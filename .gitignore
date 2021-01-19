@@ -1,0 +1,16 @@
+build*/
+temp/
+install/
+.vscode/
+.vs/
+*.kdev4
+*~
+cache/
+out/
+resources/python/
+engine.txt
+engine.py
+engine.json
+CMakeSettings.json
+*.blend*
+!*.blend

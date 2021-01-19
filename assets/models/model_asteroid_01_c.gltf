@@ -1,0 +1,286 @@
+{
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5123,
+            "count" : 114,
+            "max" : [
+                93
+            ],
+            "min" : [
+                0
+            ],
+            "type" : "SCALAR"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 94,
+            "max" : [
+                0.7257899045944214,
+                0.8380843997001648,
+                0.9612915515899658
+            ],
+            "min" : [
+                -0.7835214734077454,
+                -1.0897339582443237,
+                -0.8047419786453247
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 94,
+            "max" : [
+                0.9793853163719177,
+                0.9996399283409119,
+                0.9801268577575684
+            ],
+            "min" : [
+                -0.9550375938415527,
+                -0.981296181678772,
+                -0.9470350742340088
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5123,
+            "count" : 1014,
+            "max" : [
+                981
+            ],
+            "min" : [
+                0
+            ],
+            "type" : "SCALAR"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5126,
+            "count" : 982,
+            "max" : [
+                0.6944241523742676,
+                0.8756219148635864,
+                0.970623254776001
+            ],
+            "min" : [
+                -0.6986455917358398,
+                -1.0331788063049316,
+                -0.6869105696678162
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 5,
+            "componentType" : 5126,
+            "count" : 982,
+            "max" : [
+                0.9961851835250854,
+                0.9928586483001709,
+                0.9935300946235657
+            ],
+            "min" : [
+                -0.9983214735984802,
+                -0.9842219352722168,
+                -0.9890438318252563
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 6,
+            "componentType" : 5126,
+            "count" : 982,
+            "max" : [
+                0.6738787889480591,
+                0.999668300151825,
+                0.7236517667770386,
+                1.0
+            ],
+            "min" : [
+                -0.9943617582321167,
+                -0.9997798800468445,
+                -0.9996641874313354,
+                -1.0
+            ],
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 7,
+            "componentType" : 5126,
+            "count" : 982,
+            "max" : [
+                0.9955382347106934,
+                1.0007445812225342
+            ],
+            "min" : [
+                0.0036925459280610085,
+                0.0025119781494140625
+            ],
+            "type" : "VEC2"
+        }
+    ],
+    "asset" : {
+        "generator" : "Khronos Blender glTF 2.0 exporter",
+        "version" : "2.0"
+    },
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 228,
+            "byteOffset" : 0,
+            "target" : 34963
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 1128,
+            "byteOffset" : 228,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 1128,
+            "byteOffset" : 1356,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 2028,
+            "byteOffset" : 2484,
+            "target" : 34963
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 11784,
+            "byteOffset" : 4512,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 11784,
+            "byteOffset" : 16296,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 15712,
+            "byteOffset" : 28080,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 7856,
+            "byteOffset" : 43792,
+            "target" : 34962
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 51648,
+            "uri" : "model_asteroid_01_c.bin"
+        }
+    ],
+    "images" : [
+        {
+            "name" : "model_asteroid_01_diff",
+            "uri" : "model_asteroid_01_diff.png"
+        },
+        {
+            "name" : "model_asteroid_01_meta",
+            "uri" : "model_asteroid_01_meta.png"
+        },
+        {
+            "name" : "model_asteroid_01_norm",
+            "uri" : "model_asteroid_01_norm.png"
+        }
+    ],
+    "materials" : [
+        {
+            "name" : "Material.002",
+            "normalTexture" : {
+                "index" : 2
+            },
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.5,
+                    0.5,
+                    0.5,
+                    1.0
+                ],
+                "baseColorTexture" : {
+                    "index" : 0
+                },
+                "metallicRoughnessTexture" : {
+                    "index" : 1
+                }
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "model_asteroid_01_c_CCX",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "NORMAL" : 2,
+                        "POSITION" : 1
+                    },
+                    "indices" : 0
+                }
+            ]
+        },
+        {
+            "name" : "model_asteroid_01_c",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "NORMAL" : 5,
+                        "POSITION" : 4,
+                        "TANGENT" : 6,
+                        "TEXCOORD_0" : 7
+                    },
+                    "indices" : 3,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "model_asteroid_01_c_CCX"
+        },
+        {
+            "mesh" : 1,
+            "name" : "model_asteroid_01_c"
+        }
+    ],
+    "samplers" : [
+        {}
+    ],
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0,
+                1
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        },
+        {
+            "sampler" : 0,
+            "source" : 1
+        },
+        {
+            "sampler" : 0,
+            "source" : 2
+        }
+    ]
+}

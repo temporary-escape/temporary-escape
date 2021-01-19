@@ -1,0 +1,154 @@
+{
+    "asset": {
+        "generator": "Khronos glTF Blender I/O v1.3.48",
+        "version": "2.0"
+    },
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "mesh": 0,
+            "name": "model_engine_02"
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "emissiveFactor": [
+                0,
+                0,
+                0
+            ],
+            "name": "pallete_01",
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "index": 0,
+                    "texCoord": 0
+                },
+                "metallicRoughnessTexture": {
+                    "index": 1,
+                    "texCoord": 0
+                }
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "POSITION": 0,
+                        "NORMAL": 1,
+                        "TANGENT": 2,
+                        "TEXCOORD_0": 3
+                    },
+                    "indices": 4,
+                    "material": 0
+                }
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "source": 0
+        },
+        {
+            "source": 1
+        }
+    ],
+    "images": [
+        {
+            "mimeType": "image/png",
+            "name": "pallete_01_diff",
+            "uri": "pallete_01_diff.png"
+        },
+        {
+            "mimeType": "image/png",
+            "name": "pallete_01_norm",
+            "uri": "pallete_01_norm.png"
+        }
+    ],
+    "accessors": [
+        {
+            "bufferView": 0,
+            "componentType": 5126,
+            "count": 176,
+            "max": [
+                0.49999985098838806,
+                0.5013716220855713,
+                0.4999789297580719
+            ],
+            "min": [
+                -0.5000001788139343,
+                -0.49862828850746155,
+                -0.5000211596488953
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 176,
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 176,
+            "type": "VEC4"
+        },
+        {
+            "bufferView": 3,
+            "componentType": 5126,
+            "count": 176,
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 4,
+            "componentType": 5123,
+            "count": 324,
+            "type": "SCALAR"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 2112,
+            "byteOffset": 0
+        },
+        {
+            "buffer": 0,
+            "byteLength": 2112,
+            "byteOffset": 2112
+        },
+        {
+            "buffer": 0,
+            "byteLength": 2816,
+            "byteOffset": 4224
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1408,
+            "byteOffset": 7040
+        },
+        {
+            "buffer": 0,
+            "byteLength": 648,
+            "byteOffset": 8448
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 9096,
+            "uri": "model_engine_02.bin"
+        }
+    ]
+}

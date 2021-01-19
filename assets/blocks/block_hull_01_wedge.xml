@@ -1,0 +1,7 @@
+<block>
+	<title>Hull Wedge (Basic)</title>
+	<description>Basic hull made from the cheapest materials.</description>
+	<tier>1</tier>
+	<model>model_block_01_wedge</model>
+	<group>Hulls</group>
+</block>

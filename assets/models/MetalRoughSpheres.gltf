@@ -1,0 +1,163 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.4.40",
+        "version" : "2.0"
+    },
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "Spheres.006",
+            "scale" : [
+                0.34291499853134155,
+                0.34291499853134155,
+                0.34291499853134155
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "name" : "Material_0.002",
+            "pbrMetallicRoughness" : {
+                "baseColorTexture" : {
+                    "index" : 0,
+                    "texCoord" : 0
+                },
+                "metallicRoughnessTexture" : {
+                    "index" : 1,
+                    "texCoord" : 0
+                }
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "Spheres.006",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1,
+                        "TANGENT" : 2,
+                        "TEXCOORD_0" : 3
+                    },
+                    "indices" : 4,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        },
+        {
+            "sampler" : 0,
+            "source" : 1
+        }
+    ],
+    "images" : [
+        {
+            "mimeType" : "image/png",
+            "name" : "Spheres_BaseColor",
+            "uri" : "Spheres_BaseColor.png"
+        },
+        {
+            "mimeType" : "image/png",
+            "name" : "Spheres_MetalRough",
+            "uri" : "Spheres_MetalRough.png"
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 256214,
+            "max" : [
+                11.874730110168457,
+                9.000000953674316,
+                10.969940185546875
+            ],
+            "min" : [
+                -12.186589241027832,
+                -1.0000001192092896,
+                -12.35944938659668
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 256214,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 256214,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5126,
+            "count" : 256214,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5125,
+            "count" : 1505328,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 3074568,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 3074568,
+            "byteOffset" : 3074568
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 4099424,
+            "byteOffset" : 6149136
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 2049712,
+            "byteOffset" : 10248560
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 6021312,
+            "byteOffset" : 12298272
+        }
+    ],
+    "samplers" : [
+        {
+            "magFilter" : 9729,
+            "minFilter" : 9986,
+            "wrapS" : 33071,
+            "wrapT" : 33071
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 18319584,
+            "uri" : "MetalRoughSpheres.bin"
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+[submodule "libs/Nuklear"]
+	path = libs/Nuklear
+	url = https://github.com/Immediate-Mode-UI/Nuklear.git
+[submodule "libs/wren"]
+	path = libs/wren
+	url = https://github.com/wren-lang/wren.git
+[submodule "libs/wrenbind17"]
+	path = libs/wrenbind17
+	url = https://github.com/matusnovak/wrenbind17.git
