@@ -108,6 +108,10 @@ void Application::render(const Vector2i& viewport) {
     }
     }
 
+    if (viewport == Vector2i{0, 0}) {
+        return;
+    }
+
     glViewport(0, 0, viewport.x, viewport.y);
     Framebuffer::DefaultFramebuffer.bind();
     static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};

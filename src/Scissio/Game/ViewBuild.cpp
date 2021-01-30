@@ -93,8 +93,20 @@ void ViewBuild::render(const Vector2i& viewport) {
         }
     }
 
-    const auto projected = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 10.0f;
-    preview->move(projected);
+    {
+        const auto to = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 100.0f;
+        const auto result = ship->getComponent<ComponentGrid>()->rayCast(camera->getEyesPos(), to);
+
+        if (result.has_value()) {
+            const auto& r = result.value();
+            preview->move(r.node.get().pos + r.normal);
+        } else {
+            preview->move(Vector3{-99999.0f});
+        }
+    }
+
+    // const auto projected = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 10.0f;
+    // preview->move(projected);
 
     scene.render(renderer);
 }
@@ -127,16 +139,17 @@ void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button)
 
     gui.mousePressEvent(pos, button);
 
-    if (button == MouseButton::Left) {
+    /*if (button == MouseButton::Left) {
         const auto to = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 100.0f;
         const auto result =
             ship->getComponent<ComponentGrid>()->rayCast(camera->getEyesPos(), to, ship->getTransform());
         if (result.has_value()) {
-            std::cout << "has result: " << result.value().pos << std::endl;
+            const auto& r = result.value();
+            std::cout << "has result: " << r.pos << " normal: " << r.normal << " side: " << r.side << std::endl;
         } else {
             std::cout << "no result" << std::endl;
         }
-    }
+    }*/
 }
 
 void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button) {

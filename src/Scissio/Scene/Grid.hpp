@@ -28,9 +28,11 @@ public:
     };
 
     struct RayCastResult {
-        Node& node;
+        std::reference_wrapper<Node> node;
         BlockPtr block{nullptr};
         Vector3 pos{0.0};
+        Vector3 normal{0.0f};
+        int side{0};
     };
 
     using Nodes = std::vector<Node>;

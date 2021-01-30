@@ -60,7 +60,7 @@ public:
     };
 
     struct RayCastResut {
-        Node& node;
+        std::reference_wrapper<Node> node;
         uint16_t offset;
         Vector3 pos;
     };
@@ -92,7 +92,7 @@ public:
 
     std::optional<RayCastResut> rayCast(const Vector3& from, const Vector3& to) {
 
-        return rayCast(nodes.at(0), Vector3i{0}, std::log2f(width), from, to);
+        return rayCast(nodes.at(0), Vector3i{0}, width / 2, from, to);
     }
 
     void remove(const uint16_t offset) {
@@ -219,51 +219,45 @@ private:
         }
     }
 
-    /*std::optional<RayCastResut> rayCast(Node& node, const Vector3& origin, const int level, const Vector3& from,
+    std::optional<RayCastResut> rayCast(Node& node, const Vector3i& origin, const int half, const Vector3& from,
                                         const Vector3& to) {
-        const auto half = std::powf(2.0f, level) / 2.0f;
-        const auto min = origin - Vector3{static_cast<float>(half)} + Vector3{0.5f};
-        const auto max = origin + Vector3{static_cast<float>(half)} + Vector3{0.5f};
 
-        const auto res = intersectBox(min, max, from, to);
-        if (!res.has_value()) {
-            return std::nullopt;
-        }
+        std::optional<RayCastResut> result;
 
-        if (level != 0) {
-            Node* tempPtr{nullptr};
-            Vector3 tempPos;
-            uint16_t tempOffset{0};
+        for (auto idx = 0; idx < node.children.size(); idx++) {
+            const auto& childOffset = node.children.at(idx);
+            if (childOffset == 0) {
+                continue;
+            }
 
-            for (auto idx = 0; idx < node.children.size(); idx++) {
-                const auto childOrigin = idxToOffset(idx, half / 2.0f, origin);
+            auto& child = nodes.at(childOffset);
 
-                const auto childOffset = node.children.at(idx);
-                if (childOffset == 0) {
-                    continue;
-                }
+            const auto offset = idxToOffset(idx, half / 2.0f, Vector3{origin});
 
-                auto& child = nodes.at(childOffset);
+            const auto min = Vector3{offset} - Vector3{static_cast<float>(half) / 2.0f} + Vector3{0.5f};
+            const auto max = Vector3{offset} + Vector3{static_cast<float>(half) / 2.0f} + Vector3{0.5f};
 
-                auto test = rayCast(child, childOrigin, level - 1, from, to);
-                if (test.has_value()) {
-                    if (!tempPtr || glm::length(tempPos - origin) > glm::length(test.value().pos - origin)) {
-                        tempPtr = &test.value().node;
-                        tempPos = test.value().pos;
-                        tempOffset = test.value().offset;
+            const auto pos = intersectBox(min, max, from, to);
+            if (pos.has_value()) {
+                if (half == 1) {
+                    if (!result.has_value() ||
+                        glm::distance(result.value().pos, from) > glm::distance(pos.value(), from)) {
+                        result = RayCastResut{child, getNodeOffset(child), pos.value()};
+                    }
+                } else {
+                    const auto test = rayCast(child, offset, half / 2, from, to);
+                    if (test.has_value()) {
+                        if (!result.has_value() ||
+                            glm::distance(result.value().pos, from) > glm::distance(test.value().pos, from)) {
+                            result = test;
+                        }
                     }
                 }
             }
-
-            if (tempPtr) {
-                return RayCastResut{*tempPtr, tempOffset, tempPos};
-            } else {
-                return std::nullopt;
-            }
-        } else {
-            return RayCastResut{node, getNodeOffset(node), res.value()};
         }
-    }*/
+
+        return result;
+    }
 
     std::optional<NodeRef> find(Node& parent, const Vector3i& origin, const int half, const Vector3i& target) {
         const auto idx = posToIndex(target, origin);

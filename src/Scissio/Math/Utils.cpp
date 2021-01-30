@@ -1,5 +1,7 @@
 #include "Utils.hpp"
 
+#include <iostream>
+
 using namespace Scissio;
 
 std::optional<Vector3> Scissio::intersectBox(const Vector3& min, const Vector3& max, const Vector3& from,
@@ -8,33 +10,6 @@ std::optional<Vector3> Scissio::intersectBox(const Vector3& min, const Vector3& 
     auto dir = to - from;
     const auto ml = glm::length(dir);
     dir = glm::normalize(dir);
-
-    /*float t1 = (min.x - from.x) / dir.x;
-    float t2 = (max.x - from.x) / dir.x;
-    float t3 = (min.y - from.y) / dir.y;
-    float t4 = (max.y - from.y) / dir.y;
-    float t5 = (min.z - from.z) / dir.z;
-    float t6 = (max.z - from.z) / dir.z;
-
-    float aMin = t1 < t2 ? t1 : t2;
-    float bMin = t3 < t4 ? t3 : t4;
-    float cMin = t5 < t6 ? t5 : t6;
-
-    float aMax = t1 > t2 ? t1 : t2;
-    float bMax = t3 > t4 ? t3 : t4;
-    float cMax = t5 > t6 ? t5 : t6;
-
-    float fMax = aMin > bMin ? aMin : bMin;
-    float fMin = aMax < bMax ? aMax : bMax;
-
-    float t7 = fMax > cMin ? fMax : cMin;
-    float t8 = fMin < cMax ? fMin : cMax;
-
-    float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
-
-    if (t9 > ml) {
-        return std::nullopt;
-    }*/
 
     // Source of the algorithm: http://www.cs.utah.edu/~awilliam/box/
     float tmin, tmax, tymin, tymax, tzmin, tzmax;
@@ -79,6 +54,28 @@ std::optional<Vector3> Scissio::intersectBox(const Vector3& min, const Vector3& 
     }
 
     return from + dir * tmin;
+}
+
+static bool isAtSide(const float v) {
+    return v >= 0.4999f && v <= 0.5001f;
+}
+
+Vector3 Scissio::intersectBoxNormal(const Vector3& center, const Vector3& pos) {
+    const auto relative = pos - center;
+
+    if (isAtSide(relative.x)) {
+        return {1.0f, 0.0f, 0.0f};
+    } else if (isAtSide(-relative.x)) {
+        return {-1.0f, 0.0f, 0.0f};
+    } else if (isAtSide(relative.y)) {
+        return {0.0f, 1.0f, 0.0f};
+    } else if (isAtSide(-relative.y)) {
+        return {0.0f, -1.0f, 0.0f};
+    } else if (isAtSide(relative.z)) {
+        return {0.0f, 0.0f, 1.0f};
+    } else {
+        return {0.0f, 0.0f, -1.0f};
+    }
 }
 
 Vector3 Scissio::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,

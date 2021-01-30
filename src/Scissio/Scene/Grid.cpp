@@ -45,7 +45,8 @@ uint16_t Grid::insertBlockType(const BlockPtr& block) {
 Grid::Node& Grid::insert(const uint16_t type, const Vector3& pos, const uint8_t rot) {
     auto& node = nextEmptyNode();
     const auto ref = tree.insert(pos);
-    ref.node.data = static_cast<Pointer>(&nodes.at(0) - &node);
+    const auto begin = &nodes.at(0);
+    ref.node.data = static_cast<Pointer>(&node - begin);
     node.type = type;
     node.pos = pos;
     node.rot = rot;
@@ -162,10 +163,29 @@ std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vect
         return std::nullopt;
     }
 
-    auto& node = nodes.at(res.value().node.data);
+    auto& node = nodes.at(res.value().node.get().data);
     const auto block = getType(node).block;
 
-    return RayCastResult{node, block, res.value().pos};
+    const auto normal = intersectBoxNormal(node.pos, res.value().pos);
+
+    auto side = 0;
+    if (normal.x <= -1.0f) {
+        side = 1;
+    }
+    if (normal.y >= 1.0f) {
+        side = 2;
+    }
+    if (normal.y <= -1.0f) {
+        side = 3;
+    }
+    if (normal.z >= 1.0f) {
+        side = 4;
+    }
+    if (normal.z <= -1.0f) {
+        side = 5;
+    }
+
+    return RayCastResult{node, block, res.value().pos, normal, side};
 }
 
 std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vector3& to, const Matrix4& transform) {
@@ -173,5 +193,13 @@ std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vect
     const auto alignedFrom = Vector3{inverse * Vector4{from, 1.0f}};
     const auto alignedTo = Vector3{inverse * Vector4{to, 1.0f}};
 
-    return rayCast(alignedFrom, alignedTo);
+    const auto result = rayCast(alignedFrom, alignedTo);
+    if (!result.has_value()) {
+        return std::nullopt;
+    }
+
+    return RayCastResult{
+        result.value().node,   result.value().block, Vector3{transform * Vector4{result.value().pos, 1.0f}},
+        result.value().normal, result.value().side,
+    };
 }
