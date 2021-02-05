@@ -11,6 +11,7 @@
 #include "GuiWindow.hpp"
 
 #include <functional>
+#include <list>
 #include <queue>
 #include <string>
 

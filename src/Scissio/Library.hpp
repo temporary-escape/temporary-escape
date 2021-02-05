@@ -6,6 +6,6 @@
 #else
 #define SCISSIO_API __declspec(dllimport)
 #endif
-#elif
-#define LIBRARY_API
+#else
+#define SCISSIO_API
 #endif

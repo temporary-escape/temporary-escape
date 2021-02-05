@@ -17,7 +17,7 @@ struct Faction {
 
 struct Player {
     uint64_t id{0};
-    uint64_t factionId{0};
+    std::optional<int64_t> factionId;
     bool admin{false};
     std::string name;
     float reputation{0.0f};
@@ -29,7 +29,7 @@ struct Player {
         TableField("factionId").integer().references<Faction>("id").indexed().onDeleteNull(),
         TableField("admin").boolean().nonNull(),
         TableField("name").text().nonNull().unique(),
-        TableField("reputation").real().nonNull().default("0.0"),
+        TableField("reputation").real().nonNull().defval("0.0"),
     });
 
     DB_BIND(factionId, admin, name, reputation);
@@ -128,7 +128,87 @@ TEST("Foreign key on delete null") {
     db.remove<Faction>(faction.id);
 
     player = db.get<Player>(player.id).value();
-    REQUIRE(player.factionId == 0);
+    REQUIRE(player.factionId == std::nullopt);
+}
+
+TEST("Update single row") {
+    Database db;
+
+    db.create<Faction>();
+
+    Faction faction{0, "Hello"};
+    db.insert(faction);
+    REQUIRE(faction.id != 0);
+
+    faction.name = "World";
+    db.update(faction);
+
+    faction = db.select<Faction>().front();
+    REQUIRE(faction.name == "World");
+}
+
+TEST("Set multiple rows") {
+    Database db;
+
+    db.create<Faction>();
+    db.create<Player>();
+
+    Faction faction{0, "Lorem Ipsum"};
+    db.insert<Faction>(faction);
+    REQUIRE(faction.id != 0);
+
+    Player playerA{0, faction.id, true, "Player A", 1.0f};
+    Player playerB{0, faction.id, false, "Player B", 1.9f};
+    Player playerC{0, faction.id, false, "Player C", 0.1f};
+    db.insert(playerA);
+    db.insert(playerB);
+    db.insert(playerC);
+
+    db.set<Player>("reputation = ? WHERE admin = ?", 0.0f, false);
+
+    const auto players = db.select<Player>();
+    REQUIRE(players.size() == 3);
+
+    const auto pA = std::find_if(players.begin(), players.end(), [](const auto& p) { return p.name == "Player A"; });
+    const auto pB = std::find_if(players.begin(), players.end(), [](const auto& p) { return p.name == "Player B"; });
+    const auto pC = std::find_if(players.begin(), players.end(), [](const auto& p) { return p.name == "Player C"; });
+
+    REQUIRE(pA != players.end());
+    REQUIRE(pA->admin == true);
+    REQUIRE(pA->reputation > 0.0f);
+
+    REQUIRE(pB != players.end());
+    REQUIRE(pB->admin == false);
+    REQUIRE(pB->reputation == Approx(0.0f));
+
+    REQUIRE(pC != players.end());
+    REQUIRE(pC->admin == false);
+    REQUIRE(pC->reputation == Approx(0.0f));
+
+    REQUIRE(db.count<Faction>() == 1);
+    REQUIRE(db.count<Player>() == 3);
+}
+
+TEST("Describe") {
+    Database db;
+
+    REQUIRE(db.exists<Faction>() == false);
+    REQUIRE(db.exists<Player>() == false);
+
+    db.create<Faction>();
+    db.create<Player>();
+
+    REQUIRE(db.exists<Faction>() == true);
+    REQUIRE(db.exists<Player>() == true);
+
+    const auto schema = db.describe("player");
+    REQUIRE(schema == Player::dbSchema());
+}
+
+TEST("Describe non existing table") {
+    Database db;
+
+    REQUIRE_THROWS(db.describe("player"));
 }
 
 TEST("Move table") {
@@ -167,5 +247,5 @@ TEST("Move table") {
     db.remove<Faction>(faction.id);
 
     player = db.get<Player>(player.id).value();
-    REQUIRE(player.factionId == 0);
+    REQUIRE(player.factionId == std::nullopt);
 }

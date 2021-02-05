@@ -11,6 +11,7 @@
 #include "../Shaders/ShaderPbr.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
 #include "GBuffer.hpp"
+#include <list>
 
 namespace Scissio {
 class Model;

@@ -1,6 +1,7 @@
 #include "Database.hpp"
 #include "../Utils/Exceptions.hpp"
 
+#include <iostream>
 #include <sqlite3.h>
 #include <sstream>
 
@@ -10,6 +11,14 @@ TableBinder::TableBinder(sqlite3_stmt* stmt) : stmt(stmt) {
 }
 
 TableBinder::~TableBinder() = default;
+
+bool ColumnUtils::isNull(sqlite3_stmt* stmt, const int idx) {
+    return sqlite3_column_type(stmt, idx) == SQLITE_NULL;
+}
+
+void ColumnUtils::bindCharConst(sqlite3_stmt* stmt, const int idx, const char* value) {
+    sqlite3_bind_text(stmt, idx, value, -1, nullptr);
+}
 
 template <> void ColumnBinder<uint64_t>::b(sqlite3_stmt* stmt, const int idx, const uint64_t& value) {
     sqlite3_bind_int64(stmt, idx, static_cast<int64_t>(value));
@@ -214,8 +223,8 @@ void Database::create(const TableSchema& schema) {
         if (field.flags & TableField::NonNull) {
             ss << " NOT NULL";
         }
-        if (!field.defval.empty()) {
-            ss << " DEFAULT " << field.defval;
+        if (!field.def.empty()) {
+            ss << " DEFAULT " << field.def;
         }
         first = false;
     }
@@ -274,7 +283,7 @@ void Database::create(const TableSchema& schema) {
     try {
         exec(sql);
     } catch (...) {
-        Log::d("Table schema:\n{}", sql);
+        Log::w("Table schema:\n{}", sql);
         EXCEPTION_NESTED("Failed to create table '{}'", schema.name);
     }
 }
@@ -289,4 +298,163 @@ void Database::exec(const std::string& sql) const {
 
 std::string Database::getLastError() const {
     return sqlite3_errmsg(db.get());
+}
+
+struct TableInfo {
+    int cid;
+    std::string name;
+    std::string type;
+    bool notnull;
+    std::optional<std::string> dflt_value;
+    bool pk;
+
+    DB_BIND_FIELDS(cid, name, type, notnull, dflt_value, pk);
+};
+
+struct ForeignKeyInfo {
+    int id;
+    int seq;
+    std::string table;
+    std::string from;
+    std::string to;
+    std::string on_update;
+    std::string on_delete;
+    std::string match;
+
+    DB_BIND_FIELDS(id, seq, table, from, to, on_update, on_delete, match);
+};
+
+struct IndexInfo {
+    int seq;
+    std::string name;
+    bool unique;
+    std::string origin;
+    bool partial;
+
+    DB_BIND_FIELDS(seq, name, unique, origin, partial);
+};
+
+static TableField parse(const TableInfo& info) {
+    TableField field(info.name);
+
+    if (info.pk) {
+        field.primary();
+        field.autoInc();
+    }
+
+    if (info.notnull) {
+        field.nonNull();
+    }
+
+    if (info.dflt_value.has_value()) {
+        field.defval(info.dflt_value.value());
+    }
+
+    if (info.type == "TEXT") {
+        field.text();
+    }
+
+    if (info.type == "REAL") {
+        field.real();
+    }
+
+    if (info.type == "INTEGER") {
+        field.integer();
+    }
+
+    if (info.type == "BLOB") {
+        field.binary();
+    }
+
+    return field;
+}
+
+TableSchema Database::describe(const std::string& name) {
+    auto sql = fmt::format("PRAGMA table_info(\'{}\');", name);
+    std::vector<TableInfo> results;
+    query(sql, nullptr, [&](TableBinder& binder, const int idx) {
+        results.emplace_back();
+        results.back().dbUnbind(binder, idx);
+    });
+
+    if (results.empty()) {
+        EXCEPTION("Failed to describe table schema of: '{}' error: table does not exist", name);
+    }
+
+    std::vector<TableField> fields;
+    for (const auto& result : results) {
+        fields.push_back(parse(result));
+    }
+
+    sql = fmt::format("PRAGMA foreign_key_list(\'{}\');", name);
+    std::vector<ForeignKeyInfo> foreigns;
+    query(sql, nullptr, [&](TableBinder& binder, const int idx) {
+        foreigns.emplace_back();
+        foreigns.back().dbUnbind(binder, idx);
+    });
+
+    for (const auto& key : foreigns) {
+        auto it = std::find_if(fields.begin(), fields.end(), [&](const TableField& f) { return f.name == key.from; });
+        if (it == fields.end()) {
+            EXCEPTION("Unable to find foreign key field: '{}' in table scema of: '{}'", key.from, name);
+        }
+
+        auto& field = *it;
+        field.flags |= TableField::Foreign;
+        field.ref = fmt::format("{} ({})", key.table, key.to);
+
+        if (key.on_delete == "CASCADE") {
+            field.flags |= TableField::OnDeleteCascade;
+        }
+        if (key.on_delete == "SET NULL") {
+            field.flags |= TableField::OnDeleteNull;
+        }
+        if (key.on_delete == "SET DEFAULT") {
+            field.flags |= TableField::OnDeleteDefault;
+        }
+        if (key.on_delete == "RESTRICT") {
+            field.flags |= TableField::OnDeleteRestrict;
+        }
+
+        if (key.on_update == "CASCADE") {
+            field.flags |= TableField::OnUpdateCascade;
+        }
+        if (key.on_update == "SET NULL") {
+            field.flags |= TableField::OnUpdateNull;
+        }
+        if (key.on_update == "SET DEFAULT") {
+            field.flags |= TableField::OnUpdateDefault;
+        }
+        if (key.on_update == "RESTRICT") {
+            field.flags |= TableField::OnUpdateRestrict;
+        }
+    }
+
+    sql = fmt::format("PRAGMA index_list(\'{}\');", name);
+    std::vector<IndexInfo> indexes;
+    query(sql, nullptr, [&](TableBinder& binder, const int idx) {
+        indexes.emplace_back();
+        indexes.back().dbUnbind(binder, idx);
+    });
+
+    for (const auto& index : indexes) {
+        auto it = std::find_if(fields.begin(), fields.end(), [&](const TableField& f) {
+            return index.name == fmt::format("{}_{}_idx", name, f.name);
+        });
+        if (it == fields.end()) {
+            EXCEPTION("Unable to find index key field: '{}' in table scema of: '{}'", index.name, name);
+        }
+
+        auto& field = *it;
+        field.indexed();
+
+        if (index.unique) {
+            field.unique();
+        }
+    }
+
+    return {
+        name,
+        std::move(fields),
+    };
 }

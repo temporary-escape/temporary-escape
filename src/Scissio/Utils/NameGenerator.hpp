@@ -11,7 +11,7 @@ public:
     explicit NameGenerator(const std::vector<std::string>& words);
     virtual ~NameGenerator() = default;
 
-    std::string operator()(std::mt19937_64& rng) const;
+    std::string operator()(std::mt19937_64& rng);
 
     static NameGenerator Default;
 

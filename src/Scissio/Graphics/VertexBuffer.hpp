@@ -4,6 +4,7 @@
 
 #include "Enums.hpp"
 #include <glad/glad.h>
+#include <string>
 
 namespace Scissio {
 struct NoCreate;

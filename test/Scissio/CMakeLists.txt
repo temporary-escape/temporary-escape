@@ -1,6 +1,8 @@
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
 
-add_compile_options(/wd4251)
+if(MSVC)
+  add_compile_options(/wd4251)
+endif()
 
 add_executable(${PROJECT_NAME}Tests ${SOURCES})
 target_link_libraries(${PROJECT_NAME}Tests PUBLIC Catch2::Catch2 ${PROJECT_NAME}Lib)

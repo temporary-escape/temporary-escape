@@ -65,7 +65,7 @@ template <typename T> static T pick(const std::vector<T>& vec, const size_t rand
     return vec.at(rand % vec.size());
 }
 
-std::string NameGenerator::operator()(std::mt19937_64& rng) const {
+std::string NameGenerator::operator()(std::mt19937_64& rng) {
     const auto length = distLength(rng);
 
     std::string ss(SEQUENCE_LENGTH + length, ' ');

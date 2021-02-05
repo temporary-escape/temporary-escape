@@ -15,7 +15,7 @@ struct sqlite3_stmt;
 namespace Scissio {
 struct TableField {
     static constexpr int Integer = 1 << 0;
-    static constexpr int Boolean = 1 << 1;
+    // static constexpr int Boolean = 1 << 1;
     static constexpr int Real = 1 << 2;
     static constexpr int Text = 1 << 3;
     static constexpr int Binary = 1 << 4;
@@ -36,10 +36,18 @@ struct TableField {
 
     std::string name;
     int flags{0};
-    std::string defval;
+    std::string def;
     std::string ref;
 
     explicit TableField(std::string name) : name(std::move(name)) {
+    }
+
+    bool operator==(const TableField& other) const {
+        return name == other.name && flags == other.flags && def == other.def && ref == other.ref;
+    }
+
+    bool operator!=(const TableField& other) const {
+        return name != other.name || flags != other.flags || def != other.def || ref != other.ref;
     }
 
     TableField& integer() {
@@ -48,7 +56,7 @@ struct TableField {
     }
 
     TableField& boolean() {
-        flags |= Text;
+        flags |= Integer;
         return *this;
     }
 
@@ -59,6 +67,11 @@ struct TableField {
 
     TableField& text() {
         flags |= Text;
+        return *this;
+    }
+
+    TableField& binary() {
+        flags |= Binary;
         return *this;
     }
 
@@ -118,6 +131,7 @@ struct TableField {
     }
 
     TableField& unique() {
+        flags |= Indexed;
         flags |= Unique;
         return *this;
     }
@@ -133,8 +147,8 @@ struct TableField {
         return *this;
     }
 
-    TableField& default(std::string defval) {
-        this->defval = std::move(defval);
+    TableField& defval(std::string value) {
+        this->def = std::move(value);
         return *this;
     }
 };
@@ -142,10 +156,32 @@ struct TableField {
 struct TableSchema {
     std::string name;
     std::vector<TableField> fields;
+
+    bool operator==(const TableSchema& other) const {
+        if (fields.size() != other.fields.size()) {
+            return false;
+        }
+
+        if (name != other.name) {
+            return false;
+        }
+
+        for (size_t i = 0; i < fields.size(); i++) {
+            if (fields.at(i) != other.fields.at(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator!=(const TableSchema&& other) const {
+        return !(*this == other);
+    }
 };
 
 struct SCISSIO_API ColumnUtils {
     static bool isNull(sqlite3_stmt* stmt, int idx);
+    static void bindCharConst(sqlite3_stmt* stmt, const int idx, const char* value);
 };
 
 template <typename T> struct SCISSIO_API ColumnBinder {
@@ -153,20 +189,30 @@ template <typename T> struct SCISSIO_API ColumnBinder {
     static T f(sqlite3_stmt* stmt, int idx);
 };
 
+template <> struct SCISSIO_API ColumnBinder<char const*> {
+    static void b(sqlite3_stmt* stmt, const int idx, char const* value) {
+        ColumnUtils::bindCharConst(stmt, idx, value);
+    }
+
+    static char const* f(sqlite3_stmt* stmt, const int idx) {
+        throw std::runtime_error("cannot fetch const char* from database");
+    }
+};
+
 template <typename T> struct SCISSIO_API ColumnBinder<std::optional<T>> {
-    static void b(sqlite3_stmt* stmt, const int idx, const T& value) {
+    static void b(sqlite3_stmt* stmt, const int idx, const std::optional<T>& value) {
         if (value.has_value()) {
-            ColumnBinder<T>::template b(stmt, idx, value.value());
+            ColumnBinder<T>::b(stmt, idx, value.value());
         } else {
-            ColumnBinder<std::nullptr_t>::template b(stmt, idx, nullptr);
+            ColumnBinder<std::nullptr_t>::b(stmt, idx, nullptr);
         }
     }
 
-    static T f(sqlite3_stmt* stmt, const int idx) {
+    static std::optional<T> f(sqlite3_stmt* stmt, const int idx) {
         if (ColumnUtils::isNull(stmt, idx)) {
             return std::nullopt;
         } else {
-            return ColumnBinder<T>::template f(stmt, idx);
+            return ColumnBinder<T>::f(stmt, idx);
         }
     }
 };
@@ -177,11 +223,11 @@ public:
     ~TableBinder();
 
     template <typename T> void bind(int idx, const T& value) {
-        ColumnBinder<T>::template b(stmt, idx, value);
+        ColumnBinder<T>::b(stmt, idx, value);
     }
 
     template <typename T> T column(int idx) {
-        return ColumnBinder<T>::template f(stmt, idx);
+        return ColumnBinder<T>::f(stmt, idx);
     }
 
     void bindArgs(const int idx) {
@@ -189,11 +235,11 @@ public:
     }
 
     template <typename Arg> void bindArgs(const int idx, const Arg& arg) {
-        ColumnBinder<Arg>::template b(stmt, idx, arg);
+        ColumnBinder<Arg>::b(stmt, idx, arg);
     }
 
     template <typename Arg, typename... Args> void bindArgs(const int idx, const Arg& arg, const Args&... args) {
-        ColumnBinder<Arg>::template b(stmt, idx, arg);
+        ColumnBinder<Arg>::b(stmt, idx, arg);
         bindArgs<Args...>(idx + 1, args...);
     }
 
@@ -269,6 +315,30 @@ public:
         query(sql, bind, nullptr);
     }
 
+    template <typename T> void update(const T& item) {
+        const auto sql = fmt::format("UPDATE {} SET {} WHERE id = ?;", T::dbName(), T::dbSets());
+        const auto bind = [&](TableBinder& binder, const int idx) {
+            const auto nextIdx = item.dbBind(binder, idx);
+            binder.bind(nextIdx, item.id);
+        };
+        query(sql, bind, nullptr);
+    }
+
+    template <typename T, typename... Args> void set(const std::string& sql, Args&&... args) {
+        const auto st = fmt::format("UPDATE {} SET {};", T::dbName(), sql);
+
+        const auto bind = [&](TableBinder& binder, const int idx) { binder.bindArgs(idx, args...); };
+        query(st, bind, nullptr);
+    }
+
+    template <typename T, typename... Args> size_t count(const std::string& where = "", Args&&... args) {
+        const auto sql = fmt::format("SELECT COUNT(*) FROM {} {};", T::dbName(), where);
+        size_t count = 0;
+        const auto bind = [&](TableBinder& binder, const int idx) { binder.bindArgs(idx, args...); };
+        query(sql, bind, [&](TableBinder& binder, const int idx) { count = binder.column<uint64_t>(idx); });
+        return count;
+    }
+
     void exec(const std::string& sql) const;
 
     void beginTransaction() const {
@@ -291,6 +361,19 @@ public:
             rollbackTransaction();
             std::rethrow_exception(std::current_exception());
         }
+    }
+
+    TableSchema describe(const std::string& name);
+
+    template <typename T> bool exists() {
+        const auto sql = "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?;";
+        size_t count = 0;
+        const auto bind = [&](TableBinder& binder, const int idx) {
+            binder.bind(idx, std::string("table"));
+            binder.bind(idx + 1, T::dbName());
+        };
+        query(sql, bind, [&](TableBinder& binder, const int idx) { count = binder.column<uint64_t>(idx); });
+        return count > 0;
     }
 
 private:
@@ -336,14 +419,15 @@ static const inline std::array<const char*, 8> DB_VALUES_ARRAY = {
     "", "?", "?,?", "?,?,?", "?,?,?,?", "?,?,?,?,?", "?,?,?,?,?,?", "?,?,?,?,?,?,?",
 };
 
-template <typename Arg> static void dbUtilsBindFields(TableBinder& binder, const int idx, const Arg& value) {
+template <typename Arg> static int dbUtilsBindFields(TableBinder& binder, const int idx, const Arg& value) {
     binder.bind(idx, value);
+    return idx + 1;
 }
 
 template <typename Arg, typename... Args>
-static void dbUtilsBindFields(TableBinder& binder, const int idx, const Arg& value, const Args&... values) {
+static int dbUtilsBindFields(TableBinder& binder, const int idx, const Arg& value, const Args&... values) {
     binder.bind(idx, value);
-    dbUtilsBindFields<Args...>(binder, idx + 1, values...);
+    return dbUtilsBindFields<Args...>(binder, idx + 1, values...);
 }
 
 template <typename Arg> static void dbUtilsUnbindFields(TableBinder& binder, const int idx, Arg& value) {
@@ -365,6 +449,15 @@ static std::string dbUtilsFieldNames(const Name& name, const Names&... names) {
     return name + dbUtilsFieldNames<Names...>(names...);
 }
 
+template <typename Name> static std::string dbUtilsSetNames(const Name& name) {
+    return fmt::format("{} = ?", name);
+}
+
+template <typename Name, typename... Names>
+static std::string dbUtilsSetNames(const Name& name, const Names&... names) {
+    return fmt::format("{} = ? {}", name, dbUtilsSetNames<Names...>(names...));
+}
+
 #define DB_VALUES_STRING(N) DB_VALUES_ARRAY.at(N)
 
 #define DB_VALUES()                                                                                                    \
@@ -374,8 +467,16 @@ static std::string dbUtilsFieldNames(const Name& name, const Names&... names) {
     }
 
 #define DB_BIND_FIELDS(...)                                                                                            \
-    void dbBind(TableBinder& binder, const int idx) {                                                                  \
-        dbUtilsBindFields(binder, idx, __VA_ARGS__);                                                                   \
+    int dbBind(TableBinder& binder, const int idx) const {                                                             \
+        return dbUtilsBindFields(binder, idx, __VA_ARGS__);                                                            \
+    }                                                                                                                  \
+    void dbUnbind(TableBinder& binder, const int idx) {                                                                \
+        dbUtilsUnbindFields(binder, idx, __VA_ARGS__);                                                                 \
+    }
+
+#define DB_BIND_FIELDS_WITH_ID(...)                                                                                    \
+    int dbBind(TableBinder& binder, const int idx) const {                                                             \
+        return dbUtilsBindFields(binder, idx, __VA_ARGS__);                                                            \
     }                                                                                                                  \
     void dbUnbind(TableBinder& binder, const int idx) {                                                                \
         id = binder.column<decltype(id)>(idx);                                                                         \
@@ -388,9 +489,16 @@ static std::string dbUtilsFieldNames(const Name& name, const Names&... names) {
         return s;                                                                                                      \
     }
 
+#define DB_FIELD_SETS(...)                                                                                             \
+    static const std::string& dbSets() {                                                                               \
+        static std::string s = dbUtilsSetNames(__VA_ARGS__);                                                           \
+        return s;                                                                                                      \
+    }
+
 #define DB_BIND(...)                                                                                                   \
     DB_FIELD_NAMES(#__VA_ARGS__);                                                                                      \
-    DB_BIND_FIELDS(__VA_ARGS__);                                                                                       \
+    DB_FIELD_SETS(#__VA_ARGS__);                                                                                       \
+    DB_BIND_FIELDS_WITH_ID(__VA_ARGS__);                                                                               \
     DB_VALUES();
 
 } // namespace Scissio

@@ -22,7 +22,6 @@ inline void backtrace(const std::exception& e, const size_t level = 0) {
 
 #define __FILENAME__ std::filesystem::path(__FILE__).stem().string()
 #define WHERE (__FILENAME__ + std::string(":") + std::to_string(__LINE__))
-#define EXCEPTION(MSG, ...)                                                                                            \
-    throw std::runtime_error(fmt::format("Exception at {} {}", WHERE, fmt::format(MSG, __VA_ARGS__)));
-#define EXCEPTION_NESTED(MSG, ...)                                                                                     \
-    std::throw_with_nested(std::runtime_error(fmt::format("Exception at {} {}", WHERE, fmt::format(MSG, __VA_ARGS__))));
+#define EXCEPTION(...) throw std::runtime_error(fmt::format("Exception at {} {}", WHERE, fmt::format(__VA_ARGS__)));
+#define EXCEPTION_NESTED(...)                                                                                          \
+    std::throw_with_nested(std::runtime_error(fmt::format("Exception at {} {}", WHERE, fmt::format(__VA_ARGS__))));
