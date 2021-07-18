@@ -7,32 +7,34 @@ endif()
 
 add_library(${PROJECT_NAME}Lib SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME}Lib 
-	PUBLIC 
-		glm 
-		glad::glad 
-		fmt::fmt 
-		Cgltf
-		Msgpack
-	PRIVATE 
-		glfw 
-		Xml2 
-		termcolor::termcolor 
-		nanovg::nanovg 
-		Png 
-		asio 
-		asio::asio 
-		unofficial::sqlite3::sqlite3 
-		Nuklear
-		Stb
+    PUBLIC 
+        glm 
+        glad::glad 
+        fmt::fmt 
+        Cgltf
+        Msgpack
+    PRIVATE 
+        glfw 
+        Xml2 
+        termcolor::termcolor 
+        nanovg::nanovg 
+        Png 
+        asio 
+        asio::asio 
+        unofficial::sqlite3::sqlite3 
+        Nuklear
+        Stb
 )
+
 if(NOT MSVC)
   target_link_libraries(${PROJECT_NAME}Lib PRIVATE ZLIB::ZLIB liblzma::liblzma)
 endif()
+
 target_compile_definitions(${PROJECT_NAME}Lib PRIVATE 
-	SCISSIO_EXPORTS=1
-	_WIN32_WINNT=0x0501
-	_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
-	_CRT_SECURE_NO_WARNINGS=1
+    SCISSIO_EXPORTS=1
+    _WIN32_WINNT=0x0501
+    _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
+    _CRT_SECURE_NO_WARNINGS=1
 )
 set_target_properties(${PROJECT_NAME}Lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR})
 set_target_properties(${PROJECT_NAME}Lib PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)

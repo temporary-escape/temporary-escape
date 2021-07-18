@@ -5,68 +5,67 @@
 #include "../Graphics/Framebuffer.hpp"
 #include "../Library.hpp"
 #include "../Math/Vector.hpp"
+#include "../Scene/Object.hpp"
 #include "../Shaders/ShaderGBufferView.hpp"
 #include "../Shaders/ShaderGrid.hpp"
+#include "../Shaders/ShaderLines.hpp"
 #include "../Shaders/ShaderModel.hpp"
-#include "../Shaders/ShaderPbr.hpp"
+#include "../Shaders/ShaderPbrBuffer.hpp"
+#include "../Shaders/ShaderPointCloud.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
+#include "../Shaders/ShaderWireframe.hpp"
+#include "FBuffer.hpp"
 #include "GBuffer.hpp"
-#include <list>
 
 namespace Scissio {
-class Model;
+class Scene;
 struct Skybox;
+
+struct RenderOptions {
+    bool withSkybox{true};
+};
 
 class SCISSIO_API Renderer {
 public:
     explicit Renderer(const Config& config);
-    virtual ~Renderer() = default;
+    ~Renderer() = default;
 
-    // void beginFrame(const Vector2i& viewport, GBuffer& gBuffer);
-    // void endFrame();
-
-    // void blit(const Skybox& skybox, const GBuffer& gBuffer);
-    // void endFrameDebug(int mode);
-    // void renderGBuffer(int mode);
-
-    void setCamera(const glm::mat4x4& viewMatrix);
+    void setView(const glm::mat4x4& viewMatrix);
     void setProjection(float fov = 70.0f);
     void setProjection(const Matrix4& projectionMatrix);
     void setViewport(const Vector2i& viewport);
-    void renderPbr(const GBuffer& gBuffer, const Skybox& skybox);
-    void renderSkybox(const TextureCubemap& texture);
-    void renderModel(const Model& model, const Matrix4& transform);
-    void renderGridModel(const std::list<Primitive>& primitives, const Matrix4& transform);
+    void setSkybox(const Skybox& skybox);
+    void setGBuffer(GBuffer& gbuffer);
+    void setFBuffer(FBuffer& fbuffer);
+    void setQueryPos(const Vector2i& queryPos);
+    std::optional<Object*> render(Scene& scene, const RenderOptions& options = RenderOptions{});
 
 private:
-    const Config& config;
+    void renderGBuffer();
+
     ShaderModel shaderModel;
     ShaderGrid shaderGrid;
     ShaderGBufferView shaderGBufferView;
-    ShaderPbr shaderPbr;
+    ShaderPbrBuffer shaderPbr;
     ShaderSkybox shaderSkybox;
+    ShaderPointCloud shaderPointCloud;
+    ShaderLines shaderLines;
+    ShaderWireframe shaderWireframe;
+
+    Texture2D brdf;
+    Vector2i viewport;
+    bool viewportChanged;
+    Vector2i queryPos{};
+
+    const Skybox* skybox;
+    GBuffer* gbuffer;
+    FBuffer* fbuffer;
 
     Mesh fullScreenQuad;
     Mesh skyboxMesh;
 
-    Vector2i viewport;
-
-    /*Framebuffer fbo;
-    Texture2D fboDepth;
-    Texture2D fboColorRoughness;
-    Texture2D fboEmissiveMetallic;
-    Texture2D fboNormalAmbient;*/
-
-    Texture2D defaultBaseColor;
-    Texture2D defaultNormal;
-    Texture2D defaultEmissive;
-    Texture2D defaultMetallicRoughness;
-    Texture2D defaultAmbientOcclusion;
-
-    Texture2D brdf;
-
-    glm::mat4x4 projectionMatrix;
-    glm::mat4x4 viewMatrix;
-    glm::mat4x4 projectionViewMatrix;
+    glm::mat4x4 projectionMatrix{};
+    glm::mat4x4 viewMatrix{};
+    glm::mat4x4 projectionViewMatrix{};
 };
-} // namespace Scissio
+}; // namespace Scissio

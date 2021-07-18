@@ -1,12 +1,11 @@
 #pragma once
+#include "../Utils/Exceptions.hpp"
 #include "Entity.hpp"
 
 #include <unordered_map>
 #include <vector>
 
 namespace Scissio {
-class Renderer;
-
 class SCISSIO_API Scene {
 public:
     using ComponentSystemsMap = std::unordered_map<ComponentType, std::shared_ptr<AbstractComponentSystem>>;
@@ -19,9 +18,10 @@ public:
     Scene& operator=(Scene&& other) noexcept;
     void swap(Scene& other) noexcept;
 
-    void render(Renderer& renderer);
+    void update();
 
     EntityPtr addEntity();
+    void insertEntity(EntityPtr entity); // AbstractClient only!
     /*template <typename T, typename... Args> T& addComponent(const EntityPtr& entity, Args&&... args) {
         auto& system = getComponentSystem<T>();
         auto& component = system.add(*entity, std::forward<Args>(args)...);
@@ -29,8 +29,16 @@ public:
         return component;
     }*/
 
-    template <typename T> ComponentSystem<T>& getComponentSystem() {
-        return *std::dynamic_pointer_cast<ComponentSystem<T>>(systems.at(T::Type));
+    template <typename T> ComponentSystem<T>& getComponentSystem() const {
+        const auto ptr = dynamic_cast<ComponentSystem<T>*>(systems.at(T::Type).get());
+        if (!ptr) {
+            EXCEPTION("The component system for {} does not exist", typeid(T).name());
+        }
+        return *ptr;
+    }
+
+    const std::vector<EntityPtr>& getEntities() const {
+        return entities;
     }
 
 private:

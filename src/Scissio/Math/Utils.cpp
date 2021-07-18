@@ -83,10 +83,19 @@ Vector3 Scissio::screenToWorld(const Matrix4& viewMatrix, const Matrix4& project
     const Vector4 rayClip((pos.x - 0) / float(viewport.x) * 2.0f - 1.0f,
                           -((pos.y - 0) / float(viewport.y) * 2.0f - 1.0f), 0.5f, 0.0f);
 
-    const Vector4 rayEye = projectionMatrix * rayClip;
+    const Vector4 rayEye = glm::inverse(projectionMatrix) * rayClip;
 
     const Vector4 rayEyeFixed(rayEye.x, rayEye.y, -1.0f, 0.0f);
 
     const auto rayWorld = viewMatrix * rayEyeFixed;
     return {rayWorld.x, rayWorld.y, rayWorld.z};
+}
+
+Vector2i Scissio::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
+                                const Vector3& pos) {
+    const auto vp = projectionMatrix * glm::inverse(viewMatrix);
+    const auto clipSpace = vp * Vector4{pos, 1.0f};
+    auto ndcSpace = Vector3{clipSpace} / clipSpace.w;
+    ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
+    return ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
 }

@@ -41,7 +41,12 @@ public:
 private:
     uint64_t id;
     std::vector<StreamPtr> streams;
+    std::atomic_int64_t nextId;
 };
+
+template <> inline void Session::send<Packet>(const size_t channel, const Packet& message) {
+    streams.at(channel)->sendRaw(message);
+}
 
 using SessionPtr = std::shared_ptr<Session>;
 using SessionWeak = std::weak_ptr<Session>;

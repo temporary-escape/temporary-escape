@@ -13,9 +13,9 @@ struct stbrp_node;
 
 namespace Scissio {
 struct SCISSIO_API ImageNode {
-    Vector2i pos;
-    Vector2i size;
-    Texture2D* texture = nullptr;
+    Vector2i pos{0};
+    Vector2i size{0};
+    Texture2D* texture{nullptr};
 };
 
 class SCISSIO_API ImageAtlas {

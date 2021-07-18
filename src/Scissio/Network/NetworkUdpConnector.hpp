@@ -15,7 +15,7 @@ public:
 
     void close();
     void start() override;
-    void receive(const StreamPtr& stream, const Packet& packet) override;
+    void receive(const StreamPtr& stream, Packet packet) override;
 
 private:
     void accept();

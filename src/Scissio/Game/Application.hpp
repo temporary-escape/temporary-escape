@@ -9,9 +9,10 @@
 #include "../Graphics/Shader.hpp"
 #include "../Graphics/SkyboxRenderer.hpp"
 #include "../Graphics/TextureCompressor.hpp"
+#include "../Graphics/ThumbnailRenderer.hpp"
 #include "../Modding/ModManager.hpp"
 #include "../Platform/OpenGLWindow.hpp"
-#include "../Utils/EventBus.hpp"
+#include "../Utils/Database.hpp"
 
 namespace Scissio {
 class Client;
@@ -36,22 +37,28 @@ public:
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
-    void eventKeyPressed(Key key) override;
-    void eventKeyReleased(Key key) override;
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
+    void eventMouseScroll(int xscroll, int yscroll) override;
 
 private:
+    uint64_t generatePlayerUid();
+
     State state = State::Init;
 
     const Config& config;
     Canvas2D canvas;
     Canvas2D::FontHandle defaultFont;
+    uint64_t uid;
     std::unique_ptr<ModManager> modManager;
-    std::unique_ptr<EventBus> eventBus;
     std::unique_ptr<TextureCompressor> textureCompressor;
     std::unique_ptr<SkyboxRenderer> skyboxRenderer;
+    std::unique_ptr<ThumbnailRenderer> thumbnailRenderer;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<GBuffer> gBuffer;
+    std::unique_ptr<FBuffer> fBuffer;
     std::unique_ptr<AssetManager> assetManager;
+    std::unique_ptr<Database> database;
     std::unique_ptr<Server> server;
     std::unique_ptr<Client> client;
     Future<void> clientFuture;

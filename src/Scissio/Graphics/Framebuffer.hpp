@@ -29,6 +29,10 @@ public:
         return handle;
     }
 
+    operator bool() const {
+        return handle > 0;
+    }
+
     static Framebuffer DefaultFramebuffer;
 
 private:

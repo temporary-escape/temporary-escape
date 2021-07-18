@@ -1,0 +1,19 @@
+<asteroid>
+	<title>Asteroid (Rock)</title>
+	<description>Asteroid with no useful minerals.</description>
+	<distribution>
+		<rarity>1.0</rarity>
+		<min>0.0</min>
+		<max>1.0</max>
+	</distribution>
+	<models>
+		<model>model_asteroid_01_a</model>
+		<model>model_asteroid_01_b</model>
+		<model>model_asteroid_01_c</model>
+		<model>model_asteroid_01_d</model>
+		<model>model_asteroid_01_e</model>
+		<model>model_asteroid_01_f</model>
+		<model>model_asteroid_01_g</model>
+		<model>model_asteroid_01_h</model>
+	</models>
+</asteroid>

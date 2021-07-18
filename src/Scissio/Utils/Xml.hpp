@@ -107,7 +107,7 @@ public:
 
     const std::string& getName() const;
 
-    template <typename T> void convert(T& value) {
+    template <typename T> void convert(T& value) const {
         T::convert(*this, value);
     }
 
@@ -134,27 +134,27 @@ private:
     std::shared_ptr<_xmlDoc> doc;
 };
 
-template <> inline void Node::convert<std::string>(std::string& value) {
+template <> inline void Node::convert<std::string>(std::string& value) const {
     value = this->asString();
 }
 
-template <> inline void Node::convert<int64_t>(int64_t& value) {
+template <> inline void Node::convert<int64_t>(int64_t& value) const {
     value = this->asLong();
 }
 
-template <> inline void Node::convert<int>(int& value) {
+template <> inline void Node::convert<int>(int& value) const {
     value = static_cast<int>(this->asLong());
 }
 
-template <> inline void Node::convert<float>(float& value) {
+template <> inline void Node::convert<float>(float& value) const {
     value = static_cast<float>(this->asDouble());
 }
 
-template <> inline void Node::convert<double>(double& value) {
+template <> inline void Node::convert<double>(double& value) const {
     value = this->asDouble();
 }
 
-template <> inline void Node::convert<bool>(bool& value) {
+template <> inline void Node::convert<bool>(bool& value) const {
     value = this->asBool();
 }
 }; // namespace Xml

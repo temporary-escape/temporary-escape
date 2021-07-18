@@ -20,11 +20,11 @@ void main()
     vec4 worldPos = modelMatrix * vec4(position.xyz, 1.0);
 
     vec3 N = normalize(normalMatrix * normal);
-	vec3 T = normalize(normalMatrix * tangent.xyz);
-	vec3 B = cross(N, T);
+    vec3 T = normalize(normalMatrix * tangent.xyz);
+    vec3 B = cross(N, T);
 
     v_TBN = mat3(T, B, N);
-	v_normal = N.xyz;
+    v_normal = N.xyz;
     v_worldpos = worldPos.xyz;
 
     gl_Position = transformationProjectionMatrix * worldPos;

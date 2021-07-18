@@ -35,6 +35,7 @@ OpenGLWindow::OpenGLWindow(const std::string& name, const Vector2i& size) : wind
     glfwSetKeyCallback(window, &keyCallback);
     glfwSetCursorPosCallback(window, &mouseMovedCallback);
     glfwSetMouseButtonCallback(window, &mouseButtonCallback);
+    glfwSetScrollCallback(window, &mouseScrollCallback);
 
     glfwMakeContextCurrent(window);
     gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
@@ -72,7 +73,7 @@ void OpenGLWindow::run() {
     }
 }
 
-void OpenGLWindow::mouseMovedCallback(GLFWwindow* window, double x, double y) {
+void OpenGLWindow::mouseMovedCallback(GLFWwindow* window, const double x, const double y) {
     auto& self = *static_cast<OpenGLWindow*>(glfwGetWindowUserPointer(window));
     self.mousePos = {static_cast<int>(x), static_cast<int>(y)};
     self.eventMouseMoved(self.mousePos);
@@ -95,7 +96,9 @@ static MouseButton toMouseButton(int button) {
     }
 }
 
-void OpenGLWindow::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+void OpenGLWindow::mouseButtonCallback(GLFWwindow* window, const int button, const int action, int mods) {
+    (void)mods;
+
     auto& self = *static_cast<OpenGLWindow*>(glfwGetWindowUserPointer(window));
 
     const auto btn = toMouseButton(button);
@@ -192,19 +195,34 @@ static Key toKey(int key) {
     case GLFW_KEY_LEFT_CONTROL: {
         return Key::LeftControl;
     }
+    case GLFW_KEY_DELETE: {
+        return Key::Delete;
+    }
     default: {
         return Key::None;
     }
     }
 }
 
-void OpenGLWindow::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void OpenGLWindow::keyCallback(GLFWwindow* window, const int key, const int scancode, const int action,
+                               const int mods) {
+    (void)scancode;
+    (void)mods;
+
     auto& self = *static_cast<OpenGLWindow*>(glfwGetWindowUserPointer(window));
+
+    Modifiers modifiers = 0;
 
     const auto k = toKey(key);
     if (action == GLFW_PRESS) {
-        self.eventKeyPressed(k);
+        self.eventKeyPressed(k, modifiers);
     } else if (action == GLFW_RELEASE) {
-        self.eventKeyReleased(k);
+        self.eventKeyReleased(k, modifiers);
     }
+}
+
+void OpenGLWindow::mouseScrollCallback(GLFWwindow* window, const double xscroll, const double yscroll) {
+    auto& self = *static_cast<OpenGLWindow*>(glfwGetWindowUserPointer(window));
+
+    self.eventMouseScroll(static_cast<int>(xscroll), static_cast<int>(yscroll));
 }

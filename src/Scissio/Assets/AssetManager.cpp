@@ -3,7 +3,7 @@
 #include "../Utils/Exceptions.hpp"
 #include "../Utils/GltfImporter.hpp"
 #include "../Utils/StringUtils.hpp"
-#include "Block.hpp"
+#include "BasicTexture.hpp"
 #include "FontFamily.hpp"
 #include "IconAtlas.hpp"
 #include "Model.hpp"
@@ -17,58 +17,11 @@ using namespace Scissio;
 
 AssetManager* AssetManager::instance = nullptr;
 
-static const std::array<GLenum, 6> CUBEMAP_ENUMS = {
-    GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-};
-
-static std::unique_ptr<uint8_t[]> pixelsFromColor(const Vector2i& size, const Color4& color) {
-    std::unique_ptr<uint8_t[]> pixels(new uint8_t[size.x * size.y * 3]);
-    for (size_t i = 0; i < size.x * size.y * 3; i += 3) {
-        pixels[i + 0] = static_cast<uint8_t>(color.r * 255.0f);
-        pixels[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
-        pixels[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
-    }
-    return pixels;
-}
-
 AssetManager::AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor,
-                           Renderer& renderer, SkyboxRenderer& skyboxRenderer)
+                           Renderer& renderer)
     : canvas(canvas), imageAtlas(config), textureCompressor(textureCompressor), renderer(renderer) {
 
     instance = this;
-
-    // Generate skybox for thumbnails
-    TextureCubemap skybox;
-    skybox.bind();
-
-    const auto pixels = pixelsFromColor({64, 64}, {0.07f, 0.07f, 0.07f, 1.0f});
-    for (const auto& side : CUBEMAP_ENUMS) {
-        glTexImage2D(side, 0, GL_RGB8, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels.get());
-    }
-
-    skybox.texParameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    skybox.texParameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    skybox.texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    skybox.texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    skybox.texParameteri(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    skybox.texParameteri(GL_TEXTURE_BASE_LEVEL, 0);
-    skybox.texParameteri(GL_TEXTURE_MAX_LEVEL, 0);
-
-    auto prefilter = skyboxRenderer.prefilter(skybox);
-    auto irradiance = skyboxRenderer.irradiance(skybox);
-
-    thumbnailSkybox = Skybox{
-        std::move(skybox),
-        std::move(prefilter),
-        std::move(irradiance),
-    };
-
-    // Configure thumbnail FBO
-    thumbnailFboColor.setStorage(0, {128, 128}, PixelType::Rgba8u);
-    thumbnailFboDepth.setStorage({128, 128}, PixelType::Depth24Stencil8);
-    thumbnailFbo.attach(thumbnailFboColor, FramebufferAttachment::Color0, 0);
-    thumbnailFbo.attach(thumbnailFboDepth, FramebufferAttachment::DepthStencil);
 }
 
 AssetManager& AssetManager::singleton() {
@@ -208,16 +161,27 @@ template <> ModelPtr AssetManager::load<Model>(const Manifest& mod, const Path& 
     }
 }
 
-template <> BlockPtr AssetManager::load<Block>(const Manifest& mod, const Path& path) {
+template <> BasicTexturePtr AssetManager::load<BasicTexture>(const Manifest& mod, const Path& path) {
     try {
-        const auto block = std::make_shared<Block>(mod, path);
-        add(block);
-        return block;
+        const auto baseName = path.stem().string();
+        auto texture = std::make_shared<BasicTexture>(mod, baseName, path);
+        add(texture);
+        return texture;
     } catch (...) {
-        EXCEPTION_NESTED("Failed to load block: '{}'", path.string());
+        EXCEPTION_NESTED("Failed to load texture: '{}'", path.string());
     }
 }
 
+template <> ImagePtr AssetManager::load<Image>(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto image = std::make_shared<Image>(mod, baseName, imageAtlas, path);
+        add(image);
+        return image;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to load texture: '{}'", path.string());
+    }
+}
 void AssetManager::add(AssetPtr asset) {
     assets.insert(std::make_pair(asset->getName(), asset));
     loadQueue.push([this, asset]() {
@@ -229,47 +193,15 @@ void AssetManager::add(AssetPtr asset) {
     });
 }
 
-ImagePtr AssetManager::generateThumbnail(const Model& model) {
-    static const Vector2i viewport{128, 128};
-    static const Matrix4 transform{1.0f};
-    const Matrix4 viewMatrix = glm::lookAt(Vector3{2.0f, 2.0f, -2.0f}, Vector3{0.0f}, Vector3{0.0f, 1.0f, 0.0f});
+ImagePtr AssetManager::generateImage(const Manifest& mod, const std::string& name, const Vector2i& size,
+                                     std::unique_ptr<char[]> pixels) {
+    const auto node = imageAtlas.reserve(size);
+    node->texture->setPixels(0, node->pos, node->size, PixelType::Rgba8u, pixels.get());
+    node->texture->unbind();
 
-    thumbnailGBuffer.bind(viewport);
-
-    renderer.setViewport(viewport);
-    renderer.setProjection(30.0f);
-    renderer.setCamera(viewMatrix);
-
-    glEnable(GL_DEPTH_TEST);
-    renderer.renderModel(model, transform);
-    glDisable(GL_DEPTH_TEST);
-
-    thumbnailGBuffer.unbind();
-
-    thumbnailFbo.bind();
-
-    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
-    glClearBufferfv(GL_COLOR, 0, &black.x);
-    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
-
-    // renderer.renderSkybox(thumbnailSkybox.texture);
-    renderer.renderPbr(thumbnailGBuffer, thumbnailSkybox);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-    const auto node = imageAtlas.reserve(viewport);
-
-    /*std::unique_ptr<char[]> pixels(new char[viewport.x * viewport.y * 4]);
-    glReadPixels(0, 0, viewport.x, viewport.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get());
-
-    std::ofstream file(model.getName() + ".raw", std::ios::out | std::ios::binary);
-    file.write(pixels.get(), viewport.x * viewport.y * 4);*/
-
-    node->texture->bind();
-    glCopyTexSubImage2D(node->texture->getTarget(), 0, node->pos.x, node->pos.y, 0, 0, viewport.x, viewport.y);
-
-    auto image = std::make_shared<Image>(model.getMod(), model.getName() + "-thumb", imageAtlas, *node->texture,
-                                         node->pos, node->size);
+    auto image = std::make_shared<Image>(mod, name, imageAtlas, *node->texture, node->pos, node->size);
 
     add(image);
+    image->load(*this);
     return image;
 }

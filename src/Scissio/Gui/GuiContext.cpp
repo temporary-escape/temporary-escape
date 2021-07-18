@@ -1,7 +1,6 @@
 #include "GuiContext.hpp"
 #include "../Assets/AssetManager.hpp"
 #include "../Assets/FontFace.hpp"
-#include "GuiWindow.hpp"
 
 #include <nuklear.h>
 
@@ -120,14 +119,14 @@ extern "C" {
 #include <nuklear_internal.h>
 void cnk_draw_button_image(struct nk_context* ctx, struct nk_command_buffer* out, const struct nk_rect* bounds,
                            const struct nk_rect* content, nk_flags state, const struct nk_style_button* style,
-                           const struct nk_image* img) {
-    nk_draw_button(out, bounds, state, style);
+                           const struct nk_image* img, const nk_bool active) {
+    nk_draw_button(out, bounds, state | (active ? NK_WIDGET_STATE_ACTIVE : 0), style);
 
     auto c = style->text_normal;
-    if (nk_input_is_mouse_hovering_rect(&ctx->input, *bounds)) {
+    if (active || nk_input_is_mouse_hovering_rect(&ctx->input, *bounds)) {
         if (state & NK_WIDGET_STATE_HOVER) {
             c = style->text_hover;
-        } else if (state & NK_WIDGET_STATE_ACTIVE) {
+        } else if (active || state & NK_WIDGET_STATE_ACTIVE) {
             c = style->text_active;
         }
     }
@@ -137,15 +136,15 @@ void cnk_draw_button_image(struct nk_context* ctx, struct nk_command_buffer* out
 
 nk_bool cnk_do_button_image(struct nk_context* ctx, struct nk_command_buffer* out, struct nk_rect bounds,
                             struct nk_image img, enum nk_button_behavior b, const struct nk_style_button* style,
-                            const struct nk_input* in) {
+                            const struct nk_input* in, const nk_bool active) {
     int ret;
     struct nk_rect content;
 
     auto state = &ctx->last_widget_state;
 
-    assert(state);
-    assert(style);
-    assert(out);
+    NK_ASSERT(state);
+    NK_ASSERT(style);
+    NK_ASSERT(out);
     if (!out || !style || !state)
         return nk_false;
 
@@ -157,13 +156,14 @@ nk_bool cnk_do_button_image(struct nk_context* ctx, struct nk_command_buffer* ou
 
     if (style->draw_begin)
         style->draw_begin(out, style->userdata);
-    cnk_draw_button_image(ctx, out, &bounds, &content, *state, style, &img);
+    cnk_draw_button_image(ctx, out, &bounds, &content, *state, style, &img, active);
     if (style->draw_end)
         style->draw_end(out, style->userdata);
     return ret;
 }
 
-nk_bool cnk_button_image_styled(struct nk_context* ctx, const struct nk_style_button* style, struct nk_image img) {
+nk_bool cnk_button_image_styled(struct nk_context* ctx, const struct nk_style_button* style, struct nk_image img,
+                                const nk_bool active) {
     struct nk_window* win;
     struct nk_panel* layout;
     const struct nk_input* in;
@@ -171,9 +171,9 @@ nk_bool cnk_button_image_styled(struct nk_context* ctx, const struct nk_style_bu
     struct nk_rect bounds;
     enum nk_widget_layout_states state;
 
-    assert(ctx);
-    assert(ctx->current);
-    assert(ctx->current->layout);
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
     if (!ctx || !ctx->current || !ctx->current->layout)
         return 0;
 
@@ -184,14 +184,14 @@ nk_bool cnk_button_image_styled(struct nk_context* ctx, const struct nk_style_bu
     if (!state)
         return 0;
     in = (state == NK_WIDGET_ROM || layout->flags & NK_WINDOW_ROM) ? 0 : &ctx->input;
-    return cnk_do_button_image(ctx, &win->buffer, bounds, img, ctx->button_behavior, style, in);
+    return cnk_do_button_image(ctx, &win->buffer, bounds, img, ctx->button_behavior, style, in, active);
 }
 
-nk_bool cnk_button_image(struct nk_context* ctx, struct nk_image img) {
+nk_bool cnk_button_image(struct nk_context* ctx, struct nk_image img, const nk_bool active) {
     assert(ctx);
     if (!ctx)
         return 0;
-    return cnk_button_image_styled(ctx, &ctx->style.button, img);
+    return cnk_button_image_styled(ctx, &ctx->style.button, img, active);
 }
 }
 
@@ -245,7 +245,7 @@ static nk_buttons asButton(const MouseButton button) {
 struct Scissio::GuiFontData {
     Canvas2D* canvas{nullptr};
     FontFacePtr fontFace{nullptr};
-    struct nk_user_font data;
+    struct nk_user_font data {};
 };
 
 static float getTextWidth(const nk_handle handle, const float h, const char* str, const int len) {
@@ -543,67 +543,28 @@ void GuiContext::renderInternal(const Vector2& viewport) {
     glDisable(GL_SCISSOR_TEST);
 }
 
-void GuiContext::addWindow(GuiWindow& window) {
-    windows.remove(&window);
-    windows.push_back(&window);
-}
-
-void GuiContext::removeWindow(GuiWindow& window) {
-    const auto it = std::find_if(windows.begin(), windows.end(), [&](GuiWindow* w) { return w == &window; });
-    if (it != windows.end()) {
-        windowsToRemove.push_back(window.getId());
-        windows.erase(it);
-    }
+void GuiContext::reset() {
+    windowsBounds.clear();
 }
 
 void GuiContext::render(const Vector2& viewport) {
-    windowsBounds.clear();
-    windowsBounds.reserve(windows.size());
-
-    for (auto it = windowsToRemove.begin(); it != windowsToRemove.end(); ++it) {
-        nk_window_close(ctx.get(), *it);
-    }
-
-    for (auto it = windows.begin(); it != windows.end(); ++it) {
-        GuiWindow* window = *it;
-
-        if (window->isHidden()) {
-            continue;
-        }
-
-        const auto& key = window->getId();
-        const auto& title = window->getTitle();
-        const auto& pos = window->getPos();
-        const auto& size = window->getSize();
-        const auto flags = window->getFlags();
-
-        auto p = pos;
-        if (flags & GuiFlag::CenterX) {
-            p = {(viewport.x / 2.0f) - (size.x / 2.0f), p.y};
-        }
-        if (flags & GuiFlag::CenterY) {
-            p = {p.x, (viewport.y / 2.0f) - (size.y / 2.0f)};
-        }
-
-        if (nk_begin_titled(ctx.get(), key, title.c_str(), nk_rect(p.x, p.y, size.x, size.y), flags)) {
-            nk_window_set_position(ctx.get(), key, nk_vec2(p.x, p.y));
-            window->render();
-        }
-        const auto bounds = nk_window_get_bounds(ctx.get());
-        nk_end(ctx.get());
-
-        windowsBounds.push_back(Vector4i{
-            static_cast<int>(bounds.x),
-            static_cast<int>(bounds.y),
-            static_cast<int>(bounds.x + bounds.w),
-            static_cast<int>(bounds.y + bounds.h),
-        });
-    }
-    renderInternal(viewport);
+    this->viewport = viewport;
+    renderInternal(this->viewport);
 }
 
 void GuiContext::spacing() {
     nk_spacing(ctx.get(), 1);
+}
+
+void GuiContext::window(const Vector2& pos, const Vector2& size, const std::string& name, const GuiFlags flags,
+                        const std::function<void()>& fn) {
+    if (nk_begin_titled(ctx.get(), name.c_str(), name.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags)) {
+        windowsBounds.push_back({pos, size});
+        nk_window_set_position(ctx.get(), name.c_str(), nk_vec2(pos.x, pos.y));
+        fn();
+
+        nk_end(ctx.get());
+    }
 }
 
 void GuiContext::group(const std::string& name, const GuiFlags flags, const std::function<void()>& fn) {
@@ -619,19 +580,19 @@ bool GuiContext::button(const std::string& text) {
 }
 
 bool GuiContext::buttonImage(const ImagePtr& image) {
-    struct nk_image img;
+    struct nk_image img {};
     img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
     img.w = image->getSize().x;
     img.h = image->getSize().y;
     return nk_button_image(ctx.get(), img);
 }
 
-bool GuiContext::buttonImage(const IconPtr& image) {
-    struct nk_image img;
+bool GuiContext::buttonImage(const IconPtr& image, const bool active) {
+    struct nk_image img {};
     img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
     img.w = image->getSize().x;
     img.h = image->getSize().y;
-    return cnk_button_image(ctx.get(), img);
+    return cnk_button_image(ctx.get(), img, active);
 }
 
 void GuiContext::label(const std::string& text) {
@@ -645,7 +606,7 @@ void GuiContext::title(const std::string& text) {
 }
 
 void GuiContext::text(const std::string& text) {
-    nk_text_wrap(ctx.get(), text.c_str(), text.size());
+    nk_text_wrap(ctx.get(), text.c_str(), static_cast<int>(text.size()));
 }
 
 void GuiContext::layoutDynamic(const float height, const int count) {
@@ -748,15 +709,15 @@ void GuiContext::textInputEvent(const int c) {
     inputEvents.push({data, InputEventType::TextInput});*/
 }
 
-/*bool GuiContext::inputOverlap(const Vector2i& pos) const {
+bool GuiContext::inputOverlap(const Vector2i& pos) const {
     for (const auto& bounds : windowsBounds) {
-        if (pos.x() >= bounds.min().x() && pos.x() <= bounds.max().x() && pos.y() >= bounds.min().y() &&
-            pos.y() <= bounds.max().y()) {
+        if (pos.x >= bounds.pos.x && pos.x <= bounds.pos.x + bounds.size.x && pos.y >= bounds.pos.y &&
+            pos.y <= bounds.pos.y + bounds.size.y) {
             return true;
         }
     }
     return false;
-}*/
+}
 
 void GuiContext::applyTheme() {
     auto& window = ctx->style.window;
@@ -776,21 +737,21 @@ void GuiContext::applyTheme() {
     window.border_color = BORDER_GREY;
     window.rounding = 0;
     window.fixed_background.data.color = BACKGROUND_COLOR;
-    window.header.normal.data.color = BACKGROUND_COLOR;
-    window.header.hover.data.color = BACKGROUND_COLOR;
-    window.header.active.data.color = BACKGROUND_COLOR;
+    window.header.normal.data.color = ACTIVE_COLOR;
+    window.header.hover.data.color = ACTIVE_COLOR;
+    window.header.active.data.color = ACTIVE_COLOR;
     window.header.close_button.normal.data.color = BACKGROUND_COLOR;
     window.header.close_button.hover.data.color = WHITE;
     window.header.close_button.active.data.color = ACTIVE_COLOR;
     window.header.close_button.text_normal = TEXT_WHITE;
     window.header.close_button.text_hover = TEXT_BLACK;
     window.header.close_button.text_active = TEXT_BLACK;
-    window.header.label_normal = TEXT_WHITE;
-    window.header.label_hover = TEXT_WHITE;
-    window.header.label_active = TEXT_WHITE;
-    window.header.padding = nk_vec2(6, 6);
+    window.header.label_normal = TEXT_BLACK;
+    window.header.label_hover = TEXT_BLACK;
+    window.header.label_active = TEXT_BLACK;
+    window.header.padding = nk_vec2(3, 2);
     window.group_padding = nk_vec2(1, 1);
-    window.padding = nk_vec2(4, 4);
+    window.padding = nk_vec2(4, 8);
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
 

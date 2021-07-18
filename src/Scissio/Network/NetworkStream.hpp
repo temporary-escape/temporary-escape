@@ -16,7 +16,7 @@ public:
     template <typename T> void send(const T& message, const uint64_t sessionId) {
         Packet packet;
         msgpack::pack(packet.data, message);
-        packet.id = T::KIND;
+        packet.id = getMessageId<T>();
         packet.sessionId = sessionId;
         sendRaw(packet);
     }

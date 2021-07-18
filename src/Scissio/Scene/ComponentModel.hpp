@@ -1,26 +1,33 @@
 #pragma once
 
 #include "../Assets/Model.hpp"
-#include "../Library.hpp"
-#include "ComponentSystem.hpp"
+#include "Component.hpp"
 
 namespace Scissio {
-class Renderer;
+class ShaderModel;
 
 class SCISSIO_API ComponentModel : public Component {
 public:
-    static constexpr ComponentType Type = 1;
+    static constexpr ComponentType Type = 2;
 
-    ComponentModel() = default;
-    explicit ComponentModel(Object& object, ModelPtr model) : Component(Type, object), model(std::move(model)) {
-    }
+    ComponentModel();
+    explicit ComponentModel(Object& object, ModelPtr model);
     virtual ~ComponentModel() = default;
 
     const ModelPtr& getModel() const {
         return model;
     }
 
+    void setModel(ModelPtr model) {
+        this->model = std::move(model);
+    }
+
+    void render(ShaderModel& shader);
+
 private:
     ModelPtr model{nullptr};
+
+public:
+    MSGPACK_DEFINE_ARRAY(model);
 };
 } // namespace Scissio

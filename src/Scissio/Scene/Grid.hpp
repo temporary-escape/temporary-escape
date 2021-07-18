@@ -1,5 +1,5 @@
 #pragma once
-#include "../Assets/Block.hpp"
+#include "../Assets/Model.hpp"
 #include "Octree.hpp"
 
 namespace Scissio {
@@ -7,19 +7,34 @@ class SCISSIO_API Grid {
 public:
     static constexpr uint16_t INVALID_TYPE = 0xFFFF;
 
-    using Pointer = uint16_t;
+    static const std::array<Matrix4, 6> ORIENTATIONS;
 
-    struct NodeType {
-        BlockPtr block{nullptr};
+    struct BlockRef {
+        BlockRef() = default;
+
+        explicit BlockRef(ModelPtr model) : name(model->getName()), model(std::move(model)) {
+        }
+
+        explicit BlockRef(std::string name) : name(std::move(name)) {
+        }
+
+        std::string name;
+        ModelPtr model{nullptr};
+
+        MSGPACK_DEFINE_ARRAY(name, model);
+    };
+
+    struct BlockType {
+        BlockRef block;
         uint16_t count{0};
         bool dirty{true};
 
         MSGPACK_DEFINE_ARRAY(block, count, dirty);
     };
 
-    using Types = std::vector<NodeType>;
+    using Types = std::vector<BlockType>;
 
-    struct Node {
+    struct BlockData {
         uint16_t type{INVALID_TYPE};
         Vector3 pos{0};
         uint8_t rot{0};
@@ -27,58 +42,69 @@ public:
         MSGPACK_DEFINE_ARRAY(type, pos, rot);
     };
 
+    using BlockNode = Octree<BlockData>::Node;
+    using BlockNodeRef = Octree<BlockData>::NodeRef;
+
     struct RayCastResult {
-        std::reference_wrapper<Node> node;
-        BlockPtr block{nullptr};
+        std::reference_wrapper<BlockNode> node;
+        BlockRef block;
         Vector3 pos{0.0};
         Vector3 normal{0.0f};
         int side{0};
     };
 
-    using Nodes = std::vector<Node>;
+    struct BlockInstances {
+        uint16_t type{0};
+        ModelPtr model;
+        std::vector<Matrix4> instances;
+    };
 
     Grid() = default;
     virtual ~Grid() = default;
 
-    Node& insert(const BlockPtr& block, const Vector3& pos, uint8_t rot);
-    NodeType& getType(const Node& node);
-    const NodeType& getType(const Node& node) const;
+    BlockNode& insert(const BlockRef& block, const Vector3& pos, uint8_t rot);
+    BlockRef remove(const BlockNode& node);
+    std::optional<BlockNodeRef> find(const Vector3& pos);
+
+    BlockType& getType(const BlockData& node);
+    const BlockType& getType(const BlockData& node) const;
 
     const Types& getTypes() const {
         return types;
     }
 
-    const Nodes& getNodes() const {
-        return nodes;
+    const std::vector<Octree<BlockData>::Node>& getNodes() const {
+        return tree.getNodes();
     }
 
-    void resize();
-
-    bool isDirtyClear() {
-        if (dirty) {
-            dirty = false;
-            return true;
-        }
-        return false;
+    bool isDirty() const {
+        return dirty;
     }
 
-    std::unordered_map<BlockPtr, std::vector<Matrix4>> buildInstanceBuffer();
+    void clearDirty() {
+        dirty = false;
+    }
+
+    void debugTree() {
+        tree.debug();
+    }
+
+    std::vector<BlockInstances> buildInstanceBuffer();
 
     std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to);
     std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to, const Matrix4& transform);
 
 private:
-    uint16_t insertBlockType(const BlockPtr& block);
-    Node& insert(uint16_t type, const Vector3& pos, uint8_t rot);
-    Node& nextEmptyNode();
+    uint16_t insertBlockType(const BlockRef& block);
+    BlockNode& insert(uint16_t type, const Vector3& pos, uint8_t rot);
 
-    Octree<Pointer> tree;
+    Octree<BlockData> tree;
     Types types;
-    Nodes nodes;
+    // Nodes nodes;
     size_t next{0};
     bool dirty{true};
 
 public:
-    MSGPACK_DEFINE_ARRAY(nodes, types, nodes);
+    MSGPACK_DEFINE_ARRAY(tree, types);
 };
 } // namespace Scissio

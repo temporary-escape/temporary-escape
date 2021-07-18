@@ -3,5 +3,5 @@
 	<description>Basic hull made from the cheapest materials.</description>
 	<tier>1</tier>
 	<model>model_block_01_hepta</model>
-	<group>Hulls</group>
+	<category>Hulls</category>
 </block>

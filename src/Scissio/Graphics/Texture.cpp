@@ -42,6 +42,11 @@ void Texture::bind(const GLuint location) const {
     glBindTexture(target, handle);
 }
 
+void Texture::unbind() const {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(target, 0);
+}
+
 void Texture::generateMipmaps() {
     bind();
     glGenerateMipmap(target);

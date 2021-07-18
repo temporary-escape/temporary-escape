@@ -2,8 +2,8 @@
 
 #include "NetworkAcceptor.hpp"
 #include "NetworkAsio.hpp"
-#include "NetworkMessageAcceptor.hpp"
 #include "NetworkSession.hpp"
+#include "Packet.hpp"
 #include <shared_mutex>
 #include <thread>
 #include <unordered_map>
@@ -19,10 +19,10 @@ public:
         acceptors.back()->start();
     }
 
-    void receive(const StreamPtr& stream, const Packet& packet);
-    virtual SessionPtr createSession(int64_t playerId, const std::string& password) = 0;
+    void receive(const StreamPtr& stream, Packet packet);
+    virtual SessionPtr createSession(uint64_t uid, const std::string& name, const std::string& password) = 0;
     virtual void acceptSession(const SessionPtr& session) = 0;
-    virtual void dispatch(const SessionPtr& session, const Packet& packet) = 0;
+    virtual void dispatch(const SessionPtr& session, Packet packet) = 0;
 
 private:
     void startIoService();
@@ -36,37 +36,31 @@ private:
     std::unordered_map<uint64_t, SessionWeak> sessions;
 };
 
-struct SCISSIO_API SessionInfo {
-    int port{0};
-    bool isTcp{false};
-
-    MSGPACK_DEFINE(port, isTcp);
-};
-
 struct SCISSIO_API MessageSessionInit {
-    MESSAGE_REGISTER(MessageSessionInit);
-
-    int64_t playerId{0};
+    uint64_t uid{0};
+    std::string name;
     std::string password;
 
-    MSGPACK_DEFINE(playerId, password);
+    MSGPACK_DEFINE(uid, name, password);
 };
 
-struct SCISSIO_API MessageSessionInitResponse {
-    MESSAGE_REGISTER(MessageSessionInitResponse);
+REGISTER_MESSAGE(MessageSessionInit);
 
+struct SCISSIO_API MessageSessionInitResponse {
     uint64_t sessionId{0};
     std::string error;
 
     MSGPACK_DEFINE(sessionId, error);
 };
 
-struct SCISSIO_API MessageSessionConnect {
-    MESSAGE_REGISTER(MessageSessionConnect);
+REGISTER_MESSAGE(MessageSessionInitResponse);
 
+struct SCISSIO_API MessageSessionConnect {
     uint64_t sessionId{0};
     uint64_t state{0};
 
     MSGPACK_DEFINE(sessionId, state);
 };
+
+REGISTER_MESSAGE(MessageSessionConnect);
 } // namespace Scissio::Network

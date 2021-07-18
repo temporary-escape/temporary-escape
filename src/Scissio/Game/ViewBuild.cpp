@@ -1,118 +1,165 @@
 #include "ViewBuild.hpp"
 
-#include "../Assets/Model.hpp"
-#include "../Math/Matrix.hpp"
-#include "../Math/Utils.hpp"
-#include "../Scene/ComponentCamera.hpp"
 #include "../Scene/ComponentGrid.hpp"
 #include "../Scene/ComponentModel.hpp"
-
-#include <iostream>
+#include "../Scene/ComponentWireframe.hpp"
+#include "Messages.hpp"
 
 using namespace Scissio;
 
-ViewBuild::ViewBuild(const Config& config, EventBus& eventBus, AssetManager& assetManager, Renderer& renderer,
-                     Canvas2D& canvas)
-    : config(config), eventBus(eventBus), assetManager(assetManager), renderer(renderer),
-      gui(canvas, config, assetManager), cameraMove{false}, cameraRotation{0, 0}, cameraRotate{false},
-      blockSelector(gui, assetManager), menu(gui, assetManager) {
+ViewBuild::ViewBuild(const Config& config, Network::Client& client, Store& store, AssetManager& assetManager)
+    : Store::Listener(store), config(config), client(client), assetManager(assetManager), mode{Mode::None},
+      cameraMove{false}, cameraRotation{0, 0}, cameraRotate{false}, loading{true}, placeRotation{0} {
 
-    /*auto model = assetManager.find<Model>("model_engine_01");
-    auto entity = scene.addEntity();
-    entity->addComponent<ComponentModel>(model);
-    entity->translate({0.0f, 0.0f, 0.0f});
-    // entity->rotate({ 0.0f, 1.0f, 0.0f }, 90.0f);
-
-    model = assetManager.find<Model>("SciFiHelmet");
-    entity = scene.addEntity();
-    entity->addComponent<ComponentModel>(model);
-    entity->translate({0.0f, 0.0f, -2.0f});*/
-
-    auto entity = scene.addEntity();
-    camera = entity->addComponent<ComponentCamera>();
-    entity->translate({0.0f, 0.0f, 2.0f});
+    camera.translate({0.0f, 0.0f, 2.0f});
 
     ship = scene.addEntity();
-    auto block = assetManager.find<Block>("block_hull_01_cube");
+    auto block = assetManager.find<Model>("model_block_01_cube");
+    Grid::BlockRef ref{block};
     auto grid = ship->addComponent<ComponentGrid>();
-    grid->insert(block, {0, 0, 0}, 0);
-    grid->insert(block, {1, 0, 0}, 0);
-    grid->insert(block, {2, 0, 0}, 0);
+    grid->insert(ref, {0, 0, 0}, 0);
+    grid->insert(ref, {1, 0, 0}, 0);
+    grid->insert(ref, {2, 0, 0}, 0);
     ship->translate({0.0f, 0.0f, 0.0f});
 
     preview = scene.addEntity();
-    preview->addComponent<ComponentModel>(block->getModel());
-    preview->translate({0.0f, -1000.0f, 0.0f});
+    preview->addComponent<ComponentModel>(block);
+    preview->addComponent<ComponentWireframe>(WireframeModel::Box, Color4{0.0f, 1.0f, 0.0f, 1.0f});
+
+    highlight = scene.addEntity();
+    highlight->addComponent<ComponentWireframe>(WireframeModel::Box, Color4{1.0f, 1.0f, 0.0f, 1.0f});
+
+    onNotify(store.blocks, [this](Store& store) {
+        Log::d("All player usable blocks received, total: {}", store.blocks.value().size());
+        (void)store;
+        loading = false;
+
+        const auto thumbnailDefault = this->assetManager.find<Image>("default-block-thumbnail");
+
+        std::map<std::string, std::vector<const BlockDto*>> categories;
+
+        for (const auto& block : store.blocks.value()) {
+            categories[block.category].push_back(&block);
+        }
+
+        for (const auto& pair : categories) {
+            blockSelector.categories.emplace_back();
+            auto& category = blockSelector.categories.back();
+
+            category.label = pair.first;
+
+            for (const auto block : pair.second) {
+                category.items.emplace_back();
+                auto& item = category.items.back();
+
+                const auto thumbnail = store.thumbnails.value().find(block->key);
+
+                item.block = block;
+                item.thumbnail = thumbnail != store.thumbnails.value().end() ? thumbnail->second : thumbnailDefault;
+            }
+        }
+    });
+
+    store.blocks.value().clear();
+    client.send(0, MessageBlocksRequest{});
+
+    sidebar = {
+        {assetManager.find<Icon>("icons-arrow-cursor"), "Select", [this]() { mode = Mode::Select; }},
+        {assetManager.find<Icon>("icons-info"), "Information", [this]() { mode = Mode::None; }},
+        {assetManager.find<Icon>("icons-cube"), "Choose Block", [this]() { mode = Mode::Build; }},
+        {assetManager.find<Icon>("icons-paint-roller"), "Coloring", [this]() { mode = Mode::None; }},
+        {assetManager.find<Icon>("icons-anticlockwise-rotation"), "Undo", [this]() { actionUndo(); }},
+        {assetManager.find<Icon>("icons-clockwise-rotation"), "Redo", [this]() { actionRedo(); }},
+    };
 }
 
-void ViewBuild::render(const Vector2i& viewport) {
+void ViewBuild::update(const Vector2i& viewport) {
     this->viewport = viewport;
 
-    auto& systemCamera = scene.getComponentSystem<ComponentCamera>();
+    {
+        static constexpr auto d = 0.1f;
 
-    for (auto& camera : systemCamera) {
-        if (camera->isActive()) {
-            static constexpr auto d = 0.1f;
-
-            Vector3 dir{0.0f};
-            if (cameraMove[0]) {
-                dir += Vector3{0.0f, 0.0f, -d};
-            }
-            if (cameraMove[1]) {
-                dir += Vector3{-d, 0.0f, 0.0f};
-            }
-            if (cameraMove[2]) {
-                dir += Vector3{0.0f, 0.0f, d};
-            }
-            if (cameraMove[3]) {
-                dir += Vector3{d, 0.0f, 0.0f};
-            }
-            if (cameraMove[4]) {
-                dir += Vector3{0.0f, d, 0.0f};
-            }
-            if (cameraMove[5]) {
-                dir += Vector3{0.0f, -d, 0.0f};
-            }
-
-            const auto translation = Vector3(camera->getObject().getTransform()[3]);
-
-            glm::mat4x4 transform{1.0f};
-            transform = glm::rotate(transform, glm::radians(cameraRotation.x), Vector3{0.0f, 1.0f, 0.0f});
-            transform = glm::rotate(transform, glm::radians(cameraRotation.y), Vector3{1.0f, 0.0f, 0.0f});
-
-            dir = Vector3(transform * Vector4(dir, 1.0f));
-
-            transform = glm::translate(glm::mat4x4{1.0f}, translation + dir) * transform;
-            camera->getObject().getTransform() = transform;
-            camera->setProjection(viewport, 70.0f);
-
-            renderer.setCamera(camera->getViewMatrix());
-            renderer.setProjection(camera->getProjectionMatrix());
-
-            break;
+        Vector3 dir{0.0f};
+        if (cameraMove[0]) {
+            dir += Vector3{0.0f, 0.0f, -d};
         }
+        if (cameraMove[1]) {
+            dir += Vector3{-d, 0.0f, 0.0f};
+        }
+        if (cameraMove[2]) {
+            dir += Vector3{0.0f, 0.0f, d};
+        }
+        if (cameraMove[3]) {
+            dir += Vector3{d, 0.0f, 0.0f};
+        }
+        if (cameraMove[4]) {
+            dir += Vector3{0.0f, d, 0.0f};
+        }
+        if (cameraMove[5]) {
+            dir += Vector3{0.0f, -d, 0.0f};
+        }
+
+        const auto translation = Vector3(camera.getTransform()[3]);
+
+        glm::mat4x4 transform{1.0f};
+        transform = glm::rotate(transform, glm::radians(cameraRotation.x), Vector3{0.0f, 1.0f, 0.0f});
+        transform = glm::rotate(transform, glm::radians(cameraRotation.y), Vector3{1.0f, 0.0f, 0.0f});
+
+        dir = Vector3(transform * Vector4(dir, 1.0f));
+
+        transform = glm::translate(glm::mat4x4{1.0f}, translation + dir) * transform;
+        camera.updateTransform(transform);
+        camera.setProjection(viewport, 70.0f);
     }
 
     {
-        const auto to = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 100.0f;
-        const auto result = ship->getComponent<ComponentGrid>()->rayCast(camera->getEyesPos(), to);
+        // const auto to = camera.getEyesPos() + camera.screenToWorld(viewport, mousePos) * 100.0f;
+        // rayCastResult = ship->getComponent<ComponentGrid>()->rayCast(camera.getEyesPos(), to);
 
-        if (result.has_value()) {
-            const auto& r = result.value();
-            preview->move(r.node.get().pos + r.normal);
+        if (placePosition.has_value() && mode == Mode::Build) {
+            preview->updateTransform(Grid::ORIENTATIONS[placeRotation]);
+            preview->move(placePosition.value());
+
         } else {
             preview->move(Vector3{-99999.0f});
         }
+
+        if (mode != Mode::Select) {
+            selectedBlock = std::nullopt;
+            highlight->move(Vector3{-99999.0f});
+        }
     }
 
-    // const auto projected = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 10.0f;
-    // preview->move(projected);
-
-    scene.render(renderer);
+    scene.update();
 }
 
-void ViewBuild::canvas(const Vector2i& viewport) {
-    gui.render(viewport);
+void ViewBuild::render(const Vector2i& viewport, Renderer& renderer) {
+    if (loading) {
+        return;
+    }
+
+    renderer.setView(camera.getViewMatrix());
+    renderer.setProjection(camera.getProjectionMatrix());
+    renderer.render(scene);
+}
+
+void ViewBuild::renderCanvas(const Vector2i& viewport, Canvas2D& canvas, GuiContext& gui) {
+    if (loading) {
+        Widgets::modal(gui, "Please wait!", "Initializing build mode...");
+        return;
+    }
+
+    Widgets::sidebar(gui, sidebar);
+
+    if (sidebar.at(2).active) {
+        Widgets::blockSelector(gui, blockSelector, [this](const BlockDto& block) {
+            try {
+                preview->getComponent<ComponentModel>()->setModel(block.model);
+            } catch (...) {
+                EXCEPTION_NESTED("Failed to set preview model");
+            }
+        });
+    }
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
@@ -128,38 +175,40 @@ void ViewBuild::eventMouseMoved(const Vector2i& pos) {
         }
         cameraRotation.y = glm::clamp(cameraRotation.y, -90.0f, 90.0f);
         mousePosOld = pos;
+    } else {
+        calculateRayCast();
     }
-
-    gui.mouseMoveEvent(pos);
 }
 
 void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     mousePosOld = pos;
     cameraRotate |= button == MouseButton::Right;
 
-    gui.mousePressEvent(pos, button);
-
-    /*if (button == MouseButton::Left) {
-        const auto to = camera->getEyesPos() + camera->screenToWorld(viewport, mousePos) * 100.0f;
-        const auto result =
-            ship->getComponent<ComponentGrid>()->rayCast(camera->getEyesPos(), to, ship->getTransform());
-        if (result.has_value()) {
-            const auto& r = result.value();
-            std::cout << "has result: " << r.pos << " normal: " << r.normal << " side: " << r.side << std::endl;
-        } else {
-            std::cout << "no result" << std::endl;
+    if (button == MouseButton::Left && rayCastResult.has_value()) {
+        switch (mode) {
+        case Mode::Build: {
+            actionPlaceBlock();
+            calculateRayCast();
+            break;
         }
-    }*/
+        case Mode::Select: {
+            highlight->move(rayCastResult.value().node.get().data.pos);
+            selectedBlock = rayCastResult.value().node;
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
 }
 
 void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     mousePosOld = pos;
-    cameraRotate &= !(button == MouseButton::Right);
-
-    gui.mouseReleaseEvent(pos, button);
+    cameraRotate &= button != MouseButton::Right;
 }
 
-void ViewBuild::eventKeyPressed(const Key key) {
+void ViewBuild::eventKeyPressed(const Key key, const Modifiers modifiers) {
     cameraMove[0] |= key == Key::LetterW;
     cameraMove[1] |= key == Key::LetterA;
     cameraMove[2] |= key == Key::LetterS;
@@ -167,24 +216,100 @@ void ViewBuild::eventKeyPressed(const Key key) {
     cameraMove[4] |= key == Key::SpaceBar;
     cameraMove[5] |= key == Key::LeftControl;
 
-    if (key == Key::LetterB) {
-        eventBus.publish(EventSpaceMode{});
+    if (key == Key::Delete && mode == Mode::Select) {
+        actionRemoveBlock();
+        highlight->move(Vector3{-99999.0f});
+        selectedBlock = std::nullopt;
     }
-
-    if (key == Key::LetterH) {
-        blockSelector.setHidden(!blockSelector.isHidden());
-    }
-
-    gui.keyPressEvent(key);
 }
 
-void ViewBuild::eventKeyReleased(const Key key) {
-    cameraMove[0] &= !(key == Key::LetterW);
-    cameraMove[1] &= !(key == Key::LetterA);
-    cameraMove[2] &= !(key == Key::LetterS);
-    cameraMove[3] &= !(key == Key::LetterD);
-    cameraMove[4] &= !(key == Key::SpaceBar);
-    cameraMove[5] &= !(key == Key::LeftControl);
+void ViewBuild::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    cameraMove[0] &= key != Key::LetterW;
+    cameraMove[1] &= key != Key::LetterA;
+    cameraMove[2] &= key != Key::LetterS;
+    cameraMove[3] &= key != Key::LetterD;
+    cameraMove[4] &= key != Key::SpaceBar;
+    cameraMove[5] &= key != Key::LeftControl;
+}
 
-    gui.keyReleaseEvent(key);
+void ViewBuild::eventMouseScroll(int xscroll, int yscroll) {
+    placeRotation += yscroll;
+    if (placeRotation < 0) {
+        placeRotation = Grid::ORIENTATIONS.size() - 1;
+    }
+    if (placeRotation >= static_cast<int>(Grid::ORIENTATIONS.size())) {
+        placeRotation = 0;
+    }
+}
+
+void ViewBuild::calculateRayCast() {
+    const auto to = camera.getEyesPos() + camera.screenToWorld(viewport, mousePos) * 100.0f;
+    rayCastResult = ship->getComponent<ComponentGrid>()->rayCast(camera.getEyesPos(), to);
+
+    if (rayCastResult.has_value()) {
+        const auto& r = rayCastResult.value();
+        placePosition = {r.node.get().data.pos + r.normal};
+    } else {
+        placePosition.reset();
+    }
+}
+
+void ViewBuild::actionPlaceBlock() {
+    if (!placePosition) {
+        return;
+    }
+
+    Grid::BlockRef ref{preview->getComponent<ComponentModel>()->getModel()};
+    auto grid = ship->getComponent<ComponentGrid>();
+    const auto pos = placePosition.value();
+
+    grid->insert(ref, pos, placeRotation);
+    grid->debugTree();
+
+    ActionPlaceBlock a;
+    const auto& node = selectedBlock.value().get();
+    a.ref = Grid::BlockRef{preview->getComponent<ComponentModel>()->getModel()};
+    a.pos = node.data.pos;
+    a.rot = node.data.rot;
+
+    action(a);
+}
+
+void ViewBuild::actionRemoveBlock() {
+    if (!selectedBlock) {
+        return;
+    }
+
+    ActionRemoveBlock a;
+    const auto& node = selectedBlock.value().get();
+    a.pos = node.data.pos;
+    a.rot = node.data.rot;
+
+    action(a);
+}
+
+void ViewBuild::actionUndo() {
+}
+
+void ViewBuild::actionRedo() {
+}
+
+void ViewBuild::action(const Action& action) {
+    std::visit(
+        [this](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            auto grid = ship->getComponent<ComponentGrid>();
+
+            if constexpr (std::is_same_v<ActionPlaceBlock, T>) {
+                const ActionPlaceBlock& action = arg;
+                grid->insert(action.ref, action.pos, action.rot);
+            } else if constexpr (std::is_same_v<ActionRemoveBlock, T>) {
+                const ActionRemoveBlock& action = arg;
+                const auto found = grid->find(action.pos);
+                if (found) {
+                    grid->remove(found.value().node);
+                }
+            }
+        },
+        action);
 }

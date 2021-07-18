@@ -4,49 +4,86 @@
 #include "../Config.hpp"
 #include "../Graphics/Renderer.hpp"
 #include "../Gui/GuiContext.hpp"
-#include "../Gui/GuiWindow.hpp"
-#include "../Scene/ComponentCamera.hpp"
+#include "../Network/NetworkClient.hpp"
+#include "../Scene/Camera.hpp"
+#include "../Scene/Grid.hpp"
 #include "../Scene/Scene.hpp"
-#include "../Utils/EventBus.hpp"
+#include "Store.hpp"
 #include "View.hpp"
-#include "WindowBlockSelector.hpp"
-#include "WindowBuildMenu.hpp"
+#include "Widgets.hpp"
 
 namespace Scissio {
-class SCISSIO_API ViewBuild : public View {
+class SCISSIO_API ViewBuild : public View, public Store::Listener {
 public:
-    explicit ViewBuild(const Config& config, EventBus& eventBus, AssetManager& assetManager, Renderer& renderer,
-                       Canvas2D& canvas);
+    explicit ViewBuild(const Config& config, Network::Client& client, Store& store, AssetManager& assetManager);
     virtual ~ViewBuild() = default;
 
-    void render(const Vector2i& viewport) override;
-    void canvas(const Vector2i& viewport) override;
+    void update(const Vector2i& viewport) override;
+    void render(const Vector2i& viewport, Renderer& renderer) override;
+    void renderCanvas(const Vector2i& viewport, Canvas2D& canvas, GuiContext& gui) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
-    void eventKeyPressed(Key key) override;
-    void eventKeyReleased(Key key) override;
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
+    void eventMouseScroll(int xscroll, int yscroll) override;
 
 private:
-    const Config& config;
-    EventBus& eventBus;
-    AssetManager& assetManager;
-    Renderer& renderer;
-    GuiContext gui;
-    Scene scene;
+    enum class Mode {
+        None = 0,
+        Select,
+        Build,
+    };
 
-    Vector2i viewport;
-    std::shared_ptr<ComponentCamera> camera;
+    struct ActionPlaceBlock {
+        Grid::BlockRef ref;
+        Vector3 pos;
+        int rot{0};
+    };
+
+    struct ActionRemoveBlock {
+        Grid::BlockRef ref;
+        Vector3 pos;
+        int rot{0};
+    };
+
+    using Action = std::variant<ActionPlaceBlock, ActionRemoveBlock>;
+
+    void calculateRayCast();
+    void actionPlaceBlock();
+    void actionRemoveBlock();
+    void actionUndo();
+    void actionRedo();
+    void action(const Action& action);
+
+    const Config& config;
+    Network::Client& client;
+    AssetManager& assetManager;
+
+    Scene scene;
+    Camera camera;
+    Vector2i viewport{};
     EntityPtr ship;
     EntityPtr preview;
+    EntityPtr highlight;
+
+    Mode mode;
 
     bool cameraMove[6];
     Vector2 cameraRotation;
     bool cameraRotate;
-    Vector2 mousePosOld;
-    Vector2 mousePos;
+    Vector2 mousePosOld{};
+    Vector2 mousePos{};
 
-    WindowBlockSelector blockSelector;
-    WindowBuildMenu menu;
+    bool loading;
+    std::vector<Widgets::SidebarItem> sidebar;
+    Widgets::BlockSelectorData blockSelector;
+
+    std::optional<Grid::RayCastResult> rayCastResult{};
+    std::optional<std::reference_wrapper<Grid::BlockNode>> selectedBlock{};
+    std::optional<Vector3> placePosition{};
+    int placeRotation;
+
+    std::list<Action> actions;
 };
 } // namespace Scissio

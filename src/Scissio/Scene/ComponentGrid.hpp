@@ -1,73 +1,44 @@
 #pragma once
 
 #include "../Library.hpp"
-#include "../Shaders/ShaderGrid.hpp"
-#include "ComponentSystem.hpp"
+#include "Component.hpp"
 #include "Grid.hpp"
 
 namespace Scissio {
-class Renderer;
+class ShaderGrid;
 
 class SCISSIO_API ComponentGrid : public Component, public Grid {
 public:
     static constexpr ComponentType Type = 3;
 
     struct MeshData {
+        uint16_t type{0};
+        ModelPtr model{nullptr};
         VertexBuffer instances{NO_CREATE};
         std::list<Primitive> primitives;
     };
 
-    ComponentGrid() = default;
-    ComponentGrid(ComponentGrid&& other) = default;
+    ComponentGrid();
+    ComponentGrid(ComponentGrid&& other) noexcept = default;
     ComponentGrid(const ComponentGrid& other) = delete;
     ComponentGrid& operator=(const ComponentGrid& other) = delete;
-    ComponentGrid& operator=(ComponentGrid&& other) = default;
+    ComponentGrid& operator=(ComponentGrid&& other) noexcept = default;
 
-    explicit ComponentGrid(Object& object) : Component(Type, object) {
-    }
+    explicit ComponentGrid(Object& object);
     virtual ~ComponentGrid() = default;
 
-    void rebuildBuffers() {
-        const auto buffers = Grid::buildInstanceBuffer();
-
-        for (const auto& pair : buffers) {
-            const auto& block = pair.first;
-            const auto& matrices = pair.second;
-
-            auto& data = meshes[block];
-            data.instances = VertexBuffer(VertexBufferType::Array);
-            data.primitives.clear();
-
-            data.instances.bufferData(&matrices[0][0].x, sizeof(Matrix4) * matrices.size(),
-                                      VertexBufferUsage::StaticDraw);
-
-            for (auto& primitive : block->getModel()->getPrimitives()) {
-                data.primitives.emplace_back();
-                auto& p = data.primitives.back();
-                auto& mesh = p.mesh;
-                p.material = primitive.material;
-
-                mesh = Mesh{};
-                mesh.addVertexBuffer(primitive.vbo, ShaderModel::Position{}, ShaderModel::Normal{},
-                                     ShaderModel::TextureCoordinates{}, ShaderModel::Tangent{});
-                mesh.addVertexBufferInstanced(data.instances, ShaderGrid::Instances{});
-                mesh.setIndexBuffer(primitive.ibo, primitive.mesh.getIndexType());
-                mesh.setPrimitive(primitive.mesh.getPrimitive());
-                mesh.setCount(primitive.mesh.getCount());
-                mesh.setInstancesCount(matrices.size());
-
-                glBindVertexArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-        }
-    }
-
-    const std::unordered_map<BlockPtr, MeshData>& getMeshes() const {
+    const std::vector<MeshData>& getMeshes() const {
         return meshes;
     }
 
+    void render(ShaderGrid& shader);
+
 private:
-    std::unordered_map<BlockPtr, MeshData> meshes;
+    void rebuildBuffers();
+
+    std::vector<MeshData> meshes;
+
+public:
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE(Grid));
 };
 } // namespace Scissio

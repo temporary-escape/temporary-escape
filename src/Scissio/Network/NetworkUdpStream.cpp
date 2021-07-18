@@ -22,7 +22,7 @@ void Network::UdpStream::sendRaw(const Packet& packet) {
         if (ec) {
             Log::e("Network UDP stream async_send_to error: {}", ec.message());
         } else {
-            // Utils::Log::d("Network UDP stream sent: {} bytes", length);
+            //Log::d("Network UDP stream sent: {} bytes", length);
         }
     });
 }
@@ -31,5 +31,5 @@ void Network::UdpStream::disconnect() {
 }
 
 void Network::UdpStream::receive(Packet packet) {
-    acceptor.receive(shared_from_this(), packet);
+    acceptor.receive(shared_from_this(), std::move(packet));
 }

@@ -90,7 +90,7 @@ int main(const int argc, char** argv) {
         return EXIT_SUCCESS;
 
     } catch (const std::exception& e) {
-        backtrace(e);
+        BACKTRACE(e, "fatal error");
         return EXIT_FAILURE;
     }
 }

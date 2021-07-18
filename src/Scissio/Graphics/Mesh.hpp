@@ -145,6 +145,10 @@ public:
         return *iboTarget;
     }*/
 
+    operator bool() const {
+        return !!vao;
+    }
+
 private:
     template <typename Attribute> static GLsizei getTotal(const GLsizei total, const Attribute& attribute) {
         return total + attribute.size;

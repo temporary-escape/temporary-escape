@@ -1,6 +1,5 @@
 #include "NetworkClient.hpp"
 #include "../Utils/Log.hpp"
-#include "NetworkMessageAcceptor.hpp"
 
 using namespace Scissio;
 
@@ -22,11 +21,11 @@ void Network::Client::close() {
 }
 
 void Network::Client::startIoService() {
-    Log::i("Client network asio service started!");
+    Log::i("AbstractClient network asio service started!");
     work = std::make_unique<asio::io_service::work>(service);
     thread = std::thread([this]() {
         service.run();
-        Log::w("Client network asio service stopped!");
+        Log::w("AbstractClient network asio service stopped!");
     });
 }
 
@@ -39,17 +38,16 @@ void Network::Client::stopIoService() {
     }
 }
 
-void Network::Client::receive(const StreamPtr& stream, const Packet& packet) {
+void Network::Client::receive(const StreamPtr& stream, Packet packet) {
     (void)stream;
 
-    // Utils::Log::d("Client received packet: {}", packet.id);
+    // Utils::Log::d("AbstractClient received packet: {}", packet.id);
 
     switch (packet.id) {
-    case MessageSessionInitResponse::KIND: {
-        Log::d("Client received MessageSessionInitResponse");
+    case getMessageId<MessageSessionInitResponse>(): {
         {
             std::lock_guard<std::mutex> lock{mutex};
-            auto message = Details::unpack<MessageSessionInitResponse>(packet);
+            auto message = Details::MessageUnpacker<MessageSessionInitResponse>::unpack(packet);
 
             if (!message.error.empty()) {
                 error = message.error;
@@ -62,11 +60,10 @@ void Network::Client::receive(const StreamPtr& stream, const Packet& packet) {
         cvConnection.notify_one();
         break;
     }
-    case MessageSessionConnect::KIND: {
-        Log::d("Client received MessageSessionConnect");
+    case getMessageId<MessageSessionConnect>(): {
         {
             std::lock_guard<std::mutex> lock{mutex};
-            auto message = Details::unpack<MessageSessionConnect>(packet);
+            auto message = Details::MessageUnpacker<MessageSessionConnect>::unpack(packet);
             state = message.state;
             Log::d("Setting state to: {}", state);
         }
@@ -75,7 +72,7 @@ void Network::Client::receive(const StreamPtr& stream, const Packet& packet) {
         break;
     }
     default: {
-        dispatch(packet);
+        dispatch(std::move(packet));
         break;
     }
     }

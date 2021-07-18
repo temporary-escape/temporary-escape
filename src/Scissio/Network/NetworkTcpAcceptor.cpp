@@ -50,6 +50,14 @@ void Network::TcpAcceptor::accept() {
     });
 }
 
-void Network::TcpAcceptor::receive(const StreamPtr& stream, const Packet& packet) {
-    server.receive(stream, packet);
+void Network::TcpAcceptor::receive(const StreamPtr& stream, Packet packet) {
+    const auto packetId = packet.id;
+    const auto sessionId = packet.sessionId;
+
+    try {
+        server.receive(stream, std::move(packet));
+    } catch (std::exception& e) {
+        Log::e("Failed to accept packet id: {} session: {}", packetId, sessionId);
+        backtrace(e);
+    }
 }

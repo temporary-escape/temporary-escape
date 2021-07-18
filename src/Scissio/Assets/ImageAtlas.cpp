@@ -11,6 +11,8 @@ ImageAtlas::ImageAtlas(const Config& config) : config(config), size(config.image
 ImageAtlas::~ImageAtlas() = default;
 
 std::shared_ptr<ImageNode> ImageAtlas::reserve(const Vector2i& size) {
+    Log::d("Image atlas reserving new size: {}x{}", size.x, size.y);
+
     for (auto& layer : layers) {
         const auto pos = layer->reserve(size);
         if (pos.has_value()) {
@@ -25,7 +27,7 @@ std::shared_ptr<ImageNode> ImageAtlas::reserve(const Vector2i& size) {
 
     const auto pos = layer->reserve(size);
     if (!pos.has_value()) {
-        EXCEPTION("Unable to reserve image");
+        EXCEPTION("Unable to reserve image of size: {}x{} atlas out of size", size.x, size.y);
     }
 
     auto ptr = std::make_shared<ImageNode>(ImageNode{pos.value(), size, &layer->getTexture()});
@@ -34,8 +36,9 @@ std::shared_ptr<ImageNode> ImageAtlas::reserve(const Vector2i& size) {
 }
 
 ImageAtlas::Layer::Layer(const Config& config) : ctx(new stbrp_context{}), nodes(new stbrp_node[4096]) {
+    Log::w("Image atlas allocating new layer size: {}x{} with 4096 nodes", config.imageAtlasSize,
+           config.imageAtlasSize);
     stbrp_init_target(ctx.get(), config.imageAtlasSize, config.imageAtlasSize, nodes.get(), 4096);
-    // texture.setStorage(1, GL::TextureFormat::RGBA8, Vector2i(config.imageAtlasSize));
 
     texture.setStorage(0, Vector2i{config.imageAtlasSize}, PixelType::Rgba8u);
 }

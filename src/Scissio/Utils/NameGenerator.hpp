@@ -1,4 +1,5 @@
 #pragma once
+#include "../Library.hpp"
 #include <random>
 #include <string>
 #include <unordered_map>
@@ -6,9 +7,11 @@
 #include <vector>
 
 namespace Scissio {
-class NameGenerator {
+class SCISSIO_API NameGenerator {
 public:
-    explicit NameGenerator(const std::vector<std::string>& words);
+    static const std::vector<std::string> DefaultWords;
+
+    explicit NameGenerator(const std::vector<std::string>& words = DefaultWords);
     virtual ~NameGenerator() = default;
 
     std::string operator()(std::mt19937_64& rng);

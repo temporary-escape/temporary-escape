@@ -22,6 +22,7 @@ public:
     void swap(Texture& other) noexcept;
 
     void bind() const;
+    void unbind() const;
     void bind(GLuint location) const;
     void generateMipmaps();
     void texParameteri(GLenum parameter, GLint value);

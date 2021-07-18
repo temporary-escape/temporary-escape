@@ -4,6 +4,7 @@
 #include "../Math/Quaternion.hpp"
 #include "../Math/Vector.hpp"
 #include <msgpack.hpp>
+#include <optional>
 
 namespace msgpack {
 MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
@@ -184,6 +185,29 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
             }
             return o;
             ;
+        }
+    };
+
+    template <typename T> struct convert<std::optional<T>> {
+        msgpack::object const& operator()(msgpack::object const& o, std::optional<T>& v) const {
+            if (o.type == msgpack::type::NIL) {
+                v = std::nullopt;
+                return o;
+            }
+
+            v = {o.as<T>()};
+            return o;
+        }
+    };
+    template <typename T> struct pack<std::optional<T>> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, std::optional<T> const& v) const {
+            if (!v.has_value()) {
+                o.pack_nil();
+                return o;
+            }
+            o.pack(v.value());
+            return o;
         }
     };
 
@@ -384,3 +408,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
 #define MSGPACK_PACK_FUNC(T)                                                                                           \
     msgpack::packer<msgpack::sbuffer>& msgpack::adaptor::pack<T, void>::operator()(                                    \
         msgpack::packer<msgpack::sbuffer>& o, T const& v) const
+
+#define MSGPACK_FRIEND(T)                                                                                              \
+    friend struct msgpack::MSGPACK_DEFAULT_API_NS::adaptor::convert<T>;                                                \
+    friend struct msgpack::MSGPACK_DEFAULT_API_NS::adaptor::pack<T>;

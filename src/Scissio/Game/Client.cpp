@@ -1,148 +1,297 @@
 #include "Client.hpp"
 
-#include "../Assets/Block.hpp"
 #include "../Assets/Model.hpp"
 #include "../Network/NetworkTcpConnector.hpp"
 #include "../Network/NetworkUdpConnector.hpp"
-#include "../Scene/ComponentCamera.hpp"
 #include "../Scene/ComponentGrid.hpp"
 #include "../Scene/ComponentModel.hpp"
+#include "Widgets.hpp"
+#include <fstream>
 
 using namespace Scissio;
 
-Client::Client(const Config& config, EventBus& eventBus, AssetManager& assetManager, Renderer& renderer,
-               SkyboxRenderer& skyboxRenderer, Canvas2D& canvas, const std::string& address)
-    : Network::Client(0, address), config(config), eventBus(eventBus), assetManager(assetManager), renderer(renderer),
-      skyboxRenderer(skyboxRenderer), canvas(canvas), view(nullptr), renderMode(0) {
+#define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
+#define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Client, handle));
 
-    initConnection<Network::TcpConnector>(config.serverPort, 1234, "admin");
+Client::Client(const Config& config, AssetManager& assetManager, Renderer& renderer, SkyboxRenderer& skyboxRenderer,
+               ThumbnailRenderer& thumbnailRenderer, Canvas2D& canvas, const std::string& address, const uint64_t uid)
+    : AbstractClient(config, assetManager, address, uid), renderer(renderer), skyboxRenderer(skyboxRenderer),
+      thumbnailRenderer(thumbnailRenderer), canvas(canvas), gui(canvas, config, assetManager),
+      view(nullptr), mousePos{-1} {
+
+    MESSAGE_DISPATCH(MessageSystemsResponse);
+    MESSAGE_DISPATCH(MessageRegionsResponse);
+    MESSAGE_DISPATCH(MessageBlocksResponse);
+}
+
+#undef MESSAGE_DISPATCH
+#define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, AbstractClient, handle));
+
+AbstractClient::AbstractClient(const Config& config, AssetManager& assetManager, const std::string& address,
+                               const uint64_t uid)
+    : Network::Client(0, address), config(config), assetManager(assetManager) {
+
+    MESSAGE_DISPATCH(MessageHelloResponse);
+    MESSAGE_DISPATCH(MessageSectorChanged);
+    MESSAGE_DISPATCH(MessageSectorStatusResponse);
+    MESSAGE_DISPATCH(MessageEntityBatch);
+
+    initConnection<Network::TcpConnector>(config.serverPort, uid, "admin", "admin");
     addConnection<Network::UdpConnector>(config.serverPort);
     syncHello();
-
-    ADD_EVENT_LISTENER(eventBus, EventBuildMode, Client, handle);
-    ADD_EVENT_LISTENER(eventBus, EventSpaceMode, Client, handle);
 }
 
-void Client::syncHello() {
-    MessageClientHello hello{};
+void AbstractClient::syncHello() {
+    MessageHelloRequest hello{};
     hello.version = {1, 0, 0};
-    send(0, hello);
+    this->send(0, hello);
 
-    const auto res = response.get<MessageServerHello>();
-    Log::v("Client received hello for server: {}", res.name);
+    // const auto res = rpc.send<MessageHelloResponse>(hello);
+    // Log::v("AbstractClient received hello for server: {}", res.name);
 }
 
-void Client::initScene() {
-    scene = std::make_unique<Scene>();
-    viewSpace = std::make_unique<ViewSpace>(config, eventBus, renderer, *scene);
-    view = viewSpace.get();
-
-    skybox = skyboxRenderer.renderAndFilter(7418525);
-
-    std::mt19937_64 rng;
-    for (auto x = 0; x < 8; x++) {
-        for (auto y = 0; y < 8; y++) {
-            auto model = assetManager.find<Model>("model_asteroid_01_a");
-            auto entity = scene->addEntity();
-            entity->addComponent<ComponentModel>(model);
-            entity->translate({x * 3.0f, 0.0f, y * 3.0f});
-            entity->rotate(randomQuaternion(rng));
-        }
-    }
-
-    /*auto model = assetManager.find<Model>("model_block_01_cube");
-    auto entity = scene->addEntity();
-    entity->addComponent<ComponentModel>(model);
-    entity->translate({-3.0f, 0.0f, 0.0f});*/
-
-    auto block = assetManager.find<Block>("block_hull_01_cube");
-    auto entity = scene->addEntity();
-    auto grid = entity->addComponent<ComponentGrid>();
-    grid->insert(block, {0, 0, 0}, 0);
-    grid->insert(block, {1, 0, 0}, 0);
-    grid->insert(block, {2, 0, 0}, 0);
-    // entity->translate({0.0f, 0.0f, 0.0f});
-
-    entity = scene->addEntity();
-    entity->addComponent<ComponentCamera>();
-    entity->translate({0.0f, 0.0f, 2.0f});
-}
-
-void Client::render(GBuffer& gBuffer, const Vector2i& viewport) {
+void AbstractClient::update() {
+    worker.run();
     if (scene) {
-        gBuffer.bind(viewport);
+        scene->update();
+    }
+}
+
+void Client::render(GBuffer& gBuffer, FBuffer& fbuffer, const Vector2i& viewport) {
+    if (scene && view && skybox.texture) {
+        view->update(viewport);
 
         renderer.setViewport(viewport);
-        view->render(viewport);
-
-        gBuffer.unbind();
-
-        renderer.renderSkybox(skybox.texture);
-        renderer.renderPbr(gBuffer, skybox);
+        renderer.setGBuffer(gBuffer);
+        renderer.setFBuffer(fbuffer);
+        renderer.setSkybox(skybox);
+        renderer.setQueryPos(mousePos);
+        view->render(viewport, renderer);
+        fbuffer.blit(Framebuffer::DefaultFramebuffer);
 
         canvas.beginFrame(viewport);
-        view->canvas(viewport);
+        gui.reset();
+        view->renderCanvas(viewport, canvas, gui);
+        gui.render(viewport);
         canvas.endFrame();
     } else {
-        initScene();
+        canvas.beginFrame(viewport);
+        gui.reset();
+
+        if (scene) {
+            Widgets::modal(gui, "Connecting", "Loading sector data...");
+        } else {
+            Widgets::modal(gui, "Connecting", "Entering sector...");
+        }
+
+        gui.render(viewport);
+        canvas.endFrame();
     }
 }
 
-void Client::handle(MessageServerHello message) {
-    response.store(std::move(message));
+void Client::handle(MessageSystemsResponse message) {
+    auto w = [message{std::move(message)}, this]() {
+        Log::d("Received {} systems", message.results.size());
+        if (!message.results.empty()) {
+            store.systems.value().insert(store.systems.value().end(), message.results.begin(), message.results.end());
+
+            MessageSystemsRequest req{message.cont};
+            this->send(0, req);
+        } else {
+            store.systems.notify();
+        }
+    };
+
+    WORK_SAFE(worker, w);
 }
 
-void Client::handle(const EventBuildMode& event) {
-    viewBuild = std::make_unique<ViewBuild>(config, eventBus, assetManager, renderer, canvas);
-    view = viewBuild.get();
+void Client::handle(MessageRegionsResponse message) {
+    auto w = [message{std::move(message)}, this]() {
+        Log::d("Received {} regions", message.results.size());
+        if (!message.results.empty()) {
+            store.regions.value().insert(store.regions.value().end(), message.results.begin(), message.results.end());
+
+            MessageRegionsRequest req{message.cont};
+            this->send(0, req);
+        } else {
+            store.regions.notify();
+        }
+    };
+
+    WORK_SAFE(worker, w);
 }
 
-void Client::handle(const EventSpaceMode& event) {
-    viewBuild.reset();
-    view = viewSpace.get();
+void Client::handle(MessageBlocksResponse message) {
+    auto w = [message{std::move(message)}, this]() {
+        Log::d("Received {} blocks", message.results.size());
+        if (!message.results.empty()) {
+            store.blocks.value().insert(store.blocks.value().end(), message.results.begin(), message.results.end());
+
+            for (const auto& block : message.results) {
+                const auto thumbnailName = fmt::format("{}_thumb", block.key);
+                auto thumbnail = assetManager.findOrNull<Image>(thumbnailName);
+
+                if (!thumbnail) {
+                    try {
+                        thumbnailRenderer.render(renderer, block.model);
+                        auto pixels = thumbnailRenderer.getPixels();
+                        auto size = thumbnailRenderer.getSize();
+
+                        std::ofstream file(block.key + ".raw", std::ios::binary);
+                        file.write(pixels.get(), size.x * size.y * 4);
+
+                        thumbnail =
+                            assetManager.generateImage(block.model->getMod(), thumbnailName, size, std::move(pixels));
+
+                        store.thumbnails.value().insert(std::make_pair(block.key, thumbnail));
+                    } catch (...) {
+                        EXCEPTION_NESTED("Failed to generate thumbnail for block: {}", block.key);
+                    }
+                }
+            }
+
+            MessageBlocksRequest req{message.cont};
+            this->send(0, req);
+        } else {
+            store.blocks.notify();
+        }
+    };
+
+    WORK_SAFE(worker, w);
 }
 
-#define MESSAGE_DISPATCH(T)                                                                                            \
-    case T::KIND: {                                                                                                    \
-        this->handle(Scissio::Network::Details::unpack<T>(packet.data));                                               \
-        break;                                                                                                         \
-    }
+void AbstractClient::handle(MessageHelloResponse message) {
+    (void)message;
+}
 
-void Client::dispatch(const Network::Packet& packet) {
-    switch (packet.id) {
-        MESSAGE_DISPATCH(MessageServerHello)
-    default: {
-        Log::e("Client cannot accept unknown packet id: {}", packet.id);
-    }
+void AbstractClient::handle(MessageSectorChanged message) {
+    auto w = [message{std::move(message)}, this]() {
+        store.sector.value() = message.sector;
+        store.sector.notify();
+
+        scene = std::make_unique<Scene>();
+
+        send(0, MessageSectorStatusRequest{});
+    };
+
+    WORK_SAFE(worker, w);
+}
+
+void AbstractClient::handle(MessageSectorStatusResponse message) {
+    auto w = [message, this]() {
+        if (!message.loaded) {
+            send(0, MessageSectorStatusRequest{});
+        } else {
+            onSectorLoaded();
+        }
+    };
+
+    WORK_SAFE(worker, w);
+}
+
+void Client::onSectorLoaded() {
+    auto w = [this]() {
+        viewSpace = std::make_unique<ViewSpace>(config, *this, *scene);
+        view = viewSpace.get();
+
+        skybox = skyboxRenderer.renderAndFilter(7418525);
+    };
+
+    WORK_SAFE(worker, w);
+}
+
+void AbstractClient::handle(MessageEntityBatch message) {
+    auto w = [message{std::move(message)}, this]() {
+        if (!scene)
+            return;
+
+        Log::d("Entity batch received of size: {}", message.entities.size());
+        for (const auto& entity : message.entities) {
+            scene->insertEntity(entity);
+        }
+    };
+
+    WORK_SAFE(worker, w);
+}
+
+void AbstractClient::dispatch(const Network::Packet packet) {
+    try {
+        dispatcher.dispatch(packet);
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to dispatch message");
     }
 }
 
 void Client::eventMouseMoved(const Vector2i& pos) {
-    if (view) {
+    mousePos = pos;
+
+    if (view /* && !gui.inputOverlap(pos)*/) {
         view->eventMouseMoved(pos);
     }
+
+    gui.mouseMoveEvent(pos);
 }
 
 void Client::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    if (view) {
+    if (view && !gui.inputOverlap(pos)) {
         view->eventMousePressed(pos, button);
     }
+
+    gui.mousePressEvent(pos, button);
 }
 
 void Client::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    if (view) {
+    if (view /* && !gui.inputOverlap(pos)*/) {
         view->eventMouseReleased(pos, button);
     }
+
+    gui.mouseReleaseEvent(pos, button);
 }
 
-void Client::eventKeyPressed(const Key key) {
-    if (view) {
-        view->eventKeyPressed(key);
+void Client::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    if (view && !gui.inputOverlap(mousePos)) {
+        view->eventKeyPressed(key, modifiers);
     }
+
+    if (key == Key::LetterB) {
+        if (viewBuild) {
+            view = viewSpace.get();
+
+            viewMap.reset();
+            viewBuild.reset();
+
+        } else {
+            viewBuild = std::make_unique<ViewBuild>(config, *this, store, assetManager);
+            view = viewBuild.get();
+        }
+    }
+
+    if (key == Key::LetterM) {
+        if (viewMap) {
+            view = viewSpace.get();
+
+            viewMap.reset();
+            viewBuild.reset();
+
+        } else {
+            viewMap = std::make_unique<ViewMap>(config, *this, store, assetManager);
+            view = viewMap.get();
+        }
+    }
+
+    gui.keyPressEvent(key);
 }
 
-void Client::eventKeyReleased(const Key key) {
-    if (view) {
-        view->eventKeyReleased(key);
+void Client::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    if (view /* && !gui.inputOverlap(mousePos)*/) {
+        view->eventKeyReleased(key, modifiers);
+    }
+
+    gui.keyReleaseEvent(key);
+}
+
+void Client::eventMouseScroll(const int xscroll, const int yscroll) {
+    if (view && !gui.inputOverlap(mousePos)) {
+        view->eventMouseScroll(xscroll, yscroll);
     }
 }

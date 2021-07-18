@@ -12,15 +12,17 @@ public:
     explicit Client(uint64_t sessionId, const std::string& address);
     virtual ~Client();
 
-    void receive(const StreamPtr& stream, const Packet& packet);
+    void receive(const StreamPtr& stream, Packet packet);
     void close();
 
-    template <typename T> void initConnection(const int port, const int64_t playerId, std::string password) {
+    template <typename T>
+    void initConnection(const int port, const int64_t uid, std::string name, std::string password) {
         add<T>(port);
 
         MessageSessionInit msg;
         msg.password = std::move(password);
-        msg.playerId = playerId;
+        msg.name = std::move(name);
+        msg.uid = uid;
         send(getStreams().size() - 1, msg);
 
         waitForSession();
@@ -41,7 +43,7 @@ public:
         }
     }
 
-    virtual void dispatch(const Packet& packet) = 0;
+    virtual void dispatch(Packet packet) = 0;
 
 private:
     void waitForSession();

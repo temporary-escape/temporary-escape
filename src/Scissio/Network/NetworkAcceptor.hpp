@@ -12,7 +12,7 @@ public:
 
     virtual void start() = 0;
 
-    virtual void receive(const StreamPtr& stream, const Packet& packet) = 0;
+    virtual void receive(const StreamPtr& stream, Packet packet) = 0;
 };
 
 using AcceptorPtr = std::shared_ptr<Acceptor>;

@@ -1,62 +1,104 @@
-#include "ShaderPbr.hpp"
+#include "ShaderModel.hpp"
 
 using namespace Scissio;
 
 ShaderPbr::ShaderPbr(const Config& config) {
-    addVertexShader(config.shadersPath / "quad.vert");
-    addFragmentShader(config.shadersPath / "pbr.frag");
-    link();
-    use();
-
-    setUniform("depthTexture", int(DepthTexture));
-    setUniform("baseColorRoughnessTexture", int(BaseColorRoughnessTexture));
-    setUniform("normalMetallicTexture", int(NormalMetallicTexture));
-    setUniform("emissiveAmbientTexture", int(EmissiveAmbientTexture));
-    setUniform("brdfTexture", int(BrdfTexture));
-    setUniform("irradianceTexture", int(SkyboxIrradianceTexture));
-    setUniform("prefilterTexture", int(SkyboxPrefilterTexture));
-
-    viewportUniform = getUniformLocation("viewport");
-    viewProjectionInverseMatrixUniform = getUniformLocation("viewProjectionInverseMatrix");
-    eyesPosUniform = getUniformLocation("eyesPos");
 }
 
-void ShaderPbr::setViewProjectionInverseMatrix(const Matrix4& matrix) {
-    setUniform(viewProjectionInverseMatrixUniform, matrix);
+void ShaderPbr::complete() {
+    setUniform("baseColorTexture", int(BaseColorTexture));
+    setUniform("normalTexture", int(NormalTexture));
+    setUniform("emissiveTexture", int(EmissiveTexture));
+    setUniform("metallicRoughnessTexture", int(MetallicRoughnessTexture));
+    setUniform("ambientOcclusionTexture", int(AmbientOcclusionTexture));
+
+    transformationProjectionMatrixUniform = getUniformLocation("transformationProjectionMatrix");
+    projectionMatrixUniform = getUniformLocation("projectionMatrix");
+    modelMatrixUniform = getUniformLocation("modelMatrix");
+    normalMatrixUniform = getUniformLocation("normalMatrix");
+    objectIdUniform = getUniformLocation("objectId");
+
+    const auto setColor = [](Texture2D& texture, const Color4& color) {
+        std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
+        for (size_t i = 0; i < 8 * 8 * 4; i += 4) {
+            pixels[i + 0] = static_cast<uint8_t>(color.r * 255.0f);
+            pixels[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
+            pixels[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
+            pixels[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
+        }
+
+        texture.setStorage(0, {8, 8}, PixelType::Rgba8u);
+        texture.setPixels(0, {0, 0}, {8, 8}, PixelType::Rgba8u, pixels.get());
+    };
+
+    setColor(defaultBaseColor, Color4{1.0f, 0.0f, 1.0f, 1.0f});
+    setColor(defaultNormal, Color4{0.5f, 0.5f, 1.0f, 1.0f});
+    setColor(defaultEmissive, Color4{0.0f, 0.0f, 0.0f, 1.0f});
+    setColor(defaultMetallicRoughness, Color4{0.0f, 0.5f, 0.5f, 1.0f});
+    setColor(defaultAmbientOcclusion, Color4{1.0f, 1.0f, 1.0f, 1.0f});
 }
 
-void ShaderPbr::bindDepthTexture(const Texture& texture) {
-    texture.bind(DepthTexture);
+void ShaderPbr::setModelMatrix(const glm::mat4x4& matrix) {
+    setUniform(modelMatrixUniform, matrix);
 }
 
-void ShaderPbr::bindBaseColorRoughnessTexture(const Texture& texture) {
-    texture.bind(BaseColorRoughnessTexture);
+void ShaderPbr::setNormalMatrix(const glm::mat3x3& matrix) {
+    setUniform(normalMatrixUniform, matrix);
 }
 
-void ShaderPbr::bindNormalMetallicTexture(const Texture& texture) {
-    texture.bind(NormalMetallicTexture);
+void ShaderPbr::setTransformationProjectionMatrix(const Matrix4& matrix) {
+    setUniform(transformationProjectionMatrixUniform, matrix);
 }
 
-void ShaderPbr::bindEmissiveAmbientTexture(const Texture& texture) {
-    texture.bind(EmissiveAmbientTexture);
+void ShaderPbr::setProjectionMatrix(const Matrix4& matrix) {
+    setUniform(projectionMatrixUniform, matrix);
 }
 
-void ShaderPbr::bindBrdfTexture(const Texture& texture) {
-    texture.bind(BrdfTexture);
+void ShaderPbr::bindBaseColorTexture(const Texture2D& texture) {
+    texture.bind(BaseColorTexture);
 }
 
-void ShaderPbr::bindSkyboxIrradianceTexture(const Texture& texture) {
-    texture.bind(SkyboxIrradianceTexture);
+void ShaderPbr::bindNormalTexture(const Texture2D& texture) {
+    texture.bind(NormalTexture);
 }
 
-void ShaderPbr::bindSkyboxPrefilterTexture(const Texture& texture) {
-    texture.bind(SkyboxPrefilterTexture);
+void ShaderPbr::bindEmissiveTexture(const Texture2D& texture) {
+    texture.bind(EmissiveTexture);
 }
 
-void ShaderPbr::setViewport(const Vector2i& viewport) {
-    setUniform(viewportUniform, viewport);
+void ShaderPbr::bindMetallicRoughnessTexture(const Texture2D& texture) {
+    texture.bind(MetallicRoughnessTexture);
 }
 
-void ShaderPbr::setEyesPos(const Vector3& pos) {
-    setUniform(eyesPosUniform, pos);
+void ShaderPbr::bindAmbientOcclusionTexture(const Texture2D& texture) {
+    texture.bind(AmbientOcclusionTexture);
+}
+
+void ShaderPbr::bindBaseColorTextureDefault() {
+    defaultBaseColor.bind(BaseColorTexture);
+}
+
+void ShaderPbr::bindNormalTextureDefault() {
+    defaultNormal.bind(NormalTexture);
+}
+
+void ShaderPbr::bindEmissiveTextureDefault() {
+    defaultEmissive.bind(EmissiveTexture);
+}
+
+void ShaderPbr::bindMetallicRoughnessTextureDefault() {
+    defaultMetallicRoughness.bind(MetallicRoughnessTexture);
+}
+
+void ShaderPbr::bindAmbientOcclusionTextureDefault() {
+    defaultAmbientOcclusion.bind(AmbientOcclusionTexture);
+}
+
+void ShaderPbr::setObjectId(const uint16_t id) {
+    Color4 color;
+    color.r = (id & 0xFF) / 255.0f;
+    color.g = ((id & 0xFF00) >> 8) / 255.0f;
+    color.b = 0.0f;
+    color.a = 1.0f;
+    setUniform(objectIdUniform, color);
 }

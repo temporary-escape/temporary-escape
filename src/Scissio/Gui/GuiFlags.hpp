@@ -21,18 +21,4 @@ struct GuiFlag {
     static constexpr GuiFlags CenterX = (1 << (29));
     static constexpr GuiFlags CenterY = 1 << 30;
 };
-
-/*inline GuiFlags operator|(const GuiFlags a, const GuiFlag b) {
-    return static_cast<GuiFlags>(a | GuiFlags(b));
-}
-inline GuiFlags operator|(const GuiFlag a, const GuiFlag b) {
-    return GuiFlags(a) | GuiFlags(b);
-}
-inline GuiFlags& operator|=(GuiFlags& a, const GuiFlag b) {
-    a = static_cast<GuiFlags>(a | GuiFlags(b));
-    return a;
-}
-inline bool operator&(const GuiFlags a, const GuiFlag b) {
-    return static_cast<GuiFlags>(a & GuiFlags(b));
-}*/
 } // namespace Scissio

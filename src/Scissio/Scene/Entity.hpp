@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ComponentSystem.hpp"
+#include "Component.hpp"
 #include "Object.hpp"
 
 #include <memory>
@@ -9,12 +9,14 @@
 namespace Scissio {
 class Scene;
 
-class SCISSIO_API Entity : public Object {
+class SCISSIO_API Entity : public Object, public std::enable_shared_from_this<Entity> {
 public:
-    explicit Entity(uint64_t id = 0);
-    virtual ~Entity();
+    explicit Entity(const uint64_t id = 0) : id(id) {
+    }
 
-    uint64_t getId() const {
+    virtual ~Entity() = default;
+
+    [[nodiscard]] uint64_t getId() const {
         return id;
     }
 
@@ -40,11 +42,12 @@ public:
         return signature & (1 << T::Type);
     }
 
-    const std::vector<ComponentPtr>& getComponents() const {
+    [[nodiscard]] const std::vector<ComponentPtr>& getComponents() const {
         return components;
     }
 
     friend Scene;
+    MSGPACK_FRIEND(Entity);
 
 private:
     uint64_t id{0};
@@ -54,3 +57,7 @@ private:
 
 using EntityPtr = std::shared_ptr<Entity>;
 } // namespace Scissio
+
+MSGPACK_CONVERT(Scissio::Entity);
+MSGPACK_CONVERT(Scissio::EntityPtr);
+MSGPACK_CONVERT(Scissio::ComponentPtr);

@@ -88,7 +88,7 @@ void main() {
     albedo = pow(albedo, vec3(2.2));
     float roughness = baseColorRoughness.a;
     vec4 normalMetallic = texture(normalMetallicTexture, v_texCoords);
-    vec3 N = -normalMetallic.rgb;
+    vec3 N = normalMetallic.rgb;
     float metallic = normalMetallic.a;
     vec4 emissiveAmbient = texture(emissiveAmbientTexture, v_texCoords);
     vec3 emissive = emissiveAmbient.rgb;

@@ -40,8 +40,8 @@ void Network::UdpConnector::start() {
     accept();
 }
 
-void Network::UdpConnector::receive(const StreamPtr& stream, const Packet& packet) {
-    client.receive(stream, packet);
+void Network::UdpConnector::receive(const StreamPtr& stream, Packet packet) {
+    client.receive(stream, std::move(packet));
 }
 
 void Network::UdpConnector::accept() {

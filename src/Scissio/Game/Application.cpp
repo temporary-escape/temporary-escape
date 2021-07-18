@@ -1,9 +1,10 @@
 #include "Application.hpp"
 
-#include "../Assets/IconAtlas.hpp"
-#include "../Assets/PbrTexture.hpp"
+#include "../Utils/Random.hpp"
 #include "Client.hpp"
 #include "Server.hpp"
+
+#include <fstream>
 
 using namespace Scissio;
 
@@ -15,7 +16,7 @@ inline constexpr bool operator&(const Application::State a, const uint64_t b) {
     return static_cast<uint64_t>(a) & b;
 }
 
-Application::Application(const Config& config) : OpenGLWindow("Scissio", Vector2i{1920, 1080}), config(config) {
+Application::Application(const Config& config) : OpenGLWindow("Scissio", Vector2i{1920, 1080}), config(config), uid{0} {
 
     defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path("iosevka-aile-regular.ttf"));
 }
@@ -26,15 +27,17 @@ void Application::render(const Vector2i& viewport) {
     switch (state) {
     case State::Init: {
         try {
-            eventBus = std::make_unique<EventBus>();
+            // eventBus = std::make_unique<EventBus>();
             textureCompressor = std::make_unique<TextureCompressor>();
             renderer = std::make_unique<Renderer>(config);
             skyboxRenderer = std::make_unique<SkyboxRenderer>(config);
-            assetManager =
-                std::make_unique<AssetManager>(config, canvas, *textureCompressor, *renderer, *skyboxRenderer);
+            thumbnailRenderer = std::make_unique<ThumbnailRenderer>(config, *skyboxRenderer);
+            assetManager = std::make_unique<AssetManager>(config, canvas, *textureCompressor, *renderer);
             gBuffer = std::make_unique<GBuffer>();
+            fBuffer = std::make_unique<FBuffer>();
             modManager = std::make_unique<ModManager>(*assetManager);
             modManager->load(config.assetsPath);
+            uid = generatePlayerUid();
             state = State::LoadAssets;
         } catch (...) {
             EXCEPTION_NESTED("Failed to initialize game assets");
@@ -66,7 +69,24 @@ void Application::render(const Vector2i& viewport) {
     }
     case State::LoadServer: {
         serverFuture = std::async([this]() {
-            auto server = std::make_unique<Server>(config, *assetManager);
+            if (!Fs::exists(config.userdataSavesPath)) {
+                Fs::create_directories(config.userdataSavesPath);
+            }
+
+            const auto savePath = config.userdataSavesPath / Path("Universe");
+            if (!Fs::exists(savePath)) {
+                Fs::create_directory(savePath);
+            }
+
+            const auto dbPath = savePath / Path("index.db");
+            auto database = std::make_unique<Database>(dbPath);
+            createSchemas(*database);
+            modManager->loadXmlData(config.assetsPath, *database);
+
+            this->database = std::move(database);
+
+            auto server = std::make_unique<Server>(config, *assetManager, *this->database);
+            server->load();
             this->server = std::move(server);
         });
         state = State::WaitServer;
@@ -85,8 +105,8 @@ void Application::render(const Vector2i& viewport) {
     }
     case State::LoadClient: {
         clientFuture = std::async([this]() {
-            auto client = std::make_unique<Client>(config, *eventBus, *assetManager, *renderer, *skyboxRenderer, canvas,
-                                                   "localhost");
+            auto client = std::make_unique<Client>(config, *assetManager, *renderer, *skyboxRenderer,
+                                                   *thumbnailRenderer, canvas, "localhost", uid);
             this->client = std::move(client);
         });
         state = State::WaitClient;
@@ -137,26 +157,9 @@ void Application::render(const Vector2i& viewport) {
     }
 
     else if (state == State::Playing) {
-        /*vao.bind();
-        assetManager.find<IconAtlas>("icons")->getTexture().bind();
-        shader.use();
-        shader.setInt("tex", 0);
-        shader.drawArrays(GL_TRIANGLES, 2 * 3);*/
-
-        // const auto& icon = assetManager.find<Icon>("icons-card-10-hearts")->getImage();
-        /*const auto pbr = assetManager.find<PbrTexture>("SciFiHelmet_MetallicRoughness")->getImage();
-
-        canvas.beginFrame(viewport);
-        canvas.fillColor(Color4{1.0f, 0.0f, 0.0f, 1.0f});
-        canvas.beginPath();
-        canvas.rectImage({0.0f, 0.0f}, {512.0f, 512.0f}, pbr);
-        canvas.fill();
-        canvas.closePath();
-        canvas.endFrame();*/
-
         if (client) {
-            eventBus->poll();
-            client->render(*gBuffer, viewport);
+            client->update();
+            client->render(*gBuffer, *fBuffer, viewport);
         }
     }
 }
@@ -167,26 +170,57 @@ void Application::eventMouseMoved(const Vector2i& pos) {
     }
 }
 
-void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
+void Application::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     if (client) {
         client->eventMousePressed(pos, button);
     }
 }
 
-void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+void Application::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     if (client) {
         client->eventMouseReleased(pos, button);
     }
 }
 
-void Application::eventKeyPressed(Key key) {
+void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     if (client) {
-        client->eventKeyPressed(key);
+        client->eventKeyPressed(key, modifiers);
     }
 }
 
-void Application::eventKeyReleased(Key key) {
+void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
     if (client) {
-        client->eventKeyReleased(key);
+        client->eventKeyReleased(key, modifiers);
+    }
+}
+
+void Application::eventMouseScroll(const int xscroll, const int yscroll) {
+    if (client) {
+        client->eventMouseScroll(xscroll, yscroll);
+    }
+}
+
+uint64_t Application::generatePlayerUid() {
+    const auto path = config.userdataPath / Path("uid");
+    if (Fs::exists(path)) {
+        std::ifstream f(path);
+        if (!f.is_open()) {
+            EXCEPTION("Failed to open '{}' for reading", path.string());
+        }
+
+        const std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+
+        return std::stoull(str);
+    } else {
+        const auto uid = randomId();
+
+        std::ofstream f(path);
+        if (!f.is_open()) {
+            EXCEPTION("Failed to open '{}' for writing", path.string());
+        }
+
+        f << uid;
+
+        return uid;
     }
 }

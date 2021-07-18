@@ -18,7 +18,7 @@ struct Config {
     int brdfSize = 512;
     int fboSamples = 4;
     float cameraFov = 75.0f;
-    int modelPreviewSize = 128;
+    int thumbnailSize = 128;
     std::string guiFontFaceRegular = "iosevka-aile-regular";
     std::string guiFontFaceBold = "iosevka-aile-bold";
     float guiFontSize = 21.0f;

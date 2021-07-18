@@ -8,7 +8,6 @@
 #include "../Math/Vector.hpp"
 #include "../Platform/Enums.hpp"
 #include "GuiFlags.hpp"
-#include "GuiWindow.hpp"
 
 #include <functional>
 #include <list>
@@ -32,16 +31,17 @@ public:
     explicit GuiContext(Canvas2D& canvas, const Config& config, AssetManager& assetManager);
     virtual ~GuiContext();
 
+    void reset();
     void render(const Vector2& viewport);
     void setFont(const FontFacePtr& fontFace, float height);
-    void addWindow(GuiWindow& window);
-    void removeWindow(GuiWindow& window);
 
     void spacing();
+    void window(const Vector2& pos, const Vector2& size, const std::string& name, GuiFlags flags,
+                const std::function<void()>& fn);
     void group(const std::string& name, GuiFlags flags, const std::function<void()>& fn);
     bool button(const std::string& text);
     bool buttonImage(const ImagePtr& image);
-    bool buttonImage(const IconPtr& image);
+    bool buttonImage(const IconPtr& image, bool active = false);
     void label(const std::string& text);
     void title(const std::string& text);
     void text(const std::string& text);
@@ -62,7 +62,11 @@ public:
     void mouseMoveEvent(const Vector2i& pos);
     // void mouseScrollEvent(const Platform::MouseScrollEvent& event);
     void textInputEvent(int c);
-    // bool inputOverlap(const Vector2i& pos) const;
+    bool inputOverlap(const Vector2i& pos) const;
+
+    const Vector2i& getViewport() const {
+        return viewport;
+    }
 
 private:
     enum class InputEventType {
@@ -103,18 +107,22 @@ private:
         InputEventType type;
     };
 
+    struct WindowBounds {
+        Vector2i pos;
+        Vector2i size;
+    };
+
     void renderInternal(const Vector2& viewport);
     void applyTheme();
 
     Canvas2D& canvas;
     const Config& config;
     std::unique_ptr<nk_context> ctx;
+    Vector2i viewport{};
     std::queue<InputEvent> inputEvents;
-    std::list<GuiWindow*> windows;
-    std::list<GuiId> windowsToRemove;
     std::unordered_map<FontFacePtr, std::unique_ptr<GuiFontData>> fonts;
     FontFacePtr fontFaceRegular;
     FontFacePtr fontFaceBold;
-    std::vector<Vector4i> windowsBounds;
+    std::vector<WindowBounds> windowsBounds;
 };
 } // namespace Scissio

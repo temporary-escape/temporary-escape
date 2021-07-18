@@ -8,8 +8,8 @@ struct Faction {
     DB_TABLE_NAME("faction");
 
     DB_SCHEMA({
-        TableField("id").integer().primary().autoInc(),
-        TableField("name").text().nonNull().unique(),
+        SchemaField("id").integer().primary().autoInc(),
+        SchemaField("name").text().nonNull().unique(),
     });
 
     DB_BIND(name);
@@ -25,11 +25,11 @@ struct Player {
     DB_TABLE_NAME("player");
 
     DB_SCHEMA({
-        TableField("id").integer().primary().autoInc(),
-        TableField("factionId").integer().references<Faction>("id").indexed().onDeleteNull(),
-        TableField("admin").boolean().nonNull(),
-        TableField("name").text().nonNull().unique(),
-        TableField("reputation").real().nonNull().defval("0.0"),
+        SchemaField("id").integer().primary().autoInc(),
+        SchemaField("factionId").integer().references<Faction>("id").indexed().onDeleteNull(),
+        SchemaField("admin").boolean().nonNull(),
+        SchemaField("name").text().nonNull().unique(),
+        SchemaField("reputation").real().nonNull().defval("0.0"),
     });
 
     DB_BIND(factionId, admin, name, reputation);
@@ -72,6 +72,44 @@ TEST("Basic CRUD operations") {
     REQUIRE(opt.has_value() == true);
     REQUIRE(opt.value().id == faction.id);
     REQUIRE(opt.value().name == faction.name);
+
+    // Insert with ID
+    Faction faction2{123, "Lorem Ipsum 2"};
+    db.insert<Faction>(faction2);
+    REQUIRE(faction2.id == 123);
+
+    factions = db.select<Faction>("WHERE id = ?", 123);
+    REQUIRE(factions.size() == 1);
+    REQUIRE(factions.at(0).id == faction2.id);
+    REQUIRE(factions.at(0).name == faction2.name);
+}
+
+TEST("Inner join") {
+    Database db;
+
+    db.create<Faction>();
+    db.create<Player>();
+
+    REQUIRE(Faction::dbSelect() == "faction.name");
+    const auto s = Player::dbSelect();
+    REQUIRE(s == "player.factionId,player.admin,player.name,player.reputation");
+
+    Faction f0{0, "Lorem Ipsum"};
+    Faction f1{0, "Donor"};
+
+    db.insert(f0);
+    db.insert(f1);
+
+    Player p0{0, f0.id, false, "Player A", 1.0f};
+    Player p1{0, f1.id, false, "Player B", 1.0f};
+    Player p2{0, f1.id, false, "Player C", 1.0f};
+
+    db.insert(p0);
+    db.insert(p1);
+    db.insert(p2);
+
+    const auto join = db.join<Player, Faction>("factionId", "id");
+    REQUIRE(join.size() == 3);
 }
 
 TEST("Constraint failed") {
@@ -82,6 +120,8 @@ TEST("Constraint failed") {
     Faction faction{0, "Hello"};
 
     db.insert(faction);
+    faction.id = 0;
+
     REQUIRE_THROWS_WITH(db.insert(faction), Catch::Contains("UNIQUE constraint failed: faction.name"));
 
     const auto factions = db.select<Faction>();
@@ -98,6 +138,7 @@ TEST("Transactions") {
     const auto f = [&]() {
         db.transaction([&]() {
             db.insert(faction);
+            faction.id = 0;
             db.insert(faction);
         });
     };
@@ -205,6 +246,26 @@ TEST("Describe") {
     REQUIRE(schema == Player::dbSchema());
 }
 
+/*TEST("Describe with compound indexes") {
+    Database db;
+
+    db.create<Faction>();
+    db.create<Player>();
+
+    db.exec(R"(
+    CREATE TABLE example (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        playerId INTEGER NOT NULL,
+        factionId INTEGER NOT NULL,
+        FOREIGN KEY (playerId) REFERENCES player (id),
+        FOREIGN KEY (factionId) REFERENCES faction (id)
+    );
+    CREATE UNIQUE INDEX example_playerId_factionId_idx ON example(playerId, factionId);
+    )");
+
+    const auto schema = db.describe("example");
+}*/
+
 TEST("Describe non existing table") {
     Database db;
 
@@ -249,3 +310,127 @@ TEST("Move table") {
     player = db.get<Player>(player.id).value();
     REQUIRE(player.factionId == std::nullopt);
 }
+
+struct SomeSchemaV1 {
+    uint64_t id{0};
+    int64_t fieldA{0};
+    bool fieldB{false};
+    std::string fieldC{false};
+
+    DB_TABLE_NAME("SomeSchema");
+
+    DB_SCHEMA({
+        SchemaField("id").integer().primary().autoInc(),
+        SchemaField("fieldA").integer().nonNull().indexed(),
+        SchemaField("fieldB").boolean().nonNull(),
+        SchemaField("fieldC").text().nonNull(),
+    });
+
+    DB_BIND(fieldA, fieldB, fieldC);
+};
+
+struct SomeSchemaV2 {
+    uint64_t id{0};
+    std::optional<int64_t> fieldA{0};
+    std::string fieldC{false};
+    float fieldD{0.0f};
+
+    DB_TABLE_NAME("SomeSchema");
+
+    DB_SCHEMA({
+        SchemaField("id").integer().primary().autoInc(),
+        SchemaField("fieldA").integer().indexed(),
+        SchemaField("fieldC").text().nonNull().unique(),
+        SchemaField("fieldD").real().defval("1.0"),
+    });
+
+    DB_BIND(fieldA, fieldC, fieldD);
+};
+
+TEST("Auto migrate table") {
+    Database db;
+
+    db.create<SomeSchemaV1>();
+
+    SomeSchemaV1 v0{0, 123, true, "Hello"};
+    SomeSchemaV1 v1{0, 456, false, "World"};
+    db.insert(v0);
+    db.insert(v1);
+
+    db.create<SomeSchemaV2>();
+    const auto vs = db.select<SomeSchemaV2>();
+    REQUIRE(vs.size() == 2);
+
+    const SomeSchemaV2* v0b;
+    const SomeSchemaV2* v1b;
+
+    if (vs.at(0).id == v0.id) {
+        v0b = &vs.at(0);
+        v1b = &vs.at(1);
+    } else {
+        v0b = &vs.at(1);
+        v1b = &vs.at(0);
+    }
+
+    REQUIRE(v0b->fieldA.has_value() == true);
+    REQUIRE(v0b->fieldA.value() == 123);
+    REQUIRE(v0b->fieldC == "Hello");
+    REQUIRE(v0b->fieldD == Approx(1.0f));
+
+    REQUIRE(v1b->fieldA.has_value() == true);
+    REQUIRE(v1b->fieldA.value() == 456);
+    REQUIRE(v1b->fieldC == "World");
+    REQUIRE(v1b->fieldD == Approx(1.0f));
+
+    // Sanity check unique keys
+    SomeSchemaV2 v3{0, 789, "World", 3.0f};
+    REQUIRE_THROWS_WITH(db.insert(v3), Catch::Contains("UNIQUE constraint failed: SomeSchema.fieldC"));
+}
+
+struct SomeItem {
+    uint64_t id{0};
+    std::string key;
+    std::string name;
+
+    DB_TABLE_NAME("SomeItem");
+
+    DB_SCHEMA({
+        SchemaField("id").integer().primary().autoInc(),
+        SchemaField("key").text().nonNull().unique(),
+        SchemaField("name").text().nonNull(),
+    });
+
+    DB_BIND(key, name);
+};
+
+/*TEST("Replace existing") {
+    Database db;
+
+    db.create<SomeItem>();
+
+    SomeItem a{0, "aaa", "Hello"};
+    SomeItem b{0, "bbb", "World"};
+
+    db.replace(a, "key");
+    db.replace(b, "key");
+
+    auto items = db.select<SomeItem>();
+    REQUIRE(items.size() == 2);
+
+    items = db.select<SomeItem>("WHERE key = ?", std::string("bbb"));
+    REQUIRE(items.size() == 1);
+    REQUIRE(items.front().id == 2);
+    REQUIRE(items.front().name == "World");
+
+    SomeItem c{0, "bbb", "Hello World!"};
+
+    db.replace(c, "key");
+
+    items = db.select<SomeItem>();
+    REQUIRE(items.size() == 2);
+
+    items = db.select<SomeItem>("WHERE key = ?", std::string("bbb"));
+    REQUIRE(items.size() == 1);
+    REQUIRE(items.front().id == 2);
+    REQUIRE(items.front().name == "Hello World!");
+}*/

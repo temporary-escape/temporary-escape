@@ -11,34 +11,54 @@ public:
     virtual ~Object() = default;
 
     void translate(const Vector3& pos) {
-        transform = glm::translate(transform, pos);
+        updateTransform(glm::translate(transform, pos));
     }
 
     void move(const Vector3& pos) {
-        transform[3] = Vector4(pos, transform[3].w);
+        auto temp = transform;
+        temp[3] = Vector4(pos, temp[3].w);
+        updateTransform(temp);
     }
 
     void rotate(const Vector3& axis, const float degrees) {
-        transform = glm::rotate(transform, glm::radians(degrees), axis);
+        updateTransform(glm::rotate(transform, glm::radians(degrees), axis));
     }
 
     void rotate(const Quaternion& q) {
-        transform = transform * glm::toMat4(q);
+        updateTransform(transform * glm::toMat4(q));
     }
 
-    const Matrix4& getTransform() const {
+    void scale(const Vector3& value) {
+        updateTransform(glm::scale(transform, value));
+    }
+
+    [[nodiscard]] const Matrix4& getTransform() const {
         return transform;
     }
 
-    Matrix4& getTransform() {
-        return transform;
+    void updateTransform(const Matrix4& transform) {
+        dirty = true;
+        this->transform = transform;
     }
 
-    Vector3 getPosition() const {
+    [[nodiscard]] Vector3 getPosition() const {
         return Vector3(transform[3]);
+    }
+
+    [[nodiscard]] bool isDirty() const {
+        return dirty;
+    }
+
+    void markDirty() {
+        dirty = true;
+    }
+
+    void clearDirty() {
+        dirty = false;
     }
 
 private:
     Matrix4 transform;
+    bool dirty{true};
 };
 } // namespace Scissio

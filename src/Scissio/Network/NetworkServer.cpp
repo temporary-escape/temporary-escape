@@ -40,30 +40,40 @@ void Network::Server::stopIoService() {
     }
 }
 
-void Network::Server::receive(const StreamPtr& stream, const Packet& packet) {
+void Network::Server::receive(const StreamPtr& stream, Packet packet) {
+    // Log::d("Server received packet id: {}", packet.id);
+
     switch (packet.id) {
-    case MessageSessionInit::KIND: {
+    case getMessageId<MessageSessionInit>(): {
         std::unique_lock<std::shared_mutex> lock{mutex};
 
-        const auto message = Details::unpack<MessageSessionInit>(packet);
-        auto session = createSession(message.playerId, message.password);
+        const auto message = Details::MessageUnpacker<MessageSessionInit>::unpack(packet);
+        try {
+            auto session = createSession(message.uid, message.name, message.password);
 
-        Log::d("New connection accepted uid: {} session: {}", message.playerId, session->getSessionId());
+            Log::d("New connection accepted uid: {} session: {}", message.uid, session->getSessionId());
 
-        MessageSessionInitResponse response;
-        response.sessionId = session->getSessionId();
+            MessageSessionInitResponse response;
+            response.sessionId = session->getSessionId();
 
-        session->addStream(stream);
-        stream->send(response, session->getSessionId());
+            session->addStream(stream);
+            stream->send(response, session->getSessionId());
 
-        sessions.insert(std::make_pair(session->getSessionId(), std::move(session)));
+            sessions.insert(std::make_pair(session->getSessionId(), std::move(session)));
+
+        } catch (std::exception& e) {
+            MessageSessionInitResponse response;
+            response.error = e.what();
+
+            stream->send(response, 0);
+        }
 
         break;
     }
-    case MessageSessionConnect::KIND: {
+    case getMessageId<MessageSessionConnect>(): {
         std::unique_lock<std::shared_mutex> lock{mutex};
 
-        auto message = Details::unpack<MessageSessionConnect>(packet);
+        auto message = Details::MessageUnpacker<MessageSessionConnect>::unpack(packet);
 
         const auto found = sessions.find(message.sessionId);
         if (found != sessions.end()) {
@@ -93,7 +103,7 @@ void Network::Server::receive(const StreamPtr& stream, const Packet& packet) {
         const auto it = sessions.find(packet.sessionId);
         if (it != sessions.end()) {
             if (auto session = it->second.lock()) {
-                dispatch(session, packet);
+                dispatch(session, std::move(packet));
             }
         }
     }

@@ -320,7 +320,7 @@ void Model::load(AssetManager& assetManager) {
     }
 }
 
-template <> void Xml::Node::convert<std::shared_ptr<Model>>(ModelPtr& value) {
+template <> void Xml::Node::convert<std::shared_ptr<Model>>(ModelPtr& value) const {
     value = AssetManager::singleton().find<Model>(this->asString());
 }
 

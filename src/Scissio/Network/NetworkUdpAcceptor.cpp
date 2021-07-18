@@ -44,6 +44,7 @@ void Network::UdpAcceptor::accept() {
                 try {
                     Packet packet;
                     oh.get().convert(packet);
+                    // Log::d("Network UDP stream accepted packet id: {}", packet.id);
                     self->getStream(*endpoint)->receive(std::move(packet));
                 } catch (std::exception& e) {
                     Log::e("Network UDP acceptor msgpack error: {}", e.what());
@@ -57,12 +58,21 @@ void Network::UdpAcceptor::accept() {
 std::shared_ptr<Network::UdpStream> Network::UdpAcceptor::getStream(const asio::ip::udp::endpoint& endpoint) {
     auto found = streams.find(endpoint);
     if (found == streams.end()) {
+        Log::v("New UDP connection from: [{}]:{}", endpoint.address().to_string(), endpoint.port());
         found = streams.insert(std::make_pair(endpoint, std::make_shared<UdpStream>(*this, socket, endpoint))).first;
     }
 
     return found->second;
 }
 
-void Network::UdpAcceptor::receive(const StreamPtr& stream, const Packet& packet) {
-    server.receive(stream, packet);
+void Network::UdpAcceptor::receive(const StreamPtr& stream, Packet packet) {
+    const auto packetId = packet.id;
+    const auto sessionId = packet.sessionId;
+
+    try {
+        server.receive(stream, std::move(packet));
+    } catch (std::exception& e) {
+        Log::e("Failed to accept packet id: {} session: {}", packetId, sessionId);
+        backtrace(e);
+    }
 }

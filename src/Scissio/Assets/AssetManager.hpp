@@ -20,7 +20,7 @@ class Canvas2D;
 class SCISSIO_API AssetManager {
 public:
     explicit AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor,
-                          Renderer& renderer, SkyboxRenderer& skyboxRenderer);
+                          Renderer& renderer);
     virtual ~AssetManager() = default;
 
     template <typename T> std::shared_ptr<T> findOrNull(const std::string& name) {
@@ -66,7 +66,8 @@ public:
         return textureCompressor;
     }
 
-    ImagePtr generateThumbnail(const Model& model);
+    ImagePtr generateImage(const Manifest& mod, const std::string& name, const Vector2i& size,
+                           std::unique_ptr<char[]> pixels);
 
     static AssetManager& singleton();
 
@@ -82,11 +83,5 @@ private:
     ImageAtlas imageAtlas;
     AssetPtrMap assets;
     AssetLoadQueue loadQueue;
-
-    GBuffer thumbnailGBuffer;
-    Skybox thumbnailSkybox;
-    Framebuffer thumbnailFbo;
-    Renderbuffer thumbnailFboDepth;
-    Texture2D thumbnailFboColor;
 };
 } // namespace Scissio

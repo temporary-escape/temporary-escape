@@ -38,5 +38,22 @@ enum class Key {
     LetterZ,
     SpaceBar,
     LeftControl,
+    Delete,
 };
+
+enum class Modifier : int {
+    Ctrl = 1 << 0,
+    Shift = 1 << 1,
+    Alt = 1 << 2,
+};
+
+using Modifiers = int;
+
+inline bool operator&(const Modifier& modifier, const Modifiers& modifiers) {
+    return static_cast<int>(modifier) & modifiers;
+}
+
+inline bool operator&(const Modifiers& modifiers, const Modifier& modifier) {
+    return static_cast<int>(modifier) & modifiers;
+}
 } // namespace Scissio

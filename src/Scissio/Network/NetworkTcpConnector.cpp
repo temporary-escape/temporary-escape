@@ -42,6 +42,6 @@ void Network::TcpConnector::close() {
 void Network::TcpConnector::start() {
 }
 
-void Network::TcpConnector::receive(const StreamPtr& stream, const Packet& packet) {
-    client.receive(stream, packet);
+void Network::TcpConnector::receive(const StreamPtr& stream, Packet packet) {
+    client.receive(stream, std::move(packet));
 }

@@ -17,6 +17,7 @@ public:
 private:
     static void mouseMovedCallback(GLFWwindow* window, double x, double y);
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void mouseScrollCallback(GLFWwindow* window, double xscroll, double yscroll);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
     GLFWwindow* window;

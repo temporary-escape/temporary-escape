@@ -27,13 +27,17 @@
                 0
             ],
             "name": "pallete_01",
+            "normalTexture" : {
+                "index" : 1,
+                "texCoord" : 0
+            },
             "pbrMetallicRoughness": {
                 "baseColorTexture": {
                     "index": 0,
                     "texCoord": 0
                 },
                 "metallicRoughnessTexture": {
-                    "index": 1,
+                    "index": 2,
                     "texCoord": 0
                 }
             }
@@ -62,6 +66,9 @@
         },
         {
             "source": 1
+        },
+        {
+            "source": 2
         }
     ],
     "images": [
@@ -74,6 +81,11 @@
             "mimeType": "image/png",
             "name": "pallete_01_norm",
             "uri": "pallete_01_norm.png"
+        },
+        {
+            "mimeType": "image/png",
+            "name": "pallete_01_meta",
+            "uri": "pallete_01_meta.png"
         }
     ],
     "accessors": [

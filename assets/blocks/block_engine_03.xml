@@ -3,5 +3,5 @@
 	<description>Small engine for your ship.</description>
 	<tier>1</tier>
 	<model>model_engine_03</model>
-	<group>Engines</group>
+	<category>Engines</category>
 </block>

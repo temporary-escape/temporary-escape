@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../Library.hpp"
 #include "../Math/Utils.hpp"
 #include "../Math/Vector.hpp"
@@ -6,6 +7,7 @@
 #include "../Utils/Msgpack.hpp"
 
 #include <array>
+#include <iostream>
 #include <optional>
 #include <vector>
 
@@ -52,6 +54,21 @@ public:
         uint16_t parent{INVALID_PARENT};
         std::array<uint16_t, 8> children{0};
         T data{};
+
+        bool isBranch() const {
+            for (const auto& child : children) {
+                if (child != 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool isLeaf() const {
+            return !isBranch();
+        }
+
+        MSGPACK_DEFINE_ARRAY(parent, children, data);
     };
 
     struct NodeRef {
@@ -95,25 +112,42 @@ public:
         return rayCast(nodes.at(0), Vector3i{0}, width / 2, from, to);
     }
 
+    void remove(const Node& node) {
+        if (&node < &nodes.front() || &node > &nodes.back()) {
+            // Not our node or the node reference is old
+            return;
+        }
+
+        // Check if the parent exists
+        if (node.parent != INVALID_PARENT) {
+            // Remove this node from its parent
+            clearChildOf(nodes.at(node.parent), node);
+        }
+
+        const auto offset = &node - &nodes.front();
+
+        auto& found = nodes.at(offset);
+        found.parent = INVALID_PARENT;
+        found.data = T{};
+
+        if (offset < next) {
+            next = offset;
+        }
+    }
+
     void remove(const uint16_t offset) {
         if (offset < nodes.size()) {
-            auto& node = nodes.at(offset);
-
-            // Check if the parent exists
-            if (node.parent != INVALID_PARENT) {
-                // Remove this node from its parent
-                clearChildOf(nodes.at(node.parent), node);
-            }
-
-            node.parent = INVALID_PARENT;
-            if (offset < next) {
-                next = offset;
-            }
+            const auto& node = nodes.at(offset);
+            remove(node);
         }
     }
 
     Node& get(const uint16_t offset) {
         return nodes.at(offset);
+    }
+
+    const std::vector<Node>& getNodes() const {
+        return nodes;
     }
 
     Vector3 getBoundingBox() const {
@@ -142,6 +176,12 @@ public:
             }
             nodes.resize(i + 1);
         }
+    }
+
+    void debug() const {
+        std::cout << "debugging octree with width: " << width << std::endl;
+        debug(nodes.at(0), Vector3{0.0f}, width / 2, 0);
+        std::cout << std::endl;
     }
 
 private:
@@ -215,6 +255,18 @@ private:
                 } else {
                     return 6;
                 }
+            }
+        }
+    }
+
+    void debug(const Node& node, const Vector3i& origin, const int half, const int indent) const {
+        for (auto idx = 0; idx < node.children.size(); idx++) {
+            const auto childIdx = node.children[idx];
+            if (childIdx != 0) {
+                const auto offset = idxToOffset(idx, half / 2.0f, Vector3{origin});
+                std::cout << std::string(indent, ' ') << "> child at " << offset << std::endl;
+                const auto& child = nodes.at(childIdx);
+                debug(child, offset, half / 2, indent + 4);
             }
         }
     }
@@ -312,6 +364,7 @@ private:
         uint16_t children[8] = {0};
 
         auto& node = nodes.at(offset);
+
         // const auto s = static_cast<int>(node.size) / 2;
         // const auto origin = node.pos;
         std::memcpy(&grandChildren[0], &node.children[0], sizeof(grandChildren));
@@ -336,6 +389,7 @@ private:
         }
 
         auto& node0 = nodes.at(offset);
+        node0.data = T{};
         std::memcpy(&node0.children[0], &children[0], sizeof(children));
         // node0.size = node0.size << 1;
 

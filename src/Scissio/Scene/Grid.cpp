@@ -15,14 +15,38 @@ template <typename V> static V roundUp(const V numToRound, const V multiple) {
     return numToRound + multiple - remainder;
 }
 
-Grid::Node& Grid::insert(const BlockPtr& block, const Vector3& pos, const uint8_t rot) {
+decltype(Grid::ORIENTATIONS) Grid::ORIENTATIONS = {
+    glm::rotate(Matrix4{1.0f}, glm::radians(0.0f), Vector3{0.0f, 1.0f, 0.0f}),
+    glm::rotate(Matrix4{1.0f}, glm::radians(90.0f), Vector3{0.0f, 1.0f, 0.0f}),
+    glm::rotate(Matrix4{1.0f}, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f}),
+    glm::rotate(Matrix4{1.0f}, glm::radians(270.0f), Vector3{0.0f, 1.0f, 0.0f}),
+    glm::rotate(Matrix4{1.0f}, glm::radians(90.0f), Vector3{1.0f, 0.0f, 0.0f}),
+    glm::rotate(Matrix4{1.0f}, glm::radians(270.0f), Vector3{1.0f, 0.0f, 0.0f}),
+};
+
+Grid::BlockNode& Grid::insert(const BlockRef& block, const Vector3& pos, const uint8_t rot) {
     return insert(insertBlockType(block), pos, rot);
 }
 
-uint16_t Grid::insertBlockType(const BlockPtr& block) {
+Grid::BlockRef Grid::remove(const BlockNode& node) {
+    auto& type = getType(node.data);
+    if (type.count > 0) {
+        type.count--;
+    }
+    tree.remove(node);
+    type.dirty = true;
+    dirty = true;
+    return type.block;
+}
+
+std::optional<Grid::BlockNodeRef> Grid::find(const Vector3& pos) {
+    return tree.find(pos);
+}
+
+uint16_t Grid::insertBlockType(const BlockRef& block) {
     for (size_t index = 0; index < types.size(); index++) {
         auto& type = types[index];
-        if (type.block == block) {
+        if (type.block.name == block.name) {
             type.count++;
             type.dirty = true;
             return static_cast<uint16_t>(index);
@@ -42,47 +66,16 @@ uint16_t Grid::insertBlockType(const BlockPtr& block) {
     return static_cast<uint16_t>(types.size() - 1);
 }
 
-Grid::Node& Grid::insert(const uint16_t type, const Vector3& pos, const uint8_t rot) {
-    auto& node = nextEmptyNode();
+Grid::BlockNode& Grid::insert(const uint16_t type, const Vector3& pos, const uint8_t rot) {
     const auto ref = tree.insert(pos);
-    const auto begin = &nodes.at(0);
-    ref.node.data = static_cast<Pointer>(&node - begin);
-    node.type = type;
-    node.pos = pos;
-    node.rot = rot;
+    ref.node.data.type = type;
+    ref.node.data.pos = pos;
+    ref.node.data.rot = rot;
     dirty = true;
-    return node;
+    return ref.node;
 }
 
-Grid::Node& Grid::nextEmptyNode() {
-    // Check if next empty node
-    for (size_t i = next; i < nodes.size(); i++) {
-        auto& node = nodes.at(i);
-        if (node.type == INVALID_TYPE) {
-            next = i + 1;
-            return node;
-        }
-    }
-
-    // No next empty node, expand the array
-    const auto last = nodes.size();
-    if (nodes.empty()) {
-        nodes.resize(1);
-    } else {
-        auto nextSize = roundUp<size_t>(nodes.size(), 2ULL);
-        if (nextSize == nodes.size()) {
-            nextSize *= 2;
-        }
-        if (nextSize > INVALID_TYPE) {
-            EXCEPTION("The maximum number of nodes in grid reached");
-        }
-        nodes.resize(nextSize);
-    }
-    next = last + 1;
-    return nodes.at(last);
-}
-
-Grid::NodeType& Grid::getType(const Node& node) {
+Grid::BlockType& Grid::getType(const BlockData& node) {
     if (node.type == INVALID_TYPE || node.type >= types.size()) {
         EXCEPTION("Invalid node type");
     }
@@ -95,7 +88,7 @@ Grid::NodeType& Grid::getType(const Node& node) {
     return type;
 }
 
-const Grid::NodeType& Grid::getType(const Node& node) const {
+const Grid::BlockType& Grid::getType(const BlockData& node) const {
     if (node.type == INVALID_TYPE || node.type >= types.size()) {
         EXCEPTION("Invalid node type");
     }
@@ -108,27 +101,13 @@ const Grid::NodeType& Grid::getType(const Node& node) const {
     return type;
 }
 
-void Grid::resize() {
-    if (!nodes.empty()) {
-        size_t i = nodes.size() - 1;
-        for (i = nodes.size() - 1; i > 0; i--) {
-            if (nodes.at(i).type != INVALID_TYPE) {
-                break;
-            }
-        }
-        nodes.resize(i + 1);
-    }
-
-    tree.resize();
-}
-
-std::unordered_map<BlockPtr, std::vector<Matrix4>> Grid::buildInstanceBuffer() {
+std::vector<Grid::BlockInstances> Grid::buildInstanceBuffer() {
     std::unordered_map<uint16_t, std::vector<Matrix4>> matrices;
 
     for (uint16_t typeIdx = 0; typeIdx < static_cast<uint16_t>(types.size()); typeIdx++) {
         auto& type = types.at(typeIdx);
 
-        if (!type.block) {
+        if (!type.block.model) {
             continue;
         }
 
@@ -138,19 +117,31 @@ std::unordered_map<BlockPtr, std::vector<Matrix4>> Grid::buildInstanceBuffer() {
         type.dirty = false;
     }
 
-    for (const auto& node : nodes) {
-        if (auto it = matrices.find(node.type); it != matrices.end()) {
+    for (const auto& node : tree.getNodes()) {
+        if (node.data.type == INVALID_TYPE) {
+            continue;
+        }
+
+        if (auto it = matrices.find(node.data.type); it != matrices.end()) {
             Matrix4 transformation{1.0f};
-            transformation = glm::translate(transformation, node.pos);
+            auto rot = node.data.rot;
+            if (rot < 0 || rot >= ORIENTATIONS.size()) {
+                rot = 0;
+            }
+            transformation = glm::translate(transformation, node.data.pos);
+            transformation *= ORIENTATIONS[rot];
             it->second.push_back(transformation);
         }
     }
 
-    std::unordered_map<BlockPtr, std::vector<Matrix4>> blocks;
+    std::vector<BlockInstances> blocks;
 
     for (auto& pair : matrices) {
         const auto& type = types.at(pair.first);
-        blocks.insert(std::make_pair(type.block, std::move(pair.second)));
+        blocks.emplace_back();
+        blocks.back().model = type.block.model;
+        blocks.back().instances = std::move(pair.second);
+        blocks.back().type = pair.first;
     }
 
     dirty = false;
@@ -163,10 +154,11 @@ std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vect
         return std::nullopt;
     }
 
-    auto& node = nodes.at(res.value().node.get().data);
-    const auto block = getType(node).block;
+    auto& node = res.value().node.get();
+    auto& data = node.data;
+    const auto block = getType(data).block;
 
-    const auto normal = intersectBoxNormal(node.pos, res.value().pos);
+    const auto normal = intersectBoxNormal(data.pos, res.value().pos);
 
     auto side = 0;
     if (normal.x <= -1.0f) {

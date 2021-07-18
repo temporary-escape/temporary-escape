@@ -3,41 +3,63 @@
 #include "../Config.hpp"
 #include "../Graphics/Mesh.hpp"
 #include "../Graphics/Shader.hpp"
-#include "../Graphics/Texture.hpp"
+#include "../Graphics/Texture2D.hpp"
 #include "../Math/Matrix.hpp"
 
 namespace Scissio {
 class SCISSIO_API ShaderPbr : public Shader {
 public:
-    typedef VertexAttribute<0, Vector2> Position;
+    typedef VertexAttribute<0, Vector3> Position;
+    typedef VertexAttribute<1, Vector3> Normal;
+    typedef VertexAttribute<2, Vector2> TextureCoordinates;
+    typedef VertexAttribute<3, Vector4> Tangent;
 
     enum : int {
-        DepthTexture = 0,
-        BaseColorRoughnessTexture,
-        NormalMetallicTexture,
-        EmissiveAmbientTexture,
-        BrdfTexture,
-        SkyboxIrradianceTexture,
-        SkyboxPrefilterTexture,
+        BaseColorTexture = 0,
+        NormalTexture,
+        EmissiveTexture,
+        MetallicRoughnessTexture,
+        AmbientOcclusionTexture
     };
 
     explicit ShaderPbr(const Config& config);
-    virtual ~ShaderPbr() = default;
+    virtual ~ShaderPbr() = 0;
 
-    void setViewProjectionInverseMatrix(const Matrix4& matrix);
-    void bindDepthTexture(const Texture& texture);
-    void bindBaseColorRoughnessTexture(const Texture& texture);
-    void bindNormalMetallicTexture(const Texture& texture);
-    void bindEmissiveAmbientTexture(const Texture& texture);
-    void bindBrdfTexture(const Texture& texture);
-    void bindSkyboxIrradianceTexture(const Texture& texture);
-    void bindSkyboxPrefilterTexture(const Texture& texture);
-    void setViewport(const Vector2i& viewport);
-    void setEyesPos(const Vector3& pos);
+    void setTransformationProjectionMatrix(const Matrix4& matrix);
+    void setProjectionMatrix(const Matrix4& matrix);
 
-private:
-    int viewportUniform;
-    int viewProjectionInverseMatrixUniform;
-    int eyesPosUniform;
+    void setModelMatrix(const Matrix4& matrix);
+    void setNormalMatrix(const Matrix3& matrix);
+
+    void bindBaseColorTexture(const Texture2D& texture);
+    void bindBaseColorTextureDefault();
+    void bindNormalTexture(const Texture2D& texture);
+    void bindNormalTextureDefault();
+    void bindEmissiveTexture(const Texture2D& texture);
+    void bindEmissiveTextureDefault();
+    void bindMetallicRoughnessTexture(const Texture2D& texture);
+    void bindMetallicRoughnessTextureDefault();
+    void bindAmbientOcclusionTexture(const Texture2D& texture);
+    void bindAmbientOcclusionTextureDefault();
+
+    void setObjectId(uint16_t id);
+
+protected:
+    void complete();
+
+    Texture2D defaultBaseColor{NO_CREATE};
+    Texture2D defaultNormal{NO_CREATE};
+    Texture2D defaultEmissive{NO_CREATE};
+    Texture2D defaultMetallicRoughness{NO_CREATE};
+    Texture2D defaultAmbientOcclusion{NO_CREATE};
+
+    int transformationProjectionMatrixUniform;
+    int projectionMatrixUniform;
+    int normalMatrixUniform;
+    int modelMatrixUniform;
+    int objectIdUniform;
 };
+
+inline ShaderPbr::~ShaderPbr() {
+}
 } // namespace Scissio

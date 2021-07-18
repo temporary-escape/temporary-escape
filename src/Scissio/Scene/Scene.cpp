@@ -1,9 +1,11 @@
 #include "Scene.hpp"
 
 #include "../Graphics/Renderer.hpp"
-#include "ComponentCamera.hpp"
 #include "ComponentGrid.hpp"
+#include "ComponentLines.hpp"
 #include "ComponentModel.hpp"
+#include "ComponentPointCloud.hpp"
+#include "ComponentWireframe.hpp"
 
 using namespace Scissio;
 
@@ -12,13 +14,14 @@ uint64_t Scene::nextId = 1;
 Scene::Scene()
     : systems{
           {ComponentModel::Type, std::make_shared<ComponentSystem<ComponentModel>>()},
-          {ComponentCamera::Type, std::make_shared<ComponentSystem<ComponentCamera>>()},
           {ComponentGrid::Type, std::make_shared<ComponentSystem<ComponentGrid>>()},
+          {ComponentPointCloud::Type, std::make_shared<ComponentSystem<ComponentPointCloud>>()},
+          {ComponentLines::Type, std::make_shared<ComponentSystem<ComponentLines>>()},
+          {ComponentWireframe::Type, std::make_shared<ComponentSystem<ComponentWireframe>>()},
       } {
 }
 
-Scene::~Scene() {
-}
+Scene::~Scene() = default;
 
 Scene::Scene(Scene&& other) noexcept {
     swap(other);
@@ -42,40 +45,21 @@ EntityPtr Scene::addEntity() {
     return entitiesAdded.back();
 }
 
-void Scene::render(Renderer& renderer) {
+void Scene::insertEntity(EntityPtr entity) {
+    entitiesAdded.push_back(std::move(entity));
+}
+
+void Scene::update() {
     for (auto& entity : entitiesAdded) {
         for (auto& component : entity->getComponents()) {
+            if (component->getType() == 0)
+                continue;
+
             auto& system = systems.at(component->getType());
-            system->add(*component.get());
+            system->add(*component);
         }
         entities.push_back(entity);
     }
 
     entitiesAdded.clear();
-
-    auto& systemModel = getComponentSystem<ComponentModel>();
-    auto& systemCamera = getComponentSystem<ComponentCamera>();
-    auto& systemGrid = getComponentSystem<ComponentGrid>();
-
-    glEnable(GL_DEPTH_TEST);
-    for (const auto& component : systemModel) {
-        const auto& transform = component->getObject().getTransform();
-        if (component->getModel()) {
-            renderer.renderModel(*component->getModel(), transform);
-        }
-    }
-
-    for (const auto& component : systemGrid) {
-        const auto& transform = component->getObject().getTransform();
-        if (component->isDirtyClear()) {
-            component->rebuildBuffers();
-        }
-
-        for (const auto& pair : component->getMeshes()) {
-            const auto& data = pair.second;
-            renderer.renderGridModel(data.primitives, transform);
-        }
-    }
-
-    glDisable(GL_DEPTH_TEST);
 }

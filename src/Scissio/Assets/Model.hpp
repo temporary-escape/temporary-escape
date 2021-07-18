@@ -30,6 +30,10 @@ private:
 };
 
 using ModelPtr = std::shared_ptr<Model>;
+
+namespace Xml {
+template <> void Node::convert<ModelPtr>(ModelPtr& value) const;
+} // namespace Xml
 } // namespace Scissio
 
 MSGPACK_CONVERT(Scissio::ModelPtr)

@@ -1,7 +1,7 @@
 #include "NetworkTcpStream.hpp"
+#include "../Utils/Exceptions.hpp"
 #include "../Utils/Log.hpp"
 #include "NetworkAcceptor.hpp"
-#include "NetworkMessageAcceptor.hpp"
 
 static constexpr int WINDOW_SIZE = 1024;
 
@@ -9,6 +9,9 @@ using namespace Scissio;
 
 Network::TcpStream::TcpStream(Acceptor& acceptor, asio::ip::tcp::socket socket)
     : acceptor(acceptor), socket(std::move(socket)), endpoint(this->socket.remote_endpoint()), unp{} {
+
+    Log::v("New TCP connection from: [{}]:{}", this->socket.remote_endpoint().address().to_string(),
+           this->socket.remote_endpoint().port());
 }
 
 void Network::TcpStream::disconnect() {
@@ -33,9 +36,10 @@ void Network::TcpStream::receive() {
                 try {
                     Packet packet;
                     oh.get().convert(packet);
+                    //Log::d("Network TCP stream accepted packet id: {}", packet.id);
                     self->acceptor.receive(self, std::move(packet));
                 } catch (std::exception& e) {
-                    Log::e("Network TCP stream msgpack error: {}", e.what());
+                    BACKTRACE(e, "Network TCP stream error");
                 }
             }
             self->receive();
@@ -55,7 +59,7 @@ void Network::TcpStream::sendRaw(const Packet& packet) {
         if (ec) {
             Log::e("Network TCP stream async_write_some error: {}", ec.message());
         } else {
-            // Utils::Log::d("Network TCP stream sent: {} bytes", length);
+            //Log::d("Network TCP stream sent: {} bytes", length);
         }
     });
 }
