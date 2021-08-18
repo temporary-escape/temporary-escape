@@ -24,3 +24,26 @@ void BasicTexture::load(AssetManager& assetManager) {
         EXCEPTION_NESTED("Failed to load pbr texture: '{}'", getName());
     }
 }
+
+MSGPACK_UNPACK_FUNC(BasicTexturePtr) {
+    if (o.type == msgpack::type::STR) {
+        const auto name = o.as<std::string>();
+        v = AssetManager::singleton().find<BasicTexture>(name);
+    } else {
+        throw msgpack::type_error();
+    }
+
+    return o;
+}
+
+MSGPACK_PACK_FUNC(BasicTexturePtr) {
+    if (v) {
+        const auto& name = v->getName();
+        o.pack_str(static_cast<uint32_t>(name.size()));
+        o.pack_str_body(name.c_str(), static_cast<uint32_t>(name.size()));
+    } else {
+        o.pack_nil();
+    }
+
+    return o;
+}

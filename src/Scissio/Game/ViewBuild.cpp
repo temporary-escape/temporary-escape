@@ -68,8 +68,8 @@ ViewBuild::ViewBuild(const Config& config, Network::Client& client, Store& store
         {assetManager.find<Icon>("icons-info"), "Information", [this]() { mode = Mode::None; }},
         {assetManager.find<Icon>("icons-cube"), "Choose Block", [this]() { mode = Mode::Build; }},
         {assetManager.find<Icon>("icons-paint-roller"), "Coloring", [this]() { mode = Mode::None; }},
-        {assetManager.find<Icon>("icons-anticlockwise-rotation"), "Undo", [this]() { actionUndo(); }},
-        {assetManager.find<Icon>("icons-clockwise-rotation"), "Redo", [this]() { actionRedo(); }},
+        {assetManager.find<Icon>("icons-anticlockwise-rotation"), "Undo", [this]() { actionUndo(); }, false},
+        {assetManager.find<Icon>("icons-clockwise-rotation"), "Redo", [this]() { actionRedo(); }, false},
     };
 }
 
@@ -113,9 +113,6 @@ void ViewBuild::update(const Vector2i& viewport) {
     }
 
     {
-        // const auto to = camera.getEyesPos() + camera.screenToWorld(viewport, mousePos) * 100.0f;
-        // rayCastResult = ship->getComponent<ComponentGrid>()->rayCast(camera.getEyesPos(), to);
-
         if (placePosition.has_value() && mode == Mode::Build) {
             preview->updateTransform(Grid::ORIENTATIONS[placeRotation]);
             preview->move(placePosition.value());
@@ -154,6 +151,7 @@ void ViewBuild::renderCanvas(const Vector2i& viewport, Canvas2D& canvas, GuiCont
     if (sidebar.at(2).active) {
         Widgets::blockSelector(gui, blockSelector, [this](const BlockDto& block) {
             try {
+                blockSelectorChoice = {block};
                 preview->getComponent<ComponentModel>()->setModel(block.model);
             } catch (...) {
                 EXCEPTION_NESTED("Failed to set preview model");
@@ -255,24 +253,16 @@ void ViewBuild::calculateRayCast() {
 }
 
 void ViewBuild::actionPlaceBlock() {
-    if (!placePosition) {
+    if (!placePosition || !blockSelectorChoice) {
         return;
     }
 
-    Grid::BlockRef ref{preview->getComponent<ComponentModel>()->getModel()};
-    auto grid = ship->getComponent<ComponentGrid>();
-    const auto pos = placePosition.value();
-
-    grid->insert(ref, pos, placeRotation);
-    grid->debugTree();
-
     ActionPlaceBlock a;
-    const auto& node = selectedBlock.value().get();
-    a.ref = Grid::BlockRef{preview->getComponent<ComponentModel>()->getModel()};
-    a.pos = node.data.pos;
-    a.rot = node.data.rot;
+    a.ref = Grid::BlockRef{blockSelectorChoice.value().key, blockSelectorChoice.value().model};
+    a.pos = placePosition.value();
+    a.rot = placeRotation;
 
-    action(a);
+    saveAction(action(a));
 }
 
 void ViewBuild::actionRemoveBlock() {
@@ -283,33 +273,78 @@ void ViewBuild::actionRemoveBlock() {
     ActionRemoveBlock a;
     const auto& node = selectedBlock.value().get();
     a.pos = node.data.pos;
-    a.rot = node.data.rot;
 
-    action(a);
+    saveAction(action(a));
 }
 
 void ViewBuild::actionUndo() {
+    if (actionsUndo.empty()) {
+        return;
+    }
+
+    Action a;
+    std::swap(actionsUndo.back(), a);
+    actionsUndo.pop_back();
+    actionsRedo.push_back(action(a));
 }
 
 void ViewBuild::actionRedo() {
+    if (actionsRedo.empty()) {
+        return;
+    }
+
+    Action a;
+    std::swap(actionsRedo.back(), a);
+    actionsRedo.pop_back();
+    actionsUndo.push_back(action(a));
 }
 
-void ViewBuild::action(const Action& action) {
-    std::visit(
-        [this](auto&& arg) {
+ViewBuild::Action ViewBuild::action(const Action& action) {
+    return std::visit(
+        [this](auto&& arg) -> Action {
             using T = std::decay_t<decltype(arg)>;
             auto grid = ship->getComponent<ComponentGrid>();
 
             if constexpr (std::is_same_v<ActionPlaceBlock, T>) {
                 const ActionPlaceBlock& action = arg;
+                Log::d("Inserting block: {} pos: [{}, {}, {}] rot: {}", action.ref.model->getName(), action.pos.x,
+                       action.pos.y, action.pos.z, action.rot);
                 grid->insert(action.ref, action.pos, action.rot);
+
+                ActionRemoveBlock reverse;
+                reverse.pos = action.pos;
+                return reverse;
+
             } else if constexpr (std::is_same_v<ActionRemoveBlock, T>) {
                 const ActionRemoveBlock& action = arg;
-                const auto found = grid->find(action.pos);
+                auto found = grid->find(action.pos);
+
                 if (found) {
+                    const auto ref = grid->getBlockType(found.value().node.data).block;
+                    const auto rot = found.value().node.data.rot;
+                    Log::d("Removing block: {} pos: [{}, {}, {}]", ref.model->getName(), action.pos.x, action.pos.y,
+                           action.pos.z);
                     grid->remove(found.value().node);
+
+                    ActionPlaceBlock reverse;
+                    reverse.pos = action.pos;
+                    reverse.ref = ref;
+                    reverse.rot = rot;
+                    return reverse;
                 }
+
+                return Action{};
+            } else {
+                return Action{};
             }
         },
         action);
+}
+
+void ViewBuild::saveAction(Action action) {
+    actionsUndo.push_back(std::move(action));
+    if (actionsUndo.size() > 64) {
+        actionsUndo.pop_front();
+    }
+    actionsRedo.clear();
 }

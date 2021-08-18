@@ -6,6 +6,7 @@
 #include "../Scene/ComponentGrid.hpp"
 #include "../Scene/ComponentLines.hpp"
 #include "../Scene/ComponentModel.hpp"
+#include "../Scene/ComponentParticleEmitter.hpp"
 #include "../Scene/ComponentPointCloud.hpp"
 #include "../Scene/ComponentWireframe.hpp"
 #include "../Scene/Scene.hpp"
@@ -17,8 +18,8 @@ static const Matrix4 SkyboxModelMatrix = glm::scale(Matrix4{1.0f}, Vector3{100.0
 
 Renderer::Renderer(const Config& config)
     : shaderModel(config), shaderGrid(config), shaderGBufferView(config), shaderPbr(config), shaderSkybox(config),
-      shaderPointCloud(config), shaderLines(config),
-      shaderWireframe(config), brdf{NO_CREATE}, viewport{1920.0f, 1080.0f}, skybox{nullptr}, gbuffer{nullptr},
+      shaderPointCloud(config), shaderLines(config), shaderWireframe(config),
+      shaderParticleEmitter(config), brdf{NO_CREATE}, viewport{1920.0f, 1080.0f}, skybox{nullptr}, gbuffer{nullptr},
       fullScreenQuad{NO_CREATE}, skyboxMesh{NO_CREATE} {
 
     brdf = BrdfRenderer(config).render();
@@ -75,6 +76,7 @@ std::optional<Object*> Renderer::render(Scene& scene, const RenderOptions& optio
     auto& systemPointCloud = scene.getComponentSystem<ComponentPointCloud>();
     auto& systemLines = scene.getComponentSystem<ComponentLines>();
     auto& systemWireframe = scene.getComponentSystem<ComponentWireframe>();
+    auto& systemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
 
     std::vector<Object*> objectIdMap;
 
@@ -175,6 +177,16 @@ std::optional<Object*> Renderer::render(Scene& scene, const RenderOptions& optio
         shaderLines.setProjectionViewMatrix(projectionViewMatrix);
         for (const auto& component : systemLines) {
             component->render(shaderLines);
+        }
+    }
+
+    // ParticleEmitter
+    {
+        shaderParticleEmitter.use();
+        shaderParticleEmitter.setProjectionMatrix(projectionMatrix);
+        shaderParticleEmitter.setViewMatrix(viewMatrix);
+        for (const auto& component : systemParticleEmitter) {
+            component->render(shaderParticleEmitter);
         }
     }
 

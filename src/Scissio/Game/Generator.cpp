@@ -14,7 +14,7 @@ class GalaxyDistribution {
 public:
     explicit GalaxyDistribution(const float maxWidth)
         : maxWidth(maxWidth), distArmIndex(0, ARMS_COUNT), distArmDistance(0.01f, 1.0f),
-          distArmOffset(-ARM_ANGLE_HALF, ARM_ANGLE_HALF), distGridOffset(-0.4f, 0.4f) {
+          distArmOffset(-ARM_ANGLE_HALF, ARM_ANGLE_HALF), distGridOffset(-0.1f, 0.1f) {
     }
 
     [[nodiscard]] Vector2 operator()(std::mt19937_64& rng) {

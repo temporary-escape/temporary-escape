@@ -15,7 +15,7 @@ public:
         explicit BlockRef(ModelPtr model) : name(model->getName()), model(std::move(model)) {
         }
 
-        explicit BlockRef(std::string name) : name(std::move(name)) {
+        explicit BlockRef(std::string name, ModelPtr model = nullptr) : name(std::move(name)), model(std::move(model)) {
         }
 
         std::string name;
@@ -66,8 +66,8 @@ public:
     BlockRef remove(const BlockNode& node);
     std::optional<BlockNodeRef> find(const Vector3& pos);
 
-    BlockType& getType(const BlockData& node);
-    const BlockType& getType(const BlockData& node) const;
+    BlockType& getBlockType(const BlockData& node);
+    const BlockType& getBlockType(const BlockData& node) const;
 
     const Types& getTypes() const {
         return types;

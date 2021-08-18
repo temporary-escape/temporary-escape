@@ -29,7 +29,7 @@ Grid::BlockNode& Grid::insert(const BlockRef& block, const Vector3& pos, const u
 }
 
 Grid::BlockRef Grid::remove(const BlockNode& node) {
-    auto& type = getType(node.data);
+    auto& type = getBlockType(node.data);
     if (type.count > 0) {
         type.count--;
     }
@@ -75,7 +75,7 @@ Grid::BlockNode& Grid::insert(const uint16_t type, const Vector3& pos, const uin
     return ref.node;
 }
 
-Grid::BlockType& Grid::getType(const BlockData& node) {
+Grid::BlockType& Grid::getBlockType(const BlockData& node) {
     if (node.type == INVALID_TYPE || node.type >= types.size()) {
         EXCEPTION("Invalid node type");
     }
@@ -88,7 +88,7 @@ Grid::BlockType& Grid::getType(const BlockData& node) {
     return type;
 }
 
-const Grid::BlockType& Grid::getType(const BlockData& node) const {
+const Grid::BlockType& Grid::getBlockType(const BlockData& node) const {
     if (node.type == INVALID_TYPE || node.type >= types.size()) {
         EXCEPTION("Invalid node type");
     }
@@ -156,7 +156,7 @@ std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vect
 
     auto& node = res.value().node.get();
     auto& data = node.data;
-    const auto block = getType(data).block;
+    const auto block = getBlockType(data).block;
 
     const auto normal = intersectBoxNormal(data.pos, res.value().pos);
 

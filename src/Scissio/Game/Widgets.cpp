@@ -38,8 +38,10 @@ void Widgets::sidebar(GuiContext& gui, std::vector<SidebarItem>& items) {
         for (auto item = items.begin(); item != items.end(); ++item) {
             gui.tooltip(item->title);
             if (gui.buttonImage(item->icon, item->active)) {
-                selected = item;
-                item->active = !item->active;
+                if (item->toggleable) {
+                    selected = item;
+                    item->active = !item->active;
+                }
                 item->callback();
             }
         }

@@ -42,9 +42,7 @@ private:
     };
 
     struct ActionRemoveBlock {
-        Grid::BlockRef ref;
         Vector3 pos;
-        int rot{0};
     };
 
     using Action = std::variant<ActionPlaceBlock, ActionRemoveBlock>;
@@ -54,7 +52,8 @@ private:
     void actionRemoveBlock();
     void actionUndo();
     void actionRedo();
-    void action(const Action& action);
+    Action action(const Action& action);
+    void saveAction(Action action);
 
     const Config& config;
     Network::Client& client;
@@ -78,12 +77,13 @@ private:
     bool loading;
     std::vector<Widgets::SidebarItem> sidebar;
     Widgets::BlockSelectorData blockSelector;
-
+    std::optional<BlockDto> blockSelectorChoice;
     std::optional<Grid::RayCastResult> rayCastResult{};
     std::optional<std::reference_wrapper<Grid::BlockNode>> selectedBlock{};
     std::optional<Vector3> placePosition{};
     int placeRotation;
 
-    std::list<Action> actions;
+    std::list<Action> actionsUndo;
+    std::list<Action> actionsRedo;
 };
 } // namespace Scissio

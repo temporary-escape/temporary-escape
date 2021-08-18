@@ -4,6 +4,7 @@
 #include "ComponentGrid.hpp"
 #include "ComponentLines.hpp"
 #include "ComponentModel.hpp"
+#include "ComponentParticleEmitter.hpp"
 #include "ComponentPointCloud.hpp"
 #include "ComponentWireframe.hpp"
 
@@ -18,6 +19,7 @@ Scene::Scene()
           {ComponentPointCloud::Type, std::make_shared<ComponentSystem<ComponentPointCloud>>()},
           {ComponentLines::Type, std::make_shared<ComponentSystem<ComponentLines>>()},
           {ComponentWireframe::Type, std::make_shared<ComponentSystem<ComponentWireframe>>()},
+          {ComponentParticleEmitter::Type, std::make_shared<ComponentSystem<ComponentParticleEmitter>>()},
       } {
 }
 

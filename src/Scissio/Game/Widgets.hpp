@@ -8,6 +8,7 @@ struct SidebarItem {
     IconPtr icon;
     std::string title;
     std::function<void()> callback;
+    bool toggleable{true};
 
     bool active{false};
 };

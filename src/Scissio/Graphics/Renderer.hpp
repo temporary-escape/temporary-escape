@@ -10,6 +10,7 @@
 #include "../Shaders/ShaderGrid.hpp"
 #include "../Shaders/ShaderLines.hpp"
 #include "../Shaders/ShaderModel.hpp"
+#include "../Shaders/ShaderParticleEmitter.hpp"
 #include "../Shaders/ShaderPbrBuffer.hpp"
 #include "../Shaders/ShaderPointCloud.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
@@ -51,6 +52,7 @@ private:
     ShaderPointCloud shaderPointCloud;
     ShaderLines shaderLines;
     ShaderWireframe shaderWireframe;
+    ShaderParticleEmitter shaderParticleEmitter;
 
     Texture2D brdf;
     Vector2i viewport;

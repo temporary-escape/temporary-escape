@@ -141,10 +141,6 @@ public:
         return indexType != IndexType::None;
     }
 
-    /*const VertexBuffer& getIbo() const {
-        return *iboTarget;
-    }*/
-
     operator bool() const {
         return !!vao;
     }
@@ -161,18 +157,12 @@ private:
 
     template <typename Attribute>
     static void setAttributes(const GLsizei offset, const GLsizei stride, const Attribute& attribute) {
-        /*glEnableVertexAttribArray(attribute.index);
-        glVertexAttribPointer(attribute.index, attribute.components, GL_FLOAT, GL_FALSE, stride,
-                              reinterpret_cast<void*>(static_cast<size_t>(offset)));*/
         Attribute::bindAttribute(stride, offset);
     }
 
     template <typename Attribute, typename... Attributes>
     static void setAttributes(const GLsizei offset, const GLsizei stride, const Attribute& attribute,
                               Attributes&&... attributes) {
-        /*glEnableVertexAttribArray(attribute.index);
-        glVertexAttribPointer(attribute.index, attribute.components, GL_FLOAT, GL_FALSE, stride,
-                              reinterpret_cast<void*>(static_cast<size_t>(offset)));*/
         Attribute::bindAttribute(stride, offset);
 
         setAttributes(offset + attribute.size, stride, attributes...);

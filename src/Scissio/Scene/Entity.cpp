@@ -2,10 +2,12 @@
 
 #include "ComponentGrid.hpp"
 #include "ComponentModel.hpp"
+#include "ComponentParticleEmitter.hpp"
 
 using namespace Scissio;
 
-static constexpr auto ComponentsMask = (1 << ComponentModel::Type) | (1 << ComponentGrid::Type);
+static constexpr auto ComponentsMask =
+    (1 << ComponentModel::Type) | (1 << ComponentGrid::Type) | (1 << ComponentParticleEmitter::Type);
 
 template <typename...> struct ComponentHelper {
     static ComponentPtr unpack(msgpack::object const& o, const ComponentType kind) {
@@ -37,7 +39,7 @@ template <typename C, typename... Cs> struct ComponentHelper<C, Cs...> {
     }
 };
 
-using Helper = ComponentHelper<ComponentModel, ComponentGrid>;
+using Helper = ComponentHelper<ComponentModel, ComponentGrid, ComponentParticleEmitter>;
 
 MSGPACK_UNPACK_FUNC(ComponentPtr) {
     if (o.type != msgpack::type::ARRAY)

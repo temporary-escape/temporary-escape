@@ -2,6 +2,7 @@
 
 #include "../Graphics/Canvas2D.hpp"
 #include "../Graphics/Texture2D.hpp"
+#include "../Utils/Msgpack.hpp"
 #include "Asset.hpp"
 
 namespace Scissio {
@@ -23,3 +24,5 @@ private:
 
 using BasicTexturePtr = std::shared_ptr<BasicTexture>;
 } // namespace Scissio
+
+MSGPACK_CONVERT(Scissio::BasicTexturePtr)

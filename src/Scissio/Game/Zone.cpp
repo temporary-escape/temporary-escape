@@ -2,6 +2,7 @@
 
 #include "../Assets/AssetManager.hpp"
 #include "../Scene/ComponentModel.hpp"
+#include "../Scene/ComponentParticleEmitter.hpp"
 #include "Messages.hpp"
 #include "World.hpp"
 
@@ -21,6 +22,9 @@ void Zone::load() {
     std::mt19937_64 rng;
     for (auto x = 0; x < 8; x++) {
         for (auto y = 0; y < 8; y++) {
+            if (x == 0 && y == 0) {
+                continue;
+            }
             auto entity = scene.addEntity();
             entity->addComponent<ComponentModel>(model);
             entity->translate({x * 3.0f, 0.0f, y * 3.0f});
@@ -28,7 +32,12 @@ void Zone::load() {
         }
     }
 
-    warmup = 20;
+    auto texture = assetManager.find<BasicTexture>("star_dust");
+
+    auto entity = scene.addEntity();
+    entity->addComponent<ComponentParticleEmitter>(texture);
+
+    warmup = 1;
 }
 
 void Zone::tick() {
@@ -42,19 +51,6 @@ void Zone::tickInternal() {
 
         if (ready) {
             Log::v("Zone id: {} warmup complete", sectorId);
-
-            /*MessageEntityBatch batch{};
-            for (const auto& entity : scene.getEntities()) {
-                batch.entities.push_back(entity);
-                if (batch.entities.size() >= 32) {
-                    sendAll(0, batch);
-                    batch.entities.clear();
-                }
-            }
-
-            if (!batch.entities.empty()) {
-                sendAll(0, batch);
-            }*/
         }
     }
 
