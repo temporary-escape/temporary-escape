@@ -32,10 +32,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
 namespace Scissio::Network {
 struct SCISSIO_API Packet {
     uint64_t id{0};
-    uint64_t sessionId{0};
     msgpack::sbuffer data;
 
-    MSGPACK_DEFINE_ARRAY(id, sessionId, data);
+    MSGPACK_DEFINE_ARRAY(id, data);
 };
 
 namespace Details {
@@ -93,13 +92,17 @@ template <typename T> constexpr uint64_t getMessageId() {
     return Details::MessageTypeId<T>::get();
 }
 
+template <typename T> T unpack(const Network::Packet& packet) {
+    return Details::MessageUnpacker<M>::unpack(packet);
+}
+
 template <typename... Args> class MessageDispatcher {
 public:
     using Callback = std::function<void(Args&&..., const Network::Packet&)>;
 
     template <typename M> void add(std::function<void(Args..., M)> fn) {
         auto callback = [fn{std::move(fn)}](Args&&... args, const Network::Packet& packet) {
-            fn(std::forward<Args>(args)..., Details::MessageUnpacker<M>::unpack(packet));
+            fn(std::forward<Args>(args)..., unpack<M>(packet));
         };
 
         callbacks.insert(std::make_pair(getMessageId<M>(), std::move(callback)));

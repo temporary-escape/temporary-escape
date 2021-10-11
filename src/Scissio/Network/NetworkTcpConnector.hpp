@@ -15,7 +15,8 @@ public:
 
     void close();
     void start() override;
-    void receive(const StreamPtr& stream, Packet packet) override;
+    void eventPacket(const StreamPtr& stream, Packet packet) override;
+    void eventDisconnect(const StreamPtr& stream) override;
 
 private:
     Client& client;

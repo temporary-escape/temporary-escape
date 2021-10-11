@@ -28,7 +28,7 @@ Network::TcpConnector::TcpConnector(Client& client, asio::io_service& service, c
     stream = std::make_shared<TcpStream>(*this, std::move(socket));
     stream->receive();
 
-    client.addStream(stream);
+    client.eventConnect(stream);
 }
 
 Network::TcpConnector::~TcpConnector() {
@@ -42,6 +42,22 @@ void Network::TcpConnector::close() {
 void Network::TcpConnector::start() {
 }
 
-void Network::TcpConnector::receive(const StreamPtr& stream, Packet packet) {
-    client.receive(stream, std::move(packet));
+void Network::TcpConnector::eventPacket(const StreamPtr& stream, Packet packet) {
+    const auto packetId = packet.id;
+
+    try {
+        client.eventPacket(stream, std::move(packet));
+    } catch (std::exception& e) {
+        Log::e("Network TCP connector failed to accept packet id: {}", packetId);
+        backtrace(e);
+    }
+}
+
+void Network::TcpConnector::eventDisconnect(const StreamPtr& stream) {
+    try {
+        client.eventDisconnect(stream);
+    } catch (std::exception& e) {
+        Log::e("Network TCP connector failed to disconnect stream");
+        backtrace(e);
+    }
 }

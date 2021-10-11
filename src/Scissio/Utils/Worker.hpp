@@ -82,12 +82,3 @@ private:
     std::atomic_bool flag;
 };
 } // namespace Scissio
-
-#define WORK_SAFE(worker, fn)                                                                                          \
-    (worker).post([f{std::move(fn)}]() {                                                                               \
-        try {                                                                                                          \
-            f();                                                                                                       \
-        } catch (const std::exception& e) {                                                                            \
-            BACKTRACE(e, "async work failed");                                                                         \
-        }                                                                                                              \
-    });

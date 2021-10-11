@@ -146,8 +146,8 @@ World::World(const Config& config, Database& db)
       regions(db), db(db) {
 }
 
-Player World::playerLogin(const uint64_t playerId, const std::string& name) {
-    Log::v("Logging in uid: {} name: '{}'", playerId, name);
+std::optional<Player> World::playerLogin(const uint64_t playerId, const std::string& name) {
+    Log::v("Logging in player id: {} name: '{}'", playerId, name);
 
     // Check if player already exists in the database
     auto data = players.get(playerId);
@@ -160,23 +160,29 @@ Player World::playerLogin(const uint64_t playerId, const std::string& name) {
 
         data.value().lastLogin = 1;
         players.update(data.value());
-
-    } else {
-
-        // Do not allow multiple players with the same name
-        const auto found = players.find("WHERE name = ?", name);
-        if (found.has_value()) {
-            EXCEPTION("Player with name '{}' already exists", name);
-        }
-
-        // Create a new player
-        Log::v("Creating player id: {} name: '{}'", playerId, name);
-        Player player{playerId, name, false, std::nullopt};
-        players.insert(player);
-
-        data = {player};
     }
 
+    return data;
+}
+
+bool World::playerNameTaken(const std::string& name) {
+    const auto found = players.find("WHERE name = ?", name);
+    return found.has_value();
+}
+
+Player World::playerRegister(const uint64_t playerId, const std::string& name) {
+    // Do not allow multiple players with the same name
+    const auto found = players.find("WHERE name = ?", name);
+    if (found.has_value()) {
+        EXCEPTION("Player with name '{}' already exists", name);
+    }
+
+    // Create a new player
+    Log::v("Creating player id: {} name: '{}'", playerId, name);
+    Player player{playerId, name, false, std::nullopt};
+    players.insert(player);
+
+    // Choose starting location for the new player
     const auto locationOpt = players.getLocation(playerId);
     if (!locationOpt.has_value()) {
         const auto sectorOpt = sectors.chooseStartingSector(playerId);
@@ -188,20 +194,11 @@ Player World::playerLogin(const uint64_t playerId, const std::string& name) {
         players.updateLocation(playerId, sectorOpt.value().id);
     }
 
-    return data.value();
+    return player;
 }
 
 void World::playerInit(const uint64_t playerId) {
-    const auto locationOpt = players.getLocation(playerId);
-    if (!locationOpt.has_value()) {
-        const auto sectorOpt = sectors.chooseStartingSector(playerId);
-
-        if (!sectorOpt.has_value()) {
-            EXCEPTION("Unable to choose starting sector for player '{}'", playerId);
-        }
-
-        players.updateLocation(playerId, sectorOpt.value().id);
-    }
+    Log::v("Initializing player id: {}", playerId);
 
     for (const auto& block : blocks.findMany("")) {
         this->blocks.addPlayerBlock(playerId, block.id);

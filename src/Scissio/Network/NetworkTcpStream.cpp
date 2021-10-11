@@ -36,8 +36,8 @@ void Network::TcpStream::receive() {
                 try {
                     Packet packet;
                     oh.get().convert(packet);
-                    //Log::d("Network TCP stream accepted packet id: {}", packet.id);
-                    self->acceptor.receive(self, std::move(packet));
+                    // Log::d("Network TCP stream accepted packet id: {}", packet.id);
+                    self->acceptor.eventPacket(self, std::move(packet));
                 } catch (std::exception& e) {
                     BACKTRACE(e, "Network TCP stream error");
                 }
@@ -59,7 +59,7 @@ void Network::TcpStream::sendRaw(const Packet& packet) {
         if (ec) {
             Log::e("Network TCP stream async_write_some error: {}", ec.message());
         } else {
-            //Log::d("Network TCP stream sent: {} bytes", length);
+            // Log::d("Network TCP stream sent: {} bytes", length);
         }
     });
 }

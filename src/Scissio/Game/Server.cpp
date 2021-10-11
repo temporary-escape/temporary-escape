@@ -1,7 +1,6 @@
 #include "Server.hpp"
 
 #include "../Network/NetworkTcpAcceptor.hpp"
-#include "../Network/NetworkUdpAcceptor.hpp"
 #include "../Utils/Random.hpp"
 #include "Generator.hpp"
 
@@ -16,18 +15,39 @@ static const auto TickLengthUs = std::chrono::microseconds(static_cast<long long
     std::bind(static_cast<void (T::*)(PlayerSessionPtr, M)>(&T::F), this, std::placeholders::_1, std::placeholders::_2)
 #define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Server, handle));
 
+#define STRAND(...)                                                                                                    \
+    try {                                                                                                              \
+        strand.post(__VA_ARGS__);                                                                                      \
+    } catch (std::exception & e) {                                                                                     \
+        BACKTRACE(e, "async work error");                                                                              \
+    }
+
+#define WORK(...)                                                                                                      \
+    try {                                                                                                              \
+        strand.post(__VA_ARGS__);                                                                                      \
+    } catch (std::exception & e) {                                                                                     \
+        BACKTRACE(e, "async work error");                                                                              \
+    }
+
+#define LOADER(...)                                                                                                    \
+    try {                                                                                                              \
+        loader.post(__VA_ARGS__);                                                                                      \
+    } catch (std::exception & e) {                                                                                     \
+        BACKTRACE(e, "async work error");                                                                              \
+    }
+
 Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     : config(config), assetManager(assetManager), db(db), world(config, db), worker(4), strand(worker.strand()),
       tickFlag(true) {
 
-    MESSAGE_DISPATCH(MessageHelloRequest);
+    // MESSAGE_DISPATCH(MessageHelloRequest);
+    // MESSAGE_DISPATCH(MessageLoginRequest);
     MESSAGE_DISPATCH(MessageSystemsRequest);
     MESSAGE_DISPATCH(MessageRegionsRequest);
     MESSAGE_DISPATCH(MessageBlocksRequest);
     MESSAGE_DISPATCH(MessageSectorStatusRequest);
 
-    addAcceptor<Network::TcpAcceptor>(config.serverPort);
-    addAcceptor<Network::UdpAcceptor>(config.serverPort);
+    bind<Network::TcpAcceptor>(config.serverPort);
 
     tickThread = std::thread(&Server::tick, this);
 }
@@ -53,7 +73,7 @@ void Server::tick() {
         const auto start = std::chrono::steady_clock::now();
 
         {
-            std::unique_lock<std::shared_mutex> lock{glock};
+            // std::unique_lock<std::shared_mutex> lock{glock};
 
             auto failed = false;
 
@@ -67,6 +87,10 @@ void Server::tick() {
             // number of available threads is exhausted.
             strand.post([this, &failed]() {
                 for (const auto& [sectorId, zone] : zones) {
+                    if (!zone->isReady()) {
+                        continue;
+                    }
+
                     // Uses its own strand, this call will not block
                     try {
                         zone->tick();
@@ -97,47 +121,97 @@ void Server::tick() {
 void Server::handle(PlayerSessionPtr session, MessageHelloRequest req) {
     (void)req;
 
-    auto w = [=]() {
+    WORK([=]() {
         MessageHelloResponse res;
         res.name = "Server Name";
-        // res.version = {1, 0, 0};
-        session->send(0, res);
-    };
+        res.version = {1, 0, 0};
+        session->send(res);
+    });
+}
 
-    WORK_SAFE(worker, w);
+void Server::login(const Network::StreamPtr& stream, MessageLoginRequest req) {
+    (void)req;
+
+    STRAND([=]() {
+        // Remove from the lobby
+        {
+            std::unique_lock<std::shared_mutex> lock{playersMutex};
+            lobby.erase(std::find(lobby.begin(), lobby.end(), stream));
+        }
+
+        // Login or create player
+        auto player = world.playerLogin(req.uid, req.name);
+        if (!player.has_value()) {
+            if (world.playerNameTaken(req.name)) {
+                MessageLoginResponse res{};
+                res.error = "Name already taken";
+                stream->send(res);
+                return;
+            }
+
+            player = world.playerRegister(req.uid, req.name);
+        }
+
+        const auto session = std::make_shared<PlayerSession>(stream, player->id);
+
+        // Init player info
+        world.playerInit(req.uid);
+
+        // Load or create zone based on player location
+        const auto location = world.players.getLocation(player->id);
+        if (location) {
+            auto it = zones.find(location->sectorId);
+            if (it == zones.end()) {
+                const auto sector = world.sectors.get(location->sectorId);
+
+                const auto ptr = std::make_shared<Zone>(config, assetManager, world, worker.strand(), sector->id);
+                it = zones.insert(std::make_pair(location->sectorId, ptr)).first;
+                const auto zone = it->second;
+
+                LOADER([zone]() { zone->load(); });
+            }
+
+            it->second->addPlayer(session);
+
+        } else {
+            Log::e("Player {} has no starting location, possibly a bug", player->id);
+            // TODO: disconnect
+        }
+
+        // Player cache
+        {
+            std::unique_lock<std::shared_mutex> lock{playersMutex};
+            streamToPlayer.insert(std::make_pair(session->getStream(), session));
+            players.insert(std::make_pair(player->id, session));
+        }
+    });
 }
 
 void Server::handle(PlayerSessionPtr session, MessageSystemsRequest req) {
-    auto w = [=]() {
+    WORK([=]() {
         MessageSystemsResponse res = world.systems.findForPlayer(session->getPlayerId(), req.cont);
-        session->send(0, res);
-    };
-
-    WORK_SAFE(worker, w);
+        session->send(res);
+    });
 }
 
 void Server::handle(PlayerSessionPtr session, MessageRegionsRequest req) {
-    auto w = [=]() {
+    WORK([=]() {
         MessageRegionsResponse res = world.regions.findForPlayer(session->getPlayerId(), req.cont);
-        session->send(0, res);
-    };
-
-    WORK_SAFE(worker, w);
+        session->send(res);
+    });
 }
 
 void Server::handle(PlayerSessionPtr session, MessageBlocksRequest req) {
-    auto w = [=]() {
+    WORK([=]() {
         MessageBlocksResponse res = world.blocks.findForPlayer(session->getPlayerId(), req.cont);
-        session->send(0, res);
-    };
-
-    WORK_SAFE(worker, w);
+        session->send(res);
+    });
 }
 
 void Server::handle(PlayerSessionPtr session, MessageSectorStatusRequest req) {
     (void)req;
 
-    auto w = [=]() {
+    STRAND([=]() {
         MessageSectorStatusResponse res{false};
 
         const auto zone = findZoneByPlayer(session);
@@ -145,26 +219,81 @@ void Server::handle(PlayerSessionPtr session, MessageSectorStatusRequest req) {
         if (zone.has_value() && zone.value()->isReady()) {
             res.loaded = true;
 
-            auto w = [=]() { zone.value()->addPlayer(session); };
-
-            WORK_SAFE(strand, w);
+            STRAND([=]() { zone.value()->addPlayer(session); });
         }
 
-        session->send(0, res);
-    };
-
-    WORK_SAFE(strand, w);
+        session->send(res);
+    });
 }
 
-void Server::dispatch(const Network::SessionPtr& session, const Network::Packet packet) {
+void Server::dispatch(PlayerSessionPtr session, const Network::Packet packet) {
     try {
-        dispatcher.dispatch(std::dynamic_pointer_cast<PlayerSession>(session), packet);
+        dispatcher.dispatch(std::move(session), packet);
     } catch (...) {
         EXCEPTION_NESTED("Failed to dispatch message");
     }
 }
 
-// Requires lock by caller
+void Server::eventConnect(const Network::StreamPtr& stream) {
+    STRAND([=]() {
+        std::unique_lock<std::shared_mutex> lock{playersMutex};
+
+        lobby.push_back(stream);
+    });
+}
+
+void Server::eventDisconnect(const Network::StreamPtr& stream) {
+    STRAND([=]() {
+        std::unique_lock<std::shared_mutex> lock{playersMutex};
+
+        lobby.erase(std::find(lobby.begin(), lobby.end(), stream));
+
+        const auto player = streamToPlayer.find(stream);
+        if (player != streamToPlayer.end()) {
+            streamToPlayer.erase(stream);
+            players.erase(player->second->getPlayerId());
+        }
+
+        const auto zone = playerToZone.find(player->second->getPlayerId());
+        if (zone != playerToZone.end()) {
+            zone->second->removePlayer(player->second);
+            playerToZone.erase(zone);
+        }
+    });
+}
+
+void Server::eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
+    try {
+        if (packet.id == Network::getMessageId<MessageLoginRequest>()) {
+            login(stream, Network::unpack<MessageLoginRequest>(packet));
+        } else {
+            auto session = findPlayerByStream(stream);
+            if (!session) {
+                MessageServerError err{};
+                err.msg = "No session established";
+                stream->send(err);
+                stream->disconnect();
+            } else {
+                dispatch(session.value(), std::move(packet));
+            }
+        }
+    } catch (std::exception& e) {
+        BACKTRACE(e, "Client failed to process packet");
+    }
+}
+
+std::optional<PlayerSessionPtr> Server::findPlayerByStream(const Network::StreamPtr& stream) {
+    std::shared_lock<std::shared_mutex> lock{playersMutex};
+
+    const auto it = streamToPlayer.find(stream);
+    if (it == streamToPlayer.end()) {
+        return std::nullopt;
+    }
+
+    return it->second;
+}
+
+/*// Requires lock by caller
 uint64_t Server::createSessionId() const {
     return randomId([&](uint64_t test) -> bool {
         const auto pred = [&](const PlayerSessionPtr& p) { return p->getSessionId() == test; };
@@ -267,4 +396,4 @@ void Server::acceptSession(const Network::SessionPtr& session) {
         Log::i("Accepting network session for player uid: {}", player->getPlayerId());
         players.push_back(std::move(player));
     }
-}
+}*/

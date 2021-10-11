@@ -15,6 +15,7 @@ Network::TcpAcceptor::~TcpAcceptor() {
 }
 
 void Network::TcpAcceptor::close() {
+    std::lock_guard<std::mutex> lock{mutex};
     for (auto& stream : streams) {
         stream->disconnect();
     }
@@ -34,13 +35,12 @@ void Network::TcpAcceptor::accept() {
             }
 
             try {
-                // auto endpoint = socket.remote_endpoint();
                 const auto peer = std::make_shared<TcpStream>(*self, std::move(self->socket));
+                server.eventConnect(peer);
                 peer->receive();
+
+                std::lock_guard<std::mutex> lock{mutex};
                 self->streams.push_back(peer);
-                // onAccept(peer);
-                // peer->receive();
-                // acceptPeer(peer);
             } catch (std::exception& e) {
                 Log::e("Network TCP acceptor async_accept error: {}", e.what());
             }
@@ -50,14 +50,22 @@ void Network::TcpAcceptor::accept() {
     });
 }
 
-void Network::TcpAcceptor::receive(const StreamPtr& stream, Packet packet) {
+void Network::TcpAcceptor::eventPacket(const StreamPtr& stream, Packet packet) {
     const auto packetId = packet.id;
-    const auto sessionId = packet.sessionId;
 
     try {
-        server.receive(stream, std::move(packet));
+        server.eventPacket(stream, std::move(packet));
     } catch (std::exception& e) {
-        Log::e("Failed to accept packet id: {} session: {}", packetId, sessionId);
+        Log::e("Network TCP acceptor failed to accept packet id: {}", packetId);
+        backtrace(e);
+    }
+}
+
+void Network::TcpAcceptor::eventDisconnect(const StreamPtr& stream) {
+    try {
+        server.eventDisconnect(stream);
+    } catch (std::exception& e) {
+        Log::e("Network TCP acceptor failed to disconnect stream");
         backtrace(e);
     }
 }

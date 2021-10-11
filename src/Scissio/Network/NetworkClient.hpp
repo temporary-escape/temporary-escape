@@ -3,61 +3,33 @@
 #include "../Utils/Log.hpp"
 #include "NetworkAsio.hpp"
 #include "NetworkServer.hpp"
-#include "NetworkSession.hpp"
 #include <thread>
 
 namespace Scissio::Network {
-class SCISSIO_API Client : public Session {
+class SCISSIO_API Client {
 public:
-    explicit Client(uint64_t sessionId, const std::string& address);
+    explicit Client();
     virtual ~Client();
 
-    void receive(const StreamPtr& stream, Packet packet);
-    void close();
-
-    template <typename T>
-    void initConnection(const int port, const int64_t uid, std::string name, std::string password) {
-        add<T>(port);
-
-        MessageSessionInit msg;
-        msg.password = std::move(password);
-        msg.name = std::move(name);
-        msg.uid = uid;
-        send(getStreams().size() - 1, msg);
-
-        waitForSession();
+    template <typename T> void connect(const std::string& address, const int port) {
+        acceptor = std::make_shared<T>(*this, service, address, port);
     }
 
-    template <typename T> void addConnection(const int port) {
-        add<T>(port);
-
-        const auto idx = getStreams().size() - 1;
-        MessageSessionConnect msg;
-        msg.sessionId = getSessionId();
-        msg.state = idx;
-        send(idx, msg);
-
-        waitForSession();
-        if (state != idx) {
-            EXCEPTION("Server responded with invalid state");
+    template <typename T> void send(const T& message) {
+        if (!stream) {
+            EXCEPTION("Client is not connected to any server");
         }
+        stream->send(message);
     }
 
-    virtual void dispatch(Packet packet) = 0;
+    void eventConnect(const StreamPtr& stream);
+    void eventDisconnect(const StreamPtr& stream);
+    virtual void eventPacket(const StreamPtr& stream, Packet packet) = 0;
 
 private:
-    void waitForSession();
-
-    template <typename T> void add(const int port) {
-        std::lock_guard<std::mutex> lock{mutex};
-        acceptors.push_back(std::make_shared<T>(*this, service, address, port));
-        acceptors.back()->start();
-    }
-
     void startIoService();
     void stopIoService();
 
-    std::string address;
     asio::io_service service;
     std::unique_ptr<asio::io_service::work> work;
     asio::ip::tcp::endpoint endpoint;
@@ -67,6 +39,7 @@ private:
     std::condition_variable cvConnection;
     std::string error;
     uint64_t state;
-    std::vector<std::shared_ptr<Acceptor>> acceptors;
+    std::shared_ptr<Acceptor> acceptor;
+    StreamPtr stream;
 };
 } // namespace Scissio::Network

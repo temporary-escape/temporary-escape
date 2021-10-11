@@ -64,7 +64,9 @@ public:
     explicit World(const Config& config, Database& db);
 
     void playerInit(uint64_t playerId);
-    Player playerLogin(uint64_t playerId, const std::string& name);
+    std::optional<Player> playerLogin(uint64_t playerId, const std::string& name);
+    bool playerNameTaken(const std::string& name);
+    Player playerRegister(uint64_t playerId, const std::string& name);
 
     template <typename Fn> void transaction(Fn&& fn) {
         db.transaction(std::forward<Fn>(fn));

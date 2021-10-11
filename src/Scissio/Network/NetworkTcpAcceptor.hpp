@@ -14,7 +14,8 @@ public:
 
     void close();
     void start() override;
-    void receive(const StreamPtr& stream, Packet packet) override;
+    void eventPacket(const StreamPtr& stream, Packet packet) override;
+    void eventDisconnect(const StreamPtr& stream) override;
 
 private:
     void accept();
@@ -25,6 +26,7 @@ private:
     asio::ip::tcp::socket socket;
     asio::ip::tcp::endpoint endpoint;
 
+    std::mutex mutex;
     std::vector<std::shared_ptr<TcpStream>> streams;
 };
 } // namespace Scissio::Network

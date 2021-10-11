@@ -11,8 +11,8 @@ public:
     virtual ~Acceptor() = default;
 
     virtual void start() = 0;
-
-    virtual void receive(const StreamPtr& stream, Packet packet) = 0;
+    virtual void eventPacket(const StreamPtr& stream, Packet packet) = 0;
+    virtual void eventDisconnect(const StreamPtr& stream);
 };
 
 using AcceptorPtr = std::shared_ptr<Acceptor>;

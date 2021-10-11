@@ -2,7 +2,6 @@
 
 #include "../Assets/Model.hpp"
 #include "../Network/NetworkTcpConnector.hpp"
-#include "../Network/NetworkUdpConnector.hpp"
 #include "../Scene/ComponentGrid.hpp"
 #include "../Scene/ComponentModel.hpp"
 #include "Widgets.hpp"
@@ -12,16 +11,18 @@ using namespace Scissio;
 
 #define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
 #define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Client, handle));
+#define WORK(...)                                                                                                      \
+    try {                                                                                                              \
+        worker.post(__VA_ARGS__);                                                                                      \
+    } catch (std::exception & e) {                                                                                     \
+        BACKTRACE(e, "async work error");                                                                              \
+    }
 
 Client::Client(const Config& config, AssetManager& assetManager, Renderer& renderer, SkyboxRenderer& skyboxRenderer,
                ThumbnailRenderer& thumbnailRenderer, Canvas2D& canvas, const std::string& address, const uint64_t uid)
     : AbstractClient(config, assetManager, address, uid), renderer(renderer), skyboxRenderer(skyboxRenderer),
       thumbnailRenderer(thumbnailRenderer), canvas(canvas), gui(canvas, config, assetManager),
       view(nullptr), mousePos{-1} {
-
-    MESSAGE_DISPATCH(MessageSystemsResponse);
-    MESSAGE_DISPATCH(MessageRegionsResponse);
-    MESSAGE_DISPATCH(MessageBlocksResponse);
 }
 
 #undef MESSAGE_DISPATCH
@@ -29,25 +30,15 @@ Client::Client(const Config& config, AssetManager& assetManager, Renderer& rende
 
 AbstractClient::AbstractClient(const Config& config, AssetManager& assetManager, const std::string& address,
                                const uint64_t uid)
-    : Network::Client(0, address), config(config), assetManager(assetManager) {
+    : Network::TcpClient(address, config.serverPort), config(config), assetManager(assetManager) {
 
-    MESSAGE_DISPATCH(MessageHelloResponse);
+    // MESSAGE_DISPATCH(MessageHelloResponse);
     MESSAGE_DISPATCH(MessageSectorChanged);
     MESSAGE_DISPATCH(MessageSectorStatusResponse);
     MESSAGE_DISPATCH(MessageEntityBatch);
-
-    initConnection<Network::TcpConnector>(config.serverPort, uid, "admin", "admin");
-    addConnection<Network::UdpConnector>(config.serverPort);
-    syncHello();
-}
-
-void AbstractClient::syncHello() {
-    MessageHelloRequest hello{};
-    hello.version = {1, 0, 0};
-    this->send(0, hello);
-
-    // const auto res = rpc.send<MessageHelloResponse>(hello);
-    // Log::v("AbstractClient received hello for server: {}", res.name);
+    MESSAGE_DISPATCH(MessageSystemsResponse);
+    MESSAGE_DISPATCH(MessageRegionsResponse);
+    MESSAGE_DISPATCH(MessageBlocksResponse);
 }
 
 void AbstractClient::update() {
@@ -89,119 +80,116 @@ void Client::render(GBuffer& gBuffer, FBuffer& fbuffer, const Vector2i& viewport
     }
 }
 
-void Client::handle(MessageSystemsResponse message) {
-    auto w = [message{std::move(message)}, this]() {
+void AbstractClient::handle(MessageSystemsResponse message) {
+    WORK([message{std::move(message)}, this]() {
         Log::d("Received {} systems", message.results.size());
         if (!message.results.empty()) {
             store.systems.value().insert(store.systems.value().end(), message.results.begin(), message.results.end());
 
             MessageSystemsRequest req{message.cont};
-            this->send(0, req);
+            send(req);
         } else {
             store.systems.notify();
         }
-    };
-
-    WORK_SAFE(worker, w);
+    });
 }
 
-void Client::handle(MessageRegionsResponse message) {
-    auto w = [message{std::move(message)}, this]() {
+void AbstractClient::handle(MessageRegionsResponse message) {
+    WORK([message{std::move(message)}, this]() {
         Log::d("Received {} regions", message.results.size());
         if (!message.results.empty()) {
             store.regions.value().insert(store.regions.value().end(), message.results.begin(), message.results.end());
 
             MessageRegionsRequest req{message.cont};
-            this->send(0, req);
+            send(req);
         } else {
             store.regions.notify();
         }
-    };
-
-    WORK_SAFE(worker, w);
+    });
 }
 
-void Client::handle(MessageBlocksResponse message) {
-    auto w = [message{std::move(message)}, this]() {
+void AbstractClient::handle(MessageBlocksResponse message) {
+    WORK([message{std::move(message)}, this]() {
         Log::d("Received {} blocks", message.results.size());
         if (!message.results.empty()) {
             store.blocks.value().insert(store.blocks.value().end(), message.results.begin(), message.results.end());
 
             for (const auto& block : message.results) {
-                const auto thumbnailName = fmt::format("{}_thumb", block.key);
-                auto thumbnail = assetManager.findOrNull<Image>(thumbnailName);
-
-                if (!thumbnail) {
-                    try {
-                        thumbnailRenderer.render(renderer, block.model);
-                        auto pixels = thumbnailRenderer.getPixels();
-                        auto size = thumbnailRenderer.getSize();
-
-                        std::ofstream file(block.key + ".raw", std::ios::binary);
-                        file.write(pixels.get(), size.x * size.y * 4);
-
-                        thumbnail =
-                            assetManager.generateImage(block.model->getMod(), thumbnailName, size, std::move(pixels));
-
-                        store.thumbnails.value().insert(std::make_pair(block.key, thumbnail));
-                    } catch (...) {
-                        EXCEPTION_NESTED("Failed to generate thumbnail for block: {}", block.key);
-                    }
-                }
+                onBlockReceived(block);
             }
 
             MessageBlocksRequest req{message.cont};
-            this->send(0, req);
+            send(req);
         } else {
             store.blocks.notify();
         }
-    };
-
-    WORK_SAFE(worker, w);
+    });
 }
 
 void AbstractClient::handle(MessageHelloResponse message) {
     (void)message;
 }
 
+void AbstractClient::handle(MessageLoginResponse message) {
+    (void)message;
+}
+
 void AbstractClient::handle(MessageSectorChanged message) {
-    auto w = [message{std::move(message)}, this]() {
+    WORK([message{std::move(message)}, this]() {
         store.sector.value() = message.sector;
         store.sector.notify();
 
         scene = std::make_unique<Scene>();
 
-        send(0, MessageSectorStatusRequest{});
-    };
-
-    WORK_SAFE(worker, w);
+        send(MessageSectorStatusRequest{});
+    });
 }
 
 void AbstractClient::handle(MessageSectorStatusResponse message) {
-    auto w = [message, this]() {
+    WORK([message, this]() {
         if (!message.loaded) {
-            send(0, MessageSectorStatusRequest{});
+            send(MessageSectorStatusRequest{});
         } else {
             onSectorLoaded();
         }
-    };
-
-    WORK_SAFE(worker, w);
+    });
 }
 
 void Client::onSectorLoaded() {
-    auto w = [this]() {
+    WORK([this]() {
         viewSpace = std::make_unique<ViewSpace>(config, *this, *scene);
         view = viewSpace.get();
 
         skybox = skyboxRenderer.renderAndFilter(7418525);
-    };
+    });
+}
 
-    WORK_SAFE(worker, w);
+void Client::onBlockReceived(const BlockDto& block) {
+    WORK([block, this]() {
+        const auto thumbnailName = fmt::format("{}_thumb", block.key);
+        auto thumbnail = assetManager.findOrNull<Image>(thumbnailName);
+
+        if (!thumbnail) {
+            try {
+                thumbnailRenderer.render(renderer, block.model);
+                auto pixels = thumbnailRenderer.getPixels();
+                auto size = thumbnailRenderer.getSize();
+
+                std::ofstream file(block.key + ".raw", std::ios::binary);
+                file.write(pixels.get(), size.x * size.y * 4);
+
+                thumbnail = assetManager.generateImage(block.model->getMod(), thumbnailName, size, std::move(pixels));
+
+                store.thumbnails.value().insert(std::make_pair(block.key, thumbnail));
+            } catch (...) {
+                EXCEPTION_NESTED("Failed to generate thumbnail for block: {}", block.key);
+            }
+        }
+    });
 }
 
 void AbstractClient::handle(MessageEntityBatch message) {
-    auto w = [message{std::move(message)}, this]() {
+    WORK([message{std::move(message)}, this]() {
         if (!scene)
             return;
 
@@ -209,9 +197,7 @@ void AbstractClient::handle(MessageEntityBatch message) {
         for (const auto& entity : message.entities) {
             scene->insertEntity(entity);
         }
-    };
-
-    WORK_SAFE(worker, w);
+    });
 }
 
 void AbstractClient::dispatch(const Network::Packet packet) {
@@ -219,6 +205,15 @@ void AbstractClient::dispatch(const Network::Packet packet) {
         dispatcher.dispatch(packet);
     } catch (...) {
         EXCEPTION_NESTED("Failed to dispatch message");
+    }
+}
+
+void AbstractClient::eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
+    (void)stream;
+    try {
+        dispatch(std::move(packet));
+    } catch (std::exception& e) {
+        BACKTRACE(e, "Client failed to process packet");
     }
 }
 

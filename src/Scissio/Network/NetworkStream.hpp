@@ -3,8 +3,6 @@
 #include "Packet.hpp"
 
 namespace Scissio::Network {
-class MessageAcceptor;
-
 class SCISSIO_API Stream {
 public:
     Stream() = default;
@@ -13,11 +11,10 @@ public:
     virtual void disconnect() = 0;
     virtual void sendRaw(const Packet& packet) = 0;
 
-    template <typename T> void send(const T& message, const uint64_t sessionId) {
+    template <typename T> void send(const T& message) {
         Packet packet;
         msgpack::pack(packet.data, message);
         packet.id = getMessageId<T>();
-        packet.sessionId = sessionId;
         sendRaw(packet);
     }
 };

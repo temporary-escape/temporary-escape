@@ -1,18 +1,31 @@
 #pragma once
-#include "../Network/NetworkSession.hpp"
+
+#include <utility>
+
+#include "../Network/NetworkStream.hpp"
 
 namespace Scissio {
-class PlayerSession : public Network::Session, std::enable_shared_from_this<PlayerSession> {
+class PlayerSession : public std::enable_shared_from_this<PlayerSession> {
 public:
-    explicit PlayerSession(const uint64_t sessionId, const int64_t uid) : Network::Session(sessionId), uid(uid) {
+    explicit PlayerSession(std::shared_ptr<Network::Stream> stream, const int64_t uid)
+        : stream(std::move(stream)), uid(uid) {
     }
     virtual ~PlayerSession() = default;
+
+    template <typename T> void send(const T& message) {
+        stream->send(message);
+    }
 
     int64_t getPlayerId() const {
         return uid;
     }
 
+    const std::shared_ptr<Network::Stream>& getStream() const {
+        return stream;
+    }
+
 private:
+    std::shared_ptr<Network::Stream> stream;
     int64_t uid;
 };
 

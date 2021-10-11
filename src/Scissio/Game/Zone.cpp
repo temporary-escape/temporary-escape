@@ -8,10 +8,17 @@
 
 using namespace Scissio;
 
+#define STRAND(...)                                                                                                    \
+    try {                                                                                                              \
+        strand.post(__VA_ARGS__);                                                                                      \
+    } catch (std::exception & e) {                                                                                     \
+        BACKTRACE(e, "async work error");                                                                              \
+    }
+
 Zone::Zone(const Config& config, AssetManager& assetManager, World& world, Worker::Strand strand,
            const uint64_t sectorId)
     : config(config), assetManager(assetManager), world(world), strand(std::move(strand)), sectorId(sectorId),
-      ready(false), warmup(0) {
+      ready(false) {
 }
 
 Zone::~Zone() = default;
@@ -37,28 +44,30 @@ void Zone::load() {
     auto entity = scene.addEntity();
     entity->addComponent<ComponentParticleEmitter>(texture);
 
-    warmup = 1;
+    ready = true;
 }
 
 void Zone::tick() {
-    strand.post([this]() { tickInternal(); });
+    STRAND([this]() { scene.update(); });
 }
 
-void Zone::tickInternal() {
-    if (warmup > 0) {
-        --warmup;
-        ready = warmup == 0;
-
-        if (ready) {
-            Log::v("Zone id: {} warmup complete", sectorId);
+void Zone::removePlayer(const PlayerSessionPtr& session) {
+    STRAND([this, session]() {
+        if (const auto it = players.find(session->getPlayerId()); it != players.end()) {
+            Log::v("Removing player: {} from zone: {}", session->getPlayerId(), this->sectorId);
+            players.erase(it);
         }
-    }
-
-    scene.update();
+    });
 }
 
 void Zone::addPlayer(const PlayerSessionPtr& session) {
-    if (players.find(session->getPlayerId()) == players.end()) {
+    STRAND([this, session]() {
+        if (const auto it = players.find(session->getPlayerId()); it == players.end()) {
+            Log::v("Adding player: {} to zone: {}", session->getPlayerId(), this->sectorId);
+            players.insert(std::make_pair(session->getPlayerId(), session));
+        }
+    });
+    /*if (players.find(session->getPlayerId()) == players.end()) {
         players.insert(std::make_pair(session->getPlayerId(), session));
     }
 
@@ -75,5 +84,5 @@ void Zone::addPlayer(const PlayerSessionPtr& session) {
         if (!batch.entities.empty()) {
             sendAll(0, batch);
         }
-    });
+    });*/
 }

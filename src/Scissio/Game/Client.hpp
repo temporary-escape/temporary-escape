@@ -5,7 +5,7 @@
 #include "../Graphics/SkyboxRenderer.hpp"
 #include "../Graphics/ThumbnailRenderer.hpp"
 #include "../Math/Vector.hpp"
-#include "../Network/NetworkClient.hpp"
+#include "../Network/NetworkTcpClient.hpp"
 #include "../Platform/Enums.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Utils/Worker.hpp"
@@ -16,16 +16,18 @@
 #include "ViewSpace.hpp"
 
 namespace Scissio {
-class SCISSIO_API AbstractClient : public Network::Client {
+class SCISSIO_API AbstractClient : public Network::TcpClient {
 public:
     explicit AbstractClient(const Config& config, AssetManager& assetManager, const std::string& address, uint64_t uid);
     virtual ~AbstractClient() = default;
 
     void update();
-    void dispatch(Network::Packet packet) override;
+    void dispatch(Network::Packet packet);
+    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) override;
 
 protected:
     virtual void onSectorLoaded() = 0;
+    virtual void onBlockReceived(const BlockDto& block) = 0;
 
     const Config& config;
     AssetManager& assetManager;
@@ -35,11 +37,14 @@ protected:
     asio::io_service worker;
 
 private:
-    void syncHello();
     void handle(MessageHelloResponse message);
+    void handle(MessageLoginResponse message);
     void handle(MessageSectorChanged message);
     void handle(MessageSectorStatusResponse message);
     void handle(MessageEntityBatch message);
+    void handle(MessageSystemsResponse message);
+    void handle(MessageRegionsResponse message);
+    void handle(MessageBlocksResponse message);
 };
 
 class SCISSIO_API Client : public AbstractClient {
@@ -59,12 +64,9 @@ public:
 
 protected:
     void onSectorLoaded() override;
+    void onBlockReceived(const BlockDto& block) override;
 
 private:
-    void handle(MessageSystemsResponse message);
-    void handle(MessageRegionsResponse message);
-    void handle(MessageBlocksResponse message);
-
     Renderer& renderer;
     SkyboxRenderer& skyboxRenderer;
     ThumbnailRenderer& thumbnailRenderer;

@@ -8,6 +8,14 @@
 #include <type_traits>
 
 namespace Scissio {
+struct MessageServerError {
+    std::string msg;
+
+    MSGPACK_DEFINE_ARRAY(msg);
+};
+
+REGISTER_MESSAGE(MessageServerError);
+
 struct MessageHelloRequest {
     std::array<int, 3> version;
 
@@ -25,13 +33,23 @@ struct MessageHelloResponse {
 
 REGISTER_MESSAGE(MessageHelloResponse);
 
-struct MessageErrorResponse {
-    std::string what;
+struct MessageLoginRequest {
+    uint64_t uid{0};
+    std::string name;
+    std::string password;
 
-    MSGPACK_DEFINE_ARRAY(what);
+    MSGPACK_DEFINE(uid, name, password);
 };
 
-REGISTER_MESSAGE(MessageErrorResponse);
+REGISTER_MESSAGE(MessageLoginRequest);
+
+struct MessageLoginResponse {
+    std::string error;
+
+    MSGPACK_DEFINE(error);
+};
+
+REGISTER_MESSAGE(MessageLoginResponse);
 
 template <typename T> struct MessageResourceRequest {
     size_t cont{0};

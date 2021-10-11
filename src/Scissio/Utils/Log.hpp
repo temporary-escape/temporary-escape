@@ -2,6 +2,7 @@
 
 #include "../Library.hpp"
 #include <fmt/format.h>
+#include <utility>
 
 namespace Scissio {
 class SCISSIO_API Log {

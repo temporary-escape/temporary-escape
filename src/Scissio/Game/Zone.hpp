@@ -27,10 +27,10 @@ public:
         return ready;
     }
 
+    void removePlayer(const PlayerSessionPtr& session);
     void addPlayer(const PlayerSessionPtr& session);
 
 private:
-    void tickInternal();
     template <typename T> void sendAll(const size_t channel, const T& message) {
         for (const auto& [playerId, session] : players) {
             session->send(channel, message);
@@ -43,7 +43,6 @@ private:
     Worker::Strand strand;
     const uint64_t sectorId;
     bool ready;
-    int warmup;
 
     Scene scene;
     std::unordered_map<uint64_t, PlayerSessionPtr> players;

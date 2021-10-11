@@ -1,0 +1,14 @@
+C:/Projects/scissio/cmake-build-debug/CMakeFiles/Nuklear.dir
+C:/Projects/scissio/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Projects/scissio/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+C:/Projects/scissio/cmake-build-debug/src/CMakeFiles/edit_cache.dir
+C:/Projects/scissio/cmake-build-debug/src/CMakeFiles/rebuild_cache.dir
+C:/Projects/scissio/cmake-build-debug/src/Scissio/CMakeFiles/ScissioLib.dir
+C:/Projects/scissio/cmake-build-debug/src/Scissio/CMakeFiles/edit_cache.dir
+C:/Projects/scissio/cmake-build-debug/src/Scissio/CMakeFiles/Scissio.dir
+C:/Projects/scissio/cmake-build-debug/src/Scissio/CMakeFiles/rebuild_cache.dir
+C:/Projects/scissio/cmake-build-debug/test/CMakeFiles/edit_cache.dir
+C:/Projects/scissio/cmake-build-debug/test/CMakeFiles/rebuild_cache.dir
+C:/Projects/scissio/cmake-build-debug/test/Scissio/CMakeFiles/rebuild_cache.dir
+C:/Projects/scissio/cmake-build-debug/test/Scissio/CMakeFiles/ScissioTests.dir
+C:/Projects/scissio/cmake-build-debug/test/Scissio/CMakeFiles/edit_cache.dir
