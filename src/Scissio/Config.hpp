@@ -21,6 +21,6 @@ struct Config {
     int thumbnailSize = 128;
     std::string guiFontFaceRegular = "iosevka-aile-regular";
     std::string guiFontFaceBold = "iosevka-aile-bold";
-    float guiFontSize = 21.0f;
+    int guiFontSize = 21;
 };
 } // namespace Scissio

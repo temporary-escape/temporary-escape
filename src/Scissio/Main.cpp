@@ -1,8 +1,7 @@
-#include "Game/Application.hpp"
+#include "Client/OpenGLApplication.hpp"
 #include "Utils/Exceptions.hpp"
-
-#include <argagg/argagg.hpp>
-#include <iostream>
+#include "Utils/Log.hpp"
+#include <cxxopts.hpp>
 
 #ifdef _WIN32
 #include <Shlobj.h>
@@ -16,14 +15,6 @@
 
 using namespace Scissio;
 
-argagg::parser argparser{{
-    {"help", {"-h", "--help"}, "Shows this help message", 0},
-    {"root", {"-r", "--root"}, "Override the game root folder path", 1},
-    {"userdata", {"--userdata"}, "Override the game user data folder path", 1},
-    {"generate-api-txt", {"--generate-api-txt"}, "Generate mod API documentation in text format", 1},
-    {"generate-api-json", {"--generate-api-json"}, "Generate mod API documentation in JSON format", 1},
-}};
-
 std::filesystem::path appDataDir() {
 #ifdef _WIN32
     char appDataPath[MAX_PATH];
@@ -32,7 +23,7 @@ std::filesystem::path appDataDir() {
 #else
     struct passwd* pw = getpwuid(getuid());
     const char* homedir = pw->pw_dir;
-    return std::filesystem::path(std::string(homedir)).append(".Scissio");
+    return std::filesystem::path(std::string(homedir)).append(".scissio");
 #endif
 }
 
@@ -57,40 +48,37 @@ std::filesystem::path execDir() {
 #endif
 }
 
-int main(const int argc, char** argv) {
-    argagg::parser_results args;
+int main(int argc, char** argv) {
+    Log::configure(true);
+    Log::i("main", "Scissio main");
+
+    cxxopts::Options options("Scissio", "Space sim multiplayer game");
+
+    const auto defaultRoot = execDir().parent_path().parent_path();
+    const auto defaultUserData = appDataDir();
+
+    options.add_options()("r,root", "Path to the root game folder",
+                          cxxopts::value<std::string>()->default_value(defaultRoot.string()));
+
+    options.add_options()("u,userdata", "Path to the user data folder",
+                          cxxopts::value<std::string>()->default_value(defaultUserData.string()));
+
+    auto args = options.parse(argc, argv);
+
     try {
-        args = argparser.parse(argc, argv);
+        Config config{};
+        config.assetsPath = std::filesystem::absolute(Path(args["root"].as<std::string>()) / "assets");
+        config.userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
+        config.userdataSavesPath = config.userdataPath / "Saves";
+        config.shadersPath = config.assetsPath / "shaders";
 
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+        std::filesystem::create_directories(config.userdataPath);
+        std::filesystem::create_directories(config.userdataSavesPath);
 
-    if (args["help"]) {
-        std::cerr << argparser;
-        return EXIT_SUCCESS;
-    }
-
-    try {
-        Config config;
-        const auto root = std::filesystem::absolute(args["root"] ? Path(args["root"].as<std::string>())
-                                                                 : execDir().parent_path().parent_path());
-
-        config.assetsPath = root / "assets";
-        config.resourcesPath = root / "resources";
-        config.cwdPath = execDir();
-        config.userdataPath = args["userdata"] ? Path(args["userdata"].as<std::string>()) : appDataDir();
-        config.userdataSavesPath = config.userdataPath / Path("Saves");
-        config.shadersPath = config.assetsPath / Path("shaders");
-
-        Application application(config);
-
+        OpenGLApplication application(config);
         application.run();
-        return EXIT_SUCCESS;
-
     } catch (const std::exception& e) {
-        BACKTRACE(e, "fatal error");
+        BACKTRACE("Main", e, "fatal error");
         return EXIT_FAILURE;
     }
 }

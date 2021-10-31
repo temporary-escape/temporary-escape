@@ -3,6 +3,8 @@
 #include "NetworkClient.hpp"
 #include <future>
 
+#define CMP "NetworkTcpConnector"
+
 using namespace Scissio;
 
 Network::TcpConnector::TcpConnector(Client& client, asio::io_service& service, const std::string& address,
@@ -48,7 +50,7 @@ void Network::TcpConnector::eventPacket(const StreamPtr& stream, Packet packet) 
     try {
         client.eventPacket(stream, std::move(packet));
     } catch (std::exception& e) {
-        Log::e("Network TCP connector failed to accept packet id: {}", packetId);
+        Log::e(CMP, "Network TCP connector failed to accept packet id: {}", packetId);
         backtrace(e);
     }
 }
@@ -57,7 +59,7 @@ void Network::TcpConnector::eventDisconnect(const StreamPtr& stream) {
     try {
         client.eventDisconnect(stream);
     } catch (std::exception& e) {
-        Log::e("Network TCP connector failed to disconnect stream");
+        Log::e(CMP, "Network TCP connector failed to disconnect stream");
         backtrace(e);
     }
 }

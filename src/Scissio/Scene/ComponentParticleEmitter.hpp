@@ -1,7 +1,6 @@
 #pragma once
-#include "../Assets/BasicTexture.hpp"
+#include "../Assets/AssetTexture.hpp"
 #include "../Graphics/Mesh.hpp"
-#include "../Shaders/ShaderParticleEmitter.hpp"
 #include "Component.hpp"
 
 namespace Scissio {
@@ -10,14 +9,14 @@ public:
     static constexpr ComponentType Type = 7;
 
     ComponentParticleEmitter();
-    explicit ComponentParticleEmitter(Object& object, BasicTexturePtr texture);
+    explicit ComponentParticleEmitter(Object& object, AssetTexturePtr texture);
     virtual ~ComponentParticleEmitter() = default;
 
-    void render(ShaderParticleEmitter& shader);
+    void render(Shader& shader);
 
 private:
     Mesh mesh;
-    BasicTexturePtr texture;
+    AssetTexturePtr texture;
 
 public:
     MSGPACK_DEFINE_ARRAY(texture);

@@ -1,8 +1,5 @@
 #define NANOVG_GL3_IMPLEMENTATION
 #include "Canvas2D.hpp"
-#include "../Assets/FontFace.hpp"
-#include "../Assets/Icon.hpp"
-#include "../Assets/Image.hpp"
 #include "../Utils/Exceptions.hpp"
 #include <nanovg.h>
 #include <nanovg_gl.h>
@@ -103,49 +100,7 @@ Canvas2D::FontHandle Canvas2D::loadFont(const Path& path) {
     return it->second;
 }
 
-/*Canvas2D::Image& Canvas2D::loadImage(const Assets::AssetImagePtr& image) {
-    const Vector2i atlasSize = {config.imageAtlasSize, config.imageAtlasSize};
-
-    auto it = imageCache.find(image.get());
-    if (it == imageCache.end()) {
-        const auto textureId = image->getTexture().id();
-        const auto handle =
-            nvglCreateImageFromHandleGL3(vg, textureId, atlasSize.x, atlasSize.y, NVGcreateFlags::NVG_ANTIALIAS);
-        if (handle < 0)
-            throw RuntimeException(WHERE, "Failed to Canvas2D image from: {}", image->getName());
-        auto ptr =
-            std::make_unique<Image>(handle, Vector2(atlasSize), Vector2(image->getPos()), Vector2(image->getSize()));
-        it = imageCache.insert(std::make_pair(image.get(), std::move(ptr))).first;
-    }
-    return *it->second;
-}
-
-Canvas2D::Image& Canvas2D::loadImage(const World::BlockPtr& block) {
-    const Vector2i atlasSize = {config.imageAtlasSize, config.imageAtlasSize};
-
-    auto it = imageCache.find(block.get());
-    if (it == imageCache.end()) {
-        const auto textureId = block->image.texture->id();
-        const auto handle =
-            nvglCreateImageFromHandleGL3(vg, textureId, atlasSize.x, atlasSize.y, NVGcreateFlags::NVG_ANTIALIAS);
-        if (handle < 0)
-            throw RuntimeException(WHERE, "Failed to Canvas2D image from: {}", block->name);
-        auto ptr =
-            std::make_unique<Image>(handle, Vector2(atlasSize), Vector2(block->image.pos), Vector2(block->image.size));
-        it = imageCache.insert(std::make_pair(block.get(), std::move(ptr))).first;
-    }
-    return *it->second;
-}*/
-
-/*Canvas2D::Image Canvas2D::loadImage(const Texture2D& texture, const Vector2i& textureSize, const Vector2i& pos,
-                                    const Vector2i& size) {
-    const auto textureId = texture.getHandle();
-    const auto handle =
-        nvglCreateImageFromHandleGL3(vg, textureId, textureSize.x, textureSize.y, NVGcreateFlags::NVG_ANTIALIAS);
-    return Image(handle, Vector2(textureSize), Vector2(pos), Vector2(size));
-}*/
-
-Canvas2D::Image Canvas2D::loadImage(const Scissio::Image& image) {
+/*Canvas2D::Image Canvas2D::loadImage(const Scissio::Image& image) {
     const auto& texture = image.getTexture();
     const auto& textureSize = image.getAtlasSize();
     const auto& pos = image.getPos();
@@ -155,9 +110,9 @@ Canvas2D::Image Canvas2D::loadImage(const Scissio::Image& image) {
     const auto handle =
         nvglCreateImageFromHandleGL3(vg, textureId, textureSize.x, textureSize.y, NVGcreateFlags::NVG_ANTIALIAS);
     return Image(handle, Vector2(textureSize), Vector2(pos), Vector2(size));
-}
+}*/
 
-Canvas2D::Image Canvas2D::loadImage(const Scissio::Icon& icon) {
+/*Canvas2D::Image Canvas2D::loadImage(const Scissio::Icon& icon) {
     const auto& texture = icon.getTexture();
     const auto& textureSize = icon.getAtlasSize();
     const auto& pos = icon.getPos();
@@ -167,31 +122,31 @@ Canvas2D::Image Canvas2D::loadImage(const Scissio::Icon& icon) {
     const auto handle =
         nvglCreateImageFromHandleGL3(vg, textureId, textureSize.x, textureSize.y, NVGcreateFlags::NVG_ANTIALIAS);
     return Image(handle, Vector2(textureSize), Vector2(pos), Vector2(size));
-}
+}*/
 
-void Canvas2D::rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) const {
-    /*const auto imageSize = image.getSize();
-    const auto scale = size / imageSize;
-    const auto atlasSize = image.getAtlasSize() * scale;
-    const auto imagePos = image.getPos() * scale;
-    auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, atlasSize.y - pos.y + imagePos.y, atlasSize.x, atlasSize.y,
-                                   0.0f, image.getHandle(), 1.0f);
-    pattern.innerColor = toNvg(color);
-    nvgFillPaint(vg, pattern);
-    rect(pos, size);
-    fill();*/
+// void Canvas2D::rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) const {
+/*const auto imageSize = image.getSize();
+const auto scale = size / imageSize;
+const auto atlasSize = image.getAtlasSize() * scale;
+const auto imagePos = image.getPos() * scale;
+auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, atlasSize.y - pos.y + imagePos.y, atlasSize.x, atlasSize.y,
+                               0.0f, image.getHandle(), 1.0f);
+pattern.innerColor = toNvg(color);
+nvgFillPaint(vg, pattern);
+rect(pos, size);
+fill();*/
 
-    const auto& imageSize = image.getSize();
-    const auto& scale = size / imageSize;
-    const auto& atlasSize = image.getAtlasSize() * scale;
-    const auto& imagePos = image.getPos() * scale;
-    auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, pos.y + imagePos.y + (imageSize.y * scale.y), atlasSize.x,
-                                   -atlasSize.y, 0.0f, image.getHandle(), 1.0f);
-    pattern.innerColor = toNvg(color);
-    nvgFillPaint(vg, pattern);
-    rect(pos, size);
-    fill();
-}
+/*const auto& imageSize = image.getSize();
+const auto& scale = size / imageSize;
+const auto& atlasSize = image.getAtlasSize() * scale;
+const auto& imagePos = image.getPos() * scale;
+auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, pos.y + imagePos.y + (imageSize.y * scale.y), atlasSize.x,
+                               -atlasSize.y, 0.0f, image.getHandle(), 1.0f);
+pattern.innerColor = toNvg(color);
+nvgFillPaint(vg, pattern);
+rect(pos, size);
+fill();
+}*/
 
 void Canvas2D::fontFace(const FontHandle& font) const {
     if (font < 0)
@@ -200,9 +155,9 @@ void Canvas2D::fontFace(const FontHandle& font) const {
     nvgFontFaceId(vg, font);
 }
 
-void Canvas2D::fontFace(const FontFacePtr& font) const {
+/*void Canvas2D::fontFace(const FontFacePtr& font) const {
     fontFace(font->getHandle());
-}
+}*/
 
 void Canvas2D::fontSize(const float size) const {
     nvgFontSize(vg, size);

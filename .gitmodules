@@ -7,3 +7,6 @@
 [submodule "libs/wrenbind17"]
 	path = libs/wrenbind17
 	url = https://github.com/matusnovak/wrenbind17.git
+[submodule "libs/nanovg"]
+	path = libs/nanovg
+	url = https://github.com/memononen/nanovg.git

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Graphics/Shader.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/Msgpack.hpp"
 #include "Object.hpp"
@@ -71,7 +72,7 @@ public:
     ComponentSystem() = default;
     virtual ~ComponentSystem() {
         if (!components.empty()) {
-            Log::w("Component system destroyed with {} components attached", components.size());
+            Log::w("ComponentSystem", "Component system destroyed with {} components attached", components.size());
         }
     }
 

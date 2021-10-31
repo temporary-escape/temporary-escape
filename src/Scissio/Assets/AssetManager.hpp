@@ -1,17 +1,15 @@
 #pragma once
-#include "../Graphics/Renderer.hpp"
-#include "../Graphics/SkyboxRenderer.hpp"
+#include "../Config.hpp"
 #include "../Library.hpp"
 #include "../Utils/Exceptions.hpp"
 #include "Asset.hpp"
-#include "Image.hpp"
-#include "ImageAtlas.hpp"
+#include "AssetFontFamily.hpp"
+#include "AssetModel.hpp"
+#include "TextureCompressor.hpp"
 
 #include <queue>
 
 namespace Scissio {
-class Model;
-class TextureCompressor;
 using AssetPtrMap = std::unordered_map<std::string, AssetPtr>;
 using AssetLoadQueue = std::queue<std::function<void()>>;
 
@@ -19,8 +17,7 @@ class Canvas2D;
 
 class SCISSIO_API AssetManager {
 public:
-    explicit AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor,
-                          Renderer& renderer);
+    explicit AssetManager(const Config& config, TextureCompressor& textureCompressor);
     virtual ~AssetManager() = default;
 
     template <typename T> std::shared_ptr<T> findOrNull(const std::string& name) {
@@ -53,21 +50,12 @@ public:
         return res;
     }
 
-    template <typename T> std::shared_ptr<T> load(const Manifest& mod, const Path& path);
-    AssetLoadQueue& getLoadQueue() {
-        return loadQueue;
-    }
+    AssetFontFacePtr addFontFace(const Manifest& mod, const Path& path);
+    AssetModelPtr addModel(const Manifest& mod, const Path& path);
+    AssetTexturePtr addTexture(const Manifest& mod, const Path& path, TextureType type);
+    AssetLoadQueue getLoadQueue();
 
-    Canvas2D& getCanvas() const {
-        return canvas;
-    }
-
-    TextureCompressor& getTextureCompressor() const {
-        return textureCompressor;
-    }
-
-    ImagePtr generateImage(const Manifest& mod, const std::string& name, const Vector2i& size,
-                           std::unique_ptr<char[]> pixels);
+    Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);
 
     static AssetManager& singleton();
 
@@ -76,12 +64,8 @@ private:
 
     void add(AssetPtr asset);
 
-    Canvas2D& canvas;
+    const Config& config;
     TextureCompressor& textureCompressor;
-    Renderer& renderer;
-
-    ImageAtlas imageAtlas;
     AssetPtrMap assets;
-    AssetLoadQueue loadQueue;
 };
 } // namespace Scissio

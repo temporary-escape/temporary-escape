@@ -1,6 +1,8 @@
 #include "NetworkClient.hpp"
 #include "../Utils/Log.hpp"
 
+#define CMP "NetworkClient"
+
 using namespace Scissio;
 
 Network::Client::Client() {
@@ -16,11 +18,11 @@ Network::Client::~Client() {
 }
 
 void Network::Client::startIoService() {
-    Log::i("AbstractClient network asio service started!");
+    Log::i(CMP, "AbstractClient network asio service started!");
     work = std::make_unique<asio::io_service::work>(service);
     thread = std::thread([this]() {
         service.run();
-        Log::w("AbstractClient network asio service stopped!");
+        Log::w(CMP, "AbstractClient network asio service stopped!");
     });
 }
 

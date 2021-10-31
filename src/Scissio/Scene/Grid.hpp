@@ -1,5 +1,5 @@
 #pragma once
-#include "../Assets/Model.hpp"
+#include "../Assets/AssetModel.hpp"
 #include "Octree.hpp"
 
 namespace Scissio {
@@ -12,14 +12,15 @@ public:
     struct BlockRef {
         BlockRef() = default;
 
-        explicit BlockRef(ModelPtr model) : name(model->getName()), model(std::move(model)) {
+        explicit BlockRef(AssetModelPtr model) : name(model->getName()), model(std::move(model)) {
         }
 
-        explicit BlockRef(std::string name, ModelPtr model = nullptr) : name(std::move(name)), model(std::move(model)) {
+        explicit BlockRef(std::string name, AssetModelPtr model = nullptr)
+            : name(std::move(name)), model(std::move(model)) {
         }
 
         std::string name;
-        ModelPtr model{nullptr};
+        AssetModelPtr model{nullptr};
 
         MSGPACK_DEFINE_ARRAY(name, model);
     };
@@ -55,7 +56,7 @@ public:
 
     struct BlockInstances {
         uint16_t type{0};
-        ModelPtr model;
+        AssetModelPtr model;
         std::vector<Matrix4> instances;
     };
 

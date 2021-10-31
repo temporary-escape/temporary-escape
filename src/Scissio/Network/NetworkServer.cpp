@@ -1,6 +1,8 @@
 #include "NetworkServer.hpp"
 #include "../Utils/Log.hpp"
 
+#define CMP "NetworkServer"
+
 using namespace Scissio;
 
 Network::Server::Server() {
@@ -17,10 +19,10 @@ Network::Server::~Server() {
 
 void Network::Server::startIoService() {
     work = std::make_unique<asio::io_service::work>(service);
-    Log::i("Network server asio service started!");
+    Log::i(CMP, "Network server asio service started!");
     thread = std::thread([this]() {
         service.run();
-        Log::w("Network server asio service stopped!");
+        Log::w(CMP, "Network server asio service stopped!");
     });
 }
 

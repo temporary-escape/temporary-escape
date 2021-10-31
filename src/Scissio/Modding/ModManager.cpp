@@ -1,18 +1,16 @@
 #include "ModManager.hpp"
 
-#include "../Assets/BasicTexture.hpp"
-#include "../Assets/FontFace.hpp"
-#include "../Assets/IconAtlas.hpp"
-#include "../Assets/Model.hpp"
-#include "../Game/Schemas.hpp"
-#include "../Utils/Database.hpp"
+#include "../Assets/AssetFontFace.hpp"
+#include "../Assets/AssetModel.hpp"
 #include "../Utils/Log.hpp"
 
 #include <set>
 
+#define CMP "ModManager"
+
 using namespace Scissio;
 
-ModManager::ModManager(AssetManager& assetManager) : assetManager(assetManager) {
+ModManager::ModManager() {
 }
 
 template <typename Fn> static void iterateDir(const Path& dir, const std::set<std::string>& exts, const Fn& fn) {
@@ -27,18 +25,25 @@ template <typename Fn> static void iterateDir(const Path& dir, const std::set<st
     }
 }
 
-void ModManager::load(const Path& dir) {
+void ModManager::load(AssetManager& assetManager, const Path& dir) {
     try {
-        Log::v("Loading mod from dir: '{}'", dir.string());
-        Manifest manifest{};
+        Log::i(CMP, "Loading mod from dir: '{}'", dir.string());
+        manifests.push_back(std::make_shared<Manifest>());
+        Manifest& manifest = *manifests.back();
+
         Xml::Document(dir / Path("manifest.xml")).getRoot().convert(manifest);
 
-        Log::v("Loading assets for: '{}'", manifest.name);
+        Log::i(CMP, "Loading assets for: '{}'", manifest.name);
 
         iterateDir(dir / Path("fonts"), {".ttf", ".otf"},
-                   [&](const Path& path) { assetManager.load<FontFace>(manifest, path); });
+                   [&](const Path& path) { assetManager.addFontFace(manifest, path); });
 
-        iterateDir(dir / Path("icons"), {".png"},
+        iterateDir(dir / Path("models"), {".gltf"}, [&](const Path& path) { assetManager.addModel(manifest, path); });
+
+        iterateDir(dir / Path("textures"), {".png"},
+                   [&](const Path& path) { assetManager.addTexture(manifest, path, TextureType::Generic); });
+
+        /*iterateDir(dir / Path("icons"), {".png"},
                    [&](const Path& path) { assetManager.load<IconAtlas>(manifest, path); });
 
         iterateDir(dir / Path("models"), {".gltf"},
@@ -47,7 +52,8 @@ void ModManager::load(const Path& dir) {
         iterateDir(dir / Path("textures"), {".png"},
                    [&](const Path& path) { assetManager.load<BasicTexture>(manifest, path); });
 
-        iterateDir(dir / Path("images"), {".png"}, [&](const Path& path) { assetManager.load<Image>(manifest, path); });
+        iterateDir(dir / Path("images"), {".png"}, [&](const Path& path) { assetManager.load<Image>(manifest, path);
+        });*/
     } catch (...) {
         EXCEPTION_NESTED("Failed to load mod assets from dir: '{}'", dir.string());
     }
@@ -56,12 +62,12 @@ void ModManager::load(const Path& dir) {
 template <typename T> static void loadAllXml(Database& db, const Path& path) {
     static const std::set<std::string> exts = {".xml"};
 
-    Log::v("Loading xml data from: '{}'", path.string());
+    Log::i(CMP, "Loading xml data from: '{}'", path.string());
 
     std::set<std::string> keys;
 
     // Insert or replace all from the directory
-    db.transaction([&]() {
+    /*db.transaction([&]() {
         iterateDir(path, exts, [&](const Path& file) {
             try {
                 T item{};
@@ -96,14 +102,14 @@ template <typename T> static void loadAllXml(Database& db, const Path& path) {
                 db.remove<T>(item.id);
             }
         }
-    });
+    });*/
 }
 
-void ModManager::loadXmlData(const Path& dir, Database& db) {
-    try {
+void ModManager::loadXmlData(AssetManager& assetManager, const Path& dir, Database& db) {
+    /*try {
         loadAllXml<Block>(db, dir / Path("blocks"));
         loadAllXml<Asteroid>(db, dir / Path("asteroids"));
     } catch (...) {
         EXCEPTION_NESTED("Failed to load mod data from dir: '{}'", dir.string());
-    }
+    }*/
 }

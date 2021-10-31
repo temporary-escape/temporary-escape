@@ -1,96 +1,39 @@
-#define NOMINMAX 1
-#include <ctime>
-#include <mutex>
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 #include "Log.hpp"
-#include <fmt/chrono.h>
-#include <iostream>
-#include <termcolor/termcolor.hpp>
-
-static std::mutex mut;
+#include <memory>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 using namespace Scissio;
 
-static const char* typeToStr(const Log::Type type) {
-    switch (type) {
-    case Log::Type::E: {
-        return "ERROR  ";
-    }
-    case Log::Type::W: {
-        return "WARN   ";
-    }
-    case Log::Type::V: {
-        return "VERBOSE";
-    }
-    case Log::Type::D: {
-        return "DEBUG  ";
-    }
-    case Log::Type::I: {
-        return "INFO   ";
-    }
-    default: {
-        return "       ";
-    }
-    }
+static std::unique_ptr<spdlog::logger> logger;
+
+void Log::configure(bool debug) {
+    auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    consoleSink->set_level(spdlog::level::trace);
+    consoleSink->set_pattern("[%Y-%m-%d %H:%M:%S %z] [%^%l%$] [thread %t] %v");
+
+    auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("scissio.log", true);
+    fileSink->set_level(spdlog::level::trace);
+    fileSink->set_pattern("[%Y-%m-%d %H:%M:%S %z] [%^%l%$] [thread %t] %v");
+
+    ::logger.reset(new spdlog::logger("Scissio", {consoleSink, fileSink})); // NOLINT(modernize-make-unique)
+    ::logger->flush_on(spdlog::level::debug);
+    ::logger->set_level(spdlog::level::debug);
 }
 
-static void typeToColor(const Log::Type type) {
-    switch (type) {
-    case Log::Type::E: {
-        std::cout << termcolor::red;
-        break;
-    }
-    case Log::Type::W: {
-        std::cout << termcolor::yellow;
-        break;
-    }
-    case Log::Type::V: {
-        std::cout << termcolor::white;
-        break;
-    }
-    case Log::Type::D: {
-        std::cout << termcolor::white;
-        break;
-    }
-    case Log::Type::I: {
-        std::cout << termcolor::cyan;
-        break;
-    }
-    default: {
-        break;
-    }
-    }
+void Log::i(const std::string& cmp, const std::string& msg) {
+    ::logger->info("[{}] {}", cmp, msg);
 }
 
-void Log::print(Type type, const std::string& str) {
-    std::lock_guard<std::mutex> lock(mut);
-
-    time_t t = time(nullptr);
-    struct tm* now = localtime(&t);
-
-    typeToColor(type);
-    std::cout << fmt::format("{:%Y-%m-%d %H:%M:%S} | {} | {}", *now, typeToStr(type), str) << std::endl;
-    std::cout << termcolor::reset;
+void Log::w(const std::string& cmp, const std::string& msg) {
+    ::logger->warn("[{}] {}", cmp, msg);
 }
 
-void Log::e(const std::string& str) {
-    print(Type::E, str);
+void Log::e(const std::string& cmp, const std::string& msg) {
+    ::logger->error("[{}] {}", cmp, msg);
 }
 
-void Log::w(const std::string& str) {
-    print(Type::W, str);
-}
-
-void Log::d(const std::string& str) {
-    print(Type::D, str);
-}
-
-void Log::v(const std::string& str) {
-    print(Type::V, str);
-}
-
-void Log::i(const std::string& str) {
-    print(Type::I, str);
+void Log::d(const std::string& cmp, const std::string& msg) {
+    ::logger->debug("[{}] {}", cmp, msg);
 }

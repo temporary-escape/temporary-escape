@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Config.hpp"
 #include "../Modding/Manifest.hpp"
 #include <memory>
 

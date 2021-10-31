@@ -8,13 +8,13 @@ class Database;
 
 class SCISSIO_API ModManager {
 public:
-    explicit ModManager(AssetManager& assetManager);
+    explicit ModManager();
     virtual ~ModManager() = default;
 
-    void load(const Path& dir);
-    void loadXmlData(const Path& dir, Database& db);
+    void load(AssetManager& assetManager, const Path& dir);
+    void loadXmlData(AssetManager& assetManager, const Path& dir, Database& db);
 
 private:
-    AssetManager& assetManager;
+    std::vector<std::shared_ptr<Manifest>> manifests;
 };
 } // namespace Scissio

@@ -4,7 +4,8 @@
 #include <glad.h>
 
 namespace Scissio {
-enum class PbrTextureType {
+enum class TextureType {
+    Generic,
     BaseColor,
     Normals,
     MetallicRoughness,

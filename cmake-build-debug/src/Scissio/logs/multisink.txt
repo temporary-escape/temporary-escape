@@ -1,0 +1,3 @@
+[2021-10-28 14:15:16 +02:00] [info] [thread 21484] [main] Scissio main
+[2021-10-28 14:15:16 +02:00] [info] [thread 21484] [VulkanWindow] Creating window of size: [1920, 1080]
+[2021-10-28 14:15:16 +02:00] [info] [thread 21484] [VulkanWindow] Creating Vulkan instance

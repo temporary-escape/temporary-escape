@@ -76,11 +76,10 @@ public:
     }*/
     // Image loadImage(const Texture2D& texture, const Vector2i& textureSize, const Vector2i& pos, const Vector2i&
     // size);
-    Image loadImage(const Scissio::Image& image);
-    Image loadImage(const Scissio::Icon& icon);
-    void rectImage(const Vector2& pos, const Vector2& size, const Image& image,
-                   const Color4& color = Color4{1.0f}) const;
-    void fontFace(const std::shared_ptr<FontFace>& font) const;
+    // Image loadImage(const Scissio::Image& image);
+    // Image loadImage(const Scissio::Icon& icon);
+    // void rectImage(const Vector2& pos, const Vector2& size, const Image& image,
+    //               const Color4& color = Color4{1.0f}) const;
     void fontFace(const FontHandle& font) const;
     void fontSize(float size) const;
     void text(const Vector2& pos, const std::string& str) const;

@@ -12,7 +12,7 @@ public:
 
     virtual void start() = 0;
     virtual void eventPacket(const StreamPtr& stream, Packet packet) = 0;
-    virtual void eventDisconnect(const StreamPtr& stream);
+    virtual void eventDisconnect(const StreamPtr& stream) = 0;
 };
 
 using AcceptorPtr = std::shared_ptr<Acceptor>;

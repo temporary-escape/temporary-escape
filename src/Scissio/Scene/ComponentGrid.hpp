@@ -5,15 +5,13 @@
 #include "Grid.hpp"
 
 namespace Scissio {
-class ShaderGrid;
-
 class SCISSIO_API ComponentGrid : public Component, public Grid {
 public:
     static constexpr ComponentType Type = 3;
 
     struct MeshData {
         uint16_t type{0};
-        ModelPtr model{nullptr};
+        AssetModelPtr model{nullptr};
         VertexBuffer instances{NO_CREATE};
         std::list<Primitive> primitives;
     };
@@ -31,7 +29,7 @@ public:
         return meshes;
     }
 
-    void render(ShaderGrid& shader);
+    void render(Shader& shader);
 
 private:
     void rebuildBuffers();

@@ -93,7 +93,7 @@ template <typename T> constexpr uint64_t getMessageId() {
 }
 
 template <typename T> T unpack(const Network::Packet& packet) {
-    return Details::MessageUnpacker<M>::unpack(packet);
+    return Details::MessageUnpacker<T>::unpack(packet);
 }
 
 template <typename... Args> class MessageDispatcher {

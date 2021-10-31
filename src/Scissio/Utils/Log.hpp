@@ -5,31 +5,28 @@
 #include <utility>
 
 namespace Scissio {
-class SCISSIO_API Log {
-public:
-    enum class Type { E, W, D, V, I };
+namespace Log {
+extern SCISSIO_API void configure(bool debug);
 
-    template <typename... Args> static void e(const std::string& str, Args&&... args) {
-        e(fmt::format(str, std::forward<Args>(args)...));
-    }
-    template <typename... Args> static void w(const std::string& str, Args&&... args) {
-        w(fmt::format(str, std::forward<Args>(args)...));
-    }
-    template <typename... Args> static void d(const std::string& str, Args&&... args) {
-        d(fmt::format(str, std::forward<Args>(args)...));
-    }
-    template <typename... Args> static void v(const std::string& str, Args&&... args) {
-        v(fmt::format(str, std::forward<Args>(args)...));
-    }
-    template <typename... Args> static void i(const std::string& str, Args&&... args) {
-        i(fmt::format(str, std::forward<Args>(args)...));
-    }
+extern SCISSIO_API void i(const std::string& cmp, const std::string& msg);
+extern SCISSIO_API void w(const std::string& cmp, const std::string& msg);
+extern SCISSIO_API void e(const std::string& cmp, const std::string& msg);
+extern SCISSIO_API void d(const std::string& cmp, const std::string& msg);
 
-    static void e(const std::string& str);
-    static void w(const std::string& str);
-    static void d(const std::string& str);
-    static void v(const std::string& str);
-    static void i(const std::string& str);
-    static void print(Type type, const std::string& str);
-};
+template <typename... Args> void i(const std::string& cmp, const std::string& msg, Args&&... args) {
+    i(cmp, fmt::format(msg, std::forward<Args>(args)...));
+}
+
+template <typename... Args> void w(const std::string& cmp, const std::string& msg, Args&&... args) {
+    w(cmp, fmt::format(msg, std::forward<Args>(args)...));
+}
+
+template <typename... Args> void e(const std::string& cmp, const std::string& msg, Args&&... args) {
+    e(cmp, fmt::format(msg, std::forward<Args>(args)...));
+}
+
+template <typename... Args> void d(const std::string& cmp, const std::string& msg, Args&&... args) {
+    d(cmp, fmt::format(msg, std::forward<Args>(args)...));
+}
+} // namespace Log
 } // namespace Scissio

@@ -15,16 +15,11 @@ namespace Scissio {
 class Mesh;
 struct NoCreate;
 
-using ShaderSource = std::variant<std::string, Path>;
-using ShaderSources = std::vector<ShaderSource>;
-
 class SCISSIO_API Shader {
 public:
     explicit Shader(const NoCreate&);
     explicit Shader();
-    // explicit Shader(const std::string& vertSource, const std::string& fragSource,
-    //                const std::optional<std::string>& geomSource = std::nullopt);
-    // explicit Shader(const Path& vertPath, const Path& fragPath, const std::optional<Path>& geomPath = std::nullopt);
+
     virtual ~Shader();
     Shader(const Shader& other) = delete;
     Shader(Shader&& other) noexcept;

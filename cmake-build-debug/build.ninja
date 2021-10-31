@@ -35,6 +35,42 @@ CONFIGURATION = Debug
 include CMakeFiles\rules.ninja
 
 # =============================================================================
+# Object build statements for STATIC_LIBRARY target NanoVG
+
+
+#############################################
+# Order-only phony target for NanoVG
+
+build cmake_object_order_depends_target_NanoVG: phony || CMakeFiles\NanoVG.dir
+
+build CMakeFiles\NanoVG.dir\libs\nanovg\src\nanovg.c.obj: C_COMPILER__NanoVG_Debug ..\libs\nanovg\src\nanovg.c || cmake_object_order_depends_target_NanoVG
+  DEFINES = -DFONS_USE_FREETYPE=1
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -imsvc C:\tools\vcpkg\installed\x64-windows\include
+  OBJECT_DIR = CMakeFiles\NanoVG.dir
+  OBJECT_FILE_DIR = CMakeFiles\NanoVG.dir\libs\nanovg\src
+  TARGET_COMPILE_PDB = CMakeFiles\NanoVG.dir\NanoVG.pdb
+  TARGET_PDB = NanoVG.pdb
+
+
+# =============================================================================
+# Link build statements for STATIC_LIBRARY target NanoVG
+
+
+#############################################
+# Link the static library NanoVG.lib
+
+build NanoVG.lib: C_STATIC_LIBRARY_LINKER__NanoVG_Debug CMakeFiles\NanoVG.dir\libs\nanovg\src\nanovg.c.obj
+  LANGUAGE_COMPILE_FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1
+  LINK_FLAGS = /machine:x64
+  OBJECT_DIR = CMakeFiles\NanoVG.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_COMPILE_PDB = CMakeFiles\NanoVG.dir\NanoVG.pdb
+  TARGET_FILE = NanoVG.lib
+  TARGET_PDB = NanoVG.pdb
+
+# =============================================================================
 # Object build statements for STATIC_LIBRARY target Nuklear
 
 
@@ -381,6 +417,96 @@ build Nuklear.lib: C_STATIC_LIBRARY_LINKER__Nuklear_Debug CMakeFiles\Nuklear.dir
   TARGET_FILE = Nuklear.lib
   TARGET_PDB = Nuklear.pdb
 
+# =============================================================================
+# Object build statements for STATIC_LIBRARY target Wren
+
+
+#############################################
+# Order-only phony target for Wren
+
+build cmake_object_order_depends_target_Wren: phony || CMakeFiles\Wren.dir
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_compiler.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_compiler.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_core.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_core.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_debug.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_debug.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_primitive.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_primitive.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_utils.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_utils.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_value.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_value.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+build CMakeFiles\Wren.dir\libs\wren\src\vm\wren_vm.c.obj: C_COMPILER__Wren_Debug ..\libs\wren\src\vm\wren_vm.c || cmake_object_order_depends_target_Wren
+  DEFINES = -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc
+  INCLUDES = -I..\libs\wren\src\include
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  OBJECT_FILE_DIR = CMakeFiles\Wren.dir\libs\wren\src\vm
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_PDB = Wren.pdb
+
+
+# =============================================================================
+# Link build statements for STATIC_LIBRARY target Wren
+
+
+#############################################
+# Link the static library Wren.lib
+
+build Wren.lib: C_STATIC_LIBRARY_LINKER__Wren_Debug CMakeFiles\Wren.dir\libs\wren\src\vm\wren_compiler.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_core.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_debug.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_primitive.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_utils.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_value.c.obj CMakeFiles\Wren.dir\libs\wren\src\vm\wren_vm.c.obj
+  LANGUAGE_COMPILE_FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1
+  LINK_FLAGS = /machine:x64
+  OBJECT_DIR = CMakeFiles\Wren.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_COMPILE_PDB = CMakeFiles\Wren.dir\Wren.pdb
+  TARGET_FILE = Wren.lib
+  TARGET_PDB = Wren.pdb
+
 
 #############################################
 # Utility command for edit_cache
@@ -444,228 +570,93 @@ build src\rebuild_cache: phony src\CMakeFiles\rebuild_cache.util
 #############################################
 # Order-only phony target for ScissioLib
 
-build cmake_object_order_depends_target_ScissioLib: phony || cmake_object_order_depends_target_Nuklear
+build cmake_object_order_depends_target_ScissioLib: phony || cmake_object_order_depends_target_NanoVG cmake_object_order_depends_target_Nuklear cmake_object_order_depends_target_Wren
+
+build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetFontFace.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\AssetFontFace.cpp || cmake_object_order_depends_target_ScissioLib
+  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
+  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
+  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
+  TARGET_PDB = src\Scissio\ScissioLib.pdb
+
+build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetFontFamily.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\AssetFontFamily.cpp || cmake_object_order_depends_target_ScissioLib
+  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
+  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
+  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
+  TARGET_PDB = src\Scissio\ScissioLib.pdb
 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetManager.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\AssetManager.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\BasicTexture.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\BasicTexture.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetModel.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\AssetModel.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\FontFace.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\FontFace.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetTexture.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\AssetTexture.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\FontFamily.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\FontFamily.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\TextureCompressor.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\TextureCompressor.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Icon.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\Icon.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Client\Application.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Client\Application.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Client
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\IconAtlas.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\IconAtlas.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Client\Client.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Client\Client.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Client
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Image.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\Image.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Client\OpenGLApplication.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Client\OpenGLApplication.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\ImageAtlas.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\ImageAtlas.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Model.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\Model.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Assets\PbrTexture.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Assets\PbrTexture.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Assets
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Application.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Application.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Client.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Client.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Generator.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Generator.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Schemas.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Schemas.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Server.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Server.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Store.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Store.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewBuild.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\ViewBuild.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewMap.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\ViewMap.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewSpace.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\ViewSpace.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Widgets.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Widgets.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\World.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\World.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Game\Zone.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Game\Zone.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Game
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\BrdfRenderer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\BrdfRenderer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Client
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Canvas2D.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Canvas2D.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\FBuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\FBuffer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -674,16 +665,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\FBuffer.cpp.obj: CXX_COMPIL
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Framebuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Framebuffer.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\GBuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\GBuffer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -692,7 +674,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\GBuffer.cpp.obj: CXX_COMPIL
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Mesh.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Mesh.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -701,16 +683,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Mesh.cpp.obj: CXX_COMPILER_
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\PixelType.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\PixelType.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Primitives.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Primitives.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -719,16 +692,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Primitives.cpp.obj: CXX_COM
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderbuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Renderbuffer.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Renderer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -737,16 +701,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderer.cpp.obj: CXX_COMPI
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Shader.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Shader.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\SkyboxRenderer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\SkyboxRenderer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -755,7 +710,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\SkyboxRenderer.cpp.obj: CXX
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Texture.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -764,7 +719,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture.cpp.obj: CXX_COMPIL
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2D.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Texture2D.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -773,16 +728,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2D.cpp.obj: CXX_COMP
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2DMultisample.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\Texture2DMultisample.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCompressor.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\TextureCompressor.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -791,16 +737,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCompressor.cpp.obj: 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCubemap.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\TextureCubemap.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\ThumbnailRenderer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\ThumbnailRenderer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -809,7 +746,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\ThumbnailRenderer.cpp.obj: 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexArray.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\VertexArray.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -818,25 +755,16 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexArray.cpp.obj: CXX_CO
 build src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexBuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Graphics\VertexBuffer.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Graphics
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Gui\GuiContext.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Gui\GuiContext.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Gui
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Math\Quaternion.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Math\Quaternion.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Math
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -845,7 +773,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Math\Quaternion.cpp.obj: CXX_COMPILE
 build src\Scissio\CMakeFiles\ScissioLib.dir\Math\Utils.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Math\Utils.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Math
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -854,7 +782,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Math\Utils.cpp.obj: CXX_COMPILER__Sc
 build src\Scissio\CMakeFiles\ScissioLib.dir\Modding\ModManager.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Modding\ModManager.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Modding
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -863,7 +791,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Modding\ModManager.cpp.obj: CXX_COMP
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkClient.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkClient.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -872,7 +800,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkClient.cpp.obj: CXX_C
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkServer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkServer.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -881,7 +809,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkServer.cpp.obj: CXX_C
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpAcceptor.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkTcpAcceptor.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -890,7 +818,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpAcceptor.cpp.obj: 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpClient.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkTcpClient.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -899,7 +827,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpClient.cpp.obj: CX
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpConnector.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkTcpConnector.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -908,7 +836,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpConnector.cpp.obj:
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpServer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkTcpServer.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -917,7 +845,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpServer.cpp.obj: CX
 build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpStream.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Network\NetworkTcpStream.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Network
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -926,7 +854,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpStream.cpp.obj: CX
 build src\Scissio\CMakeFiles\ScissioLib.dir\Platform\OpenGLWindow.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Platform\OpenGLWindow.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Platform
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -935,7 +863,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Platform\OpenGLWindow.cpp.obj: CXX_C
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentGrid.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentGrid.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -944,7 +872,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentGrid.cpp.obj: CXX_COM
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentLines.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentLines.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -953,7 +881,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentLines.cpp.obj: CXX_CO
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentModel.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentModel.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -962,7 +890,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentModel.cpp.obj: CXX_CO
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentParticleEmitter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentParticleEmitter.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -971,16 +899,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentParticleEmitter.cpp.o
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentPointCloud.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentPointCloud.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentWireframe.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\ComponentWireframe.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -989,7 +908,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentWireframe.cpp.obj: CX
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Entity.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\Entity.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -998,7 +917,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Entity.cpp.obj: CXX_COMPILER__
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Grid.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\Grid.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1007,7 +926,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Grid.cpp.obj: CXX_COMPILER__Sc
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Object.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\Object.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1016,160 +935,70 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Object.cpp.obj: CXX_COMPILER__
 build src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Scene.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Scene\Scene.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Scene
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderBrdf.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderBrdf.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Server\Database.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Server\Database.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Server
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderGBufferView.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderGBufferView.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Server\Generator.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Server\Generator.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Server
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderGrid.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderGrid.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Server\Sector.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Server\Sector.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Server
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderLines.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderLines.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Server\Server.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Server\Server.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Server
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderModel.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderModel.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Server\World.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Server\World.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderParticleEmitter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderParticleEmitter.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPbr.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderPbr.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPbrBuffer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderPbrBuffer.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPointCloud.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderPointCloud.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkybox.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderSkybox.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxIrradiance.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderSkyboxIrradiance.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxNebula.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderSkyboxNebula.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxPrefilter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderSkyboxPrefilter.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxStars.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderSkyboxStars.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
-  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
-  TARGET_PDB = src\Scissio\ScissioLib.pdb
-
-build src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderWireframe.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Shaders\ShaderWireframe.cpp || cmake_object_order_depends_target_ScissioLib
-  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
-  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
-  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
-  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Shaders
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Server
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Base64.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Base64.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
   TARGET_PDB = src\Scissio\ScissioLib.pdb
 
-build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Database.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Database.cpp || cmake_object_order_depends_target_ScissioLib
+build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\FreeTypeImporter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\FreeTypeImporter.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1178,7 +1007,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Database.cpp.obj: CXX_COMPILER
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\GltfImporter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\GltfImporter.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1187,7 +1016,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\GltfImporter.cpp.obj: CXX_COMP
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Log.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Log.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1196,7 +1025,16 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Log.cpp.obj: CXX_COMPILER__Sci
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\NameGenerator.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\NameGenerator.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
+  OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
+  OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
+  TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
+  TARGET_PDB = src\Scissio\ScissioLib.pdb
+
+build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Packer.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Packer.cpp || cmake_object_order_depends_target_ScissioLib
+  DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
+  FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1205,7 +1043,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\NameGenerator.cpp.obj: CXX_COM
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\PngImporter.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\PngImporter.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1214,7 +1052,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\PngImporter.cpp.obj: CXX_COMPI
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Random.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Random.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1223,7 +1061,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Random.cpp.obj: CXX_COMPILER__
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\StringUtils.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\StringUtils.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1232,7 +1070,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\StringUtils.cpp.obj: CXX_COMPI
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Worker.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Worker.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1241,7 +1079,7 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Worker.cpp.obj: CXX_COMPILER__
 build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Xml.cpp.obj: CXX_COMPILER__ScissioLib_Debug ..\src\Scissio\Utils\Xml.cpp || cmake_object_order_depends_target_ScissioLib
   DEFINES = -DFMT_LOCALE -DFMT_SHARED -DGLFW_DLL -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 -DSCISSIO_EXPORTS=1 -DScissioLib_EXPORTS -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1 -D_WIN32_WINNT=0x0501
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1 /EHsc /wd4251 -std:c++17
-  INCLUDES = -I..\libs\Nuklear\src -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad
+  INCLUDES = -I..\libs\nanovg\src -I..\libs\Nuklear\src -I..\libs\wren\src\include -imsvc C:\tools\vcpkg\installed\x64-windows\include -imsvc C:\tools\vcpkg\installed\x64-windows\include\glad -imsvc ..\libs\wrenbind17\include
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   OBJECT_FILE_DIR = src\Scissio\CMakeFiles\ScissioLib.dir\Utils
   TARGET_COMPILE_PDB = src\Scissio\CMakeFiles\ScissioLib.dir\
@@ -1255,10 +1093,10 @@ build src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Xml.cpp.obj: CXX_COMPILER__Sci
 #############################################
 # Link the shared library src\Scissio\ScissioLib.dll
 
-build src\Scissio\ScissioLib.dll src\Scissio\ScissioLib.lib: CXX_SHARED_LIBRARY_LINKER__ScissioLib_Debug src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetManager.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\BasicTexture.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\FontFace.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\FontFamily.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Icon.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\IconAtlas.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Image.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\ImageAtlas.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\Model.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\PbrTexture.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Application.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Client.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Generator.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Schemas.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Server.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Store.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewBuild.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewMap.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\ViewSpace.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Widgets.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\World.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Game\Zone.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\BrdfRenderer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Canvas2D.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\FBuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Framebuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\GBuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Mesh.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\PixelType.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Primitives.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderbuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Shader.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\SkyboxRenderer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2D.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2DMultisample.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCompressor.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCubemap.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\ThumbnailRenderer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexArray.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexBuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Gui\GuiContext.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Math\Quaternion.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Math\Utils.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Modding\ModManager.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkClient.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkServer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpAcceptor.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpClient.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpConnector.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpServer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpStream.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Platform\OpenGLWindow.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentGrid.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentLines.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentModel.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentParticleEmitter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentPointCloud.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentWireframe.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Entity.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Grid.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Object.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Scene.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderBrdf.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderGBufferView.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderGrid.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderLines.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderModel.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderParticleEmitter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPbr.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPbrBuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderPointCloud.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkybox.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxIrradiance.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxNebula.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxPrefilter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderSkyboxStars.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Shaders\ShaderWireframe.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Base64.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Database.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\GltfImporter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Log.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\NameGenerator.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\PngImporter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Random.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\StringUtils.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Worker.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Xml.cpp.obj | C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\libxml2.lib C$:\tools\vcpkg\installed\x64-windows\lib\nanovg.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\libpng16d.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\sqlite3.lib Nuklear.lib || Nuklear.lib
+build src\Scissio\ScissioLib.dll src\Scissio\ScissioLib.lib: CXX_SHARED_LIBRARY_LINKER__ScissioLib_Debug src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetFontFace.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetFontFamily.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetManager.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetModel.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\AssetTexture.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Assets\TextureCompressor.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Client\Application.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Client\Client.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Client\OpenGLApplication.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Canvas2D.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Framebuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Mesh.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\PixelType.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Renderbuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Shader.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2D.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\Texture2DMultisample.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\TextureCubemap.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexArray.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Graphics\VertexBuffer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Math\Quaternion.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Math\Utils.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Modding\ModManager.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkClient.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkServer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpAcceptor.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpClient.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpConnector.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpServer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Network\NetworkTcpStream.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Platform\OpenGLWindow.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentGrid.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentLines.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentModel.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentParticleEmitter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\ComponentPointCloud.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Entity.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Grid.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Object.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Scene\Scene.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Server\Database.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Server\Generator.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Server\Sector.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Server\Server.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Server\World.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Base64.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\FreeTypeImporter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\GltfImporter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Log.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\NameGenerator.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Packer.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\PngImporter.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Random.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\StringUtils.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Worker.cpp.obj src\Scissio\CMakeFiles\ScissioLib.dir\Utils\Xml.cpp.obj | C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\libxml2.lib NanoVG.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\libpng16d.lib Nuklear.lib Wren.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib || NanoVG.lib Nuklear.lib Wren.lib
   LANGUAGE_COMPILE_FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL
-  LINK_LIBRARIES = C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\libxml2.lib  C:\tools\vcpkg\installed\x64-windows\lib\nanovg.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\libpng16d.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\sqlite3.lib  Nuklear.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+  LINK_LIBRARIES = C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glfw3dll.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\libxml2.lib  NanoVG.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\libpng16d.lib  Nuklear.lib  Wren.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib  shlwapi.lib  rpcrt4.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
   OBJECT_DIR = src\Scissio\CMakeFiles\ScissioLib.dir
   POST_BUILD = cmd.exe /C "cd /D C:\Projects\scissio\cmake-build-debug\src\Scissio && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/tools/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Projects/scissio/cmake-build-debug/src/Scissio/ScissioLib.dll -installedDir C:/tools/vcpkg/installed/x64-windows/debug/bin -OutVariable out"
   PRE_LINK = cd .
@@ -1267,7 +1105,6 @@ build src\Scissio\ScissioLib.dll src\Scissio\ScissioLib.lib: CXX_SHARED_LIBRARY_
   TARGET_FILE = src\Scissio\ScissioLib.dll
   TARGET_IMPLIB = src\Scissio\ScissioLib.lib
   TARGET_PDB = src\Scissio\ScissioLib.pdb
-  RSP_FILE = CMakeFiles\ScissioLib.rsp
 
 
 #############################################
@@ -1306,10 +1143,10 @@ build src\Scissio\CMakeFiles\Scissio.dir\Main.cpp.obj: CXX_COMPILER__Scissio_Deb
 #############################################
 # Link the executable src\Scissio\Scissio.exe
 
-build src\Scissio\Scissio.exe: CXX_EXECUTABLE_LINKER__Scissio_Debug src\Scissio\CMakeFiles\Scissio.dir\Main.cpp.obj | src\Scissio\ScissioLib.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib || src\Scissio\ScissioLib.dll
+build src\Scissio\Scissio.exe: CXX_EXECUTABLE_LINKER__Scissio_Debug src\Scissio\CMakeFiles\Scissio.dir\Main.cpp.obj | src\Scissio\ScissioLib.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib || src\Scissio\ScissioLib.dll
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
-  LINK_LIBRARIES = src\Scissio\ScissioLib.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+  LINK_LIBRARIES = src\Scissio\ScissioLib.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib  shlwapi.lib  rpcrt4.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
   OBJECT_DIR = src\Scissio\CMakeFiles\Scissio.dir
   POST_BUILD = cmd.exe /C "cd /D C:\Projects\scissio\cmake-build-debug\src\Scissio && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/tools/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Projects/scissio/cmake-build-debug/src/Scissio/Scissio.exe -installedDir C:/tools/vcpkg/installed/x64-windows/debug/bin -OutVariable out"
   PRE_LINK = cd .
@@ -1446,10 +1283,10 @@ build test\Scissio\CMakeFiles\ScissioTests.dir\Utils\DatabaseTests.cpp.obj: CXX_
 #############################################
 # Link the executable src\Scissio\ScissioTests.exe
 
-build src\Scissio\ScissioTests.exe: CXX_EXECUTABLE_LINKER__ScissioTests_Debug test\Scissio\CMakeFiles\ScissioTests.dir\Main.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Math\UtilsTests.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Network\NetworkClientTest.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Network\NetworkMessageDispatcherTest.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Scene\OctreeTests.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Utils\DatabaseTests.cpp.obj | src\Scissio\ScissioLib.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib || src\Scissio\ScissioLib.dll
+build src\Scissio\ScissioTests.exe: CXX_EXECUTABLE_LINKER__ScissioTests_Debug test\Scissio\CMakeFiles\ScissioTests.dir\Main.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Math\UtilsTests.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Network\NetworkClientTest.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Network\NetworkMessageDispatcherTest.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Scene\OctreeTests.cpp.obj test\Scissio\CMakeFiles\ScissioTests.dir\Utils\DatabaseTests.cpp.obj | src\Scissio\ScissioLib.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib C$:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib || src\Scissio\ScissioLib.dll
   FLAGS = -m64 /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
-  LINK_LIBRARIES = src\Scissio\ScissioLib.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+  LINK_LIBRARIES = src\Scissio\ScissioLib.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\fmtd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\rocksdbd.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\zlibd.lib  shlwapi.lib  rpcrt4.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\glad.lib  C:\tools\vcpkg\installed\x64-windows\debug\lib\freetyped.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
   OBJECT_DIR = test\Scissio\CMakeFiles\ScissioTests.dir
   POST_BUILD = cmd.exe /C "cd /D C:\Projects\scissio\cmake-build-debug\test\Scissio && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/tools/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Projects/scissio/cmake-build-debug/src/Scissio/ScissioTests.exe -installedDir C:/tools/vcpkg/installed/x64-windows/debug/bin -OutVariable out"
   PRE_LINK = cd .
@@ -1472,6 +1309,8 @@ build test\Scissio\edit_cache: phony test\Scissio\CMakeFiles\edit_cache.util
 # =============================================================================
 # Target aliases.
 
+build NanoVG: phony NanoVG.lib
+
 build Nuklear: phony Nuklear.lib
 
 build Scissio: phony src\Scissio\Scissio.exe
@@ -1486,6 +1325,8 @@ build ScissioTests: phony src\Scissio\ScissioTests.exe
 
 build ScissioTests.exe: phony src\Scissio\ScissioTests.exe
 
+build Wren: phony Wren.lib
+
 # =============================================================================
 # Folder targets.
 
@@ -1494,7 +1335,7 @@ build ScissioTests.exe: phony src\Scissio\ScissioTests.exe
 #############################################
 # Folder: C:/Projects/scissio/cmake-build-debug
 
-build all: phony Nuklear.lib src\all test\all
+build all: phony NanoVG.lib Nuklear.lib Wren.lib src\all test\all
 
 # =============================================================================
 
@@ -1531,14 +1372,14 @@ build test\Scissio\all: phony src\Scissio\ScissioTests.exe
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | ..\CMakeLists.txt ..\modules\FindArgAgg.cmake ..\modules\FindCgltf.cmake ..\modules\FindMsgpack.cmake ..\modules\FindNuklear.cmake ..\modules\FindPng.cmake ..\modules\FindStb.cmake ..\modules\FindXml2.cmake ..\src\CMakeLists.txt ..\src\Scissio\CMakeLists.txt ..\test\CMakeLists.txt ..\test\Scissio\CMakeLists.txt C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeDependentOption.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageMessage.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\WindowsPaths.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glm\glm-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake C$:\tools\vcpkg\installed\x64-windows\share\termcolor\termcolor-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\termcolor\termcolor-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets.cmake C$:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake CMakeCache.txt CMakeFiles\3.19.2\CMakeCCompiler.cmake CMakeFiles\3.19.2\CMakeCXXCompiler.cmake CMakeFiles\3.19.2\CMakeRCCompiler.cmake CMakeFiles\3.19.2\CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | ..\CMakeLists.txt ..\modules\FindCgltf.cmake ..\modules\FindMsgpack.cmake ..\modules\FindNanoVG.cmake ..\modules\FindNuklear.cmake ..\modules\FindPng.cmake ..\modules\FindStb.cmake ..\modules\FindWren.cmake ..\modules\FindWrenBind17.cmake ..\modules\FindXml2.cmake ..\src\CMakeLists.txt ..\src\Scissio\CMakeLists.txt ..\test\CMakeLists.txt ..\test\Scissio\CMakeLists.txt C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeDependentOption.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckIncludeFile.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckLibraryExists.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageMessage.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindThreads.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindZLIB.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\SelectLibraryConfigurations.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glm\glm-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake C$:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake CMakeCache.txt CMakeFiles\3.19.2\CMakeCCompiler.cmake CMakeFiles\3.19.2\CMakeCXXCompiler.cmake CMakeFiles\3.19.2\CMakeRCCompiler.cmake CMakeFiles\3.19.2\CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build ..\CMakeLists.txt ..\modules\FindArgAgg.cmake ..\modules\FindCgltf.cmake ..\modules\FindMsgpack.cmake ..\modules\FindNuklear.cmake ..\modules\FindPng.cmake ..\modules\FindStb.cmake ..\modules\FindXml2.cmake ..\src\CMakeLists.txt ..\src\Scissio\CMakeLists.txt ..\test\CMakeLists.txt ..\test\Scissio\CMakeLists.txt C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeDependentOption.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageMessage.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\WindowsPaths.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glm\glm-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\nanovg\nanovgTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake C$:\tools\vcpkg\installed\x64-windows\share\termcolor\termcolor-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\termcolor\termcolor-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\unofficial-sqlite3\unofficial-sqlite3-targets.cmake C$:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake CMakeCache.txt CMakeFiles\3.19.2\CMakeCCompiler.cmake CMakeFiles\3.19.2\CMakeCXXCompiler.cmake CMakeFiles\3.19.2\CMakeRCCompiler.cmake CMakeFiles\3.19.2\CMakeSystem.cmake: phony
+build ..\CMakeLists.txt ..\modules\FindCgltf.cmake ..\modules\FindMsgpack.cmake ..\modules\FindNanoVG.cmake ..\modules\FindNuklear.cmake ..\modules\FindPng.cmake ..\modules\FindStb.cmake ..\modules\FindWren.cmake ..\modules\FindWrenBind17.cmake ..\modules\FindXml2.cmake ..\src\CMakeLists.txt ..\src\Scissio\CMakeLists.txt ..\test\CMakeLists.txt ..\test\Scissio\CMakeLists.txt C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCXXInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeCommonLanguageInclude.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeDependentOption.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeFindDependencyMacro.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeGenericSystem.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeInitializeConfigs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeLanguageInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeRCInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInformation.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CMakeSystemSpecificInitialize.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckCSourceCompiles.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckIncludeFile.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\CheckLibraryExists.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\CMakeCommonCompilerMacros.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Compiler\Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageHandleStandardArgs.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindPackageMessage.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindThreads.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\FindZLIB.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Internal\CheckSourceCompiles.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-C.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang-CXX.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-Clang.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows-MSVC.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\Windows.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\Platform\WindowsPaths.cmake C$:\Program$ Files\JetBrains\CLion$ 2021.1\bin\cmake\win\share\cmake-3.19\Modules\SelectLibraryConfigurations.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\Catch2\Catch2Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\asio\asio-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\cxxopts\cxxopts-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\fmt\fmt-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-config-version.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\freetype\freetype-targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glad\gladTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Config.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3ConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\glfw3\glfw3Targets.cmake C$:\tools\vcpkg\installed\x64-windows\share\glm\glm-config.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\rocksdb\RocksDBTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfig.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets-debug.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets-release.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigTargets.cmake C$:\tools\vcpkg\installed\x64-windows\share\spdlog\spdlogConfigVersion.cmake C$:\tools\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake C$:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake CMakeCache.txt CMakeFiles\3.19.2\CMakeCCompiler.cmake CMakeFiles\3.19.2\CMakeCXXCompiler.cmake CMakeFiles\3.19.2\CMakeRCCompiler.cmake CMakeFiles\3.19.2\CMakeSystem.cmake: phony
 
 
 #############################################

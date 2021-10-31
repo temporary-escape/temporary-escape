@@ -3,6 +3,8 @@
 #include "NetworkServer.hpp"
 #include "NetworkTcpStream.hpp"
 
+#define CMP "NetworkTcpAcceptor"
+
 using namespace Scissio;
 
 Network::TcpAcceptor::TcpAcceptor(Server& server, asio::io_service& service, const int port)
@@ -23,7 +25,7 @@ void Network::TcpAcceptor::close() {
 
 void Network::TcpAcceptor::start() {
     accept();
-    Log::i("Network TCP acceptor started on: {}", endpoint.address().to_string());
+    Log::i(CMP, "Network TCP acceptor started on: [{}]:{}", endpoint.address().to_string(), endpoint.port());
 }
 
 void Network::TcpAcceptor::accept() {
@@ -36,13 +38,13 @@ void Network::TcpAcceptor::accept() {
 
             try {
                 const auto peer = std::make_shared<TcpStream>(*self, std::move(self->socket));
-                server.eventConnect(peer);
+                self->server.eventConnect(peer);
                 peer->receive();
 
-                std::lock_guard<std::mutex> lock{mutex};
+                std::lock_guard<std::mutex> lock{self->mutex};
                 self->streams.push_back(peer);
             } catch (std::exception& e) {
-                Log::e("Network TCP acceptor async_accept error: {}", e.what());
+                Log::e(CMP, "Network TCP acceptor async_accept error: {}", e.what());
             }
         }
 
@@ -56,7 +58,7 @@ void Network::TcpAcceptor::eventPacket(const StreamPtr& stream, Packet packet) {
     try {
         server.eventPacket(stream, std::move(packet));
     } catch (std::exception& e) {
-        Log::e("Network TCP acceptor failed to accept packet id: {}", packetId);
+        Log::e(CMP, "Network TCP acceptor failed to accept packet id: {}", packetId);
         backtrace(e);
     }
 }
@@ -65,7 +67,7 @@ void Network::TcpAcceptor::eventDisconnect(const StreamPtr& stream) {
     try {
         server.eventDisconnect(stream);
     } catch (std::exception& e) {
-        Log::e("Network TCP acceptor failed to disconnect stream");
+        Log::e(CMP, "Network TCP acceptor failed to disconnect stream");
         backtrace(e);
     }
 }

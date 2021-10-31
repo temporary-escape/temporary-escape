@@ -1,9 +1,6 @@
 #pragma once
 
-#include "../Graphics/PixelType.hpp"
-#include "../Library.hpp"
-#include "../Math/Vector.hpp"
-#include "Path.hpp"
+#include "ImageImporter.hpp"
 
 #ifndef PNG_H
 typedef void* png_structp;
@@ -11,28 +8,19 @@ typedef void* png_infop;
 #endif
 
 namespace Scissio {
-class SCISSIO_API PngImporter {
+class SCISSIO_API PngImporter : public ImageImporter {
 public:
     explicit PngImporter(const Path& path);
-    virtual ~PngImporter();
+    ~PngImporter() override;
 
-    int getWidth() const {
-        return width;
-    }
-    int getHeight() const {
-        return height;
-    }
-    int getDepth() const {
-        return depth;
-    }
-    PixelType getPixelType() const {
+    [[nodiscard]] PixelType getPixelType() const override {
         return pixelType;
     }
-    void* getData() const;
-    size_t getDataSize() const {
+    [[nodiscard]] void* getData() const override;
+    [[nodiscard]] size_t getDataSize() const override {
         return size;
     }
-    Vector2i getSize() const {
+    [[nodiscard]] Vector2i getSize() const override {
         return {width, height};
     }
 

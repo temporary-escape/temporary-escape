@@ -1,0 +1,14 @@
+Determining if the include file pthread.h exists failed with the following output:
+Change Dir: C:/Projects/scissio/cmake-build-debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/PROGRA~2/MICROS~2/2019/COMMUN~1/Common7/IDE/COMMON~1/MICROS~1/CMake/Ninja/ninja.exe cmTC_361a0 && [1/2] Building C object CMakeFiles\cmTC_361a0.dir\CheckIncludeFile.c.obj
+FAILED: CMakeFiles/cmTC_361a0.dir/CheckIncludeFile.c.obj 
+C:\PROGRA~1\LLVM\bin\clang-cl.exe  /nologo   -m64  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_361a0.dir\CheckIncludeFile.c.obj /FdCMakeFiles\cmTC_361a0.dir\ -c -- CheckIncludeFile.c
+CheckIncludeFile.c(1,10): fatal error: 'pthread.h' file not found
+#include <pthread.h>
+         ^~~~~~~~~~~
+1 error generated.
+ninja: build stopped: subcommand failed.
+
+
+

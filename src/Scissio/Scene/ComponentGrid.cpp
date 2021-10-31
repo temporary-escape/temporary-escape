@@ -1,7 +1,5 @@
 #include "ComponentGrid.hpp"
 
-#include "../Shaders/ShaderGrid.hpp"
-
 using namespace Scissio;
 
 ComponentGrid::ComponentGrid() : Component(Type) {
@@ -11,6 +9,12 @@ ComponentGrid::ComponentGrid(Object& object) : Component(Type, object) {
 }
 
 void ComponentGrid::rebuildBuffers() {
+    typedef VertexAttribute<0, Vector3> Position;
+    typedef VertexAttribute<1, Vector3> Normal;
+    typedef VertexAttribute<2, Vector2> TextureCoordinates;
+    typedef VertexAttribute<3, Vector4> Tangent;
+    typedef VertexAttribute<4, Matrix4> Instances;
+
     const auto blocks = Grid::buildInstanceBuffer();
 
     const auto fastInsert = meshes.empty();
@@ -56,9 +60,8 @@ void ComponentGrid::rebuildBuffers() {
             p.material = primitive.material;
 
             mesh = Mesh{};
-            mesh.addVertexBuffer(primitive.vbo, ShaderGrid::Position{}, ShaderGrid::Normal{},
-                                 ShaderGrid::TextureCoordinates{}, ShaderGrid::Tangent{});
-            mesh.addVertexBufferInstanced(data.instances, ShaderGrid::Instances{});
+            mesh.addVertexBuffer(primitive.vbo, Position{}, Normal{}, TextureCoordinates{}, Tangent{});
+            mesh.addVertexBufferInstanced(data.instances, Instances{});
             mesh.setIndexBuffer(primitive.ibo, primitive.mesh.getIndexType());
             mesh.setPrimitive(primitive.mesh.getPrimitive());
             mesh.setCount(primitive.mesh.getCount());
@@ -71,7 +74,7 @@ void ComponentGrid::rebuildBuffers() {
     }
 }
 
-void ComponentGrid::render(ShaderGrid& shader) {
+void ComponentGrid::render(Shader& shader) {
     if (isDirty()) {
         rebuildBuffers();
     }
@@ -80,7 +83,7 @@ void ComponentGrid::render(ShaderGrid& shader) {
 
     const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
 
-    shader.setModelMatrix(transform);
+    /*shader.setModelMatrix(transform);
     shader.setNormalMatrix(transformInverted);
 
     for (const auto& mesh : meshes) {
@@ -122,5 +125,5 @@ void ComponentGrid::render(ShaderGrid& shader) {
 
             shader.draw(primitive.mesh);
         }
-    }
+    }*/
 }

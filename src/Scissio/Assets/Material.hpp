@@ -1,16 +1,16 @@
 #pragma once
 
-#include "PbrTexture.hpp"
+#include "AssetTexture.hpp"
 
 namespace Scissio {
 struct Material {
     Vector4 baseColorFactor{1.0f};
     Vector4 emissiveFactor{1.0f};
     Vector4 metallicRoughnessFactor{1.0f};
-    PbrTexturePtr baseColorTexture{nullptr};
-    PbrTexturePtr emissiveTexture{nullptr};
-    PbrTexturePtr normalTexture{nullptr};
-    PbrTexturePtr ambientOcclusionTexture{nullptr};
-    PbrTexturePtr metallicRoughnessTexture{nullptr};
+    AssetTexturePtr baseColorTexture{nullptr};
+    AssetTexturePtr emissiveTexture{nullptr};
+    AssetTexturePtr normalTexture{nullptr};
+    AssetTexturePtr ambientOcclusionTexture{nullptr};
+    AssetTexturePtr metallicRoughnessTexture{nullptr};
 };
 } // namespace Scissio
