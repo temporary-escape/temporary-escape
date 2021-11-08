@@ -3,7 +3,7 @@
 #include "../Assets/AssetManager.hpp"
 #include "../Config.hpp"
 #include "../Library.hpp"
-#include "../Network/NetworkTcpServer.hpp"
+#include "../Network/NetworkServer.hpp"
 #include "../Utils/Worker.hpp"
 #include "Database.hpp"
 #include "Messages.hpp"
@@ -11,18 +11,39 @@
 #include "Session.hpp"
 
 namespace Scissio {
-class SCISSIO_API Server : public Network::TcpServer {
+class SCISSIO_API Server {
 public:
     explicit Server(const Config& config, AssetManager& assetManager, Database& db);
-    ~Server() override;
+    virtual ~Server();
 
     void tick();
 
-    void eventConnect(const Network::StreamPtr& stream) override;
-    void eventDisconnect(const Network::StreamPtr& stream) override;
-    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) override;
+    void eventConnect(const Network::StreamPtr& stream);
+    void eventDisconnect(const Network::StreamPtr& stream);
+    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet);
 
 private:
+    class EventListener : public Network::EventListener {
+    public:
+        explicit EventListener(Server& server) : server(server) {
+        }
+
+        void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) override {
+            server.eventPacket(stream, std::move(packet));
+        }
+
+        void eventConnect(const Network::StreamPtr& stream) override {
+            server.eventConnect(stream);
+        }
+
+        void eventDisconnect(const Network::StreamPtr& stream) override {
+            server.eventDisconnect(stream);
+        }
+
+    private:
+        Server& server;
+    };
+
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
     SessionPtr getSession(const Network::StreamPtr& stream);
 
@@ -37,6 +58,9 @@ private:
 
     Worker worker;
     Worker::Strand strand;
+
+    std::unique_ptr<EventListener> listener;
+    std::shared_ptr<Network::Server> network;
 
     std::shared_mutex sessionsMutex;
     std::unordered_map<Network::StreamPtr, SessionPtr> sessions;

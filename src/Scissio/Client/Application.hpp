@@ -3,6 +3,7 @@
 #include "../Future.hpp"
 #include "../Modding/ModManager.hpp"
 #include "../Platform/Window.hpp"
+#include "../Server/Generator.hpp"
 #include "../Server/Server.hpp"
 #include "Client.hpp"
 #include <atomic>
@@ -40,6 +41,7 @@ private:
     std::shared_ptr<AssetManager> assetManager;
     std::shared_ptr<ModManager> modManager;
     std::shared_ptr<Database> db;
+    std::shared_ptr<Generator> generator;
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;
 

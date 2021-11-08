@@ -1,7 +1,9 @@
 #include "../Common.hpp"
 #include <Scene/Octree.hpp>
 
-TEST("Insert at zero depth then expand") {
+#define TAG "[Octree]"
+
+TEST_CASE("Insert at zero depth then expand", TAG) {
     Octree<int> tree;
     auto ref = tree.insert({0, 0, 0});
     REQUIRE(ref.node.parent == 0);
@@ -68,7 +70,7 @@ TEST("Insert at zero depth then expand") {
     REQUIRE(tree.find({3, 1, 1}) != std::nullopt);
 }
 
-TEST("Ray cast #1") {
+TEST_CASE("Ray cast #1", TAG) {
     const Vector3 from{-1.80790210f, 1.61972129f, 2.19639850f};
     const Vector3 to{56.6261482f, -37.6193161f, -71.3039246f};
 
@@ -83,7 +85,7 @@ TEST("Ray cast #1") {
     REQUIRE(res.value().offset == 1); // {0, 0, 0}
 }
 
-TEST("Ray cast #2") {
+TEST_CASE("Ray cast #2", TAG) {
     const Vector3 from{-2.31813049f, 0.834588826f, 0.807334304f};
     const Vector3 to{96.6625977f, -14.8718967f, -22.7634792f};
 
@@ -98,7 +100,7 @@ TEST("Ray cast #2") {
     REQUIRE(res.value().offset == 1); // {0, 0, 0}
 }
 
-TEST("Ray cast #3") {
+TEST_CASE("Ray cast #3", TAG) {
     const Vector3 from{6.01735115f, 0.846191764f, 0.0433584750f};
     const Vector3 to{-94.3871002f, -12.2351160f, 0.299766093f};
 

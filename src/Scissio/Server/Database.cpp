@@ -14,6 +14,122 @@ struct Database::Data {
     rocksdb::OptimisticTransactionDB* txn;
 };
 
+class TransactionWrapper : public Transaction {
+public:
+    explicit TransactionWrapper(std::shared_ptr<rocksdb::Transaction> txn, rocksdb::DB* db)
+        : txn(std::move(txn)), db(db) {
+    }
+
+    ~TransactionWrapper() override = default;
+
+private:
+    bool getForUpdateInternal(const std::string& key, const std::function<void(const char*, size_t)>& fn) override {
+        rocksdb::ReadOptions options{};
+        rocksdb::PinnableSlice slice;
+        const auto s = txn->GetForUpdate(options, db->DefaultColumnFamily(), key, &slice);
+        if (!s.ok()) {
+            if (s.code() == rocksdb::Status::Code::kNotFound) {
+                return false;
+            }
+            EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
+        }
+
+        fn(slice.data(), slice.size());
+
+        return true;
+    }
+
+    bool getInternal(const std::string& key, const std::function<void(const char*, size_t)>& fn) override {
+        rocksdb::ReadOptions options{};
+        rocksdb::PinnableSlice slice;
+        const auto s = txn->Get(options, db->DefaultColumnFamily(), key, &slice);
+        if (!s.ok()) {
+            if (s.code() == rocksdb::Status::Code::kNotFound) {
+                return false;
+            }
+            EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
+        }
+
+        fn(slice.data(), slice.size());
+
+        return true;
+    }
+
+    void multiGetInternal(const std::vector<std::string>& keys,
+                          const std::function<void(const std::string&, const char*, size_t)>& fn) override {
+        rocksdb::ReadOptions options{};
+        std::vector<rocksdb::Slice> keysSlice;
+        keysSlice.reserve(keys.size());
+        for (const auto& key : keys) {
+            keysSlice.emplace_back(key.data(), key.size());
+        }
+        std::vector<rocksdb::PinnableSlice> slices;
+        std::vector<rocksdb::Status> statuses;
+        slices.resize(keys.size());
+        statuses.resize(keys.size());
+        txn->MultiGet(options, db->DefaultColumnFamily(), keys.size(), keysSlice.data(), slices.data(),
+                      statuses.data());
+
+        for (size_t i = 0; i < keys.size(); i++) {
+            if (statuses[i].ok()) {
+                fn(keys[i], slices[i].data(), slices[i].size());
+            }
+        }
+    }
+
+    void seekInternal(const std::string& prefix,
+                      const std::function<void(const std::string&, const char*, size_t)>& fn) override {
+        rocksdb::ReadOptions options{};
+        options.prefix_same_as_start = true;
+        std::shared_ptr<rocksdb::Iterator> iter(txn->GetIterator(options));
+        iter->Seek(prefix);
+
+        while (iter->Valid()) {
+            if (iter->key().starts_with(prefix)) {
+                fn(iter->key().ToString(), iter->value().data(), iter->value().size());
+            }
+            iter->Next();
+        }
+    }
+
+    void putInternal(const std::string& key, const char* rawData, size_t size) override {
+        rocksdb::WriteOptions options{};
+        rocksdb::Slice slice(rawData, size);
+        const auto s = txn->Put(db->DefaultColumnFamily(), key, slice);
+        if (!s.ok()) {
+            EXCEPTION("Failed to put database key: {} error: {}", key, s.ToString());
+        }
+    }
+
+    void removeInternal(const std::string& key) override {
+        rocksdb::WriteOptions options{};
+        const auto s = txn->Delete(db->DefaultColumnFamily(), key);
+        if (!s.ok()) {
+            EXCEPTION("Failed to delete database key: {} error: {}", key, s.ToString());
+        }
+    }
+
+    void removeByPrefixInternal(const std::string& prefix) override {
+        rocksdb::ReadOptions options{};
+        options.prefix_same_as_start = true;
+        std::shared_ptr<rocksdb::Iterator> iter(txn->GetIterator(options));
+        iter->Seek(prefix);
+
+        while (iter->Valid()) {
+            if (iter->key().starts_with(prefix)) {
+                const auto s = txn->Delete(iter->key());
+                if (!s.ok()) {
+                    EXCEPTION("Failed to delete database key: {} error: {}", iter->key().ToString(), s.ToString());
+                }
+            }
+            iter->Next();
+        }
+    }
+
+    std::shared_ptr<rocksdb::Transaction> txn;
+    rocksdb::DB* db;
+};
+
 Database::Database(const Path& path) : data(std::make_unique<Data>()) {
     rocksdb::Options options;
     options.create_if_missing = true;
@@ -38,7 +154,7 @@ Database::~Database() {
     }
 }
 
-bool Database::get(const std::string& key, const std::function<void(const char*, size_t)>& fn) {
+bool Database::getInternal(const std::string& key, const std::function<void(const char*, size_t)>& fn) {
     rocksdb::ReadOptions options{};
     rocksdb::PinnableSlice slice;
     const auto s = data->db->Get(options, data->db->DefaultColumnFamily(), key, &slice);
@@ -54,50 +170,71 @@ bool Database::get(const std::string& key, const std::function<void(const char*,
     return true;
 }
 
-bool Database::update(
-    const std::string& key,
-    const std::function<void(const char*, size_t, const std::function<void(const char*, size_t)>&)>& fn) {
-    rocksdb::WriteOptions writeOptions{};
+void Database::multiGetInternal(const std::vector<std::string>& keys,
+                                const std::function<void(const std::string&, const char*, size_t)>& fn) {
+    rocksdb::ReadOptions options{};
+    std::vector<rocksdb::Slice> keysSlice;
+    keysSlice.reserve(keys.size());
+    for (const auto& key : keys) {
+        keysSlice.emplace_back(key.data(), key.size());
+    }
+    std::vector<rocksdb::PinnableSlice> slices;
+    std::vector<rocksdb::Status> statuses;
+    slices.resize(keys.size());
+    statuses.resize(keys.size());
+    data->db->MultiGet(options, data->db->DefaultColumnFamily(), keys.size(), keysSlice.data(), slices.data(),
+                       statuses.data());
 
-    while (true) {
-        std::shared_ptr<rocksdb::Transaction> txn(data->txn->BeginTransaction(writeOptions));
-
-        rocksdb::ReadOptions readOptions{};
-        rocksdb::PinnableSlice readSlice;
-        auto s = txn->GetForUpdate(readOptions, data->db->DefaultColumnFamily(), key, &readSlice);
-
-        if (!s.ok()) {
-            if (s.code() == rocksdb::Status::Code::kNotFound) {
-                return false;
-            }
-            EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
+    for (size_t i = 0; i < keys.size(); i++) {
+        if (statuses[i].ok()) {
+            fn(keys[i], slices[i].data(), slices[i].size());
         }
-
-        auto inserted = false;
-
-        const auto callback = [&](const char* rawData, const size_t size) {
-            rocksdb::Slice putSlice(rawData, size);
-            auto ss = data->db->Put(writeOptions, data->db->DefaultColumnFamily(), key, putSlice);
-            if (!ss.ok()) {
-                EXCEPTION("Failed to put database key: {} error: {}", key, s.ToString());
-            }
-
-            inserted = true;
-        };
-
-        fn(readSlice.data(), readSlice.size(), callback);
-
-        if (inserted) {
-            s = txn->Commit();
-            if (!s.ok()) {
-                EXCEPTION("Failed to commit database key: {} error: {}", key, s.ToString());
-            }
-        }
-        return true;
     }
 }
 
-void Database::put(const std::string& key, const char* rawData, size_t size) {
+void Database::seekInternal(const std::string& prefix,
+                            const std::function<void(const std::string&, const char*, size_t)>& fn) {
+    rocksdb::ReadOptions options{};
+    options.prefix_same_as_start = true;
+    std::shared_ptr<rocksdb::Iterator> iter(data->db->NewIterator(options));
+    iter->Seek(prefix);
+
+    while (iter->Valid()) {
+        if (iter->key().starts_with(prefix)) {
+            fn(iter->key().ToString(), iter->value().data(), iter->value().size());
+        }
+        iter->Next();
+    }
+}
+
+bool Database::transaction(const std::function<bool(Transaction&)>& fn, bool retry) {
+    while (true) {
+        rocksdb::WriteOptions writeOptions{};
+        std::shared_ptr<rocksdb::Transaction> txn(data->txn->BeginTransaction(writeOptions));
+
+        TransactionWrapper wrapper(txn, data->db);
+
+        if (fn(wrapper)) {
+            const auto s = txn->Commit();
+            if (s.code() == rocksdb::Status::Code::kBusy) {
+                if (retry) {
+                    continue;
+                }
+                return false;
+            }
+
+            if (!s.ok()) {
+                EXCEPTION("Failed to commit transaction error: {}", s.ToString());
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+}
+
+void Database::putInternal(const std::string& key, const char* rawData, size_t size) {
     rocksdb::WriteOptions options{};
     rocksdb::Slice slice(rawData, size);
     const auto s = data->db->Put(options, data->db->DefaultColumnFamily(), key, slice);
@@ -106,10 +243,28 @@ void Database::put(const std::string& key, const char* rawData, size_t size) {
     }
 }
 
-void Database::remove(const std::string& key) {
+void Database::removeInternal(const std::string& key) {
     rocksdb::WriteOptions options{};
     const auto s = data->db->Delete(options, data->db->DefaultColumnFamily(), key);
     if (!s.ok()) {
         EXCEPTION("Failed to delete database key: {} error: {}", key, s.ToString());
+    }
+}
+
+void Database::removeByPrefixInternal(const std::string& prefix) {
+    rocksdb::ReadOptions options{};
+    rocksdb::WriteOptions writeOptions{};
+    options.prefix_same_as_start = true;
+    std::shared_ptr<rocksdb::Iterator> iter(data->db->NewIterator(options));
+    iter->Seek(prefix);
+
+    while (iter->Valid()) {
+        if (iter->key().starts_with(prefix)) {
+            const auto s = data->db->Delete(writeOptions, iter->key());
+            if (!s.ok()) {
+                EXCEPTION("Failed to delete database key: {} error: {}", iter->key().ToString(), s.ToString());
+            }
+        }
+        iter->Next();
     }
 }

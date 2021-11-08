@@ -1,4 +1,5 @@
 #include "OpenGLWindow.hpp"
+#include "../Utils/Log.hpp"
 
 // clang-format off
 #include <glad/glad.h>
@@ -7,10 +8,12 @@
 #include <iostream>
 #include <stdexcept>
 
+#define CMP "OpenGLWindow"
+
 using namespace Scissio;
 
 static void errorCallback(const int error, const char* description) {
-    std::cerr << "error: " << error << " description: " << description << std::endl;
+    Log::e(CMP, "{}", description);
 }
 
 OpenGLWindow::OpenGLWindow(const std::string& name, const Vector2i& size) : window(nullptr) {

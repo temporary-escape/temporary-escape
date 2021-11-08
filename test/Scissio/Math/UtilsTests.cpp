@@ -1,7 +1,9 @@
 #include "../Common.hpp"
 #include <Math/Utils.hpp>
 
-TEST("Ray box intersection") {
+#define TAG "[Math]"
+
+TEST_CASE("Ray box intersection", TAG) {
     Vector3 min{-0.5f};
     Vector3 max{0.5f};
     Vector3 from{-2.0f, 0.0f, 0.0f};

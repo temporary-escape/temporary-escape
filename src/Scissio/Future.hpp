@@ -36,6 +36,13 @@ public:
         return f.get();
     }
 
+    template <class Rep, class Period> T get(const std::chrono::duration<Rep, Period>& duration) {
+        if (waitFor(duration) == std::future_status::timeout) {
+            throw std::runtime_error("timeout while waiting for promise");
+        }
+        return get();
+    }
+
     operator bool() const {
         return ready();
     }

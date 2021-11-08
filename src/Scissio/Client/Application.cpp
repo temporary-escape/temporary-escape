@@ -106,9 +106,17 @@ void Application::load() {
     const auto saveDir = config.userdataSavesPath / "Universe";
 
     db = std::make_shared<Database>(saveDir / "database");
-    server = std::make_shared<Server>(config, *assetManager, *db);
+
+    loadingProgress.store(0.8f);
+
+    generator = std::make_shared<Generator>(*db, Generator::Options{});
+    generator->generateWorld(123456789u);
 
     loadingProgress.store(0.9f);
+
+    server = std::make_shared<Server>(config, *assetManager, *db);
+
+    loadingProgress.store(0.95f);
 
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
 

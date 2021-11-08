@@ -28,6 +28,10 @@ void main() {
 
 static const float FULL_SCREEN_QUAD[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 
+TextureCompressor::TextureCompressor(const NoCreate&)
+    : shader(NO_CREATE), fbo(NO_CREATE), fboColor(NO_CREATE), fboDepth(NO_CREATE), vao(NO_CREATE), vbo(NO_CREATE) {
+}
+
 TextureCompressor::TextureCompressor() : textureSize{0, 0}, vbo{VertexBufferType::Array} {
 
     shader.addFragmentShader(SHADER_FRAG);

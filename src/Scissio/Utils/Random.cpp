@@ -1,5 +1,6 @@
 #include "Random.hpp"
 #include "NameGenerator.hpp"
+#include <uuid/uuid.h>
 
 using namespace Scissio;
 
@@ -31,4 +32,14 @@ uint64_t Scissio::randomId(const std::function<bool(uint64_t)>& pred) {
 
 std::string Scissio::randomName(std::mt19937_64& rng) {
     return names(rng);
+}
+
+std::string Scissio::uuid() {
+    uuid_t id;
+    uuid_generate(id);
+
+    char data[37];
+    uuid_unparse_lower(id, data);
+
+    return std::string(data);
 }

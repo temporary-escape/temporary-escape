@@ -10,6 +10,7 @@ struct Config {
     Path cwdPath;
     Path userdataSavesPath;
     Path shadersPath;
+    std::string serverPassword = "";
     int serverPort = 22443;
     int skyboxIrradianceSize = 32;
     int skyboxPrefilterSize = 128;

@@ -38,7 +38,6 @@ enum class PixelType : int {
     Depth24Stencil8,
 };
 
-SCISSIO_API PixelType toPixelType(int bpp, int ilFlag);
 SCISSIO_API GLenum toTextureFormat(PixelType type);
 SCISSIO_API GLenum toTextureInternalFormat(PixelType type);
 SCISSIO_API GLenum toTextureType(PixelType type);

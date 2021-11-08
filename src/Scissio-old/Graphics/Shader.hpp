@@ -1,7 +1,7 @@
 #pragma once
 #include "../Math/Vector.hpp"
 
-#include <glad.h>
+#include <glad/glad.h>
 #include <sstream>
 #include <string>
 

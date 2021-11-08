@@ -1,4 +1,6 @@
 #include "Server.hpp"
+#include "../Network/NetworkTcpServer.hpp"
+#include "../Utils/Random.hpp"
 
 #define CMP "Server"
 
@@ -13,10 +15,10 @@ static const double tickLength = 1.0f / 20.0f;
 static const auto tickLengthUs = std::chrono::microseconds(static_cast<long long>(tickLength * 1000.0 * 1000.0));
 
 Server::Server(const Config& config, AssetManager& assetManager, Database& db)
-    : Network::TcpServer(config.serverPort), config(config), assetManager(assetManager), db(db), worker(4),
-      strand(worker.strand()) {
+    : config(config), tickFlag(true), assetManager(assetManager), db(db), worker(4), strand(worker.strand()),
+      listener(std::make_unique<EventListener>(*this)),
+      network(std::make_shared<Network::TcpServer>(*listener, config.serverPort)) {
 
-    tickFlag.store(true);
     tickThread = std::thread(&Server::tick, this);
 
     MESSAGE_DISPATCH(MessageLoginRequest);
@@ -93,21 +95,47 @@ SessionPtr Server::getSession(const Network::StreamPtr& stream) {
 void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
     strand.post([=]() {
         try {
-            Log::i(CMP, "Logging in player uid: {}", req.uid);
+            Log::i(CMP, "Logging in player: '{}'", req.name);
             auto session = getSession(stream);
 
-            const auto key = fmt::format("player_{}", req.uid);
-            auto data = db.get<PlayerData>(key);
-
-            if (!data.has_value()) {
-                PlayerData player;
-                player.uid = req.uid;
-                player.name = req.name;
-                player.admin = true;
-                db.put(key, player);
+            if (!config.serverPassword.empty() && config.serverPassword != req.password) {
+                MessageLoginResponse res;
+                res.error = "Bad password";
+                stream->send(res);
+                return;
             }
 
-            session->uid = req.uid;
+            // Find the player in the database using its secret
+            // to get us a primary key (id)
+            const auto found = db.getByIndex<&PlayerData::secret>(req.secret);
+            std::string playerId;
+            if (found.empty()) {
+                // No such player found, generate one
+                playerId = uuid();
+            } else {
+                playerId = found.front().id;
+            }
+
+            // Update the player data or create a new player
+            db.update<PlayerData>(playerId, [&](std::optional<PlayerData>& player) {
+                if (!player.has_value()) {
+                    Log::i(CMP, "Registering new player: '{}'", req.name);
+                    player = PlayerData{};
+                    player.value().id = playerId;
+                    player.value().secret = req.secret;
+                    player.value().admin = true;
+                }
+
+                player.value().name = req.name;
+
+                return true;
+            });
+
+            session->playerId = playerId;
+
+            MessageLoginResponse res;
+            stream->send(res);
+
         } catch (std::exception& e) {
             Log::e(CMP, "Failed to handle login request error: {}", e.what());
         }

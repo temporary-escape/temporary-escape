@@ -7,9 +7,9 @@
 
 using namespace Scissio;
 
-Network::TcpConnector::TcpConnector(Client& client, asio::io_service& service, const std::string& address,
+Network::TcpConnector::TcpConnector(EventListener& listener, asio::io_service& service, const std::string& address,
                                     const int port)
-    : client(client) {
+    : Acceptor(listener) {
 
     const asio::ip::tcp::resolver::query query(address, std::to_string(port));
     asio::ip::tcp::resolver resolver(service);
@@ -30,7 +30,7 @@ Network::TcpConnector::TcpConnector(Client& client, asio::io_service& service, c
     stream = std::make_shared<TcpStream>(*this, std::move(socket));
     stream->receive();
 
-    client.eventConnect(stream);
+    listener.eventConnect(stream);
 }
 
 Network::TcpConnector::~TcpConnector() {
@@ -42,24 +42,4 @@ void Network::TcpConnector::close() {
 }
 
 void Network::TcpConnector::start() {
-}
-
-void Network::TcpConnector::eventPacket(const StreamPtr& stream, Packet packet) {
-    const auto packetId = packet.id;
-
-    try {
-        client.eventPacket(stream, std::move(packet));
-    } catch (std::exception& e) {
-        Log::e(CMP, "Network TCP connector failed to accept packet id: {}", packetId);
-        backtrace(e);
-    }
-}
-
-void Network::TcpConnector::eventDisconnect(const StreamPtr& stream) {
-    try {
-        client.eventDisconnect(stream);
-    } catch (std::exception& e) {
-        Log::e(CMP, "Network TCP connector failed to disconnect stream");
-        backtrace(e);
-    }
 }

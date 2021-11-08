@@ -6,7 +6,10 @@
 namespace Scissio::Network {
 class SCISSIO_API TcpServer : public Server {
 public:
-    TcpServer(int port);
-    virtual ~TcpServer() = default;
+    TcpServer(EventListener& listener, int port);
+    virtual ~TcpServer();
+
+private:
+    std::shared_ptr<TcpAcceptor> acceptor;
 };
 } // namespace Scissio::Network

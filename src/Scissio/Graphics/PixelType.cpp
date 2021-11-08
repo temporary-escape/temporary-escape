@@ -1,7 +1,5 @@
 #include "PixelType.hpp"
 
-#include <IL/il.h>
-
 using namespace Scissio;
 
 #define GL_COMPRESSED_RED_RGTC1_EXT 0x8DBB
@@ -12,36 +10,6 @@ using namespace Scissio;
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
 #define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
-
-PixelType Scissio::toPixelType(const int bpp, const int ilFlag) {
-    switch (ilFlag) {
-    case IL_RGB: {
-        switch (bpp) {
-        case 24: {
-            return PixelType::Rgb8u;
-        }
-        default: {
-            break;
-        }
-        }
-    }
-    case IL_RGBA: {
-        switch (bpp) {
-        case 32: {
-            return PixelType::Rgba8u;
-        }
-        default: {
-            break;
-        }
-        }
-    }
-    default: {
-        break;
-    }
-    }
-
-    return PixelType::None;
-}
 
 GLenum Scissio::toTextureFormat(const PixelType type) {
     switch (type) {

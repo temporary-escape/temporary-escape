@@ -18,7 +18,8 @@ struct CompressedTextureChunk {
 
 class SCISSIO_API TextureCompressor {
 public:
-    explicit TextureCompressor();
+    explicit TextureCompressor(const NoCreate&);
+    TextureCompressor();
     virtual ~TextureCompressor() = default;
 
     Texture2D convert(Texture2D& source, const Vector2i& targetSize, PixelType target);

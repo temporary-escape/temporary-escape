@@ -5,7 +5,7 @@
 namespace Scissio {
 struct Session {
     Network::StreamPtr stream;
-    uint64_t uid = 0;
+    std::string playerId;
 };
 
 using SessionPtr = std::shared_ptr<Session>;

@@ -1,16 +1,19 @@
+# Build folders
 build*/
-temp/
+cmake-build*/
 install/
+out/
+
+# IDE folders
 .vscode/
 .vs/
-*.kdev4
-*~
-cache/
-out/
-resources/python/
-engine.txt
-engine.py
-engine.json
+
+# CMake cache
 CMakeSettings.json
+
+# Blend bak files
 *.blend*
 !*.blend
+
+# Additional folders
+temp/

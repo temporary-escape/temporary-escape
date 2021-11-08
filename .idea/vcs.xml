@@ -3,7 +3,11 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/libs/Nuklear" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/nanovg" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/libs/wren" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/libs/wrenbind17" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/wrenbind17/docs/themes/hugo-book" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/wrenbind17/libs/Catch2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/wrenbind17/libs/wren" vcs="Git" />
   </component>
 </project>

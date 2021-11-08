@@ -16,9 +16,13 @@ Network::TcpStream::TcpStream(Acceptor& acceptor, asio::ip::tcp::socket socket)
            this->socket.remote_endpoint().port());
 }
 
+Network::TcpStream::~TcpStream() {
+    TcpStream::disconnect();
+}
+
 void Network::TcpStream::disconnect() {
     if (socket.is_open()) {
-        Log::i(CMP, "Network TCP stream disconnecting address: {}", endpoint.address().to_string());
+        Log::i(CMP, "Disconnecting address: {}", endpoint.address().to_string());
         socket.close();
         // acceptor.removePeer(shared_from_this());
     }
@@ -30,7 +34,12 @@ void Network::TcpStream::receive() {
     auto self = shared_from_this();
     self->socket.async_read_some(b, [self](const asio::error_code ec, const size_t length) {
         if (ec) {
-            Log::e(CMP, "Network TCP stream async_read_some error: {}", ec.message());
+            Log::e(CMP, "async_read_some error: {}", ec.message());
+
+            if (ec == asio::error::eof || ec == asio::error::connection_reset) {
+                self->disconnect();
+                self->acceptor.eventDisconnect(self);
+            }
         } else {
             self->unp.buffer_consumed(length);
             msgpack::object_handle oh;
@@ -41,7 +50,7 @@ void Network::TcpStream::receive() {
                     // Log::d("Network TCP stream accepted packet id: {}", packet.id);
                     self->acceptor.eventPacket(self, std::move(packet));
                 } catch (std::exception& e) {
-                    BACKTRACE(CMP, e, "Network TCP stream error");
+                    BACKTRACE(CMP, e, "error accepting packet");
                 }
             }
             self->receive();
@@ -59,7 +68,7 @@ void Network::TcpStream::sendRaw(const Packet& packet) {
         (void)self;
 
         if (ec) {
-            Log::e(CMP, "Network TCP stream async_write_some error: {}", ec.message());
+            Log::e(CMP, "async_write_some error: {}", ec.message());
         } else {
             // Log::d("Network TCP stream sent: {} bytes", length);
         }

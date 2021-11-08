@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <glad.h>
+#include <glad/glad.h>
 
 namespace Scissio {
 enum class TextureType {

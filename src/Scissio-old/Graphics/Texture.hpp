@@ -3,7 +3,7 @@
 #include "../Library.hpp"
 #include "Enums.hpp"
 #include "PixelType.hpp"
-#include <glad.h>
+#include <glad/glad.h>
 
 namespace Scissio {
 struct NoCreate {};

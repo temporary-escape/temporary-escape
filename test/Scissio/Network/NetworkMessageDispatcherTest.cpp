@@ -1,6 +1,8 @@
 #include "../Common.hpp"
 #include <Network/Packet.hpp>
 
+#define TAG "[NetworkMessageDispatch]"
+
 struct MessageA {
     int a{123};
 
@@ -17,7 +19,7 @@ struct MessageB {
 
 REGISTER_MESSAGE(MessageB);
 
-TEST("Dispatch message into the correct callback") {
+TEST_CASE("Dispatch message into the correct callback", TAG) {
     Network::MessageDispatcher<bool> dispatcher{};
 
     bool dispatched[2] = {false, false};

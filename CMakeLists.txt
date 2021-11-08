@@ -32,6 +32,7 @@ find_package(RocksDB CONFIG REQUIRED)
 find_package(Wren REQUIRED)
 find_package(WrenBind17 REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
+find_package(unofficial-libuuid CONFIG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)

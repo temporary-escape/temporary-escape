@@ -4,7 +4,7 @@
 #include "../Math/Vector.hpp"
 #include "../Utils/Path.hpp"
 #include "Texture2D.hpp"
-#include <glad.h>
+#include <glad/glad.h>
 #include <memory>
 #include <unordered_map>
 

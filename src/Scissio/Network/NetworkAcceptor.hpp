@@ -1,4 +1,5 @@
 #pragma once
+#include "NetworkEventListener.hpp"
 #include "NetworkStream.hpp"
 #include <memory>
 
@@ -7,12 +8,16 @@ class Server;
 
 class SCISSIO_API Acceptor {
 public:
-    Acceptor() = default;
+    explicit Acceptor(EventListener& listener);
     virtual ~Acceptor() = default;
 
     virtual void start() = 0;
-    virtual void eventPacket(const StreamPtr& stream, Packet packet) = 0;
-    virtual void eventDisconnect(const StreamPtr& stream) = 0;
+
+    void eventPacket(const StreamPtr& stream, Packet packet);
+    void eventDisconnect(const StreamPtr& stream);
+
+protected:
+    EventListener& listener;
 };
 
 using AcceptorPtr = std::shared_ptr<Acceptor>;

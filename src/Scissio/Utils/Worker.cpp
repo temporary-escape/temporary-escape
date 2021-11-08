@@ -1,5 +1,7 @@
 #include "Worker.hpp"
 
+#define CMP "Worker"
+
 using namespace Scissio;
 
 Service::Service()
@@ -33,6 +35,8 @@ Worker::~Worker() {
 }
 
 void Worker::run() {
+    service->restart();
+
     counter.store(threads.size());
     cv.notify_all();
 
@@ -42,6 +46,7 @@ void Worker::run() {
 }
 
 void Worker::work() {
+    Log::d(CMP, "Starting worker thread");
     while (flag.load()) {
         {
             std::unique_lock<std::mutex> lock(mutex);
@@ -55,4 +60,5 @@ void Worker::work() {
         service->run();
         --counter;
     }
+    Log::d(CMP, "Stopping worker thread");
 }

@@ -8,7 +8,7 @@ endif ()
 add_library(${PROJECT_NAME}Lib SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME}Lib
         PUBLIC
-        glm
+        glm::glm
         fmt::fmt
         Cgltf
         Msgpack
@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}Lib
         Wren
         WrenBind17
         RocksDB::rocksdb
+        unofficial::UUID::uuid
         )
 
 if (NOT MSVC)
@@ -35,10 +36,13 @@ endif ()
 
 target_compile_definitions(${PROJECT_NAME}Lib PRIVATE
         SCISSIO_EXPORTS=1
-        _WIN32_WINNT=0x0501
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
-        _CRT_SECURE_NO_WARNINGS=1
-        )
+        _CRT_SECURE_NO_WARNINGS=1)
+if (MSVC)
+    target_compile_definitions(${PROJECT_NAME}Lib PRIVATE
+            _WIN32_WINNT=0x0501)
+endif ()
+
 set_target_properties(${PROJECT_NAME}Lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR})
 set_target_properties(${PROJECT_NAME}Lib PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 
