@@ -35,7 +35,9 @@ public:
     DummyClient() : listener(*this), client(std::make_shared<Network::TcpClient>(listener, "localhost", serverPort)) {
     }
 
-    ~DummyClient() = default;
+    ~DummyClient() {
+        client.reset();
+    }
 
     void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
         packets.push_back(std::move(packet));
@@ -64,7 +66,9 @@ public:
     DummyServer() : listener(*this), server(std::make_shared<Network::TcpServer>(listener, serverPort)) {
     }
 
-    ~DummyServer() = default;
+    ~DummyServer() {
+        server.reset();
+    }
 
     void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
         packets.emplace_back(stream, std::move(packet));

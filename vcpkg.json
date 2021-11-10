@@ -20,7 +20,10 @@
     "cxxopts",
     "freetype",
     "rocksdb",
-    "libuuid",
-    "openssl"
+    "openssl",
+    {
+      "name": "libuuid",
+      "platform": "!windows"
+    }
   ]
 }

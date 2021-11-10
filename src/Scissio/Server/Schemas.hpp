@@ -9,18 +9,16 @@ struct PlayerData {
     std::string name;
     bool admin;
 
-    MSGPACK_DEFINE(id, secret, name, admin);
+    MSGPACK_DEFINE_MAP(id, secret, name, admin);
+    SCHEMA_DEFINE_INDEXED(PlayerData, secret);
 };
-
-SCHEMA_DEFINE_INDEXED(PlayerData, secret);
 
 struct WorldData {
     uint64_t seed = 0;
 
     MSGPACK_DEFINE(seed);
+    SCHEMA_DEFINE(WorldData);
 };
-
-SCHEMA_DEFINE(WorldData);
 
 struct GalaxyData {
     std::string id;
@@ -29,9 +27,8 @@ struct GalaxyData {
     uint64_t seed = 0;
 
     MSGPACK_DEFINE(id, name, pos, seed);
+    SCHEMA_DEFINE_INDEXED(GalaxyData, name);
 };
-
-SCHEMA_DEFINE_INDEXED(GalaxyData, name);
 
 struct RegionData {
     std::string id;
@@ -41,9 +38,8 @@ struct RegionData {
     uint64_t seed = 0;
 
     MSGPACK_DEFINE(id, galaxyId, name, pos, seed);
+    SCHEMA_DEFINE_INDEXED(RegionData, name);
 };
-
-SCHEMA_DEFINE_INDEXED(RegionData, name);
 
 struct SystemData {
     std::string id;
@@ -54,9 +50,8 @@ struct SystemData {
     uint64_t seed = 0;
 
     MSGPACK_DEFINE(id, galaxyId, regionId, name, pos, seed);
+    SCHEMA_DEFINE_INDEXED(SystemData, name);
 };
-
-SCHEMA_DEFINE_INDEXED(SystemData, name);
 
 struct SectorData {
     std::string id;
@@ -67,8 +62,6 @@ struct SectorData {
     bool generated = false;
 
     MSGPACK_DEFINE(id, systemId, name, pos, seed, generated);
+    SCHEMA_DEFINE_INDEXED(SectorData, name);
 };
-
-SCHEMA_DEFINE_INDEXED(SectorData, name);
-
 } // namespace Scissio

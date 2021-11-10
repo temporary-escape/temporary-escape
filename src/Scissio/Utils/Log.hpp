@@ -2,6 +2,7 @@
 
 #include "../Library.hpp"
 #include <fmt/format.h>
+#include <iostream>
 #include <utility>
 
 namespace Scissio {

@@ -2,9 +2,10 @@
 
 #include "../Library.hpp"
 #include "../Utils/Span.hpp"
-#include <vector>
-#include <memory>
 #include <atomic>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace Scissio::Crypto {
 using SharedSecret = std::vector<unsigned char>;
@@ -39,5 +40,4 @@ private:
     std::atomic<uint64_t> counterEnc;
     std::atomic<uint64_t> counterDec;
 };
-}
-
+} // namespace Scissio::Crypto

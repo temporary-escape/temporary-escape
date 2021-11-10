@@ -37,6 +37,6 @@ private:
     std::vector<MeshData> meshes;
 
 public:
-    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE(Grid));
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
 };
 } // namespace Scissio

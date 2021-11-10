@@ -11,7 +11,7 @@ target_link_libraries(${PROJECT_NAME}Lib
         glm::glm
         fmt::fmt
         Cgltf
-        Msgpack
+        msgpackc msgpackc-cxx
         RocksDB::rocksdb
         glad::glad
         freetype
@@ -27,20 +27,23 @@ target_link_libraries(${PROJECT_NAME}Lib
         Wren
         WrenBind17
         RocksDB::rocksdb
-        unofficial::UUID::uuid
         OpenSSL::SSL OpenSSL::Crypto
         )
 
-if (NOT MSVC)
-    target_link_libraries(${PROJECT_NAME}Lib PRIVATE ZLIB::ZLIB liblzma::liblzma)
+if (MSVC)
+    target_link_libraries(${PROJECT_NAME}Lib PRIVATE rpcrt4.lib)
+else ()
+    target_link_libraries(${PROJECT_NAME}Lib PRIVATE ZLIB::ZLIB liblzma::liblzma unofficial::UUID::uuid)
 endif ()
 
 target_compile_definitions(${PROJECT_NAME}Lib PRIVATE
         SCISSIO_EXPORTS=1
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
         _CRT_SECURE_NO_WARNINGS=1)
+target_compile_definitions(${PROJECT_NAME}Lib PUBLIC
+        MSGPACK_USE_DEFINE_MAP=1)
 if (MSVC)
-    target_compile_definitions(${PROJECT_NAME}Lib PRIVATE
+    target_compile_definitions(${PROJECT_NAME}Lib PUBLIC
             _WIN32_WINNT=0x0501)
 endif ()
 

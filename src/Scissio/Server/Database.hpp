@@ -7,10 +7,139 @@
 #include <functional>
 #include <optional>
 
+#define SCHEMA_STRING(s) #s
+
 namespace Scissio {
 class AbstractDatabase;
 
-template <typename T> struct IndexValueHelper {
+template <typename T> struct SchemaGetVarClass {};
+
+template <typename Class, typename Value> struct SchemaGetVarClass<Value Class::*> { using type = Class; };
+
+template <typename M> struct SchemaGetVarType {
+    template <typename C, typename T> static T getType(T C::*v) {
+    }
+
+    typedef decltype(getType(static_cast<M>(nullptr))) type;
+};
+
+#define SCHEMA_DEFINE(Class)                                                                                           \
+    static const char* schemaGetName() {                                                                               \
+        return SCHEMA_STRING(Class);                                                                                   \
+    }                                                                                                                  \
+    template <auto F> static const char* schamaGetFieldName();                                                         \
+    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {                                     \
+        (void)key;                                                                                                     \
+        (void)db;                                                                                                      \
+    }
+
+#define SCHEMA_DEFINE_FIELD_NAME(Class, Field)                                                                         \
+    template <> static const char* schamaGetFieldName<&Class::Field>() {                                               \
+        return SCHEMA_STRING(Field);                                                                                   \
+    }
+
+// Source: https://stackoverflow.com/a/14735113
+#define SCHEMA_FOR_EACH_EXPAND(x) x
+#define SCHEMA_FOR_EACH_1(what, cls, x, ...) what(cls, x)
+#define SCHEMA_FOR_EACH_2(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_1(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_3(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_2(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_4(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_3(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_5(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_4(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_6(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_5(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_7(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_6(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH_8(what, cls, x, ...)                                                                           \
+    what(cls, x);                                                                                                      \
+    EXPAND(SCHEMA_FOR_EACH_7(what, cls, __VA_ARGS__))
+
+#define SCHEMA_FOR_EACH_NARG(...) SCHEMA_FOR_EACH_NARG_(__VA_ARGS__, SCHEMA_FOR_EACH_RSEQ_N())
+#define SCHEMA_FOR_EACH_NARG_(...) SCHEMA_FOR_EACH_EXPAND(SCHEMA_FOR_EACH_ARG_N(__VA_ARGS__))
+#define SCHEMA_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
+#define SCHEMA_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
+#define SCHEMA_FOR_EACH_CONCATENATE(x, y) x##y
+#define SCHEMA_FOR_EACH_(N, what, cls, ...)                                                                            \
+    SCHEMA_FOR_EACH_EXPAND(SCHEMA_FOR_EACH_CONCATENATE(SCHEMA_FOR_EACH_, N)(what, cls, __VA_ARGS__))
+#define SCHEMA_FOR_EACH(what, cls, ...) SCHEMA_FOR_EACH_(SCHEMA_FOR_EACH_NARG(__VA_ARGS__), what, cls, __VA_ARGS__)
+
+#define SCHEMA_PUT_INDEX_CALL(C, F) db.putIndex<&C::F>(key, this->F)
+#define SCHEMA_FOR_EACH_INDEX_PUT(cls, ...) SCHEMA_FOR_EACH(SCHEMA_PUT_INDEX_CALL, cls, __VA_ARGS__)
+#define SCHEMA_FOR_EACH_INDEX_DEFINE(cls, ...) SCHEMA_FOR_EACH(SCHEMA_DEFINE_FIELD_NAME, cls, __VA_ARGS__)
+
+#define SCHEMA_DEFINE_INDEXED(cls, ...)                                                                                \
+    static const char* schemaGetName() {                                                                               \
+        return SCHEMA_STRING(cls);                                                                                     \
+    }                                                                                                                  \
+    template <auto F> static const char* schamaGetFieldName();                                                         \
+    SCHEMA_FOR_EACH_INDEX_DEFINE(cls, __VA_ARGS__);                                                                    \
+    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {                                     \
+        SCHEMA_FOR_EACH_INDEX_PUT(cls, __VA_ARGS__);                                                                   \
+    }
+
+template <typename Class> struct SchemaHelper {
+    static const char* getClassName() {
+        return Class::schemaGetName();
+    }
+
+    static std::string getDataKeyName(const std::string& key) {
+        return fmt::format("{}:data:{}", getClassName(), key);
+    }
+
+    template <typename FieldType, FieldType Class::*Field> static const char* getFieldName() {
+        return Class::template schamaGetFieldName<Field>();
+    }
+
+    template <typename FieldType, FieldType Class::*Field> static std::string getIndexKeyName() {
+        return fmt::format("{}:index:{}:", getClassName(), getFieldName<FieldType, Field>());
+    }
+
+    template <typename FieldType, FieldType Class::*Field> static std::string getIndexKeyName(const FieldType& value) {
+        return fmt::format("{}:index:{}:{}:", getClassName(), getFieldName<FieldType, Field>(), value);
+    }
+
+    template <typename FieldType, FieldType Class::*Field>
+    static std::string getIndexKeyName(const FieldType& value, const std::string& key) {
+        return fmt::format("{}:index:{}:{}:{}", getClassName(), getFieldName<FieldType, Field>(), value, key);
+    }
+
+    static void removeIndexes(AbstractDatabase& db, const std::string& key) {
+        (void)db;
+        (void)key;
+        // Do we need this?
+    }
+
+    static void insertIndexes(AbstractDatabase& db, const std::string& key, const Class& value) {
+        value.schemaInsertIndexes(db, key);
+    }
+};
+
+template <> struct SchemaHelper<std::string> {
+    static const char* getClassName() {
+        return "string";
+    }
+
+    static std::string getDataKeyName(const std::string& key) {
+        return key;
+    }
+
+    static void insertIndexes(AbstractDatabase& db, const std::string& key, const std::string& value) {
+        (void)db;
+        (void)key;
+        (void)value;
+    }
+};
+
+/*template <typename T> struct IndexValueHelper {
     static std::string get(const T& value) {
         return fmt::format("{}", value);
     }
@@ -74,20 +203,20 @@ template <typename M> struct SchemaGetVarType {
 
 template <typename T> struct SchemaGetVarClass {};
 
-template <typename Class, typename Value> struct SchemaGetVarClass<Value Class::*> { using type = Class; };
+template <typename Class, typename Value> struct SchemaGetVarClass<Value Class::*> { using type = Class; };*/
 
-class AbstractDatabase {
+class SCISSIO_API AbstractDatabase {
 public:
     virtual ~AbstractDatabase() = default;
 
     template <typename T> void remove(const std::string& key) {
-        removeInternal(SchemaKeyName<T>::getName(key));
-        SchemaIndexes<T>::removeIndexes(*this, key);
+        removeInternal(SchemaHelper<T>::getDataKeyName(key));
+        SchemaHelper<T>::removeIndexes(*this, key);
     }
 
     template <typename T> void removeByPrefix(const std::string& prefix) {
-        removeByPrefixInternal(SchemaKeyName<T>::getName(prefix));
-        SchemaIndexes<T>::removeIndexes(*this, prefix);
+        removeByPrefixInternal(SchemaHelper<T>::getDataKeyName(prefix));
+        SchemaHelper<T>::removeIndexes(*this, prefix);
     }
 
     template <typename T> std::optional<T> get(const std::string& key) {
@@ -104,7 +233,7 @@ public:
             }
         };
 
-        if (getInternal(SchemaKeyName<T>::getName(key), handler)) {
+        if (getInternal(SchemaHelper<T>::getDataKeyName(key), handler)) {
             return value;
         }
         return std::nullopt;
@@ -114,7 +243,7 @@ public:
         std::vector<std::string> keysInternal;
         keysInternal.reserve(keys.size());
         for (const auto& key : keys) {
-            keysInternal.push_back(SchemaKeyName<T>::getName(key));
+            keysInternal.push_back(SchemaHelper<T>::getDataKeyName(key));
         }
 
         std::vector<T> values;
@@ -122,7 +251,7 @@ public:
 
         const auto handler = [&](const std::string& key, const char* data, const size_t size) {
             try {
-                values.template emplace_back();
+                values.emplace_back();
                 msgpack::unpacked result;
                 msgpack::unpack(result, data, size);
                 msgpack::object obj(result.get());
@@ -141,7 +270,7 @@ public:
 
         const auto handler = [&](const std::string& key, const char* data, const size_t size) {
             try {
-                values.template emplace_back();
+                values.emplace_back();
                 msgpack::unpacked result;
                 msgpack::unpack(result, data, size);
                 msgpack::object obj(result.get());
@@ -151,7 +280,7 @@ public:
             }
         };
 
-        seekInternal(SchemaKeyName<T>::getName(prefix), handler);
+        seekInternal(SchemaHelper<T>::getDataKeyName(prefix), handler);
 
         return values;
     }
@@ -171,16 +300,27 @@ public:
             EXCEPTION_NESTED("Failed to pack database key: {} as: {}", key, typeid(T).name());
         }
 
-        putInternal(SchemaKeyName<T>::getName(key), sbuf.data(), sbuf.size());
-        SchemaIndexes<T>::putIndexes(*this, key, value);
+        putInternal(SchemaHelper<T>::getDataKeyName(key), sbuf.data(), sbuf.size());
+        SchemaHelper<T>::insertIndexes(*this, key, value);
+    }
+
+    template <auto F, typename T = typename SchemaGetVarClass<decltype(F)>::type,
+              typename R = typename SchemaGetVarType<decltype(F)>::type>
+    void putIndex(const std::string& key, const R& value) {
+        return putIndexInternal<T, R, F>(key, value);
+    }
+
+    template <typename... Fields> void putIndexes(const std::string& key, Fields&&... fields) {
+        (putIndex(key, fields), ...);
     }
 
 private:
-    template <typename T, typename D, D T::*Field> std::vector<T> getByIndexInternal(const D& value) {
-        const auto indexKey =
-            fmt::format("{}:index:{}:{}:", SchemaNaming<T>::getName(), SchemaIndexName<T, D, Field>::getName(), value);
+    template <typename T, typename D, D T::*Field> void putIndexInternal(const std::string& key, const D& value) {
+        put(SchemaHelper<T>::template getIndexKeyName<D, Field>(value, key), SchemaHelper<T>::getDataKeyName(key));
+    }
 
-        const auto keys = seek<std::string>(indexKey);
+    template <typename T, typename D, D T::*Field> std::vector<T> getByIndexInternal(const D& value) {
+        const auto keys = seek<std::string>(SchemaHelper<T>::template getIndexKeyName<D, Field>(value));
         if (keys.empty()) {
             return {};
         }
@@ -190,7 +330,7 @@ private:
 
         const auto handler = [&](const std::string& key, const char* data, const size_t size) {
             try {
-                values.template emplace_back();
+                values.emplace_back();
                 msgpack::unpacked result;
                 msgpack::unpack(result, data, size);
                 msgpack::object obj(result.get());
@@ -214,7 +354,7 @@ private:
     virtual void removeByPrefixInternal(const std::string& prefix) = 0;
 };
 
-template <typename T>
+/*template <typename T>
 inline void SchemaIndexes<T>::putIndexes(AbstractDatabase& db, const std::string& key, const T& value) {
     // By default do nothing
     (void)db;
@@ -241,9 +381,9 @@ inline void putIndexes(AbstractDatabase& db, const std::string& key, const T& va
 template <typename T, size_t N>
 inline void removeIndexes(AbstractDatabase& db, const std::string& key, const std::array<IndexMapping<T>, N>& fields) {
     // TODO (do we need it anyway?)
-}
+}*/
 
-class Transaction : public AbstractDatabase {
+class SCISSIO_API Transaction : public AbstractDatabase {
 public:
     virtual ~Transaction() = default;
 
@@ -261,7 +401,7 @@ public:
             }
         };
 
-        if (getForUpdateInternal(SchemaKeyName<T>::getName(key), handler)) {
+        if (getForUpdateInternal(SchemaHelper<T>::getDataKeyName(key), handler)) {
             return value;
         }
         return std::nullopt;
@@ -271,7 +411,7 @@ private:
     virtual bool getForUpdateInternal(const std::string& key, const std::function<void(const char*, size_t)>& fn) = 0;
 };
 
-class Database : public AbstractDatabase {
+class SCISSIO_API Database : public AbstractDatabase {
 public:
     explicit Database(const Path& path);
     ~Database() override;
@@ -308,7 +448,7 @@ private:
 };
 } // namespace Scissio
 
-#define SCHEMA_INDEX_NAME(C, F)                                                                                        \
+/*#define SCHEMA_INDEX_NAME(C, F) \
     template <> struct SchemaIndexName<C, decltype(C::F), &C::F> {                                                     \
         static const char* getName() {                                                                                 \
             return #F;                                                                                                 \
@@ -343,7 +483,7 @@ private:
 #define SCHEMA_INDEX_7(C, a, b, c, d, e, f, g) SCHEMA_INDEX_1(C, a) SCHEMA_INDEX_6(C, b, c, d, e, f, g)
 #define SCHEMA_INDEX_8(C, a, b, c, d, e, f, g, h) SCHEMA_INDEX_1(C, a) SCHEMA_INDEX_7(C, b, c, d, e, f, g, h)
 #define SCHEMA_INDEX_M(C, M, ...) M(C, __VA_ARGS__)
-#define SCHEMA_INDEX_LIST(C, ...) SCHEMA_INDEX_M(C, XPASTE(SCHEMA_INDEX_, PP_NARG(__VA_ARGS__)), __VA_ARGS__)
+#define SCHEMA_INDEX_LIST(C, ...) SCHEMA_INDEX_M(C, XPASTE(SCHEMA_INDEX_, PP_NARG(##__VA_ARGS__)), __VA_ARGS__)
 
 #define SCHEMA_DEFINE_INDEXED(C, ...)                                                                                  \
     SCHEMA_DEFINE(C)                                                                                                   \
@@ -357,3 +497,4 @@ private:
             Scissio::removeIndexes(db, key, fields);                                                                   \
         }                                                                                                              \
     };
+*/

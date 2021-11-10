@@ -1,6 +1,11 @@
 #include "Random.hpp"
 #include "NameGenerator.hpp"
+
+#ifdef _WIN32
+#include <rpc.h>
+#else
 #include <uuid/uuid.h>
+#endif
 
 using namespace Scissio;
 
@@ -35,6 +40,15 @@ std::string Scissio::randomName(std::mt19937_64& rng) {
 }
 
 std::string Scissio::uuid() {
+#ifdef _WIN32
+    UUID uuid;
+    UuidCreate(&uuid);
+    char* str;
+    UuidToStringA(&uuid, (RPC_CSTR*)&str);
+    std::string res(str);
+    RpcStringFreeA((RPC_CSTR*)&str);
+    return res;
+#else
     uuid_t id;
     uuid_generate(id);
 
@@ -42,4 +56,5 @@ std::string Scissio::uuid() {
     uuid_unparse_lower(id, data);
 
     return std::string(data);
+#endif
 }

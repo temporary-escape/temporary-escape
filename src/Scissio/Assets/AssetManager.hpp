@@ -6,7 +6,7 @@
 #include "AssetFontFamily.hpp"
 #include "AssetModel.hpp"
 #include "TextureCompressor.hpp"
-
+#include <functional>
 #include <queue>
 
 namespace Scissio {
