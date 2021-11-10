@@ -9,5 +9,5 @@ Network::TcpServer::TcpServer(EventListener& listener, const int port) : Server(
 }
 
 Network::TcpServer::~TcpServer() {
-    acceptor.reset();
+    acceptor->close();
 }

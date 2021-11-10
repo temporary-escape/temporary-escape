@@ -210,7 +210,7 @@ void Generator::generateSystems(uint64_t seed, const std::string& galaxyId) {
     GalaxyDistribution distributor(options.galaxyWidth);
 
     std::unordered_set<std::string> namesTaken;
-    namesTaken.reserve(options.galaxyWidth);
+    namesTaken.reserve(options.totalSystems);
 
     for (auto i = 0; i < options.totalSystems; i++) {
         const auto pos = distributor(seeder.rng());

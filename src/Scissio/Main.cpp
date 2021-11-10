@@ -1,4 +1,4 @@
-#include "Client/OpenGLApplication.hpp"
+#include "Client/Application.hpp"
 #include "Utils/Exceptions.hpp"
 #include "Utils/Log.hpp"
 #include <cxxopts.hpp>
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
 
-        OpenGLApplication application(config);
+        Application application(config);
         application.run();
     } catch (const std::exception& e) {
         BACKTRACE("Main", e, "fatal error");

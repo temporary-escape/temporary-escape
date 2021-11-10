@@ -7,8 +7,8 @@
 
 using namespace Scissio;
 
-Application::Application(Config& config) : config(config), loading(true), loadingProgress(0.0f) {
-    defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path("iosevka-aile-regular.ttf"));
+Application::Application(Config& config) : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), loading(true), loadingProgress(0.0f) {
+    defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular));
 
     textureCompressor = std::make_shared<TextureCompressor>();
 }
@@ -18,6 +18,7 @@ Application::~Application() {
 
 void Application::update() {
     if (!stagesFuture.valid() && !assetManager) {
+        loadingProgress.store(0.1f);
         loadQueueFuture = loadQueuePromise.future();
         stagesFuture = std::async(std::bind(&Application::load, this));
     }
@@ -41,7 +42,7 @@ void Application::update() {
                     break;
                 }
 
-                loadingProgress.store((assetLoadQueue.size() / assetLoadQueueInitialSize.load()) * 0.8f);
+                loadingProgress.store((assetLoadQueue.size() / assetLoadQueueInitialSize.load()) * 0.7f + 0.1f);
             }
 
             if (wasNotEmpty && assetLoadQueue.empty()) {
@@ -74,7 +75,7 @@ void Application::render(const Vector2i& viewport) {
     if (loading.load()) {
         canvas.beginFrame(viewport);
         canvas.fontFace(defaultFont);
-        canvas.fontSize(24.0f);
+        canvas.fontSize(config.guiFontSize);
         canvas.beginPath();
         canvas.fillColor({1.0f, 1.0f, 1.0f, 1.0f});
         canvas.rect({50.0f, viewport.y - 75.0f}, {(viewport.x - 100.0f) * loadingProgress.load(), 25.0f});
@@ -104,6 +105,9 @@ void Application::load() {
     loadingProgress.store(0.8f);
 
     const auto saveDir = config.userdataSavesPath / "Universe";
+    if (!std::filesystem::exists(saveDir) && !std::filesystem::create_directories(saveDir)) {
+        EXCEPTION("Failed to create save directory: '{}'", saveDir.string());
+    }
 
     db = std::make_shared<Database>(saveDir / "database");
 
@@ -119,6 +123,7 @@ void Application::load() {
     loadingProgress.store(0.95f);
 
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
+    client->login("password");
 
     loadingProgress.store(1.0f);
 

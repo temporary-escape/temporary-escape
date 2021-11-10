@@ -1,0 +1,26 @@
+{
+  "name": "scissio",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "liblzma",
+    "zlib",
+    "glfw3",
+    "glm",
+    "glad",
+    "fmt",
+    "libxml2",
+    "nanovg",
+    "libpng",
+    "cgltf",
+    "msgpack",
+    "asio",
+    "stb",
+    "catch2",
+    "spdlog",
+    "cxxopts",
+    "freetype",
+    "rocksdb",
+    "libuuid",
+    "openssl"
+  ]
+}

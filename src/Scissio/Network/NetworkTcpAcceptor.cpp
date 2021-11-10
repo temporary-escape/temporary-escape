@@ -13,15 +13,16 @@ Network::TcpAcceptor::TcpAcceptor(EventListener& listener, asio::io_service& ser
 }
 
 Network::TcpAcceptor::~TcpAcceptor() {
-    close();
 }
 
 void Network::TcpAcceptor::close() {
     Log::i(CMP, "Closing");
+    socket.close();
     std::lock_guard<std::mutex> lock{mutex};
     for (auto& stream : streams) {
         stream->disconnect();
     }
+    streams.clear();
 }
 
 void Network::TcpAcceptor::start() {

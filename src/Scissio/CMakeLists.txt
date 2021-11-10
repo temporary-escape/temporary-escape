@@ -28,6 +28,7 @@ target_link_libraries(${PROJECT_NAME}Lib
         WrenBind17
         RocksDB::rocksdb
         unofficial::UUID::uuid
+        OpenSSL::SSL OpenSSL::Crypto
         )
 
 if (NOT MSVC)

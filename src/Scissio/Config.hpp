@@ -4,13 +4,14 @@
 
 namespace Scissio {
 struct Config {
-    Path resourcesPath;
+    int windowWidth = 1280;
+    int windowHeight = 720;
     Path assetsPath;
     Path userdataPath;
     Path cwdPath;
     Path userdataSavesPath;
     Path shadersPath;
-    std::string serverPassword = "";
+    std::string serverPassword;
     int serverPort = 22443;
     int skyboxIrradianceSize = 32;
     int skyboxPrefilterSize = 128;
@@ -20,8 +21,8 @@ struct Config {
     int fboSamples = 4;
     float cameraFov = 75.0f;
     int thumbnailSize = 128;
-    std::string guiFontFaceRegular = "iosevka-aile-regular";
-    std::string guiFontFaceBold = "iosevka-aile-bold";
+    std::string guiFontFaceRegular = "iosevka-aile-regular.ttf";
+    std::string guiFontFaceBold = "iosevka-aile-bold.ttf";
     int guiFontSize = 21;
 };
 } // namespace Scissio

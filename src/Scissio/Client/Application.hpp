@@ -2,14 +2,14 @@
 
 #include "../Future.hpp"
 #include "../Modding/ModManager.hpp"
-#include "../Platform/Window.hpp"
+#include "../Platform/OpenGLWindow.hpp"
 #include "../Server/Generator.hpp"
 #include "../Server/Server.hpp"
 #include "Client.hpp"
 #include <atomic>
 
 namespace Scissio {
-class SCISSIO_API Application : public Window {
+class SCISSIO_API Application : public OpenGLWindow {
 public:
     Application(Config& config);
     virtual ~Application();
