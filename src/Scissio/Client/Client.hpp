@@ -51,6 +51,7 @@ private:
     uint64_t secret;
     uint64_t playerId;
 
+    Promise<void> connectPromise;
     Promise<void> loginPromise;
 };
 } // namespace Scissio

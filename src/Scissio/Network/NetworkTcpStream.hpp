@@ -9,7 +9,7 @@ class Acceptor;
 
 class SCISSIO_API TcpStream : public Stream, public std::enable_shared_from_this<TcpStream> {
 public:
-    TcpStream(Acceptor& acceptor, asio::ip::tcp::socket socket);
+    TcpStream(Acceptor& acceptor, Crypto::Ecdhe& ecdhe, asio::ip::tcp::socket socket);
     virtual ~TcpStream();
 
     void sendRaw(const Packet& packet) override;

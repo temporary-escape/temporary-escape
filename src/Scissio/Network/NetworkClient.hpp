@@ -12,7 +12,7 @@ public:
     virtual ~Client();
 
     template <typename T> std::shared_ptr<T> connect(const std::string& address, const int port) {
-        auto acceptor = std::make_shared<T>(listener, service, address, port);
+        auto acceptor = std::make_shared<T>(listener, ecdhe, service, address, port);
         return acceptor;
     }
 
@@ -32,5 +32,7 @@ private:
     std::unique_ptr<asio::io_service::work> work;
     asio::ip::tcp::endpoint endpoint;
     std::thread thread;
+
+    Crypto::Ecdhe ecdhe;
 };
 } // namespace Scissio::Network

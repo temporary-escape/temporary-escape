@@ -7,8 +7,8 @@
 
 using namespace Scissio;
 
-Network::TcpConnector::TcpConnector(EventListener& listener, asio::io_service& service, const std::string& address,
-                                    const int port)
+Network::TcpConnector::TcpConnector(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service,
+                                    const std::string& address, const int port)
     : Acceptor(listener) {
 
     const asio::ip::tcp::resolver::query query(address, std::to_string(port));
@@ -27,10 +27,9 @@ Network::TcpConnector::TcpConnector(EventListener& listener, asio::io_service& s
     }
 
     endpoint = socket.remote_endpoint();
-    stream = std::make_shared<TcpStream>(*this, std::move(socket));
+    stream = std::make_shared<TcpStream>(*this, ecdhe, std::move(socket));
     stream->receive();
-
-    listener.eventConnect(stream);
+    stream->sendPublicKey();
 }
 
 Network::TcpConnector::~TcpConnector() {

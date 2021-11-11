@@ -129,7 +129,7 @@ static const unsigned char gcm_iv[16] = {
     0x99, 0xaa, 0x3e, 0x68, 0xed, 0x81, 0x73, 0xa0, 0xee, 0xd0, 0x66, 0x84, 0x01, 0x02, 0x03, 0x04,
 };
 
-Crypto::Buffer Crypto::Aes256::encrypt(const Span<unsigned char>& data) {
+size_t Crypto::Aes256::encrypt(const Span<unsigned char>& src, unsigned char* dst) {
     auto ctx = std::shared_ptr<EVP_CIPHER_CTX>(EVP_CIPHER_CTX_new(), [](EVP_CIPHER_CTX* p){ EVP_CIPHER_CTX_free(p); });
 
     Nounce nounce;
@@ -142,24 +142,20 @@ Crypto::Buffer Crypto::Aes256::encrypt(const Span<unsigned char>& data) {
         EXCEPTION("Failed to init decryption context");
     }
 
-    Buffer buffer;
-    buffer.resize(data.size() + EVP_MAX_BLOCK_LENGTH - 1);
-
     int encryptLen;
-    if (!EVP_EncryptUpdate(ctx.get(), buffer.data(), &encryptLen, data.data(), static_cast<int>(data.size()))) {
+    if (!EVP_EncryptUpdate(ctx.get(), dst, &encryptLen, src.data(), static_cast<int>(src.size()))) {
         EXCEPTION("Failed to encrypt data");
     }
 
     int finalizeLen;
-    if (!EVP_EncryptFinal_ex(ctx.get(), buffer.data() + encryptLen, &finalizeLen)) {
+    if (!EVP_EncryptFinal_ex(ctx.get(), dst + encryptLen, &finalizeLen)) {
         EXCEPTION("Failed to finalize encryption");
     }
 
-    buffer.resize(encryptLen + finalizeLen);
-    return buffer;
+    return encryptLen + finalizeLen;
 }
 
-Crypto::Buffer Crypto::Aes256::decrypt(const Span<unsigned char>& data){
+size_t Crypto::Aes256::decrypt(const Span<unsigned char>& src, unsigned char* dst){
     auto ctx = std::shared_ptr<EVP_CIPHER_CTX>(EVP_CIPHER_CTX_new(), [](EVP_CIPHER_CTX* p){ EVP_CIPHER_CTX_free(p); });
 
     Nounce nounce;
@@ -172,19 +168,19 @@ Crypto::Buffer Crypto::Aes256::decrypt(const Span<unsigned char>& data){
         EXCEPTION("Failed to init decryption context");
     }
 
-    Buffer buffer;
-    buffer.resize(data.size());
-
     int decryptLen;
-    if (!EVP_DecryptUpdate(ctx.get(), buffer.data(), &decryptLen, data.data(), static_cast<int>(data.size()))) {
+    if (!EVP_DecryptUpdate(ctx.get(), dst, &decryptLen, src.data(), static_cast<int>(src.size()))) {
         EXCEPTION("Failed to decrypt data");
     }
 
     int finalizeLen;
-    if (!EVP_DecryptFinal_ex(ctx.get(), buffer.data() + decryptLen, &finalizeLen)) {
+    if (!EVP_DecryptFinal_ex(ctx.get(), dst + decryptLen, &finalizeLen)) {
         EXCEPTION("Failed to finalize decryption");
     }
 
-    buffer.resize(decryptLen + finalizeLen);
-    return buffer;
+    return decryptLen + finalizeLen;
+}
+
+size_t Crypto::Aes256::expectedEncryptSize(size_t length) {
+    return length + EVP_MAX_BLOCK_LENGTH - 1;
 }

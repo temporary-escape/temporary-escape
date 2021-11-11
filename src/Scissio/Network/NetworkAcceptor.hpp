@@ -14,6 +14,7 @@ public:
     virtual void start() = 0;
 
     void eventPacket(const StreamPtr& stream, Packet packet);
+    void eventConnect(const StreamPtr& stream);
     void eventDisconnect(const StreamPtr& stream);
 
 protected:

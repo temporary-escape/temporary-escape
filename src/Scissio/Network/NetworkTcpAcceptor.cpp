@@ -7,9 +7,10 @@
 
 using namespace Scissio;
 
-Network::TcpAcceptor::TcpAcceptor(EventListener& listener, asio::io_service& service, const int port)
-    : Acceptor(listener), acceptor(service, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)), socket(service),
-      endpoint(acceptor.local_endpoint()) {
+Network::TcpAcceptor::TcpAcceptor(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service,
+                                  const int port)
+    : Acceptor(listener), ecdhe(ecdhe), acceptor(service, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)),
+      socket(service), endpoint(acceptor.local_endpoint()) {
 }
 
 Network::TcpAcceptor::~TcpAcceptor() {
@@ -39,9 +40,9 @@ void Network::TcpAcceptor::accept() {
             }
 
             try {
-                const auto peer = std::make_shared<TcpStream>(*self, std::move(self->socket));
-                self->listener.eventConnect(peer);
+                const auto peer = std::make_shared<TcpStream>(*self, self->ecdhe, std::move(self->socket));
                 peer->receive();
+                peer->sendPublicKey();
 
                 std::lock_guard<std::mutex> lock{self->mutex};
                 self->streams.push_back(peer);

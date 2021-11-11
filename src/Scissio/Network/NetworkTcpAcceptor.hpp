@@ -9,7 +9,7 @@ class TcpStream;
 
 class SCISSIO_API TcpAcceptor : public Acceptor, public std::enable_shared_from_this<TcpAcceptor> {
 public:
-    explicit TcpAcceptor(EventListener& listener, asio::io_service& service, int port);
+    explicit TcpAcceptor(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service, int port);
     virtual ~TcpAcceptor();
 
     void close();
@@ -17,6 +17,8 @@ public:
 
 private:
     void accept();
+
+    Crypto::Ecdhe& ecdhe;
 
     asio::ip::tcp::acceptor acceptor;
     asio::ip::tcp::socket socket;

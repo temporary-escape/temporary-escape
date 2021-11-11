@@ -8,8 +8,11 @@ struct Player {
     std::string name;
 
     MSGPACK_DEFINE(name);
-    SCHEMA_DEFINE(Player);
 };
+
+namespace Scissio {
+SCHEMA_DEFINE(Player);
+}
 
 TEST_CASE("Put Get Delete", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
@@ -278,8 +281,11 @@ struct IndexedPlayer {
     bool admin;
 
     MSGPACK_DEFINE(uid, name, admin);
-    SCHEMA_DEFINE_INDEXED(IndexedPlayer, name, admin);
 };
+
+namespace Scissio {
+SCHEMA_DEFINE_INDEXED(IndexedPlayer, name, admin);
+}
 
 TEST_CASE("Indexes", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
@@ -324,32 +330,26 @@ struct FooDataV1 {
     std::string msg;
 
     MSGPACK_DEFINE(msg);
-
-    static const char* schemaGetName() {
-        return "FooData";
-    }
-
-    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {
-        (void)db;
-        (void)key;
-    }
 };
+
+namespace Scissio {
+template <> const char* SchemaDefinition<FooDataV1>::getName() {
+    return "FooData";
+}
+} // namespace Scissio
 
 struct FooDataV2 {
     std::string msg;
     bool field = true;
 
     MSGPACK_DEFINE(msg, field);
-
-    static const char* schemaGetName() {
-        return "FooData";
-    }
-
-    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {
-        (void)db;
-        (void)key;
-    }
 };
+
+namespace Scissio {
+template <> const char* SchemaDefinition<FooDataV2>::getName() {
+    return "FooData";
+}
+} // namespace Scissio
 
 TEST_CASE("Backwards compatibility with missing field", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();

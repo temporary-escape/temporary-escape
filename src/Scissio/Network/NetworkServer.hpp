@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Utils/Crypto.hpp"
 #include "NetworkAcceptor.hpp"
 #include "NetworkAsio.hpp"
 #include "Packet.hpp"
@@ -14,7 +15,7 @@ public:
     virtual ~Server();
 
     template <typename T> std::shared_ptr<T> bind(const int port) {
-        auto acceptor = std::make_shared<T>(listener, service, port);
+        auto acceptor = std::make_shared<T>(listener, ecdhe, service, port);
         acceptor->start();
         return acceptor;
     }
@@ -28,5 +29,7 @@ private:
     asio::io_service service;
     std::unique_ptr<asio::io_service::work> work;
     std::thread thread;
+
+    Crypto::Ecdhe ecdhe;
 };
 } // namespace Scissio::Network

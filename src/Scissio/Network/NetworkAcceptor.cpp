@@ -18,6 +18,15 @@ void Network::Acceptor::eventPacket(const StreamPtr& stream, Packet packet) {
     }
 }
 
+void Network::Acceptor::eventConnect(const StreamPtr& stream) {
+    try {
+        listener.eventConnect(stream);
+    } catch (std::exception& e) {
+        Log::e(CMP, "Failed to connect stream");
+        backtrace(e);
+    }
+}
+
 void Network::Acceptor::eventDisconnect(const StreamPtr& stream) {
     try {
         listener.eventDisconnect(stream);

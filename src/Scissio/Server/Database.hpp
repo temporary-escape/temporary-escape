@@ -12,6 +12,20 @@
 namespace Scissio {
 class AbstractDatabase;
 
+template <typename T> struct SchemaDefinition {
+    static const char* getName();
+
+    static void insertIndexes(AbstractDatabase& db, const std::string& key, const T& o) {
+        (void)db;
+        (void)key;
+        (void)o;
+    }
+};
+
+template <typename Class, typename FieldType, FieldType Class::*Field> struct SchemaIndexDefinition {
+    static const char* getName();
+};
+
 template <typename T> struct SchemaGetVarClass {};
 
 template <typename Class, typename Value> struct SchemaGetVarClass<Value Class::*> { using type = Class; };
@@ -24,17 +38,12 @@ template <typename M> struct SchemaGetVarType {
 };
 
 #define SCHEMA_DEFINE(Class)                                                                                           \
-    static const char* schemaGetName() {                                                                               \
+    template <> inline const char* SchemaDefinition<Class>::getName() {                                                \
         return SCHEMA_STRING(Class);                                                                                   \
-    }                                                                                                                  \
-    template <auto F> static const char* schamaGetFieldName();                                                         \
-    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {                                     \
-        (void)key;                                                                                                     \
-        (void)db;                                                                                                      \
     }
 
 #define SCHEMA_DEFINE_FIELD_NAME(Class, Field)                                                                         \
-    template <> static const char* schamaGetFieldName<&Class::Field>() {                                               \
+    template <> inline const char* SchemaIndexDefinition<Class, decltype(Class::Field), &Class::Field>::getName() {    \
         return SCHEMA_STRING(Field);                                                                                   \
     }
 
@@ -72,23 +81,23 @@ template <typename M> struct SchemaGetVarType {
     SCHEMA_FOR_EACH_EXPAND(SCHEMA_FOR_EACH_CONCATENATE(SCHEMA_FOR_EACH_, N)(what, cls, __VA_ARGS__))
 #define SCHEMA_FOR_EACH(what, cls, ...) SCHEMA_FOR_EACH_(SCHEMA_FOR_EACH_NARG(__VA_ARGS__), what, cls, __VA_ARGS__)
 
-#define SCHEMA_PUT_INDEX_CALL(C, F) db.putIndex<&C::F>(key, this->F)
+#define SCHEMA_PUT_INDEX_CALL(C, F) db.putIndex<&C::F>(key, o.F)
 #define SCHEMA_FOR_EACH_INDEX_PUT(cls, ...) SCHEMA_FOR_EACH(SCHEMA_PUT_INDEX_CALL, cls, __VA_ARGS__)
 #define SCHEMA_FOR_EACH_INDEX_DEFINE(cls, ...) SCHEMA_FOR_EACH(SCHEMA_DEFINE_FIELD_NAME, cls, __VA_ARGS__)
 
 #define SCHEMA_DEFINE_INDEXED(cls, ...)                                                                                \
-    static const char* schemaGetName() {                                                                               \
+    template <> inline const char* SchemaDefinition<cls>::getName() {                                                  \
         return SCHEMA_STRING(cls);                                                                                     \
     }                                                                                                                  \
-    template <auto F> static const char* schamaGetFieldName();                                                         \
     SCHEMA_FOR_EACH_INDEX_DEFINE(cls, __VA_ARGS__);                                                                    \
-    void schemaInsertIndexes(AbstractDatabase& db, const std::string& key) const {                                     \
+    template <>                                                                                                        \
+    inline void SchemaDefinition<cls>::insertIndexes(AbstractDatabase& db, const std::string& key, const cls& o) {     \
         SCHEMA_FOR_EACH_INDEX_PUT(cls, __VA_ARGS__);                                                                   \
     }
 
 template <typename Class> struct SchemaHelper {
     static const char* getClassName() {
-        return Class::schemaGetName();
+        return SchemaDefinition<Class>::getName();
     }
 
     static std::string getDataKeyName(const std::string& key) {
@@ -96,7 +105,7 @@ template <typename Class> struct SchemaHelper {
     }
 
     template <typename FieldType, FieldType Class::*Field> static const char* getFieldName() {
-        return Class::template schamaGetFieldName<Field>();
+        return SchemaIndexDefinition<Class, FieldType, Field>::getName();
     }
 
     template <typename FieldType, FieldType Class::*Field> static std::string getIndexKeyName() {
@@ -119,7 +128,7 @@ template <typename Class> struct SchemaHelper {
     }
 
     static void insertIndexes(AbstractDatabase& db, const std::string& key, const Class& value) {
-        value.schemaInsertIndexes(db, key);
+        SchemaDefinition<Class>::insertIndexes(db, key, value);
     }
 };
 

@@ -40,11 +40,13 @@ TEST_CASE("Encrypt and decrypt via AES-256", TAG) {
     Crypto::Aes256 bob(secret, seed);
 
     std::string msg = "This is a message from Alice";
+    std::vector<unsigned char> enc;
+    std::vector<unsigned char> dec;
 
-    auto enc = alice.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()});
+    alice.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()}, enc);
     REQUIRE(enc.size() >= msg.size());
 
-    auto dec = bob.decrypt(enc);
+    bob.decrypt(enc, dec);
     REQUIRE(dec.size() == msg.size());
 
     std::string decStr(reinterpret_cast<const char*>(dec.data()), dec.size());
@@ -52,10 +54,10 @@ TEST_CASE("Encrypt and decrypt via AES-256", TAG) {
 
     msg = "This is a message from Bob";
 
-    enc = bob.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()});
+    bob.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()}, enc);
     REQUIRE(enc.size() >= msg.size());
 
-    dec = alice.decrypt(enc);
+    alice.decrypt(enc, dec);
     REQUIRE(dec.size() == msg.size());
 
     decStr = std::string(reinterpret_cast<const char*>(dec.data()), dec.size());
@@ -63,10 +65,10 @@ TEST_CASE("Encrypt and decrypt via AES-256", TAG) {
 
     msg = "Alice says good bye Bob!";
 
-    enc = alice.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()});
+    alice.encrypt({reinterpret_cast<const unsigned char*>(msg.data()), msg.size()}, enc);
     REQUIRE(enc.size() >= msg.size());
 
-    dec = bob.decrypt(enc);
+    bob.decrypt(enc, dec);
     REQUIRE(dec.size() == msg.size());
 
     decStr = std::string(reinterpret_cast<const char*>(dec.data()), dec.size());

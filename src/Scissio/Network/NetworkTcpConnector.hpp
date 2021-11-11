@@ -10,7 +10,8 @@ class Client;
 
 class SCISSIO_API TcpConnector : public Acceptor, public std::enable_shared_from_this<TcpConnector> {
 public:
-    explicit TcpConnector(EventListener& listener, asio::io_service& service, const std::string& address, int port);
+    explicit TcpConnector(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service,
+                          const std::string& address, int port);
     virtual ~TcpConnector();
 
     void close();

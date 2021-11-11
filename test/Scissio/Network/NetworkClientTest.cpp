@@ -90,8 +90,9 @@ public:
 
 struct DummyPacket {
     std::string msg;
+    bool status = false;
 
-    MSGPACK_DEFINE(msg);
+    MSGPACK_DEFINE(msg, status);
 };
 
 REGISTER_MESSAGE(DummyPacket);
@@ -101,8 +102,9 @@ TEST_CASE("Connect to the server and send one packet", TAG) {
     auto client = std::make_unique<DummyClient>();
 
     REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
+    REQUIRE(waitForCondition([&]() { return client->connect == true; }));
 
-    auto msg = DummyPacket{"Hello from client!"};
+    auto msg = DummyPacket{"Hello from client!", true};
     client->send(msg);
 
     REQUIRE(waitForCondition([&]() { return server->packets.size() == 1; }));
@@ -113,6 +115,7 @@ TEST_CASE("Connect to the server and send one packet", TAG) {
 
     auto unpacked = Network::unpack<DummyPacket>(packet);
     REQUIRE(unpacked.msg == msg.msg);
+    REQUIRE(unpacked.status == true);
 
     msg = DummyPacket{"Hello from server!"};
     stream->send(msg);

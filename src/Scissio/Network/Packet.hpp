@@ -30,11 +30,26 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
 } // namespace msgpack
 
 namespace Scissio::Network {
+class PacketBuffer : public std::vector<unsigned char> {
+public:
+    void write(const char* src, size_t len) {
+        const auto prev = size();
+        resize(size() + len);
+        std::memcpy(data() + prev, src, len);
+    }
+
+    void swap(PacketBuffer& other) noexcept {
+        std::vector<unsigned char>::swap(other);
+    }
+};
+
+inline void swap(PacketBuffer& a, PacketBuffer& b) {
+    a.swap(b);
+}
+
 struct SCISSIO_API Packet {
     uint64_t id{0};
-    msgpack::sbuffer data;
-
-    MSGPACK_DEFINE_ARRAY(id, data);
+    PacketBuffer data;
 };
 
 namespace Details {
@@ -47,9 +62,9 @@ inline constexpr uint64_t hash_64_fnv1a_const(const char* const str, const uint6
     return (str[0] == '\0') ? value : hash_64_fnv1a_const(&str[1], (value ^ uint64_t(str[0])) * prime_64_const);
 }
 
-template <typename T> T unpack(const msgpack::sbuffer& buffer) {
+template <typename T, typename Container> T unpack(const Container& buffer) {
     msgpack::object_handle obj;
-    msgpack::unpack(obj, buffer.data(), buffer.size());
+    msgpack::unpack(obj, reinterpret_cast<const char*>(buffer.data()), buffer.size());
     const auto& o = obj.get();
 
     T ret{};
@@ -120,3 +135,32 @@ private:
     std::unordered_map<uint64_t, Callback> callbacks;
 };
 } // namespace Scissio::Network
+
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+    namespace adaptor {
+    template <> struct convert<Scissio::Network::Packet> {
+        msgpack::object const& operator()(msgpack::object const& o, Scissio::Network::Packet& v) const {
+            if (o.type != msgpack::type::ARRAY)
+                throw msgpack::type_error();
+            if (o.via.array.size != 2)
+                throw msgpack::type_error();
+            v.id = o.via.array.ptr[0].as<uint64_t>();
+            v.data.resize(o.via.array.ptr[1].via.bin.size);
+            std::memcpy(v.data.data(), o.via.array.ptr[1].via.bin.ptr, v.data.size());
+            return o;
+        }
+    };
+    template <> struct pack<Scissio::Network::Packet> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, Scissio::Network::Packet const& v) const {
+            o.pack_array(2);
+            o.pack_uint64(v.id);
+            o.pack_bin(v.data.size());
+            o.pack_bin_body(reinterpret_cast<const char*>(v.data.data()), v.data.size());
+            return o;
+        }
+    };
+    } // namespace adaptor
+}
+} // namespace msgpack

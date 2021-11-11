@@ -9,8 +9,8 @@ static constexpr int WINDOW_SIZE = 1024;
 
 using namespace Scissio;
 
-Network::TcpStream::TcpStream(Acceptor& acceptor, asio::ip::tcp::socket socket)
-    : acceptor(acceptor), socket(std::move(socket)), endpoint(this->socket.remote_endpoint()), unp{} {
+Network::TcpStream::TcpStream(Acceptor& acceptor, Crypto::Ecdhe& ecdhe, asio::ip::tcp::socket socket)
+    : Stream(ecdhe), acceptor(acceptor), socket(std::move(socket)), endpoint(this->socket.remote_endpoint()), unp{} {
 
     Log::i(CMP, "New TCP connection from: [{}]:{}", this->socket.remote_endpoint().address().to_string(),
            this->socket.remote_endpoint().port());
@@ -47,8 +47,15 @@ void Network::TcpStream::receive() {
                 try {
                     Packet packet;
                     oh.get().convert(packet);
-                    // Log::d("Network TCP stream accepted packet id: {}", packet.id);
-                    self->acceptor.eventPacket(self, std::move(packet));
+                    // Log::d(CMP, "Network TCP stream accepted packet id: {}", packet.id);
+
+                    if (packet.id == 0) {
+                        self->acceptPublicKey(packet);
+                        self->acceptor.eventConnect(self);
+                    } else {
+                        self->decrypt(packet);
+                        self->acceptor.eventPacket(self, std::move(packet));
+                    }
                 } catch (std::exception& e) {
                     BACKTRACE(CMP, e, "error accepting packet");
                 }

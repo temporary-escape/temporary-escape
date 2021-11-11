@@ -9,7 +9,6 @@
 
 namespace Scissio::Crypto {
 using SharedSecret = std::vector<unsigned char>;
-using Buffer = std::vector<unsigned char>;
 
 using Key = std::string;
 
@@ -31,8 +30,22 @@ public:
     Aes256(SharedSecret secret, uint64_t salt);
     ~Aes256();
 
-    Buffer encrypt(const Span<unsigned char>& data);
-    Buffer decrypt(const Span<unsigned char>& data);
+    template <typename Container> void encrypt(const Span<unsigned char>& src, Container& dst) {
+        auto length = expectedEncryptSize(src.size());
+        dst.resize(length);
+        length = encrypt(src, dst.data());
+        dst.resize(length);
+    }
+
+    template <typename Container> void decrypt(const Span<unsigned char>& src, Container& dst) {
+        dst.resize(src.size());
+        const auto length = decrypt(src, dst.data());
+        dst.resize(length);
+    }
+
+    size_t encrypt(const Span<unsigned char>& src, unsigned char* dst);
+    size_t decrypt(const Span<unsigned char>& src, unsigned char* dst);
+    size_t expectedEncryptSize(size_t length);
 
 private:
     SharedSecret secret;
