@@ -1,6 +1,7 @@
 #include "../Common.hpp"
 #include <Client/Client.hpp>
 #include <Server/Server.hpp>
+#include <Utils/Random.hpp>
 
 #define TAG "[Client]"
 
@@ -20,23 +21,69 @@ TEST_CASE("Login into server", TAG) {
     RESOURCES;
 
     auto players = db->seek<PlayerData>("");
-    REQUIRE(players.size() == 0);
+    REQUIRE(players.empty() == true);
 
-    client->login("password");
+    auto future = client->login("password");
+    future.get(std::chrono::milliseconds(1000));
 
     players = db->seek<PlayerData>("");
     REQUIRE(players.size() == 1);
+
+    REQUIRE(waitForCondition([&]() { return server->getSessions().size() == 1; }));
+    REQUIRE(server->getSessions().front()->playerId == players.front().id);
+
+    client.reset();
+
+    REQUIRE(waitForCondition([&]() { return server->getSessions().empty() == true; }));
 
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
 
-    client->login("password");
+    future = client->login("password");
+    future.get(std::chrono::milliseconds(1000));
 
     players = db->seek<PlayerData>("");
     REQUIRE(players.size() == 1);
+
+    REQUIRE(waitForCondition([&]() { return server->getSessions().size() == 1; }));
+    REQUIRE(server->getSessions().front()->playerId == players.front().id);
 }
 
 TEST_CASE("Login into server with bad password", TAG) {
     RESOURCES;
 
-    REQUIRE_THROWS_WITH(client->login(""), "Bad password");
+    auto future = client->login("");
+    REQUIRE_THROWS_WITH(future.get(std::chrono::milliseconds(1000)), "Bad password");
+}
+
+TEST_CASE("Fetch systems via request api", TAG) {
+    RESOURCES;
+
+    GalaxyData galaxy;
+    galaxy.id = uuid();
+    galaxy.name = "Galaxy";
+
+    db->put(galaxy.id, galaxy);
+
+    for (auto i = 0; i < 1000; i++) {
+        SystemData system;
+        system.id = uuid();
+        system.galaxyId = galaxy.id;
+        system.name = fmt::format("System {}", i);
+
+        db->put(fmt::format("{}/{}", galaxy.id, system.id), system);
+    }
+
+    auto future = client->login("password");
+    future.get(std::chrono::milliseconds(1000));
+
+    std::vector<SystemData> res;
+
+    client->fetchSystems()->then([&](const std::vector<SystemData>& systems) { res = systems; });
+
+    REQUIRE(waitForCondition([&]() {
+        client->update();
+        return !res.empty();
+    }));
+
+    REQUIRE(res.size() == 1000);
 }

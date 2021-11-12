@@ -22,6 +22,7 @@ Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     tickThread = std::thread(&Server::tick, this);
 
     MESSAGE_DISPATCH(MessageLoginRequest);
+    MESSAGE_DISPATCH(MessageFetchRequest<SystemData>);
 }
 
 Server::~Server() {
@@ -92,6 +93,15 @@ SessionPtr Server::getSession(const Network::StreamPtr& stream) {
     EXCEPTION("Session does not exist for stream: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
 }
 
+std::vector<SessionPtr> Server::getSessions() {
+    std::shared_lock<std::shared_mutex> lock{sessionsMutex};
+    std::vector<SessionPtr> res;
+    for (const auto& [stream, session] : sessions) {
+        res.push_back(session);
+    }
+    return res;
+}
+
 void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
     strand.post([=]() {
         try {
@@ -134,10 +144,38 @@ void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
             session->playerId = playerId;
 
             MessageLoginResponse res;
+            res.playerId = playerId;
             stream->send(res);
 
         } catch (std::exception& e) {
             Log::e(CMP, "Failed to handle login request error: {}", e.what());
+        }
+    });
+}
+
+template <typename T> void Server::handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req) {
+    worker.post([=]() {
+        try {
+            auto session = getSession(stream);
+            if (session->playerId.empty()) {
+                return;
+            }
+
+            Log::d(CMP, "Handle MessageFetchRequest<{}> next: {}", typeid(T).name(), req.next);
+
+            MessageFetchResponse<T> res;
+            res.id = req.id;
+
+            if (req.next.empty()) {
+                res.data.emplace_back();
+                res.next = "1234";
+            }
+
+            stream->send(res);
+
+        } catch (std::exception& e) {
+            Log::e(CMP, "Failed to handle fetch request for: {} next: '{}' error: {}", typeid(T).name(), req.next,
+                   e.what());
         }
     });
 }

@@ -4,12 +4,12 @@
 
 using namespace Scissio;
 
-Service::Service()
+BackgroundWorker::BackgroundWorker()
     : service(std::make_unique<asio::io_service>()), work(std::make_unique<asio::io_service::work>(*service)),
       thread([this]() { service->run(); }) {
 }
 
-Service::~Service() {
+BackgroundWorker::~BackgroundWorker() {
     if (thread.joinable()) {
         work.reset();
         thread.join();

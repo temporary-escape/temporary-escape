@@ -11,6 +11,8 @@
 
 using namespace Scissio;
 
+std::atomic<uint64_t> Client::nextRequestId(1);
+
 uint64_t generatePlayerUid(const Config& config) {
     const auto path = config.userdataPath / Path("uid");
     if (Fs::exists(path)) {
@@ -41,6 +43,7 @@ Client::Client(Config& config, const std::string& address, const int port)
       network(std::make_shared<Network::TcpClient>(*listener, address, port)), secret(generatePlayerUid(config)) {
 
     MESSAGE_DISPATCH(MessageLoginResponse);
+    MESSAGE_DISPATCH(MessageFetchResponse<SystemData>);
 
     auto future = connectPromise.future();
     if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
@@ -67,7 +70,9 @@ void Client::eventConnect() {
 void Client::eventDisconnect() {
 }
 
-void Client::login(const std::string& password) {
+Future<void> Client::login(const std::string& password) {
+    loginPromise = Promise<void>{};
+
     MessageLoginRequest req{};
     req.secret = secret;
     req.name = "Some Player";
@@ -75,14 +80,73 @@ void Client::login(const std::string& password) {
 
     network->send(req);
 
-    auto future = loginPromise.future();
-    future.get(std::chrono::milliseconds(1000));
+    return loginPromise.future();
 }
 
-void Client::handle(MessageLoginResponse req) {
-    if (!req.error.empty()) {
-        loginPromise.reject<std::runtime_error>(req.error);
+void Client::update() {
+    sync.run();
+}
+
+void Client::handle(MessageLoginResponse res) {
+    if (!res.error.empty()) {
+        loginPromise.reject<std::runtime_error>(res.error);
     } else {
+        playerId = res.playerId;
         loginPromise.resolve();
+    }
+}
+
+template <typename T> void Client::handle(MessageFetchResponse<T> res) {
+    if (res.id) {
+        AbstractRequestPtr abstractReq = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock{requestsMutex};
+            const auto it = requests.find(res.id);
+
+            if (it == requests.end()) {
+                Log::e(CMP, "Got response for unknown fetch request id: {} type: {}", res.id, typeid(T).name());
+            } else {
+                abstractReq = it->second;
+            }
+        }
+
+        if (!abstractReq) {
+            return;
+        }
+
+        const auto req = std::dynamic_pointer_cast<Request<T>>(abstractReq);
+        if (!req) {
+            Log::e(CMP, "Got response for invalid type fetch request id: {} type: {}", res.id, typeid(T).name());
+            return;
+        }
+
+        if (res.data.empty()) {
+            // Done!
+
+            Log::d(CMP, "Syncing req: {}", req->getId());
+
+            sync.post([this, req]() {
+                Log::d(CMP, "Completing req: {}", req->getId());
+
+                {
+                    std::lock_guard<std::mutex> lock{requestsMutex};
+                    requests.erase(req->getId());
+                }
+
+                req->complete();
+            });
+
+        } else {
+            // Not done yet, needs more data!
+
+            req->append(res.data);
+
+            MessageFetchRequest<T> req;
+            req.id = res.id;
+            req.next = res.next;
+
+            network->send(req);
+        }
     }
 }

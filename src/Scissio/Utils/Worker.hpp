@@ -8,17 +8,17 @@
 #include "../Library.hpp"
 #include "Exceptions.hpp"
 
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
-#include <condition_variable>
 
 namespace Scissio {
-class Service {
+class BackgroundWorker {
 public:
-    Service();
-    ~Service();
+    BackgroundWorker();
+    ~BackgroundWorker();
 
     template <typename Fn> void post(Fn&& fn) {
         service->post(std::forward<Fn>(fn));

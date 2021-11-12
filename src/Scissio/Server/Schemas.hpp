@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Utils/Msgpack.hpp"
+#include "Database.hpp"
 
 namespace Scissio {
 struct PlayerData {

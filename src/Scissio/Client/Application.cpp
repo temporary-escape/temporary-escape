@@ -7,7 +7,9 @@
 
 using namespace Scissio;
 
-Application::Application(Config& config) : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), loading(true), loadingProgress(0.0f) {
+Application::Application(Config& config)
+    : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), loading(true),
+      loadingProgress(0.0f) {
     defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular));
 
     textureCompressor = std::make_shared<TextureCompressor>();
@@ -83,6 +85,13 @@ void Application::render(const Vector2i& viewport) {
         canvas.text({50.0f, viewport.y - 100.0f}, "Loading...");
         canvas.closePath();
         canvas.endFrame();
+    } else if (client) {
+        if (!clientRenderer) {
+            clientRenderer = std::make_shared<ClientRenderer>(*client);
+        }
+
+        client->update();
+        clientRenderer->render(viewport, canvas);
     }
 }
 
@@ -123,7 +132,8 @@ void Application::load() {
     loadingProgress.store(0.95f);
 
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
-    client->login("password");
+    auto futureLogin = client->login("password");
+    future.get(std::chrono::milliseconds(1000));
 
     loadingProgress.store(1.0f);
 

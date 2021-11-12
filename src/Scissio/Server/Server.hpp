@@ -22,6 +22,8 @@ public:
     void eventDisconnect(const Network::StreamPtr& stream);
     void eventPacket(const Network::StreamPtr& stream, Network::Packet packet);
 
+    std::vector<SessionPtr> getSessions();
+
 private:
     class EventListener : public Network::EventListener {
     public:
@@ -45,6 +47,9 @@ private:
     };
 
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
+
+    template <typename T> void handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req);
+
     SessionPtr getSession(const Network::StreamPtr& stream);
 
     const Config& config;
