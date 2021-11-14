@@ -84,6 +84,7 @@ Future<void> Client::login(const std::string& password) {
 }
 
 void Client::update() {
+    sync.restart();
     sync.run();
 }
 
@@ -121,13 +122,15 @@ template <typename T> void Client::handle(MessageFetchResponse<T> res) {
             return;
         }
 
+        // Log::d(CMP, "Request id: {} received {} items", res.id, res.data.size());
+
         if (res.data.empty()) {
             // Done!
 
-            Log::d(CMP, "Syncing req: {}", req->getId());
+            // Log::d(CMP, "Syncing req: {}", req->getId());
 
             sync.post([this, req]() {
-                Log::d(CMP, "Completing req: {}", req->getId());
+                // Log::d(CMP, "Completing req: {}", req->getId());
 
                 {
                     std::lock_guard<std::mutex> lock{requestsMutex};
@@ -144,7 +147,8 @@ template <typename T> void Client::handle(MessageFetchResponse<T> res) {
 
             MessageFetchRequest<T> req;
             req.id = res.id;
-            req.next = res.next;
+            req.prefix = res.prefix;
+            req.start = res.next;
 
             network->send(req);
         }

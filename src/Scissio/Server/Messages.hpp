@@ -25,18 +25,20 @@ REGISTER_MESSAGE(MessageLoginResponse);
 
 template <typename T> struct MessageFetchRequest {
     uint64_t id = 0;
-    std::string next;
+    std::string prefix;
+    std::string start;
 
-    MSGPACK_DEFINE(id, next);
+    MSGPACK_DEFINE(id, prefix, start);
 };
 
 template <typename T> struct MessageFetchResponse {
     uint64_t id = 0;
+    std::string prefix;
     std::string next;
     std::vector<T> data;
     std::string error;
 
-    MSGPACK_DEFINE(id, next, data, error);
+    MSGPACK_DEFINE(id, prefix, next, data, error);
 };
 
 REGISTER_MESSAGE(MessageFetchRequest<SystemData>);

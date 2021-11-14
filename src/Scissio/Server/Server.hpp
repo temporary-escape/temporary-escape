@@ -47,8 +47,11 @@ private:
     };
 
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
-
     template <typename T> void handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req);
+
+    template <typename T>
+    void fetchResourceForPlayer(const SessionPtr& session, const std::string& prefix, const std::string& start,
+                                std::vector<T>& out, std::string& next);
 
     SessionPtr getSession(const Network::StreamPtr& stream);
 

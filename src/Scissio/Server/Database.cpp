@@ -78,7 +78,7 @@ private:
     }
 
     void seekInternal(const std::string& prefix,
-                      const std::function<void(const std::string&, const char*, size_t)>& fn) override {
+                      const std::function<bool(const std::string&, const char*, size_t)>& fn) override {
         rocksdb::ReadOptions options{};
         options.prefix_same_as_start = true;
         std::shared_ptr<rocksdb::Iterator> iter(txn->GetIterator(options));
@@ -86,7 +86,29 @@ private:
 
         while (iter->Valid()) {
             if (iter->key().starts_with(prefix)) {
-                fn(iter->key().ToString(), iter->value().data(), iter->value().size());
+                if (!fn(iter->key().ToString(), iter->value().data(), iter->value().size())) {
+                    break;
+                }
+            }
+            iter->Next();
+        }
+    }
+
+    void nextInternal(const std::string& prefix, const std::string& start,
+                      const std::function<bool(const std::string&, const char*, size_t)>& fn) override {
+        rocksdb::ReadOptions options{};
+        rocksdb::Slice lowerBound(start);
+        options.prefix_same_as_start = true;
+        options.iterate_lower_bound = &lowerBound;
+
+        std::shared_ptr<rocksdb::Iterator> iter(txn->GetIterator(options));
+        iter->Seek(prefix);
+
+        while (iter->Valid()) {
+            if (iter->key().starts_with(prefix)) {
+                if (!fn(iter->key().ToString(), iter->value().data(), iter->value().size())) {
+                    break;
+                }
             }
             iter->Next();
         }
@@ -193,7 +215,7 @@ void Database::multiGetInternal(const std::vector<std::string>& keys,
 }
 
 void Database::seekInternal(const std::string& prefix,
-                            const std::function<void(const std::string&, const char*, size_t)>& fn) {
+                            const std::function<bool(const std::string&, const char*, size_t)>& fn) {
     rocksdb::ReadOptions options{};
     options.prefix_same_as_start = true;
     std::shared_ptr<rocksdb::Iterator> iter(data->db->NewIterator(options));
@@ -201,7 +223,29 @@ void Database::seekInternal(const std::string& prefix,
 
     while (iter->Valid()) {
         if (iter->key().starts_with(prefix)) {
-            fn(iter->key().ToString(), iter->value().data(), iter->value().size());
+            if (!fn(iter->key().ToString(), iter->value().data(), iter->value().size())) {
+                break;
+            }
+        }
+        iter->Next();
+    }
+}
+
+void Database::nextInternal(const std::string& prefix, const std::string& start,
+                            const std::function<bool(const std::string&, const char*, size_t)>& fn) {
+    rocksdb::ReadOptions options{};
+    rocksdb::Slice lowerBound(start);
+    options.prefix_same_as_start = true;
+    options.iterate_lower_bound = &lowerBound;
+
+    std::shared_ptr<rocksdb::Iterator> iter(data->db->NewIterator(options));
+    iter->Seek(prefix);
+
+    while (iter->Valid()) {
+        if (iter->key().starts_with(prefix)) {
+            if (!fn(iter->key().ToString(), iter->value().data(), iter->value().size())) {
+                break;
+            }
         }
         iter->Next();
     }

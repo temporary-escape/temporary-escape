@@ -102,8 +102,15 @@ std::vector<SessionPtr> Server::getSessions() {
     return res;
 }
 
+template <typename T>
+void Server::fetchResourceForPlayer(const SessionPtr& session, const std::string& prefix, const std::string& start,
+                                    std::vector<T>& out, std::string& next) {
+
+    out = db.next<T>(prefix, start, 64, &next);
+}
+
 void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
-    strand.post([=]() {
+    strand.post([=]() -> void {
         try {
             Log::i(CMP, "Logging in player: '{}'", req.name);
             auto session = getSession(stream);
@@ -161,20 +168,24 @@ template <typename T> void Server::handle(const Network::StreamPtr& stream, Mess
                 return;
             }
 
-            Log::d(CMP, "Handle MessageFetchRequest<{}> next: {}", typeid(T).name(), req.next);
+            // Log::d(CMP, "Handle MessageFetchRequest<{}> start: {}", typeid(T).name(), req.start);
 
             MessageFetchResponse<T> res;
             res.id = req.id;
-
-            if (req.next.empty()) {
-                res.data.emplace_back();
-                res.next = "1234";
+            res.prefix = req.prefix;
+            try {
+                fetchResourceForPlayer(session, req.prefix, req.start, res.data, res.next);
+            } catch (std::exception& e) {
+                Log::e(CMP, "Failed to fetch resource for: {} player: {} error: {}", typeid(T).name(),
+                       session->playerId, e.what());
+                res.data.clear();
+                res.next.clear();
+                res.error = "Failed to fetch resource";
             }
-
             stream->send(res);
 
         } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle fetch request for: {} next: '{}' error: {}", typeid(T).name(), req.next,
+            Log::e(CMP, "Failed to handle fetch request for: {} next: '{}' start: {}", typeid(T).name(), req.start,
                    e.what());
         }
     });

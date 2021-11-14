@@ -64,7 +64,7 @@ TEST_CASE("Fetch systems via request api", TAG) {
 
     db->put(galaxy.id, galaxy);
 
-    for (auto i = 0; i < 1000; i++) {
+    for (auto i = 0; i < 200; i++) {
         SystemData system;
         system.id = uuid();
         system.galaxyId = galaxy.id;
@@ -78,12 +78,12 @@ TEST_CASE("Fetch systems via request api", TAG) {
 
     std::vector<SystemData> res;
 
-    client->fetchSystems()->then([&](const std::vector<SystemData>& systems) { res = systems; });
+    client->fetchSystems(galaxy.id)->then([&](std::vector<SystemData> systems) { res = std::move(systems); });
 
     REQUIRE(waitForCondition([&]() {
         client->update();
         return !res.empty();
     }));
 
-    REQUIRE(res.size() == 1000);
+    REQUIRE(res.size() == 200);
 }

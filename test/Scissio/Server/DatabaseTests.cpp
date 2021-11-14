@@ -1,6 +1,7 @@
 #include "../Common.hpp"
 #include <Future.hpp>
 #include <Server/Database.hpp>
+#include <Server/Schemas.hpp>
 
 #define TAG "[Database]"
 
@@ -80,11 +81,44 @@ TEST_CASE("Seek", TAG) {
     players = db.seek<Player>("Some");
     REQUIRE(players.size() == 10);
 
+    players = db.seek<Player>("Some", 5);
+    REQUIRE(players.size() == 5);
+
     players = db.seek<Player>("Some Other");
     REQUIRE(players.size() == 5);
 
     players = db.seek<Player>("Some Unknown");
     REQUIRE(players.empty() == true);
+}
+
+TEST_CASE("Next", TAG) {
+    auto tmpDir = std::make_shared<TmpDir>();
+    Database db(tmpDir->value());
+
+    const auto galaxyId = "Galaxy Name";
+
+    for (auto i = 0; i < 10; i++) {
+        SystemData system;
+        system.id = fmt::format("System {}", static_cast<char>('A' + i));
+        db.put(fmt::format("{}/{}", galaxyId, system.id), system);
+    }
+
+    auto systems = db.next<SystemData>(galaxyId, "", 2);
+    REQUIRE(systems.size() == 2);
+    REQUIRE(systems.at(0).id == "System A");
+    REQUIRE(systems.at(1).id == "System B");
+
+    systems = db.next<SystemData>(galaxyId, fmt::format("{}/System B", galaxyId), 2);
+    REQUIRE(systems.size() == 2);
+    REQUIRE(systems.at(0).id == "System C");
+    REQUIRE(systems.at(1).id == "System D");
+
+    systems = db.next<SystemData>(galaxyId, fmt::format("{}/System I", galaxyId), 2);
+    REQUIRE(systems.size() == 1);
+    REQUIRE(systems.at(0).id == "System J");
+
+    systems = db.next<SystemData>(galaxyId, fmt::format("{}/System J", galaxyId), 2);
+    REQUIRE(systems.empty());
 }
 
 TEST_CASE("Delete by prefix", TAG) {
