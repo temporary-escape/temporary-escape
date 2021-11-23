@@ -106,9 +106,14 @@ void Application::load() {
     assetLoadQueueInitialSize.store(queue.size());
     loadQueuePromise.resolve(std::move(queue));
 
-    auto future = assetLoadQueueFinished.future();
-    if (!future.get()) {
-        return;
+    Log::i(CMP, "Waiting for assets to load");
+    try {
+        auto future = assetLoadQueueFinished.future();
+        if (!future.get()) {
+            return;
+        }
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to wait for assets to load");
     }
 
     loadingProgress.store(0.8f);
@@ -122,22 +127,26 @@ void Application::load() {
 
     loadingProgress.store(0.8f);
 
+    Log::i(CMP, "Starting world generator");
     generator = std::make_shared<Generator>(*db, Generator::Options{});
     generator->generateWorld(123456789u);
 
     loadingProgress.store(0.9f);
 
+    Log::i(CMP, "Starting server");
     server = std::make_shared<Server>(config, *assetManager, *db);
 
     loadingProgress.store(0.95f);
 
+    Log::i(CMP, "Starting client");
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
     auto futureLogin = client->login("password");
-    future.get(std::chrono::milliseconds(1000));
+    futureLogin.get(std::chrono::milliseconds(1000));
 
     loadingProgress.store(1.0f);
 
     loading.store(false);
+    Log::i(CMP, "Loading finished");
 }
 
 void Application::eventMouseMoved(const Vector2i& pos) {

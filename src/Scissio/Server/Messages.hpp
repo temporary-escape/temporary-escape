@@ -2,6 +2,7 @@
 
 #include "../Network/Packet.hpp"
 #include "Schemas.hpp"
+#include <chrono>
 
 namespace Scissio {
 struct MessageLoginRequest {
@@ -22,6 +23,38 @@ struct MessageLoginResponse {
 };
 
 REGISTER_MESSAGE(MessageLoginResponse);
+
+struct MessagePingRequest {
+    std::chrono::system_clock::time_point timePoint;
+
+    MSGPACK_DEFINE(timePoint);
+};
+
+REGISTER_MESSAGE(MessagePingRequest);
+
+struct MessagePingResponse {
+    std::chrono::system_clock::time_point timePoint;
+
+    MSGPACK_DEFINE(timePoint);
+};
+
+REGISTER_MESSAGE(MessagePingResponse);
+
+struct MessageLatencyRequest {
+    std::chrono::system_clock::time_point timePoint;
+
+    MSGPACK_DEFINE(timePoint);
+};
+
+REGISTER_MESSAGE(MessageLatencyRequest);
+
+struct MessageLatencyResponse {
+    std::chrono::system_clock::time_point timePoint;
+
+    MSGPACK_DEFINE(timePoint);
+};
+
+REGISTER_MESSAGE(MessageLatencyResponse);
 
 template <typename T> struct MessageFetchRequest {
     uint64_t id = 0;

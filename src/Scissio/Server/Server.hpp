@@ -47,6 +47,8 @@ private:
     };
 
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
+    void handle(const Network::StreamPtr& stream, MessagePingRequest req);
+    void handle(const Network::StreamPtr& stream, MessageLatencyRequest req);
     template <typename T> void handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req);
 
     template <typename T>

@@ -12,6 +12,12 @@
 namespace Scissio {
 class SCISSIO_API Client {
 public:
+    struct Stats {
+        std::atomic<uint64_t> packetsSent{0};
+        std::atomic<uint64_t> packetsReceived{0};
+        std::atomic<uint64_t> serverLatencyMs{0};
+    };
+
     explicit Client(Config& config, const std::string& address, int port);
     virtual ~Client();
 
@@ -42,6 +48,10 @@ public:
 
     void update();
 
+    const Stats& getStats() const {
+        return stats;
+    }
+
 private:
     class EventListener : public Network::EventListener {
     public:
@@ -68,7 +78,8 @@ private:
     };
 
     void handle(MessageLoginResponse res);
-
+    void handle(MessagePingResponse res);
+    void handle(MessageLatencyResponse res);
     template <typename T> void handle(MessageFetchResponse<T> res);
 
     static std::atomic<uint64_t> nextRequestId;
@@ -83,9 +94,12 @@ private:
     Promise<void> loginPromise;
 
     asio::io_service sync;
+    PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
     // BackgroundWorker background;
 
     std::mutex requestsMutex;
     std::unordered_map<uint64_t, AbstractRequestPtr> requests;
+
+    Stats stats;
 };
 } // namespace Scissio

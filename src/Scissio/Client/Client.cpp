@@ -43,6 +43,8 @@ Client::Client(Config& config, const std::string& address, const int port)
       network(std::make_shared<Network::TcpClient>(*listener, address, port)), secret(generatePlayerUid(config)) {
 
     MESSAGE_DISPATCH(MessageLoginResponse);
+    MESSAGE_DISPATCH(MessagePingResponse);
+    MESSAGE_DISPATCH(MessageLatencyResponse);
     MESSAGE_DISPATCH(MessageFetchResponse<SystemData>);
 
     auto future = connectPromise.future();
@@ -57,6 +59,7 @@ Client::~Client() {
 
 void Client::eventPacket(Network::Packet packet) {
     try {
+        stats.packetsReceived++;
         dispatcher.dispatch(packet);
     } catch (...) {
         EXCEPTION_NESTED("Failed to dispatch message");
@@ -65,6 +68,9 @@ void Client::eventPacket(Network::Packet packet) {
 
 void Client::eventConnect() {
     connectPromise.resolve();
+
+    network->send(MessagePingRequest{std::chrono::system_clock::now()});
+    network->send(MessageLatencyRequest{std::chrono::system_clock::now()});
 }
 
 void Client::eventDisconnect() {
@@ -95,6 +101,26 @@ void Client::handle(MessageLoginResponse res) {
         playerId = res.playerId;
         loginPromise.resolve();
     }
+}
+
+void Client::handle(MessagePingResponse res) {
+    const auto now = std::chrono::system_clock::now();
+    const auto diff = now - res.timePoint;
+    stats.serverLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+
+    Log::d(CMP, "Network latency: {} ms", stats.serverLatencyMs.load());
+
+    worker1s.post([this]() { network->send(MessagePingRequest{std::chrono::system_clock::now()}); });
+}
+
+void Client::handle(MessageLatencyResponse res) {
+    const auto now = std::chrono::system_clock::now();
+    const auto diff = now - res.timePoint;
+    stats.serverLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+
+    Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
+
+    worker1s.post([this]() { network->send(MessageLatencyRequest{std::chrono::system_clock::now()}); });
 }
 
 template <typename T> void Client::handle(MessageFetchResponse<T> res) {

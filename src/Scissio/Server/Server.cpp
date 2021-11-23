@@ -22,6 +22,8 @@ Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     tickThread = std::thread(&Server::tick, this);
 
     MESSAGE_DISPATCH(MessageLoginRequest);
+    MESSAGE_DISPATCH(MessagePingRequest);
+    MESSAGE_DISPATCH(MessageLatencyRequest);
     MESSAGE_DISPATCH(MessageFetchRequest<SystemData>);
 }
 
@@ -157,6 +159,20 @@ void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
         } catch (std::exception& e) {
             Log::e(CMP, "Failed to handle login request error: {}", e.what());
         }
+    });
+}
+
+void Server::handle(const Network::StreamPtr& stream, MessagePingRequest req) {
+    MessagePingResponse res;
+    res.timePoint = req.timePoint;
+    stream->send(res);
+}
+
+void Server::handle(const Network::StreamPtr& stream, MessageLatencyRequest req) {
+    worker.post([=]() {
+        MessageLatencyResponse res;
+        res.timePoint = req.timePoint;
+        stream->send(res);
     });
 }
 

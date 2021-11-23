@@ -11,6 +11,10 @@ public:
 
     void load(AssetManager& assetManager) override;
 
+    const Canvas2D::FontHandle& getHandle() const {
+        return font;
+    }
+
 private:
     const Config& config;
     Path path;

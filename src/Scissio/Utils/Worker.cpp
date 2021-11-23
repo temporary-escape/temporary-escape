@@ -4,6 +4,43 @@
 
 using namespace Scissio;
 
+PeriodicWorker::PeriodicWorker(const std::chrono::milliseconds& period)
+    : period(period), service(std::make_unique<asio::io_service>()),
+      /*work(std::make_unique<asio::io_service::work>(*service)),*/ terminate(false), thread([this]() { run(); }) {
+}
+
+PeriodicWorker::~PeriodicWorker() {
+    if (thread.joinable()) {
+        {
+            std::unique_lock<std::mutex> lock{mutex};
+            terminate = true;
+            cv.notify_all();
+        }
+
+        work.reset();
+        thread.join();
+    }
+}
+
+void PeriodicWorker::run() {
+    while (true) {
+        const auto t0 = std::chrono::steady_clock::now();
+        service->reset();
+        service->run();
+        const auto t1 = std::chrono::steady_clock::now();
+
+        const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+
+        if (diff < period) {
+            const auto toSleep = period - diff;
+            std::unique_lock<std::mutex> lock{mutex};
+            if (cv.wait_for(lock, toSleep, [&]() { return terminate; })) {
+                break;
+            }
+        }
+    }
+}
+
 BackgroundWorker::BackgroundWorker()
     : service(std::make_unique<asio::io_service>()), work(std::make_unique<asio::io_service::work>(*service)),
       thread([this]() { service->run(); }) {

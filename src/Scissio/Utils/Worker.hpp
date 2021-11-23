@@ -15,6 +15,29 @@
 #include <vector>
 
 namespace Scissio {
+class PeriodicWorker {
+public:
+    PeriodicWorker(const std::chrono::milliseconds& period);
+    ~PeriodicWorker();
+
+    template <typename Fn> void post(Fn&& fn) {
+        service->post(std::forward<Fn>(fn));
+    }
+
+private:
+    void run();
+
+    const std::chrono::milliseconds period;
+    std::unique_ptr<asio::io_service> service;
+    std::unique_ptr<asio::io_service::work> work;
+
+    std::condition_variable cv;
+    std::mutex mutex;
+    bool terminate;
+
+    std::thread thread;
+};
+
 class BackgroundWorker {
 public:
     BackgroundWorker();
