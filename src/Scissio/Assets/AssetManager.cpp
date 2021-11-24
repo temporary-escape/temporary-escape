@@ -13,8 +13,8 @@ using namespace Scissio;
 
 AssetManager* AssetManager::instance = nullptr;
 
-AssetManager::AssetManager(const Config& config, TextureCompressor& textureCompressor)
-    : config(config), textureCompressor(textureCompressor) {
+AssetManager::AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor)
+    : config(config), canvas(canvas), textureCompressor(textureCompressor) {
     instance = this;
 }
 
@@ -111,4 +111,8 @@ AssetLoadQueue AssetManager::getLoadQueue() {
 
 Texture2D AssetManager::compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target) {
     return textureCompressor.convert(source, targetSize, target);
+}
+
+Canvas2D::FontHandle AssetManager::createFontHandle(const Path& path) {
+    return canvas.loadFont(path);
 }

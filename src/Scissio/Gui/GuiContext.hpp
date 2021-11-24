@@ -40,7 +40,7 @@ public:
     bool button(const std::string& text);
     // bool buttonImage(const ImagePtr& image);
     // bool buttonImage(const IconPtr& image, bool active = false);
-    void label(const std::string& text);
+    void label(const std::string& text, TextAlignValue align = TextAlign::Left);
     void title(const std::string& text);
     void text(const std::string& text);
     void layoutDynamic(float height, int count);

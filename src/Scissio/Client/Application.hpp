@@ -5,7 +5,7 @@
 #include "../Platform/OpenGLWindow.hpp"
 #include "../Server/Generator.hpp"
 #include "../Server/Server.hpp"
-#include "ClientRenderer.hpp"
+#include "Renderer.hpp"
 #include <atomic>
 
 namespace Scissio {
@@ -44,7 +44,7 @@ private:
     std::shared_ptr<Generator> generator;
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;
-    std::shared_ptr<ClientRenderer> clientRenderer;
+    std::shared_ptr<Renderer> renderer;
 
     std::atomic<size_t> assetLoadQueueInitialSize;
     std::atomic<bool> loading;

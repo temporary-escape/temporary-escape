@@ -10,7 +10,7 @@ using namespace Scissio;
 Application::Application(Config& config)
     : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), loading(true),
       loadingProgress(0.0f) {
-    defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular));
+    defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular + ".ttf"));
 
     textureCompressor = std::make_shared<TextureCompressor>();
 }
@@ -86,18 +86,18 @@ void Application::render(const Vector2i& viewport) {
         canvas.closePath();
         canvas.endFrame();
     } else if (client) {
-        if (!clientRenderer) {
-            clientRenderer = std::make_shared<ClientRenderer>(*client);
+        if (!renderer) {
+            renderer = std::make_shared<Renderer>(canvas, config, *assetManager, *client);
         }
 
         client->update();
-        clientRenderer->render(viewport, canvas);
+        renderer->render(viewport);
     }
 }
 
 void Application::load() {
     Log::i(CMP, "Initializing resource managers");
-    assetManager = std::make_shared<AssetManager>(config, *textureCompressor);
+    assetManager = std::make_shared<AssetManager>(config, canvas, *textureCompressor);
     modManager = std::make_shared<ModManager>();
 
     Log::i(CMP, "Loading mods");

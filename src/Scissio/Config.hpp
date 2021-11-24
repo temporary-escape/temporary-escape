@@ -21,8 +21,8 @@ struct Config {
     int fboSamples = 4;
     float cameraFov = 75.0f;
     int thumbnailSize = 128;
-    std::string guiFontFaceRegular = "iosevka-aile-regular.ttf";
-    std::string guiFontFaceBold = "iosevka-aile-bold.ttf";
-    int guiFontSize = 21;
+    std::string guiFontFaceRegular = "iosevka-aile-regular";
+    std::string guiFontFaceBold = "iosevka-aile-bold";
+    int guiFontSize = 18;
 };
 } // namespace Scissio

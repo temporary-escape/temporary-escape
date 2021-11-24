@@ -8,16 +8,11 @@
 #include "../Server/Schemas.hpp"
 #include "../Utils/Worker.hpp"
 #include "Request.hpp"
+#include "Stats.hpp"
 
 namespace Scissio {
 class SCISSIO_API Client {
 public:
-    struct Stats {
-        std::atomic<uint64_t> packetsSent{0};
-        std::atomic<uint64_t> packetsReceived{0};
-        std::atomic<uint64_t> serverLatencyMs{0};
-    };
-
     explicit Client(Config& config, const std::string& address, int port);
     virtual ~Client();
 
@@ -49,6 +44,10 @@ public:
     void update();
 
     const Stats& getStats() const {
+        return stats;
+    }
+
+    Stats& getStats() {
         return stats;
     }
 

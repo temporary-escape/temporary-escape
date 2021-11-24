@@ -575,7 +575,7 @@ void GuiContext::group(const std::string& name, const GuiFlags flags, const std:
 }
 
 bool GuiContext::button(const std::string& text) {
-    return nk_button_label(ctx.get(), text.c_str());
+    return nk_button_label(ctx.get(), text.c_str()) == nk_true;
 }
 
 /*bool GuiContext::buttonImage(const ImagePtr& image) {
@@ -594,8 +594,8 @@ bool GuiContext::buttonImage(const IconPtr& image, const bool active) {
     return cnk_button_image(ctx.get(), img, active);
 }*/
 
-void GuiContext::label(const std::string& text) {
-    nk_label(ctx.get(), text.c_str(), NK_TEXT_ALIGN_LEFT);
+void GuiContext::label(const std::string& text, const TextAlignValue align) {
+    nk_label(ctx.get(), text.c_str(), align);
 }
 
 void GuiContext::title(const std::string& text) {
@@ -620,7 +620,7 @@ void GuiContext::combo(const std::string& selected, const Vector2& size, const s
 }
 
 bool GuiContext::comboItem(const std::string& text) {
-    const bool res = nk_combo_item_label(ctx.get(), text.c_str(), NK_TEXT_LEFT);
+    const auto res = nk_combo_item_label(ctx.get(), text.c_str(), NK_TEXT_LEFT) == nk_true;
     if (res) {
         ctx->input.mouse.pos = nk_vec2(0, 0);
         ctx->input.mouse.buttons[NK_BUTTON_LEFT].down = 0;
@@ -646,7 +646,7 @@ void GuiContext::tooltip(const float width, const std::function<void()>& fn) {
 bool GuiContext::isNextHover() const {
     const struct nk_input* in = &ctx->input;
     const auto bounds = nk_widget_bounds(ctx.get());
-    return nk_input_is_mouse_hovering_rect(in, bounds);
+    return nk_input_is_mouse_hovering_rect(in, bounds) == nk_true;
 }
 
 Vector2 GuiContext::getContentSize() const {

@@ -17,7 +17,7 @@ class Canvas2D;
 
 class SCISSIO_API AssetManager {
 public:
-    explicit AssetManager(const Config& config, TextureCompressor& textureCompressor);
+    explicit AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor);
     virtual ~AssetManager() = default;
 
     template <typename T> std::shared_ptr<T> findOrNull(const std::string& name) {
@@ -56,6 +56,7 @@ public:
     AssetLoadQueue getLoadQueue();
 
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);
+    Canvas2D::FontHandle createFontHandle(const Path& path);
 
     static AssetManager& singleton();
 
@@ -65,6 +66,7 @@ private:
     void add(AssetPtr asset);
 
     const Config& config;
+    Canvas2D& canvas;
     TextureCompressor& textureCompressor;
     AssetPtrMap assets;
 };

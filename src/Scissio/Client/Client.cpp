@@ -106,9 +106,9 @@ void Client::handle(MessageLoginResponse res) {
 void Client::handle(MessagePingResponse res) {
     const auto now = std::chrono::system_clock::now();
     const auto diff = now - res.timePoint;
-    stats.serverLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+    stats.networkLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
 
-    Log::d(CMP, "Network latency: {} ms", stats.serverLatencyMs.load());
+    // Log::d(CMP, "Network latency: {} ms", stats.serverLatencyMs.load());
 
     worker1s.post([this]() { network->send(MessagePingRequest{std::chrono::system_clock::now()}); });
 }
@@ -118,7 +118,7 @@ void Client::handle(MessageLatencyResponse res) {
     const auto diff = now - res.timePoint;
     stats.serverLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
 
-    Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
+    // Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
 
     worker1s.post([this]() { network->send(MessageLatencyRequest{std::chrono::system_clock::now()}); });
 }

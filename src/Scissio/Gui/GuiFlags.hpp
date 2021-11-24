@@ -21,4 +21,14 @@ struct GuiFlag {
     static constexpr GuiFlags CenterX = (1 << (29));
     static constexpr GuiFlags CenterY = 1 << 30;
 };
+
+using TextAlignValue = uint32_t;
+enum TextAlign : TextAlignValue {
+    Left = 0x01,
+    Centered = 0x02,
+    Right = 0x04,
+    Top = 0x08,
+    Middle = 0x10,
+    Bottom = 0x20,
+};
 } // namespace Scissio
