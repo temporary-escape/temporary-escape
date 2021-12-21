@@ -100,5 +100,7 @@ private:
     std::unordered_map<uint64_t, AbstractRequestPtr> requests;
 
     Stats stats;
+
+    std::unique_ptr<Scene> scene;
 };
 } // namespace Scissio

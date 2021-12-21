@@ -12,9 +12,9 @@ void WidgetDebugStats::renderInternal(GuiContext& gui) {
         gui.label(fmt::format(format, stat), TextAlign::Right);
     };
 
-    draw("Network latency", "{}ms", stats.networkLatencyMs.load());
-    draw("Server latency", "{}ms", stats.serverLatencyMs.load());
-    draw("Packets sent", "{}", stats.packetsSent.load());
-    draw("Packets received", "{}", stats.packetsReceived.load());
-    draw("Frame time", "{}ms", stats.frameTimeMs.load());
+    draw("Network latency", "{}ms", stats.network.latencyMs.load());
+    draw("Server latency", "{}ms", stats.server.latencyMs.load());
+    draw("Packets sent", "{}", stats.network.packetsSent.load());
+    draw("Packets received", "{}", stats.network.packetsReceived.load());
+    draw("Frame time", "{}ms", stats.render.frameTimeMs.load());
 }

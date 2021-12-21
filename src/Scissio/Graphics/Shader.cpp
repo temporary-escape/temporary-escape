@@ -41,7 +41,8 @@ static std::string loadFile(const Path& path) {
 Shader::Shader(const NoCreate&) : vertex(0), fragment(0), geometry(0), program() {
 }
 
-Shader::Shader() : vertex(0), fragment(0), geometry(0), program(glCreateProgram()) {
+Shader::Shader(std::string name)
+    : name(std::move(name)), vertex(0), fragment(0), geometry(0), program(glCreateProgram()) {
 }
 
 void Shader::compile(const std::string& source, GLuint& shader, const GLenum target) {
@@ -97,6 +98,7 @@ Shader::Shader(Shader&& other) noexcept : vertex(0), fragment(0), geometry(0), p
 }
 
 void Shader::swap(Shader& other) noexcept {
+    std::swap(name, other.name);
     std::swap(vertex, other.vertex);
     std::swap(fragment, other.fragment);
     std::swap(geometry, other.geometry);
@@ -176,8 +178,24 @@ void Shader::draw(const Mesh& mesh) const {
     }
 }
 
-GLuint Shader::getUniformLocation(const std::string& location) const {
-    return glGetUniformLocation(program, location.c_str());
+GLint Shader::getUniformLocation(const std::string& location) const {
+    const auto v = glGetUniformLocation(program, location.c_str());
+    if (v == -1) {
+        Log::w("Shader {} uniform location {} not found", name, location);
+    }
+    return v;
+}
+
+GLint Shader::getUniformBlockIndex(const std::string& location) const {
+    const auto v = glGetUniformBlockIndex(program, location.c_str());
+    if (v == -1) {
+        Log::w("Shader {} uniform block index {} not found", name, location);
+    }
+    return v;
+}
+
+void Shader::uniformBlockBinding(GLuint blockIndex, GLuint blockBinding) const {
+    glUniformBlockBinding(program, blockIndex, blockBinding);
 }
 
 template <> void Shader::setUniform<int>(const GLuint location, const int& value) const {

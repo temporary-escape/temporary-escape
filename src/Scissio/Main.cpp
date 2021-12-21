@@ -66,11 +66,12 @@ int main(int argc, char** argv) {
     auto args = options.parse(argc, argv);
 
     try {
+        const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
         Config config{};
-        config.assetsPath = std::filesystem::absolute(Path(args["root"].as<std::string>()) / "assets");
+        config.assetsPath = rootPath / "assets";
         config.userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
         config.userdataSavesPath = config.userdataPath / "Saves";
-        config.shadersPath = config.assetsPath / "shaders";
+        config.shadersPath = rootPath / "shaders";
 
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
@@ -82,4 +83,3 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 }
-

@@ -8,12 +8,12 @@ ComponentModel::ComponentModel() : Component(Type) {
 ComponentModel::ComponentModel(Object& object, AssetModelPtr model) : Component(Type, object), model(std::move(model)) {
 }
 
-void ComponentModel::render(Shader& shader) {
+/*void ComponentModel::render(Shader& shader) {
     const auto& transform = getObject().getTransform();
 
     const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
 
-    /*shader.setModelMatrix(transform);
+    shader.setModelMatrix(transform);
     shader.setNormalMatrix(transformInverted);
 
     for (const auto& primitive : model->getPrimitives()) {
@@ -49,5 +49,5 @@ void ComponentModel::render(Shader& shader) {
         }
 
         shader.draw(primitive.mesh);
-    }*/
-}
+    }
+}*/

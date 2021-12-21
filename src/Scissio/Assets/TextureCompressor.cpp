@@ -32,7 +32,7 @@ TextureCompressor::TextureCompressor(const NoCreate&)
     : shader(NO_CREATE), fbo(NO_CREATE), fboColor(NO_CREATE), fboDepth(NO_CREATE), vao(NO_CREATE), vbo(NO_CREATE) {
 }
 
-TextureCompressor::TextureCompressor() : textureSize{0, 0}, vbo{VertexBufferType::Array} {
+TextureCompressor::TextureCompressor() : textureSize{0, 0}, shader("TextureCompressor"), vbo{VertexBufferType::Array} {
 
     shader.addFragmentShader(SHADER_FRAG);
     shader.addVertexShader(SHADER_VERT);

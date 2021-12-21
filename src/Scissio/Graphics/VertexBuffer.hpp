@@ -23,6 +23,7 @@ public:
 
     void bufferData(const void* data, size_t size, VertexBufferUsage usage);
     void bind() const;
+    void bindBufferBase(const GLuint index) const;
 
     GLuint get() const {
         return ref;

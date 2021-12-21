@@ -59,7 +59,7 @@ Client::~Client() {
 
 void Client::eventPacket(Network::Packet packet) {
     try {
-        stats.packetsReceived++;
+        stats.network.packetsReceived++;
         dispatcher.dispatch(packet);
     } catch (...) {
         EXCEPTION_NESTED("Failed to dispatch message");
@@ -100,13 +100,17 @@ void Client::handle(MessageLoginResponse res) {
     } else {
         playerId = res.playerId;
         loginPromise.resolve();
+
+        sync.post([this]() -> {
+
+        });
     }
 }
 
 void Client::handle(MessagePingResponse res) {
     const auto now = std::chrono::system_clock::now();
     const auto diff = now - res.timePoint;
-    stats.networkLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+    stats.network.latencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
 
     // Log::d(CMP, "Network latency: {} ms", stats.serverLatencyMs.load());
 
@@ -116,7 +120,7 @@ void Client::handle(MessagePingResponse res) {
 void Client::handle(MessageLatencyResponse res) {
     const auto now = std::chrono::system_clock::now();
     const auto diff = now - res.timePoint;
-    stats.serverLatencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+    stats.server.latencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
 
     // Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
 

@@ -1,4 +1,5 @@
 #include "AssetModel.hpp"
+#include "../Shaders/ShaderModel.hpp"
 #include "../Utils/GltfImporter.hpp"
 #include "AssetManager.hpp"
 
@@ -195,9 +196,9 @@ void AssetModel::load(AssetManager& assetManager) {
 
             this->primitives.push_back({});
             Primitive& primitive = this->primitives.back();
-            primitive.material.baseColorFactor = material.baseColorFactor;
-            primitive.material.emissiveFactor = material.emissiveFactor;
-            primitive.material.metallicRoughnessFactor = material.metallicRoughnessFactor;
+            primitive.material.uniform.baseColorFactor = material.baseColorFactor;
+            primitive.material.uniform.emissiveFactor = material.emissiveFactor;
+            primitive.material.uniform.metallicRoughnessFactor = material.metallicRoughnessFactor;
 
             if (material.baseColorTexture.has_value()) {
                 primitive.material.baseColorTexture =
@@ -290,18 +291,18 @@ void AssetModel::load(AssetManager& assetManager) {
 
             primitive.mesh = Mesh{};
 
-            typedef VertexAttribute<0, Vector3> Position;
-            typedef VertexAttribute<1, Vector3> Normal;
-            typedef VertexAttribute<2, Vector2> TextureCoordinates;
-            typedef VertexAttribute<3, Vector4> Tangent;
-
             primitive.vbo = VertexBuffer(VertexBufferType::Array);
             primitive.vbo.bufferData(vboData.data(), vboData.size() * sizeof(float), VertexBufferUsage::StaticDraw);
-            primitive.mesh.addVertexBuffer(primitive.vbo, Position{}, Normal{}, TextureCoordinates{}, Tangent{});
+            primitive.mesh.addVertexBuffer(primitive.vbo, ShaderModel::Position{}, ShaderModel::Normal{},
+                                           ShaderModel::TextureCoordinates{}, ShaderModel::Tangent{});
 
             primitive.ibo = VertexBuffer(VertexBufferType::Indices);
             primitive.ibo.bufferData(iboData.data(), iboData.size(), VertexBufferUsage::DynamicDraw);
             primitive.mesh.setIndexBuffer(primitive.ibo, indexType);
+
+            primitive.ubo = VertexBuffer(VertexBufferType::Uniform);
+            primitive.ubo.bufferData(&primitive.material.uniform, sizeof(Material::Uniform),
+                                     VertexBufferUsage::StaticDraw);
 
             primitive.mesh.setPrimitive(primitiveType);
             primitive.mesh.setCount(static_cast<GLsizei>(part.indices->count));

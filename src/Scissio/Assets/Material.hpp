@@ -4,9 +4,12 @@
 
 namespace Scissio {
 struct Material {
-    Vector4 baseColorFactor{1.0f};
-    Vector4 emissiveFactor{1.0f};
-    Vector4 metallicRoughnessFactor{1.0f};
+    struct Uniform {
+        Vector4 baseColorFactor{1.0f};
+        Vector4 emissiveFactor{1.0f};
+        Vector4 metallicRoughnessFactor{1.0f};
+    } uniform;
+
     AssetTexturePtr baseColorTexture{nullptr};
     AssetTexturePtr emissiveTexture{nullptr};
     AssetTexturePtr normalTexture{nullptr};

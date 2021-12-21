@@ -4,10 +4,18 @@
 
 namespace Scissio {
 struct Stats {
-    std::atomic<uint64_t> packetsSent{0};
-    std::atomic<uint64_t> packetsReceived{0};
-    std::atomic<uint64_t> networkLatencyMs{0};
-    std::atomic<uint64_t> serverLatencyMs{0};
-    std::atomic<uint64_t> frameTimeMs{0};
+    struct Network {
+        std::atomic<uint64_t> packetsSent{0};
+        std::atomic<uint64_t> packetsReceived{0};
+        std::atomic<uint64_t> latencyMs{0};
+    } network;
+
+    struct Server {
+        std::atomic<uint64_t> latencyMs{0};
+    } server;
+
+    struct Render {
+        std::atomic<uint64_t> frameTimeMs{0};
+    } render;
 };
 } // namespace Scissio

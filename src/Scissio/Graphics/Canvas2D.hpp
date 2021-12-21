@@ -17,7 +17,8 @@ class Icon;
 
 class SCISSIO_API Canvas2D {
 public:
-    explicit Canvas2D();
+    Canvas2D();
+    explicit Canvas2D(NoCreate&);
     virtual ~Canvas2D();
 
     using FontHandle = int;

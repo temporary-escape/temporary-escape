@@ -12,7 +12,9 @@ public:
     explicit ComponentModel(Object& object, AssetModelPtr model);
     virtual ~ComponentModel() = default;
 
-    void render(Shader& shader);
+    const AssetModelPtr& getAssetModel() const {
+        return model;
+    }
 
 private:
     AssetModelPtr model{nullptr};

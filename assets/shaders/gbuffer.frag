@@ -1,12 +1,16 @@
-layout(location = 0) out vec4 o_ColorRoughness;
-layout(location = 1) out vec4 o_EmissiveAmbient;
-layout(location = 2) out vec4 o_NormalMetallic;
-layout(location = 3) out vec2 o_ObjectId;
+in FS_IN {
+    vec3 normal;
+    vec2 texCoords;
+    mat3 TBN;
+    vec3 worldpos;
+} fs_in;
 
-in vec3 v_normal;
-in vec2 v_texCoords;
-in mat3 v_TBN;
-in vec3 v_worldpos;
+out FS_OUT {
+    vec4 colorRoughness;
+    vec4 emissiveAmbient;
+    vec4 normalMetallic;
+    vec2 objectId;
+} fs_out;
 
 // Material
 uniform sampler2D baseColorTexture;
@@ -18,21 +22,21 @@ uniform vec4 objectId;
 
 void main()
 {
-    vec4 baseColor = texture(baseColorTexture, v_texCoords);
-    vec3 normalRaw = vec3(texture(normalTexture, v_texCoords).xy, 0.0) * 2.0 - 1.0;
+    vec4 baseColor = texture(baseColorTexture, fs_in.texCoords);
+    vec3 normalRaw = vec3(texture(normalTexture, fs_in.texCoords).xy, 0.0) * 2.0 - 1.0;
     normalRaw.z = sqrt(1.0 - dot(normalRaw.xy, normalRaw.xy));
-    vec3 emissive = texture(emissiveTexture, v_texCoords).rgb;
-    vec3 metallicRoughness = texture(metallicRoughnessTexture, v_texCoords).rgb;
+    vec3 emissive = texture(emissiveTexture, fs_in.texCoords).rgb;
+    vec3 metallicRoughness = texture(metallicRoughnessTexture, fs_in.texCoords).rgb;
     // float ambient = texture(ambientOcclusionTexture, v_texCoords).r;
     float ambient = 1.0;
 
     float metallic = metallicRoughness.b;
     float roughness = metallicRoughness.g;
 
-    vec3 normal = normalize(v_TBN * normalRaw); 
+    vec3 normal = normalize(v_TBN * normalRaw);
 
-    o_ColorRoughness = vec4(baseColor.rgb, roughness);
-    o_EmissiveAmbient = vec4(emissive, ambient);
-    o_NormalMetallic = vec4(normal, metallic);
-    o_ObjectId = vec2(objectId.rg);
+    fs_out.colorRoughness = vec4(baseColor.rgb, roughness);
+    fs_out.emissiveAmbient = vec4(emissive, ambient);
+    fs_out.normalMetallic = vec4(normal, metallic);
+    fs_out.objectId = vec2(objectId.rg);
 }

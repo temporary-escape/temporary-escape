@@ -11,9 +11,10 @@
     config.serverPassword = "password";                                                                                \
     config.userdataPath = tmpDir->value();                                                                             \
     std::filesystem::create_directories(tmpDir->value() / "Saves" / "Universe");                                       \
+    auto canvas = std::make_shared<Canvas2D>(NO_CREATE);                                                               \
     auto textureCompressor = std::make_shared<TextureCompressor>(NO_CREATE);                                           \
     auto db = std::make_shared<Database>(tmpDir->value() / "Saves" / "Universe");                                      \
-    auto assetManager = std::make_shared<AssetManager>(config, *textureCompressor);                                    \
+    auto assetManager = std::make_shared<AssetManager>(config, *canvas, *textureCompressor);                           \
     auto server = std::make_shared<Server>(config, *assetManager, *db);                                                \
     auto client = std::make_shared<Client>(config, "localhost", config.serverPort);
 

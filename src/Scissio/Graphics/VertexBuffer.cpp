@@ -25,6 +25,10 @@ void VertexBuffer::bind() const {
     glBindBuffer(GLenum(target), ref);
 }
 
+void VertexBuffer::bindBufferBase(const GLuint index) const {
+    glBindBufferBase(GLenum(target), index, ref);
+}
+
 VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept : ref(0) {
     swap(other);
 }

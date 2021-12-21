@@ -20,6 +20,9 @@ Canvas2D::Canvas2D() {
     vg = nvgCreateGL3(NVG_STENCIL_STROKES);
 }
 
+Canvas2D::Canvas2D(NoCreate&) : vg(nullptr) {
+}
+
 Canvas2D::~Canvas2D() {
     if (vg) {
         fontCache.clear();

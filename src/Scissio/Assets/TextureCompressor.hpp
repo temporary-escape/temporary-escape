@@ -10,12 +10,6 @@
 namespace Scissio {
 class Texture2D;
 
-struct CompressedTextureChunk {
-    int level;
-    int width;
-    std::unique_ptr<uint8_t[]> pixels;
-};
-
 class SCISSIO_API TextureCompressor {
 public:
     explicit TextureCompressor(const NoCreate&);

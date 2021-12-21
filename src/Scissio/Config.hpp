@@ -4,8 +4,8 @@
 
 namespace Scissio {
 struct Config {
-    int windowWidth = 1280;
-    int windowHeight = 720;
+    int windowWidth = 1920;
+    int windowHeight = 1080;
     Path assetsPath;
     Path userdataPath;
     Path cwdPath;

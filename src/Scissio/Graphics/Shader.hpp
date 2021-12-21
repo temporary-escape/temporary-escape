@@ -18,7 +18,7 @@ struct NoCreate;
 class SCISSIO_API Shader {
 public:
     explicit Shader(const NoCreate&);
-    explicit Shader();
+    explicit Shader(std::string name);
 
     virtual ~Shader();
     Shader(const Shader& other) = delete;
@@ -42,7 +42,9 @@ public:
     void drawArrays(PrimitiveType type, GLsizei count) const;
     void draw(const Mesh& mesh) const;
 
-    GLuint getUniformLocation(const std::string& location) const;
+    GLint getUniformLocation(const std::string& location) const;
+    GLint getUniformBlockIndex(const std::string& location) const;
+    void uniformBlockBinding(GLuint blockIndex, GLuint blockBinding) const;
     template <typename T> void setUniform(const std::string& location, const T& value) const {
         setUniform(getUniformLocation(location), value);
     }
@@ -60,6 +62,7 @@ private:
 
     // void build(const std::string& vertSource, const std::string& fragSource,
     //           const std::optional<std::string>& geomSource = std::nullopt);
+    std::string name;
     std::string defines;
     GLuint vertex;
     GLuint fragment;
