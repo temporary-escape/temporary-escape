@@ -2,7 +2,6 @@
 
 #include "../Graphics/Shader.hpp"
 #include "../Utils/Log.hpp"
-#include "../Utils/Msgpack.hpp"
 #include "Object.hpp"
 
 #include <memory>
@@ -105,5 +104,46 @@ public:
 
 private:
     std::unordered_set<T*> components;
+};
+
+template <typename...> struct ComponentHelper {
+    static ComponentPtr unpack(msgpack::v1::object const& o, const ComponentType kind) {
+        return nullptr;
+    }
+
+    template <typename Stream> static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& component) {
+    }
+
+    static bool isPackable(const ComponentPtr& component) {
+        return false;
+    }
+};
+
+template <typename C, typename... Cs> struct ComponentHelper<C, Cs...> {
+    static ComponentPtr unpack(msgpack::v1::object const& o, const ComponentType kind) {
+        if (C::Type == kind) {
+            auto ptr = std::make_shared<C>();
+            o.convert<C>(*ptr);
+            return ptr;
+        } else {
+            return ComponentHelper<Cs...>::unpack(o, kind);
+        }
+    }
+
+    template <typename Stream> static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& component) {
+        if (C::Type == component->getType()) {
+            o.pack(*std::dynamic_pointer_cast<C>(component));
+        } else {
+            ComponentHelper<Cs...>::template pack<Stream>(o, component);
+        }
+    }
+
+    static bool isPackable(const ComponentPtr& component) {
+        if (C::Type == component->getType()) {
+            return true;
+        } else {
+            return ComponentHelper<Cs...>::isPackable(component);
+        }
+    }
 };
 } // namespace Scissio

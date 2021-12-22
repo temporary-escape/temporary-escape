@@ -4,6 +4,7 @@
 #include "../Future.hpp"
 #include "../Library.hpp"
 #include "../Network/NetworkClient.hpp"
+#include "../Scene/Scene.hpp"
 #include "../Server/Messages.hpp"
 #include "../Server/Schemas.hpp"
 #include "../Utils/Worker.hpp"
@@ -45,6 +46,10 @@ public:
 
     const Stats& getStats() const {
         return stats;
+    }
+
+    Scene* getScene() const {
+        return scene.get();
     }
 
     Stats& getStats() {

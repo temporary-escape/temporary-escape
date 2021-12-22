@@ -12,7 +12,7 @@ public:
     explicit ComponentModel(Object& object, AssetModelPtr model);
     virtual ~ComponentModel() = default;
 
-    const AssetModelPtr& getAssetModel() const {
+    const AssetModelPtr& getModel() const {
         return model;
     }
 

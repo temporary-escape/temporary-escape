@@ -1,5 +1,7 @@
 #include "Client.hpp"
+#include "../Assets/AssetManager.hpp"
 #include "../Network/NetworkTcpClient.hpp"
+#include "../Scene/ComponentModel.hpp"
 #include "../Server/Messages.hpp"
 #include "../Utils/Random.hpp"
 #include <fstream>
@@ -92,6 +94,10 @@ Future<void> Client::login(const std::string& password) {
 void Client::update() {
     sync.restart();
     sync.run();
+
+    if (scene) {
+        scene->update();
+    }
 }
 
 void Client::handle(MessageLoginResponse res) {
@@ -101,8 +107,11 @@ void Client::handle(MessageLoginResponse res) {
         playerId = res.playerId;
         loginPromise.resolve();
 
-        sync.post([this]() -> {
-
+        sync.post([this]() {
+            scene = std::make_unique<Scene>();
+            auto entity = scene->addEntity();
+            auto model = AssetManager::singleton().find<AssetModel>("model_engine_01");
+            entity->addComponent<ComponentModel>(model);
         });
     }
 }

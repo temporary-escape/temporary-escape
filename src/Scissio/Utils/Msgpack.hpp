@@ -4,6 +4,7 @@
 #include "../Math/Quaternion.hpp"
 #include "../Math/Vector.hpp"
 #include <msgpack.hpp>
+#include <msgpack/adaptor/define_decl.hpp>
 #include <optional>
 
 namespace msgpack {

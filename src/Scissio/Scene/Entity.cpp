@@ -6,7 +6,7 @@
 
 using namespace Scissio;
 
-static constexpr auto ComponentsMask =
+/*static constexpr auto ComponentsMask =
     (1 << ComponentModel::Type) | (1 << ComponentGrid::Type) | (1 << ComponentParticleEmitter::Type);
 
 template <typename...> struct ComponentHelper {
@@ -103,7 +103,7 @@ MSGPACK_PACK_FUNC(Entity) {
     }
 
     return o;
-}
+}*/
 
 MSGPACK_UNPACK_FUNC(EntityPtr) {
     v = std::make_shared<Entity>();

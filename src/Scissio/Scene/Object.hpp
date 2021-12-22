@@ -3,6 +3,7 @@
 #include "../Library.hpp"
 #include "../Math/Matrix.hpp"
 #include "../Math/Vector.hpp"
+#include "../Utils/Msgpack.hpp"
 
 namespace Scissio {
 class SCISSIO_API Object {
@@ -60,5 +61,8 @@ public:
 private:
     Matrix4 transform;
     bool dirty{true};
+
+public:
+    MSGPACK_DEFINE_ARRAY(transform);
 };
 } // namespace Scissio

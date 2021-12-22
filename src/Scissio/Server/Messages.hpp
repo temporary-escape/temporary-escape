@@ -2,6 +2,7 @@
 
 #include "../Network/Packet.hpp"
 #include "Schemas.hpp"
+
 #include <chrono>
 
 namespace Scissio {
