@@ -103,7 +103,7 @@ MSGPACK_PACK_FUNC(Entity) {
     }
 
     return o;
-}*/
+}
 
 MSGPACK_UNPACK_FUNC(EntityPtr) {
     v = std::make_shared<Entity>();
@@ -114,4 +114,4 @@ MSGPACK_UNPACK_FUNC(EntityPtr) {
 MSGPACK_PACK_FUNC(EntityPtr) {
     o.pack(*v);
     return o;
-}
+}*/
