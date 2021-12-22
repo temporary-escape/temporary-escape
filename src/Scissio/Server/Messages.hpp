@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Network/Packet.hpp"
+#include "../Scene/Entity.hpp"
 #include "Schemas.hpp"
 
 #include <chrono>
@@ -56,6 +57,38 @@ struct MessageLatencyResponse {
 };
 
 REGISTER_MESSAGE(MessageLatencyResponse);
+
+struct MessageSectorReadyRequest {
+    bool dummy{false};
+
+    MSGPACK_DEFINE(dummy);
+};
+
+REGISTER_MESSAGE(MessageSectorReadyRequest);
+
+struct MessageSectorReadyResponse {
+    bool ready{false};
+
+    MSGPACK_DEFINE(ready);
+};
+
+REGISTER_MESSAGE(MessageSectorReadyResponse);
+
+struct MessageSectorChanged {
+    std::string compoundId;
+
+    MSGPACK_DEFINE(compoundId);
+};
+
+REGISTER_MESSAGE(MessageSectorChanged);
+
+struct MessageEntitySync {
+    std::vector<EntityPtr> entities;
+
+    MSGPACK_DEFINE(entities);
+};
+
+REGISTER_MESSAGE(MessageEntitySync);
 
 template <typename T> struct MessageFetchRequest {
     uint64_t id = 0;

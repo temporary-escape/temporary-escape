@@ -128,13 +128,14 @@ void Application::load() {
     loadingProgress.store(0.8f);
 
     Log::i(CMP, "Starting world generator");
-    generator = std::make_shared<Generator>(*db, Generator::Options{});
-    generator->generateWorld(123456789u);
+    generator = std::make_shared<Generator>();
+    generator->addStep<GeneratorStepCoreGalaxy>(*assetManager);
+    generator->generate(*db, 123456789u);
 
     loadingProgress.store(0.9f);
 
     Log::i(CMP, "Starting server");
-    server = std::make_shared<Server>(config, *assetManager, *db);
+    server = std::make_shared<Server>(config, *assetManager, *db, *generator);
 
     loadingProgress.store(0.95f);
 

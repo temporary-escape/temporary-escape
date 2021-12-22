@@ -2,10 +2,7 @@
 
 using namespace Scissio;
 
-ComponentGrid::ComponentGrid() : Component(Type) {
-}
-
-ComponentGrid::ComponentGrid(Object& object) : Component(Type, object) {
+ComponentGrid::ComponentGrid(Object& object) : Component(object) {
 }
 
 void ComponentGrid::rebuildBuffers() {
@@ -72,58 +69,4 @@ void ComponentGrid::rebuildBuffers() {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
     }
-}
-
-void ComponentGrid::render(Shader& shader) {
-    if (isDirty()) {
-        rebuildBuffers();
-    }
-
-    const auto& transform = getObject().getTransform();
-
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-
-    /*shader.setModelMatrix(transform);
-    shader.setNormalMatrix(transformInverted);
-
-    for (const auto& mesh : meshes) {
-        if (!mesh.model || !mesh.instances) {
-            continue;
-        }
-
-        for (const auto& primitive : mesh.primitives) {
-            const auto& material = primitive.material;
-            if (material.baseColorTexture) {
-                shader.bindBaseColorTexture(material.baseColorTexture->getTexture());
-            } else {
-                shader.bindBaseColorTextureDefault();
-            }
-
-            if (material.emissiveTexture) {
-                shader.bindEmissiveTexture(material.emissiveTexture->getTexture());
-            } else {
-                shader.bindEmissiveTextureDefault();
-            }
-
-            if (material.normalTexture) {
-                shader.bindNormalTexture(material.normalTexture->getTexture());
-            } else {
-                shader.bindNormalTextureDefault();
-            }
-
-            if (material.metallicRoughnessTexture) {
-                shader.bindMetallicRoughnessTexture(material.metallicRoughnessTexture->getTexture());
-            } else {
-                shader.bindMetallicRoughnessTextureDefault();
-            }
-
-            if (material.ambientOcclusionTexture) {
-                shader.bindAmbientOcclusionTexture(material.ambientOcclusionTexture->getTexture());
-            } else {
-                shader.bindAmbientOcclusionTextureDefault();
-            }
-
-            shader.draw(primitive.mesh);
-        }
-    }*/
 }

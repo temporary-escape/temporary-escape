@@ -6,14 +6,16 @@
 #include "../Network/NetworkServer.hpp"
 #include "../Utils/Worker.hpp"
 #include "Database.hpp"
+#include "Generator.hpp"
 #include "Messages.hpp"
 #include "Schemas.hpp"
+#include "Sector.hpp"
 #include "Session.hpp"
 
 namespace Scissio {
 class SCISSIO_API Server {
 public:
-    explicit Server(const Config& config, AssetManager& assetManager, Database& db);
+    explicit Server(const Config& config, AssetManager& assetManager, Database& db, Generator& generator);
     virtual ~Server();
 
     void tick();
@@ -46,20 +48,28 @@ private:
         Server& server;
     };
 
+    struct SectorReference {
+        std::string compoundId;
+        std::shared_ptr<Sector> ptr;
+        bool ready;
+    };
+
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
     void handle(const Network::StreamPtr& stream, MessagePingRequest req);
     void handle(const Network::StreamPtr& stream, MessageLatencyRequest req);
+    void handle(const Network::StreamPtr& stream, MessageSectorReadyRequest req);
     template <typename T> void handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req);
 
     template <typename T>
     void fetchResourceForPlayer(const SessionPtr& session, const std::string& prefix, const std::string& start,
                                 std::vector<T>& out, std::string& next);
 
-    SessionPtr getSession(const Network::StreamPtr& stream);
+    SessionPtr getSession(const Network::StreamPtr& stream, bool check = true);
 
     const Config& config;
     AssetManager& assetManager;
     Database& db;
+    Generator& generator;
 
     Network::MessageDispatcher<const Network::StreamPtr&> dispatcher;
 
@@ -68,11 +78,14 @@ private:
 
     Worker worker;
     Worker::Strand strand;
+    BackgroundWorker loader;
 
     std::unique_ptr<EventListener> listener;
     std::shared_ptr<Network::Server> network;
 
     std::shared_mutex sessionsMutex;
     std::unordered_map<Network::StreamPtr, SessionPtr> sessions;
+
+    std::vector<SectorReference> sectors;
 };
 } // namespace Scissio

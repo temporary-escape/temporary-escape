@@ -18,25 +18,20 @@ public:
     virtual void add(Component& component) = 0;
 };
 
-using ComponentType = uint32_t;
-
 class SCISSIO_API Component {
 public:
     Component() = default;
 
-    explicit Component(const ComponentType type) : type(type) {
+    explicit Component(Object& object) : object(&object) {
     }
 
-    explicit Component(const ComponentType type, Object& object) : type(type), object(&object) {
-    }
     virtual ~Component() = 0;
 
-    // This function can only be used by msgpack!
-    void setObject(Object& object) {
+    void setObject(Object& object) { // Used by msgpack only
         this->object = &object;
     }
 
-    Object& getObject() const {
+    [[nodiscard]] Object& getObject() const {
         assert(!!object);
         return *object;
     }
@@ -45,13 +40,6 @@ public:
         assert(!!system);
         this->system = system;
     }
-
-    ComponentType getType() const {
-        return type;
-    }
-
-protected:
-    ComponentType type{0};
 
 private:
     Object* object{nullptr};
@@ -84,9 +72,6 @@ public:
     }
 
     void add(Component& component) override {
-        if (component.getType() != T::Type) {
-            return;
-        }
         auto ptr = reinterpret_cast<T*>(&component);
         if (ptr) {
             components.insert(ptr);
@@ -106,44 +91,64 @@ private:
     std::unordered_set<T*> components;
 };
 
-template <typename...> struct ComponentHelper {
-    static ComponentPtr unpack(msgpack::v1::object const& o, const ComponentType kind) {
-        return nullptr;
+using ComponentSystemsMap = std::unordered_map<size_t, std::shared_ptr<AbstractComponentSystem>>;
+
+template <typename...> struct ComponentHelper;
+
+template <> struct ComponentHelper<> {
+    static void generateComponentSystemsMap(ComponentSystemsMap& map, const size_t index) {
     }
 
-    template <typename Stream> static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& component) {
+    template <typename Stream>
+    static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& value, const size_t index,
+                     const size_t current = 0) {
+        throw msgpack::type_error();
     }
 
-    static bool isPackable(const ComponentPtr& component) {
-        return false;
+    static ComponentPtr unpack(msgpack::object const& o, const size_t index, const size_t current = 0) {
+        throw msgpack::type_error();
     }
 };
 
-template <typename C, typename... Cs> struct ComponentHelper<C, Cs...> {
-    static ComponentPtr unpack(msgpack::v1::object const& o, const ComponentType kind) {
-        if (C::Type == kind) {
-            auto ptr = std::make_shared<C>();
-            o.convert<C>(*ptr);
-            return ptr;
+template <typename ComponentT, typename... ComponentsT> struct ComponentHelper<ComponentT, ComponentsT...> {
+    template <typename T> static constexpr size_t getIndexOf() {
+        if constexpr (std::is_same<T, ComponentT>::value) {
+            return 0;
         } else {
-            return ComponentHelper<Cs...>::unpack(o, kind);
+            return 1 + ComponentHelper<ComponentsT...>::template getIndexOf<T>();
         }
     }
 
-    template <typename Stream> static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& component) {
-        if (C::Type == component->getType()) {
-            o.pack(*std::dynamic_pointer_cast<C>(component));
+    template <typename Stream>
+    static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& value, const size_t index,
+                     const size_t current = 0) {
+        if (index == current) {
+            auto ptr = std::dynamic_pointer_cast<ComponentT>(value);
+            o.pack(*ptr);
         } else {
-            ComponentHelper<Cs...>::template pack<Stream>(o, component);
+            ComponentHelper<ComponentsT...>::template pack<Stream>(o, value, index, current + 1);
         }
     }
 
-    static bool isPackable(const ComponentPtr& component) {
-        if (C::Type == component->getType()) {
-            return true;
+    static ComponentPtr unpack(msgpack::object const& o, const size_t index, const size_t current = 0) {
+        if (index == current) {
+            auto cmp = std::make_shared<ComponentT>();
+            o.convert(*cmp);
+            return cmp;
         } else {
-            return ComponentHelper<Cs...>::isPackable(component);
+            return ComponentHelper<ComponentsT...>::unpack(o, index, current + 1);
         }
+    }
+
+    static ComponentSystemsMap generateComponentSystemsMap() {
+        ComponentSystemsMap map;
+        generateComponentSystemsMap(map, 0);
+        return map;
+    }
+
+    static void generateComponentSystemsMap(ComponentSystemsMap& map, const size_t index) {
+        map.insert(std::make_pair(index, std::make_shared<ComponentSystem<ComponentT>>()));
+        ComponentHelper<ComponentsT...>::generateComponentSystemsMap(map, index + 1);
     }
 };
 } // namespace Scissio

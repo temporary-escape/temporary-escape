@@ -7,6 +7,7 @@
 #include "../Scene/Scene.hpp"
 #include "../Server/Messages.hpp"
 #include "../Server/Schemas.hpp"
+#include "../Server/Sector.hpp"
 #include "../Utils/Worker.hpp"
 #include "Request.hpp"
 #include "Stats.hpp"
@@ -84,6 +85,9 @@ private:
     void handle(MessageLoginResponse res);
     void handle(MessagePingResponse res);
     void handle(MessageLatencyResponse res);
+    void handle(MessageSectorReadyResponse res);
+    void handle(MessageSectorChanged res);
+    void handle(MessageEntitySync res);
     template <typename T> void handle(MessageFetchResponse<T> res);
 
     static std::atomic<uint64_t> nextRequestId;

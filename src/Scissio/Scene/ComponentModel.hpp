@@ -6,9 +6,7 @@
 namespace Scissio {
 class SCISSIO_API ComponentModel : public Component {
 public:
-    static constexpr ComponentType Type = 2;
-
-    ComponentModel();
+    ComponentModel() = default;
     explicit ComponentModel(Object& object, AssetModelPtr model);
     virtual ~ComponentModel() = default;
 

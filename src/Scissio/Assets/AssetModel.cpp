@@ -332,25 +332,6 @@ template <> void Xml::Node::convert<AssetModelPtr>(AssetModelPtr& value) const {
     value = AssetManager::singleton().find<AssetModel>(this->asString());
 }
 
-MSGPACK_UNPACK_FUNC(AssetModelPtr) {
-    if (o.type == msgpack::type::STR) {
-        const auto name = o.as<std::string>();
-        v = AssetManager::singleton().find<AssetModel>(name);
-    } else {
-        throw msgpack::type_error();
-    }
-
-    return o;
-}
-
-MSGPACK_PACK_FUNC(AssetModelPtr) {
-    if (v) {
-        const auto& name = v->getName();
-        o.pack_str(static_cast<uint32_t>(name.size()));
-        o.pack_str_body(name.c_str(), static_cast<uint32_t>(name.size()));
-    } else {
-        o.pack_nil();
-    }
-
-    return o;
+std::shared_ptr<AssetModel> AssetModel::from(const std::string& name) {
+    return AssetManager::singleton().find<AssetModel>(name);
 }

@@ -47,6 +47,9 @@ Client::Client(Config& config, const std::string& address, const int port)
     MESSAGE_DISPATCH(MessageLoginResponse);
     MESSAGE_DISPATCH(MessagePingResponse);
     MESSAGE_DISPATCH(MessageLatencyResponse);
+    MESSAGE_DISPATCH(MessageSectorReadyResponse);
+    MESSAGE_DISPATCH(MessageSectorChanged);
+    MESSAGE_DISPATCH(MessageEntitySync);
     MESSAGE_DISPATCH(MessageFetchResponse<SystemData>);
 
     auto future = connectPromise.future();
@@ -107,12 +110,7 @@ void Client::handle(MessageLoginResponse res) {
         playerId = res.playerId;
         loginPromise.resolve();
 
-        sync.post([this]() {
-            scene = std::make_unique<Scene>();
-            auto entity = scene->addEntity();
-            auto model = AssetManager::singleton().find<AssetModel>("model_engine_01");
-            entity->addComponent<ComponentModel>(model);
-        });
+        network->send(MessageSectorReadyRequest{});
     }
 }
 
@@ -134,6 +132,40 @@ void Client::handle(MessageLatencyResponse res) {
     // Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
 
     worker1s.post([this]() { network->send(MessageLatencyRequest{std::chrono::system_clock::now()}); });
+}
+
+void Client::handle(MessageSectorReadyResponse res) {
+    sync.post([this, res]() {
+        try {
+            if (!res.ready) {
+                network->send(MessageSectorReadyRequest{});
+            }
+        } catch (std::exception& e) {
+            BACKTRACE(CMP, e, "Failed to process sector ready response");
+        }
+    });
+}
+
+void Client::handle(MessageSectorChanged res) {
+    sync.post([this, res = std::move(res)]() {
+        try {
+            scene = std::make_unique<Scene>();
+        } catch (std::exception& e) {
+            BACKTRACE(CMP, e, "Failed to process sector changed response");
+        }
+    });
+}
+
+void Client::handle(MessageEntitySync res) {
+    sync.post([this, res = std::move(res)]() {
+        try {
+            for (auto& entity : res.entities) {
+                scene->addEntity(entity);
+            }
+        } catch (std::exception& e) {
+            BACKTRACE(CMP, e, "Failed to process entity sync response");
+        }
+    });
 }
 
 template <typename T> void Client::handle(MessageFetchResponse<T> res) {

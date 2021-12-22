@@ -6,6 +6,7 @@
 #include "../Scene/ComponentModel.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Shaders/ShaderModel.hpp"
+#include "../Shaders/ShaderSkybox.hpp"
 #include "Client.hpp"
 #include "SkyboxRenderer.hpp"
 #include "WidgetDebugStats.hpp"
@@ -23,7 +24,11 @@ private:
         Matrix4 transformationProjectionMatrix;
     };
 
-    void renderScene(const Vector2i& viewport, Scene& scene);
+    void createSkybox(uint64_t seed);
+    void renderSceneSkybox(const Vector2i& viewport, Scene& scene);
+    void renderScenePbr(const Vector2i& viewport, Scene& scene);
+    void renderSceneForward(const Vector2i& viewport, Scene& scene);
+    void renderComponent(ComponentSkybox& component);
     void renderComponent(ComponentModel& component);
     void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment);
 
@@ -35,6 +40,7 @@ private:
     WidgetDebugStats widgetDebugStats;
 
     struct Shaders {
+        ShaderSkybox skybox;
         ShaderModel model;
     } shaders;
 
@@ -59,6 +65,10 @@ private:
         Texture2D fboObjectId;
     } gBuffer;
 
-    Skybox skybox;
+    struct SkyboxData {
+        Skybox textures;
+        uint64_t seed{0};
+        Mesh mesh{NO_CREATE};
+    } skybox;
 };
 } // namespace Scissio

@@ -8,17 +8,13 @@
 namespace Scissio {
 class SCISSIO_API ComponentLines : public Component, public Lines {
 public:
-    static constexpr ComponentType Type = 5;
-
-    ComponentLines();
+    ComponentLines() = default;
     explicit ComponentLines(Object& object);
     virtual ~ComponentLines() = default;
-
-    void render(Shader& shader);
 
 private:
     void rebuildBuffers();
 
-    Mesh mesh;
+    Mesh mesh{NO_CREATE};
 };
 } // namespace Scissio

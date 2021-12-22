@@ -9,6 +9,8 @@
 namespace Scissio {
 class SCISSIO_API AssetModel : public Asset {
 public:
+    static std::shared_ptr<AssetModel> from(const std::string& name);
+
     explicit AssetModel(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetModel() = default;
     AssetModel(const AssetModel& other) = delete;
@@ -35,4 +37,29 @@ template <> void Node::convert<AssetModelPtr>(AssetModelPtr& value) const;
 } // namespace Xml
 } // namespace Scissio
 
-MSGPACK_CONVERT(Scissio::AssetModelPtr)
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+    namespace adaptor {
+
+    template <> struct convert<Scissio::AssetModelPtr> {
+        msgpack::object const& operator()(msgpack::object const& o, Scissio::AssetModelPtr& v) const {
+            if (o.type != msgpack::type::STR)
+                throw msgpack::type_error();
+            std::string name;
+            o.convert(name);
+            v = Scissio::AssetModel::from(name);
+            return o;
+        }
+    };
+
+    template <> struct pack<Scissio::AssetModelPtr> {
+        template <typename Stream>
+        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Scissio::AssetModelPtr const& v) const {
+            o.pack_str(v->getName().size());
+            o.pack_str_body(v->getName().c_str(), v->getName().size());
+            return o;
+        }
+    };
+    } // namespace adaptor
+}
+} // namespace msgpack

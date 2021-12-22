@@ -18,11 +18,11 @@ public:
     explicit SkyboxRenderer(const Config& config);
     virtual ~SkyboxRenderer() = default;
 
-    TextureCubemap render(int64_t seed);
+    TextureCubemap render(uint64_t seed);
     TextureCubemap irradiance(const TextureCubemap& texture);
     TextureCubemap prefilter(const TextureCubemap& texture);
 
-    Skybox renderAndFilter(const int64_t seed) {
+    Skybox renderAndFilter(const uint64_t seed) {
         Skybox skybox;
         skybox.texture = render(seed);
         skybox.irradiance = irradiance(skybox.texture);

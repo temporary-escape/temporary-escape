@@ -8,20 +8,21 @@
 namespace Scissio {
 class SCISSIO_API Scene {
 public:
-    using ComponentSystemsMap = std::unordered_map<ComponentType, std::shared_ptr<AbstractComponentSystem>>;
+    class EventListener {
+    public:
+        virtual void eventEntityAdded(const EntityPtr& entity) {
+            (void)entity;
+        }
+    };
 
-    explicit Scene();
+    static inline EventListener defaultEventListener;
+
+    explicit Scene(EventListener& eventListener = defaultEventListener);
     virtual ~Scene();
-    Scene(const Scene& other) = delete;
-    Scene(Scene&& other) noexcept;
-    Scene& operator=(const Scene& other) = delete;
-    Scene& operator=(Scene&& other) noexcept;
-    void swap(Scene& other) noexcept;
 
     void update();
 
-    EntityPtr addEntity();
-    void insertEntity(EntityPtr entity); // AbstractClient only!
+    void addEntity(EntityPtr entity);
     /*template <typename T, typename... Args> T& addComponent(const EntityPtr& entity, Args&&... args) {
         auto& system = getComponentSystem<T>();
         auto& component = system.add(*entity, std::forward<Args>(args)...);
@@ -30,7 +31,7 @@ public:
     }*/
 
     template <typename T> ComponentSystem<T>& getComponentSystem() const {
-        const auto ptr = dynamic_cast<ComponentSystem<T>*>(systems.at(T::Type).get());
+        const auto ptr = dynamic_cast<ComponentSystem<T>*>(systems.at(EntityComponentHelper::getIndexOf<T>()).get());
         if (!ptr) {
             EXCEPTION("The component system for {} does not exist", typeid(T).name());
         }
@@ -42,10 +43,9 @@ public:
     }
 
 private:
-    static uint64_t nextId;
-
+    EventListener& eventListener;
+    uint64_t nextId;
     ComponentSystemsMap systems;
-    std::vector<EntityPtr> entitiesAdded;
     std::vector<EntityPtr> entities;
 };
 } // namespace Scissio

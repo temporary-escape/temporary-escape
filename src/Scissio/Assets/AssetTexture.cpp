@@ -41,25 +41,6 @@ template <> void Xml::Node::convert<AssetTexturePtr>(AssetTexturePtr& value) con
     value = AssetManager::singleton().find<AssetTexture>(this->asString());
 }
 
-MSGPACK_UNPACK_FUNC(AssetTexturePtr) {
-    if (o.type == msgpack::type::STR) {
-        const auto name = o.as<std::string>();
-        v = AssetManager::singleton().find<AssetTexture>(name);
-    } else {
-        throw msgpack::type_error();
-    }
-
-    return o;
-}
-
-MSGPACK_PACK_FUNC(AssetTexturePtr) {
-    if (v) {
-        const auto& name = v->getName();
-        o.pack_str(static_cast<uint32_t>(name.size()));
-        o.pack_str_body(name.c_str(), static_cast<uint32_t>(name.size()));
-    } else {
-        o.pack_nil();
-    }
-
-    return o;
+std::shared_ptr<AssetTexture> AssetTexture::from(const std::string& name) {
+    return AssetManager::singleton().find<AssetTexture>(name);
 }

@@ -1,9 +1,23 @@
 #include "Generator.hpp"
+#include "../Assets/AssetManager.hpp"
 #include "../Utils/Random.hpp"
 
 #define CMP "Generator"
 
 using namespace Scissio;
+
+void Generator::generate(Database& db, uint64_t seed) {
+    for (auto& step : steps) {
+        step->generate(db, seed);
+    }
+}
+
+void Generator::populate(Database& db, uint64_t seed, Scene& scene, const std::string& galaxyId,
+                         const std::string& systemId, const std::string& sectorId) {
+    for (auto& step : steps) {
+        step->populate(db, seed, scene, galaxyId, systemId, sectorId);
+    }
+}
 
 static const std::vector<std::string> regionSuffixes = {
     "Region", "District", "Province", "Place",  "Territory", "Zone",    "Division",
@@ -69,7 +83,7 @@ private:
 
 class Seeder {
 public:
-    Seeder(uint64_t seed) : r{seed} {
+    explicit Seeder(uint64_t seed) : r{seed} {
     }
 
     uint64_t operator()() {
@@ -85,10 +99,14 @@ private:
     std::uniform_int_distribution<uint64_t> dist;
 };
 
-Generator::Generator(Database& db, Options options) : db(db), options(options) {
+GeneratorStepCoreGalaxy::GeneratorStepCoreGalaxy(AssetManager& assetManager) : assetManager(assetManager) {
 }
 
-void Generator::generateWorld(uint64_t seed) {
+Generator::OptionMap GeneratorStepCoreGalaxy::getOptions() {
+    return {}; // TODO
+}
+
+void GeneratorStepCoreGalaxy::generate(Database& db, uint64_t seed) {
     auto world = db.get<WorldData>("0");
     if (world.has_value()) {
         Log::i(CMP, "Not generating world, already exists");
@@ -101,10 +119,27 @@ void Generator::generateWorld(uint64_t seed) {
     world.value().seed = seed;
     db.put("0", world.value());
 
-    generateGalaxies(seed);
+    generateGalaxies(db, seed);
 }
 
-void Generator::generateGalaxies(uint64_t seed) {
+void GeneratorStepCoreGalaxy::populate(Database& db, uint64_t seed, Scene& scene, const std::string& galaxyId,
+                                       const std::string& systemId, const std::string& sectorId) {
+    Log::i(CMP, "Populating sector {}/{}/{} with seed {}", galaxyId, systemId, sectorId, seed);
+
+    const auto system = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId)).value();
+    const auto sector = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId)).value();
+
+    auto skybox = std::make_shared<Entity>();
+    skybox->addComponent<ComponentSkybox>(sector.seed);
+    scene.addEntity(skybox);
+
+    auto entity = std::make_shared<Entity>();
+    auto model = assetManager.find<AssetModel>("model_engine_01");
+    entity->addComponent<ComponentModel>(model);
+    scene.addEntity(entity);
+}
+
+void GeneratorStepCoreGalaxy::generateGalaxies(Database& db, uint64_t seed) {
     Log::i(CMP, "Generating galaxies ...");
 
     Seeder seeder(seed);
@@ -117,11 +152,11 @@ void Generator::generateGalaxies(uint64_t seed) {
 
     db.put(galaxy.id, galaxy);
 
-    generateRegions(seeder(), galaxy.id);
-    generateSystems(seeder(), galaxy.id);
+    generateRegions(db, seeder(), galaxy.id);
+    generateSystems(db, seeder(), galaxy.id);
 }
 
-void Generator::generateRegions(uint64_t seed, const std::string& galaxyId) {
+void GeneratorStepCoreGalaxy::generateRegions(Database& db, uint64_t seed, const std::string& galaxyId) {
     const auto galaxy = db.get<GalaxyData>(galaxyId).value();
     Log::i(CMP, "Generating regions for galaxy '{}' ...", galaxy.name);
 
@@ -174,7 +209,7 @@ void Generator::generateRegions(uint64_t seed, const std::string& galaxyId) {
     Log::i(CMP, "Generated {} regions for galaxy '{}'", positions.size(), galaxy.name);
 }
 
-void Generator::generateSystems(uint64_t seed, const std::string& galaxyId) {
+void GeneratorStepCoreGalaxy::generateSystems(Database& db, uint64_t seed, const std::string& galaxyId) {
     const auto galaxy = db.get<GalaxyData>(galaxyId).value();
     const auto regions = db.seek<RegionData>(fmt::format("{}/", galaxyId));
 
@@ -237,11 +272,12 @@ void Generator::generateSystems(uint64_t seed, const std::string& galaxyId) {
 
         db.put(fmt::format("{}/{}", galaxyId, system.id), system);
 
-        generateSectors(system.seed, galaxyId, system.id);
+        generateSectors(db, system.seed, galaxyId, system.id);
     }
 }
 
-void Generator::generateSectors(uint64_t seed, const std::string& galaxyId, const std::string& systemId) {
+void GeneratorStepCoreGalaxy::generateSectors(Database& db, uint64_t seed, const std::string& galaxyId,
+                                              const std::string& systemId) {
     const auto system = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId)).value();
 
     Seeder seeder(seed);
@@ -259,9 +295,11 @@ void Generator::generateSectors(uint64_t seed, const std::string& galaxyId, cons
         SectorData sector;
         sector.id = uuid();
         sector.systemId = systemId;
+        sector.galaxyId = galaxyId;
         sector.pos = pos;
         sector.name = fmt::format("{} {}", system.name, i + 1);
         sector.generated = false;
+        sector.seed = seeder();
 
         db.put(fmt::format("{}/{}/{}", system.galaxyId, system.id, sector.id), sector);
     }

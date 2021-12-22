@@ -1,10 +1,35 @@
 #include "Renderer.hpp"
 
+#define CMP "Renderer"
+
+// Simple skybox box with two triangles per side.
+static const float skyboxVertices[] = {
+    // positions
+    -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+    -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+
+    1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+
+    -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,
+};
+
 using namespace Scissio;
 
 Renderer::Renderer(Canvas2D& canvas, const Config& config, AssetManager& assetManager, Client& client)
     : canvas(canvas), gui(canvas, config, assetManager), client(client), skyboxRenderer(config),
-      widgetDebugStats(gui, client.getStats()), shaders{ShaderModel{config}}, cameraUbo(VertexBufferType::Uniform) {
+      widgetDebugStats(gui, client.getStats()), shaders{ShaderSkybox{config}, ShaderModel{config}},
+      cameraUbo(VertexBufferType::Uniform) {
 
     const auto setColor = [](Texture2D& texture, const Color4& color) {
         std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
@@ -31,10 +56,34 @@ Renderer::Renderer(Canvas2D& canvas, const Config& config, AssetManager& assetMa
 
 Renderer::~Renderer() = default;
 
+void Renderer::createSkybox(uint64_t seed) {
+    Log::i(CMP, "Creating skybox for seed {}", seed);
+
+    if (!skybox.mesh) {
+        VertexBuffer vbo(VertexBufferType::Array);
+        vbo.bufferData(skyboxVertices, sizeof(skyboxVertices), VertexBufferUsage::StaticDraw);
+
+        skybox.mesh.addVertexBuffer(std::move(vbo), ShaderSkybox::Position{});
+        skybox.mesh.setCount(6 * 2 * 3);
+        skybox.mesh.setPrimitive(PrimitiveType::Triangles);
+    }
+
+    skybox.seed = seed;
+
+    skybox.textures = skyboxRenderer.renderAndFilter(seed);
+}
+
 void Renderer::render(const Vector2i& viewport) {
     const auto t0 = std::chrono::steady_clock::now();
 
-    if (const auto scene = client.getScene(); !!scene) {
+    camera.setProjection(viewport, 70.0f);
+
+    CameraUniform cameraUniform{
+        camera.getProjectionMatrix() * camera.getViewMatrix(),
+    };
+    cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::StaticDraw);
+
+    if (const auto scene = client.getScene(); scene != nullptr) {
         if (gBuffer.size != viewport) {
             gBuffer.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
             gBuffer.fboColorRoughness.setStorage(0, viewport, PixelType::Rgba8u);
@@ -52,8 +101,10 @@ void Renderer::render(const Vector2i& viewport) {
             }
         }
 
+        renderSceneSkybox(viewport, *scene);
+
         gBuffer.fbo.bind();
-        renderScene(viewport, *scene);
+        renderScenePbr(viewport, *scene);
         Framebuffer::DefaultFramebuffer.bind();
 
         // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color2);
@@ -91,13 +142,43 @@ void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& 
     glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
-void Renderer::renderScene(const Vector2i& viewport, Scene& scene) {
-    camera.setProjection(viewport, 70.0f);
+void Renderer::renderSceneSkybox(const Vector2i& viewport, Scene& scene) {
+    auto& componentSystemSkybox = scene.getComponentSystem<ComponentSkybox>();
 
-    CameraUniform cameraUniform{
-        camera.getProjectionMatrix() * camera.getViewMatrix(),
+    auto componentSkybox = componentSystemSkybox.begin();
+    if (componentSkybox != componentSystemSkybox.end()) {
+        auto& component = *componentSkybox;
+        if (skybox.seed != component->getSeed()) {
+            createSkybox(component->getSeed());
+        }
+    }
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
     };
-    cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::StaticDraw);
+    glDrawBuffers(1, attachments);
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+
+    shaders.skybox.use();
+    shaders.skybox.bindCameraUniform(cameraUbo);
+
+    if (componentSkybox != componentSystemSkybox.end()) {
+        renderComponent(**componentSkybox);
+    }
+}
+
+void Renderer::renderSceneForward(const Vector2i& viewport, Scene& scene) {
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+}
+
+void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
+    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
 
     GLuint attachments[4] = {
         GL_COLOR_ATTACHMENT0,
@@ -117,14 +198,18 @@ void Renderer::renderScene(const Vector2i& viewport, Scene& scene) {
     glClearBufferfv(GL_COLOR, 3, &black.x);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
-    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
-
     shaders.model.use();
     shaders.model.bindCameraUniform(cameraUbo);
 
     for (auto& component : componentSystemModel) {
         renderComponent(*component);
     }
+}
+
+void Renderer::renderComponent(ComponentSkybox& component) {
+    shaders.skybox.setModelMatrix(component.getObject().getTransform());
+    shaders.skybox.bindSkyboxTexture(skybox.textures.texture);
+    shaders.skybox.draw(skybox.mesh);
 }
 
 void Renderer::renderComponent(ComponentModel& component) {

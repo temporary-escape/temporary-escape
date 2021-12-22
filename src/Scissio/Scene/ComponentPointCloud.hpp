@@ -9,18 +9,14 @@
 namespace Scissio {
 class SCISSIO_API ComponentPointCloud : public Component, public PointCloud {
 public:
-    static constexpr ComponentType Type = 4;
-
-    ComponentPointCloud();
+    ComponentPointCloud() = default;
     explicit ComponentPointCloud(Object& object, AssetTexturePtr texture);
     virtual ~ComponentPointCloud() = default;
-
-    void render(Shader& shader);
 
 private:
     void rebuildBuffers();
 
-    Mesh mesh;
-    AssetTexturePtr texture;
+    Mesh mesh{NO_CREATE};
+    AssetTexturePtr texture{nullptr};
 };
 } // namespace Scissio

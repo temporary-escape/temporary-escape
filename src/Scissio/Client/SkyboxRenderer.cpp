@@ -65,7 +65,7 @@ SkyboxRenderer::SkyboxRenderer(const Config& config)
     fbo.attach(fboDepth, FramebufferAttachment::DepthStencil);
 }
 
-TextureCubemap SkyboxRenderer::render(const int64_t seed) {
+TextureCubemap SkyboxRenderer::render(const uint64_t seed) {
     const auto size = config.skyboxSize;
     std::mt19937_64 rng(seed); // 741852
 

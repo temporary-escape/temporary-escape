@@ -15,6 +15,17 @@ struct PlayerData {
 
 SCHEMA_DEFINE_INDEXED(PlayerData, secret);
 
+struct PlayerLocationData {
+    std::string id;
+    std::string galaxyId;
+    std::string systemId;
+    std::string sectorId;
+
+    MSGPACK_DEFINE(id, galaxyId, systemId, sectorId);
+};
+
+SCHEMA_DEFINE(PlayerLocationData);
+
 struct WorldData {
     uint64_t seed = 0;
 
@@ -61,13 +72,14 @@ SCHEMA_DEFINE_INDEXED(SystemData, name);
 
 struct SectorData {
     std::string id;
+    std::string galaxyId;
     std::string systemId;
     std::string name;
     Vector2 pos;
     uint64_t seed = 0;
     bool generated = false;
 
-    MSGPACK_DEFINE(id, systemId, name, pos, seed, generated);
+    MSGPACK_DEFINE(id, galaxyId, systemId, name, pos, seed, generated);
 };
 
 SCHEMA_DEFINE_INDEXED(SectorData, name);

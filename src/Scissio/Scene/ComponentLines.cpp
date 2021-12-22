@@ -2,10 +2,7 @@
 
 using namespace Scissio;
 
-ComponentLines::ComponentLines() : mesh{NO_CREATE} {
-}
-
-ComponentLines::ComponentLines(Object& object) : Component(Type, object), mesh{NO_CREATE} {
+ComponentLines::ComponentLines(Object& object) : Component(object), mesh{NO_CREATE} {
 }
 
 void ComponentLines::rebuildBuffers() {
@@ -21,13 +18,4 @@ void ComponentLines::rebuildBuffers() {
     mesh.addVertexBuffer(std::move(vbo), Position{}, Dummy{}, Color{});
     mesh.setPrimitive(PrimitiveType::Lines);
     mesh.setCount(static_cast<GLsizei>(lines.size()));
-}
-
-void ComponentLines::render(Shader& shader) {
-    if (!mesh && !this->getLines().empty()) {
-        rebuildBuffers();
-    }
-
-    // shader.setModelMatrix(getObject().getTransform());
-    shader.draw(mesh);
 }

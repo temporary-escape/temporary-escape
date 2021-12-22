@@ -6,17 +6,13 @@
 namespace Scissio {
 class ComponentParticleEmitter : public Component {
 public:
-    static constexpr ComponentType Type = 7;
-
-    ComponentParticleEmitter();
+    ComponentParticleEmitter() = default;
     explicit ComponentParticleEmitter(Object& object, AssetTexturePtr texture);
     virtual ~ComponentParticleEmitter() = default;
 
-    void render(Shader& shader);
-
 private:
-    Mesh mesh;
-    AssetTexturePtr texture;
+    Mesh mesh{NO_CREATE};
+    AssetTexturePtr texture{nullptr};
 
 public:
     MSGPACK_DEFINE_ARRAY(texture);

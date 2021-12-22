@@ -7,8 +7,6 @@
 namespace Scissio {
 class SCISSIO_API ComponentGrid : public Component, public Grid {
 public:
-    static constexpr ComponentType Type = 3;
-
     struct MeshData {
         uint16_t type{0};
         AssetModelPtr model{nullptr};
@@ -16,7 +14,7 @@ public:
         std::list<Primitive> primitives;
     };
 
-    ComponentGrid();
+    ComponentGrid() = default;
     ComponentGrid(ComponentGrid&& other) noexcept = default;
     ComponentGrid(const ComponentGrid& other) = delete;
     ComponentGrid& operator=(const ComponentGrid& other) = delete;
@@ -28,8 +26,6 @@ public:
     const std::vector<MeshData>& getMeshes() const {
         return meshes;
     }
-
-    void render(Shader& shader);
 
 private:
     void rebuildBuffers();
