@@ -20,7 +20,6 @@ ShaderModel::ShaderModel(const Config& config) : Shader("ShaderModel") {
     materialUniformIndex = getUniformBlockIndex("Material");
     uniformBlockBinding(materialUniformIndex, Bindings::Material);
 
-    objectIdUniform = getUniformLocation("objectId");
     modelMatrixUniform = getUniformLocation("modelMatrix");
     normalMatrixUniform = getUniformLocation("normalMatrix");
 }
@@ -51,15 +50,6 @@ void ShaderModel::bindMetallicRoughnessTexture(const Texture& texture) const {
 
 void ShaderModel::bindAmbientOcclusionTexture(const Texture& texture) const {
     texture.bind(AmbientOcclusionTexture);
-}
-
-void ShaderModel::setObjectId(const uint16_t id) const {
-    Color4 color;
-    color.r = (id & 0xFF) / 255.0f;
-    color.g = ((id & 0xFF00) >> 8) / 255.0f;
-    color.b = 0.0f;
-    color.a = 1.0f;
-    setUniform(objectIdUniform, color);
 }
 
 void ShaderModel::bindCameraUniform(const VertexBuffer& ubo) const {

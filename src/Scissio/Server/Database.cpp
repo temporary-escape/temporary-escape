@@ -11,7 +11,51 @@ using namespace Scissio;
 
 struct Database::Data {
     rocksdb::DB* db{nullptr};
-    rocksdb::OptimisticTransactionDB* txn;
+    rocksdb::OptimisticTransactionDB* txn{nullptr};
+};
+
+class DefaultLogger : public rocksdb::Logger {
+public:
+    DefaultLogger() = default;
+
+    void Logv(const rocksdb::InfoLogLevel logLevel, const char* format, va_list ap) override {
+        using LogFunc = void (*)(const std::string&, const std::string&);
+        auto func = static_cast<LogFunc>(&Log::d);
+        switch (logLevel) {
+        case rocksdb::InfoLogLevel::DEBUG_LEVEL: {
+            func = static_cast<LogFunc>(&Log::e);
+            break;
+        }
+        case rocksdb::InfoLogLevel::HEADER_LEVEL: {
+            func = static_cast<LogFunc>(&Log::i);
+            break;
+        }
+        case rocksdb::InfoLogLevel::INFO_LEVEL: {
+            func = static_cast<LogFunc>(&Log::i);
+            break;
+        }
+        case rocksdb::InfoLogLevel::FATAL_LEVEL: {
+            func = static_cast<LogFunc>(&Log::e);
+            break;
+        }
+        case rocksdb::InfoLogLevel::WARN_LEVEL: {
+            func = static_cast<LogFunc>(&Log::w);
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+        char buf[2048];
+        std::vsnprintf(buf, sizeof(buf), format, ap);
+        func(CMP, buf);
+    }
+
+    void Logv(const char* format, va_list ap) override {
+        char buf[2048];
+        std::vsnprintf(buf, sizeof(buf), format, ap);
+        Log::d(CMP, buf);
+    }
 };
 
 class TransactionWrapper : public Transaction {
@@ -155,6 +199,7 @@ private:
 Database::Database(const Path& path) : data(std::make_unique<Data>()) {
     rocksdb::Options options;
     options.create_if_missing = true;
+    options.info_log = std::make_shared<DefaultLogger>();
 
     Log::i(CMP, "Opening database: {}", path.string());
     const auto s = rocksdb::OptimisticTransactionDB::Open(options, path.string(), &data->txn);

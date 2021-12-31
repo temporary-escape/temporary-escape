@@ -5,6 +5,8 @@ set(CMAKE_MODULE_PATH
 
 project(Scissio)
 
+option(SCISSIO_BUILD_TESTS "Build with tests" OFF)
+
 if (NOT MSVC)
     find_package(ZLIB REQUIRED)
     find_package(liblzma CONFIG REQUIRED)

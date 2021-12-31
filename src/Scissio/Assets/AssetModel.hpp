@@ -31,10 +31,6 @@ private:
 };
 
 using AssetModelPtr = std::shared_ptr<AssetModel>;
-
-namespace Xml {
-template <> void Node::convert<AssetModelPtr>(AssetModelPtr& value) const;
-} // namespace Xml
 } // namespace Scissio
 
 namespace msgpack {
@@ -55,8 +51,8 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     template <> struct pack<Scissio::AssetModelPtr> {
         template <typename Stream>
         msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Scissio::AssetModelPtr const& v) const {
-            o.pack_str(v->getName().size());
-            o.pack_str_body(v->getName().c_str(), v->getName().size());
+            o.pack_str(static_cast<uint32_t>(v->getName().size()));
+            o.pack_str_body(v->getName().c_str(), static_cast<uint32_t>(v->getName().size()));
             return o;
         }
     };

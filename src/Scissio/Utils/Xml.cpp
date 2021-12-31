@@ -173,7 +173,13 @@ double Xml::Node::asDouble() const {
 
 bool Xml::Node::asBool() const {
     const auto s = asString();
-    return s == "true" || s == "True" || s == "TRUE";
+    if (s == "t" || s == "true" || s == "True" || s == "TRUE") {
+        return true;
+    } else if (s == "f" || s == "false" || s == "False" || s == "FALSE") {
+        return false;
+    } else {
+        throw std::runtime_error(fmt::format("Xml value of {} is not a valid bool type", s));
+    }
 }
 
 bool Xml::Node::hasNext() const {

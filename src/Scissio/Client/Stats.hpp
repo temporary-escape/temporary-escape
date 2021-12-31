@@ -10,10 +10,6 @@ struct Stats {
         std::atomic<uint64_t> latencyMs{0};
     } network;
 
-    struct Server {
-        std::atomic<uint64_t> latencyMs{0};
-    } server;
-
     struct Render {
         std::atomic<uint64_t> frameTimeMs{0};
     } render;

@@ -12,6 +12,9 @@ out VS_OUT {
 
 uniform Camera {
     mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
 } camera;
 
 uniform mat3 normalMatrix;

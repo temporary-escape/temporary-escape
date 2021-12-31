@@ -3,9 +3,10 @@
 #include "../Future.hpp"
 #include "../Modding/ModManager.hpp"
 #include "../Platform/OpenGLWindow.hpp"
-#include "../Server/Generator.hpp"
 #include "../Server/Server.hpp"
+#include "Client.hpp"
 #include "Renderer.hpp"
+#include "View.hpp"
 #include <atomic>
 
 namespace Scissio {
@@ -41,10 +42,10 @@ private:
     std::shared_ptr<AssetManager> assetManager;
     std::shared_ptr<ModManager> modManager;
     std::shared_ptr<Database> db;
-    std::shared_ptr<Generator> generator;
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;
     std::shared_ptr<Renderer> renderer;
+    std::shared_ptr<View> view;
 
     std::atomic<size_t> assetLoadQueueInitialSize;
     std::atomic<bool> loading;

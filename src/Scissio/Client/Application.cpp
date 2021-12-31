@@ -68,13 +68,13 @@ void Application::update() {
 void Application::render(const Vector2i& viewport) {
     update();
 
-    glViewport(0, 0, viewport.x, viewport.y);
-    Framebuffer::DefaultFramebuffer.bind();
-    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
-    glClearBufferfv(GL_COLOR, 0, &black.x);
-    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
-
     if (loading.load()) {
+        glViewport(0, 0, viewport.x, viewport.y);
+        Framebuffer::DefaultFramebuffer.bind();
+        static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+        glClearBufferfv(GL_COLOR, 0, &black.x);
+        glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+
         canvas.beginFrame(viewport);
         canvas.fontFace(defaultFont);
         canvas.fontSize(config.guiFontSize);
@@ -87,11 +87,16 @@ void Application::render(const Vector2i& viewport) {
         canvas.endFrame();
     } else if (client) {
         if (!renderer) {
-            renderer = std::make_shared<Renderer>(canvas, config, *assetManager, *client);
+            renderer = std::make_shared<Renderer>(config, canvas, *assetManager);
+            view = std::make_shared<View>(config, canvas, *assetManager, *renderer, *client);
         }
 
         client->update();
-        renderer->render(viewport);
+        view->render(viewport);
+
+        /*if (auto scene = client->getScene(); scene != nullptr) {
+            renderer->render(viewport, *scene);
+        }*/
     }
 }
 
@@ -127,22 +132,13 @@ void Application::load() {
 
     loadingProgress.store(0.8f);
 
-    Log::i(CMP, "Starting world generator");
-    generator = std::make_shared<Generator>();
-    generator->addStep<GeneratorStepCoreGalaxy>(*assetManager);
-    generator->generate(*db, 123456789u);
+    Log::i(CMP, "Starting server");
+    server = std::make_shared<Server>(config, *assetManager, *db);
 
     loadingProgress.store(0.9f);
 
-    Log::i(CMP, "Starting server");
-    server = std::make_shared<Server>(config, *assetManager, *db, *generator);
-
-    loadingProgress.store(0.95f);
-
     Log::i(CMP, "Starting client");
     client = std::make_shared<Client>(config, "localhost", config.serverPort);
-    auto futureLogin = client->login("password");
-    futureLogin.get(std::chrono::milliseconds(1000));
 
     loadingProgress.store(1.0f);
 
@@ -151,19 +147,40 @@ void Application::load() {
 }
 
 void Application::eventMouseMoved(const Vector2i& pos) {
+    if (view) {
+        view->eventMouseMoved(pos);
+    }
 }
 
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
+    if (view) {
+        view->eventMousePressed(pos, button);
+    }
 }
 
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    if (view) {
+        view->eventMouseReleased(pos, button);
+    }
 }
 
 void Application::eventMouseScroll(int xscroll, int yscroll) {
+    if (view) {
+        view->eventMouseScroll(xscroll, yscroll);
+    }
 }
 
 void Application::eventKeyPressed(Key key, Modifiers modifiers) {
+    if (key == Key::LetterR) {
+        renderer->reloadShaders();
+    }
+    if (view) {
+        view->eventKeyPressed(key, modifiers);
+    }
 }
 
 void Application::eventKeyReleased(Key key, Modifiers modifiers) {
+    if (view) {
+        view->eventKeyReleased(key, modifiers);
+    }
 }

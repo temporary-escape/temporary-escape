@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<planet>
+    <description>Planet that contains water and life.</description>
+    <surface>
+        <texture>planet_surface_life</texture>
+        <offset>0.5625</offset>
+    </surface>
+</planet>

@@ -15,7 +15,8 @@
     auto textureCompressor = std::make_shared<TextureCompressor>(NO_CREATE);                                           \
     auto db = std::make_shared<Database>(tmpDir->value() / "Saves" / "Universe");                                      \
     auto assetManager = std::make_shared<AssetManager>(config, *canvas, *textureCompressor);                           \
-    auto server = std::make_shared<Server>(config, *assetManager, *db);                                                \
+    auto generator = std::make_shared<GeneratorChain>();                                                                    \
+    auto server = std::make_shared<Server>(config, *assetManager, *db, *generator);                                    \
     auto client = std::make_shared<Client>(config, "localhost", config.serverPort);
 
 TEST_CASE("Login into server", TAG) {
@@ -31,7 +32,7 @@ TEST_CASE("Login into server", TAG) {
     REQUIRE(players.size() == 1);
 
     REQUIRE(waitForCondition([&]() { return server->getSessions().size() == 1; }));
-    REQUIRE(server->getSessions().front()->playerId == players.front().id);
+    REQUIRE(server->getSessions().front()->id == players.front().id);
 
     client.reset();
 
@@ -46,7 +47,7 @@ TEST_CASE("Login into server", TAG) {
     REQUIRE(players.size() == 1);
 
     REQUIRE(waitForCondition([&]() { return server->getSessions().size() == 1; }));
-    REQUIRE(server->getSessions().front()->playerId == players.front().id);
+    REQUIRE(server->getSessions().front()->id == players.front().id);
 }
 
 TEST_CASE("Login into server with bad password", TAG) {

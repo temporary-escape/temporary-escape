@@ -38,14 +38,12 @@ public:
     void bindEmissiveTexture(const Texture& texture) const;
     void bindMetallicRoughnessTexture(const Texture& texture) const;
     void bindAmbientOcclusionTexture(const Texture& texture) const;
-    void setObjectId(uint16_t id) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;
     void bindMaterialUniform(const VertexBuffer& ubo) const;
 
 private:
     GLint cameraUniformIndex;
     GLint materialUniformIndex;
-    GLint objectIdUniform;
     GLint normalMatrixUniform;
     GLint modelMatrixUniform;
 };

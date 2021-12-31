@@ -15,15 +15,15 @@ public:
     explicit ShaderSkyboxStars(const Config& config);
     virtual ~ShaderSkyboxStars() = default;
 
-    void setProjectionMatrix(const Matrix4& matrix) {
+    void setProjectionMatrix(const Matrix4& matrix) const {
         setUniform(projectionMatrixUniform, matrix);
     }
 
-    void setViewMatrix(const Matrix4& matrix) {
+    void setViewMatrix(const Matrix4& matrix) const {
         setUniform(viewMatrixUniform, matrix);
     }
 
-    void setParticleSize(const Vector2& size) {
+    void setParticleSize(const Vector2& size) const {
         setUniform(particleSizeUniform, size);
     }
 

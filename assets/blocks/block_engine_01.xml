@@ -1,7 +1,0 @@
-<block>
-	<title>Engine - Small (Variation A)</title>
-	<description>Small engine for your ship.</description>
-	<tier>1</tier>
-	<model>model_engine_01</model>
-	<category>Engines</category>
-</block>

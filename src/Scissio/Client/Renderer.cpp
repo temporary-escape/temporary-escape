@@ -1,6 +1,9 @@
 #include "Renderer.hpp"
+#include "../Assets/AssetManager.hpp"
 
 #define CMP "Renderer"
+static const auto pi = 3.14159265358979323846f;
+static const auto pi2 = 1.57079632679489661923f;
 
 // Simple skybox box with two triangles per side.
 static const float skyboxVertices[] = {
@@ -26,10 +29,21 @@ static const float skyboxVertices[] = {
 
 using namespace Scissio;
 
-Renderer::Renderer(Canvas2D& canvas, const Config& config, AssetManager& assetManager, Client& client)
-    : canvas(canvas), gui(canvas, config, assetManager), client(client), skyboxRenderer(config),
-      widgetDebugStats(gui, client.getStats()), shaders{ShaderSkybox{config}, ShaderModel{config}},
-      cameraUbo(VertexBufferType::Uniform) {
+struct Pos2UvVertex {
+    Vector2 position;
+    Vector2 uv;
+};
+
+static const std::array<Pos2UvVertex, 6> fullscreenQuad = {
+    Pos2UvVertex{{-1.0f, -1.0f}, {0.0f, 1.0f}}, Pos2UvVertex{{1.0f, -1.0f}, {1.0f, 1.0f}},
+    Pos2UvVertex{{-1.0f, 1.0f}, {0.0f, 0.0f}},  Pos2UvVertex{{-1.0f, 1.0f}, {0.0f, 0.0f}},
+    Pos2UvVertex{{1.0f, -1.0f}, {1.0f, 1.0f}},  Pos2UvVertex{{1.0f, 1.0f}, {1.0f, 0.0f}}};
+
+Renderer::Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetManager)
+    : config(config), canvas(canvas),
+      skyboxRenderer(config), shaders{ShaderSkybox{config},        ShaderModel{config},
+                                      ShaderBrdf{config},          ShaderPbr{config},
+                                      ShaderPlanetSurface{config}, ShaderPlanetAtmosphere{config}} {
 
     const auto setColor = [](Texture2D& texture, const Color4& color) {
         std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
@@ -51,15 +65,33 @@ Renderer::Renderer(Canvas2D& canvas, const Config& config, AssetManager& assetMa
     setColor(defaultAmbientOcclusionTexture, Color4{1.0f, 1.0f, 1.0f, 1.0f});
     setColor(defaultSkyboxTexture, Color4{0.0f, 0.0f, 0.0f, 0.0f});
 
-    camera.lookAt({2.0f, 2.0f, 2.0f}, {0.0f, 0.0f, 0.0f});
+    createFullScreenMesh();
+    createBrdfTexture();
+    createPlanetMesh();
+
+    planet.surfaceTexture = assetManager.find<AssetTexture>("planet_surface_life");
 }
 
 Renderer::~Renderer() = default;
+
+void Renderer::reloadShaders() {
+    try {
+        shaders.pbr = ShaderPbr(config);
+        shaders.model = ShaderModel(config);
+        shaders.planetSurface = ShaderPlanetSurface(config);
+        shaders.planetAtmosphere = ShaderPlanetAtmosphere(config);
+        Log::i(CMP, "Shaders reloaded");
+    } catch (std::exception& e) {
+        BACKTRACE(CMP, e, "Failed to reload shaders");
+    }
+}
 
 void Renderer::createSkybox(uint64_t seed) {
     Log::i(CMP, "Creating skybox for seed {}", seed);
 
     if (!skybox.mesh) {
+        skybox.mesh = Mesh{};
+
         VertexBuffer vbo(VertexBufferType::Array);
         vbo.bufferData(skyboxVertices, sizeof(skyboxVertices), VertexBufferUsage::StaticDraw);
 
@@ -73,44 +105,149 @@ void Renderer::createSkybox(uint64_t seed) {
     skybox.textures = skyboxRenderer.renderAndFilter(seed);
 }
 
-void Renderer::render(const Vector2i& viewport) {
-    const auto t0 = std::chrono::steady_clock::now();
+void Renderer::createFullScreenMesh() {
+    fullScreenMesh = Mesh{};
 
-    camera.setProjection(viewport, 70.0f);
+    VertexBuffer vbo(VertexBufferType::Array);
+    vbo.bufferData(fullscreenQuad.data(), fullscreenQuad.size() * sizeof(fullscreenQuad),
+                   VertexBufferUsage::StaticDraw);
 
-    CameraUniform cameraUniform{
-        camera.getProjectionMatrix() * camera.getViewMatrix(),
+    fullScreenMesh.addVertexBuffer(std::move(vbo), ShaderPbr::Position{}, ShaderPbr::TextureCoordinates{});
+    fullScreenMesh.setCount(6);
+    fullScreenMesh.setPrimitive(PrimitiveType::Triangles);
+}
+
+void Renderer::createBrdfTexture() {
+    Mesh mesh{};
+
+    VertexBuffer vbo(VertexBufferType::Array);
+    vbo.bufferData(fullscreenQuad.data(), fullscreenQuad.size() * sizeof(fullscreenQuad),
+                   VertexBufferUsage::StaticDraw);
+
+    mesh.addVertexBuffer(std::move(vbo), ShaderBrdf::Position{}, ShaderBrdf::TextureCoordinates{});
+    mesh.setCount(6);
+    mesh.setPrimitive(PrimitiveType::Triangles);
+
+    const auto size = Vector2i{config.brdfSize, config.brdfSize};
+
+    Framebuffer fbo;
+    Renderbuffer rbo;
+
+    fbo.bind();
+    glViewport(0, 0, size.x, size.y);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+    glDisable(GL_BLEND);
+
+    brdf.texture = Texture2D{};
+    brdf.texture.setStorage(0, size, PixelType::Rg16f);
+    fbo.attach(brdf.texture, FramebufferAttachment::Color0, 0);
+
+    rbo.setStorage(size, PixelType::Depth24Stencil8);
+    fbo.attach(rbo, FramebufferAttachment::DepthStencil);
+
+    shaders.brdf.use();
+    shaders.brdf.draw(mesh);
+
+    Framebuffer::DefaultFramebuffer.bind();
+}
+
+void Renderer::createPlanetMesh() {
+#pragma pack(push, 1)
+    struct Vertex {
+        Vector3 pos;
+        Vector3 normal;
     };
-    cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::StaticDraw);
+#pragma pack(pop)
 
-    if (const auto scene = client.getScene(); scene != nullptr) {
-        if (gBuffer.size != viewport) {
-            gBuffer.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
-            gBuffer.fboColorRoughness.setStorage(0, viewport, PixelType::Rgba8u);
-            gBuffer.fboEmissiveMetallic.setStorage(0, viewport, PixelType::Rgba8u);
-            gBuffer.fboNormalAmbient.setStorage(0, viewport, PixelType::Rgba16f);
-            gBuffer.fboObjectId.setStorage(0, viewport, PixelType::Rg8u);
+    static_assert(sizeof(Vertex) == 6 * sizeof(float), "Size of Vertex struct must be 6 floats");
 
-            if (!gBuffer.fboInit) {
-                gBuffer.fboInit = true;
-                gBuffer.fbo.attach(gBuffer.fboColorRoughness, FramebufferAttachment::Color0, 0);
-                gBuffer.fbo.attach(gBuffer.fboEmissiveMetallic, FramebufferAttachment::Color1, 0);
-                gBuffer.fbo.attach(gBuffer.fboNormalAmbient, FramebufferAttachment::Color2, 0);
-                gBuffer.fbo.attach(gBuffer.fboObjectId, FramebufferAttachment::Color3, 0);
-                gBuffer.fbo.attach(gBuffer.fboDepth, FramebufferAttachment::DepthStencil, 0);
-            }
+    // Source: https://stackoverflow.com/a/5989676
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
+
+    static const auto radius = 0.5f;
+    static const auto rings = 32;
+    static const auto sectors = 64;
+
+    const auto R = 1.0f / static_cast<float>(rings - 1);
+    const auto S = 1.0f / static_cast<float>(sectors - 1);
+
+    vertices.resize(rings * sectors);
+    indices.resize(rings * sectors * 6);
+
+    auto v = vertices.begin();
+    for (auto r = 0; r < rings; r++)
+        for (auto s = 0; s < sectors; s++) {
+            float const y = std::sin(-pi2 + pi * r * R);
+            float const x = std::cos(2 * pi * s * S) * std::sin(pi * r * R);
+            float const z = std::sin(2 * pi * s * S) * std::sin(pi * r * R);
+
+            *v++ = Vertex{Vector3{x, y, z} * radius, Vector3{x, y, z}};
         }
 
-        renderSceneSkybox(viewport, *scene);
+    auto i = indices.begin();
+    for (auto r = 0; r < rings; r++) {
+        for (auto s = 0; s < sectors; s++) {
+            *i++ = r * sectors + s;
+            *i++ = r * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + (s + 1);
 
-        gBuffer.fbo.bind();
-        renderScenePbr(viewport, *scene);
-        Framebuffer::DefaultFramebuffer.bind();
-
-        // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color2);
+            *i++ = r * sectors + s;
+            *i++ = (r + 1) * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + s;
+        }
     }
 
-    glDisable(GL_DEPTH_TEST);
+    planet.mesh = Mesh{};
+
+    auto vbo = VertexBuffer(VertexBufferType::Array);
+    vbo.bufferData(vertices.data(), vertices.size() * sizeof(Vertex), VertexBufferUsage::StaticDraw);
+
+    planet.mesh.addVertexBuffer(std::move(vbo), ShaderPlanetSurface::Position{}, ShaderPlanetSurface::Normal{});
+
+    auto ibo = VertexBuffer(VertexBufferType::Indices);
+    ibo.bufferData(indices.data(), indices.size() * sizeof(uint16_t), VertexBufferUsage::StaticDraw);
+
+    planet.mesh.setIndexBuffer(std::move(ibo), IndexType::UnsignedShort);
+
+    planet.mesh.setCount(static_cast<int>(indices.size()));
+    planet.mesh.setPrimitive(PrimitiveType::Triangles);
+}
+
+void Renderer::render(const Vector2i& viewport, Scene& scene) {
+    // const auto t0 = std::chrono::steady_clock::now();
+
+    if (gBuffer.size != viewport) {
+        gBuffer.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
+        gBuffer.fboColorAlpha.setStorage(0, viewport, PixelType::Rgba8u);
+        gBuffer.fboEmissive.setStorage(0, viewport, PixelType::Rgb8u);
+        gBuffer.fboMetallicRoughnessAmbient.setStorage(0, viewport, PixelType::Rgb8u);
+        gBuffer.fboNormal.setStorage(0, viewport, PixelType::Rgb16f);
+
+        if (!gBuffer.fboInit) {
+            gBuffer.fboInit = true;
+            gBuffer.fbo.attach(gBuffer.fboColorAlpha, FramebufferAttachment::Color0, 0);
+            gBuffer.fbo.attach(gBuffer.fboEmissive, FramebufferAttachment::Color1, 0);
+            gBuffer.fbo.attach(gBuffer.fboMetallicRoughnessAmbient, FramebufferAttachment::Color2, 0);
+            gBuffer.fbo.attach(gBuffer.fboNormal, FramebufferAttachment::Color3, 0);
+            gBuffer.fbo.attach(gBuffer.fboDepth, FramebufferAttachment::DepthStencil, 0);
+        }
+    }
+
+    updateLights(scene);
+    updateCameras(viewport, scene);
+
+    renderSceneBackground(viewport, scene);
+
+    gBuffer.fbo.bind();
+    renderScenePbr(viewport, scene);
+    Framebuffer::DefaultFramebuffer.bind();
+
+    // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
+
+    // renderPbr();
+
+    /*glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
@@ -118,19 +255,19 @@ void Renderer::render(const Vector2i& viewport) {
     GLuint attachments[1] = {
         GL_COLOR_ATTACHMENT0,
     };
-    glDrawBuffers(1, attachments);
+    glDrawBuffers(1, attachments);*/
 
-    canvas.beginFrame(viewport);
+    /*canvas.beginFrame(viewport);
     gui.reset();
 
     widgetDebugStats.render();
 
     gui.render(viewport);
-    canvas.endFrame();
+    canvas.endFrame();*/
 
-    const auto t1 = std::chrono::steady_clock::now();
+    /*const auto t1 = std::chrono::steady_clock::now();
     const auto tDiff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
-    client.getStats().render.frameTimeMs.store(tDiff.count());
+    client.getStats().render.frameTimeMs.store(tDiff.count());*/
 }
 
 void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target,
@@ -142,8 +279,40 @@ void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& 
     glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
-void Renderer::renderSceneSkybox(const Vector2i& viewport, Scene& scene) {
+void Renderer::renderPbr() {
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.pbr.use();
+    shaders.pbr.bindDepthTexture(gBuffer.fboDepth);
+    shaders.pbr.bindBaseColorTexture(gBuffer.fboColorAlpha);
+    shaders.pbr.bindEmissiveTexture(gBuffer.fboEmissive);
+    shaders.pbr.bindMetallicRoughnessAmbientTexture(gBuffer.fboMetallicRoughnessAmbient);
+    shaders.pbr.bindNormalTexture(gBuffer.fboNormal);
+    shaders.pbr.bindBrdfTexture(brdf.texture);
+    shaders.pbr.bindSkyboxIrradianceTexture(skybox.textures.irradiance);
+    shaders.pbr.bindSkyboxPrefilterTexture(skybox.textures.prefilter);
+    shaders.pbr.bindCameraUniform(cameraUbo);
+    shaders.pbr.bindDirectionalLightsUniform(directionalLightsUbo);
+    shaders.pbr.draw(fullScreenMesh);
+}
+
+void Renderer::renderSceneBackground(const Vector2i& viewport, Scene& scene) {
+    glViewport(0, 0, viewport.x, viewport.y);
+    Framebuffer::DefaultFramebuffer.bind();
+    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, &black.x);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+
     auto& componentSystemSkybox = scene.getComponentSystem<ComponentSkybox>();
+    auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
     auto componentSkybox = componentSystemSkybox.begin();
     if (componentSkybox != componentSystemSkybox.end()) {
@@ -158,7 +327,7 @@ void Renderer::renderSceneSkybox(const Vector2i& viewport, Scene& scene) {
     };
     glDrawBuffers(1, attachments);
 
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
@@ -167,7 +336,25 @@ void Renderer::renderSceneSkybox(const Vector2i& viewport, Scene& scene) {
     shaders.skybox.bindCameraUniform(cameraUbo);
 
     if (componentSkybox != componentSystemSkybox.end()) {
-        renderComponent(**componentSkybox);
+        renderComponentSkybox(**componentSkybox);
+    }
+
+    shaders.planetSurface.use();
+    shaders.planetSurface.bindCameraUniform(cameraUbo);
+    shaders.planetSurface.bindDirectionalLightsUniform(directionalLightsUbo);
+
+    for (auto& component : componentSystemPlanet) {
+        renderComponentPlanetSurface(*component);
+    }
+
+    // glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+
+    shaders.planetAtmosphere.use();
+    shaders.planetAtmosphere.bindCameraUniform(cameraUbo);
+    shaders.planetAtmosphere.bindDirectionalLightsUniform(directionalLightsUbo);
+
+    for (auto& component : componentSystemPlanet) {
+        renderComponentPlanetAtmosphere(*component);
     }
 }
 
@@ -179,6 +366,7 @@ void Renderer::renderSceneForward(const Vector2i& viewport, Scene& scene) {
 
 void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
     auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+    auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
     GLuint attachments[4] = {
         GL_COLOR_ATTACHMENT0,
@@ -195,24 +383,120 @@ void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
     glViewport(0, 0, viewport.x, viewport.y);
     static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
     glClearBufferfv(GL_COLOR, 0, &black.x);
-    glClearBufferfv(GL_COLOR, 3, &black.x);
+    // glClearBufferfv(GL_COLOR, 3, &black.x);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
     shaders.model.use();
     shaders.model.bindCameraUniform(cameraUbo);
 
     for (auto& component : componentSystemModel) {
-        renderComponent(*component);
+        renderComponentModel(*component);
     }
 }
 
-void Renderer::renderComponent(ComponentSkybox& component) {
+void Renderer::updateLights(Scene& scene) {
+    auto& componentSystemDirectionalLights = scene.getComponentSystem<ComponentDirectionalLight>();
+
+    DirectionalLightsUniform directionalLightsUniform{};
+
+    for (const auto& component : componentSystemDirectionalLights) {
+        if (directionalLightsUniform.count >= maxDirectionalLights) {
+            break;
+        }
+
+        const auto dir = glm::normalize(component->getObject().getPosition());
+        const auto& color = component->getColor();
+
+        directionalLightsUniform.directions[directionalLightsUniform.count] = Vector4{dir, 0.0f};
+        directionalLightsUniform.colors[directionalLightsUniform.count] = color;
+        directionalLightsUniform.count++;
+    }
+
+    if (!directionalLightsUbo) {
+        directionalLightsUbo = VertexBuffer(VertexBufferType::Uniform);
+        directionalLightsUbo.bufferData(&directionalLightsUniform, sizeof(directionalLightsUniform),
+                                        VertexBufferUsage::DynamicDraw);
+    } else {
+        directionalLightsUbo.bufferSubData(&directionalLightsUniform, sizeof(directionalLightsUniform), 0);
+    }
+}
+
+void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
+    auto& componentSystemCameras = scene.getComponentSystem<ComponentCamera>();
+
+    ComponentCamera* primary = nullptr;
+    for (auto& component : componentSystemCameras) {
+        component->setProjection(viewport, 70.0f);
+        if (component->getPrimary()) {
+            primary = component;
+        }
+    }
+
+    const auto makeUniform = [&](const bool zero) {
+        auto viewMatrix = primary->getViewMatrix();
+        if (zero) {
+            viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+        }
+        const auto transformationProjectionMatrix = primary->getProjectionMatrix() * viewMatrix;
+        const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
+        const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
+
+        CameraUniform cameraUniform;
+        cameraUniform.transformationProjectionMatrix = transformationProjectionMatrix;
+        cameraUniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
+        cameraUniform.viewport = viewport;
+        cameraUniform.eyesPos = eyesPos;
+
+        return cameraUniform;
+    };
+
+    if (primary) {
+        CameraUniform cameraUniform = makeUniform(false);
+
+        if (!cameraUbo) {
+            cameraUbo = VertexBuffer(VertexBufferType::Uniform);
+            cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+        } else {
+            cameraUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
+        }
+    }
+
+    if (primary) {
+        CameraUniform cameraUniform = makeUniform(true);
+
+        if (!cameraZeroPosUbo) {
+            cameraZeroPosUbo = VertexBuffer(VertexBufferType::Uniform);
+            cameraZeroPosUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+        } else {
+            cameraZeroPosUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
+        }
+    }
+}
+
+void Renderer::renderComponentSkybox(ComponentSkybox& component) {
     shaders.skybox.setModelMatrix(component.getObject().getTransform());
     shaders.skybox.bindSkyboxTexture(skybox.textures.texture);
     shaders.skybox.draw(skybox.mesh);
 }
 
-void Renderer::renderComponent(ComponentModel& component) {
+void Renderer::renderComponentPlanetSurface(ComponentPlanet& component) {
+    const auto& transform = component.getObject().getTransform();
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.planetSurface.setModelMatrix(transform);
+    shaders.planetSurface.setNormalMatrix(transformInverted);
+    shaders.planetSurface.bindSurfaceTexture(planet.surfaceTexture->getTexture());
+    shaders.planetSurface.draw(planet.mesh);
+}
+
+void Renderer::renderComponentPlanetAtmosphere(ComponentPlanet& component) {
+    const auto& transform = component.getObject().getTransform();
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.planetAtmosphere.setModelMatrix(transform);
+    shaders.planetAtmosphere.setNormalMatrix(transformInverted);
+    shaders.planetAtmosphere.draw(planet.mesh);
+}
+
+void Renderer::renderComponentModel(ComponentModel& component) {
     const auto& transform = component.getObject().getTransform();
     const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
     shaders.model.setModelMatrix(transform);

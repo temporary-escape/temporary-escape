@@ -24,8 +24,8 @@ void Texture2D::setStorage(const int level, const Vector2i& size, const PixelTyp
     glTexImage2D(target, level, internalFormat, size.x, size.y, 0, format, type, nullptr);
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     // glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
     // glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, levels - 1);
 }

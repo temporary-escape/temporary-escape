@@ -8,7 +8,7 @@ class Database;
 
 class SCISSIO_API ModManager {
 public:
-    explicit ModManager();
+    ModManager();
     virtual ~ModManager() = default;
 
     void load(AssetManager& assetManager, const Path& dir);

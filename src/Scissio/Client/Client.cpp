@@ -10,6 +10,8 @@
 
 #define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
 #define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Client, handle));
+#define MESSAGE_DISPATCH_FETCH(M)                                                                                      \
+    dispatcher.add<M::Response>(std::bind(&Client::handleFetch<M>, this, std::placeholders::_1));
 
 using namespace Scissio;
 
@@ -42,21 +44,26 @@ uint64_t generatePlayerUid(const Config& config) {
 
 Client::Client(Config& config, const std::string& address, const int port)
     : listener(std::make_unique<EventListener>(*this)),
-      network(std::make_shared<Network::TcpClient>(*listener, address, port)), secret(generatePlayerUid(config)) {
+      network(std::make_shared<Network::TcpClient>(*listener, address, port)), secret(generatePlayerUid(config)),
+      requestsNextId(1) {
 
+    MESSAGE_DISPATCH(MessageServerHello);
     MESSAGE_DISPATCH(MessageLoginResponse);
-    MESSAGE_DISPATCH(MessagePingResponse);
-    MESSAGE_DISPATCH(MessageLatencyResponse);
-    MESSAGE_DISPATCH(MessageSectorReadyResponse);
+    MESSAGE_DISPATCH(MessageStatusResponse);
     MESSAGE_DISPATCH(MessageSectorChanged);
     MESSAGE_DISPATCH(MessageEntitySync);
-    MESSAGE_DISPATCH(MessageFetchResponse<SystemData>);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
+    MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
 
-    auto future = connectPromise.future();
+    auto future = connected.future();
     if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
         EXCEPTION("Timeout while waiting for server connection");
     }
     future.get();
+
+    MessageStatusRequest req{};
+    req.timePoint = std::chrono::system_clock::now();
+    send(req);
 }
 
 Client::~Client() {
@@ -72,26 +79,9 @@ void Client::eventPacket(Network::Packet packet) {
 }
 
 void Client::eventConnect() {
-    connectPromise.resolve();
-
-    network->send(MessagePingRequest{std::chrono::system_clock::now()});
-    network->send(MessageLatencyRequest{std::chrono::system_clock::now()});
 }
 
 void Client::eventDisconnect() {
-}
-
-Future<void> Client::login(const std::string& password) {
-    loginPromise = Promise<void>{};
-
-    MessageLoginRequest req{};
-    req.secret = secret;
-    req.name = "Some Player";
-    req.password = password;
-
-    network->send(req);
-
-    return loginPromise.future();
 }
 
 void Client::update() {
@@ -103,38 +93,33 @@ void Client::update() {
     }
 }
 
+void Client::handle(MessageServerHello res) {
+    MessageLoginRequest req{};
+    req.secret = secret;
+    req.name = "Some Player";
+    req.password = "password";
+
+    send(req);
+}
+
 void Client::handle(MessageLoginResponse res) {
     if (!res.error.empty()) {
-        loginPromise.reject<std::runtime_error>(res.error);
+        connected.reject<std::runtime_error>(res.error);
     } else {
         playerId = res.playerId;
-        loginPromise.resolve();
-
-        network->send(MessageSectorReadyRequest{});
+        connected.resolve();
     }
 }
 
-void Client::handle(MessagePingResponse res) {
+void Client::handle(MessageStatusResponse res) {
     const auto now = std::chrono::system_clock::now();
     const auto diff = now - res.timePoint;
     stats.network.latencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
 
-    // Log::d(CMP, "Network latency: {} ms", stats.serverLatencyMs.load());
-
-    worker1s.post([this]() { network->send(MessagePingRequest{std::chrono::system_clock::now()}); });
+    worker1s.post([this]() { network->send(MessageStatusRequest{std::chrono::system_clock::now()}); });
 }
 
-void Client::handle(MessageLatencyResponse res) {
-    const auto now = std::chrono::system_clock::now();
-    const auto diff = now - res.timePoint;
-    stats.server.latencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
-
-    // Log::d(CMP, "Server latency: {} ms", stats.serverLatencyMs.load());
-
-    worker1s.post([this]() { network->send(MessageLatencyRequest{std::chrono::system_clock::now()}); });
-}
-
-void Client::handle(MessageSectorReadyResponse res) {
+/*void Client::handle(MessageSectorReadyResponse res) {
     sync.post([this, res]() {
         try {
             if (!res.ready) {
@@ -144,12 +129,18 @@ void Client::handle(MessageSectorReadyResponse res) {
             BACKTRACE(CMP, e, "Failed to process sector ready response");
         }
     });
-}
+}*/
 
 void Client::handle(MessageSectorChanged res) {
     sync.post([this, res = std::move(res)]() {
         try {
             scene = std::make_unique<Scene>();
+
+            auto entity = std::make_shared<Entity>();
+            auto camera = entity->addComponent<ComponentCamera>();
+            camera->setPrimary(true);
+            camera->lookAt({-4.0f, 4.0f, -4.0f}, {0.0f, 0.0f, 0.0f});
+            scene->addEntity(entity);
         } catch (std::exception& e) {
             BACKTRACE(CMP, e, "Failed to process sector changed response");
         }
@@ -159,6 +150,9 @@ void Client::handle(MessageSectorChanged res) {
 void Client::handle(MessageEntitySync res) {
     sync.post([this, res = std::move(res)]() {
         try {
+            if (!scene) {
+                EXCEPTION("Client scene is not initialized");
+            }
             for (auto& entity : res.entities) {
                 scene->addEntity(entity);
             }
@@ -168,8 +162,12 @@ void Client::handle(MessageEntitySync res) {
     });
 }
 
-template <typename T> void Client::handle(MessageFetchResponse<T> res) {
-    if (res.id) {
+template <typename Message, typename T> void Client::handleFetch(MessageFetchResponse<T> res) {
+    try {
+        if (!res.id) {
+            return;
+        }
+
         AbstractRequestPtr abstractReq = nullptr;
 
         {
@@ -177,51 +175,39 @@ template <typename T> void Client::handle(MessageFetchResponse<T> res) {
             const auto it = requests.find(res.id);
 
             if (it == requests.end()) {
-                Log::e(CMP, "Got response for unknown fetch request id: {} type: {}", res.id, typeid(T).name());
+                EXCEPTION("Got response for unknown fetch request id: '{}' type: '{}'", res.id, typeid(T).name());
             } else {
                 abstractReq = it->second;
             }
+
+            if (!abstractReq) {
+                requests.erase(it);
+                return;
+            }
         }
 
-        if (!abstractReq) {
-            return;
-        }
-
-        const auto req = std::dynamic_pointer_cast<Request<T>>(abstractReq);
+        const auto req = std::dynamic_pointer_cast<Request<Message, T>>(abstractReq);
         if (!req) {
-            Log::e(CMP, "Got response for invalid type fetch request id: {} type: {}", res.id, typeid(T).name());
+            EXCEPTION("Got response for invalid type fetch request id: '{}' type: '{}'", res.id, typeid(T).name());
             return;
         }
 
-        // Log::d(CMP, "Request id: {} received {} items", res.id, res.data.size());
-
-        if (res.data.empty()) {
-            // Done!
-
-            // Log::d(CMP, "Syncing req: {}", req->getId());
-
+        req->append(std::move(res.data));
+        if (res.token.empty()) {
             sync.post([this, req]() {
-                // Log::d(CMP, "Completing req: {}", req->getId());
-
-                {
-                    std::lock_guard<std::mutex> lock{requestsMutex};
-                    requests.erase(req->getId());
+                try {
+                    req->complete();
+                } catch (std::exception& e) {
+                    BACKTRACE(CMP, e, "Failed to process fetch request");
                 }
-
-                req->complete();
             });
-
         } else {
-            // Not done yet, needs more data!
-
-            req->append(res.data);
-
-            MessageFetchRequest<T> req;
-            req.id = res.id;
-            req.prefix = res.prefix;
-            req.start = res.next;
-
-            network->send(req);
+            auto& msg = req->getMessage();
+            msg.token = res.token;
+            send(msg);
         }
+
+    } catch (std::exception& e) {
+        BACKTRACE(CMP, e, "Failed to process MessageFetchResponse<T> response");
     }
 }

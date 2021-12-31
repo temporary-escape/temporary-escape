@@ -13,31 +13,31 @@ public:
     explicit ShaderSkyboxNebula(const Config& config);
     virtual ~ShaderSkyboxNebula() = default;
 
-    void setProjectionMatrix(const Matrix4& matrix) {
+    void setProjectionMatrix(const Matrix4& matrix) const {
         setUniform(projectionMatrixUniform, matrix);
     }
 
-    void setViewMatrix(const Matrix4& matrix) {
+    void setViewMatrix(const Matrix4& matrix) const {
         setUniform(viewMatrixUniform, matrix);
     }
 
-    void setColor(const Color4& color) {
+    void setColor(const Color4& color) const {
         setUniform(colorUniform, color);
     }
 
-    void setOffset(const Vector3& offset) {
+    void setOffset(const Vector3& offset) const {
         setUniform(offsetUniform, offset);
     }
 
-    void setScale(const float scale) {
+    void setScale(const float scale) const {
         setUniform(scaleUniform, scale);
     }
 
-    void setIntensity(const float intensity) {
+    void setIntensity(const float intensity) const {
         setUniform(intensityUniform, intensity);
     }
 
-    void setFalloff(const float falloff) {
+    void setFalloff(const float falloff) const {
         setUniform(falloffUniform, falloff);
     }
 

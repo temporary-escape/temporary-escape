@@ -1,7 +1,0 @@
-<block>
-	<title>Hull Tetra (Basic)</title>
-	<description>Basic hull made from the cheapest materials.</description>
-	<tier>1</tier>
-	<model>model_block_01_tetra</model>
-	<category>Hulls</category>
-</block>

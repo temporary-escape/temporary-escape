@@ -67,7 +67,7 @@ SkyboxRenderer::SkyboxRenderer(const Config& config)
 
 TextureCubemap SkyboxRenderer::render(const uint64_t seed) {
     const auto size = config.skyboxSize;
-    std::mt19937_64 rng(seed); // 741852
+    std::mt19937_64 rng(seed);
 
     TextureCubemap result;
     result.bind();

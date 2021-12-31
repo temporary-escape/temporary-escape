@@ -8,33 +8,58 @@
     std::bind(static_cast<void (T::*)(const Network::StreamPtr&, M)>(&T::F), this, std::placeholders::_1,              \
               std::placeholders::_2)
 #define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Server, handle));
+#define MESSAGE_DISPATCH_FETCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Server, handleFetch));
 
 using namespace Scissio;
 
 static const double tickLength = 1.0f / 20.0f;
 static const auto tickLengthUs = std::chrono::microseconds(static_cast<long long>(tickLength * 1000.0 * 1000.0));
 
-Server::Server(const Config& config, AssetManager& assetManager, Database& db, Generator& generator)
-    : config(config), tickFlag(true), assetManager(assetManager), db(db), generator(generator), worker(4),
-      strand(worker.strand()), listener(std::make_unique<EventListener>(*this)),
+Server::Services::Services(const Config& config, AssetManager& assetManager, Database& db)
+    : galaxies(config, assetManager, db), regions(config, assetManager, db), systems(config, assetManager, db),
+      sectors(config, assetManager, db), players(config, assetManager, db) {
+}
+
+Server::Server(const Config& config, AssetManager& assetManager, Database& db)
+    : config(config), assetManager(assetManager), db(db), services(config, assetManager, db), worker(4), loader(1),
+      listener(std::make_unique<EventListener>(*this)),
       network(std::make_shared<Network::TcpServer>(*listener, config.serverPort)) {
 
-    tickThread = std::thread(&Server::tick, this);
+    // tickThread = std::thread(&Server::tick, this);
 
     MESSAGE_DISPATCH(MessageLoginRequest);
-    MESSAGE_DISPATCH(MessagePingRequest);
-    MESSAGE_DISPATCH(MessageLatencyRequest);
-    MESSAGE_DISPATCH(MessageSectorReadyRequest);
-    MESSAGE_DISPATCH(MessageFetchRequest<SystemData>);
+    MESSAGE_DISPATCH(MessageStatusRequest);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
+    MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
+
+    loader.post([this]() {
+        try {
+            services.galaxies.generate(123456789ULL);
+            services.regions.generate();
+            services.systems.generate();
+            services.sectors.generate();
+            Log::i(CMP, "Universe has been generated and is ready");
+
+            loaded.resolve();
+        } catch (std::exception& e) {
+            BACKTRACE(CMP, e, "Failed to generate the universe");
+            loaded.reject<std::runtime_error>(e.what());
+        }
+    });
+
+    auto future = loaded.future();
+    future.get();
 }
 
 Server::~Server() {
-    Log::i(CMP, "Stopping tick");
-    tickFlag.store(false);
-    tickThread.join();
+    Log::i(CMP, "Stopping");
+    loader.stop();
+    worker.stop();
+    // tickFlag.store(false);
+    // tickThread.join();
 }
 
-void Server::tick() {
+/*void Server::tick() {
     Log::i(CMP, "Starting tick");
 
     while (tickFlag.load()) {
@@ -65,30 +90,33 @@ void Server::tick() {
     }
 
     Log::i(CMP, "Stopped tick");
-}
+}*/
 
 void Server::eventConnect(const Network::StreamPtr& stream) {
-    strand.post([=]() {
+    worker.post([=]() {
         try {
             Log::i(CMP, "Adding new connection to lobby: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
-            std::unique_lock<std::shared_mutex> lock{sessionsMutex};
-            auto session = std::make_shared<Session>();
-            session->stream = stream;
-            sessions.insert(std::make_pair(stream, std::move(session)));
+            std::unique_lock<std::shared_mutex> lock{players.mutex};
+            auto player = std::make_shared<Player>(stream);
+            players.map.insert(std::make_pair(stream, player));
+
+            MessageServerHello msg{};
+            msg.serverName = "Some Server Name";
+            player->send(msg);
         } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle connect event error: {}", e.what());
+            BACKTRACE(CMP, e, "Failed to handle connect event");
         }
     });
 }
 
 void Server::eventDisconnect(const Network::StreamPtr& stream) {
-    strand.post([=]() {
+    worker.post([=]() {
         try {
             Log::i(CMP, "Removing connection: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
-            std::unique_lock<std::shared_mutex> lock{sessionsMutex};
-            sessions.erase(stream);
+            std::unique_lock<std::shared_mutex> lock{players.mutex};
+            players.map.erase(stream);
         } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle connect event error: {}", e.what());
+            BACKTRACE(CMP, e, "Failed to handle disconnect event");
         }
     });
 }
@@ -101,11 +129,11 @@ void Server::eventPacket(const Network::StreamPtr& stream, Network::Packet packe
     }
 }
 
-SessionPtr Server::getSession(const Network::StreamPtr& stream, bool check) {
-    std::shared_lock<std::shared_mutex> lock{sessionsMutex};
-    const auto it = sessions.find(stream);
-    if (it != sessions.end()) {
-        if (check && it->second->playerId.empty()) {
+PlayerPtr Server::streamToPlayer(const Network::StreamPtr& stream, bool check) {
+    std::shared_lock<std::shared_mutex> lock{players.mutex};
+    const auto it = players.map.find(stream);
+    if (it != players.map.end()) {
+        if (check && it->second->getId().empty()) {
             EXCEPTION("Session does is not logged in for stream: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
         }
         return it->second;
@@ -113,29 +141,56 @@ SessionPtr Server::getSession(const Network::StreamPtr& stream, bool check) {
     EXCEPTION("Session does not exist for stream: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
 }
 
-std::vector<SessionPtr> Server::getSessions() {
-    std::shared_lock<std::shared_mutex> lock{sessionsMutex};
-    std::vector<SessionPtr> res;
-    for (const auto& [stream, session] : sessions) {
-        res.push_back(session);
+std::vector<PlayerPtr> Server::getPlayers() {
+    std::shared_lock<std::shared_mutex> lock{players.mutex};
+    std::vector<PlayerPtr> res;
+    for (const auto& [stream, player] : players.map) {
+        res.push_back(player);
     }
     return res;
 }
 
-template <typename T>
+/*template <typename T>
 void Server::fetchResourceForPlayer(const SessionPtr& session, const std::string& prefix, const std::string& start,
                                     std::vector<T>& out, std::string& next) {
 
     out = db.next<T>(prefix, start, 64, &next);
-}
+}*/
 
 void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
-    strand.post([=]() -> void {
+    worker.post([=]() -> void {
         try {
             Log::i(CMP, "Logging in player: '{}'", req.name);
-            auto session = getSession(stream, false);
+            auto player = streamToPlayer(stream, false);
 
+            // Check for server password
             if (!config.serverPassword.empty() && config.serverPassword != req.password) {
+                MessageLoginResponse res;
+                res.error = "Bad password";
+                stream->send(res);
+                return;
+            }
+
+            // Check if the player is already logged in
+            auto alreadyLoggedIn = false;
+            {
+                std::shared_lock<std::shared_mutex> lock{players.mutex};
+                for (const auto& [_, other] : players.map) {
+                    if (other->getId() == req.secret) {
+                        alreadyLoggedIn = true;
+                        break;
+                    }
+                }
+            }
+
+            if (alreadyLoggedIn) {
+                MessageLoginResponse res;
+                res.error = "Already logged in";
+                stream->send(res);
+                return;
+            }
+
+            /*if (!config.serverPassword.empty() && config.serverPassword != req.password) {
                 MessageLoginResponse res;
                 res.error = "Bad password";
                 stream->send(res);
@@ -190,40 +245,34 @@ void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
                 return false;
             });
 
-            session->playerId = playerId;
+            session->id = playerId;
 
             MessageLoginResponse res;
             res.playerId = playerId;
-            stream->send(res);
+            stream->send(res);*/
 
         } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle login request error: {}", e.what());
+            BACKTRACE(CMP, e, "Failed to handle login request");
         }
     });
 }
 
-void Server::handle(const Network::StreamPtr& stream, MessagePingRequest req) {
-    MessagePingResponse res;
-    res.timePoint = req.timePoint;
-    stream->send(res);
-}
-
-void Server::handle(const Network::StreamPtr& stream, MessageLatencyRequest req) {
+void Server::handle(const Network::StreamPtr& stream, MessageStatusRequest req) {
     worker.post([=]() {
-        MessageLatencyResponse res;
+        MessageStatusResponse res;
         res.timePoint = req.timePoint;
         stream->send(res);
     });
 }
 
-void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest req) {
-    strand.post([=]() -> void {
+/*void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest req) {
+    worker.post([=]() -> void {
         try {
-            auto session = getSession(stream);
+            auto player = streamToPlayer(stream);
 
-            const auto location = db.get<PlayerLocationData>(session->playerId);
+            const auto location = db.get<PlayerLocationData>(session->id);
             if (!location) {
-                EXCEPTION("Player: '{}' does not have location data", session->playerId);
+                EXCEPTION("Player: '{}' does not have location data", session->id);
             }
 
             const auto compoundId = fmt::format("{}/{}/{}", location.value().galaxyId, location.value().systemId,
@@ -232,7 +281,7 @@ void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest 
             // Lookup sector data
             const auto sector = db.get<SectorData>(compoundId);
             if (!sector) {
-                EXCEPTION("Player: '{}' is located in non existing sector {}", session->playerId, compoundId);
+                EXCEPTION("Player: '{}' is located in non existing sector {}", session->id, compoundId);
             }
 
             MessageSectorReadyResponse res;
@@ -244,8 +293,7 @@ void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest 
             if (found == sectors.end()) {
                 // Sector not found, create it
 
-                Log::i(CMP, "Sector: '{}' is not initialized and is needed by player '{}'", compoundId,
-                       session->playerId);
+                Log::i(CMP, "Sector: '{}' is not initialized and is needed by player '{}'", compoundId, session->id);
 
                 sectors.emplace_back();
                 auto* sectorPtr = &sectors.back();
@@ -279,32 +327,38 @@ void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest 
             Log::e(CMP, "Failed to handle sector satus request error: {}", e.what());
         }
     });
+}*/
+
+template <>
+PlayerLocationData Server::fetch<MessageFetchCurrentLocation>(const PlayerPtr& player,
+                                                              const MessageFetchCurrentLocation& req,
+                                                              std::string& next) {
+    return services.players.getLocation(player->getId());
 }
 
-template <typename T> void Server::handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req) {
+template <>
+std::vector<SystemData> Server::fetch<MessageFetchGalaxySystems>(const PlayerPtr& player,
+                                                                 const MessageFetchGalaxySystems& req,
+                                                                 std::string& next) {
+    return services.systems.getForPlayer(player->getId(), req.galaxyId, req.token, next);
+}
+
+template <typename RequestType> void Server::handleFetch(const Network::StreamPtr& stream, RequestType req) {
+    Log::i(CMP, "handleFetch id: {} token: {}", req.id, req.token);
+
     worker.post([=]() {
         try {
-            auto session = getSession(stream);
+            auto player = streamToPlayer(stream);
 
-            // Log::d(CMP, "Handle MessageFetchRequest<{}> start: {}", typeid(T).name(), req.start);
-
-            MessageFetchResponse<T> res;
+            typename RequestType::Response res{};
             res.id = req.id;
-            res.prefix = req.prefix;
-            try {
-                fetchResourceForPlayer(session, req.prefix, req.start, res.data, res.next);
-            } catch (std::exception& e) {
-                Log::e(CMP, "Failed to fetch resource for: '{}' player: '{}' error: {}", typeid(T).name(),
-                       session->playerId, e.what());
-                res.data.clear();
-                res.next.clear();
-                res.error = "Failed to fetch resource";
-            }
+            res.data = this->fetch<RequestType>(player, req, res.token);
             stream->send(res);
 
         } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle fetch request for: '{}' next: '{}' start: '{}'", typeid(T).name(), req.start,
-                   e.what());
+            BACKTRACE(CMP, e,
+                      fmt::format("Failed to handle fetch request for type: '{}' id: '{}' token: '{}'",
+                                  typeid(RequestType).name(), req.id, req.token));
         }
     });
 }

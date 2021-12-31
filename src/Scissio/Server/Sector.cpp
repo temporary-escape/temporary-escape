@@ -15,7 +15,7 @@ Sector::~Sector() {
     Log::i(CMP, "Stopped sector {}", compoundId);
 }
 
-void Sector::load(Generator& generator) {
+/*void Sector::load(GeneratorChain& generator) {
     const auto found = db.get<SectorData>(compoundId);
     if (!found) {
         EXCEPTION("Failed to get sector data for {}", compoundId);
@@ -23,12 +23,12 @@ void Sector::load(Generator& generator) {
 
     const auto& data = found.value();
     generator.populate(db, data.seed, scene, data.galaxyId, data.systemId, data.id);
-}
+}*/
 
 void Sector::update() {
-    for (auto& session : sessions) {
+    for (auto& player : players) {
         MessageEntitySync msg{};
-        for (auto& view : session.entities) {
+        for (auto& view : player.entities) {
             if (view.sync) {
                 msg.entities.push_back(view.ptr);
                 view.sync = false;
@@ -40,7 +40,7 @@ void Sector::update() {
         }
 
         if (!msg.entities.empty()) {
-            session.ptr->stream->send(msg);
+            player.ptr->send(msg);
         }
     }
 
@@ -56,11 +56,11 @@ void Sector::update() {
     sync.run();
 }
 
-void Sector::addSession(SessionPtr session) {
+void Sector::addPlayer(PlayerPtr player) {
     sync.post([=]() {
-        Log::i(CMP, "Adding player: '{}' to sector: '{}'", session->playerId, compoundId);
-        sessions.emplace_back();
-        sessions.back().ptr = session;
+        Log::i(CMP, "Adding player: '{}' to sector: '{}'", player->getId(), compoundId);
+        players.emplace_back();
+        players.back().ptr = player;
 
         const auto op = [](const EntityPtr& entity) {
             EntityView view;
@@ -69,17 +69,17 @@ void Sector::addSession(SessionPtr session) {
         };
 
         std::transform(scene.getEntities().begin(), scene.getEntities().end(),
-                       std::back_inserter(sessions.back().entities), op);
+                       std::back_inserter(players.back().entities), op);
 
         MessageSectorChanged msg{compoundId};
-        session->stream->send(msg);
+        player->send(msg);
     });
 }
 
 void Sector::eventEntityAdded(const EntityPtr& entity) {
-    for (auto& session : sessions) {
-        session.entities.emplace_back();
-        auto& view = session.entities.back();
+    for (auto& player : players) {
+        player.entities.emplace_back();
+        auto& view = player.entities.back();
         view.ptr = entity;
     }
 }

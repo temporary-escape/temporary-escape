@@ -11,17 +11,17 @@ class SCISSIO_API ShaderSkyboxPrefilter : public Shader {
 public:
     typedef VertexAttribute<0, Vector3> Position;
 
-    enum : int {
+    enum Samplers : int {
         SkyboxTexture = 0,
     };
 
     explicit ShaderSkyboxPrefilter(const Config& config);
     virtual ~ShaderSkyboxPrefilter() = default;
 
-    void setProjectionMatrix(const Matrix4& matrix);
-    void setViewMatrix(const Matrix4& matrix);
-    void setRoughness(float value);
-    void bindSkyboxTexture(const TextureCubemap& texture);
+    void setProjectionMatrix(const Matrix4& matrix) const;
+    void setViewMatrix(const Matrix4& matrix) const;
+    void setRoughness(float value) const;
+    void bindSkyboxTexture(const TextureCubemap& texture) const;
 
 private:
     int projectionMatrixUniform;

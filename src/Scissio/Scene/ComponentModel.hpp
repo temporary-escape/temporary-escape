@@ -7,7 +7,9 @@ namespace Scissio {
 class SCISSIO_API ComponentModel : public Component {
 public:
     ComponentModel() = default;
-    explicit ComponentModel(Object& object, AssetModelPtr model);
+    explicit ComponentModel(Object& object, AssetModelPtr model) : Component(object), model(std::move(model)) {
+    }
+
     virtual ~ComponentModel() = default;
 
     const AssetModelPtr& getModel() const {

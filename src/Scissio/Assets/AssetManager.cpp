@@ -87,8 +87,19 @@ AssetTexturePtr AssetManager::addTexture(const Manifest& mod, const Path& path, 
     }
 }
 
+AssetPlanetPtr AssetManager::addPlanet(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto planet = std::make_shared<AssetPlanet>(mod, baseName, path);
+        add(planet);
+        return planet;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add planet: '{}'", path.string());
+    }
+}
+
 void AssetManager::add(AssetPtr asset) {
-    Log::d(CMP, "Adding asset '{}/{}'", asset->getMod().name, asset->getName());
+    Log::i(CMP, "Adding asset '{}/{}'", asset->getMod().name, asset->getName());
     assets.insert(std::make_pair(asset->getName(), asset));
 }
 

@@ -14,14 +14,14 @@ ShaderSkyboxIrradiance::ShaderSkyboxIrradiance(const Config& config) : Shader("S
     viewMatrixUniform = getUniformLocation("view");
 }
 
-void ShaderSkyboxIrradiance::setProjectionMatrix(const glm::mat4x4& matrix) {
+void ShaderSkyboxIrradiance::setProjectionMatrix(const glm::mat4x4& matrix) const {
     setUniform(projectionMatrixUniform, matrix);
 }
 
-void ShaderSkyboxIrradiance::setViewMatrix(const Matrix4& matrix) {
+void ShaderSkyboxIrradiance::setViewMatrix(const Matrix4& matrix) const {
     setUniform(viewMatrixUniform, matrix);
 }
 
-void ShaderSkyboxIrradiance::bindSkyboxTexture(const TextureCubemap& texture) {
+void ShaderSkyboxIrradiance::bindSkyboxTexture(const TextureCubemap& texture) const {
     texture.bind(SkyboxTexture);
 }

@@ -21,6 +21,11 @@ void VertexBuffer::bufferData(const void* data, const size_t size, VertexBufferU
     glBufferData(GLenum(target), size, data, GLenum(usage));
 }
 
+void VertexBuffer::bufferSubData(const void* data, const size_t size, const size_t offset) {
+    bind();
+    glBufferSubData(GLenum(target), offset, size, data);
+}
+
 void VertexBuffer::bind() const {
     glBindBuffer(GLenum(target), ref);
 }

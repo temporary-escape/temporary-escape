@@ -24,3 +24,19 @@ std::vector<std::string> Scissio::split(const std::string& str, const std::strin
     }
     return strings;
 }
+
+std::string Scissio::intToRomanNumeral(int value) {
+    static const char* romans[] = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+    int values[] = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+
+    std::stringstream ss;
+
+    for (auto int i = 0; i < 13; ++i) {
+        while (value - values[i] >= 0) {
+            ss << romans[i];
+            value -= values[i];
+        }
+    }
+
+    return ss.str();
+}

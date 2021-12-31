@@ -2,9 +2,8 @@
 
 #include "../Scene/Scene.hpp"
 #include "../Utils/Worker.hpp"
-#include "Generator.hpp"
 #include "Messages.hpp"
-#include "Session.hpp"
+#include "Player.hpp"
 
 namespace Scissio {
 class Server;
@@ -19,16 +18,16 @@ public:
     explicit Sector(Server& server, Database& db, std::string compoundId);
     virtual ~Sector();
 
-    void load(Generator& generator);
+    // void load(GeneratorChain& generator);
     void update();
 
-    void addSession(SessionPtr session);
+    void addPlayer(PlayerPtr player);
 
     void eventEntityAdded(const EntityPtr& entity) override;
 
 private:
-    struct SessionView {
-        SessionPtr ptr;
+    struct PlayerView {
+        PlayerPtr ptr;
         std::vector<EntityView> entities;
     };
 
@@ -38,7 +37,7 @@ private:
 
     Scene scene;
 
-    std::list<SessionView> sessions;
+    std::list<PlayerView> players;
 
     asio::io_service sync;
 };

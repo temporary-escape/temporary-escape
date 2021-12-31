@@ -55,3 +55,15 @@ void Texture::generateMipmaps() {
 void Texture::texParameteri(const GLenum parameter, const GLint value) {
     glTexParameteri(target, parameter, value);
 }
+
+void Texture::setFiltering(TextureFiltering min, TextureFiltering mag) {
+    bind();
+    texParameteri(GL_TEXTURE_MIN_FILTER, GLenum(min));
+    texParameteri(GL_TEXTURE_MAG_FILTER, GLenum(mag));
+}
+
+void Texture::setWrapping(TextureWrapping s, TextureWrapping t) {
+    bind();
+    texParameteri(GL_TEXTURE_WRAP_S, GLenum(s));
+    texParameteri(GL_TEXTURE_WRAP_T, GLenum(t));
+}

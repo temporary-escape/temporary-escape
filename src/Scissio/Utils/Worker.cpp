@@ -41,15 +41,25 @@ void PeriodicWorker::run() {
     }
 }
 
-BackgroundWorker::BackgroundWorker()
-    : service(std::make_unique<asio::io_service>()), work(std::make_unique<asio::io_service::work>(*service)),
-      thread([this]() { service->run(); }) {
+BackgroundWorker::BackgroundWorker(size_t numThreads)
+    : service(std::make_unique<asio::io_service>()), work(std::make_unique<asio::io_service::work>(*service)) {
+
+    for (size_t i = 0; i < numThreads; i++) {
+        threads.emplace_back([this]() { service->run(); });
+    }
 }
 
 BackgroundWorker::~BackgroundWorker() {
-    if (thread.joinable()) {
+    stop();
+}
+
+void BackgroundWorker::stop() {
+    if (!threads.empty()) {
         work.reset();
-        thread.join();
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        threads.clear();
     }
 }
 

@@ -6,15 +6,15 @@
 #include <vector>
 
 namespace Scissio {
-class AbstractRequest {
+/*class AbstractRequest {
 public:
     virtual ~AbstractRequest() = default;
     virtual void complete() = 0;
 };
 
-using AbstractRequestPtr = std::shared_ptr<AbstractRequest>;
+using AbstractRequestPtr = std::shared_ptr<AbstractRequest>;*/
 
-template <typename T> class Request : public AbstractRequest {
+/*template <typename T> class Request : public AbstractRequest {
 public:
     using type = T;
 
@@ -51,5 +51,5 @@ private:
     std::function<void(std::vector<T>)> fnThen;
 };
 
-template <typename T> using RequestPtr = std::shared_ptr<Request<T>>;
+template <typename T> using RequestPtr = std::shared_ptr<Request<T>>;*/
 } // namespace Scissio

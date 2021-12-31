@@ -1,6 +1,9 @@
 #pragma once
 
+#include "ComponentCamera.hpp"
+#include "ComponentDirectionalLight.hpp"
 #include "ComponentModel.hpp"
+#include "ComponentPlanet.hpp"
 #include "ComponentSkybox.hpp"
 #include "Object.hpp"
 
@@ -10,7 +13,16 @@
 namespace Scissio {
 class Scene;
 
-using EntityComponentHelper = ComponentHelper<ComponentSkybox, ComponentModel>;
+// clang-format off
+using EntityComponentHelper = ComponentHelper<
+    // DO NOT CHANGE THE ORDER! ADD NEW COMPONENTS AT THE BOTTOM!
+    ComponentCamera,
+    ComponentSkybox,
+    ComponentModel,
+    ComponentDirectionalLight,
+    ComponentPlanet
+>;
+// clang-format on
 
 class SCISSIO_API Entity : public Object, public std::enable_shared_from_this<Entity> {
 public:
@@ -133,7 +145,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
             o.pack(v->getId());
             o.pack(v->getTransform());
 
-            o.pack_array(v->size());
+            o.pack_array(static_cast<uint32_t>(v->size()));
             for (const auto& ref : *v) {
                 o.pack(ref);
             }

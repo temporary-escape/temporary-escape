@@ -15,18 +15,18 @@ ShaderSkyboxPrefilter::ShaderSkyboxPrefilter(const Config& config) : Shader("Sha
     roughnessUniform = getUniformLocation("roughness");
 }
 
-void ShaderSkyboxPrefilter::setProjectionMatrix(const glm::mat4x4& matrix) {
+void ShaderSkyboxPrefilter::setProjectionMatrix(const glm::mat4x4& matrix) const {
     setUniform(projectionMatrixUniform, matrix);
 }
 
-void ShaderSkyboxPrefilter::setViewMatrix(const Matrix4& matrix) {
+void ShaderSkyboxPrefilter::setViewMatrix(const Matrix4& matrix) const {
     setUniform(viewMatrixUniform, matrix);
 }
 
-void ShaderSkyboxPrefilter::setRoughness(const float value) {
+void ShaderSkyboxPrefilter::setRoughness(const float value) const {
     setUniform(roughnessUniform, value);
 }
 
-void ShaderSkyboxPrefilter::bindSkyboxTexture(const TextureCubemap& texture) {
+void ShaderSkyboxPrefilter::bindSkyboxTexture(const TextureCubemap& texture) const {
     texture.bind(SkyboxTexture);
 }

@@ -6,7 +6,8 @@ namespace Scissio {
 class SCISSIO_API ComponentSkybox : public Component {
 public:
     ComponentSkybox() = default;
-    explicit ComponentSkybox(Object& object, uint64_t seed);
+    explicit ComponentSkybox(Object& object, uint64_t seed) : Component(object), seed(seed) {
+    }
     virtual ~ComponentSkybox() = default;
 
     uint64_t getSeed() const {

@@ -11,16 +11,16 @@ class SCISSIO_API ShaderSkyboxIrradiance : public Shader {
 public:
     typedef VertexAttribute<0, Vector3> Position;
 
-    enum : int {
+    enum Samplers : int {
         SkyboxTexture = 0,
     };
 
     explicit ShaderSkyboxIrradiance(const Config& config);
     virtual ~ShaderSkyboxIrradiance() = default;
 
-    void setProjectionMatrix(const Matrix4& matrix);
-    void setViewMatrix(const Matrix4& matrix);
-    void bindSkyboxTexture(const TextureCubemap& texture);
+    void setProjectionMatrix(const Matrix4& matrix) const;
+    void setViewMatrix(const Matrix4& matrix) const;
+    void bindSkyboxTexture(const TextureCubemap& texture) const;
 
 private:
     int projectionMatrixUniform;

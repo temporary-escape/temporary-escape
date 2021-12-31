@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Assets/AssetPlanet.hpp"
 #include "../Utils/Msgpack.hpp"
 #include "Database.hpp"
 
@@ -25,14 +26,6 @@ struct PlayerLocationData {
 };
 
 SCHEMA_DEFINE(PlayerLocationData);
-
-struct WorldData {
-    uint64_t seed = 0;
-
-    MSGPACK_DEFINE(seed);
-};
-
-SCHEMA_DEFINE(WorldData);
 
 struct GalaxyData {
     std::string id;
@@ -83,4 +76,17 @@ struct SectorData {
 };
 
 SCHEMA_DEFINE_INDEXED(SectorData, name);
+
+struct SectorPlanetData {
+    std::string id;
+    std::string name;
+    bool isMoon{false};
+    std::optional<std::string> planet{std::nullopt};
+    Vector2 pos;
+    AssetPlanetPtr asset;
+
+    MSGPACK_DEFINE(id, name, isMoon, planet, pos, asset);
+};
+
+SCHEMA_DEFINE(SectorPlanetData);
 } // namespace Scissio

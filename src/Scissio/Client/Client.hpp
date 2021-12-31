@@ -13,30 +13,96 @@
 #include "Stats.hpp"
 
 namespace Scissio {
+class AbstractRequest {
+public:
+    virtual ~AbstractRequest() = default;
+    // virtual void complete() = 0;
+};
+
+using AbstractRequestPtr = std::shared_ptr<AbstractRequest>;
+
+template <typename Message, typename T = typename Message::Response::ItemType> class Request : public AbstractRequest {
+public:
+    using Callback = std::function<void(T)>;
+
+    explicit Request(Message msg, Callback&& callback) : msg(std::move(msg)), callback(std::move(callback)) {
+    }
+
+    ~Request() override = default;
+
+    void complete() {
+        if (!callback) {
+            throw std::runtime_error("Request has no callback defined");
+        }
+        callback(std::move(item));
+    }
+
+    void append(T item) {
+        this->item = std::move(item);
+    }
+
+    Message& getMessage() {
+        return msg;
+    }
+
+private:
+    Message msg;
+    Callback callback;
+    T item;
+};
+
+template <typename Message, typename T> class Request<Message, std::vector<T>> : public AbstractRequest {
+public:
+    using Callback = std::function<void(std::vector<T>)>;
+
+    explicit Request(Message msg, Callback&& callback) : msg(std::move(msg)), callback(std::move(callback)) {
+    }
+
+    ~Request() override = default;
+
+    void complete() {
+        if (!callback) {
+            throw std::runtime_error("Request has no callback defined");
+        }
+        callback(std::move(items));
+    }
+
+    void append(std::vector<T> chunk) {
+        items.reserve(items.size() + chunk.size());
+        for (auto& i : chunk) {
+            items.push_back(std::move(i));
+        }
+    }
+
+    Message& getMessage() {
+        return msg;
+    }
+
+private:
+    Message msg;
+    Callback callback;
+    std::vector<T> items;
+};
+
 class SCISSIO_API Client {
 public:
     explicit Client(Config& config, const std::string& address, int port);
     virtual ~Client();
 
     Future<void> login(const std::string& password);
-    RequestPtr<SystemData> fetchSystems(const std::string& galaxyId) {
-        return fetch<SystemData>(galaxyId);
-    }
 
-    template <typename T> RequestPtr<T> fetch(const std::string& prefix) {
-        auto request = std::make_shared<Request<T>>(nextRequestId.fetch_add(1));
+    template <typename RequestType, typename Callback = typename Request<RequestType>::Callback>
+    void fetch(RequestType msg, Callback fn) {
+        const auto id = requestsNextId.fetch_add(1);
+        msg.id = id;
+        const auto req = std::make_shared<Request<RequestType>>(std::move(msg), std::move(fn));
 
         {
             std::lock_guard<std::mutex> lock{requestsMutex};
-            requests.insert(std::make_pair(request->getId(), request));
+            requests.insert(std::make_pair(id, req));
         }
 
-        MessageFetchRequest<T> req;
-        req.id = request->getId();
-        req.prefix = prefix;
-        network->send(req);
-
-        return request;
+        send(req->getMessage());
     }
 
     void eventPacket(Network::Packet packet);
@@ -55,6 +121,11 @@ public:
 
     Stats& getStats() {
         return stats;
+    }
+
+    template <typename T> void send(const T& message) {
+        network->send(message);
+        ++stats.network.packetsSent;
     }
 
 private:
@@ -82,13 +153,13 @@ private:
         Client& client;
     };
 
+    void handle(MessageServerHello res);
     void handle(MessageLoginResponse res);
-    void handle(MessagePingResponse res);
-    void handle(MessageLatencyResponse res);
-    void handle(MessageSectorReadyResponse res);
+    void handle(MessageStatusResponse res);
     void handle(MessageSectorChanged res);
     void handle(MessageEntitySync res);
-    template <typename T> void handle(MessageFetchResponse<T> res);
+    template <typename Message, typename T = typename Message::Response::ItemType>
+    void handleFetch(MessageFetchResponse<T> res);
 
     static std::atomic<uint64_t> nextRequestId;
 
@@ -98,13 +169,13 @@ private:
     uint64_t secret;
     std::string playerId;
 
-    Promise<void> connectPromise;
-    Promise<void> loginPromise;
+    Promise<void> connected;
 
     asio::io_service sync;
     PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
     // BackgroundWorker background;
 
+    std::atomic<uint64_t> requestsNextId;
     std::mutex requestsMutex;
     std::unordered_map<uint64_t, AbstractRequestPtr> requests;
 

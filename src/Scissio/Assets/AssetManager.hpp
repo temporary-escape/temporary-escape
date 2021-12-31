@@ -5,6 +5,7 @@
 #include "Asset.hpp"
 #include "AssetFontFamily.hpp"
 #include "AssetModel.hpp"
+#include "AssetPlanet.hpp"
 #include "TextureCompressor.hpp"
 #include <functional>
 #include <queue>
@@ -53,6 +54,7 @@ public:
     AssetFontFacePtr addFontFace(const Manifest& mod, const Path& path);
     AssetModelPtr addModel(const Manifest& mod, const Path& path);
     AssetTexturePtr addTexture(const Manifest& mod, const Path& path, TextureType type);
+    AssetPlanetPtr addPlanet(const Manifest& mod, const Path& path);
     AssetLoadQueue getLoadQueue();
 
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);

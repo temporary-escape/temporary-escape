@@ -7,7 +7,10 @@ namespace Scissio {
 class ComponentParticleEmitter : public Component {
 public:
     ComponentParticleEmitter() = default;
-    explicit ComponentParticleEmitter(Object& object, AssetTexturePtr texture);
+    explicit ComponentParticleEmitter(Object& object, AssetTexturePtr texture)
+        : Component(object), mesh{NO_CREATE}, texture{std::move(texture)} {
+    }
+
     virtual ~ComponentParticleEmitter() = default;
 
 private:

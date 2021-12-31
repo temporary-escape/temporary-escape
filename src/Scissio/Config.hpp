@@ -24,5 +24,15 @@ struct Config {
     std::string guiFontFaceRegular = "iosevka-aile-regular";
     std::string guiFontFaceBold = "iosevka-aile-bold";
     int guiFontSize = 18;
+
+    struct GeneratorOptions {
+        int totalSystems{2000};
+        float galaxyWidth{300.0f};
+        float regionDistance{50.0f};
+        int systemPlanetsMin{2};
+        int systemPlanetsMax{7};
+        int planetMoonsMin{0};
+        int planetMoonsMax{3};
+    } generator;
 };
 } // namespace Scissio

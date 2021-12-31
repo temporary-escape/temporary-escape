@@ -40,8 +40,10 @@ private:
 
 class BackgroundWorker {
 public:
-    BackgroundWorker();
+    explicit BackgroundWorker(size_t numTheads);
     ~BackgroundWorker();
+
+    void stop();
 
     template <typename Fn> void post(Fn&& fn) {
         service->post(std::forward<Fn>(fn));
@@ -49,7 +51,7 @@ public:
 
     std::unique_ptr<asio::io_service> service;
     std::unique_ptr<asio::io_service::work> work;
-    std::thread thread;
+    std::vector<std::thread> threads;
 };
 
 class Worker {

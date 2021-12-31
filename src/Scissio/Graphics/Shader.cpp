@@ -5,6 +5,8 @@
 #include <fstream>
 #include <glm/mat4x4.hpp>
 
+#define CMP "Shader"
+
 using namespace Scissio;
 
 static const char* SHADER_VERSION = "#version 330 core\n";
@@ -68,15 +70,27 @@ void Shader::addGeometryShader(const std::string& source) {
 }
 
 void Shader::addVertexShader(const Path& source) {
-    addVertexShader(loadFile(source));
+    try {
+        addVertexShader(loadFile(source));
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to compile vertex shader from '{}'", source.string());
+    }
 }
 
 void Shader::addFragmentShader(const Path& source) {
-    addFragmentShader(loadFile(source));
+    try {
+        addFragmentShader(loadFile(source));
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to compile fragment shader from '{}'", source.string());
+    }
 }
 
 void Shader::addGeometryShader(const Path& source) {
-    addGeometryShader(loadFile(source));
+    try {
+        addGeometryShader(loadFile(source));
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to compile geometry shader from '{}'", source.string());
+    }
 }
 
 void Shader::link() {
@@ -181,7 +195,7 @@ void Shader::draw(const Mesh& mesh) const {
 GLint Shader::getUniformLocation(const std::string& location) const {
     const auto v = glGetUniformLocation(program, location.c_str());
     if (v == -1) {
-        Log::w("Shader {} uniform location {} not found", name, location);
+        Log::w(CMP, "Shader {} uniform location {} not found", name, location);
     }
     return v;
 }
@@ -189,7 +203,7 @@ GLint Shader::getUniformLocation(const std::string& location) const {
 GLint Shader::getUniformBlockIndex(const std::string& location) const {
     const auto v = glGetUniformBlockIndex(program, location.c_str());
     if (v == -1) {
-        Log::w("Shader {} uniform block index {} not found", name, location);
+        Log::w(CMP, "Shader {} uniform block index {} not found", name, location);
     }
     return v;
 }

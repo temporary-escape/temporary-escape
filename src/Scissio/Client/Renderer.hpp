@@ -5,47 +5,79 @@
 #include "../Scene/Camera.hpp"
 #include "../Scene/ComponentModel.hpp"
 #include "../Scene/Scene.hpp"
+#include "../Shaders/ShaderBrdf.hpp"
 #include "../Shaders/ShaderModel.hpp"
+#include "../Shaders/ShaderPbr.hpp"
+#include "../Shaders/ShaderPlanetAtmosphere.hpp"
+#include "../Shaders/ShaderPlanetSurface.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
-#include "Client.hpp"
 #include "SkyboxRenderer.hpp"
-#include "WidgetDebugStats.hpp"
 
 namespace Scissio {
 class Renderer {
 public:
-    Renderer(Canvas2D& canvas, const Config& config, AssetManager& assetManager, Client& client);
+    static constexpr inline size_t maxDirectionalLights = 4;
+
+    Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetManager);
     ~Renderer();
 
-    void render(const Vector2i& viewport);
+    void render(const Vector2i& viewport, Scene& scene);
+    void reloadShaders();
 
 private:
     struct CameraUniform {
         Matrix4 transformationProjectionMatrix;
+        Matrix4 viewProjectionInverseMatrix;
+        Vector2i viewport;
+        char padding0[sizeof(int) * 2];
+        Vector3 eyesPos;
+        char padding1[sizeof(float) * 1];
+    };
+
+    struct DirectionalLightsUniform {
+        Vector4 colors[maxDirectionalLights];
+        Vector4 directions[maxDirectionalLights];
+        int count{0};
     };
 
     void createSkybox(uint64_t seed);
-    void renderSceneSkybox(const Vector2i& viewport, Scene& scene);
+    void createBrdfTexture();
+    void createFullScreenMesh();
+    void createPlanetMesh();
+    void updateLights(Scene& scene);
+    void updateCameras(const Vector2i& viewport, Scene& scene);
+    void renderPbr();
+    void renderSceneBackground(const Vector2i& viewport, Scene& scene);
     void renderScenePbr(const Vector2i& viewport, Scene& scene);
     void renderSceneForward(const Vector2i& viewport, Scene& scene);
-    void renderComponent(ComponentSkybox& component);
-    void renderComponent(ComponentModel& component);
+    void renderComponentSkybox(ComponentSkybox& component);
+    void renderComponentPlanetSurface(ComponentPlanet& component);
+    void renderComponentPlanetAtmosphere(ComponentPlanet& component);
+    void renderComponentModel(ComponentModel& component);
     void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment);
 
+    const Config& config;
     Canvas2D& canvas;
-    GuiContext gui;
-    Client& client;
+    // GuiContext gui;
+    // Client& client;
     SkyboxRenderer skyboxRenderer;
 
-    WidgetDebugStats widgetDebugStats;
+    // WidgetDebugStats widgetDebugStats;
 
     struct Shaders {
         ShaderSkybox skybox;
         ShaderModel model;
+        ShaderBrdf brdf;
+        ShaderPbr pbr;
+        ShaderPlanetSurface planetSurface;
+        ShaderPlanetAtmosphere planetAtmosphere;
     } shaders;
 
-    Camera camera;
-    VertexBuffer cameraUbo;
+    VertexBuffer cameraUbo{NO_CREATE};
+    VertexBuffer cameraZeroPosUbo{NO_CREATE};
+    VertexBuffer directionalLightsUbo{NO_CREATE};
+
+    Mesh fullScreenMesh{NO_CREATE};
 
     Texture2D defaultBaseColorTexture;
     Texture2D defaultNormalTexture;
@@ -59,10 +91,10 @@ private:
         Framebuffer fbo;
         bool fboInit{false};
         Texture2D fboDepth;
-        Texture2D fboColorRoughness;
-        Texture2D fboEmissiveMetallic;
-        Texture2D fboNormalAmbient;
-        Texture2D fboObjectId;
+        Texture2D fboColorAlpha;
+        Texture2D fboEmissive;
+        Texture2D fboNormal;
+        Texture2D fboMetallicRoughnessAmbient;
     } gBuffer;
 
     struct SkyboxData {
@@ -70,5 +102,14 @@ private:
         uint64_t seed{0};
         Mesh mesh{NO_CREATE};
     } skybox;
+
+    struct BrdfData {
+        Texture2D texture{NO_CREATE};
+    } brdf;
+
+    struct PlanetData {
+        Mesh mesh{NO_CREATE};
+        AssetTexturePtr surfaceTexture;
+    } planet;
 };
 } // namespace Scissio

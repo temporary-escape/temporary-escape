@@ -43,6 +43,8 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
         iterateDir(dir / Path("textures"), {".png"},
                    [&](const Path& path) { assetManager.addTexture(manifest, path, TextureType::Generic); });
 
+        iterateDir(dir / Path("planets"), {".xml"}, [&](const Path& path) { assetManager.addPlanet(manifest, path); });
+
         /*iterateDir(dir / Path("icons"), {".png"},
                    [&](const Path& path) { assetManager.load<IconAtlas>(manifest, path); });
 

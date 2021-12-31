@@ -26,6 +26,8 @@ public:
     void bind(GLuint location) const;
     void generateMipmaps();
     void texParameteri(GLenum parameter, GLint value);
+    void setFiltering(TextureFiltering min, TextureFiltering mag);
+    void setWrapping(TextureWrapping s, TextureWrapping t);
 
     GLuint getHandle() const {
         return handle;

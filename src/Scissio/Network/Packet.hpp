@@ -99,7 +99,12 @@ template <typename T> struct MessageUnpacker {
     };                                                                                                                 \
     template <> struct Network::Details::MessageUnpacker<T> {                                                          \
         static T unpack(const Network::Packet& packet) {                                                               \
-            return Network::Details::unpack<T>(packet.data);                                                           \
+            try {                                                                                                      \
+                return Network::Details::unpack<T>(packet.data);                                                       \
+            } catch (...) {                                                                                            \
+                debugMessageContents(#T, packet);                                                                      \
+                EXCEPTION_NESTED("Failed to unpack message of type '{}'", #T);                                         \
+            }                                                                                                          \
         }                                                                                                              \
     };
 
@@ -109,6 +114,11 @@ template <typename T> constexpr uint64_t getMessageId() {
 
 template <typename T> T unpack(const Network::Packet& packet) {
     return Details::MessageUnpacker<T>::unpack(packet);
+}
+
+static inline void debugMessageContents(const char* type, const Network::Packet& packet) {
+    const auto json = msgpackToJson(packet.data);
+    Log::w("Packet", "Packet of type {} failed to unpack, contents: {}", type, json);
 }
 
 template <typename... Args> class MessageDispatcher {

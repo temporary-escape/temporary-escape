@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Utils/Xml.hpp"
 #include <cstdint>
 #include <glad/glad.h>
 
@@ -69,4 +70,23 @@ enum class FramebufferAttachment : GLenum {
     DepthStencil = GL_DEPTH_STENCIL_ATTACHMENT,
     Stencil = GL_STENCIL_ATTACHMENT,
 };
+
+enum class TextureWrapping : GLenum {
+    ClampToEdge = GL_CLAMP_TO_EDGE,
+    Repeat = GL_REPEAT,
+};
+
+enum class TextureFiltering : GLenum {
+    Linear = GL_LINEAR,
+    Nearest = GL_NEAREST,
+    LinearMipMapLinear = GL_LINEAR_MIPMAP_LINEAR,
+    LinearMipMapNearest = GL_LINEAR_MIPMAP_NEAREST,
+    NearestMipMapLinear = GL_NEAREST_MIPMAP_LINEAR,
+    NearestMipMapNearest = GL_NEAREST_MIPMAP_NEAREST,
+};
+
+namespace Xml {
+template <> struct Adaptor<TextureWrapping> { static void convert(const Xml::Node& n, TextureWrapping& v); };
+template <> struct Adaptor<TextureFiltering> { static void convert(const Xml::Node& n, TextureFiltering& v); };
+} // namespace Xml
 } // namespace Scissio

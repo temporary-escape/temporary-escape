@@ -11,6 +11,7 @@
 namespace Scissio {
 extern std::vector<std::string> SCISSIO_API splitLast(const std::string& str, const std::string& delim);
 extern std::vector<std::string> SCISSIO_API split(const std::string& str, const std::string& delim);
+extern std::string SCISSIO_API intToRomanNumeral(const int value);
 
 template <typename T> extern std::string join(const std::string& joiner, const std::vector<T>& items) {
     std::stringstream ss;

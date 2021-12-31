@@ -2,29 +2,44 @@
 
 #include "../Assets/AssetManager.hpp"
 #include "../Config.hpp"
+#include "../Future.hpp"
 #include "../Library.hpp"
 #include "../Network/NetworkServer.hpp"
 #include "../Utils/Worker.hpp"
 #include "Database.hpp"
-#include "Generator.hpp"
 #include "Messages.hpp"
+#include "Player.hpp"
 #include "Schemas.hpp"
 #include "Sector.hpp"
-#include "Session.hpp"
+#include "Services/ServiceGalaxies.hpp"
+#include "Services/ServicePlayers.hpp"
+#include "Services/ServiceRegions.hpp"
+#include "Services/ServiceSectors.hpp"
+#include "Services/ServiceSystems.hpp"
 
 namespace Scissio {
 class SCISSIO_API Server {
 public:
-    explicit Server(const Config& config, AssetManager& assetManager, Database& db, Generator& generator);
+    struct Services {
+        explicit Services(const Config& config, AssetManager& assetManager, Database& db);
+
+        ServiceGalaxies galaxies;
+        ServiceRegions regions;
+        ServiceSystems systems;
+        ServiceSectors sectors;
+        ServicePlayers players;
+    };
+
+    explicit Server(const Config& config, AssetManager& assetManager, Database& db);
     virtual ~Server();
 
-    void tick();
+    // void tick();
 
     void eventConnect(const Network::StreamPtr& stream);
     void eventDisconnect(const Network::StreamPtr& stream);
     void eventPacket(const Network::StreamPtr& stream, Network::Packet packet);
 
-    std::vector<SessionPtr> getSessions();
+    std::vector<PlayerPtr> getPlayers();
 
 private:
     class EventListener : public Network::EventListener {
@@ -55,36 +70,37 @@ private:
     };
 
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
-    void handle(const Network::StreamPtr& stream, MessagePingRequest req);
-    void handle(const Network::StreamPtr& stream, MessageLatencyRequest req);
-    void handle(const Network::StreamPtr& stream, MessageSectorReadyRequest req);
-    template <typename T> void handle(const Network::StreamPtr& stream, MessageFetchRequest<T> req);
+    void handle(const Network::StreamPtr& stream, MessageStatusRequest req);
+    template <typename RequestType> void handleFetch(const Network::StreamPtr& stream, RequestType req);
 
-    template <typename T>
-    void fetchResourceForPlayer(const SessionPtr& session, const std::string& prefix, const std::string& start,
-                                std::vector<T>& out, std::string& next);
+    template <typename RequestType>
+    typename RequestType::Response::ItemType fetch(const PlayerPtr& player, const RequestType& req, std::string& next);
 
-    SessionPtr getSession(const Network::StreamPtr& stream, bool check = true);
+    PlayerPtr streamToPlayer(const Network::StreamPtr& stream, bool check = true);
 
     const Config& config;
     AssetManager& assetManager;
     Database& db;
-    Generator& generator;
+    Services services;
+    Promise<void> loaded;
 
     Network::MessageDispatcher<const Network::StreamPtr&> dispatcher;
 
-    std::thread tickThread;
-    std::atomic_bool tickFlag;
+    // std::thread tickThread;
+    // std::atomic_bool tickFlag;
 
-    Worker worker;
-    Worker::Strand strand;
+    // Worker worker;
+    // Worker::Strand strand;
+    BackgroundWorker worker;
     BackgroundWorker loader;
 
     std::unique_ptr<EventListener> listener;
     std::shared_ptr<Network::Server> network;
 
-    std::shared_mutex sessionsMutex;
-    std::unordered_map<Network::StreamPtr, SessionPtr> sessions;
+    struct PlayersInternal {
+        std::shared_mutex mutex;
+        std::unordered_map<Network::StreamPtr, PlayerPtr> map;
+    } players;
 
     std::vector<SectorReference> sectors;
 };

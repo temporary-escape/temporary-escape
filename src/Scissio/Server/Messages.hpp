@@ -7,6 +7,14 @@
 #include <chrono>
 
 namespace Scissio {
+struct MessageServerHello {
+    std::string serverName;
+
+    MSGPACK_DEFINE(serverName);
+};
+
+REGISTER_MESSAGE(MessageServerHello);
+
 struct MessageLoginRequest {
     uint64_t secret;
     std::string name;
@@ -26,53 +34,21 @@ struct MessageLoginResponse {
 
 REGISTER_MESSAGE(MessageLoginResponse);
 
-struct MessagePingRequest {
+struct MessageStatusRequest {
     std::chrono::system_clock::time_point timePoint;
 
     MSGPACK_DEFINE(timePoint);
 };
 
-REGISTER_MESSAGE(MessagePingRequest);
+REGISTER_MESSAGE(MessageStatusRequest);
 
-struct MessagePingResponse {
+struct MessageStatusResponse {
     std::chrono::system_clock::time_point timePoint;
 
     MSGPACK_DEFINE(timePoint);
 };
 
-REGISTER_MESSAGE(MessagePingResponse);
-
-struct MessageLatencyRequest {
-    std::chrono::system_clock::time_point timePoint;
-
-    MSGPACK_DEFINE(timePoint);
-};
-
-REGISTER_MESSAGE(MessageLatencyRequest);
-
-struct MessageLatencyResponse {
-    std::chrono::system_clock::time_point timePoint;
-
-    MSGPACK_DEFINE(timePoint);
-};
-
-REGISTER_MESSAGE(MessageLatencyResponse);
-
-struct MessageSectorReadyRequest {
-    bool dummy{false};
-
-    MSGPACK_DEFINE(dummy);
-};
-
-REGISTER_MESSAGE(MessageSectorReadyRequest);
-
-struct MessageSectorReadyResponse {
-    bool ready{false};
-
-    MSGPACK_DEFINE(ready);
-};
-
-REGISTER_MESSAGE(MessageSectorReadyResponse);
+REGISTER_MESSAGE(MessageStatusResponse);
 
 struct MessageSectorChanged {
     std::string compoundId;
@@ -90,7 +66,42 @@ struct MessageEntitySync {
 
 REGISTER_MESSAGE(MessageEntitySync);
 
-template <typename T> struct MessageFetchRequest {
+struct MessageFetch {
+    uint64_t id{0};
+    std::string token;
+
+    MSGPACK_DEFINE(id, token);
+};
+
+template <typename T> struct MessageFetchResponse : MessageFetch {
+    using ItemType = T;
+
+    ItemType data;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), data);
+};
+
+struct MessageFetchGalaxySystems : MessageFetch {
+    using Response = MessageFetchResponse<std::vector<SystemData>>;
+
+    std::string galaxyId;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), galaxyId);
+};
+
+REGISTER_MESSAGE(MessageFetchGalaxySystems);
+REGISTER_MESSAGE(MessageFetchGalaxySystems::Response);
+
+struct MessageFetchCurrentLocation : MessageFetch {
+    using Response = MessageFetchResponse<PlayerLocationData>;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch));
+};
+
+REGISTER_MESSAGE(MessageFetchCurrentLocation);
+REGISTER_MESSAGE(MessageFetchCurrentLocation::Response);
+
+/*template <typename T> struct MessageFetchRequest {
     uint64_t id = 0;
     std::string prefix;
     std::string start;
@@ -109,5 +120,5 @@ template <typename T> struct MessageFetchResponse {
 };
 
 REGISTER_MESSAGE(MessageFetchRequest<SystemData>);
-REGISTER_MESSAGE(MessageFetchResponse<SystemData>);
+REGISTER_MESSAGE(MessageFetchResponse<SystemData>);*/
 } // namespace Scissio

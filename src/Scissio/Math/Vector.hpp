@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/geometric.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>

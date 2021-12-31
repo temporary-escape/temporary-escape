@@ -22,6 +22,7 @@ public:
     VertexBuffer& operator=(VertexBuffer&& other) noexcept;
 
     void bufferData(const void* data, size_t size, VertexBufferUsage usage);
+    void bufferSubData(const void* data, size_t size, size_t offset);
     void bind() const;
     void bindBufferBase(const GLuint index) const;
 

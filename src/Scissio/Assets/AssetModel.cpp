@@ -328,10 +328,6 @@ void AssetModel::load(AssetManager& assetManager) {
     }
 }
 
-template <> void Xml::Node::convert<AssetModelPtr>(AssetModelPtr& value) const {
-    value = AssetManager::singleton().find<AssetModel>(this->asString());
-}
-
 std::shared_ptr<AssetModel> AssetModel::from(const std::string& name) {
     return AssetManager::singleton().find<AssetModel>(name);
 }
