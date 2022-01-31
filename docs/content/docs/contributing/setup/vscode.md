@@ -42,17 +42,17 @@ You will need to set some CMake/C++ related settings in VSCode for this project.
 
 Press \[Ctrl\] + \[P\] and type `> cmake kit`. It should bring up the following options. Choose `CMake: Select a kit`.
 
-![CMake: Select a kit](/images/contributing/setup/vscode-cmake-kit-select.png)
+{{< image url="contributing/setup/vscode-cmake-kit-select.png" >}}
 
 And then select Clang
 
-![Choose Clang](/images/contributing/setup/vscode-cmake-kit-clang.png)
+{{< image url="contributing/setup/vscode-cmake-kit-clang.png" >}}
 
 ## 5. Configure
 
 Press \[Ctrl\] + \[P\] and type `> cmake configure` and select the first option. This may take few minutes to complete. CMake and vcpkg will download and install all the required C++ libraries.
 
-![CMake: Configure](/images/contributing/setup/vscode-cmake-configure.png)
+{{< image url="contributing/setup/vscode-cmake-configure.png" >}}
 
 After a successful configuration you should see the following in the "Output" window:
 
@@ -66,15 +66,15 @@ After a successful configuration you should see the following in the "Output" wi
 
 Press \[Ctrl\] + \[P\] and type `> cmake set build target`.
 
-![CMake: Set Build Target](/images/contributing/setup/vscode-cmake-build-target-select.png)
+{{< image url="contributing/setup/vscode-cmake-build-target-select.png" >}}
 
 Choose `TemporaryEscapeMain` from the selection.
 
-![TemporaryEscapeMain](/images/contributing/setup/vscode-cmake-build-target.png)
+{{< image url="contributing/setup/vscode-cmake-build-target.png" >}}
 
 And finally do the same thing for `> cmake build`.
 
-![CMake: Build](/images/contributing/setup/vscode-cmake-build.png)
+{{< image url="contributing/setup/vscode-cmake-build.png" >}}
 
 You should see the following in the "Output" window:
 
@@ -142,16 +142,16 @@ Additionally, create `tasks.json` within the same `.vscode` folder with the foll
 
 Now you can simply run it through the GUI by selecting Run -> Start Debugging from the top main bar, or by pressing \[Ctrl\] + \[P\] and selecting `> Debug: Start Debugging`.
 
-![Top menu bar -> Run -> Start Debugging](/images/contributing/setup/vscode-start-debugging.png)
+{{< image url="contributing/setup/vscode-start-debugging.png" >}}
 
 This will automatically compile any changes you have made. After the compilation is done, the game should open and you should see a new window. Once you close the game, you should see "has exited with code 0" in the "Debug Console".
 
 Here is an example of "Debug Console" where you would find stacktraces if the game would crash.
 
-![Debug Console](/images/contributing/setup/vscode-debug-console.png)
+{{< image url="contributing/setup/vscode-debug-console.png" >}}
 
 Switch to the "Terminal" to see the logging output.
 
-![Terminal logs](/images/contributing/setup/vscode-terminal-logs.png)
+{{< image url="contributing/setup/vscode-terminal-logs.png" >}}
 
 That's all.

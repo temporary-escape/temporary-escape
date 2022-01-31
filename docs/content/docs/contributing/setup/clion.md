@@ -25,7 +25,7 @@ git submodule update --init
 
 Launch CLion and open the cloned repository.
 
-![CLion Open](/images/contributing/setup/clion-open.png)
+{{< image url="contributing/setup/clion-open.png" >}}
 
 ## 4. Open Project Wizard
 
@@ -39,42 +39,42 @@ Set the **"CMake Options"** to the following below. Your `/opt/vcpkg` may differ
 -G Ninja -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
 ```
 
-![CLion Open](/images/contributing/setup/clion-open-project-wizard.png)
+{{< image url="contributing/setup/clion-open-project-wizard.png" >}}
 
 Next, select the "Manage toolchains..." option.
 
-![CLion Manage Toolchains Link](/images/contributing/setup/clion-manage-toolchains-link.png)
+{{< image url="contributing/setup/clion-manage-toolchains-link.png" >}}
 
 In the new window, select Clang as the C and C++ compiler. If you are on Linux and don't know where Clang is, open a terminal and type `which clang`. Your Clang should be located at `/usr/bin/clang` and `/usr/bin/clang++`.
 
-![CLion Manage Toolchains](/images/contributing/setup/clion-manage-toolchains.png)
+{{< image url="contributing/setup/clion-manage-toolchains.png" >}}
 
 Click "OK" and then "OK" to close the wizard. CLion should now automatically configure the project.
 
 After the configuration is done, you should see something like this in the "CMake" window at the bottom.
 
-![CLion CMake output](/images/contributing/setup/clion-cmake-output.png)
+{{< image url="contributing/setup/clion-cmake-output.png" >}}
 
 ## 5. Launching
 
 To launch the game you must select `TemporaryEscapeMain` target at the top menu bar.
 
-![Debug Targets](/images/contributing/setup/clion-select-target.png)
+{{< image url="contributing/setup/clion-select-target.png" >}}
 
 Next, in the same menu, select the "Edit Configurations" option.
 
-![Targets -> Edit Configurations](/images/contributing/setup/clion-edit-configurations.png)
+{{< image url="contributing/setup/clion-edit-configurations.png" >}}
 
 In the new window, for TemporaryEscapeMain application, set `--root $PROJECT_DIR$` as the program argument. The `--root` argument is needed because by default the `TemporaryEscape` executable expects `assets` and `shaders` folders to be located exactly 1 folder above, which is not the case during the development work. 
 
 Click "Apply" and "Ok".
 
-![TemporaryEscapeMain run configuration](/images/contributing/setup/clion-run-configurations.png)
+{{< image url="contributing/setup/clion-run-configurations.png" >}}
 
 And then press the "play" button.
 
-![Play Button](/images/contributing/setup/clion-target-run.png)
+{{< image url="contributing/setup/clion-target-run.png" >}}
 
 CLion will now compile and run the game. You should see log output from the game in the "Run" window at the bottom of the IDE. Example below.
 
-![CLion run output](/images/contributing/setup/clion-run-output.png)
+{{< image url="contributing/setup/clion-run-output.png" >}}

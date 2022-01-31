@@ -89,7 +89,7 @@ jobs:
               -B ./build \
               -G "${{ matrix.generator }}" ${{ matrix.arch }} \
               -DCMAKE_INSTALL_PREFIX=./install \
-              -CMAKE_MAKE_PROGRAM=$(which ninja) \
+              -DCMAKE_MAKE_PROGRAM=$(which ninja) \
               -DCMAKE_BUILD_TYPE=MinSizeRel \
               -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
               -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
@@ -104,6 +104,15 @@ jobs:
               -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
               .
           fi
+
+      - name: Archive CMake output
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: ctest-log
+          path: |
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
 
       - name: Compile Game
         shell: bash
