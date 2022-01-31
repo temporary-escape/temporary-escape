@@ -46,9 +46,11 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo apt-get install -y ninja-build clang
+            sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev
+            which ninja
           elif [ "{{ matrix.os }}" == "macos-latest" ]; then
             brew install ninja llvm
+            which ninja
           fi
 
       - name: Configure Vcpkg
@@ -62,6 +64,10 @@ jobs:
           else
             ./bootstrap-vcpkg.sh
           fi
+
+      - name: CMake version check
+        shell: bash
+        run: cmake --version
 
       - name: Configure
         shell: bash
@@ -77,14 +83,27 @@ jobs:
             export CC=/usr/local/bin/clang
             export CXX=/usr/local/bin/clang++
           fi
-          cmake \
-            -B ./build \
-            -G "${{ matrix.generator }}" ${{ matrix.arch }} \
-            -DCMAKE_INSTALL_PREFIX=./install \
-            -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-            .
+
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ] || [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cmake \
+              -B ./build \
+              -G "${{ matrix.generator }}" ${{ matrix.arch }} \
+              -DCMAKE_INSTALL_PREFIX=./install \
+              -CMAKE_MAKE_PROGRAM=$(which ninja) \
+              -DCMAKE_BUILD_TYPE=MinSizeRel \
+              -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+              -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+              .
+          else
+            cmake \
+              -B ./build \
+              -G "${{ matrix.generator }}" ${{ matrix.arch }} \
+              -DCMAKE_INSTALL_PREFIX=./install \
+              -DCMAKE_BUILD_TYPE=MinSizeRel \
+              -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+              -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+              .
+          fi
 
       - name: Compile Game
         shell: bash
