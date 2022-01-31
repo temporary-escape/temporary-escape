@@ -6,13 +6,18 @@
 #include "../Server/Server.hpp"
 #include "Client.hpp"
 #include "Renderer.hpp"
-#include "View.hpp"
+#include "ViewRoot.hpp"
 #include <atomic>
 
 namespace Scissio {
 class SCISSIO_API Application : public OpenGLWindow {
 public:
-    Application(Config& config);
+    struct Options {
+        std::optional<std::string> saveFolderName;
+        bool saveFolderClean{false};
+    };
+
+    Application(Config& config, const Options& options);
     virtual ~Application();
 
     void update();
@@ -28,6 +33,7 @@ public:
 
 private:
     Config& config;
+    const Options& options;
 
     Canvas2D canvas;
     Canvas2D::FontHandle defaultFont;
@@ -45,7 +51,7 @@ private:
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;
     std::shared_ptr<Renderer> renderer;
-    std::shared_ptr<View> view;
+    std::shared_ptr<ViewRoot> view;
 
     std::atomic<size_t> assetLoadQueueInitialSize;
     std::atomic<bool> loading;

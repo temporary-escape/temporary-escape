@@ -1,9 +1,12 @@
 #pragma once
 
 #include "Utils/Path.hpp"
+#include <chrono>
 
 namespace Scissio {
 struct Config {
+    std::chrono::microseconds tickLengthUs =
+        std::chrono::microseconds(static_cast<int64_t>((1 / 20.0f) * 1000.0 * 1000.0));
     int windowWidth = 1920;
     int windowHeight = 1080;
     Path assetsPath;

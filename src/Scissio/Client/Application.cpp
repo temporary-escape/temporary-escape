@@ -7,9 +7,9 @@
 
 using namespace Scissio;
 
-Application::Application(Config& config)
-    : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), loading(true),
-      loadingProgress(0.0f) {
+Application::Application(Config& config, const Options& options)
+    : OpenGLWindow("Scissio Game", {config.windowWidth, config.windowHeight}), config(config), options(options),
+      loading(true), loadingProgress(0.0f) {
     defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular + ".ttf"));
 
     textureCompressor = std::make_shared<TextureCompressor>();
@@ -68,13 +68,17 @@ void Application::update() {
 void Application::render(const Vector2i& viewport) {
     update();
 
-    if (loading.load()) {
-        glViewport(0, 0, viewport.x, viewport.y);
-        Framebuffer::DefaultFramebuffer.bind();
-        static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
-        glClearBufferfv(GL_COLOR, 0, &black.x);
-        glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+    glViewport(0, 0, viewport.x, viewport.y);
+    Framebuffer::DefaultFramebuffer.bind();
+    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, &black.x);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
+    if (client) {
+        client->update();
+    }
+
+    if (loading.load() || (client && client->getScene() == nullptr)) {
         canvas.beginFrame(viewport);
         canvas.fontFace(defaultFont);
         canvas.fontSize(config.guiFontSize);
@@ -88,15 +92,10 @@ void Application::render(const Vector2i& viewport) {
     } else if (client) {
         if (!renderer) {
             renderer = std::make_shared<Renderer>(config, canvas, *assetManager);
-            view = std::make_shared<View>(config, canvas, *assetManager, *renderer, *client);
+            view = std::make_shared<ViewRoot>(config, canvas, *assetManager, *renderer, *client);
         }
 
-        client->update();
         view->render(viewport);
-
-        /*if (auto scene = client->getScene(); scene != nullptr) {
-            renderer->render(viewport, *scene);
-        }*/
     }
 }
 
@@ -123,8 +122,22 @@ void Application::load() {
 
     loadingProgress.store(0.8f);
 
-    const auto saveDir = config.userdataSavesPath / "Universe";
-    if (!std::filesystem::exists(saveDir) && !std::filesystem::create_directories(saveDir)) {
+    auto saveDir = config.userdataSavesPath;
+
+    if (options.saveFolderName.has_value()) {
+        saveDir /= options.saveFolderName.value();
+    } else {
+        saveDir /= "Universe";
+    }
+
+    Log::i(CMP, "Using save directory: {}", saveDir.string());
+
+    if (options.saveFolderClean) {
+        Log::w(CMP, "Deleting save directory");
+        Fs::remove_all(saveDir);
+    }
+
+    if (!Fs::exists(saveDir) && !Fs::create_directories(saveDir)) {
         EXCEPTION("Failed to create save directory: '{}'", saveDir.string());
     }
 

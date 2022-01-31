@@ -17,6 +17,10 @@ using Vector4 = glm::vec4;
 using Vector4i = glm::i32vec4;
 using Color4 = glm::vec4;
 
+inline Color4 alpha(float a) {
+    return Color4{1.0f, 1.0f, 1.0f, a};
+}
+
 inline Color4 hsvToRgb(const Vector4& in) {
     float hh, p, q, t, ff;
     long i;

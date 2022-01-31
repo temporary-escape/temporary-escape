@@ -11,35 +11,29 @@
 #include "Player.hpp"
 #include "Schemas.hpp"
 #include "Sector.hpp"
-#include "Services/ServiceGalaxies.hpp"
-#include "Services/ServicePlayers.hpp"
-#include "Services/ServiceRegions.hpp"
-#include "Services/ServiceSectors.hpp"
-#include "Services/ServiceSystems.hpp"
+#include "SectorLoader.hpp"
+#include "Services.hpp"
 
 namespace Scissio {
 class SCISSIO_API Server {
 public:
-    struct Services {
-        explicit Services(const Config& config, AssetManager& assetManager, Database& db);
-
-        ServiceGalaxies galaxies;
-        ServiceRegions regions;
-        ServiceSystems systems;
-        ServiceSectors sectors;
-        ServicePlayers players;
-    };
-
     explicit Server(const Config& config, AssetManager& assetManager, Database& db);
     virtual ~Server();
 
-    // void tick();
+    void tick();
 
     void eventConnect(const Network::StreamPtr& stream);
     void eventDisconnect(const Network::StreamPtr& stream);
     void eventPacket(const Network::StreamPtr& stream, Network::Packet packet);
 
     std::vector<PlayerPtr> getPlayers();
+    Services& getServices() {
+        return services;
+    }
+
+    SectorLoader& getSectorLoader() {
+        return sectorLoader;
+    }
 
 private:
     class EventListener : public Network::EventListener {
@@ -63,12 +57,6 @@ private:
         Server& server;
     };
 
-    struct SectorReference {
-        std::string compoundId;
-        std::shared_ptr<Sector> ptr;
-        bool ready;
-    };
-
     void handle(const Network::StreamPtr& stream, MessageLoginRequest req);
     void handle(const Network::StreamPtr& stream, MessageStatusRequest req);
     template <typename RequestType> void handleFetch(const Network::StreamPtr& stream, RequestType req);
@@ -77,17 +65,19 @@ private:
     typename RequestType::Response::ItemType fetch(const PlayerPtr& player, const RequestType& req, std::string& next);
 
     PlayerPtr streamToPlayer(const Network::StreamPtr& stream, bool check = true);
+    SectorPtr startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId);
 
     const Config& config;
     AssetManager& assetManager;
     Database& db;
     Services services;
+    SectorLoader sectorLoader;
     Promise<void> loaded;
 
     Network::MessageDispatcher<const Network::StreamPtr&> dispatcher;
 
-    // std::thread tickThread;
-    // std::atomic_bool tickFlag;
+    std::thread tickThread;
+    std::atomic_bool tickFlag;
 
     // Worker worker;
     // Worker::Strand strand;
@@ -102,6 +92,9 @@ private:
         std::unordered_map<Network::StreamPtr, PlayerPtr> map;
     } players;
 
-    std::vector<SectorReference> sectors;
+    struct SectorsInternal {
+        std::shared_mutex mutex;
+        std::unordered_map<std::string, std::shared_ptr<Sector>> map;
+    } sectors;
 };
 } // namespace Scissio

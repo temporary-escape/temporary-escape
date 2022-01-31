@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT_NAME}Lib
 if (MSVC)
     target_link_libraries(${PROJECT_NAME}Lib PRIVATE rpcrt4.lib)
 else ()
-    target_link_libraries(${PROJECT_NAME}Lib PRIVATE ZLIB::ZLIB liblzma::liblzma unofficial::UUID::uuid)
+    target_link_libraries(${PROJECT_NAME}Lib PRIVATE ZLIB::ZLIB liblzma::liblzma unofficial::UUID::uuid uring)
 endif ()
 
 target_compile_definitions(${PROJECT_NAME}Lib PRIVATE

@@ -52,8 +52,11 @@ Client::Client(Config& config, const std::string& address, const int port)
     MESSAGE_DISPATCH(MessageStatusResponse);
     MESSAGE_DISPATCH(MessageSectorChanged);
     MESSAGE_DISPATCH(MessageEntitySync);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxy);
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
+    MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
 
     auto future = connected.future();
     if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
@@ -119,28 +122,20 @@ void Client::handle(MessageStatusResponse res) {
     worker1s.post([this]() { network->send(MessageStatusRequest{std::chrono::system_clock::now()}); });
 }
 
-/*void Client::handle(MessageSectorReadyResponse res) {
-    sync.post([this, res]() {
-        try {
-            if (!res.ready) {
-                network->send(MessageSectorReadyRequest{});
-            }
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to process sector ready response");
-        }
-    });
-}*/
-
 void Client::handle(MessageSectorChanged res) {
     sync.post([this, res = std::move(res)]() {
         try {
+            Log::i(CMP, "Sector has changed, creating new scene");
             scene = std::make_unique<Scene>();
 
             auto entity = std::make_shared<Entity>();
-            auto camera = entity->addComponent<ComponentCamera>();
+            auto camera = entity->addComponent<ComponentCameraTurntable>();
+            auto userInput = entity->addComponent<ComponentUserInput>(*camera);
             camera->setPrimary(true);
-            camera->lookAt({-4.0f, 4.0f, -4.0f}, {0.0f, 0.0f, 0.0f});
+            camera->setProjection(70.0f);
             scene->addEntity(entity);
+
+            store.player.location = res.location;
         } catch (std::exception& e) {
             BACKTRACE(CMP, e, "Failed to process sector changed response");
         }
@@ -210,4 +205,42 @@ template <typename Message, typename T> void Client::handleFetch(MessageFetchRes
     } catch (std::exception& e) {
         BACKTRACE(CMP, e, "Failed to process MessageFetchResponse<T> response");
     }
+}
+
+void Client::fetchGalaxy() {
+    MessageFetchGalaxy req;
+    req.galaxyId = store.player.location.value().galaxyId;
+
+    fetch(req, [this](GalaxyData item) {
+        store.galaxy.galaxy = std::move(item);
+        store.galaxy.galaxy.markChanged();
+    });
+}
+
+void Client::fetchGalaxyRegions() {
+    MessageFetchGalaxyRegions req;
+    req.galaxyId = store.player.location.value().galaxyId;
+
+    fetch(req, [this](std::vector<RegionData> items) {
+        store.galaxy.regions.value().clear();
+        for (const auto& item : items) {
+            store.galaxy.regions.value().insert(std::make_pair(item.id, item));
+        }
+
+        store.galaxy.regions.markChanged();
+    });
+}
+
+void Client::fetchGalaxySystems() {
+    MessageFetchGalaxySystems req;
+    req.galaxyId = store.player.location.value().galaxyId;
+
+    fetch(req, [this](std::vector<SystemData> items) {
+        store.galaxy.systems.value().clear();
+        for (const auto& item : items) {
+            store.galaxy.systems.value().insert(std::make_pair(item.id, item));
+        }
+
+        store.galaxy.systems.markChanged();
+    });
 }

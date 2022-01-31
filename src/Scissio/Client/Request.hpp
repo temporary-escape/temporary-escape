@@ -6,50 +6,74 @@
 #include <vector>
 
 namespace Scissio {
-/*class AbstractRequest {
+class AbstractRequest {
 public:
     virtual ~AbstractRequest() = default;
-    virtual void complete() = 0;
+    // virtual void complete() = 0;
 };
 
-using AbstractRequestPtr = std::shared_ptr<AbstractRequest>;*/
+using AbstractRequestPtr = std::shared_ptr<AbstractRequest>;
 
-/*template <typename T> class Request : public AbstractRequest {
+template <typename Message, typename T = typename Message::Response::ItemType> class Request : public AbstractRequest {
 public:
-    using type = T;
+    using Callback = std::function<void(T)>;
 
-    Request(const uint64_t id) : id(id), fnThen(nullptr) {
+    explicit Request(Message msg, Callback&& callback) : msg(std::move(msg)), callback(std::move(callback)) {
     }
 
     ~Request() override = default;
 
-    const std::vector<T>& value() const {
-        return data;
-    }
-
-    void then(std::function<void(std::vector<T>)> fn) {
-        fnThen = std::move(fn);
-    }
-
-    uint64_t getId() {
-        return id;
-    }
-
-    void append(const std::vector<T>& data) {
-        this->data.insert(this->data.end(), data.begin(), data.end());
-    }
-
-    void complete() override {
-        if (fnThen) {
-            fnThen(std::move(data));
+    void complete() {
+        if (!callback) {
+            throw std::runtime_error("Request has no callback defined");
         }
+        callback(std::move(item));
+    }
+
+    void append(T item) {
+        this->item = std::move(item);
+    }
+
+    Message& getMessage() {
+        return msg;
     }
 
 private:
-    uint64_t id;
-    std::vector<T> data;
-    std::function<void(std::vector<T>)> fnThen;
+    Message msg;
+    Callback callback;
+    T item;
 };
 
-template <typename T> using RequestPtr = std::shared_ptr<Request<T>>;*/
+template <typename Message, typename T> class Request<Message, std::vector<T>> : public AbstractRequest {
+public:
+    using Callback = std::function<void(std::vector<T>)>;
+
+    explicit Request(Message msg, Callback&& callback) : msg(std::move(msg)), callback(std::move(callback)) {
+    }
+
+    ~Request() override = default;
+
+    void complete() {
+        if (!callback) {
+            throw std::runtime_error("Request has no callback defined");
+        }
+        callback(std::move(items));
+    }
+
+    void append(std::vector<T> chunk) {
+        items.reserve(items.size() + chunk.size());
+        for (auto& i : chunk) {
+            items.push_back(std::move(i));
+        }
+    }
+
+    Message& getMessage() {
+        return msg;
+    }
+
+private:
+    Message msg;
+    Callback callback;
+    std::vector<T> items;
+};
 } // namespace Scissio

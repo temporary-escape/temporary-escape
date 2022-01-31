@@ -51,9 +51,9 @@ struct MessageStatusResponse {
 REGISTER_MESSAGE(MessageStatusResponse);
 
 struct MessageSectorChanged {
-    std::string compoundId;
+    PlayerLocationData location;
 
-    MSGPACK_DEFINE(compoundId);
+    MSGPACK_DEFINE(location);
 };
 
 REGISTER_MESSAGE(MessageSectorChanged);
@@ -81,6 +81,17 @@ template <typename T> struct MessageFetchResponse : MessageFetch {
     MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), data);
 };
 
+struct MessageFetchGalaxy : MessageFetch {
+    using Response = MessageFetchResponse<GalaxyData>;
+
+    std::string galaxyId;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), galaxyId);
+};
+
+REGISTER_MESSAGE(MessageFetchGalaxy);
+REGISTER_MESSAGE(MessageFetchGalaxy::Response);
+
 struct MessageFetchGalaxySystems : MessageFetch {
     using Response = MessageFetchResponse<std::vector<SystemData>>;
 
@@ -92,6 +103,17 @@ struct MessageFetchGalaxySystems : MessageFetch {
 REGISTER_MESSAGE(MessageFetchGalaxySystems);
 REGISTER_MESSAGE(MessageFetchGalaxySystems::Response);
 
+struct MessageFetchGalaxyRegions : MessageFetch {
+    using Response = MessageFetchResponse<std::vector<RegionData>>;
+
+    std::string galaxyId;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), galaxyId);
+};
+
+REGISTER_MESSAGE(MessageFetchGalaxyRegions);
+REGISTER_MESSAGE(MessageFetchGalaxyRegions::Response);
+
 struct MessageFetchCurrentLocation : MessageFetch {
     using Response = MessageFetchResponse<PlayerLocationData>;
 
@@ -101,24 +123,15 @@ struct MessageFetchCurrentLocation : MessageFetch {
 REGISTER_MESSAGE(MessageFetchCurrentLocation);
 REGISTER_MESSAGE(MessageFetchCurrentLocation::Response);
 
-/*template <typename T> struct MessageFetchRequest {
-    uint64_t id = 0;
-    std::string prefix;
-    std::string start;
+struct MessageFetchSystemPlanets : MessageFetch {
+    using Response = MessageFetchResponse<std::vector<SectorPlanetData>>;
 
-    MSGPACK_DEFINE(id, prefix, start);
+    std::string galaxyId;
+    std::string systemId;
+
+    MSGPACK_DEFINE(MSGPACK_BASE(MessageFetch), galaxyId, systemId);
 };
 
-template <typename T> struct MessageFetchResponse {
-    uint64_t id = 0;
-    std::string prefix;
-    std::string next;
-    std::vector<T> data;
-    std::string error;
-
-    MSGPACK_DEFINE(id, prefix, next, data, error);
-};
-
-REGISTER_MESSAGE(MessageFetchRequest<SystemData>);
-REGISTER_MESSAGE(MessageFetchResponse<SystemData>);*/
+REGISTER_MESSAGE(MessageFetchSystemPlanets);
+REGISTER_MESSAGE(MessageFetchSystemPlanets::Response);
 } // namespace Scissio

@@ -22,6 +22,10 @@ public:
         return primitives;
     }
 
+    float getBoundingRadius() const {
+        return bbRadius;
+    }
+
 private:
     Path path;
     std::list<Primitive> primitives;
@@ -31,6 +35,16 @@ private:
 };
 
 using AssetModelPtr = std::shared_ptr<AssetModel>;
+
+struct WeightedModel {
+    AssetModelPtr model;
+    float weight{1.0f};
+};
+
+namespace Xml {
+template <> struct Adaptor<WeightedModel> { static void convert(const Xml::Node& n, WeightedModel& v); };
+template <> struct Adaptor<AssetModelPtr> { static void convert(const Xml::Node& n, AssetModelPtr& v); };
+} // namespace Xml
 } // namespace Scissio
 
 namespace msgpack {

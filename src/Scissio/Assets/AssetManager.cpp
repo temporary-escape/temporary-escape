@@ -14,7 +14,7 @@ using namespace Scissio;
 AssetManager* AssetManager::instance = nullptr;
 
 AssetManager::AssetManager(const Config& config, Canvas2D& canvas, TextureCompressor& textureCompressor)
-    : config(config), canvas(canvas), textureCompressor(textureCompressor) {
+    : config(config), canvas(canvas), textureCompressor(textureCompressor), textureAtlas(config, canvas) {
     instance = this;
 }
 
@@ -87,6 +87,17 @@ AssetTexturePtr AssetManager::addTexture(const Manifest& mod, const Path& path, 
     }
 }
 
+AssetImagePtr AssetManager::addImage(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto image = std::make_shared<AssetImage>(mod, baseName, path);
+        add(image);
+        return image;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add image: '{}'", path.string());
+    }
+}
+
 AssetPlanetPtr AssetManager::addPlanet(const Manifest& mod, const Path& path) {
     try {
         const auto baseName = path.stem().string();
@@ -98,6 +109,17 @@ AssetPlanetPtr AssetManager::addPlanet(const Manifest& mod, const Path& path) {
     }
 }
 
+AssetAsteroidPtr AssetManager::addAsteroid(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto asteroid = std::make_shared<AssetAsteroid>(mod, baseName, path);
+        add(asteroid);
+        return asteroid;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add asteroid: '{}'", path.string());
+    }
+}
+
 void AssetManager::add(AssetPtr asset) {
     Log::i(CMP, "Adding asset '{}/{}'", asset->getMod().name, asset->getName());
     assets.insert(std::make_pair(asset->getName(), asset));
@@ -106,7 +128,7 @@ void AssetManager::add(AssetPtr asset) {
 AssetLoadQueue AssetManager::getLoadQueue() {
     AssetLoadQueue loadQueue;
 
-    for (const auto [key, asset] : assets) {
+    for (const auto& [key, asset] : assets) {
         loadQueue.push([this, asset = asset]() {
             try {
                 Log::d(CMP, "Loading asset '{}/{}'", asset->getMod().name, asset->getName());
@@ -122,6 +144,16 @@ AssetLoadQueue AssetManager::getLoadQueue() {
 
 Texture2D AssetManager::compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target) {
     return textureCompressor.convert(source, targetSize, target);
+}
+
+Canvas2D::Image AssetManager::addToAtlas(const Vector2i& size, const void* pixels) {
+    auto [pos, handle] = textureAtlas.add(size, pixels);
+    Canvas2D::Image image{};
+    image.handle = handle;
+    image.pos = pos;
+    image.atlasSize = Vector2i{config.imageAtlasSize};
+    image.size = size;
+    return image;
 }
 
 Canvas2D::FontHandle AssetManager::createFontHandle(const Path& path) {

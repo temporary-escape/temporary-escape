@@ -13,13 +13,31 @@ public:
     explicit Camera(Object& object) : object(&object) {
     }
 
-    void setProjection(const Vector2i& viewport, const float fov) {
-        projectionMatrix =
-            glm::perspective(glm::radians(fov), viewport.x / static_cast<float>(viewport.y), 0.1f, 2000.0f);
+    void setViewport(const Vector2i& viewport) {
+        this->viewport = viewport;
+
+        if (isOrtho) {
+            const auto zoom = fovOrZoom;
+            const float ratio = static_cast<float>(viewport.x) / static_cast<float>(viewport.y);
+            projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, -1.0f, 1.0f);
+        } else {
+            projectionMatrix =
+                glm::perspective(glm::radians(fovOrZoom), viewport.x / static_cast<float>(viewport.y), 0.1f, 2000.0f);
+        }
     }
 
-    void lookAt(const Vector3& eye, const Vector3& target) {
-        object->updateTransform(glm::inverse(glm::lookAt(eye, target, Vector3{0.0f, 1.0f, 0.0f})));
+    void setProjection(const float fov) {
+        fovOrZoom = fov;
+        isOrtho = false;
+    }
+
+    void setOrthographic(const float zoom) {
+        fovOrZoom = zoom;
+        isOrtho = true;
+    }
+
+    void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, 1.0f, 0.0f}) {
+        object->updateTransform(glm::inverse(glm::lookAt(eye, target, up)));
     }
 
     Matrix4 getViewMatrix() const {
@@ -30,11 +48,11 @@ public:
         return projectionMatrix;
     }
 
-    Vector3 screenToWorld(const Vector2i& viewport, const Vector2i& pos) const {
+    Vector3 screenToWorld(const Vector2& pos) const {
         return Scissio::screenToWorld(object->getTransform(), projectionMatrix, viewport, pos);
     }
 
-    Vector2i worldToScreen(const Vector2i& viewport, const Vector3& pos) const {
+    Vector2 worldToScreen(const Vector3& pos) const {
         return Scissio::worldToScreen(object->getTransform(), projectionMatrix, viewport, pos);
     }
 
@@ -45,5 +63,8 @@ public:
 private:
     Object* object{nullptr};
     Matrix4 projectionMatrix{1.0f};
+    Vector2i viewport;
+    float fovOrZoom{1.0f};
+    bool isOrtho{false};
 };
 } // namespace Scissio

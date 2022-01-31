@@ -13,6 +13,7 @@ public:
     void generate();
     void generate(const std::string& galaxyId);
     void generate(const std::string& galaxyId, const std::string& systemId);
+    std::vector<SectorPlanetData> getSystemPlanets(const std::string& galaxyId, const std::string& systemId);
     void tick() override;
 
 private:

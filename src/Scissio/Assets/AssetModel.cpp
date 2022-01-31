@@ -331,3 +331,13 @@ void AssetModel::load(AssetManager& assetManager) {
 std::shared_ptr<AssetModel> AssetModel::from(const std::string& name) {
     return AssetManager::singleton().find<AssetModel>(name);
 }
+
+void Xml::Adaptor<WeightedModel>::convert(const Xml::Node& n, WeightedModel& v) {
+    n.convert(v.model);
+    const auto weight = n.attribute("weight");
+    v.weight = weight.has_value() ? weight.value().asFloat() : 1.0f;
+}
+
+void Xml::Adaptor<AssetModelPtr>::convert(const Xml::Node& n, AssetModelPtr& v) {
+    v = AssetModel::from(n.asString());
+}

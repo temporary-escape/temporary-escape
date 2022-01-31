@@ -17,7 +17,7 @@ static NVGcolor toNvg(const Color4& color) {
 }
 
 Canvas2D::Canvas2D() {
-    vg = nvgCreateGL3(NVG_STENCIL_STROKES);
+    vg = nvgCreateGL3(NVG_STENCIL_STROKES | NVG_ANTIALIAS);
 }
 
 Canvas2D::Canvas2D(const NoCreate&) : vg(nullptr) {
@@ -57,6 +57,10 @@ void Canvas2D::closePath() const {
 
 void Canvas2D::rect(const Vector2& pos, const Vector2& size) const {
     nvgRect(vg, pos.x, pos.y, size.x, size.y);
+}
+
+void Canvas2D::circle(const Vector2& pos, const float radius) const {
+    nvgCircle(vg, pos.x, pos.y, radius);
 }
 
 void Canvas2D::roundedRect(const Vector2& pos, const Vector2& size, const float radius) const {
@@ -103,53 +107,21 @@ Canvas2D::FontHandle Canvas2D::loadFont(const Path& path) {
     return it->second;
 }
 
-/*Canvas2D::Image Canvas2D::loadImage(const Scissio::Image& image) {
-    const auto& texture = image.getTexture();
-    const auto& textureSize = image.getAtlasSize();
-    const auto& pos = image.getPos();
-    const auto& size = image.getSize();
+Canvas2D::ImageHandle Canvas2D::textureToImageHandle(const Texture2D& texture, const Vector2i& size) {
+    return nvglCreateImageFromHandleGL3(vg, texture.getHandle(), size.x, size.y, NVGcreateFlags::NVG_ANTIALIAS);
+}
 
-    const auto textureId = texture.getHandle();
-    const auto handle =
-        nvglCreateImageFromHandleGL3(vg, textureId, textureSize.x, textureSize.y, NVGcreateFlags::NVG_ANTIALIAS);
-    return Image(handle, Vector2(textureSize), Vector2(pos), Vector2(size));
-}*/
-
-/*Canvas2D::Image Canvas2D::loadImage(const Scissio::Icon& icon) {
-    const auto& texture = icon.getTexture();
-    const auto& textureSize = icon.getAtlasSize();
-    const auto& pos = icon.getPos();
-    const auto& size = icon.getSize();
-
-    const auto textureId = texture.getHandle();
-    const auto handle =
-        nvglCreateImageFromHandleGL3(vg, textureId, textureSize.x, textureSize.y, NVGcreateFlags::NVG_ANTIALIAS);
-    return Image(handle, Vector2(textureSize), Vector2(pos), Vector2(size));
-}*/
-
-// void Canvas2D::rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) const {
-/*const auto imageSize = image.getSize();
-const auto scale = size / imageSize;
-const auto atlasSize = image.getAtlasSize() * scale;
-const auto imagePos = image.getPos() * scale;
-auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, atlasSize.y - pos.y + imagePos.y, atlasSize.x, atlasSize.y,
-                               0.0f, image.getHandle(), 1.0f);
-pattern.innerColor = toNvg(color);
-nvgFillPaint(vg, pattern);
-rect(pos, size);
-fill();*/
-
-/*const auto& imageSize = image.getSize();
-const auto& scale = size / imageSize;
-const auto& atlasSize = image.getAtlasSize() * scale;
-const auto& imagePos = image.getPos() * scale;
-auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, pos.y + imagePos.y + (imageSize.y * scale.y), atlasSize.x,
-                               -atlasSize.y, 0.0f, image.getHandle(), 1.0f);
-pattern.innerColor = toNvg(color);
-nvgFillPaint(vg, pattern);
-rect(pos, size);
-fill();
-}*/
+void Canvas2D::rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) {
+    const auto& imageSize = Vector2{image.size};
+    const auto& scale = size / imageSize;
+    const auto& atlasSize = Vector2{image.atlasSize} * scale;
+    const auto& imagePos = Vector2{image.pos} * scale;
+    auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, pos.y + imagePos.y + (imageSize.y * scale.y), atlasSize.x,
+                                   -atlasSize.y, 0.0f, image.handle, 1.0f);
+    pattern.innerColor = toNvg(color);
+    nvgFillPaint(vg, pattern);
+    rect(pos, size);
+}
 
 void Canvas2D::fontFace(const FontHandle& font) const {
     if (font < 0)
@@ -157,10 +129,6 @@ void Canvas2D::fontFace(const FontHandle& font) const {
 
     nvgFontFaceId(vg, font);
 }
-
-/*void Canvas2D::fontFace(const FontFacePtr& font) const {
-    fontFace(font->getHandle());
-}*/
 
 void Canvas2D::fontSize(const float size) const {
     nvgFontSize(vg, size);
@@ -177,7 +145,7 @@ void Canvas2D::textBox(const Vector2& pos, const float width, const std::string&
 Vector2 Canvas2D::textBounds(const std::string::value_type* start, const std::string::value_type* end) const {
     float bounds[4];
     nvgTextBounds(vg, 0.0f, 0.0f, start, end, bounds);
-    return {bounds[2], bounds[3]};
+    return {bounds[2] - bounds[0], bounds[3] - bounds[1]};
 }
 
 Vector2 Canvas2D::textBoxBounds(const float width, const std::string::value_type* start,

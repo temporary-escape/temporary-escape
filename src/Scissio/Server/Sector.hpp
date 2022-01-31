@@ -18,7 +18,7 @@ public:
     explicit Sector(Server& server, Database& db, std::string compoundId);
     virtual ~Sector();
 
-    // void load(GeneratorChain& generator);
+    void load();
     void update();
 
     void addPlayer(PlayerPtr player);
@@ -34,11 +34,13 @@ private:
     Server& server;
     Database& db;
     std::string compoundId;
-
+    bool loaded;
     Scene scene;
 
     std::list<PlayerView> players;
 
     asio::io_service sync;
 };
+
+using SectorPtr = std::shared_ptr<Sector>;
 } // namespace Scissio

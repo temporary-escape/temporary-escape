@@ -41,6 +41,10 @@ public:
         this->system = system;
     }
 
+    void clearSystem() {
+        this->system = nullptr;
+    }
+
 private:
     Object* object{nullptr};
     AbstractComponentSystem* system{nullptr};
@@ -68,6 +72,7 @@ public:
         auto it = components.find(ptr);
         if (it != components.end()) {
             components.erase(it);
+            component.clearSystem();
         }
     }
 

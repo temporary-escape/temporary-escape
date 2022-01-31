@@ -202,11 +202,11 @@ bool Xml::Node::hasNext(const std::string& name) const {
     return false;
 }
 
-Xml::Iterator<Xml::Node> Xml::Node::begin() {
+Xml::Iterator<Xml::Node> Xml::Node::begin() const {
     return Iterator<Node>(child());
 }
 
-Xml::Iterator<Xml::Node> Xml::Node::end() {
+Xml::Iterator<Xml::Node> Xml::Node::end() const {
     return Iterator<Node>(Node{});
 }
 
@@ -254,7 +254,7 @@ Xml::Node Xml::Node::child(const std::string& name) const {
     throw std::out_of_range(fmt::format("Xml node has no child node '{}'", name));
 }
 
-Xml::Attribute Xml::Node::attribute(const std::string& name) const {
+std::optional<Xml::Attribute> Xml::Node::attribute(const std::string& name) const {
     for (const xmlAttr* cur = node->properties; cur != nullptr; cur = cur->next) {
         if (cur->type == XML_ATTRIBUTE_NODE) {
             if (std::strcmp(name.c_str(), reinterpret_cast<const char*>(cur->name)) == 0) {
@@ -263,7 +263,7 @@ Xml::Attribute Xml::Node::attribute(const std::string& name) const {
         }
     }
 
-    throw std::out_of_range(fmt::format("Xml node has no attribute '{}'", name));
+    return std::nullopt;
 }
 
 Xml::Node Xml::Document::getRoot() const {

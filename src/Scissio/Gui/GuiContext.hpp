@@ -5,6 +5,7 @@
 #include "../Graphics/Canvas2D.hpp"
 #include "../Math/Vector.hpp"
 #include "../Platform/Enums.hpp"
+#include "GuiColors.hpp"
 #include "GuiFlags.hpp"
 
 #include <functional>
@@ -41,13 +42,21 @@ public:
     // bool buttonImage(const ImagePtr& image);
     // bool buttonImage(const IconPtr& image, bool active = false);
     void label(const std::string& text, TextAlignValue align = TextAlign::Left);
+    void label(const std::string& text, const Color4& color, TextAlignValue align = TextAlign::Left);
     void title(const std::string& text);
     void text(const std::string& text);
     void layoutDynamic(float height, int count);
+    void layoutDynamic(float height, int count, const std::function<void()>& fn);
+    void layoutDynamicPush(float weight);
+    void layoutTemplated(float height, const std::function<void()>& fn);
+    void layoutTemplatedPushDynamic();
+    void layoutTemplatedPushStatic(float width);
+    void layoutTemplatedPushVariable(float width);
     void combo(const std::string& selected, const Vector2& size, const std::function<void()>& fn);
     bool comboItem(const std::string& text);
     void tooltip(const std::string& text);
     void tooltip(float width, const std::function<void()>& fn);
+    void progress(float progress);
     bool isNextHover() const;
 
     Vector2 getContentSize() const;

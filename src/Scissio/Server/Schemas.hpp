@@ -22,7 +22,7 @@ struct PlayerLocationData {
     std::string systemId;
     std::string sectorId;
 
-    MSGPACK_DEFINE(id, galaxyId, systemId, sectorId);
+    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, sectorId);
 };
 
 SCHEMA_DEFINE(PlayerLocationData);
@@ -33,7 +33,7 @@ struct GalaxyData {
     Vector2 pos;
     uint64_t seed = 0;
 
-    MSGPACK_DEFINE(id, name, pos, seed);
+    MSGPACK_DEFINE_MAP(id, name, pos, seed);
 };
 
 SCHEMA_DEFINE_INDEXED(GalaxyData, name);
@@ -45,7 +45,7 @@ struct RegionData {
     Vector2 pos;
     uint64_t seed = 0;
 
-    MSGPACK_DEFINE(id, galaxyId, name, pos, seed);
+    MSGPACK_DEFINE_MAP(id, galaxyId, name, pos, seed);
 };
 
 SCHEMA_DEFINE_INDEXED(RegionData, name);
@@ -57,8 +57,9 @@ struct SystemData {
     std::string name;
     Vector2 pos;
     uint64_t seed = 0;
+    std::vector<std::string> connections;
 
-    MSGPACK_DEFINE(id, galaxyId, regionId, name, pos, seed);
+    MSGPACK_DEFINE_MAP(id, galaxyId, regionId, name, pos, seed, connections);
 };
 
 SCHEMA_DEFINE_INDEXED(SystemData, name);
@@ -72,7 +73,7 @@ struct SectorData {
     uint64_t seed = 0;
     bool generated = false;
 
-    MSGPACK_DEFINE(id, galaxyId, systemId, name, pos, seed, generated);
+    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, pos, seed, generated);
 };
 
 SCHEMA_DEFINE_INDEXED(SectorData, name);
@@ -85,7 +86,7 @@ struct SectorPlanetData {
     Vector2 pos;
     AssetPlanetPtr asset;
 
-    MSGPACK_DEFINE(id, name, isMoon, planet, pos, asset);
+    MSGPACK_DEFINE_MAP(id, name, isMoon, planet, pos, asset);
 };
 
 SCHEMA_DEFINE(SectorPlanetData);

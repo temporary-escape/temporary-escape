@@ -12,24 +12,20 @@
 
 using namespace Scissio;
 
-static const double tickLength = 1.0f / 20.0f;
-static const auto tickLengthUs = std::chrono::microseconds(static_cast<long long>(tickLength * 1000.0 * 1000.0));
-
-Server::Services::Services(const Config& config, AssetManager& assetManager, Database& db)
-    : galaxies(config, assetManager, db), regions(config, assetManager, db), systems(config, assetManager, db),
-      sectors(config, assetManager, db), players(config, assetManager, db) {
-}
-
 Server::Server(const Config& config, AssetManager& assetManager, Database& db)
-    : config(config), assetManager(assetManager), db(db), services(config, assetManager, db), worker(4), loader(1),
+    : config(config), assetManager(assetManager), db(db), services(config, assetManager, db),
+      sectorLoader(config, assetManager, db, services), tickFlag(true), worker(4), loader(1),
       listener(std::make_unique<EventListener>(*this)),
       network(std::make_shared<Network::TcpServer>(*listener, config.serverPort)) {
 
-    // tickThread = std::thread(&Server::tick, this);
+    tickThread = std::thread(&Server::tick, this);
 
     MESSAGE_DISPATCH(MessageLoginRequest);
     MESSAGE_DISPATCH(MessageStatusRequest);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxy);
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
+    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
+    MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
 
     loader.post([this]() {
@@ -53,44 +49,54 @@ Server::Server(const Config& config, AssetManager& assetManager, Database& db)
 
 Server::~Server() {
     Log::i(CMP, "Stopping");
+    tickFlag.store(false);
+    tickThread.join();
     loader.stop();
     worker.stop();
-    // tickFlag.store(false);
-    // tickThread.join();
 }
 
-/*void Server::tick() {
+void Server::tick() {
     Log::i(CMP, "Starting tick");
+
+    Worker sectorWorker(4);
 
     while (tickFlag.load()) {
         const auto start = std::chrono::steady_clock::now();
 
-        for (const auto& sector : sectors) {
-            if (!sector.ready) {
-                continue;
+        // TICK
+        std::optional<std::string> failedId;
+        {
+            std::shared_lock<std::shared_mutex> lock{sectors.mutex};
+            for (auto& pair : sectors.map) {
+                const auto& compoundId = pair.first;
+                auto& sector = pair.second;
+                sectorWorker.post([&failedId, sector, compoundId]() {
+                    try {
+                        sector->update();
+                    } catch (std::exception& e) {
+                        BACKTRACE(CMP, e, "Failed to update sector");
+                        failedId = compoundId;
+                    }
+                });
             }
-
-            worker.post([=]() {
-                try {
-                    sector.ptr->update();
-                } catch (std::exception& e) {
-                    BACKTRACE(CMP, e, "Sector tick failed");
-                }
-            });
         }
 
-        // This is where the real tick for each sector is performed
-        worker.run();
+        sectorWorker.run();
+
+        if (failedId.has_value()) {
+            Log::e(CMP, "Sector: '{}' failed to update, stopping tick", failedId.value());
+            break;
+        }
 
         const auto now = std::chrono::steady_clock::now();
         const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
-        if (test < tickLengthUs) {
-            std::this_thread::sleep_for(tickLengthUs - test);
+        if (test < config.tickLengthUs) {
+            std::this_thread::sleep_for(config.tickLengthUs - test);
         }
     }
 
     Log::i(CMP, "Stopped tick");
-}*/
+}
 
 void Server::eventConnect(const Network::StreamPtr& stream) {
     worker.post([=]() {
@@ -141,6 +147,24 @@ PlayerPtr Server::streamToPlayer(const Network::StreamPtr& stream, bool check) {
     EXCEPTION("Session does not exist for stream: {:#0x}", reinterpret_cast<uint64_t>(stream.get()));
 }
 
+SectorPtr Server::startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId) {
+    std::shared_lock<std::shared_mutex> lock{sectors.mutex};
+    const auto compoundId = fmt::format("{}/{}/{}", galaxyId, systemId, sectorId);
+
+    const auto test = db.get<SectorData>(compoundId);
+    if (!test) {
+        EXCEPTION("Sector: '{}' does not exist", compoundId);
+    }
+
+    auto it = sectors.map.find(compoundId);
+    if (it == sectors.map.end()) {
+        const auto sector = std::make_shared<Sector>(*this, db, compoundId);
+        it = sectors.map.insert(std::make_pair(compoundId, sector)).first;
+    }
+
+    return it->second;
+}
+
 std::vector<PlayerPtr> Server::getPlayers() {
     std::shared_lock<std::shared_mutex> lock{players.mutex};
     std::vector<PlayerPtr> res;
@@ -172,84 +196,50 @@ void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
             }
 
             // Check if the player is already logged in
-            auto alreadyLoggedIn = false;
-            {
-                std::shared_lock<std::shared_mutex> lock{players.mutex};
-                for (const auto& [_, other] : players.map) {
-                    if (other->getId() == req.secret) {
-                        alreadyLoggedIn = true;
-                        break;
+            const auto playerIdFound = services.players.secretToId(req.secret);
+            if (playerIdFound) {
+                auto alreadyLoggedIn = false;
+                {
+                    std::shared_lock<std::shared_mutex> lock{players.mutex};
+                    for (const auto& [_, other] : players.map) {
+                        if (other->getId() == playerIdFound.value()) {
+                            alreadyLoggedIn = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (alreadyLoggedIn) {
-                MessageLoginResponse res;
-                res.error = "Already logged in";
-                stream->send(res);
-                return;
-            }
-
-            /*if (!config.serverPassword.empty() && config.serverPassword != req.password) {
-                MessageLoginResponse res;
-                res.error = "Bad password";
-                stream->send(res);
-                return;
-            }
-
-            // Find the player in the database using its secret
-            // to get us a primary key (id)
-            const auto found = db.getByIndex<&PlayerData::secret>(req.secret);
-            std::string playerId;
-            if (found.empty()) {
-                // No such player found, generate one
-                playerId = uuid();
-            } else {
-                playerId = found.front().id;
-            }
-
-            // Update the player data or create a new player
-            db.update<PlayerData>(playerId, [&](std::optional<PlayerData>& player) {
-                if (!player.has_value()) {
-                    Log::i(CMP, "Registering new player: '{}'", req.name);
-                    player = PlayerData{};
-                    player.value().id = playerId;
-                    player.value().secret = req.secret;
-                    player.value().admin = true;
+                if (alreadyLoggedIn) {
+                    MessageLoginResponse res;
+                    res.error = "Already logged in";
+                    stream->send(res);
+                    return;
                 }
+            }
 
-                player.value().name = req.name;
+            // Login player, this will either update the existing record or create a new one
+            const auto data = services.players.login(req.secret, req.name);
+            player->setId(data.id);
 
-                return true;
-            });
+            // Find starting location so we can move the player to the correct sector
+            const auto location = services.players.findStartingLocation(data);
 
-            // Update player location
-            db.update<PlayerLocationData>(playerId, [&](std::optional<PlayerLocationData>& location) {
-                if (!location.has_value()) {
-                    Log::i(CMP, "Choosing starting position for player: '{}'", req.name);
+            const auto sector = startSector(location.galaxyId, location.systemId, location.sectorId);
 
-                    const auto choices = db.seek<SectorData>("", 1);
-                    if (choices.empty()) {
-                        EXCEPTION("No choices for starting sector");
-                    }
-                    const auto& choice = choices.front();
-
-                    location = PlayerLocationData{};
-                    location.value().galaxyId = choice.galaxyId;
-                    location.value().systemId = choice.systemId;
-                    location.value().sectorId = choice.id;
-
-                    return true;
-                }
-
-                return false;
-            });
-
-            session->id = playerId;
-
+            // Send login response
             MessageLoginResponse res;
-            res.playerId = playerId;
-            stream->send(res);*/
+            res.playerId = data.id;
+            stream->send(res);
+
+            // Load the sector if needed and add the player to that sector.
+            loader.post([=]() {
+                try {
+                    sector->load();
+                    sector->addPlayer(player);
+                } catch (std::exception& e) {
+                    BACKTRACE(CMP, e, "Failed to load sector");
+                }
+            });
 
         } catch (std::exception& e) {
             BACKTRACE(CMP, e, "Failed to handle login request");
@@ -265,75 +255,17 @@ void Server::handle(const Network::StreamPtr& stream, MessageStatusRequest req) 
     });
 }
 
-/*void Server::handle(const Network::StreamPtr& stream, MessageSectorReadyRequest req) {
-    worker.post([=]() -> void {
-        try {
-            auto player = streamToPlayer(stream);
-
-            const auto location = db.get<PlayerLocationData>(session->id);
-            if (!location) {
-                EXCEPTION("Player: '{}' does not have location data", session->id);
-            }
-
-            const auto compoundId = fmt::format("{}/{}/{}", location.value().galaxyId, location.value().systemId,
-                                                location.value().sectorId);
-
-            // Lookup sector data
-            const auto sector = db.get<SectorData>(compoundId);
-            if (!sector) {
-                EXCEPTION("Player: '{}' is located in non existing sector {}", session->id, compoundId);
-            }
-
-            MessageSectorReadyResponse res;
-
-            // Check if we have already initialized this sector
-            const auto found = std::find_if(sectors.begin(), sectors.end(),
-                                            [&](SectorReference& ref) { return ref.compoundId == compoundId; });
-
-            if (found == sectors.end()) {
-                // Sector not found, create it
-
-                Log::i(CMP, "Sector: '{}' is not initialized and is needed by player '{}'", compoundId, session->id);
-
-                sectors.emplace_back();
-                auto* sectorPtr = &sectors.back();
-                sectorPtr->ptr = std::make_shared<Sector>(*this, db, compoundId);
-                sectorPtr->ready = false;
-                sectorPtr->compoundId = compoundId;
-
-                // Load the sector
-                loader.post([=]() {
-                    sectorPtr->ptr->load(generator);
-                    sectorPtr->ready = true;
-                    Log::i(CMP, "Sector: '{}' is ready", compoundId);
-                });
-
-                // Update player location
-                session->sectorCompoundId = compoundId;
-                sectorPtr->ptr->addSession(session);
-            } else {
-                res.ready = found->ready;
-
-                // Sector found, update player location
-                if (session->sectorCompoundId != found->compoundId) {
-                    session->sectorCompoundId = compoundId;
-                    found->ptr->addSession(session);
-                }
-            }
-
-            stream->send(res);
-
-        } catch (std::exception& e) {
-            Log::e(CMP, "Failed to handle sector satus request error: {}", e.what());
-        }
-    });
-}*/
-
 template <>
 PlayerLocationData Server::fetch<MessageFetchCurrentLocation>(const PlayerPtr& player,
                                                               const MessageFetchCurrentLocation& req,
                                                               std::string& next) {
     return services.players.getLocation(player->getId());
+}
+
+template <>
+GalaxyData Server::fetch<MessageFetchGalaxy>(const PlayerPtr& player, const MessageFetchGalaxy& req,
+                                             std::string& next) {
+    return services.galaxies.getForPlayer(player->getId(), req.galaxyId);
 }
 
 template <>
@@ -343,11 +275,25 @@ std::vector<SystemData> Server::fetch<MessageFetchGalaxySystems>(const PlayerPtr
     return services.systems.getForPlayer(player->getId(), req.galaxyId, req.token, next);
 }
 
-template <typename RequestType> void Server::handleFetch(const Network::StreamPtr& stream, RequestType req) {
-    Log::i(CMP, "handleFetch id: {} token: {}", req.id, req.token);
+template <>
+std::vector<RegionData> Server::fetch<MessageFetchGalaxyRegions>(const PlayerPtr& player,
+                                                                 const MessageFetchGalaxyRegions& req,
+                                                                 std::string& next) {
+    return services.regions.getForPlayer(player->getId(), req.galaxyId, req.token, next);
+}
 
+template <>
+std::vector<SectorPlanetData> Server::fetch<MessageFetchSystemPlanets>(const PlayerPtr& player,
+                                                                       const MessageFetchSystemPlanets& req,
+                                                                       std::string& next) {
+    return services.systems.getSystemPlanets(req.galaxyId, req.systemId);
+}
+
+template <typename RequestType> void Server::handleFetch(const Network::StreamPtr& stream, RequestType req) {
     worker.post([=]() {
         try {
+            Log::d(CMP, "handle fetch for type: '{}' id: '{}' token: '{}'", typeid(RequestType).name(), req.id,
+                   req.token);
             auto player = streamToPlayer(stream);
 
             typename RequestType::Response res{};

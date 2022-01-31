@@ -216,6 +216,15 @@ static Color4 asColor(const nk_color& color) {
             static_cast<float>(color.b) / 255.0f, static_cast<float>(color.a) / 255.0f};
 }
 
+static nk_color toNkColor(const Color4& color) {
+    nk_color res;
+    res.r = static_cast<nk_byte>(color.r * 255.0f);
+    res.g = static_cast<nk_byte>(color.g * 255.0f);
+    res.b = static_cast<nk_byte>(color.b * 255.0f);
+    res.a = static_cast<nk_byte>(color.a * 255.0f);
+    return res;
+}
+
 static Vector2 asVec(const struct nk_vec2& vec) {
     return {vec.x, vec.y};
 }
@@ -598,6 +607,10 @@ void GuiContext::label(const std::string& text, const TextAlignValue align) {
     nk_label(ctx.get(), text.c_str(), align);
 }
 
+void GuiContext::label(const std::string& text, const Color4& color, TextAlignValue align) {
+    nk_label_colored(ctx.get(), text.c_str(), align, toNkColor(color));
+}
+
 void GuiContext::title(const std::string& text) {
     setFont(fontFaceBold, config.guiFontSize + 2.0f);
     label(text);
@@ -610,6 +623,34 @@ void GuiContext::text(const std::string& text) {
 
 void GuiContext::layoutDynamic(const float height, const int count) {
     nk_layout_row_dynamic(ctx.get(), height, count);
+}
+
+void GuiContext::layoutDynamic(const float height, const int count, const std::function<void()>& fn) {
+    nk_layout_row_begin(ctx.get(), NK_DYNAMIC, height, count);
+    fn();
+    nk_layout_row_end(ctx.get());
+}
+
+void GuiContext::layoutDynamicPush(const float weight) {
+    nk_layout_row_push(ctx.get(), weight);
+}
+
+void GuiContext::layoutTemplated(const float height, const std::function<void()>& fn) {
+    nk_layout_row_template_begin(ctx.get(), height);
+    fn();
+    nk_layout_row_template_end(ctx.get());
+}
+
+void GuiContext::layoutTemplatedPushDynamic() {
+    nk_layout_row_template_push_dynamic(ctx.get());
+}
+
+void GuiContext::layoutTemplatedPushStatic(const float width) {
+    nk_layout_row_template_push_static(ctx.get(), width);
+}
+
+void GuiContext::layoutTemplatedPushVariable(const float width) {
+    nk_layout_row_template_push_variable(ctx.get(), width);
 }
 
 void GuiContext::combo(const std::string& selected, const Vector2& size, const std::function<void()>& fn) {
@@ -641,6 +682,11 @@ void GuiContext::tooltip(const float width, const std::function<void()>& fn) {
             nk_tooltip_end(ctx.get());
         }
     }
+}
+
+void GuiContext::progress(float progress) {
+    auto current = static_cast<nk_size>(progress * 100.0f);
+    nk_progress(ctx.get(), &current, 100, nk_false);
 }
 
 bool GuiContext::isNextHover() const {
@@ -726,10 +772,11 @@ void GuiContext::applyTheme() {
     auto& text = ctx->style.text;
     auto& combo = ctx->style.combo;
     auto& contextual_button = ctx->style.contextual_button;
+    auto& progress = ctx->style.progress;
 
     text.color = TEXT_WHITE;
     text.padding.x = 0;
-    text.padding.y = 0;
+    text.padding.y = 2;
 
     // window.background = PRIMARY_COLOR;
     window.border = 1.0f;
@@ -834,4 +881,18 @@ void GuiContext::applyTheme() {
     selectable.rounding = 0;
     selectable.padding.x = 0;
     selectable.padding.y = 0;
+
+    progress.border = 1.0f;
+    progress.rounding = 0;
+    progress.normal.data.color = TRANSPARENT_COLOR;
+    progress.border_color = BORDER_GREY;
+    progress.hover.data.color = TRANSPARENT_COLOR;
+    progress.active.data.color = TRANSPARENT_COLOR;
+    progress.cursor_normal.data.color = TEXT_WHITE;
+    progress.cursor_hover.data.color = TEXT_WHITE;
+    progress.cursor_active.data.color = TEXT_WHITE;
+    progress.cursor_border = 0.0f;
+    progress.cursor_border_color = TRANSPARENT_COLOR;
+    progress.padding.x = 0;
+    progress.padding.y = 0;
 }

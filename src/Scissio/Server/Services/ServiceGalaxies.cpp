@@ -31,3 +31,11 @@ void ServiceGalaxies::generate(const uint64_t seed) {
 
     db.put(galaxy.id, galaxy);
 }
+
+GalaxyData ServiceGalaxies::getForPlayer(const std::string& playerId, const std::string& id) {
+    auto galaxy = db.get<GalaxyData>(id);
+    if (!galaxy) {
+        EXCEPTION("Galaxy {} does not exist", id);
+    }
+    return galaxy.value();
+}

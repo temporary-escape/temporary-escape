@@ -14,7 +14,7 @@
 #include "SkyboxRenderer.hpp"
 
 namespace Scissio {
-class Renderer {
+class SCISSIO_API Renderer {
 public:
     static constexpr inline size_t maxDirectionalLights = 4;
 
@@ -45,8 +45,10 @@ private:
     void createFullScreenMesh();
     void createPlanetMesh();
     void updateLights(Scene& scene);
+    Camera* getPrimaryCamera(Scene& scene);
     void updateCameras(const Vector2i& viewport, Scene& scene);
     void renderPbr();
+    void renderCanvas(const Vector2i& viewport, Scene& scene);
     void renderSceneBackground(const Vector2i& viewport, Scene& scene);
     void renderScenePbr(const Vector2i& viewport, Scene& scene);
     void renderSceneForward(const Vector2i& viewport, Scene& scene);
@@ -54,6 +56,9 @@ private:
     void renderComponentPlanetSurface(ComponentPlanet& component);
     void renderComponentPlanetAtmosphere(ComponentPlanet& component);
     void renderComponentModel(ComponentModel& component);
+    void renderComponentCanvasImage(const Camera& camera, ComponentCanvasImage& component);
+    void renderComponentCanvasLines(const Camera& camera, ComponentCanvasLines& component);
+    void renderComponentCanvasLabel(const Camera& camera, ComponentCanvasLabel& component);
     void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment);
 
     const Config& config;

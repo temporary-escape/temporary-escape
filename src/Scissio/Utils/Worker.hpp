@@ -100,11 +100,13 @@ public:
 private:
     void work();
 
+    size_t start;
     std::unique_ptr<asio::io_service> service;
     std::vector<std::thread> threads;
     std::mutex mutex;
-    std::condition_variable cv;
-    std::atomic_int counter;
+    std::condition_variable cvStart;
+    std::condition_variable cvStop;
+    size_t counter;
     std::atomic_bool flag;
 };
 } // namespace Scissio

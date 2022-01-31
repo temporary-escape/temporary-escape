@@ -35,3 +35,28 @@ std::vector<Vector4i> Scissio::packRectangles(const Vector2i& maxSize, const std
         return {};
     }
 }
+
+struct Packer::Data {
+    stbrp_context ctx;
+    std::vector<stbrp_node> nodes;
+};
+
+Packer::Packer(size_t num, const Vector2i& size) : data(std::make_unique<Data>()) {
+    data->nodes.resize(num);
+    stbrp_init_target(&data->ctx, size.x, size.y, data->nodes.data(), data->nodes.size());
+}
+
+Packer::~Packer() = default;
+
+std::optional<Vector2i> Packer::add(const Vector2i& size) {
+    stbrp_rect rect;
+    rect.w = size.x;
+    rect.h = size.y;
+
+    const auto ret = stbrp_pack_rects(&data->ctx, &rect, 1);
+    if (ret > 0) {
+        return Vector2i{rect.x, rect.y};
+    } else {
+        return std::nullopt;
+    }
+}

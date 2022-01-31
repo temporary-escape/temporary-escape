@@ -21,7 +21,7 @@ public:
     virtual ~Scene();
 
     void update();
-
+    void removeEntity(const EntityPtr& entity);
     void addEntity(EntityPtr entity);
     /*template <typename T, typename... Args> T& addComponent(const EntityPtr& entity, Args&&... args) {
         auto& system = getComponentSystem<T>();
@@ -41,6 +41,13 @@ public:
     const std::vector<EntityPtr>& getEntities() const {
         return entities;
     }
+
+    void eventMouseMoved(const Vector2i& pos);
+    void eventMousePressed(const Vector2i& pos, MouseButton button);
+    void eventMouseReleased(const Vector2i& pos, MouseButton button);
+    void eventMouseScroll(int xscroll, int yscroll);
+    void eventKeyPressed(Key key, Modifiers modifiers);
+    void eventKeyReleased(Key key, Modifiers modifiers);
 
 private:
     EventListener& eventListener;

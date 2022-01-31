@@ -3,6 +3,7 @@
 #include "Path.hpp"
 #include <optional>
 #include <unordered_map>
+#include <vector>
 
 struct _xmlDoc;
 struct _xmlSchema;
@@ -41,6 +42,9 @@ public:
     [[nodiscard]] int64_t asLong() const;
     [[nodiscard]] double asDouble() const;
     [[nodiscard]] bool asBool() const;
+    [[nodiscard]] float asFloat() const {
+        return static_cast<float>(asDouble());
+    }
 
 private:
     std::shared_ptr<_xmlDoc> doc;
@@ -100,14 +104,17 @@ public:
     [[nodiscard]] Node next(const std::string& name) const;
     [[nodiscard]] Node child() const;
     [[nodiscard]] Node child(const std::string& name) const;
-    [[nodiscard]] Attribute attribute(const std::string& name) const;
+    [[nodiscard]] std::optional<Attribute> attribute(const std::string& name) const;
     [[nodiscard]] std::string asString() const;
     [[nodiscard]] int64_t asLong() const;
     [[nodiscard]] double asDouble() const;
     [[nodiscard]] bool asBool() const;
+    [[nodiscard]] float asFloat() const {
+        return static_cast<float>(asDouble());
+    }
 
-    Iterator<Node> begin();
-    Iterator<Node> end();
+    Iterator<Node> begin() const;
+    Iterator<Node> end() const;
 
     [[nodiscard]] const std::string& getName() const;
 
@@ -136,6 +143,16 @@ public:
 
 private:
     std::shared_ptr<_xmlDoc> doc;
+};
+
+template <typename T> struct Adaptor<std::vector<T>> {
+    static void convert(const Xml::Node& node, std::vector<T>& value) {
+        for (const auto& child : node) {
+            T v{};
+            child.template convert<T>(v);
+            value.push_back(std::move(v));
+        }
+    }
 };
 
 template <> struct Adaptor<std::string> {

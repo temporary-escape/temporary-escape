@@ -1,10 +1,16 @@
 #pragma once
 
 #include "ComponentCamera.hpp"
+#include "ComponentCameraTop.hpp"
+#include "ComponentCameraTurntable.hpp"
+#include "ComponentCanvasImage.hpp"
+#include "ComponentCanvasLines.hpp"
 #include "ComponentDirectionalLight.hpp"
+#include "ComponentCanvasLabel.hpp"
 #include "ComponentModel.hpp"
 #include "ComponentPlanet.hpp"
 #include "ComponentSkybox.hpp"
+#include "ComponentUserInput.hpp"
 #include "Object.hpp"
 
 #include <memory>
@@ -17,6 +23,12 @@ class Scene;
 using EntityComponentHelper = ComponentHelper<
     // DO NOT CHANGE THE ORDER! ADD NEW COMPONENTS AT THE BOTTOM!
     ComponentCamera,
+    ComponentCameraTurntable,
+    ComponentCameraTop,
+    ComponentCanvasImage,
+    ComponentCanvasLines,
+    ComponentCanvasLabel,
+    ComponentUserInput,
     ComponentSkybox,
     ComponentModel,
     ComponentDirectionalLight,

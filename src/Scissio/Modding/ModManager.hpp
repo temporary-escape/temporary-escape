@@ -12,7 +12,6 @@ public:
     virtual ~ModManager() = default;
 
     void load(AssetManager& assetManager, const Path& dir);
-    void loadXmlData(AssetManager& assetManager, const Path& dir, Database& db);
 
 private:
     std::vector<std::shared_ptr<Manifest>> manifests;

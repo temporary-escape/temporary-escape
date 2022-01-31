@@ -17,6 +17,11 @@ ServiceRegions::ServiceRegions(const Config& config, AssetManager& assetManager,
 void ServiceRegions::tick() {
 }
 
+std::vector<RegionData> ServiceRegions::getForPlayer(const std::string& playerId, const std::string& galaxyId,
+                                                     const std::string& start, std::string& next) {
+    return db.next<RegionData>(fmt::format("{}/", galaxyId), start, 64, &next);
+}
+
 void ServiceRegions::generate() {
     const auto galaxies = db.seek<GalaxyData>("");
     for (const auto& galaxy : galaxies) {

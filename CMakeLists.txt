@@ -5,7 +5,7 @@ set(CMAKE_MODULE_PATH
 
 project(Scissio)
 
-option(SCISSIO_BUILD_TESTS "Build with tests" OFF)
+option(SCISSIO_BUILD_TESTS "Build with tests" ON)
 
 if (NOT MSVC)
     find_package(ZLIB REQUIRED)
@@ -37,4 +37,7 @@ find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+
+if (SCISSIO_BUILD_TESTS)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif ()

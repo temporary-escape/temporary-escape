@@ -52,20 +52,24 @@ int main(int argc, char** argv) {
     Log::configure(true);
     Log::i("main", "Scissio main");
 
-    cxxopts::Options options("Scissio", "Space sim multiplayer game");
+    cxxopts::Options parser("Scissio", "Space sim multiplayer game");
 
     const auto defaultRoot = execDir().parent_path().parent_path();
     const auto defaultUserData = appDataDir();
 
-    options.add_options()("r,root", "Path to the root game folder",
-                          cxxopts::value<std::string>()->default_value(defaultRoot.string()));
+    parser.add_options()("r,root", "Path to the root game folder",
+                         cxxopts::value<std::string>()->default_value(defaultRoot.string()));
 
-    options.add_options()("u,userdata", "Path to the user data folder",
-                          cxxopts::value<std::string>()->default_value(defaultUserData.string()));
+    parser.add_options()("u,userdata", "Path to the user data folder",
+                         cxxopts::value<std::string>()->default_value(defaultUserData.string()));
 
-    auto args = options.parse(argc, argv);
+    parser.add_options()("save-clean", "Delete the save folder and create a new one");
+
+    parser.add_options()("save-name", "Name of the save folder", cxxopts::value<std::string>());
 
     try {
+        auto args = parser.parse(argc, argv);
+
         const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
         Config config{};
         config.assetsPath = rootPath / "assets";
@@ -73,10 +77,16 @@ int main(int argc, char** argv) {
         config.userdataSavesPath = config.userdataPath / "Saves";
         config.shadersPath = rootPath / "shaders";
 
+        Application::Options options{};
+        if (args.count("save-name")) {
+            options.saveFolderName = args["save-name"].as<std::string>();
+        }
+        options.saveFolderClean = args["save-clean"].as<bool>();
+
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
 
-        Application application(config);
+        Application application(config, options);
         application.run();
     } catch (const std::exception& e) {
         BACKTRACE("Main", e, "fatal error");

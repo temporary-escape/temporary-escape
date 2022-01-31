@@ -11,10 +11,6 @@
 struct NVGcontext;
 
 namespace Scissio {
-class FontFace;
-class Image;
-class Icon;
-
 class SCISSIO_API Canvas2D {
 public:
     Canvas2D();
@@ -22,39 +18,13 @@ public:
     virtual ~Canvas2D();
 
     using FontHandle = int;
+    using ImageHandle = int;
 
-    class Image {
-    public:
-        Image() : handle(-1), atlasSize{0}, pos{0}, size{0} {
-        }
-
-        explicit Image(const int handle, const Vector2& atlasSize, const Vector2& pos, const Vector2& size)
-            : handle(handle), atlasSize(atlasSize), pos(pos), size(size) {
-        }
-
-        ~Image() = default;
-
-        int getHandle() const {
-            return handle;
-        }
-
-        const Vector2& getPos() const {
-            return pos;
-        }
-
-        const Vector2& getSize() const {
-            return size;
-        }
-
-        const Vector2& getAtlasSize() const {
-            return atlasSize;
-        }
-
-    private:
-        int handle;
-        Vector2 atlasSize;
-        Vector2 pos;
-        Vector2 size;
+    struct Image {
+        ImageHandle handle{0};
+        Vector2i atlasSize;
+        Vector2i size;
+        Vector2i pos;
     };
 
     void beginFrame(const Vector2i& viewport);
@@ -64,6 +34,7 @@ public:
     void closePath() const;
     void roundedRect(const Vector2& pos, const Vector2& size, float radius) const;
     void rect(const Vector2& pos, const Vector2& size) const;
+    void circle(const Vector2& pos, float radius) const;
     void moveTo(const Vector2& pos) const;
     void lineTo(const Vector2& pos) const;
     void fill() const;
@@ -72,15 +43,8 @@ public:
     void strokeColor(const Color4& color) const;
     void strokeWidth(float width) const;
     FontHandle loadFont(const Path& path);
-    /*Image loadImage(const Texture2D& texture, const Vector2i& textureSize) {
-        return loadImage(texture, textureSize, {0, 0}, textureSize);
-    }*/
-    // Image loadImage(const Texture2D& texture, const Vector2i& textureSize, const Vector2i& pos, const Vector2i&
-    // size);
-    // Image loadImage(const Scissio::Image& image);
-    // Image loadImage(const Scissio::Icon& icon);
-    // void rectImage(const Vector2& pos, const Vector2& size, const Image& image,
-    //               const Color4& color = Color4{1.0f}) const;
+    ImageHandle textureToImageHandle(const Texture2D& texture, const Vector2i& size);
+    void rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color = Color4{1.0f});
     void fontFace(const FontHandle& font) const;
     void fontSize(float size) const;
     void text(const Vector2& pos, const std::string& str) const;

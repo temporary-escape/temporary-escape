@@ -31,7 +31,7 @@ void Texture2D::setStorage(const int level, const Vector2i& size, const PixelTyp
 }
 
 void Texture2D::setPixels(const int level, const Vector2i& offset, const Vector2i& size, const PixelType pixelType,
-                          void* pixels) {
+                          const void* pixels) {
 
     bind();
     const auto format = toTextureFormat(pixelType);

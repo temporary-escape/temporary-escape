@@ -1,4 +1,5 @@
 #include "Sector.hpp"
+#include "../Utils/StringUtils.hpp"
 #include "Server.hpp"
 
 #define CMP "Sector"
@@ -6,24 +7,27 @@
 using namespace Scissio;
 
 Sector::Sector(Server& server, Database& db, std::string compoundId)
-    : server(server), db(db), compoundId(std::move(compoundId)) {
+    : server(server), db(db), compoundId(std::move(compoundId)), loaded(false) {
 
-    Log::i(CMP, "Started sector {}", compoundId);
+    Log::i(CMP, "Started sector: '{}'", this->compoundId);
 }
 
 Sector::~Sector() {
-    Log::i(CMP, "Stopped sector {}", compoundId);
+    Log::i(CMP, "Stopped sector: '{}'", compoundId);
 }
 
-/*void Sector::load(GeneratorChain& generator) {
-    const auto found = db.get<SectorData>(compoundId);
-    if (!found) {
-        EXCEPTION("Failed to get sector data for {}", compoundId);
+void Sector::load() {
+    if (loaded) {
+        return;
     }
 
-    const auto& data = found.value();
-    generator.populate(db, data.seed, scene, data.galaxyId, data.systemId, data.id);
-}*/
+    loaded = true;
+    const auto tokens = split(compoundId, "/");
+    const auto& galaxyId = tokens.at(0);
+    const auto& systemId = tokens.at(1);
+    const auto& sectorId = tokens.at(2);
+    server.getSectorLoader().populate(galaxyId, systemId, sectorId, scene);
+}
 
 void Sector::update() {
     for (auto& player : players) {
@@ -57,7 +61,7 @@ void Sector::update() {
 }
 
 void Sector::addPlayer(PlayerPtr player) {
-    sync.post([=]() {
+    sync.post([this, player = std::move(player)]() {
         Log::i(CMP, "Adding player: '{}' to sector: '{}'", player->getId(), compoundId);
         players.emplace_back();
         players.back().ptr = player;
@@ -71,7 +75,8 @@ void Sector::addPlayer(PlayerPtr player) {
         std::transform(scene.getEntities().begin(), scene.getEntities().end(),
                        std::back_inserter(players.back().entities), op);
 
-        MessageSectorChanged msg{compoundId};
+        auto location = server.getServices().players.getLocation(player->getId());
+        MessageSectorChanged msg{location};
         player->send(msg);
     });
 }

@@ -3,9 +3,12 @@
 #include "../Library.hpp"
 #include "../Utils/Exceptions.hpp"
 #include "Asset.hpp"
+#include "AssetAsteroid.hpp"
 #include "AssetFontFamily.hpp"
+#include "AssetImage.hpp"
 #include "AssetModel.hpp"
 #include "AssetPlanet.hpp"
+#include "TextureAtlas.hpp"
 #include "TextureCompressor.hpp"
 #include <functional>
 #include <queue>
@@ -54,10 +57,13 @@ public:
     AssetFontFacePtr addFontFace(const Manifest& mod, const Path& path);
     AssetModelPtr addModel(const Manifest& mod, const Path& path);
     AssetTexturePtr addTexture(const Manifest& mod, const Path& path, TextureType type);
+    AssetImagePtr addImage(const Manifest& mod, const Path& path);
     AssetPlanetPtr addPlanet(const Manifest& mod, const Path& path);
+    AssetAsteroidPtr addAsteroid(const Manifest& mod, const Path& path);
     AssetLoadQueue getLoadQueue();
 
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);
+    Canvas2D::Image addToAtlas(const Vector2i& size, const void* pixels);
     Canvas2D::FontHandle createFontHandle(const Path& path);
 
     static AssetManager& singleton();
@@ -70,6 +76,7 @@ private:
     const Config& config;
     Canvas2D& canvas;
     TextureCompressor& textureCompressor;
+    TextureAtlas textureAtlas;
     AssetPtrMap assets;
 };
 } // namespace Scissio

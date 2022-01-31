@@ -370,9 +370,10 @@ public:
 
     bool transaction(const std::function<bool(Transaction&)>& fn, bool retry = true);
 
-    template <typename T> bool update(const std::string& key, const std::function<bool(std::optional<T>&)>& fn) {
-        return transaction([&](Transaction& txn) -> bool {
-            auto found = txn.template getForUpdate<T>(key);
+    template <typename T> std::tuple<bool, std::optional<T>> update(const std::string& key, const std::function<bool(std::optional<T>&)>& fn) {
+        std::optional<T> found;
+        const auto updated = transaction([&](Transaction& txn) -> bool {
+            found = txn.template getForUpdate<T>(key);
 
             const auto res = fn(found);
             if (res && found.has_value()) {
@@ -382,6 +383,8 @@ public:
 
             return false;
         });
+
+        return {updated, found};
     }
 
 private:

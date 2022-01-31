@@ -215,8 +215,6 @@ void Renderer::createPlanetMesh() {
 }
 
 void Renderer::render(const Vector2i& viewport, Scene& scene) {
-    // const auto t0 = std::chrono::steady_clock::now();
-
     if (gBuffer.size != viewport) {
         gBuffer.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
         gBuffer.fboColorAlpha.setStorage(0, viewport, PixelType::Rgba8u);
@@ -245,29 +243,9 @@ void Renderer::render(const Vector2i& viewport, Scene& scene) {
 
     // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
 
-    // renderPbr();
+    renderPbr();
 
-    /*glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-
-    GLuint attachments[1] = {
-        GL_COLOR_ATTACHMENT0,
-    };
-    glDrawBuffers(1, attachments);*/
-
-    /*canvas.beginFrame(viewport);
-    gui.reset();
-
-    widgetDebugStats.render();
-
-    gui.render(viewport);
-    canvas.endFrame();*/
-
-    /*const auto t1 = std::chrono::steady_clock::now();
-    const auto tDiff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
-    client.getStats().render.frameTimeMs.store(tDiff.count());*/
+    renderCanvas(viewport, scene);
 }
 
 void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target,
@@ -277,6 +255,42 @@ void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.getHandle());
     glViewport(0, 0, viewport.x, viewport.y);
     glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
+void Renderer::renderCanvas(const Vector2i& viewport, Scene& scene) {
+    auto camera = getPrimaryCamera(scene);
+    if (!camera) {
+        return;
+    }
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    canvas.beginFrame(viewport);
+
+    auto& componentSystemCanvasLines = scene.getComponentSystem<ComponentCanvasLines>();
+    for (auto& component : componentSystemCanvasLines) {
+        renderComponentCanvasLines(*camera, *component);
+    }
+
+    auto& componentSystemCanvasImage = scene.getComponentSystem<ComponentCanvasImage>();
+    for (auto& component : componentSystemCanvasImage) {
+        renderComponentCanvasImage(*camera, *component);
+    }
+
+    auto& componentSystemCanvasLabel = scene.getComponentSystem<ComponentCanvasLabel>();
+    for (auto& component : componentSystemCanvasLabel) {
+        renderComponentCanvasLabel(*camera, *component);
+    }
+
+    canvas.endFrame();
 }
 
 void Renderer::renderPbr() {
@@ -333,7 +347,7 @@ void Renderer::renderSceneBackground(const Vector2i& viewport, Scene& scene) {
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 
     shaders.skybox.use();
-    shaders.skybox.bindCameraUniform(cameraUbo);
+    shaders.skybox.bindCameraUniform(cameraZeroPosUbo);
 
     if (componentSkybox != componentSystemSkybox.end()) {
         renderComponentSkybox(**componentSkybox);
@@ -421,16 +435,40 @@ void Renderer::updateLights(Scene& scene) {
     }
 }
 
-void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
-    auto& componentSystemCameras = scene.getComponentSystem<ComponentCamera>();
+Camera* Renderer::getPrimaryCamera(Scene& scene) {
+    auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
+    auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
 
-    ComponentCamera* primary = nullptr;
-    for (auto& component : componentSystemCameras) {
-        component->setProjection(viewport, 70.0f);
+    Camera* primary = nullptr;
+
+    for (auto& component : componentSystemCameraTurntable) {
         if (component->getPrimary()) {
             primary = component;
         }
     }
+
+    for (auto& component : componentSystemCameraTop) {
+        if (component->getPrimary()) {
+            primary = component;
+        }
+    }
+
+    return primary;
+}
+
+void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
+    auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
+    auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
+
+    for (auto& component : componentSystemCameraTurntable) {
+        component->setViewport(viewport);
+    }
+
+    for (auto& component : componentSystemCameraTop) {
+        component->setViewport(viewport);
+    }
+
+    auto primary = getPrimaryCamera(scene);
 
     const auto makeUniform = [&](const bool zero) {
         auto viewMatrix = primary->getViewMatrix();
@@ -537,4 +575,48 @@ void Renderer::renderComponentModel(ComponentModel& component) {
 
         shaders.model.draw(primitive.mesh);
     }
+}
+
+void Renderer::renderComponentCanvasImage(const Camera& camera, ComponentCanvasImage& component) {
+    const auto& size = component.getSize();
+    const auto& image = component.getImage();
+    const auto& color = component.getColor();
+
+    canvas.beginPath();
+    const auto projected = camera.worldToScreen(component.getObject().getPosition()) + component.getOffset();
+    canvas.rectImage(projected - size / 2.0f, size, image->getImage(), color);
+    canvas.fill();
+    canvas.closePath();
+}
+
+void Renderer::renderComponentCanvasLines(const Camera& camera, ComponentCanvasLines& component) {
+    const auto width = component.getWidth();
+    const auto& color = component.getColor();
+
+    canvas.beginPath();
+    canvas.strokeColor(color);
+    canvas.strokeWidth(width);
+    for (const auto& [from, to] : component.getLines()) {
+        canvas.moveTo(camera.worldToScreen(from));
+        canvas.lineTo(camera.worldToScreen(to));
+    }
+    canvas.stroke();
+    canvas.closePath();
+}
+
+void Renderer::renderComponentCanvasLabel(const Camera& camera, ComponentCanvasLabel& component) {
+    if (!component.getVisible()) {
+        return;
+    }
+
+    canvas.beginPath();
+    canvas.fillColor(component.getColor());
+    canvas.fontFace(component.getFontFace()->getHandle());
+    canvas.fontSize(component.getSize());
+    auto projected = camera.worldToScreen(component.getObject().getPosition()) + component.getOffset();
+    if (component.getCentered()) {
+        projected -= canvas.textBounds(component.getText()) / 2.0f;
+    }
+    canvas.text(projected, component.getText());
+    canvas.closePath();
 }

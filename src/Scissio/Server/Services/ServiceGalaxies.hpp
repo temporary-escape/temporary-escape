@@ -10,6 +10,7 @@ public:
 
     void generate(uint64_t seed);
     std::vector<GalaxyData> getForPlayer(const std::string& playerId);
+    GalaxyData getForPlayer(const std::string& playerId, const std::string& id);
 
     void tick() override;
 

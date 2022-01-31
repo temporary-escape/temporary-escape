@@ -16,6 +16,6 @@ public:
     Texture2D& operator=(Texture2D&& other) noexcept;
 
     void setStorage(int level, const Vector2i& size, PixelType pixelType);
-    void setPixels(int level, const Vector2i& offset, const Vector2i& size, PixelType pixelType, void* pixels);
+    void setPixels(int level, const Vector2i& offset, const Vector2i& size, PixelType pixelType, const void* pixels);
 };
 } // namespace Scissio
