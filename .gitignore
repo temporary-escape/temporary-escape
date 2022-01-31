@@ -7,6 +7,10 @@ out/
 # IDE folders
 .vscode/
 .vs/
+.idea/
+
+# IDE files
+Folder.DotSettings.user
 
 # CMake cache
 CMakeSettings.json
