@@ -25,6 +25,7 @@ temp/
 # Hugo
 .hugo_build.lock
 docs/resources/_gen/
+docs/public/
 
 # Install directory
 install/

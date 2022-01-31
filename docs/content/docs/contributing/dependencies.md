@@ -59,10 +59,7 @@ sudo pacman -Sy \
     git base-devel git cmake ninja \
     curl zip unzip tar clang
 
-# Install vcpkg from https://aur.archlinux.org/packages/vcpkg-git/
-sudo pamac build vcpkg-git
-
-# Or use a manuall setup:
+# Install vcpkg
 git clone https://github.com/Microsoft/vcpkg.git
 sudo mv ./vcpkg /opt/vcpkg
 sudo groupadd vcpkg

@@ -17,21 +17,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 'Windows x64'
+          - name: 'Windows (x64)'
             os: windows-latest
             triplet: x64-windows
             vcpkg_dir: 'C:\vcpkg'
             suffix: 'windows-win64'
             generator: 'Visual Studio 16 2019'
             arch: '-A x64'
-          - name: 'Linux x64'
+          - name: 'Linux (x64)'
             os: ubuntu-latest
             triplet: x64-linux
             suffix: 'linux-amd64'
             vcpkg_dir: '/usr/local/share/vcpkg'
             generator: 'Ninja'
             arch: ''
-          - name: 'Mac OSX x64'
+          - name: 'Mac OSX (x64)'
             os: macos-latest
             triplet: x64-osx
             suffix: 'osx-amd64'
@@ -44,6 +44,15 @@ jobs:
         uses: actions/checkout@v1
         with:
           submodules: true
+
+      - name: Dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+            apt-get install -y ninja-build clang
+          elif [ "{{ matrix.triplet }}" == "x64-osx" ]; then
+            brew install ninja llvm
+          fi
 
       - name: Configure Vcpkg
         shell: bash
@@ -62,6 +71,15 @@ jobs:
         run: |
           mkdir -p build
           mkdir -p install
+          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+            which clang++
+            export CC=/usr/bin/clang
+            export CXX=/usr/bin/clang++
+          elif [ "{{ matrix.triplet }}" == "x64-osx" ]; then
+            which clang++
+            export CC=/usr/local/bin/clang
+            export CXX=/usr/local/bin/clang++
+          fi
           cmake \
             -B ./build \
             -G "${{ matrix.generator }}" ${{ matrix.arch }} \
@@ -85,10 +103,41 @@ jobs:
         shell: bash
         run: |
           cd build && ctest -C MinSizeRel --verbose 2>&1 | tee ctest.log
-      
-      - name: Archive ctest output
+
+      - name: Archive Unit Tests output
         uses: actions/upload-artifact@v2
         if: always()
         with:
           name: ctest-log
           path: build/ctest.log
+
+  docs:
+    name: Documentation (gh-pages)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Download Hugo
+        shell: bash
+        run: |
+          wget https://github.com/gohugoio/hugo/releases/download/v0.92.1/hugo_extended_0.92.1_Linux-64bit.tar.gz
+          tar xvf hugo_extended_0.92.1_Linux-64bit.tar.gz
+          sudo mv ./hugo /usr/local/bin/hugo
+          sudo chmod +x /usr/local/bin/hugo
+          hugo version
+
+      - name: Run Hugo
+        shell: bash
+        run: |
+          cd docs
+          hugo
+      
+      - name: Deploy
+        if: startsWith(github.ref, 'refs/heads/master')
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ github.workspace }}/docs/public

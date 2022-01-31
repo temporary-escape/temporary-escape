@@ -2,32 +2,88 @@
   "name": "scissio",
   "version-string": "0.1.0",
   "dependencies": [
-    "liblzma",
-    "zlib",
-    "glfw3",
-    "glm",
-    "glad",
-    "fmt",
-    "libxml2",
-    "nanovg",
-    "libpng",
-    "cgltf",
-    "msgpack",
-    "asio",
-    "stb",
-    "catch2",
-    "spdlog",
-    "cxxopts",
-    "freetype",
-    "rocksdb",
-    "openssl",
+    {
+      "name": "zlib",
+      "version>=": "1.2.11#13"
+    },
+    {
+      "name": "glfw3",
+      "version>=": "3.3.6"
+    },
+    {
+      "name": "glm",
+      "version>=": "0.9.9.8"
+    },
+    {
+      "name": "glad",
+      "version>=": "0.1.34"
+    },
+    {
+      "name": "fmt",
+      "version>=": "8.0.1"
+    },
+    {
+      "name": "libxml2",
+      "version>=": "2.9.12"
+    },
+    {
+      "name": "nanovg",
+      "version>=": "2019-8-30"
+    },
+    {
+      "name": "libpng",
+      "version>=": "1.6.37#16"
+    },
+    {
+      "name": "cgltf",
+      "version>=": "1.11"
+    },
+    {
+      "name": "msgpack",
+      "version>=": "3.3.0"
+    },
+    {
+      "name": "asio",
+      "version>=": "1.20.0"
+    },
+    {
+      "name": "stb",
+      "version>=": "2020-09-14"
+    },
+    {
+      "name": "catch2",
+      "version>=": "2.13.8"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.9.2"
+    },
+    {
+      "name": "cxxopts",
+      "version>=": "3.0.0"
+    },
+    {
+      "name": "freetype",
+      "version>=": "2.11.0"
+    },
+    {
+      "name": "rocksdb",
+      "version>=": "6.27.3"
+    },
+    {
+      "name": "openssl",
+      "version>=": "1.1.1l"
+    },
     {
       "name": "libuuid",
-      "platform": "!windows"
+      "platform": "!windows",
+      "version>=": "1.0.3#9"
     },
     {
       "name": "liblzma",
-      "platform": "linux"
+      "platform": "!windows",
+      "version>=": "5.2.5#4"
     }
-  ]
+  ],
+  "builtin-baseline": "1085a57da0725c19e19586025438e8c16f34c890"
 }
