@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            apt-get install -y ninja-build clang
+            sudo apt-get install -y ninja-build clang
           elif [ "{{ matrix.os }}" == "macos-latest" ]; then
             brew install ninja llvm
           fi
