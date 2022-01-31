@@ -1,0 +1,94 @@
+name: build
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Windows x64'
+            os: windows-latest
+            triplet: x64-windows
+            vcpkg_dir: 'C:\vcpkg'
+            suffix: 'windows-win64'
+            generator: 'Visual Studio 16 2019'
+            arch: '-A x64'
+          - name: 'Linux x64'
+            os: ubuntu-latest
+            triplet: x64-linux
+            suffix: 'linux-amd64'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+            generator: 'Ninja'
+            arch: ''
+          - name: 'Mac OSX x64'
+            os: macos-latest
+            triplet: x64-osx
+            suffix: 'osx-amd64'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+            generator: 'Ninja'
+            arch: ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Configure Vcpkg
+        shell: bash
+        run: |
+          cd ${{ matrix.vcpkg_dir }}
+          git fetch origin
+          git reset --hard origin/master
+          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+            ./bootstrap-vcpkg.bat
+          else
+            ./bootstrap-vcpkg.sh
+          fi
+
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir -p build
+          mkdir -p install
+          cmake \
+            -B ./build \
+            -G "${{ matrix.generator }}" ${{ matrix.arch }} \
+            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            .
+
+      - name: Compile Game
+        shell: bash
+        run: |
+          cmake --build ./build --target TemporaryEscapeMain --config MinSizeRel
+
+      - name: Compile Unit Tests
+        shell: bash
+        run: |
+          cmake --build ./build --target TemporaryEscapeUnitTests --config MinSizeRel
+
+      - name: Run Unit Tests
+        shell: bash
+        run: |
+          cd build && ctest -C MinSizeRel --verbose 2>&1 | tee ctest.log
+      
+      - name: Archive ctest output
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: ctest-log
+          path: build/ctest.log

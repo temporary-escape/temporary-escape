@@ -1,1 +1,1 @@
-add_subdirectory(unit/Scissio)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/TemporaryEscapeUnitTests)

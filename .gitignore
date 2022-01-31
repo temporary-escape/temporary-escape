@@ -21,3 +21,10 @@ CMakeSettings.json
 
 # Additional folders
 temp/
+
+# Hugo
+.hugo_build.lock
+docs/resources/_gen/
+
+# Install directory
+install/

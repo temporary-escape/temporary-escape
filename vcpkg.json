@@ -24,6 +24,10 @@
     {
       "name": "libuuid",
       "platform": "!windows"
+    },
+    {
+      "name": "liblzma",
+      "platform": "linux"
     }
   ]
 }

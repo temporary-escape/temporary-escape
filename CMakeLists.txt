@@ -3,16 +3,17 @@ set(CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_LIST_DIR}/modules"
         )
 
-project(Scissio)
+project(TemporaryEscape)
 
-option(SCISSIO_BUILD_TESTS "Build with tests" ON)
+option(TEMPORARY_ESCAPE_BUILD_TESTS "Build with tests" OFF)
 
 if (NOT MSVC)
     find_package(ZLIB REQUIRED)
-    find_package(liblzma CONFIG REQUIRED)
+    find_package(LibLZMA REQUIRED)
     find_package(unofficial-libuuid CONFIG REQUIRED)
 else ()
     add_compile_options(/EHsc)
+    add_compile_options(/wd4251)
 endif ()
 
 find_package(glfw3 CONFIG REQUIRED)
@@ -38,6 +39,7 @@ find_package(OpenSSL REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
 
-if (SCISSIO_BUILD_TESTS)
+if (TEMPORARY_ESCAPE_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()

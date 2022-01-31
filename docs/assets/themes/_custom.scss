@@ -1,0 +1,46 @@
+@font-face {
+	font-family: 'Iosevka Aile Web';
+	font-display: block;
+	font-weight: 400;
+	font-stretch: normal;
+	font-style: normal;
+	src: url('fonts/ttf/iosevka-aile-regular.ttf') format('truetype'), url('fonts/woff2/iosevka-aile-regular.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Iosevka Aile Web';
+	font-display: block;
+	font-weight: 400;
+	font-stretch: normal;
+	font-style: italic;
+	src: url('fonts/ttf/iosevka-aile-italic.ttf') format('truetype'), url('fonts/woff2/iosevka-aile-italic.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Iosevka Aile Web';
+	font-display: block;
+	font-weight: 700;
+	font-stretch: normal;
+	font-style: normal;
+	src: url('fonts/ttf/iosevka-aile-bold.ttf') format('truetype'), url('fonts/woff2/iosevka-aile-bold.woff2') format('woff2');
+}
+
+body {
+    --gray-100: rgba(255, 255, 255, 0.1);
+    --gray-200: rgba(255, 255, 255, 0.2);
+    --gray-500: rgba(255, 255, 255, 0.5);
+
+    --color-link: #fcdb0d;
+    --color-visited-link: #fcdb0d;
+
+    --body-background: #050505;
+    --body-font-color: #d3d3d3;
+
+    --icon-filter: brightness(0) invert(1);
+
+    --hint-color-info: #6bf;
+    --hint-color-warning: #fd6;
+    --hint-color-danger: #f66;
+
+    font-family: 'Iosevka Aile Web', sans-serif !important;
+}

@@ -10,3 +10,6 @@
 [submodule "libs/nanovg"]
 	path = libs/nanovg
 	url = https://github.com/memononen/nanovg.git
+[submodule "docs/themes/hugo-book"]
+	path = docs/themes/hugo-book
+	url = https://github.com/alex-shpak/hugo-book
