@@ -19,21 +19,18 @@ jobs:
         include:
           - name: 'Windows (x64)'
             os: windows-latest
-            triplet: x64-windows
             vcpkg_dir: 'C:\vcpkg'
             suffix: 'windows-win64'
             generator: 'Visual Studio 16 2019'
             arch: '-A x64'
           - name: 'Linux (x64)'
             os: ubuntu-latest
-            triplet: x64-linux
             suffix: 'linux-amd64'
             vcpkg_dir: '/usr/local/share/vcpkg'
             generator: 'Ninja'
             arch: ''
           - name: 'Mac OSX (x64)'
             os: macos-latest
-            triplet: x64-osx
             suffix: 'osx-amd64'
             vcpkg_dir: '/usr/local/share/vcpkg'
             generator: 'Ninja'
@@ -48,9 +45,9 @@ jobs:
       - name: Dependencies
         shell: bash
         run: |
-          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             apt-get install -y ninja-build clang
-          elif [ "{{ matrix.triplet }}" == "x64-osx" ]; then
+          elif [ "{{ matrix.os }}" == "macos-latest" ]; then
             brew install ninja llvm
           fi
 
@@ -60,7 +57,7 @@ jobs:
           cd ${{ matrix.vcpkg_dir }}
           git fetch origin
           git reset --hard origin/master
-          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+          if [ "${{ matrix.os }}" == "windows-win64" ]; then
             ./bootstrap-vcpkg.bat
           else
             ./bootstrap-vcpkg.sh
@@ -71,11 +68,11 @@ jobs:
         run: |
           mkdir -p build
           mkdir -p install
-          if [ "${{ matrix.triplet }}" == "x64-windows" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             which clang++
             export CC=/usr/bin/clang
             export CXX=/usr/bin/clang++
-          elif [ "{{ matrix.triplet }}" == "x64-osx" ]; then
+          elif [ "{{ matrix.os }}" == "macos-latest" ]; then
             which clang++
             export CC=/usr/local/bin/clang
             export CXX=/usr/local/bin/clang++
