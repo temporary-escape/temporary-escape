@@ -42,9 +42,9 @@ jobs:
           
           if [ "$DISTRIB_RELEASE" == "20.04" ]; then
             wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing2_2.1-2_amd64.deb"
-            dpkg -i liburing2_2.1-2_amd64.deb
+            sudo dpkg -i liburing2_2.1-2_amd64.deb
             wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing-dev_2.1-2_amd64.deb"
-            dpkg -i liburing-dev_2.1-2_amd64.deb
+            sudo dpkg -i liburing-dev_2.1-2_amd64.deb
           else
             sudo apt-get install liburing-dev
           fi
