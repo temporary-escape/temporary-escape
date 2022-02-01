@@ -46,9 +46,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev
+            sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev liburing-dev
             which ninja
-          elif [ "{{ matrix.os }}" == "macos-latest" ]; then
+          fi
+          if [ "{{ matrix.os }}" == "macos-latest" ]; then
             brew install ninja llvm
             which ninja
           fi
@@ -78,7 +79,8 @@ jobs:
             which clang++
             export CC=/usr/bin/clang
             export CXX=/usr/bin/clang++
-          elif [ "{{ matrix.os }}" == "macos-latest" ]; then
+          fi
+          if [ "{{ matrix.os }}" == "macos-latest" ]; then
             which clang++
             export CC=/usr/local/bin/clang
             export CXX=/usr/local/bin/clang++
