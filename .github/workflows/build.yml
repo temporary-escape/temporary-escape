@@ -20,21 +20,12 @@ jobs:
           - name: 'Windows (x64)'
             os: windows-latest
             vcpkg_dir: 'C:\vcpkg'
-            suffix: 'windows-win64'
-            generator: 'Visual Studio 16 2019'
-            arch: '-A x64'
           - name: 'Linux (x64)'
             os: ubuntu-latest
-            suffix: 'linux-amd64'
             vcpkg_dir: '/usr/local/share/vcpkg'
-            generator: 'Ninja'
-            arch: ''
           - name: 'Mac OSX (x64)'
             os: macos-latest
-            suffix: 'osx-amd64'
             vcpkg_dir: '/usr/local/share/vcpkg'
-            generator: 'Ninja'
-            arch: ''
 
     steps:
       - name: Checkout
@@ -42,17 +33,36 @@ jobs:
         with:
           submodules: true
 
-      - name: Dependencies
+      - name: Dependencies (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev liburing-dev
-            which ninja
+          source /etc/lsb-release
+          sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev libc6-dev linux-libc-dev
+          
+          if [ "$DISTRIB_RELEASE" == "20.04" ]; then
+            wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing2_2.1-2_amd64.deb"
+            dpkg -i liburing2_2.1-2_amd64.deb
+            wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing-dev_2.1-2_amd64.deb"
+            dpkg -i liburing-dev_2.1-2_amd64.deb
+          else
+            sudo apt-get install liburing-dev
           fi
-          if [ "{{ matrix.os }}" == "macos-latest" ]; then
-            brew install ninja llvm
-            which ninja
-          fi
+
+          which ninja
+
+      - name: Dependencies (Mac OSX)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install ninja llvm
+          which ninja
+
+      - name: Dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          echo "skip"
 
       - name: Configure Vcpkg
         shell: bash
@@ -70,42 +80,63 @@ jobs:
         shell: bash
         run: cmake --version
 
-      - name: Configure
+      - name: Configure (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           mkdir -p build
           mkdir -p install
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            which clang++
-            export CC=/usr/bin/clang
-            export CXX=/usr/bin/clang++
-          fi
-          if [ "{{ matrix.os }}" == "macos-latest" ]; then
-            which clang++
-            export CC=/usr/local/bin/clang
-            export CXX=/usr/local/bin/clang++
-          fi
 
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ] || [ "${{ matrix.os }}" == "macos-latest" ]; then
-            cmake \
-              -B ./build \
-              -G "${{ matrix.generator }}" ${{ matrix.arch }} \
-              -DCMAKE_INSTALL_PREFIX=./install \
-              -DCMAKE_MAKE_PROGRAM=$(which ninja) \
-              -DCMAKE_BUILD_TYPE=MinSizeRel \
-              -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-              -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-              .
-          else
-            cmake \
-              -B ./build \
-              -G "${{ matrix.generator }}" ${{ matrix.arch }} \
-              -DCMAKE_INSTALL_PREFIX=./install \
-              -DCMAKE_BUILD_TYPE=MinSizeRel \
-              -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-              -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-              .
-          fi
+          which clang++
+          export CC=/usr/bin/clang
+          export CXX=/usr/bin/clang++
+
+          cmake \
+            -B ./build \
+            -G "Ninja" \
+            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_MAKE_PROGRAM=$(which ninja) \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            .
+
+      - name: Configure (Mac OSX)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p build
+          mkdir -p install
+
+          which clang++
+          export CC=/usr/local/bin/clang
+          export CXX=/usr/local/bin/clang++
+
+          cmake \
+            -B ./build \
+            -G "Ninja" \
+            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_MAKE_PROGRAM=$(which ninja) \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            .
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p build
+          mkdir -p install
+
+          cmake \
+            -B ./build \
+            -G "Visual Studio 16 2019" -A x64 \
+            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            .
 
       - name: Archive CMake output
         uses: actions/upload-artifact@v2
