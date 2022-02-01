@@ -136,11 +136,11 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
-      - name: Print vcpkg installed info
+      - name: Print vcpkg installed libraries
         if: always()
         shell: bash
         run: |
-          tail build/vcpkg_installed/vcpkg/info/*.list
+          ls -la build/vcpkg_installed/*/lib/
 
       - name: Archive CMake output
         uses: actions/upload-artifact@v2
@@ -174,26 +174,11 @@ jobs:
           name: ctest-log
           path: build/ctest.log
 
-      - name: Package (Windows)
-        if: runner.os == 'Windows'
+      - name: Package
         shell: bash
         run: |
           cd build
-          cpack -G "ZIP"
-
-      - name: Package (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          cd build
-          cpack -G "TGZ"
-
-      - name: Package (Mac OSX)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          cd build
-          cpack -G "ZIP"
+          cpack -C MinSizeRel
 
       - name: Archive package
         uses: actions/upload-artifact@v2

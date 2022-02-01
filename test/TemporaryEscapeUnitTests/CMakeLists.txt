@@ -1,4 +1,4 @@
-project(TemporaryEscapeUnitTests)
+project(TemporaryEscapeUnitTests VERSION "${PROJECT_VERSION}")
 
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
 

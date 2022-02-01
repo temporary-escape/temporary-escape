@@ -1,4 +1,4 @@
-project(TemporaryEscape)
+project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
 
@@ -59,4 +59,8 @@ set_target_properties(${PROJECT_NAME}
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape"
 )
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION .)
+install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION .
+        LIBRARY DESTINATION .
+        ARCHIVE DESTINATION .
+)

@@ -3,7 +3,14 @@ set(CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_LIST_DIR}/modules"
         )
 
-project(TemporaryEscape)
+execute_process(COMMAND git describe --always OUTPUT_VARIABLE VERSION_STRING OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" VERSION_MAJOR "${VERSION_STRING}")
+string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" VERSION_MINOR "${VERSION_STRING}")
+string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" VERSION_PATCH "${VERSION_STRING}")
+string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+(.*)" "\\1" VERSION_SHA1 "${VERSION_STRING}")
+set(PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+
+project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 
 option(TEMPORARY_ESCAPE_BUILD_TESTS "Build with tests" OFF)
 
@@ -53,5 +60,10 @@ install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/shaders" DESTINATION .)
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
 set(CPACK_OUTPUT_FILE_PREFIX "release")
-set(CPACK_GENERATOR "ZIP;TGZ" CACHE STRING "Generators to support")
+if(MSVC)
+    set(CPACK_GENERATOR "ZIP" CACHE STRING "Generators to support")
+else()
+    set(CPACK_GENERATOR "ZIP;TGZ" CACHE STRING "Generators to support")
+endif()
+set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}-${CMAKE_SYSTEM_NAME}")
 include(CPack)
