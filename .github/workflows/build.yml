@@ -87,9 +87,8 @@ jobs:
           mkdir -p build
           mkdir -p install
 
-          which clang++
-          export CC=/usr/bin/clang
-          export CXX=/usr/bin/clang++
+          export CC=$(which clang)
+          export CXX=$(which clang++)
 
           cmake \
             -B ./build \
@@ -108,9 +107,8 @@ jobs:
           mkdir -p build
           mkdir -p install
 
-          which clang++
-          export CC=/usr/local/bin/clang
-          export CXX=/usr/local/bin/clang++
+          export CC=$(which clang)
+          export CXX=$(which clang++)
 
           cmake \
             -B ./build \
@@ -131,7 +129,7 @@ jobs:
 
           cmake \
             -B ./build \
-            -G "Visual Studio 16 2019" -A x64 \
+            -G "Visual Studio 16 2019" -T ClangCL -A x64 \
             -DCMAKE_INSTALL_PREFIX=./install \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \

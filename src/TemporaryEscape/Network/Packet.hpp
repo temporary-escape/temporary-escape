@@ -166,7 +166,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Network::Packet const& v) const {
             o.pack_array(2);
             o.pack_uint64(v.id);
-            o.pack_bin(v.data.size());
+            o.pack_bin(static_cast<uint32_t>(v.data.size()));
             o.pack_bin_body(reinterpret_cast<const char*>(v.data.data()), v.data.size());
             return o;
         }

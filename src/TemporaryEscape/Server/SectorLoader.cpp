@@ -72,7 +72,7 @@ struct AsteroidCluster {
             if (asteroid->getModels().empty()) {
                 EXCEPTION("Asset '{}' has no models", asteroid->getName());
             }
-            const auto idx = randomInt(rng, 0UL, asteroid->getModels().size() - 1);
+            const auto idx = randomInt<size_t>(rng, 0UL, asteroid->getModels().size() - 1);
             return asteroid->getModels().at(idx).model;
         };
 

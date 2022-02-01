@@ -22,7 +22,7 @@ public:
         }
 
         void onChange(std::function<void()>&& fn) {
-            callbacks.template emplace_back(fn);
+            callbacks.emplace_back(fn);
         }
 
         Item& operator=(const T& other) {

@@ -6,6 +6,7 @@
 #include <msgpack.hpp>
 #include <msgpack/adaptor/define_decl.hpp>
 #include <optional>
+#include <sstream>
 
 namespace Engine {
 class MsgpackJsonVisitor : public msgpack::v2::null_visitor {
