@@ -37,9 +37,21 @@ find_package(WrenBind17 REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
+if(NOT MSVC)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
 
 if (TEMPORARY_ESCAPE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()
+
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/assets" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/shaders" DESTINATION .)
+
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
+set(CPACK_OUTPUT_FILE_PREFIX "release")
+set(CPACK_GENERATOR "ZIP;TGZ" CACHE STRING "Generators to support")
+include(CPack)

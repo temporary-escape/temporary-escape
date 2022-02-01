@@ -29,3 +29,6 @@ docs/public/
 
 # Install directory
 install/
+
+# Logs
+*.log

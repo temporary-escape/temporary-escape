@@ -36,6 +36,7 @@ public:
     }
 
     ~DummyClient() {
+        packets.clear();
         client.reset();
     }
 
@@ -67,6 +68,8 @@ public:
     }
 
     ~DummyServer() {
+        packets.clear();
+        streams.clear();
         server.reset();
     }
 

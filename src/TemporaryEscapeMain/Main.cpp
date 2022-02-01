@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
     cxxopts::Options parser("Temporary Escape", "Space sim multiplayer game");
 
-    const auto defaultRoot = execDir().parent_path().parent_path();
+    const auto defaultRoot = execDir();
     const auto defaultUserData = appDataDir();
 
     parser.add_options()("r,root", "Path to the root game folder",

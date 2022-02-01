@@ -93,7 +93,7 @@ jobs:
           cmake \
             -B ./build \
             -G "Ninja" \
-            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DCMAKE_MAKE_PROGRAM=$(which ninja) \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
@@ -113,7 +113,7 @@ jobs:
           cmake \
             -B ./build \
             -G "Ninja" \
-            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DCMAKE_MAKE_PROGRAM=$(which ninja) \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
@@ -130,11 +130,17 @@ jobs:
           cmake \
             -B ./build \
             -G "Visual Studio 16 2019" -T ClangCL -A x64 \
-            -DCMAKE_INSTALL_PREFIX=./install \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
+
+      - name: Print vcpkg installed info
+        if: always()
+        shell: bash
+        run: |
+          tail build/vcpkg_installed/vcpkg/info/*.list
 
       - name: Archive CMake output
         uses: actions/upload-artifact@v2
@@ -158,14 +164,43 @@ jobs:
       - name: Run Unit Tests
         shell: bash
         run: |
-          cd build && ctest -C MinSizeRel --verbose 2>&1 | tee ctest.log
+          cd build
+          ctest -C MinSizeRel --verbose 2>&1 | tee ctest.log
 
-      - name: Archive Unit Tests output
+      - name: Archive Tests output
         uses: actions/upload-artifact@v2
         if: always()
         with:
           name: ctest-log
           path: build/ctest.log
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd build
+          cpack -G "ZIP"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd build
+          cpack -G "TGZ"
+
+      - name: Package (Mac OSX)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd build
+          cpack -G "ZIP"
+
+      - name: Archive package
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: release
+          path: build/release/
 
   docs:
     name: Documentation (gh-pages)
