@@ -24,6 +24,11 @@ git submodule update --init
 
 ## 3. Configure project
 
+{{< hint warning >}}
+**Last argument is a dot**  
+Don't forget to specify which folder the CMake should run the configuration from. The last argument must be `.`, the current folder.
+{{< /hint >}}
+
 ### Linux
 
 Find where Clang++ is located on your system. This is not needed if using Visual Studio.
@@ -41,16 +46,36 @@ mkdir build
 CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake \
     -B ./build \
     -G "Ninja" \
+    -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake .
 ```
 
 ### Windows
 
-TBA
+```bat
+cd temporary-escape
+mkdir build
+cmake \
+    -B ./build \
+    -G "Visual Studio 19 2019" -A x64 -T ClangCL \
+    -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake .
+```
 
 ### Mac OSX
 
-TBA
+```bash
+cd temporary-escape
+mkdir build
+CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake \
+    -B ./build \
+    -G "Ninja" \
+    -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake .
+```
 
 ## Build
 
@@ -74,7 +99,10 @@ cd temporary-escape
 
 ### Windows
 
-TBA
+```bat
+cd temporary-escape
+.\build\src\TemporaryEscape\Debug\TemporaryEscape.exe --root $(pwd)
+```
 
 ### Mac OSX
 

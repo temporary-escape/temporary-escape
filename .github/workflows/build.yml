@@ -165,14 +165,16 @@ jobs:
         shell: bash
         run: |
           cd build
-          ctest -C MinSizeRel --verbose 2>&1 | tee ctest.log
+          ctest -C MinSizeRel --verbose --output-on-failure 2>&1 | tee ctest.log
 
       - name: Archive Tests output
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: ctest-log
-          path: build/ctest.log
+          name: Unit-Tests-Logs-${{ runner.os }}
+          path: |
+            build/ctest.log
+            build/Testing/Temporary/LastTest.log
 
       - name: Package
         shell: bash
@@ -184,7 +186,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: release
+          name: Releases
           path: build/release/
 
   docs:

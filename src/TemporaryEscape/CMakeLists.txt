@@ -3,6 +3,7 @@ project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
+target_compile_definitions(${PROJECT_NAME} PUBLIC GAME_VERSION=${VERSION_STRING})
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         glm::glm
