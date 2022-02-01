@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace Engine {
-class PeriodicWorker {
+class ENGINE_API PeriodicWorker {
 public:
     PeriodicWorker(const std::chrono::milliseconds& period);
     ~PeriodicWorker();
@@ -38,7 +38,7 @@ private:
     std::thread thread;
 };
 
-class BackgroundWorker {
+class ENGINE_API BackgroundWorker {
 public:
     explicit BackgroundWorker(size_t numTheads);
     ~BackgroundWorker();
@@ -54,7 +54,7 @@ public:
     std::vector<std::thread> threads;
 };
 
-class Worker {
+class ENGINE_API Worker {
 public:
     class Strand {
     public:

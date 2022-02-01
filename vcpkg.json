@@ -1,5 +1,5 @@
 {
-  "name": "scissio",
+  "name": "temporary-escape",
   "version-string": "0.1.0",
   "dependencies": [
     {
@@ -64,7 +64,8 @@
     },
     {
       "name": "freetype",
-      "version>=": "2.11.0"
+      "version>=": "2.11.0",
+      "features": [ "bzip2", "zlib" ]
     },
     {
       "name": "rocksdb",
