@@ -17,13 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 'Windows (x64)'
+          - name: 'Build - Windows'
             os: windows-latest
             vcpkg_dir: 'C:\vcpkg'
-          - name: 'Linux (x64)'
+          - name: 'Build - Linux'
             os: ubuntu-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
-          - name: 'Mac OSX (x64)'
+          - name: 'Build - Mac OSX'
             os: macos-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
 
@@ -203,7 +203,7 @@ jobs:
           path: build/release/
 
   docs:
-    name: Documentation (gh-pages)
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
