@@ -7,9 +7,12 @@ title: "Server"
 
 ## Tick
 
+TBA
+
 ## Sectors and scenes
+
+TBA
 
 ## Next
 
-See [database]({{< ref "database.md" >}}) page.
-
+See [Asset Manager]({{< ref "asset-manager.md" >}}) page.

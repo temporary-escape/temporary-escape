@@ -27,10 +27,6 @@
       "version>=": "2.9.12"
     },
     {
-      "name": "nanovg",
-      "version>=": "2019-8-30"
-    },
-    {
       "name": "libpng",
       "version>=": "1.6.37#16"
     },

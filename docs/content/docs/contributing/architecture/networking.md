@@ -43,7 +43,7 @@ sequenceDiagram
 
 The game uses a custom made RPC-like framework to send and receive messages. These messages are C++ structures that are serialized and deserialized via [msgpack-c](https://msgpack.org/index.html). These messages are then encrypted or decrypted via [openssl](https://www.openssl.org/) using a shared key. The raw data is stored in a "Packet", which is just an another C++ struct serialized via [msgpack-c](https://msgpack.org/index.html). This Packet also contains a unique message type ID, so that the client knows which type of a message (i.e. which C++ struct) has been received. We can use this type ID to assign a dispatch method called "handler" to the server or client. When a message is received, the corresponding "handle" method is called. 
 
-The type ID is generated via a platform independent hash algorithm, so that when you use different OS or a different C++ compiler between the server and client, the message is always routed correctly.
+The type ID is generated via a platform independent hash algorithm, so that when you use a different OS or a different C++ compiler between the server and client, the message ID is always the same. The message is deserialized and routed correctly to its handler callback function.
 
 Here is a sequence diagram showing the data flow of a message:
 
@@ -74,14 +74,14 @@ sequenceDiagram
 
 ## Requests and large data
 
-How does it deal with large data? For example, we need to fetch thousands of system info for a galaxy when the player open the galaxy map view.
+How does it deal with large data? For example, we need to fetch information about thousands of systems for a galaxy when the player opens the galaxy map view.
 
-The framework uses something called "requests" (see `Request` C++ struct). A request is just a type of a message that has a unique sequence ID, response type (C++ type), request data, and continuation token. When a request is made, a unique ID is assigned to the request. The request is sent over to the server. Once in the server the request is processed and data is sent back to the client.
+The framework uses something called "requests" (see `Request` C++ struct). A request is just a type of a message that has a unique sequence ID, response type (C++ type), request data, and continuation token. When a request is made a unique ID is assigned to the request. The request is sent over to the server. Once in the server the request is processed and data is sent back to the client.
 
-If the server has set the "token" string, the client will re-send the message with the token. The server will then process the message yet again, but using this token. This token is used by the [database]({{< ref "database.md" >}}) to seek next range of keys. Think of the "token" as a continuation token. Once an empty token is received to the client, the request is completed.
+If the server has set the "token" string the client will re-send the message with the token. The server will then process the message yet again, but using this token instead of starting from the beginning. This token is used by the [database]({{< ref "database.md" >}}) to seek next range of keys. Think of the "token" as a continuation token. Once an empty token is received to the client and the request is marked as completed.
 
-When the request is completed, the callback handler is called. Note that this callback is executed on the same thread as the rendering thread. This is by design. We want to handle data retrieval notification/callback functions on the same thread where OpenGL is running on, so that we can allocate OpenGL resources (such as meshes) within these callback functions.
+When the request is completed the callback handler is called. Note that this callback is executed on the same thread as the rendering thread. This is by design. We want to handle data retrieval notification/callback functions on the same thread where OpenGL is running on, so that we can allocate OpenGL resources (such as meshes) within these callback functions.
 
 ## Next
 
-See [server]({{< ref "server.md" >}}) page.
+See [Server]({{< ref "server.md" >}}) page.

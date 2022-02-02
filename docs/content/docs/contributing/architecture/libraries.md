@@ -7,6 +7,9 @@ title: "Libraries"
 
 List of libraries used in this game.
 
+* [wren](https://wren.io/) - Wren, an embeddable scripting language. Used for scripting purposes and modding.
+* [wrenbind17](https://github.com/matusnovak/wrenbind17) - A header only library for binding C++17 to Wren language.
+* [nuklear](https://github.com/Immediate-Mode-UI/Nuklear) - A single-header ANSI C immediate mode cross-platform GUI library.
 * [zlib](https://zlib.net/) - Needed by libpng.
 * [glfw3](https://www.glfw.org/) - Window and OpenGL context management.
 * [glm](https://github.com/g-truc/glm) - OpenGL header only C++ mathematics library.

@@ -4,122 +4,25 @@
 #include <nuklear.h>
 
 extern "C" {
-NK_LIB void* nk_memcopy(void* dst0, const void* src0, nk_size length) {
-    nk_ptr t;
-    char* dst = (char*)dst0;
-    const char* src = (const char*)src0;
-    if (length == 0 || dst == src)
-        goto done;
 
-#define nk_word int
-#define nk_wsize sizeof(nk_word)
-#define nk_wmask (nk_wsize - 1)
-#define NK_TLOOP(s)                                                                                                    \
-    if (t)                                                                                                             \
-    NK_TLOOP1(s)
-#define NK_TLOOP1(s)                                                                                                   \
-    do {                                                                                                               \
-        s;                                                                                                             \
-    } while (--t)
+NK_LIB void* nk_memcopy(void *dst0, const void *src0, nk_size length);
+NK_LIB void nk_memset(void *ptr, int c0, nk_size size);
 
-    if (dst < src) {
-        t = (nk_ptr)src; /* only need low bits */
-        if ((t | (nk_ptr)dst) & nk_wmask) {
-            if ((t ^ (nk_ptr)dst) & nk_wmask || length < nk_wsize)
-                t = length;
-            else
-                t = nk_wsize - (t & nk_wmask);
-            length -= t;
-            NK_TLOOP1(*dst++ = *src++);
-        }
-        t = length / nk_wsize;
-        NK_TLOOP(*(nk_word*)(void*)dst = *(const nk_word*)(const void*)src; src += nk_wsize; dst += nk_wsize);
-        t = length & nk_wmask;
-        NK_TLOOP(*dst++ = *src++);
-    } else {
-        src += length;
-        dst += length;
-        t = (nk_ptr)src;
-        if ((t | (nk_ptr)dst) & nk_wmask) {
-            if ((t ^ (nk_ptr)dst) & nk_wmask || length <= nk_wsize)
-                t = length;
-            else
-                t &= nk_wmask;
-            length -= t;
-            NK_TLOOP1(*--dst = *--src);
-        }
-        t = length / nk_wsize;
-        NK_TLOOP(src -= nk_wsize; dst -= nk_wsize; *(nk_word*)(void*)dst = *(const nk_word*)(const void*)src);
-        t = length & nk_wmask;
-        NK_TLOOP(*--dst = *--src);
-    }
-#undef nk_word
-#undef nk_wsize
-#undef nk_wmask
-#undef NK_TLOOP
-#undef NK_TLOOP1
-done:
-    return (dst0);
+NK_LIB void* NK_MEMCPY(void *dst0, const void *src0, nk_size length) {
+    return nk_memcopy(dst0, src0, length);
+}
+NK_LIB void NK_MEMSET(void *ptr, int c0, nk_size size) {
+    return nk_memset(ptr, c0, size);
 }
 
-NK_LIB void nk_memset(void* ptr, int c0, nk_size size) {
-#define nk_word unsigned
-#define nk_wsize sizeof(nk_word)
-#define nk_wmask (nk_wsize - 1)
-    nk_byte* dst = (nk_byte*)ptr;
-    unsigned c = 0;
-    nk_size t = 0;
-
-    if ((c = (nk_byte)c0) != 0) {
-        c = (c << 8) | c; /* at least 16-bits  */
-        if (sizeof(unsigned int) > 2)
-            c = (c << 16) | c; /* at least 32-bits*/
-    }
-
-    /* too small of a word count */
-    dst = (nk_byte*)ptr;
-    if (size < 3 * nk_wsize) {
-        while (size--)
-            *dst++ = (nk_byte)c0;
-        return;
-    }
-
-    /* align destination */
-    if ((t = NK_PTR_TO_UINT(dst) & nk_wmask) != 0) {
-        t = nk_wsize - t;
-        size -= t;
-        do {
-            *dst++ = (nk_byte)c0;
-        } while (--t != 0);
-    }
-
-    /* fill word */
-    t = size / nk_wsize;
-    do {
-        *(nk_word*)((void*)dst) = c;
-        dst += nk_wsize;
-    } while (--t != 0);
-
-    /* fill trailing bytes */
-    t = (size & nk_wmask);
-    if (t != 0) {
-        do {
-            *dst++ = (nk_byte)c0;
-        } while (--t != 0);
-    }
-
-#undef nk_word
-#undef nk_wsize
-#undef nk_wmask
-}
-}
-
-extern "C" {
 #include <nuklear_internal.h>
+
 void cnk_draw_button_image(struct nk_context* ctx, struct nk_command_buffer* out, const struct nk_rect* bounds,
                            const struct nk_rect* content, nk_flags state, const struct nk_style_button* style,
                            const struct nk_image* img, const nk_bool active) {
     nk_draw_button(out, bounds, state | (active ? NK_WIDGET_STATE_ACTIVE : 0), style);
+
+    NK_MEMCPY(ctx, ctx, sizeof(ctx));
 
     auto c = style->text_normal;
     if (active || nk_input_is_mouse_hovering_rect(&ctx->input, *bounds)) {
