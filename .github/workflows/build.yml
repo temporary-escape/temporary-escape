@@ -80,6 +80,13 @@ jobs:
         shell: bash
         run: cmake --version
 
+      - name: Cache vcpkg directory
+        uses: actions/cache@v2
+        with:
+          path: |
+            build/vcpkg_installed
+          key: ${{ runner.os }}-vcpkg-cache
+
       - name: Configure (Linux)
         if: runner.os == 'Linux'
         shell: bash
@@ -166,15 +173,6 @@ jobs:
         run: |
           cd build
           ctest -C MinSizeRel --verbose --output-on-failure 2>&1 | tee ctest.log
-
-      - name: Archive Tests output
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: Unit-Tests-Logs-${{ runner.os }}
-          path: |
-            build/ctest.log
-            build/Testing/Temporary/LastTest.log
 
       - name: Package
         shell: bash
