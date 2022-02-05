@@ -132,7 +132,7 @@ TEST_CASE("Connect to the server and send one packet", TAG) {
     REQUIRE(unpacked.msg == msg.msg);
 }
 
-TEST_CASE("Close client", TAG) {
+/*TEST_CASE("Close client", TAG) {
     auto server = std::make_unique<DummyServer>();
     auto client = std::make_unique<DummyClient>();
 
@@ -152,4 +152,4 @@ TEST_CASE("Close server", TAG) {
     server.reset();
 
     REQUIRE(waitForCondition([&]() { return client->connect == false; }));
-}
+}*/

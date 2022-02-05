@@ -185,7 +185,7 @@ jobs:
       - name: Install and check version
         shell: bash
         run: |
-          cmake --build ./build --target install
+          cmake --build ./build --target install --config MinSizeRel
           ./install/TemporaryEscape --version
 
       - name: Package
