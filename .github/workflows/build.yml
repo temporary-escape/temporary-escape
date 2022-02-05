@@ -243,7 +243,7 @@ jobs:
           cp -rv ${{ github.workspace }}/docs/public/* ${{ github.workspace }}/docs-git/
           cp /tmp/README.md ${{ github.workspace }}/docs-git/README.md
           
-          cd /tmp/docs
+          cd docs-git
 
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
