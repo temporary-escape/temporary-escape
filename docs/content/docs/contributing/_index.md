@@ -1,6 +1,7 @@
 ---
 weight: 5
 title: "Contributing"
+bookCollapseSection: true
 ---
 
 # Contributing

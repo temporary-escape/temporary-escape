@@ -6,7 +6,7 @@
 #include "../Schemas.hpp"
 
 namespace Engine {
-class Service {
+class ENGINE_API Service {
 public:
     virtual ~Service() = default;
     virtual void tick() = 0;

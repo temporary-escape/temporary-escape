@@ -111,6 +111,7 @@ jobs:
           
           if [ "${{ matrix.asan }}" = "true" ]; then
             export LLVM_SYMBOLIZER_PATH=$(which llvm-symbolizer)
+            echo "Found LLVM_SYMBOLIZER_PATH at ${LLVM_SYMBOLIZER_PATH}"
           fi
 
           cmake \

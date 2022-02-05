@@ -34,7 +34,7 @@ A multiplayer space trading, building, and combat game. Acquire your own fleet t
 {{< columns >}}
 ## Media
 
-Check out some development screenshots [here]({{< ref "docs/media/screenshots.md" >}}).
+Check out some development screenshots [here]({{< ref "docs/media.md" >}}).
 
 <--->
 ## Want to contribute?

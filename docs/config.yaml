@@ -25,6 +25,12 @@ languages:
     contentDir: content
     weight: 1
 
+menu:
+  after:
+    - name: 'Source Code'
+      url: 'https://github.com/temporary-escape/temporary-escape'
+      weight: 1
+
 
 params:
   # (Optional, default light) Sets color theme: light, dark or auto.

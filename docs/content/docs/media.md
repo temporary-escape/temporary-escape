@@ -1,9 +1,9 @@
 ---
-weight: 1
-title: "Screenshots"
+weight: 3
+title: "Media"
 ---
 
-# Screenshots
+# Media
 
 ## Development screenshots January 2022
 
