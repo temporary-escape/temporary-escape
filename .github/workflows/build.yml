@@ -49,7 +49,9 @@ jobs:
         shell: bash
         run: |
           source /etc/lsb-release
-          sudo apt-get install -y ninja-build clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev libc6-dev linux-libc-dev
+          sudo apt-get install -y \
+            ninja-build clang llvm libxinerama-dev libxcursor-dev xorg-dev \
+            libglu1-mesa-dev libc6-dev linux-libc-dev
           
           if [ "$DISTRIB_RELEASE" == "20.04" ]; then
             wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing2_2.1-2_amd64.deb"
