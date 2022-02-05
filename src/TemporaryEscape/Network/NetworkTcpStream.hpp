@@ -13,11 +13,12 @@ public:
     virtual ~TcpStream();
 
     void sendRaw(const Packet& packet) override;
-    void disconnect() override;
+    void disconnect();
     void receive();
 
 private:
     Acceptor& acceptor;
+    std::atomic_bool flag;
     asio::ip::tcp::socket socket;
     asio::ip::tcp::endpoint endpoint;
     msgpack::unpacker unp;

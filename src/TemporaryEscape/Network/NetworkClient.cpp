@@ -23,6 +23,7 @@ void Network::Client::startIoService() {
 }
 
 void Network::Client::stopIoService() {
+    Log::i(CMP, "asio service stopping!");
     if (thread.joinable()) {
         service.post([this]() { work.reset(); });
         service.stop();

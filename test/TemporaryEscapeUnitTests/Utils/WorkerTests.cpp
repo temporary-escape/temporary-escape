@@ -6,6 +6,8 @@
 TEST_CASE("Run with no work", TAG) {
     Worker worker(4);
     worker.run();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 TEST_CASE("Run with one task", TAG) {
@@ -17,6 +19,8 @@ TEST_CASE("Run with one task", TAG) {
     worker.run();
 
     REQUIRE(completed == true);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 TEST_CASE("Run with multiple task", TAG) {
@@ -30,6 +34,8 @@ TEST_CASE("Run with multiple task", TAG) {
     worker.run();
 
     REQUIRE(completed.load() == 10);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 TEST_CASE("Add multiple task but do not run", TAG) {
@@ -42,4 +48,6 @@ TEST_CASE("Add multiple task but do not run", TAG) {
     }
 
     REQUIRE(completed.load() == 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

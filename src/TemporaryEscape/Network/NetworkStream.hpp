@@ -10,7 +10,6 @@ public:
     }
     virtual ~Stream() = default;
 
-    virtual void disconnect() = 0;
     virtual void sendRaw(const Packet& packet) = 0;
 
     template <typename T> void send(const T& message) {

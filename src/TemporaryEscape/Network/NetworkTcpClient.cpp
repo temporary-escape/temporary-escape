@@ -9,5 +9,6 @@ Network::TcpClient::TcpClient(EventListener& listener, const std::string& addres
 }
 
 Network::TcpClient::~TcpClient() {
+    acceptor->close();
     acceptor.reset();
 }

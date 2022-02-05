@@ -10,7 +10,7 @@ static constexpr int WINDOW_SIZE = 1024;
 using namespace Engine;
 
 Network::TcpStream::TcpStream(Acceptor& acceptor, Crypto::Ecdhe& ecdhe, asio::ip::tcp::socket socket)
-    : Stream(ecdhe), acceptor(acceptor), socket(std::move(socket)), endpoint(this->socket.remote_endpoint()), unp{} {
+    : Stream(ecdhe), acceptor(acceptor), flag(true), socket(std::move(socket)), endpoint(this->socket.remote_endpoint()), unp{} {
 
     Log::i(CMP, "New TCP connection from: [{}]:{}", this->socket.remote_endpoint().address().to_string(),
            this->socket.remote_endpoint().port());
@@ -22,13 +22,19 @@ Network::TcpStream::~TcpStream() {
 
 void Network::TcpStream::disconnect() {
     if (socket.is_open()) {
+        flag.store(false);
         Log::i(CMP, "Disconnecting address: {}", endpoint.address().to_string());
         socket.close();
         // acceptor.removePeer(shared_from_this());
     }
+    unp.reset();
 }
 
 void Network::TcpStream::receive() {
+    if (!flag.load()) {
+        return;
+    }
+
     unp.reserve_buffer(WINDOW_SIZE);
     const auto b = asio::buffer(unp.buffer(), WINDOW_SIZE);
     auto self = shared_from_this();
@@ -37,8 +43,10 @@ void Network::TcpStream::receive() {
             Log::e(CMP, "async_read_some error: {}", ec.message());
 
             if (ec == asio::error::eof || ec == asio::error::connection_reset) {
-                self->disconnect();
-                self->acceptor.eventDisconnect(self);
+                if (self->flag.load()) {
+                    self->disconnect();
+                    self->acceptor.eventDisconnect(self);
+                }
             }
         } else {
             self->unp.buffer_consumed(length);

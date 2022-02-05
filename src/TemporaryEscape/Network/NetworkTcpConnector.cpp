@@ -37,6 +37,9 @@ Network::TcpConnector::~TcpConnector() {
 }
 
 void Network::TcpConnector::close() {
+    if (stream) {
+        stream->disconnect();
+    }
     stream.reset();
 }
 
