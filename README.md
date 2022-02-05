@@ -2,5 +2,5 @@
 
 [![build](https://github.com/matusnovak/temporary-escape/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/matusnovak/temporary-escape/actions/workflows/build.yml)
 
-Website: **[https://temporary-escape.github.io/](https://temporary-escape.github.io/)**
+Website: **[https://temporary-escape.github.io/temporary-escape/](https://temporary-escape.github.io/temporary-escape/)**
 

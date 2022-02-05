@@ -109,7 +109,7 @@ jobs:
           export CC=$(which clang)
           export CXX=$(which clang++)
           
-          if [ "${{ matrix.asan }}" == "true" ]; then
+          if [ "${{ matrix.asan }}" = "true" ]; then
             export LLVM_SYMBOLIZER_PATH=$(which llvm-symbolizer)
           fi
 
