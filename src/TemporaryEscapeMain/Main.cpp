@@ -57,6 +57,8 @@ int main(int argc, char** argv) {
     const auto defaultRoot = execDir();
     const auto defaultUserData = appDataDir();
 
+    parser.add_options()("version", "Print out game version");
+
     parser.add_options()("r,root", "Path to the root game folder",
                          cxxopts::value<std::string>()->default_value(defaultRoot.string()));
 
@@ -69,6 +71,11 @@ int main(int argc, char** argv) {
 
     try {
         auto args = parser.parse(argc, argv);
+
+        if (args["version"].as<bool>()) {
+            std::cout << "v0.0.1" << std::endl;
+            return EXIT_SUCCESS;
+        }
 
         const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
         Config config{};

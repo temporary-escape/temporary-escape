@@ -1,4 +1,4 @@
-baseURL: 'https://matusnovak.github.io/temporary-escape/'
+baseURL: 'https://temporary-escape.github.io/'
 languageCode: 'en-us'
 title: 'Temporary Escape'
 theme: hugo-book

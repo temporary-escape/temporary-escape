@@ -182,6 +182,12 @@ jobs:
           path: |
             build/ctest.log
 
+      - name: Install and check version
+        shell: bash
+        run: |
+          cmake --build ./build --install
+          ./install/TemporaryEscape --version
+
       - name: Package
         shell: bash
         run: |

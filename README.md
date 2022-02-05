@@ -1,4 +1,6 @@
 # Temporary Escape Game
 
-Website: **[matusnovak.github.io/temporary-escape](https://matusnovak.github.io/temporary-escape/)**
+[![build](https://github.com/matusnovak/temporary-escape/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/matusnovak/temporary-escape/actions/workflows/build.yml)
+
+Website: **[https://temporary-escape.github.io/](https://temporary-escape.github.io/)**
 

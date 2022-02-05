@@ -68,3 +68,9 @@ install(TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION .
         ARCHIVE DESTINATION .
 )
+if(WIN32)
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape/"
+            DESTINATION "."
+            FILES_MATCHING PATTERN "*.dll" PATTERN "CMakeFiles" EXCLUDE
+    )
+endif()
