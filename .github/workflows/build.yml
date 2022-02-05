@@ -20,22 +20,22 @@ jobs:
           - name: 'Build - Windows'
             os: windows-latest
             vcpkg_dir: 'C:\vcpkg'
-            asan: false
+            asan: 'false'
             config: 'MinSizeRel'
           - name: 'Build - Linux'
             os: ubuntu-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: false
+            asan: 'false'
             config: 'MinSizeRel'
           - name: 'Build - Linux (ASAN)'
             os: ubuntu-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: true
+            asan: 'true'
             config: 'Debug'
           - name: 'Build - Mac OSX'
             os: macos-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: false
+            asan: 'false'
             config: 'MinSizeRel'
 
     steps:
@@ -160,15 +160,6 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
-      - name: Archive CMake output
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: Configure-Logs
-          path: |
-            build/CMakeFiles/CMakeOutput.log
-            build/CMakeFiles/CMakeError.log
-
       - name: Compile Game
         shell: bash
         run: |
@@ -188,24 +179,17 @@ jobs:
         shell: bash
         run: |
           cd build
-          ctest -C ${{ matrix.config }} --output-on-failure 2>&1 | tee ctest.log
-
-      - name: Archive Tests output
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: Tests-Logs
-          path: |
-            build/ctest.log
+          ctest -C ${{ matrix.config }} --verbose --output-on-failure 2>&1 | tee ctest.log
 
       - name: Install and check version
+        if: matrix.asan == 'false'
         shell: bash
         run: |
           cmake --build ./build --target install --config ${{ matrix.config }}
           ./install/TemporaryEscape --version
 
       - name: Package
-        if: matrix.asan != 'true'
+        if: matrix.asan == 'false'
         shell: bash
         run: |
           cd build
@@ -213,7 +197,7 @@ jobs:
 
       - name: Archive package
         uses: actions/upload-artifact@v2
-        if: matrix.asan != 'true'
+        if: matrix.asan == 'false'
         with:
           name: Releases
           path: build/release/

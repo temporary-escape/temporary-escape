@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 
 if(TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
+    message("Enabling address sanitizer for ${PROJECT_NAME}")
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
     target_link_libraries(${PROJECT_NAME} PRIVATE asan)
 endif()
