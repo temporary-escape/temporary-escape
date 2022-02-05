@@ -157,7 +157,7 @@ jobs:
           cmake \
             -B ./build \
             -G "Visual Studio 16 2019" -T ClangCL -A x64 \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            '-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install' \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
@@ -190,10 +190,10 @@ jobs:
         run: |
           cmake --build ./build --target install --config ${{ matrix.config }}
           
-          ls -la ${{ github.workspace }}/install
+          ls -la '${{ github.workspace }}/install'
           
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ${{ github.workspace }}/install/TemporaryEscape.exe --version
+            '${{ github.workspace }}/install/TemporaryEscape.exe' --version
           else
             ${{ github.workspace }}/install/TemporaryEscape --version
           fi
