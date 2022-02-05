@@ -189,10 +189,13 @@ jobs:
         shell: bash
         run: |
           cmake --build ./build --target install --config ${{ matrix.config }}
+          
+          ls -la ${{ github.workspace }}/install
+          
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ./install/TemporaryEscape.exe --version
+            ${{ github.workspace }}/install/TemporaryEscape.exe --version
           else
-            ./install/TemporaryEscape --version
+            ${{ github.workspace }}/install/TemporaryEscape --version
           fi
 
       - name: Package
