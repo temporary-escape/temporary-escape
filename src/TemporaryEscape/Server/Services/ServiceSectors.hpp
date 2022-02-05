@@ -11,6 +11,8 @@ public:
     void generate();
     void generate(const std::string& galaxyId);
     void generate(const std::string& galaxyId, const std::string& systemId);
+    void createSectorPlanet(const SectorPlanetData& planet);
+    void createSector(const SectorData& sector);
     void tick() override;
 
 private:

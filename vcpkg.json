@@ -79,6 +79,10 @@
       "name": "liblzma",
       "platform": "!windows",
       "version>=": "5.2.5#4"
+    },
+    {
+      "name": "openal-soft",
+      "version>=": "1.21.1#4"
     }
   ],
   "builtin-baseline": "1085a57da0725c19e19586025438e8c16f34c890"

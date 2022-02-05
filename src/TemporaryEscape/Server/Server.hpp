@@ -20,6 +20,7 @@ public:
     explicit Server(const Config& config, AssetManager& assetManager, Database& db);
     virtual ~Server();
 
+    void load();
     void tick();
 
     void eventConnect(const Network::StreamPtr& stream);

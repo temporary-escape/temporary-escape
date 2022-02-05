@@ -4,6 +4,7 @@
 #include "../Modding/ModManager.hpp"
 #include "../Platform/OpenGLWindow.hpp"
 #include "../Server/Server.hpp"
+#include "../Audio/AudioContext.hpp"
 #include "Client.hpp"
 #include "Renderer.hpp"
 #include "ViewRoot.hpp"
@@ -44,6 +45,7 @@ private:
     AssetLoadQueue assetLoadQueue;
     Promise<bool> assetLoadQueueFinished;
 
+    std::shared_ptr<AudioContext> audioContext;
     std::shared_ptr<TextureCompressor> textureCompressor;
     std::shared_ptr<AssetManager> assetManager;
     std::shared_ptr<ModManager> modManager;

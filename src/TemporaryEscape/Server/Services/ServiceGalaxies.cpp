@@ -29,7 +29,7 @@ void ServiceGalaxies::generate(const uint64_t seed) {
     galaxy.pos = {0.0f, 0.0f};
     galaxy.seed = randomInt<uint64_t>(rng);
 
-    db.put(galaxy.id, galaxy);
+    createGalaxy(galaxy);
 }
 
 GalaxyData ServiceGalaxies::getForPlayer(const std::string& playerId, const std::string& id) {
@@ -38,4 +38,8 @@ GalaxyData ServiceGalaxies::getForPlayer(const std::string& playerId, const std:
         EXCEPTION("Galaxy {} does not exist", id);
     }
     return galaxy.value();
+}
+
+void ServiceGalaxies::createGalaxy(const GalaxyData& galaxy) {
+    db.put(galaxy.id, galaxy);
 }

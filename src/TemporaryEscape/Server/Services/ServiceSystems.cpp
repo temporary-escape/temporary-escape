@@ -333,7 +333,7 @@ void ServiceSystems::generate(const std::string& galaxyId) {
             }
         }
 
-        db.put(fmt::format("{}/{}", galaxy.id, system.id), system);
+       createSystem(system);
     }
 
     for (size_t i = 0; i < systems.size(); i++) {
@@ -343,4 +343,8 @@ void ServiceSystems::generate(const std::string& galaxyId) {
     }
 
     Log::i(CMP, "Generated {} systems for galaxy: '{}'", systems.size(), galaxy.name);
+}
+
+void ServiceSystems::createSystem(const SystemData& system) {
+    db.put(fmt::format("{}/{}", system.galaxyId, system.id), system);
 }

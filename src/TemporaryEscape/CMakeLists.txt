@@ -26,11 +26,12 @@ target_link_libraries(${PROJECT_NAME}
         WrenBind17
         RocksDB::rocksdb
         OpenSSL::SSL OpenSSL::Crypto
+        OpenAL::OpenAL
         )
 
-if (MSVC)
+if (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE rpcrt4.lib)
-else ()
+elseif (UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid uring)
 endif ()
 
@@ -43,7 +44,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 # Msgpack-c library definitions
 target_compile_definitions(${PROJECT_NAME} PUBLIC
         MSGPACK_USE_DEFINE_MAP=1)
-if (MSVC)
+if (WIN32)
     # Asio library networking definitions
     target_compile_definitions(${PROJECT_NAME} PUBLIC
         _WIN32_WINNT=0x0501)

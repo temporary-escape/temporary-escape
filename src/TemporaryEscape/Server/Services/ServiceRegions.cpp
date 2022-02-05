@@ -90,10 +90,14 @@ void ServiceRegions::generate(const std::string& galaxyId) {
         region.name = fmt::format("{} {}", randomName(rng), randomSuffix());
         region.pos = pos;
 
-        db.put(fmt::format("{}/{}", galaxy.id, region.id), region);
+        createRegion(region);
 
         regions.push_back(std::move(region));
     }
 
     Log::i(CMP, "Generated {} regions for galaxy '{}'", regions.size(), galaxy.name);
+}
+
+void ServiceRegions::createRegion(const RegionData& region) {
+    db.put(fmt::format("{}/{}", region.galaxyId, region.id), region);
 }

@@ -27,7 +27,9 @@ Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
     MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
+}
 
+void Server::load() {
     loader.post([this]() {
         try {
             services.galaxies.generate(123456789ULL);
@@ -237,12 +239,12 @@ void Server::handle(const Network::StreamPtr& stream, MessageLoginRequest req) {
                     sector->load();
                     sector->addPlayer(player);
                 } catch (std::exception& e) {
-                    BACKTRACE(CMP, e, "Failed to load sector");
+                    BACKTRACE(CMP, e, "Failed to load sector id: '{}'", sector->getCompoundId());
                 }
             });
 
         } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to handle login request");
+            BACKTRACE(CMP, e, "Failed to handle login request for player: '{}'", req.name);
         }
     });
 }
@@ -302,9 +304,8 @@ template <typename RequestType> void Server::handleFetch(const Network::StreamPt
             stream->send(res);
 
         } catch (std::exception& e) {
-            BACKTRACE(CMP, e,
-                      fmt::format("Failed to handle fetch request for type: '{}' id: '{}' token: '{}'",
-                                  typeid(RequestType).name(), req.id, req.token));
+            BACKTRACE(CMP, e, "Failed to handle fetch request for type: '{}' id: '{}' token: '{}'",
+                      typeid(RequestType).name(), req.id, req.token);
         }
     });
 }

@@ -1,1 +1,2 @@
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/TemporaryEscapeUnitTests)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/TemporaryEscapeFunctionalTests)

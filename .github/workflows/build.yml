@@ -85,7 +85,8 @@ jobs:
         with:
           path: |
             build/vcpkg_installed
-          key: ${{ runner.os }}-vcpkg-cache
+            ${{ vcpkg_dir }}/packages
+          key: ${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
@@ -143,17 +144,11 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
-      - name: Print vcpkg installed libraries
-        if: always()
-        shell: bash
-        run: |
-          ls -la build/vcpkg_installed/*/lib/
-
       - name: Archive CMake output
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: ctest-log
+          name: Configure-Logs
           path: |
             build/CMakeFiles/CMakeOutput.log
             build/CMakeFiles/CMakeError.log
@@ -168,11 +163,24 @@ jobs:
         run: |
           cmake --build ./build --target TemporaryEscapeUnitTests --config MinSizeRel
 
-      - name: Run Unit Tests
+      - name: Compile Functional Tests
+        shell: bash
+        run: |
+          cmake --build ./build --target TemporaryEscapeFunctionalTests --config MinSizeRel
+
+      - name: Run Tests
         shell: bash
         run: |
           cd build
           ctest -C MinSizeRel --verbose --output-on-failure 2>&1 | tee ctest.log
+
+      - name: Archive Tests output
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: Tests-Logs
+          path: |
+            build/ctest.log
 
       - name: Package
         shell: bash

@@ -26,7 +26,12 @@ void Sector::load() {
     const auto& galaxyId = tokens.at(0);
     const auto& systemId = tokens.at(1);
     const auto& sectorId = tokens.at(2);
-    server.getSectorLoader().populate(galaxyId, systemId, sectorId, scene);
+
+    try {
+        server.getSectorLoader().populate(galaxyId, systemId, sectorId, scene);
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to populate sector");
+    }
 }
 
 void Sector::update() {

@@ -79,6 +79,8 @@ void ServiceSectors::generate(const std::string& galaxyId, const std::string& sy
         planet.name = fmt::format("{} {}", system.name, intToRomanNumeral(i + 1));
         planet.isMoon = false;
         planet.asset = assetPlanets.front();
+        planet.systemId = system.id;
+        planet.galaxyId = galaxy.id;
 
         // Create random moon orbits
         std::vector<Vector2> orbits;
@@ -102,14 +104,16 @@ void ServiceSectors::generate(const std::string& galaxyId, const std::string& sy
             moon.planet = planet.id;
             moon.pos = orbits.at(m);
             moon.asset = assetPlanets.front();
+            moon.systemId = system.id;
+            moon.galaxyId = galaxy.id;
 
-            db.put(fmt::format("{}/{}/{}", system.galaxyId, system.id, planet.id), moon);
+            createSectorPlanet(moon);
         }
 
         // Calculate the orbit for this planet
         planet.pos = nextOrbit(planetaryOrbitRadius, 5.0f);
 
-        db.put(fmt::format("{}/{}/{}", system.galaxyId, system.id, planet.id), planet);
+        createSectorPlanet(planet);
 
         // Advance to the next orbit
         planetaryOrbitRadius += moonOrbitRadius + 15.0f;
@@ -125,5 +129,13 @@ void ServiceSectors::generate(const std::string& galaxyId, const std::string& sy
     sector.generated = false;
     sector.seed = randomInt<uint64_t>(rng);
 
-    db.put(fmt::format("{}/{}/{}", system.galaxyId, system.id, sector.id), sector);
+    createSector(sector);
+}
+
+void ServiceSectors::createSectorPlanet(const SectorPlanetData& planet) {
+    db.put(fmt::format("{}/{}/{}", planet.galaxyId, planet.systemId, planet.id), planet);
+}
+
+void ServiceSectors::createSector(const SectorData& sector) {
+    db.put(fmt::format("{}/{}/{}", sector.galaxyId, sector.systemId, sector.id), sector);
 }

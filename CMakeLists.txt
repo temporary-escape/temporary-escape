@@ -23,7 +23,7 @@ project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 
 option(TEMPORARY_ESCAPE_BUILD_TESTS "Build with tests" OFF)
 
-if (NOT MSVC)
+if (UNIX)
     find_package(ZLIB REQUIRED)
     find_package(LibLZMA REQUIRED)
     find_package(unofficial-libuuid CONFIG REQUIRED)
@@ -52,6 +52,7 @@ find_package(Wren REQUIRED)
 find_package(WrenBind17 REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
 
 if(NOT MSVC)
     set(CMAKE_INSTALL_RPATH "$ORIGIN")

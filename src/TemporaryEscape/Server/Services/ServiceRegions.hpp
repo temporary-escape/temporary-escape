@@ -10,6 +10,7 @@ public:
 
     void generate();
     void generate(const std::string& galaxyId);
+    void createRegion(const RegionData& region);
     void tick() override;
     std::vector<RegionData> getForPlayer(const std::string& playerId, const std::string& galaxyId,
                                          const std::string& start, std::string& next);

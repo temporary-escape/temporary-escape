@@ -25,6 +25,10 @@ public:
 
     void eventEntityAdded(const EntityPtr& entity) override;
 
+    const std::string& getCompoundId() const {
+        return compoundId;
+    }
+
 private:
     struct PlayerView {
         PlayerPtr ptr;

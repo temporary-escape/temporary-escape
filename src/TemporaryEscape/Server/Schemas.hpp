@@ -80,6 +80,8 @@ SCHEMA_DEFINE_INDEXED(SectorData, name);
 
 struct SectorPlanetData {
     std::string id;
+    std::string galaxyId;
+    std::string systemId;
     std::string name;
     bool isMoon{false};
     std::optional<std::string> planet{std::nullopt};

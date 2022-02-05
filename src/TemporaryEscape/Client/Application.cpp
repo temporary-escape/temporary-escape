@@ -12,6 +12,8 @@ Application::Application(Config& config, const Options& options)
       loading(true), loadingProgress(0.0f) {
     defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular + ".ttf"));
 
+    audioContext = std::make_shared<AudioContext>();
+
     textureCompressor = std::make_shared<TextureCompressor>();
 }
 
@@ -147,6 +149,7 @@ void Application::load() {
 
     Log::i(CMP, "Starting server");
     server = std::make_shared<Server>(config, *assetManager, *db);
+    server->load();
 
     loadingProgress.store(0.9f);
 

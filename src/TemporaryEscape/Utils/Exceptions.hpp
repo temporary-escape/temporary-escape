@@ -45,8 +45,8 @@ constexpr const char* pathstem(const char* path) {
     std::throw_with_nested(std::runtime_error(                                                                         \
         fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__))));
 
-#define BACKTRACE(CMP, EXP, MESSAGE)                                                                                   \
-    Log::e(CMP, "Error at {} {}", WHERE, MESSAGE);                                                                     \
+#define BACKTRACE(CMP, EXP, MESSAGE, ...)                                                                                   \
+    Log::e(CMP, "Error at {} {}", WHERE, fmt::format(MESSAGE EXCEPTION_VA_ARGS(__VA_ARGS__)));                                                                     \
     backtrace(EXP);
 
 #define WHERE (__FILENAME__ + std::string(":") + std::to_string(__LINE__))
