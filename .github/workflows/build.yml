@@ -225,10 +225,26 @@ jobs:
         run: |
           cd docs
           hugo
-      
+
+      - name: Clone temporary-escape.github.io
+        if: startsWith(github.ref, 'refs/heads/master')
+        uses: actions/checkout@v2
+        with:
+          repository: temporary-escape/temporary-escape.github.io
+          token: ${{ secrets.TEMPORARY_ESCAPE_DOCS_TOKEN }}
+          path: /tmp/docs
+
       - name: Deploy
         if: startsWith(github.ref, 'refs/heads/master')
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ github.workspace }}/docs/public
+        shell: bash
+        run: |
+          rm -rf /tmp/docs/*
+          cp -rv ${{ github.workspace }}/docs/public /tmp/docs
+          
+          cd /tmp/docs
+
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Update documentation"
+          git push origin master
