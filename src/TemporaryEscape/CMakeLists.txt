@@ -70,7 +70,7 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 if(WIN32)
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape/${CMAKE_BUILD_TYPE}"
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape/${CMAKE_BUILD_TYPE}/"
             DESTINATION "."
             FILES_MATCHING PATTERN "*.dll" PATTERN "CMakeFiles" EXCLUDE
     )
