@@ -3,7 +3,7 @@
 #include "Service.hpp"
 
 namespace Engine {
-class ServiceSystems : public Service {
+class ENGINE_API ServiceSystems : public Service {
 public:
     explicit ServiceSystems(const Config& config, AssetManager& assetManager, Database& db);
     ~ServiceSystems() override = default;

@@ -294,8 +294,8 @@ std::vector<SectorPlanetData> Server::fetch<MessageFetchSystemPlanets>(const Pla
 template <typename RequestType> void Server::handleFetch(const Network::StreamPtr& stream, RequestType req) {
     worker.post([=]() {
         try {
-            Log::d(CMP, "handle fetch for type: '{}' id: '{}' token: '{}'", typeid(RequestType).name(), req.id,
-                   req.token);
+            //Log::d(CMP, "handle fetch for type: '{}' id: '{}' token: '{}'", typeid(RequestType).name(), req.id,
+            //       req.token);
             auto player = streamToPlayer(stream);
 
             typename RequestType::Response res{};

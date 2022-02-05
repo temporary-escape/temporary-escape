@@ -3,7 +3,7 @@
 #include "Service.hpp"
 
 namespace Engine {
-class ServiceRegions : public Service {
+class ENGINE_API ServiceRegions : public Service {
 public:
     explicit ServiceRegions(const Config& config, AssetManager& assetManager, Database& db);
     ~ServiceRegions() override = default;

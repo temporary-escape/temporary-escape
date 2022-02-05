@@ -25,6 +25,8 @@ void ViewMap::load() {
     loading = true;
 
     entityCamera.reset();
+    entitiesSystems.clear();
+    entitiesRegions.clear();
     scene = std::make_unique<Scene>();
 
     entityCamera = std::make_shared<Entity>();

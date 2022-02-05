@@ -33,6 +33,8 @@ if (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE rpcrt4.lib)
 elseif (UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid uring)
+elseif (APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid Iconv::Iconv)
 endif ()
 
 # Library definitions

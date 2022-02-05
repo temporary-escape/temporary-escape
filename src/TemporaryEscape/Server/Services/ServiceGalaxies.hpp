@@ -3,7 +3,7 @@
 #include "Service.hpp"
 
 namespace Engine {
-class ServiceGalaxies : public Service {
+class ENGINE_API ServiceGalaxies : public Service {
 public:
     explicit ServiceGalaxies(const Config& config, AssetManager& assetManager, Database& db);
     ~ServiceGalaxies() override = default;

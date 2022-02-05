@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 set(CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_LIST_DIR}/modules"
         )
@@ -27,6 +27,9 @@ if (UNIX)
     find_package(ZLIB REQUIRED)
     find_package(LibLZMA REQUIRED)
     find_package(unofficial-libuuid CONFIG REQUIRED)
+    if (APPLE)
+        find_package(Iconv)
+    endif()
 else ()
     add_compile_options(/EHsc)
     add_compile_options(/wd4251)

@@ -3,7 +3,7 @@
 #include "Service.hpp"
 
 namespace Engine {
-class ServiceSectors : public Service {
+class ENGINE_API ServiceSectors : public Service {
 public:
     explicit ServiceSectors(const Config& config, AssetManager& assetManager, Database& db);
     ~ServiceSectors() override = default;
