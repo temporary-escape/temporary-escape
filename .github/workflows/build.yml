@@ -83,7 +83,7 @@ jobs:
           cd ${{ matrix.vcpkg_dir }}
           git fetch origin
           git reset --hard origin/master
-          if [ "${{ matrix.os }}" == "windows-win64" ]; then
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
             ./bootstrap-vcpkg.bat
           else
             ./bootstrap-vcpkg.sh
@@ -189,7 +189,11 @@ jobs:
         shell: bash
         run: |
           cmake --build ./build --target install --config ${{ matrix.config }}
-          ./install/TemporaryEscape --version
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            ./install/TemporaryEscape.exe --version
+          else
+            ./install/TemporaryEscape --version
+          fi
 
       - name: Package
         if: matrix.asan == 'false'
