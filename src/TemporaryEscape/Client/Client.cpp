@@ -43,8 +43,7 @@ uint64_t generatePlayerUid(const Config& config) {
 }
 
 Client::Client(Config& config, const std::string& address, const int port)
-    : listener(std::make_unique<EventListener>(*this)),
-      network(std::make_shared<Network::TcpClient>(*listener, address, port)), secret(generatePlayerUid(config)),
+    : listener(std::make_unique<EventListener>(*this)), secret(generatePlayerUid(config)),
       requestsNextId(1) {
 
     MESSAGE_DISPATCH(MessageServerHello);
@@ -57,6 +56,8 @@ Client::Client(Config& config, const std::string& address, const int port)
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
     MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
+
+    network = std::make_shared<Network::TcpClient>(*listener, address, port);
 
     auto future = connected.future();
     if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {

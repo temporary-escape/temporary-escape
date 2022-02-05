@@ -15,8 +15,7 @@ using namespace Engine;
 Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     : config(config), assetManager(assetManager), db(db), services(config, assetManager, db),
       sectorLoader(config, assetManager, db, services), tickFlag(true), worker(4), loader(1),
-      listener(std::make_unique<EventListener>(*this)),
-      network(std::make_shared<Network::TcpServer>(*listener, config.serverPort)) {
+      listener(std::make_unique<EventListener>(*this)) {
 
     tickThread = std::thread(&Server::tick, this);
 
@@ -27,6 +26,8 @@ Server::Server(const Config& config, AssetManager& assetManager, Database& db)
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
     MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
+
+    network = std::make_shared<Network::TcpServer>(*listener, config.serverPort);
 }
 
 void Server::load() {
