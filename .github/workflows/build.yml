@@ -85,7 +85,7 @@ jobs:
         with:
           path: |
             build/vcpkg_installed
-            ${{ vcpkg_dir }}/packages
+            ${{ matrix.vcpkg_dir }}/packages
           key: ${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
 
       - name: Configure (Linux)
