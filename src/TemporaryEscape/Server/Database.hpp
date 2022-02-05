@@ -9,6 +9,12 @@
 
 #define SCHEMA_STRING(s) #s
 
+#ifdef __linux__
+#define NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_sanitize_address))
+#else
+#define NO_ADDRESS_SAFETY_ANALYSIS
+#endif
+
 namespace Engine {
 class AbstractDatabase;
 
@@ -365,7 +371,7 @@ private:
 
 class ENGINE_API Database : public AbstractDatabase {
 public:
-    explicit Database(const Path& path);
+    explicit NO_ADDRESS_SAFETY_ANALYSIS Database(const Path& path);
     ~Database() override;
 
     bool transaction(const std::function<bool(Transaction&)>& fn, bool retry = true);

@@ -19,7 +19,7 @@ private:
     void accept();
 
     Crypto::Ecdhe& ecdhe;
-
+    std::atomic_bool flag;
     asio::ip::tcp::acceptor acceptor;
     asio::ip::tcp::socket socket;
     asio::ip::tcp::endpoint endpoint;

@@ -20,12 +20,23 @@ jobs:
           - name: 'Build - Windows'
             os: windows-latest
             vcpkg_dir: 'C:\vcpkg'
+            asan: false
+            config: 'MinSizeRel'
           - name: 'Build - Linux'
             os: ubuntu-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
+            asan: false
+            config: 'MinSizeRel'
+          - name: 'Build - Linux (ASAN)'
+            os: ubuntu-latest
+            vcpkg_dir: '/usr/local/share/vcpkg'
+            asan: true
+            config: 'Debug'
           - name: 'Build - Mac OSX'
             os: macos-latest
             vcpkg_dir: '/usr/local/share/vcpkg'
+            asan: false
+            config: 'MinSizeRel'
 
     steps:
       - name: Checkout
@@ -97,14 +108,19 @@ jobs:
 
           export CC=$(which clang)
           export CXX=$(which clang++)
+          
+          if [ "${{ matrix.asan }}" == "true" ]; then
+            export LLVM_SYMBOLIZER_PATH=$(which llvm-symbolizer)
+          fi
 
           cmake \
             -B ./build \
             -G "Ninja" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DCMAKE_MAKE_PROGRAM=$(which ninja) \
-            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
+            -DTEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH=$LLVM_SYMBOLIZER_PATH \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
@@ -123,7 +139,7 @@ jobs:
             -G "Ninja" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DCMAKE_MAKE_PROGRAM=$(which ninja) \
-            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
@@ -139,7 +155,7 @@ jobs:
             -B ./build \
             -G "Visual Studio 16 2019" -T ClangCL -A x64 \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
@@ -156,23 +172,23 @@ jobs:
       - name: Compile Game
         shell: bash
         run: |
-          cmake --build ./build --target TemporaryEscapeMain --config MinSizeRel
+          cmake --build ./build --target TemporaryEscapeMain --config ${{ matrix.config }}
 
       - name: Compile Unit Tests
         shell: bash
         run: |
-          cmake --build ./build --target TemporaryEscapeUnitTests --config MinSizeRel
+          cmake --build ./build --target TemporaryEscapeUnitTests --config ${{ matrix.config }}
 
       - name: Compile Functional Tests
         shell: bash
         run: |
-          cmake --build ./build --target TemporaryEscapeFunctionalTests --config MinSizeRel
+          cmake --build ./build --target TemporaryEscapeFunctionalTests --config ${{ matrix.config }}
 
       - name: Run Tests
         shell: bash
         run: |
           cd build
-          ctest -C MinSizeRel --verbose --output-on-failure 2>&1 | tee ctest.log
+          ctest -C ${{ matrix.config }} --output-on-failure 2>&1 | tee ctest.log
 
       - name: Archive Tests output
         uses: actions/upload-artifact@v2
@@ -185,18 +201,19 @@ jobs:
       - name: Install and check version
         shell: bash
         run: |
-          cmake --build ./build --target install --config MinSizeRel
+          cmake --build ./build --target install --config ${{ matrix.config }}
           ./install/TemporaryEscape --version
 
       - name: Package
+        if: matrix.asan != 'true'
         shell: bash
         run: |
           cd build
-          cpack -C MinSizeRel
+          cpack -C ${{ matrix.config }}
 
       - name: Archive package
         uses: actions/upload-artifact@v2
-        if: always()
+        if: matrix.asan != 'true'
         with:
           name: Releases
           path: build/release/

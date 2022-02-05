@@ -22,6 +22,7 @@ endif()
 project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 
 option(TEMPORARY_ESCAPE_BUILD_TESTS "Build with tests" OFF)
+option(TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH "Path to the llvm-symbolizer to enable address sanitizer" FALSE)
 
 if (UNIX)
     find_package(ZLIB REQUIRED)

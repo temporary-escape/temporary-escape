@@ -9,7 +9,7 @@ using namespace Engine;
 
 Network::TcpAcceptor::TcpAcceptor(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service,
                                   const int port)
-    : Acceptor(listener), ecdhe(ecdhe), acceptor(service, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)),
+    : Acceptor(listener), flag(true), ecdhe(ecdhe), acceptor(service, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port)),
       socket(service), endpoint(acceptor.local_endpoint()) {
 }
 
@@ -18,6 +18,7 @@ Network::TcpAcceptor::~TcpAcceptor() {
 
 void Network::TcpAcceptor::close() {
     Log::i(CMP, "Closing");
+    flag.store(false);
     socket.close();
     std::lock_guard<std::mutex> lock{mutex};
     for (auto& stream : streams) {
@@ -34,7 +35,9 @@ void Network::TcpAcceptor::start() {
 void Network::TcpAcceptor::accept() {
     auto self = shared_from_this();
     acceptor.async_accept(socket, [self](const std::error_code ec) {
-        if (!ec) {
+        if (ec) {
+            Log::e(CMP, "async_accept error: {}", ec.message());
+        } else {
             if (!self->acceptor.is_open()) {
                 return;
             }

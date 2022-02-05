@@ -85,10 +85,10 @@ public:
         streams.erase(stream);
     }
 
+    std::set<Network::StreamPtr> streams;
     EventListener<DummyServer> listener;
     std::shared_ptr<Network::Server> server;
     std::vector<std::tuple<Network::StreamPtr, Network::Packet>> packets;
-    std::set<Network::StreamPtr> streams;
 };
 
 struct DummyPacket {
@@ -101,64 +101,55 @@ struct DummyPacket {
 REGISTER_MESSAGE(DummyPacket);
 
 TEST_CASE("Connect to the server and send one packet", TAG) {
-    for (auto i = 0; i < 10; i++) {
-        std::cout << ">>>>>>>>>>>> Start" << std::endl;
-        auto server = std::make_unique<DummyServer>();
-        auto client = std::make_unique<DummyClient>();
+    auto server = std::make_unique<DummyServer>();
+    auto client = std::make_unique<DummyClient>();
 
-        REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
-        REQUIRE(waitForCondition([&]() { return client->connect == true; }));
+    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
+    REQUIRE(waitForCondition([&]() { return client->connect == true; }));
 
-        auto msg = DummyPacket{"Hello from client!", true};
-        client->send(msg);
+    auto msg = DummyPacket{"Hello from client!", true};
+    client->send(msg);
 
-        REQUIRE(waitForCondition([&]() { return server->packets.size() == 1; }));
+    REQUIRE(waitForCondition([&]() { return server->packets.size() == 1; }));
 
-        auto& [stream, packet] = server->packets.back();
-        REQUIRE(stream.get() == server->streams.begin()->get());
-        REQUIRE(packet.id == Network::getMessageId<DummyPacket>());
+    auto& [stream, packet] = server->packets.back();
+    REQUIRE(stream.get() == server->streams.begin()->get());
+    REQUIRE(packet.id == Network::getMessageId<DummyPacket>());
 
-        auto unpacked = Network::unpack<DummyPacket>(packet);
-        REQUIRE(unpacked.msg == msg.msg);
-        REQUIRE(unpacked.status == true);
+    auto unpacked = Network::unpack<DummyPacket>(packet);
+    REQUIRE(unpacked.msg == msg.msg);
+    REQUIRE(unpacked.status == true);
 
-        msg = DummyPacket{"Hello from server!"};
-        stream->send(msg);
+    msg = DummyPacket{"Hello from server!"};
+    stream->send(msg);
 
-        REQUIRE(waitForCondition([&]() { return client->packets.size() == 1; }));
-        const auto& packet2 = client->packets.back();
+    REQUIRE(waitForCondition([&]() { return client->packets.size() == 1; }));
+    const auto& packet2 = client->packets.back();
 
-        REQUIRE(packet2.id == Network::getMessageId<DummyPacket>());
+    REQUIRE(packet2.id == Network::getMessageId<DummyPacket>());
 
-        unpacked = Network::unpack<DummyPacket>(packet2);
-        REQUIRE(unpacked.msg == msg.msg);
-    }
+    unpacked = Network::unpack<DummyPacket>(packet2);
+    REQUIRE(unpacked.msg == msg.msg);
 }
 
 TEST_CASE("Close client", TAG) {
-    for (auto i = 0; i < 10; i++) {
-        std::cout << ">>>>>>>>>>>> Start" << std::endl;
-        auto server = std::make_unique<DummyServer>();
-        auto client = std::make_unique<DummyClient>();
+    auto server = std::make_unique<DummyServer>();
+    auto client = std::make_unique<DummyClient>();
 
-        REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
+    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
 
-        client.reset();
+    client.reset();
 
-        REQUIRE(waitForCondition([&]() { return server->streams.size() == 0; }));
-    }
+    REQUIRE(waitForCondition([&]() { return server->streams.size() == 0; }));
 }
 
 TEST_CASE("Close server", TAG) {
-    for (auto i = 0; i < 10; i++) {
-        std::cout << ">>>>>>>>>>>> Start" << std::endl;
-        auto server = std::make_unique<DummyServer>();
-        auto client = std::make_unique<DummyClient>();
+    auto server = std::make_unique<DummyServer>();
+    auto client = std::make_unique<DummyClient>();
 
-        REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
+    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
 
-        server.reset();
+    server.reset();
 
-        REQUIRE(waitForCondition([&]() { return client->connect == false; }));
-    }
+    REQUIRE(waitForCondition([&]() { return client->connect == false; }));
 }
