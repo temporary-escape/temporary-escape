@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <unordered_set>
+#include <variant>
 
 namespace Engine {
 class ENGINE_API Component;
@@ -20,6 +21,25 @@ public:
 
 class ENGINE_API Component {
 public:
+    struct Flags {
+        enum : uint64_t {
+            None = 0,
+            Syncable = 0x1 << 0,
+        };
+    };
+
+    struct Reference {
+        std::shared_ptr<Component> ptr{nullptr};
+        size_t type{0};
+    };
+
+    template <typename T, uint64_t F> struct Traits {
+        using type = T;
+        static constexpr inline uint64_t flags = F;
+    };
+
+    template <typename...> struct TraitsMapper;
+
     Component() = default;
 
     explicit Component(Object& object) : object(&object) {
@@ -45,9 +65,18 @@ public:
         this->system = nullptr;
     }
 
+    bool isDirty() const {
+        return dirty;
+    }
+
+    void setDirty(const bool value) {
+        dirty = value;
+    }
+
 private:
     Object* object{nullptr};
     AbstractComponentSystem* system{nullptr};
+    bool dirty{false};
 };
 
 inline Component::~Component() {
@@ -98,12 +127,25 @@ private:
 
 using ComponentSystemsMap = std::unordered_map<size_t, std::shared_ptr<AbstractComponentSystem>>;
 
-template <typename...> struct ComponentHelper;
-
-template <> struct ComponentHelper<> {
+template <> struct Component::TraitsMapper<> {
     static void generateComponentSystemsMap(ComponentSystemsMap& map, const size_t index) {
     }
 
+    static uint64_t getFlags(const size_t idx) {
+        (void)idx;
+        return 0;
+    }
+
+    template <typename T> static constexpr size_t getIndexOf() {
+        return 0;
+    }
+
+    static uint64_t getFlagsInternal(const size_t idx, const size_t counter) {
+        (void)idx;
+        (void)counter;
+        return 0;
+    }
+
     template <typename Stream>
     static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& value, const size_t index,
                      const size_t current = 0) {
@@ -112,36 +154,69 @@ template <> struct ComponentHelper<> {
 
     static ComponentPtr unpack(msgpack::object const& o, const size_t index, const size_t current = 0) {
         throw msgpack::type_error();
+    }
+
+    template <typename D>
+    static void getDelta(const ComponentPtr& value, const size_t index, D& delta, const size_t current = 0) {
+        (void)value;
+        (void)index;
+        (void)delta;
+        (void)current;
     }
 };
 
-template <typename ComponentT, typename... ComponentsT> struct ComponentHelper<ComponentT, ComponentsT...> {
+template <typename C, typename... Others> struct Component::TraitsMapper<C, Others...> {
+    using Deltas = std::variant<typename C::type::Delta, typename Others::type::Delta...>;
+    using Tuple = std::tuple<typename C::type::Delta, typename Others::type::Delta...>;
+
     template <typename T> static constexpr size_t getIndexOf() {
-        if constexpr (std::is_same<T, ComponentT>::value) {
+        if constexpr (std::is_same<T, typename C::type>::value) {
             return 0;
         } else {
-            return 1 + ComponentHelper<ComponentsT...>::template getIndexOf<T>();
+            return 1 + TraitsMapper<Others...>::template getIndexOf<T>();
         }
+    }
+
+    static uint64_t getFlagsInternal(const size_t idx, const size_t counter) {
+        if (counter == idx) {
+            return C::flags;
+        } else {
+            return TraitsMapper<Others...>::getFlagsInternal(idx, counter + 1);
+        }
+    }
+
+    static uint64_t getFlags(const size_t idx) {
+        return getFlagsInternal(idx, 0);
     }
 
     template <typename Stream>
     static void pack(msgpack::v1::packer<Stream>& o, const ComponentPtr& value, const size_t index,
                      const size_t current = 0) {
         if (index == current) {
-            auto ptr = std::dynamic_pointer_cast<ComponentT>(value);
+            auto ptr = std::dynamic_pointer_cast<typename C::type>(value);
             o.pack(*ptr);
         } else {
-            ComponentHelper<ComponentsT...>::template pack<Stream>(o, value, index, current + 1);
+            TraitsMapper<Others...>::template pack<Stream>(o, value, index, current + 1);
         }
     }
 
     static ComponentPtr unpack(msgpack::object const& o, const size_t index, const size_t current = 0) {
         if (index == current) {
-            auto cmp = std::make_shared<ComponentT>();
+            auto cmp = std::make_shared<typename C::type>();
             o.convert(*cmp);
             return cmp;
         } else {
-            return ComponentHelper<ComponentsT...>::unpack(o, index, current + 1);
+            return TraitsMapper<Others...>::unpack(o, index, current + 1);
+        }
+    }
+
+    template <typename D>
+    static void getDelta(const ComponentPtr& value, const size_t index, D& delta, const size_t current = 0) {
+        if (index == current) {
+            auto ptr = std::dynamic_pointer_cast<typename C::type>(value);
+            delta = ptr->getDelta();
+        } else {
+            return TraitsMapper<Others...>::template getDelta(value, index, delta, current + 1);
         }
     }
 
@@ -152,8 +227,8 @@ template <typename ComponentT, typename... ComponentsT> struct ComponentHelper<C
     }
 
     static void generateComponentSystemsMap(ComponentSystemsMap& map, const size_t index) {
-        map.insert(std::make_pair(index, std::make_shared<ComponentSystem<ComponentT>>()));
-        ComponentHelper<ComponentsT...>::generateComponentSystemsMap(map, index + 1);
+        map.insert(std::make_pair(index, std::make_shared<ComponentSystem<typename C::type>>()));
+        TraitsMapper<Others...>::generateComponentSystemsMap(map, index + 1);
     }
 };
 } // namespace Engine

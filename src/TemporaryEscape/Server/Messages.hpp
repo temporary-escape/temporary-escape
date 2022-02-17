@@ -66,6 +66,14 @@ struct MessageEntitySync {
 
 REGISTER_MESSAGE(MessageEntitySync);
 
+struct MessageEntityDeltas {
+    std::vector<Entity::Delta> deltas;
+
+    MSGPACK_DEFINE(deltas);
+};
+
+REGISTER_MESSAGE(MessageEntityDeltas);
+
 struct MessageFetch {
     uint64_t id{0};
     std::string token;

@@ -49,9 +49,6 @@ std::filesystem::path execDir() {
 }
 
 int main(int argc, char** argv) {
-    Log::configure(true);
-    Log::i("main", "Temporary Escape main");
-
     cxxopts::Options parser("Temporary Escape", "Space sim multiplayer game");
 
     const auto defaultRoot = execDir();
@@ -76,6 +73,13 @@ int main(int argc, char** argv) {
             std::cout << "v0.0.1" << std::endl;
             return EXIT_SUCCESS;
         }
+
+        const auto userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
+        const auto logPath = userdataPath / "debug.log";
+
+        Log::configure(true, logPath);
+        Log::i("main", "Temporary Escape main");
+        Log::i("main", "Log file location: '{}'", logPath.string());
 
         const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
         Config config{};

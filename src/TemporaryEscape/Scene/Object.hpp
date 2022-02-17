@@ -11,6 +11,14 @@ public:
     explicit Object();
     virtual ~Object() = default;
 
+    void setParentObject(Object* value) {
+        parent = value;
+    }
+
+    Object* getParentObject() const {
+        return parent;
+    }
+
     void translate(const Vector3& pos) {
         updateTransform(glm::translate(transform, pos));
     }
@@ -37,6 +45,13 @@ public:
         return transform;
     }
 
+    [[nodiscard]] Matrix4 getAbsoluteTransform() const {
+        if (parent) {
+            return parent->getAbsoluteTransform() * getTransform();
+        }
+        return getTransform();
+    }
+
     void updateTransform(const Matrix4& transform) {
         dirty = true;
         this->transform = transform;
@@ -44,6 +59,13 @@ public:
 
     [[nodiscard]] Vector3 getPosition() const {
         return Vector3(transform[3]);
+    }
+
+    [[nodiscard]] Vector3 getAbsolutePosition() const {
+        if (parent) {
+            return parent->getAbsolutePosition() + getPosition();
+        }
+        return getPosition();
     }
 
     [[nodiscard]] bool isDirty() const {
@@ -61,6 +83,7 @@ public:
 private:
     Matrix4 transform;
     bool dirty{true};
+    Object* parent{nullptr};
 
 public:
     MSGPACK_DEFINE_ARRAY(transform);

@@ -73,9 +73,9 @@ void Server::tick() {
             for (auto& pair : sectors.map) {
                 const auto& compoundId = pair.first;
                 auto& sector = pair.second;
-                sectorWorker.post([&failedId, sector, compoundId]() {
+                sectorWorker.post([&failedId, sector, compoundId, this]() {
                     try {
-                        sector->update();
+                        sector->update(config.tickLengthUs.count() / 1000000.0f);
                     } catch (std::exception& e) {
                         BACKTRACE(CMP, e, "Failed to update sector");
                         failedId = compoundId;
@@ -295,8 +295,8 @@ std::vector<SectorPlanetData> Server::fetch<MessageFetchSystemPlanets>(const Pla
 template <typename RequestType> void Server::handleFetch(const Network::StreamPtr& stream, RequestType req) {
     worker.post([=]() {
         try {
-            //Log::d(CMP, "handle fetch for type: '{}' id: '{}' token: '{}'", typeid(RequestType).name(), req.id,
-            //       req.token);
+            // Log::d(CMP, "handle fetch for type: '{}' id: '{}' token: '{}'", typeid(RequestType).name(), req.id,
+            //        req.token);
             auto player = streamToPlayer(stream);
 
             typename RequestType::Response res{};

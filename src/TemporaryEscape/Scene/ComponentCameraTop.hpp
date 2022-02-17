@@ -6,63 +6,38 @@
 namespace Engine {
 class ENGINE_API ComponentCameraTop : public Component, public Camera, public UserInputHandler {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentCameraTop() = default;
     explicit ComponentCameraTop(Object& object) : Component(object), Camera(object) {
     }
 
     virtual ~ComponentCameraTop() = default;
 
-    void update() {
-        setOrthographic(zoom);
-        moveTo(getObject().getPosition());
+    Delta getDelta() {
+        return {};
     }
 
-    void moveTo(const Vector3& position) {
-        lookAt(position + Vector3{0.0f, 1.0f, 0.0f}, position, Vector3{0.0f, 0.0f, 1.0f});
+    void applyDelta(Delta& delta) {
+        (void)delta;
     }
+
+    void update();
+
+    void moveTo(const Vector3& position);
 
     void setZoom(const float value) {
         zoom = value;
     }
 
-    void eventMouseMoved(const Vector2i& pos) override {
-        if (move) {
-            const auto from = screenToWorld(mousePosOld);
-            const auto to = screenToWorld(pos);
-
-            const auto diff = Vector3{from.x - to.x, 0.0f, from.z - to.z};
-            moveTo(getObject().getPosition() + diff);
-
-            mousePosOld = pos;
-        }
-    }
-
-    void eventMousePressed(const Vector2i& pos, const MouseButton button) override {
-        mousePosOld = pos;
-        move |= button == MouseButton::Right;
-    }
-
-    void eventMouseReleased(const Vector2i& pos, const MouseButton button) override {
-        mousePosOld = pos;
-        move &= !(button == MouseButton::Right);
-    }
-
-    void eventMouseScroll(const int xscroll, const int yscroll) override {
-        const auto factor = map(zoom, zoomMin, zoomMax, 2.0f, 15.0f);
-        zoom += static_cast<float>(-yscroll) * factor;
-
-        if (zoom < zoomMin) {
-            zoom = zoomMin;
-        } else if (zoom > zoomMax) {
-            zoom = zoomMax;
-        }
-    }
-
-    void eventKeyPressed(const Key key, const Modifiers modifiers) override {
-    }
-
-    void eventKeyReleased(const Key key, const Modifiers modifiers) override {
-    }
+    void eventMouseMoved(const Vector2i& pos) override;
+    void eventMousePressed(const Vector2i& pos, MouseButton button) override;
+    void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
+    void eventMouseScroll(int xscroll, int yscroll) override;
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
 
     bool getPrimary() const {
         return primary;

@@ -4,10 +4,12 @@
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
+#include <optional>
+#include "../Utils/Path.hpp"
 
 namespace Engine {
 namespace Log {
-extern ENGINE_API void configure(bool debug);
+extern ENGINE_API void configure(bool debug, const std::optional<Path>& path = std::nullopt);
 
 extern ENGINE_API void i(const std::string& cmp, const std::string& msg);
 extern ENGINE_API void w(const std::string& cmp, const std::string& msg);

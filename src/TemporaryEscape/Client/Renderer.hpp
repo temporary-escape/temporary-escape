@@ -6,7 +6,10 @@
 #include "../Scene/ComponentModel.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Shaders/ShaderBrdf.hpp"
+#include "../Shaders/ShaderBullet.hpp"
+#include "../Shaders/ShaderGrid.hpp"
 #include "../Shaders/ShaderModel.hpp"
+#include "../Shaders/ShaderParticleEmitter.hpp"
 #include "../Shaders/ShaderPbr.hpp"
 #include "../Shaders/ShaderPlanetAtmosphere.hpp"
 #include "../Shaders/ShaderPlanetSurface.hpp"
@@ -16,6 +19,8 @@
 namespace Engine {
 class ENGINE_API Renderer {
 public:
+    static constexpr inline size_t ssaoSamplesNum = 8;
+    static constexpr inline size_t ssaoNoiseNum = 4;
     static constexpr inline size_t maxDirectionalLights = 4;
 
     Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetManager);
@@ -28,6 +33,8 @@ private:
     struct CameraUniform {
         Matrix4 transformationProjectionMatrix;
         Matrix4 viewProjectionInverseMatrix;
+        Matrix4 viewMatrix;
+        Matrix4 projectionMatrix;
         Vector2i viewport;
         char padding0[sizeof(int) * 2];
         Vector3 eyesPos;
@@ -40,14 +47,22 @@ private:
         int count{0};
     };
 
+    struct SSAOUniform {
+        Vector4 samples[ssaoSamplesNum];
+        Vector4 noise[ssaoNoiseNum];
+    };
+
     void createSkybox(uint64_t seed);
     void createBrdfTexture();
+    void createSSAOUbo();
     void createFullScreenMesh();
     void createPlanetMesh();
     void updateLights(Scene& scene);
+    void updateBullets(Scene& scene);
     Camera* getPrimaryCamera(Scene& scene);
     void updateCameras(const Vector2i& viewport, Scene& scene);
     void renderPbr();
+    void renderBullets();
     void renderCanvas(const Vector2i& viewport, Scene& scene);
     void renderSceneBackground(const Vector2i& viewport, Scene& scene);
     void renderScenePbr(const Vector2i& viewport, Scene& scene);
@@ -56,31 +71,40 @@ private:
     void renderComponentPlanetSurface(ComponentPlanet& component);
     void renderComponentPlanetAtmosphere(ComponentPlanet& component);
     void renderComponentModel(ComponentModel& component);
+    void renderModel(const AssetModelPtr& model, const Matrix4& transform);
+    void renderComponentTurret(ComponentTurret& component);
+    void renderComponentGrid(ComponentGrid& component);
+    void renderComponentParticleEmitter(ComponentParticleEmitter& component);
     void renderComponentCanvasImage(const Camera& camera, ComponentCanvasImage& component);
     void renderComponentCanvasLines(const Camera& camera, ComponentCanvasLines& component);
     void renderComponentCanvasLabel(const Camera& camera, ComponentCanvasLabel& component);
-    void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment);
+    void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment,
+              BufferBit bufferBit);
 
     const Config& config;
     Canvas2D& canvas;
-    // GuiContext gui;
-    // Client& client;
     SkyboxRenderer skyboxRenderer;
 
-    // WidgetDebugStats widgetDebugStats;
+    std::chrono::time_point<std::chrono::steady_clock> startTime;
+    float time;
 
     struct Shaders {
         ShaderSkybox skybox;
         ShaderModel model;
+        ShaderGrid grid;
         ShaderBrdf brdf;
         ShaderPbr pbr;
         ShaderPlanetSurface planetSurface;
         ShaderPlanetAtmosphere planetAtmosphere;
+        ShaderParticleEmitter particleEmitter;
+        ShaderBullet bullet;
     } shaders;
 
+    Matrix4 cameraViewMatrix;
     VertexBuffer cameraUbo{NO_CREATE};
     VertexBuffer cameraZeroPosUbo{NO_CREATE};
     VertexBuffer directionalLightsUbo{NO_CREATE};
+    VertexBuffer ssaoUbo{NO_CREATE};
 
     Mesh fullScreenMesh{NO_CREATE};
 
@@ -116,5 +140,15 @@ private:
         Mesh mesh{NO_CREATE};
         AssetTexturePtr surfaceTexture;
     } planet;
+
+    struct ParticleEmitterData {
+        VertexArray vao{NO_CREATE};
+    } particleEmitter;
+
+    struct BulletData {
+        Mesh mesh{NO_CREATE};
+        VertexBuffer vbo{NO_CREATE};
+        size_t size{0};
+    } bullets;
 };
 } // namespace Engine

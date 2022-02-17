@@ -4,12 +4,16 @@
 #include "ComponentCameraTop.hpp"
 #include "ComponentCameraTurntable.hpp"
 #include "ComponentCanvasImage.hpp"
+#include "ComponentCanvasLabel.hpp"
 #include "ComponentCanvasLines.hpp"
 #include "ComponentDirectionalLight.hpp"
-#include "ComponentCanvasLabel.hpp"
+#include "ComponentGrid.hpp"
 #include "ComponentModel.hpp"
+#include "ComponentParticleEmitter.hpp"
 #include "ComponentPlanet.hpp"
+#include "ComponentShipControl.hpp"
 #include "ComponentSkybox.hpp"
+#include "ComponentTurret.hpp"
 #include "ComponentUserInput.hpp"
 #include "Object.hpp"
 
@@ -20,38 +24,81 @@ namespace Engine {
 class Scene;
 
 // clang-format off
-using EntityComponentHelper = ComponentHelper<
+using EntityComponentHelper = Component::TraitsMapper<
     // DO NOT CHANGE THE ORDER! ADD NEW COMPONENTS AT THE BOTTOM!
-    ComponentCamera,
-    ComponentCameraTurntable,
-    ComponentCameraTop,
-    ComponentCanvasImage,
-    ComponentCanvasLines,
-    ComponentCanvasLabel,
-    ComponentUserInput,
-    ComponentSkybox,
-    ComponentModel,
-    ComponentDirectionalLight,
-    ComponentPlanet
+    Component::Traits<ComponentCamera,
+                      Component::Flags::None>,
+    Component::Traits<ComponentCameraTurntable,
+                      Component::Flags::None>,
+    Component::Traits<ComponentCameraTop,
+                      Component::Flags::None>,
+    Component::Traits<ComponentCanvasImage,
+                      Component::Flags::None>,
+    Component::Traits<ComponentCanvasLines,
+                      Component::Flags::None>,
+    Component::Traits<ComponentCanvasLabel,
+                      Component::Flags::None>,
+    Component::Traits<ComponentUserInput,
+                      Component::Flags::None>,
+    Component::Traits<ComponentSkybox,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentModel,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentGrid,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentTurret,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentParticleEmitter,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentDirectionalLight,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentShipControl,
+                      Component::Flags::None>,
+    Component::Traits<ComponentPlanet,
+                      Component::Flags::Syncable>
 >;
 // clang-format on
 
-class ENGINE_API Entity : public Object, public std::enable_shared_from_this<Entity> {
+class ENGINE_API EntityProxy {
 public:
-    struct ComponentReference {
-        ComponentPtr ptr{nullptr};
-        size_t type{0};
+    virtual ~EntityProxy() = 0;
+};
+
+inline EntityProxy::~EntityProxy() = default;
+
+class ENGINE_API Entity : public EntityProxy, public Object, public std::enable_shared_from_this<Entity> {
+public:
+    struct Delta {
+        uint64_t id{0};
+        Matrix4 transform;
+        std::vector<typename EntityComponentHelper::Deltas> components;
+
+        MSGPACK_DEFINE_ARRAY(id, transform, components);
     };
 
-    using ComponentsIterator = std::vector<ComponentReference>::iterator;
+    using ComponentsIterator = std::vector<Component::Reference>::iterator;
 
-    explicit Entity(const uint64_t id = 0) : id(id) {
+    explicit Entity() : id(0) {
     }
 
-    virtual ~Entity() = default;
+    void setParent(const std::shared_ptr<Entity>& value);
 
-    void setId(uint64_t id) {
-        this->id = id;
+    void removeChild(const std::shared_ptr<Entity>& value);
+
+    void clearChildren();
+
+    virtual ~Entity();
+
+    Delta getDelta() const;
+
+    void applyDelta(const Delta& delta);
+
+    void setId(const uint64_t value) {
+        id = value;
+    }
+
+    const std::vector<std::shared_ptr<Entity>>& getChildren() const {
+        return children;
     }
 
     [[nodiscard]] uint64_t getId() const {
@@ -60,7 +107,7 @@ public:
 
     template <typename T, typename... Args> std::shared_ptr<T> addComponent(Args&&... args) {
         auto ptr = std::make_shared<T>(static_cast<Object&>(*this), std::forward<Args>(args)...);
-        components.push_back(ComponentReference{ptr, EntityComponentHelper::getIndexOf<T>()});
+        components.push_back(Component::Reference{ptr, EntityComponentHelper::getIndexOf<T>()});
         return ptr;
     }
 
@@ -71,6 +118,15 @@ public:
             }
         }
         throw std::out_of_range("Component does not exist");
+    }
+
+    template <typename T> std::optional<std::shared_ptr<T>> getComponentOpt() {
+        for (const auto& component : components) {
+            if (component.type == EntityComponentHelper::getIndexOf<T>()) {
+                return std::dynamic_pointer_cast<T>(component.ptr);
+            }
+        }
+        return std::nullopt;
     }
 
     [[nodiscard]] ComponentsIterator begin() {
@@ -88,19 +144,30 @@ public:
     MSGPACK_FRIEND(std::shared_ptr<Entity>);
 
 private:
+    void addChild(const std::shared_ptr<Entity>& child) {
+        children.push_back(child);
+    }
+
+    void removeChildInternal(const Entity* child) {
+        children.erase(std::remove_if(children.begin(), children.end(), [&](auto& ptr) { return ptr.get() == child; }),
+                       children.end());
+    }
+
     uint64_t id{0};
-    std::vector<ComponentReference> components;
+    std::vector<Component::Reference> components;
+    std::vector<std::shared_ptr<Entity>> children;
 };
 
 using EntityPtr = std::shared_ptr<Entity>;
+using EntityProxyPtr = std::shared_ptr<EntityProxy>;
 } // namespace Engine
 
 namespace msgpack {
 MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     namespace adaptor {
 
-    template <> struct convert<Engine::Entity::ComponentReference> {
-        msgpack::object const& operator()(msgpack::object const& o, Engine::Entity::ComponentReference& v) const {
+    template <> struct convert<Engine::Component::Reference> {
+        msgpack::object const& operator()(msgpack::object const& o, Engine::Component::Reference& v) const {
             if (o.type != msgpack::type::ARRAY)
                 throw msgpack::type_error();
             if (o.via.array.size != 2)
@@ -113,10 +180,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         }
     };
 
-    template <> struct pack<Engine::Entity::ComponentReference> {
+    template <> struct pack<Engine::Component::Reference> {
         template <typename Stream>
-        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o,
-                                            Engine::Entity::ComponentReference const& v) const {
+        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Component::Reference const& v) const {
 
             o.pack_array(2);
             o.pack(v.type);
@@ -157,9 +223,19 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
             o.pack(v->getId());
             o.pack(v->getTransform());
 
-            o.pack_array(static_cast<uint32_t>(v->size()));
+            // Calculate what can be synced
+            size_t count = 0;
             for (const auto& ref : *v) {
-                o.pack(ref);
+                if (Engine::EntityComponentHelper::getFlags(ref.type) & Engine::Component::Flags::Syncable) {
+                    count++;
+                }
+            }
+
+            o.pack_array(static_cast<uint32_t>(count));
+            for (const auto& ref : *v) {
+                if (Engine::EntityComponentHelper::getFlags(ref.type) & Engine::Component::Flags::Syncable) {
+                    o.pack(ref);
+                }
             }
 
             return o;

@@ -8,12 +8,14 @@ using namespace Engine;
 
 static std::unique_ptr<spdlog::logger> logger;
 
-void Log::configure(bool debug) {
+void Log::configure(bool debug, const std::optional<Path>& path) {
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     consoleSink->set_level(spdlog::level::trace);
     consoleSink->set_pattern("[%Y-%m-%d %H:%M:%S %z] [%^%l%$] [thread %t] %v");
 
-    auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("TemporaryEscapeEngine.log", true);
+    const std::string filename = path.has_value() ? path.value().string() : "TemporaryEscape.log";
+
+    auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, true);
     fileSink->set_level(spdlog::level::trace);
     fileSink->set_pattern("[%Y-%m-%d %H:%M:%S %z] [%^%l%$] [thread %t] %v");
 

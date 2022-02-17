@@ -254,6 +254,17 @@ Xml::Node Xml::Node::child(const std::string& name) const {
     throw std::out_of_range(fmt::format("Xml node has no child node '{}'", name));
 }
 
+bool Xml::Node::hasChild(const std::string& name) const {
+    for (const xmlNode* cur = node->children; cur != nullptr; cur = cur->next) {
+        if (cur->type == XML_ELEMENT_NODE) {
+            if (std::strcmp(name.c_str(), reinterpret_cast<const char*>(cur->name)) == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 std::optional<Xml::Attribute> Xml::Node::attribute(const std::string& name) const {
     for (const xmlAttr* cur = node->properties; cur != nullptr; cur = cur->next) {
         if (cur->type == XML_ATTRIBUTE_NODE) {
@@ -268,4 +279,49 @@ std::optional<Xml::Attribute> Xml::Node::attribute(const std::string& name) cons
 
 Xml::Node Xml::Document::getRoot() const {
     return {doc, xmlDocGetRootElement(doc.get())};
+}
+
+Xml::NewNode::NewNode(std::shared_ptr<_xmlDoc> doc, _xmlNode* node) : doc(std::move(doc)), node(node) {
+}
+
+Xml::NewNode Xml::NewNode::child(const std::string& name) {
+    auto c = xmlNewNode(nullptr, BAD_CAST name.c_str());
+    xmlAddChild(node, c);
+    return NewNode(doc, c);
+}
+
+void Xml::NewNode::asString(const std::string& value) {
+    auto t = xmlNewText(BAD_CAST value.c_str());
+    xmlAddChild(node, t);
+}
+
+void Xml::NewNode::asBool(const bool value) {
+    asString(value ? "true" : "false");
+}
+
+void Xml::NewNode::asLong(const int64_t value) {
+    asString(std::to_string(value));
+}
+
+void Xml::NewNode::asFloat(const float value) {
+    asString(std::to_string(value));
+}
+
+void Xml::NewNode::asDouble(const double value) {
+    asString(std::to_string(value));
+}
+
+Xml::NewDocument::NewDocument(const Path& path) : path(path) {
+    doc = std::shared_ptr<_xmlDoc>(xmlNewDoc(BAD_CAST "1.0"), [](_xmlDoc* p) { xmlFreeDoc(p); });
+}
+
+Xml::NewNode Xml::NewDocument::getRoot(const std::string& name) {
+    auto node = xmlNewNode(nullptr, BAD_CAST name.c_str());
+    xmlDocSetRootElement(doc.get(), node);
+    return NewNode(doc, node);
+}
+
+void Xml::NewDocument::save() {
+    const auto filename = path.string();
+    xmlSaveFormatFileEnc(filename.c_str(), doc.get(), "UTF-8", 1);
 }

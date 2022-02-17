@@ -7,11 +7,23 @@
 namespace Engine {
 class ENGINE_API ComponentCanvasLines : public Component {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentCanvasLines() = default;
     explicit ComponentCanvasLines(Object& object, const float width, const Color4& color)
         : Component(object), width(width), color(color) {
     }
     virtual ~ComponentCanvasLines() = default;
+
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
 
     void add(const Vector3& from, const Vector3& to) {
         lines.emplace_back(from, to);

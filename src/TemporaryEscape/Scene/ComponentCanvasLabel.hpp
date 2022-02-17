@@ -7,12 +7,24 @@
 namespace Engine {
 class ENGINE_API ComponentCanvasLabel : public Component {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentCanvasLabel() = default;
     explicit ComponentCanvasLabel(Object& object, AssetFontFacePtr fontFace, std::string text, const Color4& color,
                                   const float size)
         : Component(object), fontFace(std::move(fontFace)), text(std::move(text)), color(color), size(size) {
     }
     virtual ~ComponentCanvasLabel() = default;
+
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
 
     const AssetFontFacePtr& getFontFace() const {
         return fontFace;

@@ -42,7 +42,7 @@ struct AsteroidCluster {
                 const auto u = randomReal(rng, 0.0f, 1.0f);
 
                 const auto theta = glm::acos(costheta);
-                // TODO: Needs fix, currently points clustering at the middle.
+                // TODO: Needs fix, currently points are clustering at the middle.
                 // r = R * cuberoot( u )
                 const auto r = (radius - size) * u;
                 Vector3 pos;
@@ -124,14 +124,50 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
     scene.addEntity(sun);
 
+    auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
+    auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
+    auto blockFrame = assetManager.find<AssetBlock>("block_frame_t1");
+    auto blockBattery = assetManager.find<AssetBlock>("block_battery_t1");
+    auto blockSmallReactor = assetManager.find<AssetBlock>("block_reactor_small_t1");
+    auto blockTank = assetManager.find<AssetBlock>("block_tank_t1");
+
+    auto dummy = std::make_shared<Entity>();
+    auto grid = dummy->addComponent<ComponentGrid>();
+    grid->insert(blockEngineHousing, Vector3i{-1, 0, 0}, 0);
+    grid->insert(blockEngineHousing, Vector3i{1, 0, 0}, 0);
+    grid->insert(blockEngineNozzle, Vector3i{-1, 0, 1}, 0);
+    grid->insert(blockEngineNozzle, Vector3i{1, 0, 1}, 0);
+    grid->insert(blockFrame, Vector3i{0, 0, 0}, 0);
+    grid->insert(blockBattery, Vector3i{-1, 0, -1}, 0);
+    grid->insert(blockBattery, Vector3i{1, 0, -1}, 0);
+    grid->insert(blockSmallReactor, Vector3i{0, 0, -1}, 0);
+    grid->insert(blockTank, Vector3i{-1, 0, -2}, 0);
+    grid->insert(blockTank, Vector3i{1, 0, -2}, 0);
+    grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);
+
+    auto turretAsset = assetManager.find<AssetTurret>("turret_01");
+    auto turret = dummy->addComponent<ComponentTurret>(turretAsset);
+    // turret->setOffset(Vector3{0, 1, -2});
+    turret->setTarget(Vector3{-4, 6, -15});
+
+    dummy->rotate(Vector3{0.0f, 1.0f, 0.0f}, 45.0f);
+    dummy->rotate(Vector3{1.0f, 0.0f, 0.0f}, -25.0f);
+    dummy->translate(Vector3{3.0f, 0.0f, 0.0f});
+
+    auto control = dummy->addComponent<ComponentShipControl>();
+    control->init();
+
+    scene.addEntity(dummy);
+
+    dummy = std::make_shared<Entity>();
+    dummy->addComponent<ComponentModel>(blockFrame->getModel());
+    dummy->translate(turret->getTarget());
+    scene.addEntity(dummy);
+
     auto asteroidRock = assetManager.find<AssetAsteroid>("asteroid_rock");
 
-    /*auto dummy = std::make_shared<Entity>();
-    dummy->addComponent<ComponentModel>(assetManager.find<AssetModel>("model_engine_01"));
-    scene.addEntity(dummy);*/
-
     AsteroidCluster asteroidCluster{};
-    asteroidCluster.origin = Vector3{0.0f};
+    asteroidCluster.origin = Vector3{-200.0f, 0.0f, 0.0f};
     asteroidCluster.radius = 200.0f;
     asteroidCluster.count = 500;
     asteroidCluster.weights.emplace_back(1.0f, asteroidRock);

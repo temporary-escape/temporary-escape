@@ -34,19 +34,24 @@ void Sector::load() {
     }
 }
 
-void Sector::update() {
+void Sector::update(const float delta) {
+    for (auto& entity : scene.getEntities()) {
+        if (entity->isDirty()) {
+            entity->clearDirty();
+            entityDeltas.push_back(entity->getDelta());
+        }
+    }
+
     for (auto& player : players) {
         MessageEntitySync msg{};
-        for (auto& view : player.entities) {
-            if (view.sync) {
-                msg.entities.push_back(view.ptr);
-                view.sync = false;
-            }
-
+        for (auto& entity : player.entitiesToSync) {
+            msg.entities.push_back(entity);
             if (msg.entities.size() >= 32) {
                 break;
             }
         }
+
+        player.entitiesToSync.erase(player.entitiesToSync.begin(), player.entitiesToSync.begin() + msg.entities.size());
 
         if (!msg.entities.empty()) {
             player.ptr->send(msg);
@@ -55,11 +60,30 @@ void Sector::update() {
 
     sync.post([=]() {
         try {
-            scene.update();
+            scene.update(delta);
         } catch (std::exception& e) {
             BACKTRACE(CMP, e, "Sector tick error");
         }
     });
+
+    while (!entityDeltas.empty()) {
+        MessageEntityDeltas msg{};
+        for (const auto& delta : entityDeltas) {
+            msg.deltas.push_back(delta);
+            if (msg.deltas.size() >= 32) {
+                break;
+            }
+        }
+
+        entityDeltas.erase(entityDeltas.begin(), entityDeltas.begin() + msg.deltas.size());
+
+        if (!msg.deltas.empty()) {
+            for (auto& player : players) {
+                player.ptr->send(msg);
+            }
+        }
+    }
+    entityDeltas.clear();
 
     sync.reset();
     sync.run();
@@ -72,13 +96,13 @@ void Sector::addPlayer(PlayerPtr player) {
         players.back().ptr = player;
 
         const auto op = [](const EntityPtr& entity) {
-            EntityView view;
-            view.ptr = entity;
-            return view;
+            // EntityView view;
+            // view.ptr = entity;
+            return entity;
         };
 
         std::transform(scene.getEntities().begin(), scene.getEntities().end(),
-                       std::back_inserter(players.back().entities), op);
+                       std::back_inserter(players.back().entitiesToSync), op);
 
         auto location = server.getServices().players.getLocation(player->getId());
         MessageSectorChanged msg{location};
@@ -88,8 +112,7 @@ void Sector::addPlayer(PlayerPtr player) {
 
 void Sector::eventEntityAdded(const EntityPtr& entity) {
     for (auto& player : players) {
-        player.entities.emplace_back();
-        auto& view = player.entities.back();
-        view.ptr = entity;
+        player.entitiesToSync.emplace_back();
+        player.entitiesToSync.back() = entity;
     }
 }

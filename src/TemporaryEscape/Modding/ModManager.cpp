@@ -38,12 +38,19 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
         iterateDir(dir / Path("textures"), {".png"},
                    [&](const Path& path) { assetManager.addTexture(manifest, path, TextureType::Generic); });
 
+        iterateDir(dir / Path("particles"), {".xml"},
+                   [&](const Path& path) { assetManager.addParticles(manifest, path); });
+
         iterateDir(dir / Path("images"), {".png"}, [&](const Path& path) { assetManager.addImage(manifest, path); });
 
         iterateDir(dir / Path("planets"), {".xml"}, [&](const Path& path) { assetManager.addPlanet(manifest, path); });
 
         iterateDir(dir / Path("asteroids"), {".xml"},
                    [&](const Path& path) { assetManager.addAsteroid(manifest, path); });
+
+        iterateDir(dir / Path("blocks"), {".xml"}, [&](const Path& path) { assetManager.addBlock(manifest, path); });
+
+        iterateDir(dir / Path("turrets"), {".xml"}, [&](const Path& path) { assetManager.addTurret(manifest, path); });
 
     } catch (...) {
         EXCEPTION_NESTED("Failed to load mod assets from dir: '{}'", dir.string());

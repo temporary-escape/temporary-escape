@@ -20,6 +20,6 @@ std::shared_ptr<AssetAsteroid> AssetAsteroid::from(const std::string& name) {
 }
 
 void Xml::Adaptor<AssetAsteroid::Definition>::convert(const Xml::Node& n, AssetAsteroid::Definition& v) {
-    n.child("name").convert(v.name);
+    n.child("title").convert(v.title);
     n.child("models").convert(v.models);
 }

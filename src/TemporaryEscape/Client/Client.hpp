@@ -9,6 +9,7 @@
 #include "../Server/Schemas.hpp"
 #include "../Server/Sector.hpp"
 #include "../Utils/Worker.hpp"
+#include "PlayerLocalProfile.hpp"
 #include "Request.hpp"
 #include "Stats.hpp"
 #include "Store.hpp"
@@ -95,6 +96,7 @@ private:
     void handle(MessageStatusResponse res);
     void handle(MessageSectorChanged res);
     void handle(MessageEntitySync res);
+    void handle(MessageEntityDeltas res);
     template <typename Message, typename T = typename Message::Response::ItemType>
     void handleFetch(MessageFetchResponse<T> res);
 
@@ -105,7 +107,7 @@ private:
     std::unique_ptr<EventListener> listener;
     std::shared_ptr<Network::Client> network;
     Network::MessageDispatcher<> dispatcher;
-    uint64_t secret;
+    PlayerLocalProfile localProfile;
     std::string playerId;
 
     Promise<void> connected;
@@ -121,5 +123,8 @@ private:
     Stats stats;
 
     std::unique_ptr<Scene> scene;
+    std::shared_ptr<Entity> camera;
+
+    std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
 };
 } // namespace Engine

@@ -10,16 +10,11 @@ class Server;
 
 class Sector : public Scene::EventListener {
 public:
-    struct EntityView {
-        EntityPtr ptr;
-        bool sync{true};
-    };
-
     explicit Sector(Server& server, Database& db, std::string compoundId);
     virtual ~Sector();
 
     void load();
-    void update();
+    void update(float delta);
 
     void addPlayer(PlayerPtr player);
 
@@ -32,7 +27,7 @@ public:
 private:
     struct PlayerView {
         PlayerPtr ptr;
-        std::vector<EntityView> entities;
+        std::vector<EntityPtr> entitiesToSync;
     };
 
     Server& server;
@@ -42,6 +37,7 @@ private:
     Scene scene;
 
     std::list<PlayerView> players;
+    std::vector<Entity::Delta> entityDeltas;
 
     asio::io_service sync;
 };

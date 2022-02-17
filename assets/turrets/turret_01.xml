@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<turret>
+    <title>Turret Test</title>
+    <components>
+        <base>
+            <model>model_turret_01_base</model>
+            <offset>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </offset>
+        </base>
+        <arm>
+            <model>model_turret_01_arm</model>
+            <offset>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </offset>
+        </arm>
+        <cannon>
+            <model>model_turret_01_cannon</model>
+            <offset>
+                <x>0.0</x>
+                <y>-0.15</y>
+                <z>0.0</z>
+            </offset>
+        </cannon>
+    </components>
+</turret>

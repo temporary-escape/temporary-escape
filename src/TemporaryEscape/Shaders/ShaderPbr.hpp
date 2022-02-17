@@ -26,6 +26,7 @@ public:
     enum Bindings : GLuint {
         Camera = 0,
         DirectionalLights = 1,
+        SSAO = 2,
     };
 
     explicit ShaderPbr(const Config& config);
@@ -43,9 +44,11 @@ public:
     void bindSkyboxPrefilterTexture(const Texture& texture) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;
     void bindDirectionalLightsUniform(const VertexBuffer& ubo) const;
+    void bindSSAO(const VertexBuffer& ubo) const;
 
 private:
     GLint cameraUniformIndex;
     GLint directionalLightsIndex;
+    GLint ssaoUniformIndex;
 };
 } // namespace Engine

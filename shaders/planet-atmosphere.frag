@@ -15,6 +15,8 @@ layout (std140) uniform DirectionalLights {
 layout (std140) uniform Camera {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
     ivec2 viewport;
     vec3 eyesPos;
 } camera;

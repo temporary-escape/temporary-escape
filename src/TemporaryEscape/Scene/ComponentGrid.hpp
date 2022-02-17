@@ -1,103 +1,132 @@
 #pragma once
 
+#include "../Assets/AssetBlock.hpp"
 #include "../Library.hpp"
 #include "Component.hpp"
-#include "Grid.hpp"
+#include "Octree.hpp"
 
 namespace Engine {
-class ENGINE_API ComponentGrid : public Component, public Grid {
+class ENGINE_API ComponentGrid : public Component {
 public:
-    /*struct MeshData {
-        uint16_t type{0};
-        AssetModelPtr model{nullptr};
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
+    struct BlockPrimitive {
+        Mesh mesh{NO_CREATE};
+        VertexBuffer* ubo{nullptr};
+        Material* material{nullptr};
+    };
+
+    struct BlockType {
+        AssetBlockPtr block;
+        uint16_t count{0};
+        bool dirty{true};
+
+        MSGPACK_DEFINE_ARRAY(block, count, dirty);
+    };
+
+    struct BlockTypeMesh {
+        AssetBlockPtr block;
         VertexBuffer instances{NO_CREATE};
-        std::list<Primitive> primitives;
-    };*/
+        std::list<BlockPrimitive> primitives;
+    };
+
+    struct BlockData {
+        uint16_t type{INVALID_TYPE};
+        Vector3 pos{0};
+        uint8_t rot{0};
+
+        MSGPACK_DEFINE_ARRAY(type, pos, rot);
+    };
+
+    using BlockNode = Octree<BlockData>::Node;
+    using BlockNodeRef = Octree<BlockData>::NodeRef;
+
+    struct RayCastResult {
+        std::reference_wrapper<BlockNode> node;
+        AssetBlockPtr block;
+        Vector3 pos{0.0};
+        Vector3 normal{0.0f};
+        int side{0};
+    };
+
+    static constexpr uint16_t INVALID_TYPE = 0xFFFF;
+    static const std::array<Matrix4, 6> ORIENTATIONS;
+
+    using Types = std::vector<BlockType>;
+    using BlockTypeMeshMap = std::unordered_map<AssetBlockPtr, BlockTypeMesh>;
 
     ComponentGrid() = default;
-    /*ComponentGrid(ComponentGrid&& other) noexcept = default;
-    ComponentGrid(const ComponentGrid& other) = delete;
-    ComponentGrid& operator=(const ComponentGrid& other) = delete;
-    ComponentGrid& operator=(ComponentGrid&& other) noexcept = default;*/
 
     explicit ComponentGrid(Object& object) : Component(object) {
     }
     virtual ~ComponentGrid() = default;
 
-    /*const std::vector<MeshData>& getMeshes() const {
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
+
+    BlockNode& insert(const AssetBlockPtr& block, const Vector3i& pos, uint8_t rot);
+    AssetBlockPtr remove(const BlockNode& node);
+    std::optional<BlockNodeRef> find(const Vector3& pos);
+
+    BlockType& getBlockType(const BlockData& node);
+    const BlockType& getBlockType(const BlockData& node) const;
+
+    const Types& getTypes() const {
+        return types;
+    }
+
+    const std::vector<Octree<BlockData>::Node>& getNodes() const {
+        return tree.getNodes();
+    }
+
+    void debugTree() {
+        tree.debug();
+    }
+
+    std::vector<BlockTypeMesh> generateMeshes();
+
+    std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to);
+    std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to, const Matrix4& transform);
+
+    void rebuild() {
+        if (!shouldRebuild) {
+            return;
+        }
+
+        rebuildMeshes();
+        shouldRebuild = false;
+    }
+
+    void rebuildMeshes() {
+        auto results = generateMeshes();
+        for (auto& result : results) {
+            meshes.insert(std::make_pair(result.block, std::move(result)));
+        }
+    }
+
+    const BlockTypeMeshMap& getMeshes() const {
         return meshes;
-    }*/
+    }
 
 private:
-    /*void rebuildBuffers() {
-        typedef VertexAttribute<0, Vector3> Position;
-        typedef VertexAttribute<1, Vector3> Normal;
-        typedef VertexAttribute<2, Vector2> TextureCoordinates;
-        typedef VertexAttribute<3, Vector4> Tangent;
-        typedef VertexAttribute<4, Matrix4> Instances;
+    BlockTypeMeshMap meshes;
 
-        const auto blocks = Grid::buildInstanceBuffer();
+    uint16_t insertBlockType(const AssetBlockPtr& block);
+    BlockNode& insert(uint16_t type, const Vector3& pos, uint8_t rot);
 
-        const auto fastInsert = meshes.empty();
-
-        const auto nextMeshData = [this](const BlockInstances& block) -> MeshData& {
-            meshes.emplace_back();
-            meshes.back().model = block.model;
-            meshes.back().type = block.type;
-            return meshes.back();
-        };
-
-        const auto findMeshData = [this, &nextMeshData](const BlockInstances& block) -> MeshData& {
-            const auto it = std::find_if(meshes.begin(), meshes.end(), [&](MeshData& m) { return block.type == m.type;
-    }); if (it == meshes.end()) { return nextMeshData(block);
-            }
-
-            return *it;
-        };
-
-        for (const auto& block : blocks) {
-            const auto& model = block.model;
-            const auto& matrices = block.instances;
-
-            if (matrices.empty()) {
-                meshes.erase(
-                    std::remove_if(meshes.begin(), meshes.end(), [&](MeshData& m) { return m.type == block.type; }),
-                    meshes.end());
-                continue;
-            }
-
-            auto& data = fastInsert ? nextMeshData(block) : findMeshData(block);
-
-            data.instances = VertexBuffer(VertexBufferType::Array);
-            data.primitives.clear();
-
-            data.instances.bufferData(&matrices[0][0].x, sizeof(Matrix4) * matrices.size(),
-    VertexBufferUsage::StaticDraw);
-
-            for (const auto& primitive : model->getPrimitives()) {
-                data.primitives.emplace_back();
-                auto& p = data.primitives.back();
-                auto& mesh = p.mesh;
-                p.material = primitive.material;
-
-                mesh = Mesh{};
-                mesh.addVertexBuffer(primitive.vbo, Position{}, Normal{}, TextureCoordinates{}, Tangent{});
-                mesh.addVertexBufferInstanced(data.instances, Instances{});
-                mesh.setIndexBuffer(primitive.ibo, primitive.mesh.getIndexType());
-                mesh.setPrimitive(primitive.mesh.getPrimitive());
-                mesh.setCount(primitive.mesh.getCount());
-                mesh.setInstancesCount(static_cast<GLsizei>(matrices.size()));
-
-                glBindVertexArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-        }
-    }*/
-
-    // std::vector<MeshData> meshes;
+    Octree<BlockData> tree;
+    Types types;
+    size_t next{0};
+    bool shouldRebuild{true};
 
 public:
-    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
+    MSGPACK_DEFINE_ARRAY(tree, types);
 };
 } // namespace Engine

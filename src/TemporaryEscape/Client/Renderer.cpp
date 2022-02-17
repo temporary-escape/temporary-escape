@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 #include "../Assets/AssetManager.hpp"
+#include "../Utils/Random.hpp"
 
 #define CMP "Renderer"
 static const auto pi = 3.14159265358979323846f;
@@ -40,10 +41,15 @@ static const std::array<Pos2UvVertex, 6> fullscreenQuad = {
     Pos2UvVertex{{1.0f, -1.0f}, {1.0f, 1.0f}},  Pos2UvVertex{{1.0f, 1.0f}, {1.0f, 0.0f}}};
 
 Renderer::Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetManager)
-    : config(config), canvas(canvas),
-      skyboxRenderer(config), shaders{ShaderSkybox{config},        ShaderModel{config},
-                                      ShaderBrdf{config},          ShaderPbr{config},
-                                      ShaderPlanetSurface{config}, ShaderPlanetAtmosphere{config}} {
+    : config(config), canvas(canvas), skyboxRenderer(config), shaders{ShaderSkybox{config},
+                                                                      ShaderModel{config},
+                                                                      ShaderGrid{config},
+                                                                      ShaderBrdf{config},
+                                                                      ShaderPbr{config},
+                                                                      ShaderPlanetSurface{config},
+                                                                      ShaderPlanetAtmosphere{config},
+                                                                      ShaderParticleEmitter{config},
+                                                                      ShaderBullet{config}} {
 
     const auto setColor = [](Texture2D& texture, const Color4& color) {
         std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
@@ -68,8 +74,13 @@ Renderer::Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetMa
     createFullScreenMesh();
     createBrdfTexture();
     createPlanetMesh();
+    createSSAOUbo();
 
     planet.surfaceTexture = assetManager.find<AssetTexture>("planet_surface_life");
+
+    particleEmitter.vao = VertexArray();
+
+    startTime = std::chrono::steady_clock::now();
 }
 
 Renderer::~Renderer() = default;
@@ -80,6 +91,8 @@ void Renderer::reloadShaders() {
         shaders.model = ShaderModel(config);
         shaders.planetSurface = ShaderPlanetSurface(config);
         shaders.planetAtmosphere = ShaderPlanetAtmosphere(config);
+        shaders.particleEmitter = ShaderParticleEmitter(config);
+        shaders.bullet = ShaderBullet(config);
         Log::i(CMP, "Shaders reloaded");
     } catch (std::exception& e) {
         BACKTRACE(CMP, e, "Failed to reload shaders");
@@ -151,6 +164,43 @@ void Renderer::createBrdfTexture() {
     Framebuffer::DefaultFramebuffer.bind();
 }
 
+void Renderer::createSSAOUbo() {
+    SSAOUniform uniform{};
+    std::mt19937_64 rng{};
+
+    const auto lerp = [](float a, float b, float f) -> float { return a + f * (b - a); };
+
+    for (auto i = 0; i < ssaoSamplesNum; i++) {
+        Vector3 sample = {
+            randomReal(rng, -1.0f, 1.0f),
+            randomReal(rng, -1.0f, 1.0f),
+            randomReal(rng, 0.0f, 1.0f),
+        };
+
+        sample *= randomReal(rng, 0.0f, 1.0f);
+
+        auto scale = static_cast<float>(i) / static_cast<float>(ssaoSamplesNum);
+        scale = lerp(0.1, 1.0, scale * scale);
+
+        sample *= scale;
+
+        uniform.samples[i] = Vector4{sample, 0.0f};
+    }
+
+    for (auto i = 0; i < ssaoNoiseNum; i++) {
+        Vector3 noise = {
+            randomReal(rng, -1.0f, 1.0f),
+            randomReal(rng, -1.0f, 1.0f),
+            0.0f,
+        };
+
+        uniform.noise[i] = Vector4{noise, 0.0f};
+    }
+
+    ssaoUbo = VertexBuffer(VertexBufferType::Uniform);
+    ssaoUbo.bufferData(&uniform, sizeof(SSAOUniform), VertexBufferUsage::StaticDraw);
+}
+
 void Renderer::createPlanetMesh() {
 #pragma pack(push, 1)
     struct Vertex {
@@ -215,6 +265,9 @@ void Renderer::createPlanetMesh() {
 }
 
 void Renderer::render(const Vector2i& viewport, Scene& scene) {
+    const auto now = std::chrono::steady_clock::now();
+    time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count()) / 1000.0f;
+
     if (gBuffer.size != viewport) {
         gBuffer.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
         gBuffer.fboColorAlpha.setStorage(0, viewport, PixelType::Rgba8u);
@@ -234,6 +287,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene) {
 
     updateLights(scene);
     updateCameras(viewport, scene);
+    updateBullets(scene);
 
     renderSceneBackground(viewport, scene);
 
@@ -244,17 +298,17 @@ void Renderer::render(const Vector2i& viewport, Scene& scene) {
     // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
 
     renderPbr();
-
+    renderSceneForward(viewport, scene);
     renderCanvas(viewport, scene);
 }
 
 void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target,
-                    const FramebufferAttachment attachment) {
+                    const FramebufferAttachment attachment, BufferBit bufferBit) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, source.getHandle());
     glReadBuffer(GLuint(attachment));
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.getHandle());
     glViewport(0, 0, viewport.x, viewport.y);
-    glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GLenum(bufferBit), GL_NEAREST);
 }
 
 void Renderer::renderCanvas(const Vector2i& viewport, Scene& scene) {
@@ -315,6 +369,7 @@ void Renderer::renderPbr() {
     shaders.pbr.bindSkyboxPrefilterTexture(skybox.textures.prefilter);
     shaders.pbr.bindCameraUniform(cameraUbo);
     shaders.pbr.bindDirectionalLightsUniform(directionalLightsUbo);
+    shaders.pbr.bindSSAO(ssaoUbo);
     shaders.pbr.draw(fullScreenMesh);
 }
 
@@ -373,13 +428,49 @@ void Renderer::renderSceneBackground(const Vector2i& viewport, Scene& scene) {
 }
 
 void Renderer::renderSceneForward(const Vector2i& viewport, Scene& scene) {
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::DepthStencil, BufferBit::Depth);
+
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    auto& componentSystemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
+
+    shaders.particleEmitter.use();
+    shaders.particleEmitter.bindCameraUniform(cameraUbo);
+    shaders.particleEmitter.setTime(time);
+
+    for (auto& component : componentSystemParticleEmitter) {
+        renderComponentParticleEmitter(*component);
+    }
+
+    renderBullets();
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderBullets() {
+    if (!bullets.mesh) {
+        return;
+    }
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    shaders.bullet.use();
+    shaders.bullet.bindCameraUniform(cameraUbo);
+    shaders.bullet.draw(bullets.mesh);
+    glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
     auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+    auto& componentSystemTurret = scene.getComponentSystem<ComponentTurret>();
+    auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
     auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
     GLuint attachments[4] = {
@@ -405,6 +496,17 @@ void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
 
     for (auto& component : componentSystemModel) {
         renderComponentModel(*component);
+    }
+
+    for (auto& component : componentSystemTurret) {
+        renderComponentTurret(*component);
+    }
+
+    shaders.grid.use();
+    shaders.grid.bindCameraUniform(cameraUbo);
+
+    for (auto& component : componentSystemGrid) {
+        renderComponentGrid(*component);
     }
 }
 
@@ -432,6 +534,29 @@ void Renderer::updateLights(Scene& scene) {
                                         VertexBufferUsage::DynamicDraw);
     } else {
         directionalLightsUbo.bufferSubData(&directionalLightsUniform, sizeof(directionalLightsUniform), 0);
+    }
+}
+
+void Renderer::updateBullets(Scene& scene) {
+    const auto& data = scene.getBulletsData();
+
+    if (bullets.size != data.size()) {
+        if (!bullets.mesh) {
+            bullets.mesh = Mesh{};
+            bullets.vbo = VertexBuffer(VertexBufferType::Array);
+            bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
+
+            bullets.mesh.addVertexBuffer(bullets.vbo, ShaderBullet::Position{}, ShaderBullet::Direction{},
+                                         ShaderBullet::Color{}, ShaderBullet::Time{}, ShaderBullet::Speed{});
+            bullets.mesh.setPrimitive(PrimitiveType::Points);
+            bullets.mesh.setCount(data.size());
+        } else {
+            bullets.mesh.bind();
+            bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
+        }
+        bullets.size = data.size();
+    } else if (bullets.mesh) {
+        bullets.vbo.bufferSubData(data.data(), data.size() * sizeof(Scene::Bullet), 0);
     }
 }
 
@@ -479,9 +604,11 @@ void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
         const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
         const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
 
-        CameraUniform cameraUniform;
+        CameraUniform cameraUniform{};
         cameraUniform.transformationProjectionMatrix = transformationProjectionMatrix;
         cameraUniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
+        cameraUniform.viewMatrix = viewMatrix;
+        cameraUniform.projectionMatrix = primary->getProjectionMatrix();
         cameraUniform.viewport = viewport;
         cameraUniform.eyesPos = eyesPos;
 
@@ -489,6 +616,7 @@ void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
     };
 
     if (primary) {
+        cameraViewMatrix = primary->getViewMatrix();
         CameraUniform cameraUniform = makeUniform(false);
 
         if (!cameraUbo) {
@@ -534,13 +662,24 @@ void Renderer::renderComponentPlanetAtmosphere(ComponentPlanet& component) {
     shaders.planetAtmosphere.draw(planet.mesh);
 }
 
-void Renderer::renderComponentModel(ComponentModel& component) {
+void Renderer::renderComponentParticleEmitter(ComponentParticleEmitter& component) {
+    component.rebuild();
+
     const auto& transform = component.getObject().getTransform();
+    shaders.particleEmitter.setModelMatrix(transform);
+    shaders.particleEmitter.setModelViewMatrix(cameraViewMatrix * transform);
+    shaders.particleEmitter.bindParticleTexture(component.getTexture()->getTexture());
+    shaders.particleEmitter.bindParticleData(component.getUbo());
+    particleEmitter.vao.bind();
+    glDrawArrays(GL_POINTS, 0, component.getCount());
+}
+
+void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
     const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
     shaders.model.setModelMatrix(transform);
     shaders.model.setNormalMatrix(transformInverted);
 
-    for (const auto& primitive : component.getModel()->getPrimitives()) {
+    for (const auto& primitive : model->getPrimitives()) {
         shaders.model.bindMaterialUniform(primitive.ubo);
 
         if (primitive.material.baseColorTexture) {
@@ -574,6 +713,78 @@ void Renderer::renderComponentModel(ComponentModel& component) {
         }
 
         shaders.model.draw(primitive.mesh);
+    }
+}
+
+void Renderer::renderComponentModel(ComponentModel& component) {
+    const auto& transform = component.getObject().getTransform();
+    renderModel(component.getModel(), transform);
+}
+
+void Renderer::renderComponentTurret(ComponentTurret& component) {
+    const auto& turret = component.getTurret()->getComponents();
+    const auto transformInverted = glm::inverse(component.getObject().getTransform());
+
+    auto transform = glm::translate(component.getObject().getTransform(), turret.base.offset);
+    renderModel(turret.base.model, transform);
+
+    const auto& rotation = component.getRotation();
+
+    transform = glm::translate(component.getObject().getTransform(), turret.arm.offset);
+    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+    renderModel(turret.arm.model, transform);
+
+    transform = glm::translate(component.getObject().getTransform(), turret.cannon.offset);
+    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+    transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
+
+    renderModel(turret.cannon.model, transform);
+}
+
+void Renderer::renderComponentGrid(ComponentGrid& component) {
+    component.rebuild();
+
+    const auto& transform = component.getObject().getTransform();
+    shaders.grid.setModelMatrix(transform);
+
+    const auto& meshes = component.getMeshes();
+
+    for (const auto& [block, type] : meshes) {
+        for (const auto& primitive : type.primitives) {
+            shaders.grid.bindMaterialUniform(*primitive.ubo);
+
+            if (primitive.material->baseColorTexture) {
+                shaders.grid.bindBaseColorTexture(primitive.material->baseColorTexture->getTexture());
+            } else {
+                shaders.grid.bindBaseColorTexture(defaultBaseColorTexture);
+            }
+
+            if (primitive.material->emissiveTexture) {
+                shaders.grid.bindEmissiveTexture(primitive.material->emissiveTexture->getTexture());
+            } else {
+                shaders.grid.bindEmissiveTexture(defaultEmissiveTexture);
+            }
+
+            if (primitive.material->normalTexture) {
+                shaders.grid.bindNormalTexture(primitive.material->normalTexture->getTexture());
+            } else {
+                shaders.grid.bindNormalTexture(defaultNormalTexture);
+            }
+
+            if (primitive.material->ambientOcclusionTexture) {
+                shaders.grid.bindAmbientOcclusionTexture(primitive.material->ambientOcclusionTexture->getTexture());
+            } else {
+                shaders.grid.bindAmbientOcclusionTexture(defaultAmbientOcclusionTexture);
+            }
+
+            if (primitive.material->metallicRoughnessTexture) {
+                shaders.grid.bindMetallicRoughnessTexture(primitive.material->metallicRoughnessTexture->getTexture());
+            } else {
+                shaders.grid.bindMetallicRoughnessTexture(defaultMetallicRoughnessTexture);
+            }
+
+            shaders.grid.draw(primitive.mesh);
+        }
     }
 }
 

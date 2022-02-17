@@ -6,11 +6,23 @@
 namespace Engine {
 class ENGINE_API ComponentModel : public Component {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentModel() = default;
     explicit ComponentModel(Object& object, AssetModelPtr model) : Component(object), model(std::move(model)) {
     }
 
     virtual ~ComponentModel() = default;
+
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
 
     const AssetModelPtr& getModel() const {
         return model;

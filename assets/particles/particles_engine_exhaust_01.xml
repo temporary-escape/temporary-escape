@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<particles>
+    <texture>particle_simple</texture>
+    <color>
+        <start>
+            <x>0.3</x>
+            <y>0.4</y>
+            <z>1.0</z>
+            <w>0.6</w>
+        </start>
+        <end>
+            <x>0.9</x>
+            <y>0.6</y>
+            <z>0.3</z>
+            <w>0.6</w>
+        </end>
+    </color>
+    <count>500</count>
+    <duration>0.15</duration>
+    <radius>
+        <start>0.32</start>
+        <end>0.05</end>
+    </radius>
+    <size>
+        <start>0.4</start>
+        <end>0.4</end>
+    </size>
+    <force>
+        <x>0.0</x>
+        <y>0.0</y>
+        <z>2.0</z>
+    </force>
+</particles>

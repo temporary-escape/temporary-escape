@@ -6,7 +6,7 @@ namespace Engine {
 class ENGINE_API AssetAsteroid : public Asset {
 public:
     struct Definition {
-        std::string name;
+        std::string title;
         std::vector<WeightedModel> models;
     };
 
@@ -17,8 +17,8 @@ public:
 
     void load(AssetManager& assetManager) override;
 
-    const std::string& getName() const {
-        return definition.name;
+    const std::string& getTitle() const {
+        return definition.title;
     }
 
     const std::vector<WeightedModel>& getModels() const {

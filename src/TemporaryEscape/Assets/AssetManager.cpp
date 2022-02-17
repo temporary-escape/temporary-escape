@@ -120,6 +120,39 @@ AssetAsteroidPtr AssetManager::addAsteroid(const Manifest& mod, const Path& path
     }
 }
 
+AssetBlockPtr AssetManager::addBlock(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto block = std::make_shared<AssetBlock>(mod, baseName, path);
+        add(block);
+        return block;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add block: '{}'", path.string());
+    }
+}
+
+AssetParticlesPtr AssetManager::addParticles(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto particles = std::make_shared<AssetParticles>(mod, baseName, path);
+        add(particles);
+        return particles;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add particles: '{}'", path.string());
+    }
+}
+
+AssetTurretPtr AssetManager::addTurret(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto turret = std::make_shared<AssetTurret>(mod, baseName, path);
+        add(turret);
+        return turret;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add turret: '{}'", path.string());
+    }
+}
+
 void AssetManager::add(AssetPtr asset) {
     Log::i(CMP, "Adding asset '{}/{}'", asset->getMod().name, asset->getName());
     assets.insert(std::make_pair(asset->getName(), asset));

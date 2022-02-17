@@ -4,10 +4,13 @@
 #include "../Utils/Exceptions.hpp"
 #include "Asset.hpp"
 #include "AssetAsteroid.hpp"
+#include "AssetBlock.hpp"
 #include "AssetFontFamily.hpp"
 #include "AssetImage.hpp"
 #include "AssetModel.hpp"
+#include "AssetParticles.hpp"
 #include "AssetPlanet.hpp"
+#include "AssetTurret.hpp"
 #include "TextureAtlas.hpp"
 #include "TextureCompressor.hpp"
 #include <functional>
@@ -60,6 +63,9 @@ public:
     AssetImagePtr addImage(const Manifest& mod, const Path& path);
     AssetPlanetPtr addPlanet(const Manifest& mod, const Path& path);
     AssetAsteroidPtr addAsteroid(const Manifest& mod, const Path& path);
+    AssetBlockPtr addBlock(const Manifest& mod, const Path& path);
+    AssetParticlesPtr addParticles(const Manifest& mod, const Path& path);
+    AssetTurretPtr addTurret(const Manifest& mod, const Path& path);
     AssetLoadQueue getLoadQueue();
 
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);

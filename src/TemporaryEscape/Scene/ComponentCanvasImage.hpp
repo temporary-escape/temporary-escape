@@ -8,11 +8,23 @@
 namespace Engine {
 class ENGINE_API ComponentCanvasImage : public Component {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentCanvasImage() = default;
     explicit ComponentCanvasImage(Object& object, AssetImagePtr image, const Vector2& size, const Color4& color)
         : Component(object), image(std::move(image)), size(size), color(color) {
     }
     virtual ~ComponentCanvasImage() = default;
+
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
 
     const AssetImagePtr& getImage() const {
         return image;

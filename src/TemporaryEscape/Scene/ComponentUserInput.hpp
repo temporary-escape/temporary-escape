@@ -16,10 +16,22 @@ public:
 
 class ENGINE_API ComponentUserInput : public Component {
 public:
+    struct Delta {
+        MSGPACK_DEFINE_ARRAY();
+    };
+
     ComponentUserInput() = default;
     explicit ComponentUserInput(Object& object, UserInputHandler& handler) : Component(object), handler(&handler) {
     }
     virtual ~ComponentUserInput() = default;
+
+    Delta getDelta() {
+        return {};
+    }
+
+    void applyDelta(Delta& delta) {
+        (void)delta;
+    }
 
     void eventMouseMoved(const Vector2i& pos) {
         if (handler && !disable) {

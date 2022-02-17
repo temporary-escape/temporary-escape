@@ -42,7 +42,7 @@ void ViewMap::load() {
 
 void ViewMap::render(const Vector2i& viewport) {
     if (scene != nullptr) {
-        scene->update();
+        scene->update(0.0f);
         renderer.render(viewport, *scene);
     }
 }

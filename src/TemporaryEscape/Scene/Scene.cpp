@@ -1,5 +1,7 @@
 #include "Scene.hpp"
 
+#define CMP "Scene"
+
 using namespace Engine;
 
 Scene::Scene(EventListener& eventListener)
@@ -13,7 +15,12 @@ void Scene::addEntity(EntityPtr entity) {
         entity->setId(++nextId);
     }
 
+    for (const auto& child : entity->getChildren()) {
+        addEntity(child);
+    }
+
     entities.push_back(std::move(entity));
+    entityMap.insert(std::make_pair(entities.back()->getId(), entities.back()));
 
     for (const auto& componentRef : *entities.back()) {
         auto& system = systems.at(componentRef.type);
@@ -23,17 +30,52 @@ void Scene::addEntity(EntityPtr entity) {
     eventListener.eventEntityAdded(entities.back());
 }
 
-void Scene::removeEntity(const EntityPtr& entity) {
-    const auto it = entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
-    if (it != entities.end()) {
-        for (const auto& componentRef : *entity) {
-            auto& system = systems.at(componentRef.type);
-            system->remove(*componentRef.ptr);
-        }
+void Scene::updateEntity(const Entity::Delta& delta) {
+    auto it = entityMap.find(delta.id);
+    if (it != entityMap.end()) {
+        it->second->applyDelta(delta);
     }
 }
 
-void Scene::update() {
+void Scene::removeEntity(const EntityPtr& entity) {
+    for (const auto& child : entity->getChildren()) {
+        child->setParent(nullptr);
+        removeEntity(child);
+    }
+    entity->clearChildren();
+    entity->setParent(nullptr);
+
+    entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
+    entityMap.erase(entity->getId());
+    for (const auto& componentRef : *entity) {
+        auto& system = systems.at(componentRef.type);
+        system->remove(*componentRef.ptr);
+    }
+}
+
+void Scene::addBullet(const Vector3& pos, const Vector3& dir) {
+    const auto add = [&](Bullet& bullet) {
+        bullet.pos = pos;
+        bullet.dir = dir;
+        bullet.time = 1.0f;
+        bullet.color = Color4{1.0f};
+        bullet.speed = 125.0f;
+    };
+
+    for (auto& bullet : bullets.data) {
+        if (bullet.speed <= 0.0001f) {
+            add(bullet);
+            return;
+        }
+    }
+
+    const auto endIdx = bullets.data.size();
+    Log::d(CMP, "Resizing bullets buffer to {}", bullets.data.size() + 128);
+    bullets.data.resize(bullets.data.size() + 128);
+    add(bullets.data.at(endIdx));
+}
+
+void Scene::update(const float delta) {
     auto& systemCameraTurntable = getComponentSystem<ComponentCameraTurntable>();
     for (auto& component : systemCameraTurntable) {
         component->update();
@@ -42,6 +84,33 @@ void Scene::update() {
     auto& systemCameraTop = getComponentSystem<ComponentCameraTop>();
     for (auto& component : systemCameraTop) {
         component->update();
+    }
+
+    auto& systemShipControl = getComponentSystem<ComponentShipControl>();
+    for (auto& component : systemShipControl) {
+        component->update(delta);
+    }
+
+    auto& systemTurret = getComponentSystem<ComponentTurret>();
+    for (auto& component : systemTurret) {
+        component->update(delta);
+        if (component->shouldFire()) {
+            component->resetFire();
+            addBullet(component->getNozzlePos(), component->getNozzleDir());
+        }
+    }
+
+    for (auto& bullet : bullets.data) {
+        if (bullet.speed <= 0.0001f) {
+            continue;
+        }
+
+        bullet.time += delta;
+        bullet.pos += bullet.dir * bullet.speed * delta;
+
+        if (bullet.time > 10.0f) {
+            bullet.speed = 0.0f;
+        }
     }
 }
 

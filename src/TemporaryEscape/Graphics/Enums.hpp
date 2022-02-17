@@ -71,6 +71,11 @@ enum class FramebufferAttachment : GLenum {
     Stencil = GL_STENCIL_ATTACHMENT,
 };
 
+enum class BufferBit : GLenum {
+    Color = GL_COLOR_BUFFER_BIT,
+    Depth = GL_DEPTH_BUFFER_BIT,
+};
+
 enum class TextureWrapping : GLenum {
     ClampToEdge = GL_CLAMP_TO_EDGE,
     Repeat = GL_REPEAT,

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <asteroid>
-    <name>Asteroid (Rock)</name>
+    <title>Asteroid (Rock)</title>
     <models>
         <model>model_asteroid_01_a</model>
         <model>model_asteroid_01_b</model>

@@ -19,12 +19,22 @@ layout (std140) uniform DirectionalLights {
     int count;
 } directionalLights;
 
-uniform Camera {
+layout (std140) uniform Camera {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
     ivec2 viewport;
     vec3 eyesPos;
 } camera;
+
+#define SSAO_NUM_SAMPLES 8
+#define SSAO_NUM_NOISE 4
+
+layout (std140) uniform SSAO {
+    vec3 samples[SSAO_NUM_SAMPLES];
+    vec3 noise[SSAO_NUM_NOISE];
+} ssao;
 
 const float PI = 3.14159265359;
 
@@ -79,6 +89,32 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 }
 
 // ----------------------------------------------------------------------------
+vec3 vertexPos(float depth, vec2 texCoords) {
+    return vec3(texCoords * 2.0 - 1.0, 0.0);
+}
+
+// ----------------------------------------------------------------------------
+vec4 getClipSpacePos(float depth, vec2 texCoords) {
+    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
+    vec4 clipSpaceLocation;
+    clipSpaceLocation.xy = texCoords * 2.0f - 1.0f;
+    clipSpaceLocation.z = depth * 2.0f - 1.0f;
+    clipSpaceLocation.w = 1.0f;
+
+    return clipSpaceLocation;
+}
+
+// ----------------------------------------------------------------------------
+vec3 getWorldPos(float depth, vec2 texCoords) {
+    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
+    vec4 clipSpaceLocation = getClipSpacePos(depth, texCoords);
+    vec4 homogenousLocation = camera.viewProjectionInverseMatrix * clipSpaceLocation;
+    vec3 worldPos = homogenousLocation.xyz / homogenousLocation.w;
+
+    return worldPos;
+}
+
+// ----------------------------------------------------------------------------
 void main() {
     float depth = texture(depthTexture, vsOut.texCoords).r;
     if (depth > 0.9999) {
@@ -94,13 +130,11 @@ void main() {
     vec3 emissive = texture(emissiveTexture, vsOut.texCoords).rgb;
     float ao = metallicRoughnessAmbient.b;
 
-    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
-    vec4 clipSpaceLocation;
-    clipSpaceLocation.xy = vsOut.texCoords * 2.0f - 1.0f;
-    clipSpaceLocation.z = depth * 2.0f - 1.0f;
-    clipSpaceLocation.w = 1.0f;
-    vec4 homogenousLocation = camera.viewProjectionInverseMatrix * clipSpaceLocation;
-    vec3 worldpos = homogenousLocation.xyz / homogenousLocation.w;
+    // Get world pos from UV and camera projection matrix
+    vec3 worldpos = getWorldPos(depth, vsOut.texCoords);
+
+    // Screen space normals
+    vec3 SSN = (camera.viewMatrix * vec4(N, 0.0)).xyz;
 
     // input lighting data
     vec3 V = normalize(camera.eyesPos - worldpos);

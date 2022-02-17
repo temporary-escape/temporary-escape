@@ -7,6 +7,7 @@
 #include <msgpack/adaptor/define_decl.hpp>
 #include <optional>
 #include <sstream>
+#include <variant>
 
 namespace Engine {
 class MsgpackJsonVisitor : public msgpack::v2::null_visitor {
@@ -315,6 +316,73 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 return o;
             }
             o.pack(v.value());
+            return o;
+        }
+    };
+
+    template <typename... T> struct variant_adaptor;
+
+    template <> struct variant_adaptor<> {
+        template <typename Variant> static void convert(msgpack::object const& o, Variant& v, const size_t idx = 0) {
+            (void)o;
+            (void)v;
+            (void)idx;
+        }
+
+        template <typename Stream, typename Variant>
+        static void pack(msgpack::packer<Stream>& o, Variant const& v, const size_t idx = 0) {
+            (void)o;
+            (void)v;
+        }
+    };
+
+    template <typename T, typename... Other> struct variant_adaptor<T, Other...> {
+        template <typename Variant> static void convert(msgpack::object const& o, Variant& v, const size_t idx = 0) {
+            if (o.type != msgpack::type::ARRAY) {
+                throw msgpack::type_error();
+            }
+
+            if (o.via.array.size != 2) {
+                throw msgpack::type_error();
+            }
+
+            if (o.via.array.ptr[0].type != msgpack::type::POSITIVE_INTEGER) {
+                throw msgpack::type_error();
+            }
+
+            if (o.via.array.ptr[0].via.i64 == idx) {
+                v = T{};
+                auto& vv = std::get<T>(v);
+                o.via.array.ptr[0].convert(vv);
+            } else {
+                variant_adaptor<Other...>::template convert(o, v, idx + 1);
+            }
+        }
+
+        template <typename Stream, typename Variant>
+        static void pack(msgpack::packer<Stream>& o, Variant const& v, const size_t idx = 0) {
+            if (v.index() == idx) {
+                const auto& vv = std::get<T>(v);
+                o.pack_array(2);
+                o.pack(idx);
+                o.pack(vv);
+            } else {
+                variant_adaptor<Other...>::template pack(o, v, idx + 1);
+            }
+        }
+    };
+
+    template <typename... T> struct convert<std::variant<T...>> {
+        msgpack::object const& operator()(msgpack::object const& o, std::variant<T...>& v) const {
+            variant_adaptor<T...>::template convert(o, v);
+            return o;
+        }
+    };
+
+    template <typename... T> struct pack<std::variant<T...>> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, std::variant<T...> const& v) const {
+            variant_adaptor<T...>::template pack(o, v);
             return o;
         }
     };
