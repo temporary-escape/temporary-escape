@@ -174,6 +174,10 @@ void Shader::drawArrays(const PrimitiveType type, const GLsizei count) const {
 }
 
 void Shader::draw(const Mesh& mesh) const {
+    if (!mesh || mesh.getCount() == 0) {
+        return;
+    }
+
     mesh.bind();
 
     if (mesh.getInstancesCount() != 0) {

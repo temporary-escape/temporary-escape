@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Assets/AssetFontFace.hpp"
+#include "../Assets/AssetImage.hpp"
 #include "../Config.hpp"
 #include "../Graphics/Canvas2D.hpp"
 #include "../Math/Vector.hpp"
@@ -39,7 +40,7 @@ public:
                 const std::function<void()>& fn);
     void group(const std::string& name, GuiFlags flags, const std::function<void()>& fn);
     bool button(const std::string& text);
-    // bool buttonImage(const ImagePtr& image);
+    bool buttonImage(const AssetImagePtr& image, const std::string& text);
     // bool buttonImage(const IconPtr& image, bool active = false);
     void label(const std::string& text, TextAlignValue align = TextAlign::Left);
     void label(const std::string& text, const Color4& color, TextAlignValue align = TextAlign::Left);

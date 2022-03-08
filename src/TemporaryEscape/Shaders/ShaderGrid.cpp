@@ -21,10 +21,15 @@ ShaderGrid::ShaderGrid(const Config& config) : Shader("ShaderGrid") {
     uniformBlockBinding(materialUniformIndex, Bindings::Material);
 
     modelMatrixUniform = getUniformLocation("modelMatrix");
+    objectIdUniform = getUniformLocation("objectId");
 }
 
 void ShaderGrid::setModelMatrix(const Matrix4& matrix) const {
     setUniform(modelMatrixUniform, matrix);
+}
+
+void ShaderGrid::setObjectId(const Vector2& color) const {
+    setUniform(objectIdUniform, color);
 }
 
 void ShaderGrid::bindBaseColorTexture(const Texture& texture) const {

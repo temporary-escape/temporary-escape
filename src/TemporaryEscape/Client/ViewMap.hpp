@@ -1,13 +1,16 @@
+#pragma once
+
 #include "../Assets/AssetImage.hpp"
 #include "../Gui/GuiContext.hpp"
 #include "../Server/Schemas.hpp"
 #include "View.hpp"
+#include "Widgets.hpp"
 
 namespace Engine {
 class ENGINE_API ViewMap : public View {
 public:
     explicit ViewMap(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                     Client& client, GuiContext& gui);
+                     Client& client, Widgets& widgets);
 
     void load();
     void render(const Vector2i& viewport) override;
@@ -35,7 +38,7 @@ private:
     AssetManager& assetManager;
     Renderer& renderer;
     Client& client;
-    GuiContext& gui;
+    Widgets& widgets;
 
     bool loading{false};
     std::unique_ptr<Scene> scene;
@@ -60,8 +63,11 @@ private:
     } data;*/
 
     struct Images {
-        AssetImagePtr galaxyStar;
         AssetImagePtr currentPosition;
     } images;
+
+    struct TexturesInternal {
+        AssetTexturePtr star;
+    } textures;
 };
 } // namespace Engine

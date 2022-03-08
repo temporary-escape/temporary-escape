@@ -32,6 +32,7 @@ public:
     explicit ShaderModel(const Config& config);
 
     void setModelMatrix(const Matrix4& matrix) const;
+    void setObjectId(const Vector2& color) const;
     void setNormalMatrix(const Matrix3& matrix) const;
     void bindBaseColorTexture(const Texture& texture) const;
     void bindNormalTexture(const Texture& texture) const;
@@ -46,5 +47,6 @@ private:
     GLint materialUniformIndex;
     GLint normalMatrixUniform;
     GLint modelMatrixUniform;
+    GLint objectIdUniform;
 };
 } // namespace Engine

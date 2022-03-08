@@ -5,13 +5,13 @@
 
 extern "C" {
 
-NK_LIB void* nk_memcopy(void *dst0, const void *src0, nk_size length);
-NK_LIB void nk_memset(void *ptr, int c0, nk_size size);
+NK_LIB void* nk_memcopy(void* dst0, const void* src0, nk_size length);
+NK_LIB void nk_memset(void* ptr, int c0, nk_size size);
 
-NK_LIB void* NK_MEMCPY(void *dst0, const void *src0, nk_size length) {
+NK_LIB void* NK_MEMCPY(void* dst0, const void* src0, nk_size length) {
     return nk_memcopy(dst0, src0, length);
 }
-NK_LIB void NK_MEMSET(void *ptr, int c0, nk_size size) {
+NK_LIB void NK_MEMSET(void* ptr, int c0, nk_size size) {
     return nk_memset(ptr, c0, size);
 }
 
@@ -439,8 +439,9 @@ void GuiContext::renderInternal(const Vector2& viewport) {
             const auto& color = asColor(c->col);
             const auto image = reinterpret_cast<Canvas2D::Image*>(c->img.handle.ptr);
             canvas.beginPath();
-            // canvas.rectImage({static_cast<float>(c->x), static_cast<float>(c->y)},
-            //                  {static_cast<float>(c->w), static_cast<float>(c->h)}, *image, color);
+            canvas.rectImage({static_cast<float>(c->x), static_cast<float>(c->y)},
+                             {static_cast<float>(c->w), static_cast<float>(c->h)}, *image, color);
+            canvas.fill();
             canvas.closePath();
             break;
         }
@@ -488,6 +489,14 @@ void GuiContext::group(const std::string& name, const GuiFlags flags, const std:
 
 bool GuiContext::button(const std::string& text) {
     return nk_button_label(ctx.get(), text.c_str()) == nk_true;
+}
+
+bool GuiContext::buttonImage(const AssetImagePtr& image, const std::string& text) {
+    struct nk_image img {};
+    img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
+    img.w = image->getImage().size.x;
+    img.h = image->getImage().size.y;
+    return nk_button_image_label(ctx.get(), img, text.c_str(), nk_text_align::NK_TEXT_ALIGN_CENTERED);
 }
 
 /*bool GuiContext::buttonImage(const ImagePtr& image) {

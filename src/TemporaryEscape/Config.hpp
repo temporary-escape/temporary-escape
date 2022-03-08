@@ -2,6 +2,7 @@
 
 #include "Utils/Path.hpp"
 #include <chrono>
+#include <vector>
 
 namespace Engine {
 struct Config {
@@ -14,6 +15,7 @@ struct Config {
     Path cwdPath;
     Path userdataSavesPath;
     Path shadersPath;
+    std::vector<std::string> wrenPaths;
     std::string serverPassword;
     int serverPort = 22443;
     int skyboxIrradianceSize = 32;

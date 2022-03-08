@@ -30,6 +30,7 @@ public:
 
     void setZoom(const float value) {
         zoom = value;
+        setOrthographic(zoom);
     }
 
     void eventMouseMoved(const Vector2i& pos) override;

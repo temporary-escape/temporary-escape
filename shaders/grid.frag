@@ -9,6 +9,7 @@ layout(location = 0) out vec3 fsOut_baseColor;
 layout(location = 1) out vec3 fsOut_emissive;
 layout(location = 2) out vec3 fsOut_metallicRoughnessAmbient;
 layout(location = 3) out vec3 fsOut_normal;
+layout(location = 4) out vec2 fsOut_objectId;
 
 uniform Material {
     vec4 baseColorFactor;
@@ -16,6 +17,7 @@ uniform Material {
     vec4 metallicRoughnessFactor;
 } material;
 
+uniform vec2 objectId;
 uniform sampler2D baseColorTexture;
 uniform sampler2D emissiveTexture;
 uniform sampler2D normalTexture;
@@ -43,4 +45,5 @@ void main() {
     fsOut_emissive = emissive;
     fsOut_metallicRoughnessAmbient = vec3(metallic, roughness, ambient);
     fsOut_normal = normal.rgb;
+    fsOut_objectId = objectId;
 }

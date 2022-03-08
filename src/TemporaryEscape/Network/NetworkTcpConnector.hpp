@@ -1,28 +1,21 @@
 #pragma once
 
-#include "NetworkAcceptor.hpp"
-#include "NetworkAsio.hpp"
-#include "NetworkStream.hpp"
 #include "NetworkTcpStream.hpp"
 
-namespace Engine::Network {
-class Client;
+namespace Engine {
+template <typename Sink> class ENGINE_API NetworkTcpClient;
 
-class ENGINE_API TcpConnector : public Acceptor, public std::enable_shared_from_this<TcpConnector> {
+template <typename Sink> class ENGINE_API NetworkTcpConnector : public NetworkTcpStream<Sink> {
 public:
-    explicit TcpConnector(EventListener& listener, Crypto::Ecdhe& ecdhe, asio::io_service& service,
-                          const std::string& address, int port);
-    virtual ~TcpConnector();
-
-    void close();
-    void start() override;
-
-    Stream& getStream() {
-        return *stream;
+    explicit NetworkTcpConnector(NetworkTcpClient<Sink>& client, Crypto::Ecdhe& ecdhe, asio::ip::tcp::socket socket)
+        : NetworkTcpStream<Sink>(ecdhe, std::move(socket)), client(client) {
     }
+    virtual ~NetworkTcpConnector() = default;
 
 private:
-    asio::ip::tcp::endpoint endpoint;
-    std::shared_ptr<TcpStream> stream;
+    void onConnected() override;
+    void onReceive(Packet packet) override;
+
+    NetworkTcpClient<Sink>& client;
 };
-} // namespace Engine::Network
+} // namespace Engine

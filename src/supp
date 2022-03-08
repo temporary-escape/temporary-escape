@@ -1,0 +1,4 @@
+leak:basic_string.tcc
+leak:Database.cpp
+leak:nuklear_buffer.c
+leak:vm.hpp

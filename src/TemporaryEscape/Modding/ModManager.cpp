@@ -27,6 +27,7 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
         Manifest& manifest = *manifests.back();
 
         Xml::Document(dir / Path("manifest.xml")).getRoot().convert(manifest);
+        manifest.path = dir;
 
         Log::i(CMP, "Loading assets for: '{}'", manifest.name);
 
@@ -45,12 +46,14 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
 
         iterateDir(dir / Path("planets"), {".xml"}, [&](const Path& path) { assetManager.addPlanet(manifest, path); });
 
-        iterateDir(dir / Path("asteroids"), {".xml"},
-                   [&](const Path& path) { assetManager.addAsteroid(manifest, path); });
-
         iterateDir(dir / Path("blocks"), {".xml"}, [&](const Path& path) { assetManager.addBlock(manifest, path); });
 
         iterateDir(dir / Path("turrets"), {".xml"}, [&](const Path& path) { assetManager.addTurret(manifest, path); });
+
+        iterateDir(dir / Path("entities"), {".wren"},
+                   [&](const Path& path) { assetManager.addEntity(manifest, path); });
+
+        iterateDir(dir / Path("sectors"), {".wren"}, [&](const Path& path) { assetManager.addSector(manifest, path); });
 
     } catch (...) {
         EXCEPTION_NESTED("Failed to load mod assets from dir: '{}'", dir.string());

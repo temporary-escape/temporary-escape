@@ -13,21 +13,32 @@ Scene::~Scene() = default;
 void Scene::addEntity(EntityPtr entity) {
     if (entity->getId() == 0) {
         entity->setId(++nextId);
+    } else {
+        nextId = std::max(entity->getId(), nextId);
     }
 
-    for (const auto& child : entity->getChildren()) {
-        addEntity(child);
+    if (entity->getParentId()) {
+        const auto found = entityMap.find(entity->getParentId());
+        if (found != entityMap.end()) {
+            entity->setParent(found->second);
+        } else {
+            Log::w(CMP, "Entity parent id: {} not found", entity->getParentId());
+        }
     }
 
     entities.push_back(std::move(entity));
     entityMap.insert(std::make_pair(entities.back()->getId(), entities.back()));
 
-    for (const auto& componentRef : *entities.back()) {
-        auto& system = systems.at(componentRef.type);
-        system->add(*componentRef.ptr);
+    for (const auto& ref : entities.back()->getComponents()) {
+        auto& system = systems.at(ref.type);
+        system->add(*ref.ptr);
     }
 
     eventListener.eventEntityAdded(entities.back());
+
+    for (const auto& child : entities.back()->getChildren()) {
+        addEntity(child);
+    }
 }
 
 void Scene::updateEntity(const Entity::Delta& delta) {
@@ -38,19 +49,34 @@ void Scene::updateEntity(const Entity::Delta& delta) {
 }
 
 void Scene::removeEntity(const EntityPtr& entity) {
+    if (!entity) {
+        return;
+    }
+
     for (const auto& child : entity->getChildren()) {
         child->setParent(nullptr);
         removeEntity(child);
     }
     entity->clearChildren();
     entity->setParent(nullptr);
+    if (entity->hasComponent<ComponentScript>()) {
+        entity->getComponent<ComponentScript>()->clear();
+    }
 
     entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
     entityMap.erase(entity->getId());
-    for (const auto& componentRef : *entity) {
-        auto& system = systems.at(componentRef.type);
-        system->remove(*componentRef.ptr);
+    for (const auto& ref : entity->getComponents()) {
+        auto& system = systems.at(ref.type);
+        system->remove(*ref.ptr);
     }
+}
+
+EntityPtr Scene::getEntityById(uint64_t id) {
+    const auto it = entityMap.find(id);
+    if (it == entityMap.end()) {
+        return nullptr;
+    }
+    return it->second;
 }
 
 void Scene::addBullet(const Vector3& pos, const Vector3& dir) {

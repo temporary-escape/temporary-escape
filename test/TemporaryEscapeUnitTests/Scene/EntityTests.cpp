@@ -156,3 +156,27 @@ TEST_CASE("Removing child from scene must remove child from parent as well", TAG
     scene.removeEntity(scene.getEntities().front());
     REQUIRE(counter == 0);
 }
+
+TEST_CASE("Adding entity with component to the scene", TAG) {
+    static size_t counter = 0;
+
+    auto entity = std::make_shared<EntityRefCounter>(counter);
+    entity->addComponent<ComponentGrid>();
+
+    Scene scene{};
+    scene.addEntity(entity);
+
+    const auto& gridSystem = scene.getComponentSystem<ComponentGrid>();
+
+    REQUIRE(gridSystem.size() == 1);
+
+    auto ptr = entity.get();
+    entity.reset();
+
+    REQUIRE(gridSystem.size() == 1);
+
+    scene.removeEntity(ptr->shared_from_this());
+
+    REQUIRE(gridSystem.size() == 0);
+    REQUIRE(counter == 0);
+}

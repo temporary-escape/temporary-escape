@@ -4,6 +4,7 @@
 
 namespace Engine {
 struct Manifest {
+    Path path;
     std::string name;
     std::string description;
     std::string author;

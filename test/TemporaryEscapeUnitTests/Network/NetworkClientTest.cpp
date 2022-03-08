@@ -1,155 +1,145 @@
 #include "../Common.hpp"
-#include <TemporaryEscape/Network/NetworkTcpAcceptor.hpp>
+#include <TemporaryEscape/Network/NetworkMessage.hpp>
 #include <TemporaryEscape/Network/NetworkTcpClient.hpp>
-#include <TemporaryEscape/Network/NetworkTcpConnector.hpp>
 #include <TemporaryEscape/Network/NetworkTcpServer.hpp>
+#include <TemporaryEscape/Utils/Worker.hpp>
+#include <thread>
 
 #define TAG "[NetworkClient]"
 
-static constexpr int serverPort = 22443;
+struct CustomHelloMessage {
+    struct Request : Message {
+        std::string msg;
 
-template <typename T> class EventListener : public Network::EventListener {
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), msg);
+    };
+
+    struct Response : Message {
+        std::string msg;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), msg);
+        MESSAGE_APPEND_DEFAULT();
+    };
+};
+
+struct CustomEventMessage {
+    using Request = NoMessage;
+
+    struct Response : Message {
+        uint64_t event{0};
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), event);
+        MESSAGE_APPEND_DEFAULT();
+    };
+};
+
+struct CustomLongMessage {
+    struct Request : Message {
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message));
+    };
+
+    struct Response : Message {
+        std::vector<uint64_t> data;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), data);
+        MESSAGE_APPEND_ARRAY(data);
+    };
+};
+
+using CustomMessageSink = NetworkMessageSink<CustomEventMessage, CustomHelloMessage, CustomLongMessage>;
+
+class CustomServer : public NetworkTcpServer<CustomMessageSink> {
 public:
-    EventListener(T& parent) : parent(parent) {
+    void onPeerConnected(std::shared_ptr<NetworkTcpPeer<CustomMessageSink>> peer) override {
+        peers.push_back(peer);
     }
 
-    ~EventListener() = default;
-
-    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) override {
-        parent.eventPacket(stream, std::move(packet));
+    void handle(const PeerPtr& peer, CustomEventMessage::Request req, CustomEventMessage::Response& res) override {
     }
 
-    void eventConnect(const Network::StreamPtr& stream) override {
-        parent.eventConnect(stream);
+    void handle(const PeerPtr& peer, CustomHelloMessage::Request req, CustomHelloMessage::Response& res) override {
+        res.msg = req.msg + " World!";
     }
 
-    void eventDisconnect(const Network::StreamPtr& stream) override {
-        parent.eventDisconnect(stream);
+    void handle(const PeerPtr& peer, CustomLongMessage::Request req, CustomLongMessage::Response& res) override {
+        auto idx = std::stoll(req.token);
+        while (idx < 2100 && res.data.size() < 64) {
+            res.data.push_back(idx++);
+        }
+
+        if (res.data.size() == 64) {
+            res.token = std::to_string(res.data.back() + 1);
+        }
     }
 
-    T& parent;
+    std::vector<std::shared_ptr<NetworkTcpPeer<CustomMessageSink>>> peers;
 };
 
-class DummyClient {
+class CustomClient : public NetworkTcpClient<CustomMessageSink> {
 public:
-    DummyClient() : listener(*this), client(std::make_shared<Network::TcpClient>(listener, "localhost", serverPort)) {
+    template <typename M> void send(M& message) {
+        NetworkTcpClient::send(message);
     }
 
-    ~DummyClient() {
-        packets.clear();
-        client.reset();
+    void handle(CustomHelloMessage::Response res) {
+        helloResReceived.store(true);
+        helloRes = std::move(res);
     }
 
-    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
-        packets.push_back(std::move(packet));
+    void handle(CustomEventMessage::Response res) {
+        eventResReceived.store(true);
+        eventRes = std::move(res);
     }
 
-    void eventConnect(const Network::StreamPtr& stream) {
-        connect = true;
+    void handle(CustomLongMessage::Response res) {
+        longResReceived.store(true);
+        longRes = std::move(res);
     }
 
-    void eventDisconnect(const Network::StreamPtr& stream) {
-        connect = false;
-    }
-
-    template <typename T> void send(const T& message) {
-        client->send(message);
-    }
-
-    EventListener<DummyClient> listener;
-    std::shared_ptr<Network::Client> client;
-    std::vector<Network::Packet> packets;
-    bool connect = false;
+    CustomHelloMessage::Response helloRes;
+    CustomEventMessage::Response eventRes;
+    CustomLongMessage::Response longRes;
+    std::atomic_bool helloResReceived{false};
+    std::atomic_bool eventResReceived{false};
+    std::atomic_bool longResReceived{false};
 };
 
-class DummyServer {
-public:
-    DummyServer() : listener(*this), server(std::make_shared<Network::TcpServer>(listener, serverPort)) {
+TEST_CASE("Connect to the server and send packets", TAG) {
+    BackgroundWorker worker;
+    CustomServer server;
+    CustomClient client;
+
+    IoServiceRunner clientThread(client.getWorker());
+
+    server.bind(12345);
+    client.connect("localhost", 12345);
+
+    REQUIRE(waitForCondition([&]() { return server.peers.size() == 1; }));
+
+    CustomHelloMessage::Request req{};
+    req.msg = "Hello";
+    client.send(req);
+
+    REQUIRE(waitForCondition([&]() { return client.helloResReceived.load() == true; }));
+    REQUIRE(client.helloRes.msg == "Hello World!");
+
+    CustomEventMessage::Response res{};
+    res.event = 123;
+    server.peers.front()->send(res);
+
+    REQUIRE(waitForCondition([&]() { return client.eventResReceived.load() == true; }));
+    REQUIRE(client.eventRes.event == 123);
+
+    CustomLongMessage::Request req2{};
+    req2.token = "100";
+    client.send(req2);
+
+    REQUIRE(waitForCondition([&]() { return client.longResReceived.load() == true; }));
+    REQUIRE(client.longRes.data.size() == 2000);
+    for (size_t i = 0; i < client.longRes.data.size(); i++) {
+        REQUIRE(client.longRes.data.at(i) == i + 100);
     }
 
-    ~DummyServer() {
-        packets.clear();
-        streams.clear();
-        server.reset();
-    }
-
-    void eventPacket(const Network::StreamPtr& stream, Network::Packet packet) {
-        packets.emplace_back(stream, std::move(packet));
-    }
-
-    void eventConnect(const Network::StreamPtr& stream) {
-        streams.insert(stream);
-    }
-
-    void eventDisconnect(const Network::StreamPtr& stream) {
-        streams.erase(stream);
-    }
-
-    std::set<Network::StreamPtr> streams;
-    EventListener<DummyServer> listener;
-    std::shared_ptr<Network::Server> server;
-    std::vector<std::tuple<Network::StreamPtr, Network::Packet>> packets;
-};
-
-struct DummyPacket {
-    std::string msg;
-    bool status = false;
-
-    MSGPACK_DEFINE(msg, status);
-};
-
-REGISTER_MESSAGE(DummyPacket);
-
-TEST_CASE("Connect to the server and send one packet", TAG) {
-    auto server = std::make_unique<DummyServer>();
-    auto client = std::make_unique<DummyClient>();
-
-    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
-    REQUIRE(waitForCondition([&]() { return client->connect == true; }));
-
-    auto msg = DummyPacket{"Hello from client!", true};
-    client->send(msg);
-
-    REQUIRE(waitForCondition([&]() { return server->packets.size() == 1; }));
-
-    auto& [stream, packet] = server->packets.back();
-    REQUIRE(stream.get() == server->streams.begin()->get());
-    REQUIRE(packet.id == Network::getMessageId<DummyPacket>());
-
-    auto unpacked = Network::unpack<DummyPacket>(packet);
-    REQUIRE(unpacked.msg == msg.msg);
-    REQUIRE(unpacked.status == true);
-
-    msg = DummyPacket{"Hello from server!"};
-    stream->send(msg);
-
-    REQUIRE(waitForCondition([&]() { return client->packets.size() == 1; }));
-    const auto& packet2 = client->packets.back();
-
-    REQUIRE(packet2.id == Network::getMessageId<DummyPacket>());
-
-    unpacked = Network::unpack<DummyPacket>(packet2);
-    REQUIRE(unpacked.msg == msg.msg);
-}
-
-TEST_CASE("Close client", TAG) {
-    auto server = std::make_unique<DummyServer>();
-    auto client = std::make_unique<DummyClient>();
-
-    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
-
-    client.reset();
-
-    REQUIRE(waitForCondition([&]() { return server->streams.size() == 0; }));
-}
-
-TEST_CASE("Close server", TAG) {
-    auto server = std::make_unique<DummyServer>();
-    auto client = std::make_unique<DummyClient>();
-
-    REQUIRE(waitForCondition([&]() { return server->streams.size() == 1; }));
-
-    server.reset();
-
-    REQUIRE(waitForCondition([&]() { return client->connect == false; }));
+    client.stop();
+    server.stop();
 }

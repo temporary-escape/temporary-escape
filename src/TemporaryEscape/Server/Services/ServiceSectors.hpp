@@ -9,6 +9,8 @@ public:
     ~ServiceSectors() override = default;
 
     void generate();
+    std::optional<SectorData> find(const std::string& galaxyId, const std::string& systemId,
+                                   const std::string& sectorId);
     void generate(const std::string& galaxyId);
     void generate(const std::string& galaxyId, const std::string& systemId);
     void createSectorPlanet(const SectorPlanetData& planet);

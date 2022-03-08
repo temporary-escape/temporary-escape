@@ -6,10 +6,10 @@
 using namespace Engine;
 
 ViewMap::ViewMap(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer, Client& client,
-                 GuiContext& gui)
-    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), gui(gui) {
+                 Widgets& widgets)
+    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets) {
 
-    images.galaxyStar = assetManager.find<AssetImage>("star_flare");
+    textures.star = assetManager.find<AssetTexture>("star_flare");
     images.currentPosition = assetManager.find<AssetImage>("icon_position_marker");
     fontFaceRegular = assetManager.find<AssetFontFamily>("iosevka-aile")->get("regular");
 
@@ -33,7 +33,6 @@ void ViewMap::load() {
     auto camera = entityCamera->addComponent<ComponentCameraTop>();
     camera->setPrimary(true);
     camera->setOrthographic(50.0f);
-    camera->setZoom(50.0f);
     entityCamera->addComponent<ComponentUserInput>(*camera);
     scene->addEntity(entityCamera);
 
@@ -49,7 +48,7 @@ void ViewMap::render(const Vector2i& viewport) {
 
 void ViewMap::renderGui(const Vector2i& viewport) {
     if (loading) {
-        Widgets::loading(gui, viewport, "Initializing map data...", 0.5f);
+        widgets.loading("Initializing map data...", 0.5f);
     } else {
         renderCurrentPositionInfo();
     }
@@ -59,8 +58,6 @@ void ViewMap::renderCurrentPositionInfo() {
     static const Vector2 markerSize{64.0f};
 
     auto& store = client.getStore();
-
-    auto camera = entityCamera->getComponent<ComponentCameraTop>();
 
     const auto& currentSystem = store.galaxy.systems.value().at(store.player.location.value().systemId);
     const auto& currentRegion = store.galaxy.regions.value().at(currentSystem.regionId);
@@ -117,108 +114,146 @@ void ViewMap::reconstruct() {
     static const Vector2 starSize{32.0f};
     static const Vector2 markerSize{32.0f};
 
+    if (!scene) {
+        return;
+    }
+
     loading = false;
 
-    for (auto& entity : entitiesSystems) {
-        scene->removeEntity(entity);
-    }
-    entitiesSystems.clear();
-
-    for (auto& entity : entitiesRegions) {
-        scene->removeEntity(entity);
-    }
-    entitiesRegions.clear();
-
-    auto& store = client.getStore();
-
-    std::optional<SystemData> currentSystem;
-    if (!store.player.location.value().systemId.empty()) {
-        auto it = store.galaxy.systems.value().find(store.player.location.value().systemId);
-        if (it != store.galaxy.systems.value().end()) {
-            currentSystem = it->second;
+    try {
+        for (auto& entity : entitiesSystems) {
+            scene->removeEntity(entity);
         }
-    }
+        entitiesSystems.clear();
 
-    std::optional<RegionData> currentRegion;
-    if (currentSystem.has_value()) {
-        auto it = store.galaxy.regions.value().find(currentSystem.value().regionId);
-        if (it != store.galaxy.regions.value().end()) {
-            currentRegion = it->second;
+        for (auto& entity : entitiesRegions) {
+            scene->removeEntity(entity);
         }
-    }
+        entitiesRegions.clear();
 
-    const auto isInsideOfRegion = [&](const SystemData& system) {
-        if (!currentSystem || !currentRegion) {
-            return false;
+        auto& store = client.getStore();
+
+        std::optional<SystemData> currentSystem;
+        if (!store.player.location.value().systemId.empty()) {
+            auto it = store.galaxy.systems.value().find(store.player.location.value().systemId);
+            if (it != store.galaxy.systems.value().end()) {
+                currentSystem = it->second;
+            }
         }
 
-        return currentRegion.value().id == system.regionId;
-    };
-
-    auto const isCurrentRegion = [&](const RegionData& region) {
-        if (!currentRegion) {
-            return false;
+        std::optional<RegionData> currentRegion;
+        if (currentSystem.has_value()) {
+            auto it = store.galaxy.regions.value().find(currentSystem.value().regionId);
+            if (it != store.galaxy.regions.value().end()) {
+                currentRegion = it->second;
+            }
         }
 
-        return currentRegion.value().id == region.id;
-    };
+        const auto isInsideOfRegion = [&](const SystemData& system) {
+            if (!currentSystem || !currentRegion) {
+                return false;
+            }
 
-    static const auto colorStarInRegion = Color4{1.0f, 1.0f, 1.0f, 1.0f};
-    static const auto colorStarOutRegion = Color4{1.0f, 1.0f, 1.0f, 0.7f};
-    static const auto colorConnectionInRegion = GuiColors::secondary * alpha(0.4f);
-    static const auto colorConnectionOutRegion = Color4{1.0f, 1.0f, 1.0f, 0.1f};
+            return currentRegion.value().id == system.regionId;
+        };
 
-    std::unordered_map<std::string, std::shared_ptr<ComponentCanvasLines>> regionLines;
+        auto const isCurrentRegion = [&](const RegionData& region) {
+            if (!currentRegion) {
+                return false;
+            }
 
-    for (const auto& [_, region] : store.galaxy.regions.value()) {
-        const Color4& color = isCurrentRegion(region) ? colorConnectionInRegion : colorConnectionOutRegion;
+            return currentRegion.value().id == region.id;
+        };
 
-        auto entity = std::make_shared<Entity>();
-        entity->translate(Vector3{region.pos.x, 0.0f, region.pos.y});
-        auto lines = entity->addComponent<ComponentCanvasLines>(2.0f, color);
-        auto label = entity->addComponent<ComponentCanvasLabel>(fontFaceRegular, region.name,
-                                                                GuiColors::text * alpha(0.3f), 36.0f);
-        label->setVisible(true);
-        label->setCentered(true);
+        static const auto colorStarInRegion = Color4{1.0f, 1.0f, 1.0f, 1.0f};
+        static const auto colorStarOutRegion = Color4{1.0f, 1.0f, 1.0f, 0.7f};
+        static const auto colorConnectionInRegion = GuiColors::secondary * alpha(0.4f);
+        static const auto colorConnectionOutRegion = Color4{1.0f, 1.0f, 1.0f, 0.1f};
 
-        regionLines[region.id] = lines;
+        std::unordered_map<std::string, std::shared_ptr<ComponentLines>> regionLines;
 
-        scene->addEntity(entity);
-        entitiesRegions.push_back(entity);
-    }
+        for (const auto& [_, region] : store.galaxy.regions.value()) {
+            auto entity = std::make_shared<Entity>();
+            entity->translate(Vector3{region.pos.x, 0.0f, region.pos.y});
+            auto lines = entity->addComponent<ComponentLines>();
+            auto label =
+                entity->addComponent<ComponentText>(fontFaceRegular, region.name, GuiColors::text * alpha(0.3f), 36.0f);
+            label->setVisible(true);
+            label->setCentered(true);
 
-    for (const auto& [_, system] : store.galaxy.systems.value()) {
-        const Color4& color = isInsideOfRegion(system) ? colorStarInRegion : colorStarOutRegion;
+            regionLines[region.id] = lines;
 
-        auto entity = std::make_shared<Entity>();
-        entity->translate(Vector3{system.pos.x, 0.0f, system.pos.y});
-        entity->addComponent<ComponentCanvasImage>(images.galaxyStar, starSize, color);
-        auto label = entity->addComponent<ComponentCanvasLabel>(fontFaceRegular, system.name,
-                                                                GuiColors::text * alpha(0.7f), 18.0f);
-        label->setVisible(isInsideOfRegion(system));
-        label->setOffset(Vector2{starSize.x / 2.0f, 0.0f});
-
-        if (currentSystem.has_value() && system.id == currentSystem.value().id) {
-            label->setColor(GuiColors::primary);
-
-            auto marker =
-                entity->addComponent<ComponentCanvasImage>(images.currentPosition, markerSize, GuiColors::primary);
-            marker->setOffset(Vector2{0.0f, -markerSize.y / 2.0f});
+            scene->addEntity(entity);
+            entitiesRegions.push_back(entity);
         }
 
-        scene->addEntity(entity);
-        entitiesSystems.push_back(entity);
+        for (const auto& [_, region] : store.galaxy.regions.value()) {
+            const Color4& regionColor = isCurrentRegion(region) ? colorConnectionInRegion : colorConnectionOutRegion;
 
-        for (const auto& conn : system.connections) {
-            const auto& other = store.galaxy.systems.value().at(conn);
-            regionLines.at(system.regionId)
-                ->add(Vector3{system.pos.x, 0.0f, system.pos.y}, Vector3{other.pos.x, 0.0f, other.pos.y});
+            auto entity = std::make_shared<Entity>();
+            auto pointCloud = entity->addComponent<ComponentPointCloud>(textures.star);
+            auto lines = entity->addComponent<ComponentLines>();
+
+            for (const auto& [_, system] : store.galaxy.systems.value()) {
+                if (system.regionId != region.id) {
+                    continue;
+                }
+
+                const Color4& color = isInsideOfRegion(system) ? colorStarInRegion : colorStarOutRegion;
+                pointCloud->add(Vector3{system.pos.x, 0.0f, system.pos.y}, starSize * 0.1f, color);
+
+                /*auto label = entity->addComponent<ComponentText>(fontFaceRegular, system.name,
+                                                                 GuiColors::text * alpha(0.7f), 18.0f);
+                label->setVisible(isInsideOfRegion(system));
+                label->setOffset(Vector2{starSize.x / 2.0f, 0.0f});*/
+
+                for (const auto& conn : system.connections) {
+                    const auto& other = store.galaxy.systems.value().at(conn);
+
+                    lines->add(Vector3{system.pos.x, 0.0f, system.pos.y}, Vector3{other.pos.x, 0.0f, other.pos.y},
+                               regionColor);
+                }
+            }
+
+            scene->addEntity(entity);
+            entitiesSystems.push_back(entity);
         }
-    }
 
-    if (currentSystem.has_value()) {
-        entityCamera->getComponent<ComponentCameraTop>()->moveTo(
-            Vector3{currentSystem.value().pos.x, 0.0f, currentSystem.value().pos.y});
+        /*for (const auto& [_, system] : store.galaxy.systems.value()) {
+            const Color4& color = isInsideOfRegion(system) ? colorStarInRegion : colorStarOutRegion;
+
+            auto entity = std::make_shared<Entity>();
+            entity->translate(Vector3{system.pos.x, 0.0f, system.pos.y});
+            entity->addComponent<ComponentPointCloud>(images.galaxyStar, starSize, color);
+            auto label =
+                entity->addComponent<ComponentText>(fontFaceRegular, system.name, GuiColors::text * alpha(0.7f), 18.0f);
+            label->setVisible(isInsideOfRegion(system));
+            label->setOffset(Vector2{starSize.x / 2.0f, 0.0f});
+
+            if (currentSystem.has_value() && system.id == currentSystem.value().id) {
+                label->setColor(GuiColors::primary);
+
+                auto marker =
+                    entity->addComponent<ComponentCanvasImage>(images.currentPosition, markerSize, GuiColors::primary);
+                marker->setOffset(Vector2{0.0f, -markerSize.y / 2.0f});
+            }
+
+            scene->addEntity(entity);
+            entitiesSystems.push_back(entity);
+
+            for (const auto& conn : system.connections) {
+                const auto& other = store.galaxy.systems.value().at(conn);
+                regionLines.at(system.regionId)
+                    ->add(Vector3{system.pos.x, 0.0f, system.pos.y}, Vector3{other.pos.x, 0.0f, other.pos.y});
+            }
+        }*/
+
+        if (currentSystem.has_value()) {
+            entityCamera->getComponent<ComponentCameraTop>()->moveTo(
+                Vector3{currentSystem.value().pos.x, 0.0f, currentSystem.value().pos.y});
+        }
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to reconstruct the gui map");
     }
 }
 

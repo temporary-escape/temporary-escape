@@ -7,12 +7,15 @@
 #include "../Scene/Scene.hpp"
 #include "../Shaders/ShaderBrdf.hpp"
 #include "../Shaders/ShaderBullet.hpp"
+#include "../Shaders/ShaderFXAA.hpp"
 #include "../Shaders/ShaderGrid.hpp"
+#include "../Shaders/ShaderLines.hpp"
 #include "../Shaders/ShaderModel.hpp"
 #include "../Shaders/ShaderParticleEmitter.hpp"
 #include "../Shaders/ShaderPbr.hpp"
 #include "../Shaders/ShaderPlanetAtmosphere.hpp"
 #include "../Shaders/ShaderPlanetSurface.hpp"
+#include "../Shaders/ShaderPointCloud.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
 #include "SkyboxRenderer.hpp"
 
@@ -27,7 +30,9 @@ public:
     ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene);
+    Camera* getPrimaryCamera(Scene& scene);
     void reloadShaders();
+    EntityPtr queryEntityAtPos(Scene& scene, const Vector2i& pos);
 
 private:
     struct CameraUniform {
@@ -59,7 +64,6 @@ private:
     void createPlanetMesh();
     void updateLights(Scene& scene);
     void updateBullets(Scene& scene);
-    Camera* getPrimaryCamera(Scene& scene);
     void updateCameras(const Vector2i& viewport, Scene& scene);
     void renderPbr();
     void renderBullets();
@@ -67,6 +71,7 @@ private:
     void renderSceneBackground(const Vector2i& viewport, Scene& scene);
     void renderScenePbr(const Vector2i& viewport, Scene& scene);
     void renderSceneForward(const Vector2i& viewport, Scene& scene);
+    void applyFxaa(const Vector2i& viewport);
     void renderComponentSkybox(ComponentSkybox& component);
     void renderComponentPlanetSurface(ComponentPlanet& component);
     void renderComponentPlanetAtmosphere(ComponentPlanet& component);
@@ -75,9 +80,11 @@ private:
     void renderComponentTurret(ComponentTurret& component);
     void renderComponentGrid(ComponentGrid& component);
     void renderComponentParticleEmitter(ComponentParticleEmitter& component);
-    void renderComponentCanvasImage(const Camera& camera, ComponentCanvasImage& component);
-    void renderComponentCanvasLines(const Camera& camera, ComponentCanvasLines& component);
-    void renderComponentCanvasLabel(const Camera& camera, ComponentCanvasLabel& component);
+    void renderComponentPointCloud(ComponentPointCloud& component);
+    void renderComponentLines(ComponentLines& component);
+    // void renderComponentCanvasImage(const Camera& camera, ComponentPointCloud& component);
+    // void renderComponentCanvasLines(const Camera& camera, ComponentLines& component);
+    void renderComponentText(const Camera& camera, ComponentText& component);
     void blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target, FramebufferAttachment attachment,
               BufferBit bufferBit);
 
@@ -98,6 +105,9 @@ private:
         ShaderPlanetAtmosphere planetAtmosphere;
         ShaderParticleEmitter particleEmitter;
         ShaderBullet bullet;
+        ShaderFXAA fxaa;
+        ShaderPointCloud pointCloud;
+        ShaderLines lines;
     } shaders;
 
     Matrix4 cameraViewMatrix;
@@ -124,7 +134,20 @@ private:
         Texture2D fboEmissive;
         Texture2D fboNormal;
         Texture2D fboMetallicRoughnessAmbient;
+        Texture2D fboObjectId;
     } gBuffer;
+
+    struct PostProcessing {
+        Vector2i size;
+        bool fboInit{false};
+        Texture2D fboDepth;
+
+        Framebuffer fbo[2];
+        Texture2D fboTexture[2];
+
+        size_t inputIdx{0};
+        size_t outputIdx{1};
+    } postProcessing;
 
     struct SkyboxData {
         Skybox textures;

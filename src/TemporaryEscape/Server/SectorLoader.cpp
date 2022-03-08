@@ -21,7 +21,7 @@ private:
     std::vector<std::tuple<Vector3, float>> objects;
 };
 
-struct AsteroidCluster {
+/*struct AsteroidCluster {
     Vector3 origin;
     float radius{1.0f};
     float sizeMin{0.5f};
@@ -93,10 +93,12 @@ struct AsteroidCluster {
 
             auto model = entity->addComponent<ComponentModel>(chooseModel(asteroid));
 
+            auto label = entity->addComponent<ComponentLabel>(asteroid->getTitle(), nullptr);
+
             scene.addEntity(entity);
         }
     }
-};
+};*/
 
 SectorLoader::SectorLoader(const Config& config, AssetManager& assetManager, Database& db, Services& services)
     : config(config), assetManager(assetManager), db(db), services(services) {
@@ -146,9 +148,18 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);
 
     auto turretAsset = assetManager.find<AssetTurret>("turret_01");
-    auto turret = dummy->addComponent<ComponentTurret>(turretAsset);
-    // turret->setOffset(Vector3{0, 1, -2});
-    turret->setTarget(Vector3{-4, 6, -15});
+
+    auto turret = std::make_shared<Entity>();
+    turret->setParent(dummy);
+    turret->translate(Vector3{1, 1, -2});
+    auto turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
+    turretCmp->setTarget(Vector3{-4, 6, -15});
+
+    turret = std::make_shared<Entity>();
+    turret->setParent(dummy);
+    turret->translate(Vector3{-1, 1, -2});
+    turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
+    turretCmp->setTarget(Vector3{-4, 6, -15});
 
     dummy->rotate(Vector3{0.0f, 1.0f, 0.0f}, 45.0f);
     dummy->rotate(Vector3{1.0f, 0.0f, 0.0f}, -25.0f);
@@ -161,15 +172,15 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
 
     dummy = std::make_shared<Entity>();
     dummy->addComponent<ComponentModel>(blockFrame->getModel());
-    dummy->translate(turret->getTarget());
+    dummy->translate(turretCmp->getTarget());
     scene.addEntity(dummy);
 
-    auto asteroidRock = assetManager.find<AssetAsteroid>("asteroid_rock");
+    /*auto asteroidRock = assetManager.find<AssetAsteroid>("asteroid_rock");
 
     AsteroidCluster asteroidCluster{};
     asteroidCluster.origin = Vector3{-200.0f, 0.0f, 0.0f};
     asteroidCluster.radius = 200.0f;
     asteroidCluster.count = 500;
     asteroidCluster.weights.emplace_back(1.0f, asteroidRock);
-    asteroidCluster.generate(scene, randomInt<uint64_t>(rng));
+    asteroidCluster.generate(scene, randomInt<uint64_t>(rng));*/
 }

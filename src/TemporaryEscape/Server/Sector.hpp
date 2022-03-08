@@ -3,38 +3,49 @@
 #include "../Scene/Scene.hpp"
 #include "../Utils/Worker.hpp"
 #include "Messages.hpp"
-#include "Player.hpp"
+#include "Services.hpp"
+#include "Session.hpp"
+
+namespace wrenbind17 {
+class VM;
+}
 
 namespace Engine {
 class Server;
 
 class Sector : public Scene::EventListener {
 public:
-    explicit Sector(Server& server, Database& db, std::string compoundId);
+    explicit Sector(const Config& config, Services& services, AssetManager& assetManager, Database& db,
+                    std::string galaxyId, std::string systemId, std::string sectorId);
     virtual ~Sector();
 
     void load();
     void update(float delta);
 
-    void addPlayer(PlayerPtr player);
+    void addPlayer(SessionPtr session);
 
     void eventEntityAdded(const EntityPtr& entity) override;
 
-    const std::string& getCompoundId() const {
-        return compoundId;
-    }
+    void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
     struct PlayerView {
-        PlayerPtr ptr;
+        SessionPtr session;
         std::vector<EntityPtr> entitiesToSync;
     };
 
-    Server& server;
+    void spawnPlayerShip(SessionPtr session);
+
+    const Config& config;
+    Services& services;
+    AssetManager& assetManager;
     Database& db;
-    std::string compoundId;
+    std::string galaxyId;
+    std::string systemId;
+    std::string sectorId;
     bool loaded;
     Scene scene;
+    std::unique_ptr<wrenbind17::VM> vm;
 
     std::list<PlayerView> players;
     std::vector<Entity::Delta> entityDeltas;

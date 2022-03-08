@@ -51,10 +51,10 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
     return result.value();
 }
 
-PlayerLocationData ServicePlayers::findStartingLocation(const PlayerData& player) {
-    auto [_, result] = db.update<PlayerLocationData>(player.id, [&](std::optional<PlayerLocationData>& location) {
+PlayerLocationData ServicePlayers::findStartingLocation(const std::string& playerId) {
+    auto [_, result] = db.update<PlayerLocationData>(playerId, [&](std::optional<PlayerLocationData>& location) {
         if (!location.has_value()) {
-            Log::i(CMP, "Choosing starting position for player: '{}'", player.name);
+            Log::i(CMP, "Choosing starting position for player: '{}'", playerId);
 
             const auto choices = db.seek<SectorData>("", 1);
             if (choices.empty()) {

@@ -17,5 +17,6 @@ public:
 
     void setStorage(int level, const Vector2i& size, PixelType pixelType);
     void setPixels(int level, const Vector2i& offset, const Vector2i& size, PixelType pixelType, const void* pixels);
+    void getPixels(int level, PixelType pixelType, void* pixels);
 };
 } // namespace Engine

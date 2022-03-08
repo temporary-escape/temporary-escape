@@ -10,7 +10,7 @@ using namespace Engine;
 Application::Application(Config& config, const Options& options)
     : OpenGLWindow("Engine Game", {config.windowWidth, config.windowHeight}), config(config), options(options),
       loading(true), loadingProgress(0.0f) {
-    defaultFont = canvas.loadFont(config.assetsPath / Path("fonts") / Path(config.guiFontFaceRegular + ".ttf"));
+    defaultFont = canvas.loadFont(config.assetsPath / "base" / "fonts" / Path(config.guiFontFaceRegular + ".ttf"));
 
     audioContext = std::make_shared<AudioContext>();
 
@@ -107,7 +107,7 @@ void Application::load() {
     modManager = std::make_shared<ModManager>();
 
     Log::i(CMP, "Loading mods");
-    modManager->load(*assetManager, config.assetsPath);
+    modManager->load(*assetManager, config.assetsPath / "base");
     auto queue = assetManager->getLoadQueue();
     assetLoadQueueInitialSize.store(queue.size());
     loadQueuePromise.resolve(std::move(queue));

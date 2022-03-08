@@ -1,4 +1,5 @@
 #include "ServiceSystems.hpp"
+#include "../../Utils/DelaunayTriangulation.hpp"
 #include "../../Utils/Random.hpp"
 
 #define CMP "ServiceSystem"
@@ -318,8 +319,11 @@ void ServiceSystems::generate(const std::string& galaxyId) {
         positions.push_back(system.pos);
     }
 
-    ConnectionSolver connectionSolver(std::move(positions));
-    const auto connectionsMap = connectionSolver.solve();
+    // ConnectionSolver connectionSolver(std::move(positions));
+    // const auto connectionsMap = connectionSolver.solve();
+
+    DelaunayTriangulation delaunay(std::move(positions));
+    const auto connectionsMap = delaunay.solve();
 
     for (size_t i = 0; i < systems.size(); i++) {
         auto& system = systems.at(i);
@@ -333,7 +337,7 @@ void ServiceSystems::generate(const std::string& galaxyId) {
             }
         }
 
-       createSystem(system);
+        createSystem(system);
     }
 
     for (size_t i = 0; i < systems.size(); i++) {

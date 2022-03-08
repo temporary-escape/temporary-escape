@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
         const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
         Config config{};
         config.assetsPath = rootPath / "assets";
+        config.wrenPaths = {config.assetsPath.string()};
         config.userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
         config.userdataSavesPath = config.userdataPath / "Saves";
         config.shadersPath = rootPath / "shaders";
@@ -97,8 +98,13 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
 
-        Application application(config, options);
-        application.run();
+        {
+            Application application(config, options);
+            application.run();
+        }
+        Log::i("main", "Exit success");
+        return EXIT_SUCCESS;
+
     } catch (const std::exception& e) {
         BACKTRACE("Main", e, "fatal error");
         return EXIT_FAILURE;

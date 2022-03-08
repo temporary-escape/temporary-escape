@@ -31,6 +31,22 @@ public:
     struct Reference {
         std::shared_ptr<Component> ptr{nullptr};
         size_t type{0};
+
+        Component* operator->() const {
+            return ptr.get();
+        }
+
+        const Component& operator*() const {
+            return *ptr;
+        }
+
+        Component& operator*() {
+            return *ptr;
+        }
+
+        bool operator<(const Reference& other) const {
+            return (type < other.type);
+        }
     };
 
     template <typename T, uint64_t F> struct Traits {
@@ -121,6 +137,10 @@ public:
         return components.end();
     }
 
+    size_t size() const {
+        return components.size();
+    }
+
 private:
     std::unordered_set<T*> components;
 };
@@ -163,11 +183,25 @@ template <> struct Component::TraitsMapper<> {
         (void)delta;
         (void)current;
     }
+
+    template <typename Tuple, typename Fn> static void forEach(Tuple& tuple, Fn& fn, const size_t current = 0) {
+        (void)tuple;
+        (void)fn;
+        (void)current;
+    }
+
+    template <typename Tuple>
+    static void insert(Tuple& tuple, const ComponentPtr& cmp, const size_t index, const size_t current = 0) {
+        (void)tuple;
+        (void)cmp;
+        (void)index;
+        (void)current;
+    }
 };
 
 template <typename C, typename... Others> struct Component::TraitsMapper<C, Others...> {
     using Deltas = std::variant<typename C::type::Delta, typename Others::type::Delta...>;
-    using Tuple = std::tuple<typename C::type::Delta, typename Others::type::Delta...>;
+    // using Tuple = std::tuple<std::shared_ptr<typename C::type>, std::shared_ptr<typename Others::type>...>;
 
     template <typename T> static constexpr size_t getIndexOf() {
         if constexpr (std::is_same<T, typename C::type>::value) {

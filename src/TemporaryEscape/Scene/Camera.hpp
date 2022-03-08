@@ -19,7 +19,7 @@ public:
         if (isOrtho) {
             const auto zoom = fovOrZoom;
             const float ratio = static_cast<float>(viewport.x) / static_cast<float>(viewport.y);
-            projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, -1.0f, 1.0f);
+            projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, -1000.0f, 1000.0f);
         } else {
             projectionMatrix =
                 glm::perspective(glm::radians(fovOrZoom), viewport.x / static_cast<float>(viewport.y), 0.1f, 2000.0f);

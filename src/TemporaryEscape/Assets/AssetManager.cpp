@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <wrenbind17/wrenbind17.hpp>
 
 #define CMP "AssetManager"
 
@@ -109,17 +110,6 @@ AssetPlanetPtr AssetManager::addPlanet(const Manifest& mod, const Path& path) {
     }
 }
 
-AssetAsteroidPtr AssetManager::addAsteroid(const Manifest& mod, const Path& path) {
-    try {
-        const auto baseName = path.stem().string();
-        auto asteroid = std::make_shared<AssetAsteroid>(mod, baseName, path);
-        add(asteroid);
-        return asteroid;
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to add asteroid: '{}'", path.string());
-    }
-}
-
 AssetBlockPtr AssetManager::addBlock(const Manifest& mod, const Path& path) {
     try {
         const auto baseName = path.stem().string();
@@ -128,6 +118,28 @@ AssetBlockPtr AssetManager::addBlock(const Manifest& mod, const Path& path) {
         return block;
     } catch (...) {
         EXCEPTION_NESTED("Failed to add block: '{}'", path.string());
+    }
+}
+
+AssetEntityPtr AssetManager::addEntity(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto entity = std::make_shared<AssetEntity>(mod, baseName, path);
+        add(entity);
+        return entity;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add entity: '{}'", path.string());
+    }
+}
+
+AssetSectorPtr AssetManager::addSector(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto sector = std::make_shared<AssetSector>(mod, baseName, path);
+        add(sector);
+        return sector;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add sector: '{}'", path.string());
     }
 }
 
@@ -191,4 +203,13 @@ Canvas2D::Image AssetManager::addToAtlas(const Vector2i& size, const void* pixel
 
 Canvas2D::FontHandle AssetManager::createFontHandle(const Path& path) {
     return canvas.loadFont(path);
+}
+
+void AssetManager::runAllScripts(wrenbind17::VM& vm) {
+    for (const auto& [_, asset] : assets) {
+        auto ptr = std::dynamic_pointer_cast<AssetEntity>(asset);
+        if (ptr) {
+            ptr->run(vm);
+        }
+    }
 }

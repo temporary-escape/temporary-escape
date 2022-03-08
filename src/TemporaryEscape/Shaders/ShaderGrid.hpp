@@ -33,6 +33,7 @@ public:
     explicit ShaderGrid(const Config& config);
 
     void setModelMatrix(const Matrix4& matrix) const;
+    void setObjectId(const Vector2& color) const;
     void bindBaseColorTexture(const Texture& texture) const;
     void bindNormalTexture(const Texture& texture) const;
     void bindEmissiveTexture(const Texture& texture) const;
@@ -45,5 +46,6 @@ private:
     GLint cameraUniformIndex;
     GLint materialUniformIndex;
     GLint modelMatrixUniform;
+    GLint objectIdUniform;
 };
 } // namespace Engine

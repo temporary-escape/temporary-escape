@@ -5,18 +5,22 @@ using namespace Engine;
 
 ViewRoot::ViewRoot(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
                    Client& client)
-    : config(config), canvas(canvas), client(client), gui(canvas, config, assetManager),
-      viewSpace(config, canvas, assetManager, renderer, client, gui),
-      viewMap(config, canvas, assetManager, renderer, client, gui), mapActive(false) {
+    : config(config), canvas(canvas), client(client), gui(canvas, config, assetManager), widgets(gui),
+      viewSpace(config, canvas, assetManager, renderer, client, widgets),
+      viewMap(config, canvas, assetManager, renderer, client, widgets), mapActive(false) {
 }
 
 void ViewRoot::render(const Vector2i& viewport) {
     const auto t0 = std::chrono::steady_clock::now();
 
-    if (mapActive) {
-        viewMap.render(viewport);
-    } else {
-        viewSpace.render(viewport);
+    try {
+        if (mapActive) {
+            viewMap.render(viewport);
+        } else {
+            viewSpace.render(viewport);
+        }
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to render the scene");
     }
 
     glDisable(GL_DEPTH_TEST);
@@ -32,13 +36,21 @@ void ViewRoot::render(const Vector2i& viewport) {
     canvas.beginFrame(viewport);
     gui.reset();
 
-    if (mapActive) {
-        viewMap.renderGui(viewport);
-    } else {
-        viewSpace.renderGui(viewport);
+    widgets.update(viewport);
+
+    try {
+        if (mapActive) {
+            viewMap.renderGui(viewport);
+        } else {
+            viewSpace.renderGui(viewport);
+        }
+
+        gui.render(viewport);
+
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to render the gui");
     }
 
-    gui.render(viewport);
     canvas.endFrame();
 
     const auto t1 = std::chrono::steady_clock::now();
@@ -47,6 +59,7 @@ void ViewRoot::render(const Vector2i& viewport) {
 }
 
 void ViewRoot::eventMouseMoved(const Vector2i& pos) {
+    gui.mouseMoveEvent(pos);
     if (mapActive) {
         viewMap.eventMouseMoved(pos);
     } else {
@@ -55,6 +68,7 @@ void ViewRoot::eventMouseMoved(const Vector2i& pos) {
 }
 
 void ViewRoot::eventMousePressed(const Vector2i& pos, MouseButton button) {
+    gui.mousePressEvent(pos, button);
     if (mapActive) {
         viewMap.eventMousePressed(pos, button);
     } else {
@@ -63,6 +77,7 @@ void ViewRoot::eventMousePressed(const Vector2i& pos, MouseButton button) {
 }
 
 void ViewRoot::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    gui.mouseReleaseEvent(pos, button);
     if (mapActive) {
         viewMap.eventMouseReleased(pos, button);
     } else {

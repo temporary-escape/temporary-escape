@@ -15,11 +15,12 @@ Entity::Delta Entity::getDelta() const {
     Delta delta{};
     delta.id = id;
     delta.transform = getTransform();
-    for (const auto& component : components) {
-        if (component.ptr->isDirty()) {
+
+    for (const auto& ref : components) {
+        if (ref.ptr->isDirty()) {
             delta.components.emplace_back();
-            EntityComponentHelper::getDelta(component.ptr, component.type, delta.components.back());
-            component.ptr->setDirty(false);
+            EntityComponentHelper::getDelta(ref.ptr, ref.type, delta.components.back());
+            ref.ptr->setDirty(false);
         }
     }
     return delta;

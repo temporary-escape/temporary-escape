@@ -54,6 +54,10 @@ public:
         return program;
     }
 
+    void setFragDataOutput(GLuint location, const std::string& var) const {
+        glBindFragDataLocation(program, location, var.c_str());
+    }
+
 private:
     void compile(const std::string& source, GLuint& shader, GLenum target);
     void checkShaderStatus(GLuint shader, const GLenum target) const;

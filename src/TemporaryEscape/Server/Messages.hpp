@@ -1,13 +1,151 @@
 #pragma once
 
-#include "../Network/Packet.hpp"
+#include "../Network/NetworkMessage.hpp"
 #include "../Scene/Entity.hpp"
 #include "Schemas.hpp"
 
 #include <chrono>
 
 namespace Engine {
-struct MessageServerHello {
+struct MessageLogin {
+    struct Request : Message {
+        uint64_t secret{0};
+        std::string name;
+        std::string password;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), secret, name, password);
+    };
+
+    struct Response : Message {
+        std::string error;
+        std::string playerId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), error, playerId);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+struct MessagePlayerLocation {
+    using Request = NoMessage;
+
+    struct Response : Message {
+        PlayerLocationData location;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), location);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+struct MessageSceneEntities {
+    using Request = NoMessage;
+
+    struct Response : Message {
+        std::vector<EntityProxyPtr> entities;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), entities);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+struct MessageSceneDeltas {
+    using Request = NoMessage;
+
+    struct Response : Message {
+        std::vector<Entity::Delta> deltas;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), deltas);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+struct MessageFetchGalaxy {
+    struct Request : Message {
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), galaxyId);
+    };
+
+    struct Response : Message {
+        GalaxyData galaxy;
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), galaxy, galaxyId);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_FIELDS_1(galaxyId);
+    };
+};
+
+struct MessageFetchSystems {
+    struct Request : Message {
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), galaxyId);
+    };
+
+    struct Response : Message {
+        std::vector<SystemData> systems;
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), systems, galaxyId);
+        MESSAGE_APPEND_ARRAY(systems);
+        MESSAGE_COPY_FIELDS_1(galaxyId);
+    };
+};
+
+struct MessageFetchRegions {
+    struct Request : Message {
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), galaxyId);
+    };
+
+    struct Response : Message {
+        std::vector<RegionData> regions;
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), regions, galaxyId);
+        MESSAGE_APPEND_ARRAY(regions);
+        MESSAGE_COPY_FIELDS_1(galaxyId);
+    };
+};
+
+struct MessageShipMovement {
+    struct Request : Message {
+        bool left{false};
+        bool right{false};
+        bool up{false};
+        bool down{false};
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), left, right, up, down);
+    };
+
+    struct Response : Message {
+        bool moving{false};
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), moving);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+// clang-format off
+using ServerSink = NetworkMessageSink<
+    MessageLogin,
+    MessagePlayerLocation,
+    MessageSceneEntities,
+    MessageSceneDeltas,
+    MessageFetchGalaxy,
+    MessageFetchSystems,
+    MessageFetchRegions,
+    MessageShipMovement
+>;
+// clang-format on
+
+/*struct MessageServerHello {
     std::string serverName;
 
     MSGPACK_DEFINE(serverName);
@@ -59,7 +197,7 @@ struct MessageSectorChanged {
 REGISTER_MESSAGE(MessageSectorChanged);
 
 struct MessageEntitySync {
-    std::vector<EntityPtr> entities;
+    std::vector<EntityProxyPtr> entities;
 
     MSGPACK_DEFINE(entities);
 };
@@ -141,5 +279,5 @@ struct MessageFetchSystemPlanets : MessageFetch {
 };
 
 REGISTER_MESSAGE(MessageFetchSystemPlanets);
-REGISTER_MESSAGE(MessageFetchSystemPlanets::Response);
+REGISTER_MESSAGE(MessageFetchSystemPlanets::Response);*/
 } // namespace Engine

@@ -27,14 +27,24 @@ public:
 
     void init();
     void update(float delta);
+    void setMovement(bool left, bool right, bool up, bool down) {
+        moving = left || right || up || down;
+        rotate[0] = left;
+        rotate[1] = right;
+        rotate[2] = up;
+        rotate[3] = down;
+    }
+
+    std::tuple<float, float, float> getAngles() const;
 
 private:
     void initParticles(const std::shared_ptr<Entity>& entity, const ComponentGrid& grid);
     [[nodiscard]] std::shared_ptr<Entity> getEntity() const;
 
-public:
-    bool enabled{false};
+    bool moving{true};
+    bool rotate[4] = {false};
 
+public:
     MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

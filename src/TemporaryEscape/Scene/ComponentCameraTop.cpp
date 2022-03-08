@@ -3,12 +3,12 @@
 using namespace Engine;
 
 void ComponentCameraTop::update() {
-    setOrthographic(zoom);
-    moveTo(getObject().getPosition());
+    setZoom(zoom);
+    moveTo(getEyesPos());
 }
 
 void ComponentCameraTop::moveTo(const Vector3& position) {
-    lookAt(position + Vector3{0.0f, 1.0f, 0.0f}, position, Vector3{0.0f, 0.0f, 1.0f});
+    lookAt(position, position - Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f});
 }
 
 void ComponentCameraTop::eventMouseMoved(const Vector2i& pos) {
@@ -42,6 +42,8 @@ void ComponentCameraTop::eventMouseScroll(const int xscroll, const int yscroll) 
     } else if (zoom > zoomMax) {
         zoom = zoomMax;
     }
+
+    setOrthographic(zoom);
 }
 
 void ComponentCameraTop::eventKeyPressed(const Key key, const Modifiers modifiers) {

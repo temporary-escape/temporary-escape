@@ -40,7 +40,7 @@ private:
 
 class ENGINE_API BackgroundWorker {
 public:
-    explicit BackgroundWorker(size_t numTheads);
+    explicit BackgroundWorker(size_t numTheads = 1);
     ~BackgroundWorker();
 
     void stop();
@@ -49,6 +49,11 @@ public:
         service->post(std::forward<Fn>(fn));
     }
 
+    asio::io_service& getService() {
+        return *service;
+    }
+
+private:
     std::unique_ptr<asio::io_service> service;
     std::unique_ptr<asio::io_service::work> work;
     std::vector<std::thread> threads;

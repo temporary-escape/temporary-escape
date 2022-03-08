@@ -112,10 +112,10 @@ Canvas2D::ImageHandle Canvas2D::textureToImageHandle(const Texture2D& texture, c
 }
 
 void Canvas2D::rectImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) {
-    const auto& imageSize = Vector2{image.size};
-    const auto& scale = size / imageSize;
-    const auto& atlasSize = Vector2{image.atlasSize} * scale;
-    const auto& imagePos = Vector2{image.pos} * scale;
+    const auto imageSize = Vector2{image.size};
+    const auto scale = size / imageSize;
+    const auto atlasSize = Vector2{image.atlasSize} * scale;
+    const auto imagePos = Vector2{image.pos} * scale;
     auto pattern = nvgImagePattern(vg, pos.x - imagePos.x, pos.y + imagePos.y + (imageSize.y * scale.y), atlasSize.x,
                                    -atlasSize.y, 0.0f, image.handle, 1.0f);
     pattern.innerColor = toNvg(color);

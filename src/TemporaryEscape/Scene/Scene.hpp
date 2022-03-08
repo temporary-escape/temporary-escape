@@ -33,6 +33,7 @@ public:
     void addEntity(EntityPtr entity);
     void updateEntity(const Entity::Delta& delta);
     void addBullet(const Vector3& pos, const Vector3& dir);
+    EntityPtr getEntityById(uint64_t id);
     const std::vector<Bullet>& getBulletsData() const {
         return bullets.data;
     }

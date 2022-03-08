@@ -25,15 +25,17 @@ std::tuple<Vector2i, Canvas2D::ImageHandle> TextureAtlas::add(const Vector2i& si
         }
     }
 
-    layers.push_back(std::make_shared<Layer>(config));
-    layers.back()->texture.setStorage(0, Vector2i{config.imageAtlasSize}, PixelType::Rgba8u);
-    layers.back()->handle = canvas.textureToImageHandle(layers.back()->texture, Vector2i{config.imageAtlasSize});
+    if (!texture) {
+        layers.push_back(std::make_shared<Layer>(config));
+        layers.back()->texture.setStorage(0, Vector2i{config.imageAtlasSize}, PixelType::Rgba8u);
+        layers.back()->handle = canvas.textureToImageHandle(layers.back()->texture, Vector2i{config.imageAtlasSize});
 
-    auto result = layers.back()->packer.add(size);
-    if (result.has_value()) {
-        pos = result.value();
-        texture = &layers.back()->texture;
-        handle = layers.back()->handle;
+        auto result = layers.back()->packer.add(size);
+        if (result.has_value()) {
+            pos = result.value();
+            texture = &layers.back()->texture;
+            handle = layers.back()->handle;
+        }
     }
 
     if (!texture) {

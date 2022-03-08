@@ -20,6 +20,11 @@ void ServiceSectors::generate() {
     }
 }
 
+std::optional<SectorData> ServiceSectors::find(const std::string& galaxyId, const std::string& systemId,
+                                               const std::string& sectorId) {
+    return db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
+}
+
 void ServiceSectors::generate(const std::string& galaxyId) {
     Log::i(CMP, "Generating sectors for galaxy: '{}' ...", galaxyId);
 

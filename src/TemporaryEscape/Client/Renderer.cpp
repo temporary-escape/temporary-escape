@@ -30,6 +30,22 @@ static const float skyboxVertices[] = {
 
 using namespace Engine;
 
+union ObjectId {
+    uint8_t data[2];
+    uint16_t id{0};
+};
+
+static Color4 entityIdToObjectIdColor(const EntityPtr& entity) {
+    ObjectId id;
+    id.id = entity->getId();
+    Color4 color;
+    color.r = static_cast<float>(id.data[0]) / 255.0f;
+    color.g = static_cast<float>(id.data[1]) / 255.0f;
+    color.b = 0.0f;
+    color.a = 1.0f;
+    return color;
+}
+
 struct Pos2UvVertex {
     Vector2 position;
     Vector2 uv;
@@ -49,7 +65,10 @@ Renderer::Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetMa
                                                                       ShaderPlanetSurface{config},
                                                                       ShaderPlanetAtmosphere{config},
                                                                       ShaderParticleEmitter{config},
-                                                                      ShaderBullet{config}} {
+                                                                      ShaderBullet{config},
+                                                                      ShaderFXAA{config},
+                                                                      ShaderPointCloud{config},
+                                                                      ShaderLines{config}} {
 
     const auto setColor = [](Texture2D& texture, const Color4& color) {
         std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
@@ -93,6 +112,9 @@ void Renderer::reloadShaders() {
         shaders.planetAtmosphere = ShaderPlanetAtmosphere(config);
         shaders.particleEmitter = ShaderParticleEmitter(config);
         shaders.bullet = ShaderBullet(config);
+        shaders.fxaa = ShaderFXAA(config);
+        shaders.pointCloud = ShaderPointCloud(config);
+        shaders.lines = ShaderLines(config);
         Log::i(CMP, "Shaders reloaded");
     } catch (std::exception& e) {
         BACKTRACE(CMP, e, "Failed to reload shaders");
@@ -274,6 +296,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene) {
         gBuffer.fboEmissive.setStorage(0, viewport, PixelType::Rgb8u);
         gBuffer.fboMetallicRoughnessAmbient.setStorage(0, viewport, PixelType::Rgb8u);
         gBuffer.fboNormal.setStorage(0, viewport, PixelType::Rgb16f);
+        gBuffer.fboObjectId.setStorage(0, viewport, PixelType::Rg8u);
 
         if (!gBuffer.fboInit) {
             gBuffer.fboInit = true;
@@ -281,25 +304,79 @@ void Renderer::render(const Vector2i& viewport, Scene& scene) {
             gBuffer.fbo.attach(gBuffer.fboEmissive, FramebufferAttachment::Color1, 0);
             gBuffer.fbo.attach(gBuffer.fboMetallicRoughnessAmbient, FramebufferAttachment::Color2, 0);
             gBuffer.fbo.attach(gBuffer.fboNormal, FramebufferAttachment::Color3, 0);
+            gBuffer.fbo.attach(gBuffer.fboObjectId, FramebufferAttachment::Color4, 0);
             gBuffer.fbo.attach(gBuffer.fboDepth, FramebufferAttachment::DepthStencil, 0);
         }
+
+        gBuffer.size = viewport;
     }
+
+    if (postProcessing.size != viewport) {
+        postProcessing.fboTexture[0].setStorage(0, viewport, PixelType::Rgb8u);
+        postProcessing.fboTexture[1].setStorage(0, viewport, PixelType::Rgb8u);
+        postProcessing.fboDepth.setStorage(0, viewport, PixelType::Depth24Stencil8);
+
+        if (!postProcessing.fboInit) {
+            postProcessing.fboInit = true;
+
+            postProcessing.fbo[0].attach(postProcessing.fboTexture[0], FramebufferAttachment::Color0, 0);
+            postProcessing.fbo[0].attach(postProcessing.fboDepth, FramebufferAttachment::DepthStencil, 0);
+            postProcessing.fbo[1].attach(postProcessing.fboTexture[1], FramebufferAttachment::Color0, 0);
+            postProcessing.fbo[1].attach(postProcessing.fboDepth, FramebufferAttachment::DepthStencil, 0);
+        }
+
+        postProcessing.size = viewport;
+    }
+
+    Framebuffer::DefaultFramebuffer.bind();
 
     updateLights(scene);
     updateCameras(viewport, scene);
     updateBullets(scene);
 
-    renderSceneBackground(viewport, scene);
-
     gBuffer.fbo.bind();
     renderScenePbr(viewport, scene);
-    Framebuffer::DefaultFramebuffer.bind();
 
     // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
 
+    postProcessing.fbo[postProcessing.inputIdx].bind();
+    renderSceneBackground(viewport, scene);
     renderPbr();
     renderSceneForward(viewport, scene);
+
+    applyFxaa(viewport);
+
+    blit(viewport, postProcessing.fbo[postProcessing.inputIdx], Framebuffer::DefaultFramebuffer,
+         FramebufferAttachment::Color0, BufferBit::Color);
+
+    Framebuffer::DefaultFramebuffer.bind();
     renderCanvas(viewport, scene);
+}
+
+void Renderer::applyFxaa(const Vector2i& viewport) {
+    postProcessing.fbo[postProcessing.outputIdx].bind();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.fxaa.use();
+    shaders.fxaa.setInputSize(viewport);
+    shaders.fxaa.setOutputSize(viewport);
+    shaders.fxaa.setTextureSize(viewport);
+    shaders.fxaa.setFrameCount(0);
+    shaders.fxaa.setFrameDirection(0);
+    shaders.fxaa.setMvpMatrix(Matrix4{1.0f});
+    shaders.fxaa.bindTexture(postProcessing.fboTexture[postProcessing.inputIdx]);
+    shaders.fxaa.draw(fullScreenMesh);
+
+    std::swap(postProcessing.inputIdx, postProcessing.outputIdx);
 }
 
 void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& target,
@@ -309,6 +386,21 @@ void Renderer::blit(const Vector2i& viewport, Framebuffer& source, Framebuffer& 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.getHandle());
     glViewport(0, 0, viewport.x, viewport.y);
     glBlitFramebuffer(0, 0, viewport.x, viewport.y, 0, 0, viewport.x, viewport.y, GLenum(bufferBit), GL_NEAREST);
+}
+
+EntityPtr Renderer::queryEntityAtPos(Scene& scene, const Vector2i& pos) {
+    if (pos.x >= gBuffer.size.x || pos.y >= gBuffer.size.y || pos.x < 0 || pos.y < 0) {
+        return nullptr;
+    }
+
+    std::unique_ptr<char[]> pixels(new char[gBuffer.size.x * gBuffer.size.y * 2]);
+    gBuffer.fboObjectId.getPixels(0, PixelType::Rg8u, pixels.get());
+
+    ObjectId pixel;
+    pixel.data[0] = pixels.get()[(gBuffer.size.y - pos.y - 1) * gBuffer.size.x * 2 + pos.x * 2 + 0];
+    pixel.data[1] = pixels.get()[(gBuffer.size.y - pos.y - 1) * gBuffer.size.x * 2 + pos.x * 2 + 1];
+
+    return scene.getEntityById(pixel.id);
 }
 
 void Renderer::renderCanvas(const Vector2i& viewport, Scene& scene) {
@@ -329,19 +421,19 @@ void Renderer::renderCanvas(const Vector2i& viewport, Scene& scene) {
 
     canvas.beginFrame(viewport);
 
-    auto& componentSystemCanvasLines = scene.getComponentSystem<ComponentCanvasLines>();
+    /*auto& componentSystemCanvasLines = scene.getComponentSystem<ComponentLines>();
     for (auto& component : componentSystemCanvasLines) {
         renderComponentCanvasLines(*camera, *component);
-    }
+    }*/
 
-    auto& componentSystemCanvasImage = scene.getComponentSystem<ComponentCanvasImage>();
+    /*auto& componentSystemCanvasImage = scene.getComponentSystem<ComponentPointCloud>();
     for (auto& component : componentSystemCanvasImage) {
         renderComponentCanvasImage(*camera, *component);
-    }
+    }*/
 
-    auto& componentSystemCanvasLabel = scene.getComponentSystem<ComponentCanvasLabel>();
-    for (auto& component : componentSystemCanvasLabel) {
-        renderComponentCanvasLabel(*camera, *component);
+    auto& componentSystemText = scene.getComponentSystem<ComponentText>();
+    for (auto& component : componentSystemText) {
+        renderComponentText(*camera, *component);
     }
 
     canvas.endFrame();
@@ -375,7 +467,6 @@ void Renderer::renderPbr() {
 
 void Renderer::renderSceneBackground(const Vector2i& viewport, Scene& scene) {
     glViewport(0, 0, viewport.x, viewport.y);
-    Framebuffer::DefaultFramebuffer.bind();
     static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
     glClearBufferfv(GL_COLOR, 0, &black.x);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
@@ -433,12 +524,32 @@ void Renderer::renderSceneForward(const Vector2i& viewport, Scene& scene) {
     };
     glDrawBuffers(1, attachments);
 
-    blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::DepthStencil, BufferBit::Depth);
+    blit(viewport, gBuffer.fbo, postProcessing.fbo[postProcessing.inputIdx], FramebufferAttachment::DepthStencil,
+         BufferBit::Depth);
 
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    auto& componentSystemLines = scene.getComponentSystem<ComponentLines>();
+
+    shaders.lines.use();
+    shaders.lines.bindCameraUniform(cameraUbo);
+    auto primary = getPrimaryCamera(scene);
+
+    for (auto& component : componentSystemLines) {
+        renderComponentLines(*component);
+    }
+
+    auto& componentSystemPointCloud = scene.getComponentSystem<ComponentPointCloud>();
+
+    shaders.pointCloud.use();
+    shaders.pointCloud.bindCameraUniform(cameraUbo);
+
+    for (auto& component : componentSystemPointCloud) {
+        renderComponentPointCloud(*component);
+    }
 
     auto& componentSystemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
 
@@ -473,13 +584,10 @@ void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
     auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
     auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
-    GLuint attachments[4] = {
-        GL_COLOR_ATTACHMENT0,
-        GL_COLOR_ATTACHMENT1,
-        GL_COLOR_ATTACHMENT2,
-        GL_COLOR_ATTACHMENT3,
+    GLuint attachments[5] = {
+        GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4,
     };
-    glDrawBuffers(4, attachments);
+    glDrawBuffers(5, attachments);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -488,7 +596,7 @@ void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
     glViewport(0, 0, viewport.x, viewport.y);
     static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
     glClearBufferfv(GL_COLOR, 0, &black.x);
-    // glClearBufferfv(GL_COLOR, 3, &black.x);
+    glClearBufferfv(GL_COLOR, 4, &black.x);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
     shaders.model.use();
@@ -539,6 +647,10 @@ void Renderer::updateLights(Scene& scene) {
 
 void Renderer::updateBullets(Scene& scene) {
     const auto& data = scene.getBulletsData();
+
+    if (data.empty()) {
+        return;
+    }
 
     if (bullets.size != data.size()) {
         if (!bullets.mesh) {
@@ -665,13 +777,30 @@ void Renderer::renderComponentPlanetAtmosphere(ComponentPlanet& component) {
 void Renderer::renderComponentParticleEmitter(ComponentParticleEmitter& component) {
     component.rebuild();
 
-    const auto& transform = component.getObject().getTransform();
+    const auto transform = component.getObject().getAbsoluteTransform();
     shaders.particleEmitter.setModelMatrix(transform);
     shaders.particleEmitter.setModelViewMatrix(cameraViewMatrix * transform);
     shaders.particleEmitter.bindParticleTexture(component.getTexture()->getTexture());
     shaders.particleEmitter.bindParticleData(component.getUbo());
     particleEmitter.vao.bind();
     glDrawArrays(GL_POINTS, 0, component.getCount());
+}
+
+void Renderer::renderComponentPointCloud(ComponentPointCloud& component) {
+    component.recalculate();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.pointCloud.setModelMatrix(transform);
+    shaders.pointCloud.bindTexture(component.getTexture()->getTexture());
+    shaders.pointCloud.draw(component.getMesh());
+}
+
+void Renderer::renderComponentLines(ComponentLines& component) {
+    component.recalculate();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.lines.setModelMatrix(transform);
+    shaders.lines.draw(component.getMesh());
 }
 
 void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
@@ -717,24 +846,28 @@ void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform)
 }
 
 void Renderer::renderComponentModel(ComponentModel& component) {
-    const auto& transform = component.getObject().getTransform();
+    const auto transform = component.getObject().getAbsoluteTransform();
+    if (auto entity = component.getObject().asEntity()) {
+        shaders.model.setObjectId(entityIdToObjectIdColor(entity));
+    }
     renderModel(component.getModel(), transform);
 }
 
 void Renderer::renderComponentTurret(ComponentTurret& component) {
     const auto& turret = component.getTurret()->getComponents();
-    const auto transformInverted = glm::inverse(component.getObject().getTransform());
+    const auto absoluteTransform = component.getObject().getAbsoluteTransform();
+    const auto transformInverted = glm::inverse(absoluteTransform);
 
-    auto transform = glm::translate(component.getObject().getTransform(), turret.base.offset);
+    auto transform = glm::translate(absoluteTransform, turret.base.offset);
     renderModel(turret.base.model, transform);
 
     const auto& rotation = component.getRotation();
 
-    transform = glm::translate(component.getObject().getTransform(), turret.arm.offset);
+    transform = glm::translate(absoluteTransform, turret.arm.offset);
     transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
     renderModel(turret.arm.model, transform);
 
-    transform = glm::translate(component.getObject().getTransform(), turret.cannon.offset);
+    transform = glm::translate(absoluteTransform, turret.cannon.offset);
     transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
     transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
 
@@ -744,8 +877,12 @@ void Renderer::renderComponentTurret(ComponentTurret& component) {
 void Renderer::renderComponentGrid(ComponentGrid& component) {
     component.rebuild();
 
-    const auto& transform = component.getObject().getTransform();
+    const auto transform = component.getObject().getAbsoluteTransform();
     shaders.grid.setModelMatrix(transform);
+
+    if (auto entity = component.getObject().asEntity()) {
+        shaders.grid.setObjectId(entityIdToObjectIdColor(entity));
+    }
 
     const auto& meshes = component.getMeshes();
 
@@ -788,7 +925,7 @@ void Renderer::renderComponentGrid(ComponentGrid& component) {
     }
 }
 
-void Renderer::renderComponentCanvasImage(const Camera& camera, ComponentCanvasImage& component) {
+/*void Renderer::renderComponentCanvasImage(const Camera& camera, ComponentPointCloud& component) {
     const auto& size = component.getSize();
     const auto& image = component.getImage();
     const auto& color = component.getColor();
@@ -798,9 +935,9 @@ void Renderer::renderComponentCanvasImage(const Camera& camera, ComponentCanvasI
     canvas.rectImage(projected - size / 2.0f, size, image->getImage(), color);
     canvas.fill();
     canvas.closePath();
-}
+}*/
 
-void Renderer::renderComponentCanvasLines(const Camera& camera, ComponentCanvasLines& component) {
+/*void Renderer::renderComponentCanvasLines(const Camera& camera, ComponentLines& component) {
     const auto width = component.getWidth();
     const auto& color = component.getColor();
 
@@ -813,9 +950,9 @@ void Renderer::renderComponentCanvasLines(const Camera& camera, ComponentCanvasL
     }
     canvas.stroke();
     canvas.closePath();
-}
+}*/
 
-void Renderer::renderComponentCanvasLabel(const Camera& camera, ComponentCanvasLabel& component) {
+void Renderer::renderComponentText(const Camera& camera, ComponentText& component) {
     if (!component.getVisible()) {
         return;
     }

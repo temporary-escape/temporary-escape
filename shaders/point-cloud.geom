@@ -2,43 +2,54 @@ layout (points) in;
 layout (triangle_strip) out;
 layout (max_vertices = 4) out;
 
-in float g_size[];
-in vec4 g_color[];
+in VS_OUT {
+    vec4 color;
+    vec2 size;
+} vsOut[];
 
-out vec2 v_coords;
-out vec4 v_color;
+out GS_OUT {
+    vec4 color;
+    vec2 texCoords;
+} gsOut;
 
-uniform mat4 projectionMatrix;
+layout (std140) uniform Camera {
+    mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
+} camera;
 
 void main (void) {
     vec4 P = gl_in[0].gl_Position;
 
-    v_color = g_color[0];
-    float particleSize = g_size[0];
+    gsOut.color = vsOut[0].color;
+    vec2 particleSize = vsOut[0].size;
 
     // a: left-bottom 
     vec2 va = P.xy + vec2(-1.0, -1.0) * particleSize;
-    gl_Position = projectionMatrix * vec4(va, P.zw);
-    v_coords = vec2(0.0, 0.0);
-    EmitVertex();  
-    
+    gl_Position = camera.projectionMatrix * vec4(va, P.zw);
+    gsOut.texCoords = vec2(0.0, 0.0);
+    EmitVertex();
+
     // b: left-top
     vec2 vb = P.xy + vec2(-1.0, 1.0) * particleSize;
-    gl_Position = projectionMatrix * vec4(vb, P.zw);
-    v_coords = vec2(0.0, 1.0);
-    EmitVertex();  
-    
+    gl_Position = camera.projectionMatrix * vec4(vb, P.zw);
+    gsOut.texCoords = vec2(0.0, 1.0);
+    EmitVertex();
+
     // d: right-bottom
     vec2 vd = P.xy + vec2(1.0, -1.0) * particleSize;
-    gl_Position = projectionMatrix * vec4(vd, P.zw);
-    v_coords = vec2(1.0, 0.0);
-    EmitVertex();  
+    gl_Position = camera.projectionMatrix * vec4(vd, P.zw);
+    gsOut.texCoords = vec2(1.0, 0.0);
+    EmitVertex();
 
     // c: right-top
     vec2 vc = P.xy + vec2(1.0, 1.0) * particleSize;
-    gl_Position = projectionMatrix * vec4(vc, P.zw);
-    v_coords = vec2(1.0, 1.0);
-    EmitVertex();  
+    gl_Position = camera.projectionMatrix * vec4(vc, P.zw);
+    gsOut.texCoords = vec2(1.0, 1.0);
+    EmitVertex();
 
-    EndPrimitive();  
+    EndPrimitive();
 }   

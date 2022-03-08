@@ -3,6 +3,7 @@
 #include "../Math/Matrix.hpp"
 #include "../Math/Quaternion.hpp"
 #include "../Math/Vector.hpp"
+#include "Exceptions.hpp"
 #include <msgpack.hpp>
 #include <msgpack/adaptor/define_decl.hpp>
 #include <optional>
@@ -112,6 +113,21 @@ template <typename Container> inline std::string msgpackToJson(const Container& 
     std::size_t off = 0;
     msgpack::v2::parse(reinterpret_cast<const char*>(data.data()), data.size(), off, visitor);
     return ss.str();
+}
+
+template <typename T, typename Container> T unpack(const Container& buffer) {
+    msgpack::object_handle obj;
+    msgpack::unpack(obj, reinterpret_cast<const char*>(buffer.data()), buffer.size());
+    const auto& o = obj.get();
+
+    T ret{};
+
+    try {
+        o.convert(ret);
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to unpack message of type '{}'", typeid(T).name());
+    }
+    return ret;
 }
 }; // namespace Engine
 

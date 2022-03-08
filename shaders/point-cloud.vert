@@ -1,19 +1,27 @@
-layout(location = 0) in vec3 position;
-layout(location = 1) in float size;
-layout(location = 2) in vec4 color;
+layout(location = 0) in vec3 vsIn_position;
+layout(location = 1) in vec2 vsIn_size;
+layout(location = 2) in vec4 vsIn_color;
 
-uniform mat4 viewMatrix;
+out VS_OUT {
+    vec4 color;
+    vec2 size;
+} vsOut;
+
+layout (std140) uniform Camera {
+    mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
+} camera;
+
 uniform mat4 modelMatrix;
 
-out vec4 g_color;
-out float g_size;
+void main() {
+    vec4 worldPos = modelMatrix * vec4(vsIn_position.xyz, 1.0);
+    vsOut.color = vsIn_color;
+    vsOut.size = vsIn_size;
 
-void main()
-{
-    vec4 worldPos = modelMatrix * vec4(position.xyz, 1.0);
-
-    g_color = color;
-    g_size = size;
-
-    gl_Position = viewMatrix * worldPos;
+    gl_Position = camera.viewMatrix * worldPos;
 }

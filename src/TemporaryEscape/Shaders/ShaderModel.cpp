@@ -22,6 +22,7 @@ ShaderModel::ShaderModel(const Config& config) : Shader("ShaderModel") {
 
     modelMatrixUniform = getUniformLocation("modelMatrix");
     normalMatrixUniform = getUniformLocation("normalMatrix");
+    objectIdUniform = getUniformLocation("objectId");
 }
 
 void ShaderModel::setModelMatrix(const Matrix4& matrix) const {
@@ -30,6 +31,10 @@ void ShaderModel::setModelMatrix(const Matrix4& matrix) const {
 
 void ShaderModel::setNormalMatrix(const Matrix3& matrix) const {
     setUniform(normalMatrixUniform, matrix);
+}
+
+void ShaderModel::setObjectId(const Vector2& color) const {
+    setUniform(objectIdUniform, color);
 }
 
 void ShaderModel::bindBaseColorTexture(const Texture& texture) const {

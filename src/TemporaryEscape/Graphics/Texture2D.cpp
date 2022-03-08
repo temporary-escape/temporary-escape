@@ -38,3 +38,10 @@ void Texture2D::setPixels(const int level, const Vector2i& offset, const Vector2
     const auto type = toTextureType(pixelType);
     glTexSubImage2D(target, level, offset.x, offset.y, size.x, size.y, format, type, pixels);
 }
+
+void Texture2D::getPixels(int level, PixelType pixelType, void* pixels) {
+    bind();
+    const auto format = toTextureFormat(pixelType);
+    const auto type = toTextureType(pixelType);
+    glGetTexImage(target, level, format, type, pixels);
+}

@@ -2,6 +2,7 @@
 
 #include <TemporaryEscape/Math/Quaternion.hpp>
 #include <TemporaryEscape/Math/Vector.hpp>
+#include <TemporaryEscape/Network/NetworkAsio.hpp>
 #include <TemporaryEscape/Utils/Exceptions.hpp>
 #include <TemporaryEscape/Utils/Path.hpp>
 #include <catch2/catch.hpp>
@@ -38,6 +39,27 @@ public:
 
 private:
     Path path;
+};
+
+class IoServiceRunner {
+public:
+    explicit IoServiceRunner(asio::io_service& service) : service(service) {
+        work = std::make_unique<asio::io_service::work>(service);
+        thread = std::thread([this]() { this->service.run(); });
+    }
+
+    ~IoServiceRunner() {
+        stop();
+    }
+
+    void stop() {
+        work.reset();
+        thread.join();
+    }
+
+    asio::io_service& service;
+    std::unique_ptr<asio::io_service::work> work;
+    std::thread thread;
 };
 
 static inline bool waitForCondition(const std::function<bool()>& fn) {

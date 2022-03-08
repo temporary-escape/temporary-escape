@@ -6,6 +6,8 @@
 #include "../Utils/Msgpack.hpp"
 
 namespace Engine {
+class ENGINE_API Entity;
+
 class ENGINE_API Object {
 public:
     explicit Object();
@@ -79,6 +81,8 @@ public:
     void clearDirty() {
         dirty = false;
     }
+
+    std::shared_ptr<Entity> asEntity();
 
 private:
     Matrix4 transform;

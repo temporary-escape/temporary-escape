@@ -1,6 +1,6 @@
 #include "Client.hpp"
 #include "../Assets/AssetManager.hpp"
-#include "../Network/NetworkTcpClient.hpp"
+//#include "../Network/NetworkTcpClient.hpp"
 #include "../Scene/ComponentModel.hpp"
 #include "../Server/Messages.hpp"
 #include "../Utils/Random.hpp"
@@ -8,19 +8,18 @@
 
 #define CMP "Client"
 
-#define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
+/*#define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
 #define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Client, handle));
 #define MESSAGE_DISPATCH_FETCH(M)                                                                                      \
-    dispatcher.add<M::Response>(std::bind(&Client::handleFetch<M>, this, std::placeholders::_1));
+    dispatcher.add<M::Response>(std::bind(&Client::handleFetch<M>, this, std::placeholders::_1));*/
 
 using namespace Engine;
 
 std::atomic<uint64_t> Client::nextRequestId(1);
 
-Client::Client(Config& config, const std::string& address, const int port)
-    : listener(std::make_unique<EventListener>(*this)), requestsNextId(1) {
+Client::Client(Config& config, const std::string& address, const int port) : requestsNextId(1), sync(getWorker()) {
 
-    MESSAGE_DISPATCH(MessageServerHello);
+    /*MESSAGE_DISPATCH(MessageServerHello);
     MESSAGE_DISPATCH(MessageLoginResponse);
     MESSAGE_DISPATCH(MessageStatusResponse);
     MESSAGE_DISPATCH(MessageSectorChanged);
@@ -30,7 +29,7 @@ Client::Client(Config& config, const std::string& address, const int port)
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
     MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
     MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
-    MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);
+    MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);*/
 
     const auto profilePath = config.userdataPath / Path("profile.xml");
     if (Fs::exists(profilePath)) {
@@ -41,23 +40,45 @@ Client::Client(Config& config, const std::string& address, const int port)
         Xml::saveAsXml(profilePath, "profile", localProfile);
     }
 
-    network = std::make_shared<Network::TcpClient>(*listener, address, port);
+    connect(address, port);
 
-    auto future = connected.future();
-    if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
-        EXCEPTION("Timeout while waiting for server connection");
+    MessageLogin::Request req{};
+    req.secret = localProfile.secret;
+    req.name = localProfile.name;
+    send(req);
+
+    auto future = loggedIn.future();
+    auto t0 = std::chrono::steady_clock::now();
+    while (const auto status = future.waitFor(std::chrono::milliseconds(10)) != std::future_status::ready) {
+        sync.restart();
+        sync.run();
+
+        auto now = std::chrono::steady_clock::now();
+        if (now - t0 > std::chrono::milliseconds(1000)) {
+            NetworkTcpClient<ServerSink>::stop();
+            EXCEPTION("Timeout while waiting for login");
+        }
     }
     future.get();
 
-    MessageStatusRequest req{};
+    // network = std::make_shared<Network::TcpClient>(*listener, address, port);
+
+    /*auto future = connected.future();
+    if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
+        EXCEPTION("Timeout while waiting for server connection");
+    }
+    future.get();*/
+
+    /*MessageStatusRequest req{};
     req.timePoint = std::chrono::system_clock::now();
-    send(req);
+    send(req);*/
 }
 
 Client::~Client() {
+    NetworkTcpClient<ServerSink>::stop();
 }
 
-void Client::eventPacket(Network::Packet packet) {
+/*void Client::eventPacket(Network::Packet packet) {
     try {
         stats.network.packetsReceived++;
         dispatcher.dispatch(packet);
@@ -70,7 +91,7 @@ void Client::eventConnect() {
 }
 
 void Client::eventDisconnect() {
-}
+}*/
 
 void Client::update() {
     sync.restart();
@@ -85,195 +106,92 @@ void Client::update() {
         }
         const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(timeDiff).count() / 1000000.0f;
         scene->update(delta);
-
-        /*Vector3 target;
-
-        for (const auto& entity : scene->getEntities()) {
-            try {
-                auto component = entity->getComponent<ComponentModel>();
-                if (component->getModel()->getName() == "model_frame") {
-                    entity->translate(Vector3{0.00f, 0.0f, 0.01f});
-                    target = entity->getPosition();
-                }
-            } catch (std::out_of_range&) {
-            }
-        }
-
-        for (const auto& entity : scene->getEntities()) {
-            try {
-                auto component = entity->getComponent<ComponentTurret>();
-                component->setTarget(target);
-            } catch (std::out_of_range&) {
-            }
-        }*/
     }
 }
 
-void Client::handle(MessageServerHello res) {
-    MessageLoginRequest req{};
-    req.secret = localProfile.secret;
-    req.name = localProfile.name;
-    req.password = "password";
-
-    send(req);
-}
-
-void Client::handle(MessageLoginResponse res) {
+void Client::handle(MessageLogin::Response res) {
     if (!res.error.empty()) {
-        connected.reject<std::runtime_error>(res.error);
+        loggedIn.reject<std::runtime_error>(res.error);
     } else {
         playerId = res.playerId;
-        connected.resolve();
+        loggedIn.resolve();
     }
 }
 
-void Client::handle(MessageStatusResponse res) {
-    const auto now = std::chrono::system_clock::now();
-    const auto diff = now - res.timePoint;
-    stats.network.latencyMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+void Client::handle(MessagePlayerLocation::Response res) {
+    Log::i(CMP, "Sector has changed, creating new scene");
 
-    worker1s.post([this]() { network->send(MessageStatusRequest{std::chrono::system_clock::now()}); });
+    camera.reset();
+    scene.reset();
+    scene = std::make_unique<Scene>();
+
+    camera = std::make_shared<Entity>();
+    auto cmp = camera->addComponent<ComponentCameraTurntable>();
+    auto userInput = camera->addComponent<ComponentUserInput>(*cmp);
+    cmp->setPrimary(true);
+    cmp->setProjection(70.0f);
+    scene->addEntity(camera);
+
+    store.player.location = res.location;
+    store.player.location.markChanged();
 }
 
-void Client::handle(MessageSectorChanged res) {
-    sync.post([this, res = std::move(res)]() {
-        try {
-            Log::i(CMP, "Sector has changed, creating new scene");
-            camera.reset();
-            scene.reset();
-            scene = std::make_unique<Scene>();
-
-            camera = std::make_shared<Entity>();
-            auto cmp = camera->addComponent<ComponentCameraTurntable>();
-            auto userInput = camera->addComponent<ComponentUserInput>(*cmp);
-            cmp->setPrimary(true);
-            cmp->setProjection(70.0f);
-            scene->addEntity(camera);
-
-            store.player.location = res.location;
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to process sector changed response");
-        }
-    });
-}
-
-void Client::handle(MessageEntitySync res) {
-    sync.post([this, res = std::move(res)]() {
-        try {
-            if (!scene) {
-                EXCEPTION("Client scene is not initialized");
-            }
-            for (auto& entity : res.entities) {
-                scene->addEntity(entity);
-                if (auto ship = entity->getComponentOpt<ComponentGrid>(); ship.has_value()) {
-                    camera->getComponent<ComponentCameraTurntable>()->follow(entity);
-                }
-            }
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to process entity sync response");
-        }
-    });
-}
-
-void Client::handle(MessageEntityDeltas res) {
-    sync.post([this, res = std::move(res)]() {
-        try {
-            if (!scene) {
-                EXCEPTION("Client scene is not initialized");
-            }
-            for (auto& delta : res.deltas) {
-                scene->updateEntity(delta);
-            }
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to process entity sync response");
-        }
-    });
-}
-
-template <typename Message, typename T> void Client::handleFetch(MessageFetchResponse<T> res) {
+void Client::handle(MessageSceneEntities::Response res) {
     try {
-        if (!res.id) {
-            return;
+        if (!scene) {
+            EXCEPTION("Client scene is not initialized");
         }
-
-        AbstractRequestPtr abstractReq = nullptr;
-
-        {
-            std::lock_guard<std::mutex> lock{requestsMutex};
-            const auto it = requests.find(res.id);
-
-            if (it == requests.end()) {
-                EXCEPTION("Got response for unknown fetch request id: '{}' type: '{}'", res.id, typeid(T).name());
-            } else {
-                abstractReq = it->second;
+        for (auto& proxy : res.entities) {
+            const auto entity = std::dynamic_pointer_cast<Entity>(proxy);
+            if (!entity) {
+                EXCEPTION("Failed to cast EntityProxy to Entity");
             }
+            scene->addEntity(entity);
 
-            if (!abstractReq) {
-                requests.erase(it);
-                return;
+            if (auto cmp = entity->findComponent<ComponentPlayer>(); cmp != nullptr && cmp->getPlayerId() == playerId) {
+                camera->getComponent<ComponentCameraTurntable>()->follow(entity);
             }
         }
-
-        const auto req = std::dynamic_pointer_cast<Request<Message, T>>(abstractReq);
-        if (!req) {
-            EXCEPTION("Got response for invalid type fetch request id: '{}' type: '{}'", res.id, typeid(T).name());
-            return;
-        }
-
-        req->append(std::move(res.data));
-        if (res.token.empty()) {
-            sync.post([this, req]() {
-                try {
-                    req->complete();
-                } catch (std::exception& e) {
-                    BACKTRACE(CMP, e, "Failed to process fetch request");
-                }
-            });
-        } else {
-            auto& msg = req->getMessage();
-            msg.token = res.token;
-            send(msg);
-        }
-
-    } catch (std::exception& e) {
-        BACKTRACE(CMP, e, "Failed to process MessageFetchResponse<T> response");
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to process scene entities");
     }
 }
 
-void Client::fetchGalaxy() {
-    MessageFetchGalaxy req;
-    req.galaxyId = store.player.location.value().galaxyId;
-
-    fetch(req, [this](GalaxyData item) {
-        store.galaxy.galaxy = std::move(item);
-        store.galaxy.galaxy.markChanged();
-    });
+void Client::handle(MessageSceneDeltas::Response res) {
+    try {
+        if (!scene) {
+            EXCEPTION("Client scene is not initialized");
+        }
+        for (auto& delta : res.deltas) {
+            scene->updateEntity(delta);
+        }
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to process scene entities");
+    }
 }
 
-void Client::fetchGalaxyRegions() {
-    MessageFetchGalaxyRegions req;
-    req.galaxyId = store.player.location.value().galaxyId;
-
-    fetch(req, [this](std::vector<RegionData> items) {
-        store.galaxy.regions.value().clear();
-        for (const auto& item : items) {
-            store.galaxy.regions.value().insert(std::make_pair(item.id, item));
-        }
-
-        store.galaxy.regions.markChanged();
-    });
+void Client::handle(MessageFetchGalaxy::Response res) {
+    store.galaxy.galaxy = std::move(res.galaxy);
+    store.galaxy.galaxy.markChanged();
 }
 
-void Client::fetchGalaxySystems() {
-    MessageFetchGalaxySystems req;
-    req.galaxyId = store.player.location.value().galaxyId;
+void Client::handle(MessageFetchRegions::Response res) {
+    store.galaxy.regions.value().clear();
+    for (auto& item : res.regions) {
+        store.galaxy.regions.value().insert(std::make_pair(item.id, std::move(item)));
+    }
 
-    fetch(req, [this](std::vector<SystemData> items) {
-        store.galaxy.systems.value().clear();
-        for (const auto& item : items) {
-            store.galaxy.systems.value().insert(std::make_pair(item.id, item));
-        }
+    store.galaxy.regions.markChanged();
+}
 
-        store.galaxy.systems.markChanged();
-    });
+void Client::handle(MessageFetchSystems::Response res) {
+    store.galaxy.systems.value().clear();
+    for (auto& item : res.systems) {
+        store.galaxy.systems.value().insert(std::make_pair(item.id, std::move(item)));
+    }
+
+    store.galaxy.systems.markChanged();
+}
+
+void Client::handle(MessageShipMovement::Response res) {
 }

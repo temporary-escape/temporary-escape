@@ -3,7 +3,7 @@
 
 #define TAG "[NetworkMessageDispatch]"
 
-struct MessageA {
+/*struct MessageA {
     int a{123};
 
     MSGPACK_DEFINE_ARRAY(a);
@@ -51,4 +51,4 @@ TEST_CASE("Dispatch message into the correct callback", TAG) {
 
     dispatcher.dispatch(false, packet);
     REQUIRE(dispatched[1] == true);
-}
+}*/

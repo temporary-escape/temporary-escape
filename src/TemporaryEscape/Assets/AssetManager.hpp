@@ -3,13 +3,14 @@
 #include "../Library.hpp"
 #include "../Utils/Exceptions.hpp"
 #include "Asset.hpp"
-#include "AssetAsteroid.hpp"
 #include "AssetBlock.hpp"
+#include "AssetEntity.hpp"
 #include "AssetFontFamily.hpp"
 #include "AssetImage.hpp"
 #include "AssetModel.hpp"
 #include "AssetParticles.hpp"
 #include "AssetPlanet.hpp"
+#include "AssetSector.hpp"
 #include "AssetTurret.hpp"
 #include "TextureAtlas.hpp"
 #include "TextureCompressor.hpp"
@@ -62,8 +63,9 @@ public:
     AssetTexturePtr addTexture(const Manifest& mod, const Path& path, TextureType type);
     AssetImagePtr addImage(const Manifest& mod, const Path& path);
     AssetPlanetPtr addPlanet(const Manifest& mod, const Path& path);
-    AssetAsteroidPtr addAsteroid(const Manifest& mod, const Path& path);
     AssetBlockPtr addBlock(const Manifest& mod, const Path& path);
+    AssetEntityPtr addEntity(const Manifest& mod, const Path& path);
+    AssetSectorPtr addSector(const Manifest& mod, const Path& path);
     AssetParticlesPtr addParticles(const Manifest& mod, const Path& path);
     AssetTurretPtr addTurret(const Manifest& mod, const Path& path);
     AssetLoadQueue getLoadQueue();
@@ -71,6 +73,8 @@ public:
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);
     Canvas2D::Image addToAtlas(const Vector2i& size, const void* pixels);
     Canvas2D::FontHandle createFontHandle(const Path& path);
+
+    void runAllScripts(wrenbind17::VM& vm);
 
     static AssetManager& singleton();
 

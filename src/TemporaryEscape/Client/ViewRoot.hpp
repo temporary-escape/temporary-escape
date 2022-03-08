@@ -1,6 +1,9 @@
+#pragma once
+
 #include "../Gui/GuiContext.hpp"
 #include "ViewMap.hpp"
 #include "ViewSpace.hpp"
+#include "Widgets.hpp"
 
 namespace Engine {
 class ENGINE_API ViewRoot : public View {
@@ -21,6 +24,7 @@ private:
     Canvas2D& canvas;
     Client& client;
     GuiContext gui;
+    Widgets widgets;
     ViewSpace viewSpace;
     ViewMap viewMap;
 
