@@ -15,30 +15,34 @@
 
 #define XSTR(x) #x
 
-/* need extra level to force extra eval */
-#define Paste(a, b) a##b
-#define XPASTE(a, b) Paste(a, b)
+#define FOR_EACH_EXPAND(x) x
+#define FOR_EACH_1(what, x, ...) what(x)
+#define FOR_EACH_2(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_1(what, __VA_ARGS__))
+#define FOR_EACH_3(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_2(what, __VA_ARGS__))
+#define FOR_EACH_4(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_3(what, __VA_ARGS__))
+#define FOR_EACH_5(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_4(what, __VA_ARGS__))
+#define FOR_EACH_6(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_5(what, __VA_ARGS__))
+#define FOR_EACH_7(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_6(what, __VA_ARGS__))
+#define FOR_EACH_8(what, x, ...)                                                                                       \
+    what(x);                                                                                                           \
+    FOR_EACH_EXPAND(FOR_EACH_7(what, __VA_ARGS__))
 
-/* APPLYXn variadic X-Macro by M Joshua Ryan      */
-/* Free for all uses. Don't be a jerk.            */
-/* I got bored after typing 15 of these.          */
-/* You could keep going upto 64 (PPNARG's limit). */
-#define APPLYX1(a) X(a)
-#define APPLYX2(a, b) X(a) X(b)
-#define APPLYX3(a, b, c) X(a) X(b) X(c)
-#define APPLYX4(a, b, c, d) X(a) X(b) X(c) X(d)
-#define APPLYX5(a, b, c, d, e) X(a) X(b) X(c) X(d) X(e)
-#define APPLYX6(a, b, c, d, e, f) X(a) X(b) X(c) X(d) X(e) X(f)
-#define APPLYX7(a, b, c, d, e, f, g) X(a) X(b) X(c) X(d) X(e) X(f) X(g)
-#define APPLYX8(a, b, c, d, e, f, g, h) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h)
-#define APPLYX9(a, b, c, d, e, f, g, h, i) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i)
-#define APPLYX10(a, b, c, d, e, f, g, h, i, j) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j)
-#define APPLYX11(a, b, c, d, e, f, g, h, i, j, k) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k)
-#define APPLYX12(a, b, c, d, e, f, g, h, i, j, k, l) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l)
-#define APPLYX13(a, b, c, d, e, f, g, h, i, j, k, l, m) X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m)
-#define APPLYX14(a, b, c, d, e, f, g, h, i, j, k, l, m, n)                                                             \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m) X(n)
-#define APPLYX15(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)                                                          \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m) X(n) X(o)
-#define APPLYX_(M, ...) M(__VA_ARGS__)
-#define APPLYXn(...) APPLYX_(XPASTE(APPLYX, PP_NARG(__VA_ARGS__)), __VA_ARGS__)
+#define FOR_EACH_NARG(...) FOR_EACH_NARG_(__VA_ARGS__, FOR_EACH_RSEQ_N())
+#define FOR_EACH_NARG_(...) FOR_EACH_EXPAND(FOR_EACH_ARG_N(__VA_ARGS__))
+#define FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
+#define FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
+#define FOR_EACH_CONCATENATE(x, y) x##y
+#define FOR_EACH_(N, what, ...) FOR_EACH_EXPAND(FOR_EACH_CONCATENATE(FOR_EACH_, N)(what, __VA_ARGS__))
+#define FOR_EACH(what, ...) FOR_EACH_(FOR_EACH_NARG(__VA_ARGS__), what, __VA_ARGS__)

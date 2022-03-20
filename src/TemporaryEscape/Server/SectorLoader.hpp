@@ -6,14 +6,15 @@
 namespace Engine {
 class ENGINE_API SectorLoader {
 public:
-    explicit SectorLoader(const Config& config, AssetManager& assetManager, Database& db, Services& services);
+    explicit SectorLoader(const Config& config, AssetManager& assetManager, TransactionalDatabase& db,
+                          Services& services);
 
     void populate(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId, Scene& scene);
 
 private:
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
     Services& services;
 };
 } // namespace Engine

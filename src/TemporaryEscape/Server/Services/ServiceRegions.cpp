@@ -10,7 +10,7 @@ static const std::vector<std::string> regionSuffixes = {
     "Domain", "Expanse",  "Realm",    "Sphere", "Vicinity",  "Enclave", "Area",
 };
 
-ServiceRegions::ServiceRegions(const Config& config, AssetManager& assetManager, Engine::Database& db)
+ServiceRegions::ServiceRegions(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db) {
 }
 
@@ -23,7 +23,7 @@ std::vector<RegionData> ServiceRegions::getForPlayer(const std::string& playerId
 }
 
 void ServiceRegions::generate() {
-    const auto galaxies = db.seek<GalaxyData>("");
+    const auto galaxies = db.seekAll<GalaxyData>("");
     for (const auto& galaxy : galaxies) {
         generate(galaxy.id);
     }
@@ -41,7 +41,7 @@ void ServiceRegions::generate(const std::string& galaxyId) {
 
     const auto& galaxy = galaxyOpt.value();
 
-    const auto test = db.seek<RegionData>(fmt::format("{}/", galaxy.id), 1);
+    const auto test = db.seekAll<RegionData>(fmt::format("{}/", galaxy.id), 1);
     if (!test.empty()) {
         Log::i(CMP, "Already generated regions for galaxy: '{}' ...", galaxyId);
         return;

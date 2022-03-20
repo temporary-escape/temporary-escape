@@ -26,12 +26,14 @@ public:
     enum Bindings : GLuint {
         Camera = 0,
         DirectionalLights = 1,
-        SSAO = 2,
     };
 
     explicit ShaderPbr(const Config& config);
     virtual ~ShaderPbr() = default;
 
+    ShaderPbr(const ShaderPbr& other) = delete;
+    ShaderPbr(ShaderPbr&& other) = default;
+    ShaderPbr& operator=(const ShaderPbr& other) = delete;
     ShaderPbr& operator=(ShaderPbr&& other) = default;
 
     void bindDepthTexture(const Texture& texture) const;
@@ -44,7 +46,6 @@ public:
     void bindSkyboxPrefilterTexture(const Texture& texture) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;
     void bindDirectionalLightsUniform(const VertexBuffer& ubo) const;
-    void bindSSAO(const VertexBuffer& ubo) const;
 
 private:
     GLint cameraUniformIndex;

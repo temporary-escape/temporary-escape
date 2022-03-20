@@ -4,7 +4,6 @@
 #include "ComponentCameraTop.hpp"
 #include "ComponentCameraTurntable.hpp"
 #include "ComponentDirectionalLight.hpp"
-#include "ComponentGrid.hpp"
 #include "ComponentLabel.hpp"
 #include "ComponentLines.hpp"
 #include "ComponentModel.hpp"
@@ -50,8 +49,6 @@ using EntityComponentHelper = Component::TraitsMapper<
                       Component::Flags::Syncable>,
     Component::Traits<ComponentModel,
                       Component::Flags::Syncable>,
-    Component::Traits<ComponentGrid,
-                      Component::Flags::Syncable>,
     Component::Traits<ComponentTurret,
                       Component::Flags::Syncable>,
     Component::Traits<ComponentParticleEmitter,
@@ -80,6 +77,7 @@ inline EntityProxy::~EntityProxy() = default;
 
 using EntityPtr = std::shared_ptr<Entity>;
 using EntityProxyPtr = std::shared_ptr<EntityProxy>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
 
 class ENGINE_API Entity : public EntityProxy, public Object, public std::enable_shared_from_this<Entity> {
 public:

@@ -58,6 +58,7 @@ find_package(WrenBind17 REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 if (UNIX)
     if (APPLE)

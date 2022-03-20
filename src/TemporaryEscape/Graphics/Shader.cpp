@@ -26,6 +26,8 @@ static const char* getShaderName(const GLenum target) {
 }
 
 static std::string loadFile(const Path& path) {
+    Log::i(CMP, "Loading shader file: '{}'", path.string());
+
     std::fstream file(path, std::ios::in | std::ios::ate);
     if (!file) {
         EXCEPTION("Failed to open shader file: '{}'", path.string());
@@ -113,6 +115,7 @@ Shader::Shader(Shader&& other) noexcept : vertex(0), fragment(0), geometry(0), p
 
 void Shader::swap(Shader& other) noexcept {
     std::swap(name, other.name);
+    std::swap(defines, other.defines);
     std::swap(vertex, other.vertex);
     std::swap(fragment, other.fragment);
     std::swap(geometry, other.geometry);

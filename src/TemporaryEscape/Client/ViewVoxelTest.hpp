@@ -1,17 +1,20 @@
 #pragma once
 
+#include "../Assets/AssetImage.hpp"
 #include "../Gui/GuiContext.hpp"
-#include "ViewMap.hpp"
-#include "ViewSpace.hpp"
+#include "../Server/Schemas.hpp"
+#include "View.hpp"
 #include "Widgets.hpp"
 
 namespace Engine {
-class ENGINE_API ViewRoot : public View {
+class ENGINE_API ViewVoxelTest : public View {
 public:
-    explicit ViewRoot(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                      Client& client);
+    explicit ViewVoxelTest(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
+                           Widgets& widgets);
 
+    void load();
     void render(const Vector2i& viewport) override;
+    void renderGui(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -22,12 +25,10 @@ public:
 private:
     const Config& config;
     Canvas2D& canvas;
-    Client& client;
-    GuiContext gui;
-    Widgets widgets;
-    ViewSpace viewSpace;
-    ViewMap viewMap;
+    AssetManager& assetManager;
+    Renderer& renderer;
+    Widgets& widgets;
 
-    bool mapActive;
+    std::unique_ptr<Scene> scene;
 };
 } // namespace Engine

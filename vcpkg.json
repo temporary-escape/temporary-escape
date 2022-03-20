@@ -83,6 +83,10 @@
     {
       "name": "openal-soft",
       "version>=": "1.21.1#4"
+    },
+    {
+      "name": "yaml-cpp",
+      "version>=": "0.7.0#1"
     }
   ],
   "builtin-baseline": "1085a57da0725c19e19586025438e8c16f34c890"

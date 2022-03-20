@@ -31,6 +31,11 @@ public:
 
     explicit ShaderModel(const Config& config);
 
+    ShaderModel(const ShaderModel& other) = delete;
+    ShaderModel(ShaderModel&& other) = default;
+    ShaderModel& operator=(const ShaderModel& other) = delete;
+    ShaderModel& operator=(ShaderModel&& other) = default;
+
     void setModelMatrix(const Matrix4& matrix) const;
     void setObjectId(const Vector2& color) const;
     void setNormalMatrix(const Matrix3& matrix) const;

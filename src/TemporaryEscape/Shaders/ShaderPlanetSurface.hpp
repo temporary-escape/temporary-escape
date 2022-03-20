@@ -24,6 +24,12 @@ public:
     };
 
     explicit ShaderPlanetSurface(const Config& config);
+    virtual ~ShaderPlanetSurface() = default;
+
+    ShaderPlanetSurface(const ShaderPlanetSurface& other) = delete;
+    ShaderPlanetSurface(ShaderPlanetSurface&& other) = default;
+    ShaderPlanetSurface& operator=(const ShaderPlanetSurface& other) = delete;
+    ShaderPlanetSurface& operator=(ShaderPlanetSurface&& other) = default;
 
     void setModelMatrix(const Matrix4& matrix) const;
     void setNormalMatrix(const Matrix3& matrix) const;

@@ -24,6 +24,12 @@ public:
     };
 
     explicit ShaderPointCloud(const Config& config);
+    virtual ~ShaderPointCloud() = default;
+
+    ShaderPointCloud(const ShaderPointCloud& other) = delete;
+    ShaderPointCloud(ShaderPointCloud&& other) = default;
+    ShaderPointCloud& operator=(const ShaderPointCloud& other) = delete;
+    ShaderPointCloud& operator=(ShaderPointCloud&& other) = default;
 
     void setModelMatrix(const Matrix4& matrix) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;

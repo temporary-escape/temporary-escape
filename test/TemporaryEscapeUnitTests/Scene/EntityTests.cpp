@@ -161,22 +161,22 @@ TEST_CASE("Adding entity with component to the scene", TAG) {
     static size_t counter = 0;
 
     auto entity = std::make_shared<EntityRefCounter>(counter);
-    entity->addComponent<ComponentGrid>();
+    entity->addComponent<ComponentCameraTurntable>();
 
     Scene scene{};
     scene.addEntity(entity);
 
-    const auto& gridSystem = scene.getComponentSystem<ComponentGrid>();
+    const auto& cameraSystem = scene.getComponentSystem<ComponentCameraTurntable>();
 
-    REQUIRE(gridSystem.size() == 1);
+    REQUIRE(cameraSystem.size() == 1);
 
     auto ptr = entity.get();
     entity.reset();
 
-    REQUIRE(gridSystem.size() == 1);
+    REQUIRE(cameraSystem.size() == 1);
 
     scene.removeEntity(ptr->shared_from_this());
 
-    REQUIRE(gridSystem.size() == 0);
+    REQUIRE(cameraSystem.size() == 0);
     REQUIRE(counter == 0);
 }

@@ -3,6 +3,7 @@
 #include "../Math/Vector.hpp"
 #include "../Platform/Enums.hpp"
 #include "Renderer.hpp"
+#include "Store.hpp"
 
 namespace Engine {
 class Client;
@@ -10,6 +11,7 @@ class Client;
 class ENGINE_API View {
 public:
     virtual void render(const Vector2i& viewport) = 0;
+    virtual void renderGui(const Vector2i& viewport) = 0;
     virtual void eventMouseMoved(const Vector2i& pos) = 0;
     virtual void eventMousePressed(const Vector2i& pos, MouseButton button) = 0;
     virtual void eventMouseReleased(const Vector2i& pos, MouseButton button) = 0;

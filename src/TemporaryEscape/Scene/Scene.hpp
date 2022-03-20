@@ -1,4 +1,5 @@
 #pragma once
+#include "../Assets/Skybox.hpp"
 #include "../Utils/Exceptions.hpp"
 #include "Entity.hpp"
 
@@ -6,6 +7,8 @@
 #include <vector>
 
 namespace Engine {
+class ENGINE_API SkyboxRenderer;
+
 class ENGINE_API Scene {
 public:
     struct Bullet {
@@ -63,6 +66,13 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers);
     void eventKeyReleased(Key key, Modifiers modifiers);
 
+    void setPrimaryCamera(const EntityPtr& entity) {
+        primaryCamera = entity;
+    }
+
+    std::shared_ptr<Camera> getPrimaryCamera() const;
+    std::optional<std::reference_wrapper<Skybox>> getSkybox(SkyboxRenderer& renderer);
+
 private:
     struct BulletSystem {
         std::vector<Bullet> data;
@@ -70,10 +80,14 @@ private:
     };
 
     EventListener& eventListener;
+
     uint64_t nextId;
     ComponentSystemsMap systems;
     std::vector<EntityPtr> entities;
     std::unordered_map<uint64_t, EntityPtr> entityMap;
+
     BulletSystem bullets;
+    Skybox skybox;
+    EntityWeakPtr primaryCamera;
 };
 } // namespace Engine

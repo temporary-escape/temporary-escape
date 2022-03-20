@@ -1,35 +1,13 @@
 #include "Client.hpp"
-#include "../Assets/AssetManager.hpp"
-//#include "../Network/NetworkTcpClient.hpp"
-#include "../Scene/ComponentModel.hpp"
-#include "../Server/Messages.hpp"
 #include "../Utils/Random.hpp"
 #include <fstream>
 
 #define CMP "Client"
 
-/*#define DISPATCH_FUNC(M, T, F) std::bind(static_cast<void (T::*)(M)>(&T::F), this, std::placeholders::_1)
-#define MESSAGE_DISPATCH(M) dispatcher.add<M>(DISPATCH_FUNC(M, Client, handle));
-#define MESSAGE_DISPATCH_FETCH(M)                                                                                      \
-    dispatcher.add<M::Response>(std::bind(&Client::handleFetch<M>, this, std::placeholders::_1));*/
-
 using namespace Engine;
 
-std::atomic<uint64_t> Client::nextRequestId(1);
-
-Client::Client(Config& config, const std::string& address, const int port) : requestsNextId(1), sync(getWorker()) {
-
-    /*MESSAGE_DISPATCH(MessageServerHello);
-    MESSAGE_DISPATCH(MessageLoginResponse);
-    MESSAGE_DISPATCH(MessageStatusResponse);
-    MESSAGE_DISPATCH(MessageSectorChanged);
-    MESSAGE_DISPATCH(MessageEntitySync);
-    MESSAGE_DISPATCH(MessageEntityDeltas);
-    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxy);
-    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxySystems);
-    MESSAGE_DISPATCH_FETCH(MessageFetchGalaxyRegions);
-    MESSAGE_DISPATCH_FETCH(MessageFetchCurrentLocation);
-    MESSAGE_DISPATCH_FETCH(MessageFetchSystemPlanets);*/
+Client::Client(const Config& config, Stats& stats, Store& store, const std::string& address, const int port)
+    : stats(stats), store(store), sync(getWorker()) {
 
     const auto profilePath = config.userdataPath / Path("profile.xml");
     if (Fs::exists(profilePath)) {
@@ -60,38 +38,11 @@ Client::Client(Config& config, const std::string& address, const int port) : req
         }
     }
     future.get();
-
-    // network = std::make_shared<Network::TcpClient>(*listener, address, port);
-
-    /*auto future = connected.future();
-    if (future.waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
-        EXCEPTION("Timeout while waiting for server connection");
-    }
-    future.get();*/
-
-    /*MessageStatusRequest req{};
-    req.timePoint = std::chrono::system_clock::now();
-    send(req);*/
 }
 
 Client::~Client() {
     NetworkTcpClient<ServerSink>::stop();
 }
-
-/*void Client::eventPacket(Network::Packet packet) {
-    try {
-        stats.network.packetsReceived++;
-        dispatcher.dispatch(packet);
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to dispatch message");
-    }
-}
-
-void Client::eventConnect() {
-}
-
-void Client::eventDisconnect() {
-}*/
 
 void Client::update() {
     sync.restart();
@@ -115,6 +66,9 @@ void Client::handle(MessageLogin::Response res) {
     } else {
         playerId = res.playerId;
         loggedIn.resolve();
+
+        store.player.id = playerId;
+        store.player.id.markChanged();
     }
 }
 
@@ -128,9 +82,9 @@ void Client::handle(MessagePlayerLocation::Response res) {
     camera = std::make_shared<Entity>();
     auto cmp = camera->addComponent<ComponentCameraTurntable>();
     auto userInput = camera->addComponent<ComponentUserInput>(*cmp);
-    cmp->setPrimary(true);
     cmp->setProjection(70.0f);
     scene->addEntity(camera);
+    scene->setPrimaryCamera(camera);
 
     store.player.location = res.location;
     store.player.location.markChanged();

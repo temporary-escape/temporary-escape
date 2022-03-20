@@ -7,8 +7,9 @@
 using namespace Engine;
 
 ViewSpace::ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                     Client& client, Widgets& widgets)
-    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets) {
+                     Client& client, Widgets& widgets, Store& store)
+    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets),
+      store(store) {
 
     images.info = assetManager.find<AssetImage>("icon_info");
     images.rotation = assetManager.find<AssetImage>("icon_anticlockwise_rotation");
@@ -19,8 +20,8 @@ ViewSpace::ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& asset
 
 void ViewSpace::render(const Vector2i& viewport) {
     if (auto scene = client.getScene(); scene != nullptr) {
-        renderer.render(viewport, *scene);
-        selected.hover = renderer.queryEntityAtPos(*scene, mousePosCurrent);
+        renderer.render(*scene);
+        // selected.hover = renderer.queryEntityAtPos(*scene, mousePosCurrent);
     } else {
         selected.hover.reset();
     }
@@ -37,7 +38,7 @@ void ViewSpace::renderGui(const Vector2i& viewport) {
     }
 
     if (selected.hover) {
-        const auto camera = renderer.getPrimaryCamera(*scene);
+        const auto camera = scene->getPrimaryCamera();
         const auto pos = camera->worldToScreen(selected.hover->getPosition());
 
         auto label = selected.hover->findComponent<ComponentLabel>();
@@ -73,7 +74,6 @@ void ViewSpace::renderGui(const Vector2i& viewport) {
 }
 
 void ViewSpace::eventMouseMoved(const Vector2i& pos) {
-    mousePosCurrent = pos;
     if (auto scene = client.getScene(); scene != nullptr) {
         scene->eventMouseMoved(pos);
     }

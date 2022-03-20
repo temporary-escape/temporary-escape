@@ -22,6 +22,12 @@ public:
     };
 
     explicit ShaderSkybox(const Config& config);
+    virtual ~ShaderSkybox() = default;
+
+    ShaderSkybox(const ShaderSkybox& other) = delete;
+    ShaderSkybox(ShaderSkybox&& other) = default;
+    ShaderSkybox& operator=(const ShaderSkybox& other) = delete;
+    ShaderSkybox& operator=(ShaderSkybox&& other) = default;
 
     void setModelMatrix(const Matrix4& matrix) const;
     void bindSkyboxTexture(const Texture& texture) const;

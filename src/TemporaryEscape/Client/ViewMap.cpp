@@ -6,14 +6,13 @@
 using namespace Engine;
 
 ViewMap::ViewMap(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer, Client& client,
-                 Widgets& widgets)
-    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets) {
+                 Widgets& widgets, Store& store)
+    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets),
+      store(store) {
 
     textures.star = assetManager.find<AssetTexture>("star_flare");
     images.currentPosition = assetManager.find<AssetImage>("icon_position_marker");
     fontFaceRegular = assetManager.find<AssetFontFamily>("iosevka-aile")->get("regular");
-
-    auto& store = client.getStore();
 
     store.player.location.onChange([this]() { reconstruct(); });
     store.galaxy.galaxy.onChange([this]() { this->client.fetchGalaxyRegions(); });
@@ -31,18 +30,18 @@ void ViewMap::load() {
 
     entityCamera = std::make_shared<Entity>();
     auto camera = entityCamera->addComponent<ComponentCameraTop>();
-    camera->setPrimary(true);
     camera->setOrthographic(50.0f);
     entityCamera->addComponent<ComponentUserInput>(*camera);
     scene->addEntity(entityCamera);
+    scene->setPrimaryCamera(entityCamera);
 
     client.fetchGalaxy();
 }
 
 void ViewMap::render(const Vector2i& viewport) {
     if (scene != nullptr) {
-        scene->update(0.0f);
-        renderer.render(viewport, *scene);
+        scene->update(0.1f);
+        renderer.render(*scene);
     }
 }
 
@@ -56,8 +55,6 @@ void ViewMap::renderGui(const Vector2i& viewport) {
 
 void ViewMap::renderCurrentPositionInfo() {
     static const Vector2 markerSize{64.0f};
-
-    auto& store = client.getStore();
 
     const auto& currentSystem = store.galaxy.systems.value().at(store.player.location.value().systemId);
     const auto& currentRegion = store.galaxy.regions.value().at(currentSystem.regionId);
@@ -130,8 +127,6 @@ void ViewMap::reconstruct() {
             scene->removeEntity(entity);
         }
         entitiesRegions.clear();
-
-        auto& store = client.getStore();
 
         std::optional<SystemData> currentSystem;
         if (!store.player.location.value().systemId.empty()) {

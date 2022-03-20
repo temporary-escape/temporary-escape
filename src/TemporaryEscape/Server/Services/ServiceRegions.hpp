@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API ServiceRegions : public Service {
 public:
-    explicit ServiceRegions(const Config& config, AssetManager& assetManager, Database& db);
+    explicit ServiceRegions(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     ~ServiceRegions() override = default;
 
     void generate();
@@ -18,6 +18,6 @@ public:
 private:
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
 };
 } // namespace Engine

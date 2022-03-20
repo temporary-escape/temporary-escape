@@ -10,12 +10,12 @@ using namespace Engine;
 void ComponentShipControl::init() {
     auto entity = getEntity();
 
-    if (const auto grid = entity->findComponent<ComponentGrid>()) {
+    /*if (const auto grid = entity->findComponent<ComponentGrid>()) {
         // initParticles(entity, *grid);
-    }
+    }*/
 }
 
-void ComponentShipControl::initParticles(const EntityPtr& entity, const ComponentGrid& grid) {
+/*void ComponentShipControl::initParticles(const EntityPtr& entity, const ComponentGrid& grid) {
     // For all block types in the grid
     for (size_t i = 0; i < grid.getTypes().size(); i++) {
         const auto& type = grid.getTypes().at(i);
@@ -33,7 +33,7 @@ void ComponentShipControl::initParticles(const EntityPtr& entity, const Componen
             }
         }
     }
-}
+}*/
 
 std::tuple<float, float, float> ComponentShipControl::getAngles() const {
     auto entity = getEntity();

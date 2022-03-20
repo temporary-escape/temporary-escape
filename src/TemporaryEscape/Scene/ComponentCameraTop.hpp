@@ -40,16 +40,7 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers) override;
     void eventKeyReleased(Key key, Modifiers modifiers) override;
 
-    bool getPrimary() const {
-        return primary;
-    }
-
-    void setPrimary(const bool value) {
-        primary = value;
-    }
-
 private:
-    bool primary{true};
     bool move{false};
     Vector2 mousePosOld;
     float zoom{100.0f};

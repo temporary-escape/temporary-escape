@@ -1,24 +1,24 @@
 #pragma once
 
+#include "../Audio/AudioContext.hpp"
 #include "../Future.hpp"
 #include "../Modding/ModManager.hpp"
 #include "../Platform/OpenGLWindow.hpp"
 #include "../Server/Server.hpp"
-#include "../Audio/AudioContext.hpp"
+#include "../Utils/RocksDB.hpp"
 #include "Client.hpp"
+#include "GBuffer.hpp"
 #include "Renderer.hpp"
-#include "ViewRoot.hpp"
+#include "Shaders.hpp"
+#include "ViewMap.hpp"
+#include "ViewSpace.hpp"
+#include "ViewVoxelTest.hpp"
 #include <atomic>
 
 namespace Engine {
 class ENGINE_API Application : public OpenGLWindow {
 public:
-    struct Options {
-        std::optional<std::string> saveFolderName;
-        bool saveFolderClean{false};
-    };
-
-    Application(Config& config, const Options& options);
+    Application(Config& config);
     virtual ~Application();
 
     void update();
@@ -33,8 +33,9 @@ public:
     void load();
 
 private:
+    void renderView(const Vector2i& viewport);
+
     Config& config;
-    const Options& options;
 
     Canvas2D canvas;
     Canvas2D::FontHandle defaultFont;
@@ -45,15 +46,27 @@ private:
     AssetLoadQueue assetLoadQueue;
     Promise<bool> assetLoadQueueFinished;
 
+    GBuffer gBuffer;
+
     std::shared_ptr<AudioContext> audioContext;
     std::shared_ptr<TextureCompressor> textureCompressor;
+    std::shared_ptr<SkyboxRenderer> skyboxRenderer;
     std::shared_ptr<AssetManager> assetManager;
     std::shared_ptr<ModManager> modManager;
-    std::shared_ptr<Database> db;
+    std::shared_ptr<TransactionalDatabase> db;
+    std::shared_ptr<Store> store;
+    std::shared_ptr<Stats> stats;
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;
+    std::shared_ptr<Shaders> shaders;
+    std::shared_ptr<GBuffer> gbuffer;
     std::shared_ptr<Renderer> renderer;
-    std::shared_ptr<ViewRoot> view;
+    std::shared_ptr<GuiContext> gui;
+    std::shared_ptr<Widgets> widgets;
+    std::shared_ptr<ViewSpace> viewSpace;
+    std::shared_ptr<ViewMap> viewMap;
+    std::shared_ptr<ViewVoxelTest> viewVoxelTest;
+    View* view{nullptr};
 
     std::atomic<size_t> assetLoadQueueInitialSize;
     std::atomic<bool> loading;

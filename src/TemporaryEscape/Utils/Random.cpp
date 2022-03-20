@@ -9,8 +9,6 @@
 
 using namespace Engine;
 
-static NameGenerator names;
-
 uint64_t Engine::randomId(const std::function<bool(uint64_t)>& pred) {
     union RandomUnion {
         uint8_t bytes[8];
@@ -36,7 +34,7 @@ uint64_t Engine::randomId(const std::function<bool(uint64_t)>& pred) {
 }
 
 std::string Engine::randomName(std::mt19937_64& rng) {
-    return names(rng);
+    return NameGenerator::systemsNames(rng);
 }
 
 std::string Engine::uuid() {

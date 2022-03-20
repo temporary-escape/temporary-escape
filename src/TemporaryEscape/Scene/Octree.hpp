@@ -128,7 +128,7 @@ public:
 
         auto& found = nodes.at(offset);
         found.parent = INVALID_PARENT;
-        found.data = T{};
+        found.items = T{};
 
         if (offset < next) {
             next = offset;

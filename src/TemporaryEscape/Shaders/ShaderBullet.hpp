@@ -23,6 +23,11 @@ public:
 
     explicit ShaderBullet(const Config& config);
 
+    ShaderBullet(const ShaderBullet& other) = delete;
+    ShaderBullet(ShaderBullet&& other) = default;
+    ShaderBullet& operator=(const ShaderBullet& other) = delete;
+    ShaderBullet& operator=(ShaderBullet&& other) = default;
+
     void bindCameraUniform(const VertexBuffer& ubo) const;
 
 private:

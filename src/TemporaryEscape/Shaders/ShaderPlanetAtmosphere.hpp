@@ -20,6 +20,12 @@ public:
     };
 
     explicit ShaderPlanetAtmosphere(const Config& config);
+    virtual ~ShaderPlanetAtmosphere() = default;
+
+    ShaderPlanetAtmosphere(const ShaderPlanetAtmosphere& other) = delete;
+    ShaderPlanetAtmosphere(ShaderPlanetAtmosphere&& other) = default;
+    ShaderPlanetAtmosphere& operator=(const ShaderPlanetAtmosphere& other) = delete;
+    ShaderPlanetAtmosphere& operator=(ShaderPlanetAtmosphere&& other) = default;
 
     void setModelMatrix(const Matrix4& matrix) const;
     void setNormalMatrix(const Matrix3& matrix) const;

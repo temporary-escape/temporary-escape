@@ -12,5 +12,10 @@ public:
 
     explicit ShaderBrdf(const Config& config);
     virtual ~ShaderBrdf() = default;
+
+    ShaderBrdf(const ShaderBrdf& other) = delete;
+    ShaderBrdf(ShaderBrdf&& other) = default;
+    ShaderBrdf& operator=(const ShaderBrdf& other) = delete;
+    ShaderBrdf& operator=(ShaderBrdf&& other) = default;
 };
 } // namespace Engine

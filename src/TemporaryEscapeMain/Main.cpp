@@ -64,6 +64,8 @@ int main(int argc, char** argv) {
 
     parser.add_options()("save-clean", "Delete the save folder and create a new one");
 
+    parser.add_options()("voxel-test", "Toggle ViewVoxelTest");
+
     parser.add_options()("save-name", "Name of the save folder", cxxopts::value<std::string>());
 
     try {
@@ -89,17 +91,17 @@ int main(int argc, char** argv) {
         config.userdataSavesPath = config.userdataPath / "Saves";
         config.shadersPath = rootPath / "shaders";
 
-        Application::Options options{};
         if (args.count("save-name")) {
-            options.saveFolderName = args["save-name"].as<std::string>();
+            config.saveFolderName = args["save-name"].as<std::string>();
         }
-        options.saveFolderClean = args["save-clean"].as<bool>();
+        config.saveFolderClean = args["save-clean"].as<bool>();
+        config.voxelTest = args["voxel-test"].as<bool>();
 
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
 
         {
-            Application application(config, options);
+            Application application(config);
             application.run();
         }
         Log::i("main", "Exit success");

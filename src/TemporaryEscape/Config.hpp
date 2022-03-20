@@ -2,6 +2,7 @@
 
 #include "Utils/Path.hpp"
 #include <chrono>
+#include <optional>
 #include <vector>
 
 namespace Engine {
@@ -15,6 +16,9 @@ struct Config {
     Path cwdPath;
     Path userdataSavesPath;
     Path shadersPath;
+    std::optional<std::string> saveFolderName;
+    bool saveFolderClean = false;
+    bool voxelTest = false;
     std::vector<std::string> wrenPaths;
     std::string serverPassword;
     int serverPort = 22443;

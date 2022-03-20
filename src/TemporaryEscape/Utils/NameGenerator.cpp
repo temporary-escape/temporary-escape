@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-const std::vector<std::string> NameGenerator::DefaultWords = {
+const std::vector<std::string> NameGenerator::defaultWords = {
     "Adara",     "Adena",     "Adrianne",  "Alarice",  "Alvita",  "Amara",   "Ambika",    "Antonia",   "Araceli",
     "Balandria", "Basha",     "Beryl",     "Bryn",     "Callia",  "Caryssa", "Cassandra", "Casondrah", "Chatha",
     "Ciara",     "Cynara",    "Cytheria",  "Dabria",   "Darcei",  "Deandra", "Deirdre",   "Delores",   "Desdomna",
@@ -102,14 +102,4 @@ std::string NameGenerator::operator()(std::mt19937_64& rng) {
     return ss;
 }
 
-static const std::vector<std::string> MARKOV_CHAIN_NAMES = {
-    "Adara",     "Adena",     "Adrianne",  "Alarice",  "Alvita",  "Amara",   "Ambika",    "Antonia",   "Araceli",
-    "Balandria", "Basha",     "Beryl",     "Bryn",     "Callia",  "Caryssa", "Cassandra", "Casondrah", "Chatha",
-    "Ciara",     "Cynara",    "Cytheria",  "Dabria",   "Darcei",  "Deandra", "Deirdre",   "Delores",   "Desdomna",
-    "Devi",      "Dominique", "Drucilla",  "Duvessa",  "Ebony",   "Fantine", "Fuscienne", "Gabi",      "Gallia",
-    "Hanna",     "Hedda",     "Jerica",    "Jetta",    "Joby",    "Kacila",  "Kagami",    "Kala",      "Kallie",
-    "Keelia",    "Kerry",     "Kerry-Ann", "Kimberly", "Killian", "Kory",    "Lilith",    "Lucretia",  "Lysha",
-    "Mercedes",  "Mia",       "Maura",     "Perdita",  "Quella",  "Riona",   "Safiya",    "Salina",    "Severin",
-    "Sidonia",   "Sirena",    "Solita",    "Tempest",  "Thea",    "Treva",   "Trista",    "Vala",      "Winta"};
-
-NameGenerator NameGenerator::Default(MARKOV_CHAIN_NAMES);
+NameGenerator NameGenerator::systemsNames(defaultWords);

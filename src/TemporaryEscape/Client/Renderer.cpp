@@ -1,9 +1,382 @@
 #include "Renderer.hpp"
 #include "../Assets/AssetManager.hpp"
+#include "../Graphics/MeshPrimitives.hpp"
 #include "../Utils/Random.hpp"
 
 #define CMP "Renderer"
-static const auto pi = 3.14159265358979323846f;
+
+using namespace Engine;
+
+union ObjectId {
+    uint8_t data[2];
+    uint16_t id{0};
+};
+
+static Color4 entityIdToObjectIdColor(const EntityPtr& entity) {
+    ObjectId id;
+    id.id = entity->getId();
+    Color4 color;
+    color.r = static_cast<float>(id.data[0]) / 255.0f;
+    color.g = static_cast<float>(id.data[1]) / 255.0f;
+    color.b = 0.0f;
+    color.a = 1.0f;
+    return color;
+}
+
+Renderer::Renderer(const Engine::Config& config, const Engine::Shaders& shaders, SkyboxRenderer& skyboxRenderer)
+    : config(config), shaders(shaders), skyboxRenderer(skyboxRenderer) {
+
+    meshes.fullScreenQuad = createFullScreenQuad();
+    meshes.skybox = createSkyboxMesh();
+    meshes.planet = createPlanetMesh();
+
+    const auto setColor = [](Texture2D& texture, const Color4& color) {
+        std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
+        for (size_t i = 0; i < 8 * 8 * 4; i += 4) {
+            pixels[i + 0] = static_cast<uint8_t>(color.r * 255.0f);
+            pixels[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
+            pixels[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
+            pixels[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
+        }
+
+        texture = Texture2D{};
+        texture.setStorage(0, {8, 8}, PixelType::Rgba8u);
+        texture.setPixels(0, {0, 0}, {8, 8}, PixelType::Rgba8u, pixels.get());
+    };
+
+    const auto setColorCubemap = [](TextureCubemap& texture, const Color4& color) {
+        std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
+        for (size_t i = 0; i < 8 * 8 * 4; i += 4) {
+            pixels[i + 0] = static_cast<uint8_t>(color.r * 255.0f);
+            pixels[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
+            pixels[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
+            pixels[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
+        }
+
+        texture = TextureCubemap{};
+        texture.setStorage(0, {8, 8}, PixelType::Rgba8u);
+        for (const auto side : TextureCubemap::sides) {
+            texture.setPixels(0, {0, 0}, side, {8, 8}, PixelType::Rgba8u, pixels.get());
+        }
+    };
+
+    setColor(defaultTextures.baseColorTexture, Color4{1.0f, 0.0f, 1.0f, 1.0f});
+    setColor(defaultTextures.normalTexture, Color4{0.5f, 0.5f, 1.0f, 1.0f});
+    setColor(defaultTextures.emissiveTexture, Color4{0.0f, 0.0f, 0.0f, 1.0f});
+    setColor(defaultTextures.metallicRoughnessTexture, Color4{0.0f, 0.5f, 0.5f, 1.0f});
+    setColor(defaultTextures.ambientOcclusionTexture, Color4{1.0f, 1.0f, 1.0f, 1.0f});
+    setColorCubemap(defaultTextures.skyboxTexture, Color4{0.5f, 0.5f, 0.5f, 1.0f});
+
+    createBrdfTexture();
+}
+
+void Renderer::render(Scene& scene) {
+    if (!state.gBuffer) {
+        EXCEPTION(CMP, "No GBuffer set");
+    }
+
+    if (state.viewport.x == 0 || state.viewport.y == 0) {
+        EXCEPTION(CMP, "Viewport is invalid");
+    }
+
+    const auto camera = scene.getPrimaryCamera();
+    if (!camera) {
+        EXCEPTION(CMP, "No camera in scene");
+    }
+
+    camera->setViewport(state.viewport);
+    setCamera(*camera);
+
+    {
+        auto& directionalLights = scene.getComponentSystem<ComponentDirectionalLight>();
+        std::vector<DirectionalLight> lights;
+        for (const auto& component : directionalLights) {
+            lights.push_back({component->getColor(), glm::normalize(component->getObject().getPosition())});
+        }
+        setDirectionalLights(lights);
+    }
+
+    auto skyboxOpt = scene.getSkybox(skyboxRenderer);
+    if (skyboxOpt.has_value()) {
+        state.skybox = &skyboxOpt.value().get();
+    } else {
+        state.skybox = nullptr;
+    }
+
+    Framebuffer::DefaultFramebuffer.bind();
+
+    state.gBuffer->fbo.bind();
+    renderSceneDeffered(scene);
+
+    Framebuffer::DefaultFramebuffer.bind();
+    renderSceneBackground(scene);
+    renderPbrBuffer();
+
+    // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
+
+    /*postProcessing.fbo[postProcessing.inputIdx].bind();
+    renderSceneBackground(viewport, scene);
+    renderPbr();
+    renderSceneForward(viewport, scene);
+
+    applyFxaa(viewport);
+
+    blit(viewport, postProcessing.fbo[postProcessing.inputIdx], Framebuffer::DefaultFramebuffer,
+         FramebufferAttachment::Color0, BufferBit::Color);
+
+    Framebuffer::DefaultFramebuffer.bind();
+    renderCanvas(viewport, scene);*/
+}
+
+void Renderer::renderSceneDeffered(Scene& scene) {
+    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+    auto& componentSystemTurret = scene.getComponentSystem<ComponentTurret>();
+
+    GLuint attachments[5] = {
+        GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4,
+    };
+    glDrawBuffers(5, attachments);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_BLEND);
+
+    glViewport(0, 0, state.viewport.x, state.viewport.y);
+    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, &black.x);
+    glClearBufferfv(GL_COLOR, 4, &black.x);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+
+    shaders.model.use();
+    shaders.model.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemModel) {
+        renderComponentModel(*component);
+    }
+
+    for (auto& component : componentSystemTurret) {
+        renderComponentTurret(*component);
+    }
+}
+
+void Renderer::renderPbrBuffer() {
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.pbr.use();
+    shaders.pbr.bindDepthTexture(state.gBuffer->fboDepth);
+    shaders.pbr.bindBaseColorTexture(state.gBuffer->fboColorAlpha);
+    shaders.pbr.bindEmissiveTexture(state.gBuffer->fboEmissive);
+    shaders.pbr.bindMetallicRoughnessAmbientTexture(state.gBuffer->fboMetallicRoughnessAmbient);
+    shaders.pbr.bindNormalTexture(state.gBuffer->fboNormal);
+    shaders.pbr.bindBrdfTexture(brdf.texture);
+    if (state.skybox) {
+        shaders.pbr.bindSkyboxIrradianceTexture(state.skybox->irradiance);
+        shaders.pbr.bindSkyboxPrefilterTexture(state.skybox->prefilter);
+    } else {
+        shaders.pbr.bindSkyboxIrradianceTexture(defaultTextures.skyboxTexture);
+        shaders.pbr.bindSkyboxIrradianceTexture(defaultTextures.skyboxTexture);
+    }
+    shaders.pbr.bindCameraUniform(state.cameraUbo);
+    shaders.pbr.bindDirectionalLightsUniform(state.directionalLightsUbo);
+    shaders.pbr.draw(meshes.fullScreenQuad);
+}
+
+void Renderer::renderSceneBackground(Scene& scene) {
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+
+    shaders.skybox.use();
+    shaders.skybox.bindCameraUniform(state.cameraZeroPosUbo);
+
+    auto transform = glm::scale(Matrix4{1.0f}, Vector3{100.0f});
+    renderSkybox(state.skybox ? state.skybox->texture : defaultTextures.skyboxTexture, transform);
+}
+
+void Renderer::renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform) {
+    shaders.skybox.setModelMatrix(transform);
+    shaders.skybox.bindSkyboxTexture(cubemap);
+    shaders.skybox.draw(meshes.skybox);
+}
+
+void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.model.setModelMatrix(transform);
+    shaders.model.setNormalMatrix(transformInverted);
+
+    for (const auto& primitive : model->getPrimitives()) {
+        shaders.model.bindMaterialUniform(primitive.ubo);
+
+        if (primitive.material.baseColorTexture) {
+            shaders.model.bindBaseColorTexture(primitive.material.baseColorTexture->getTexture());
+        } else {
+            shaders.model.bindBaseColorTexture(defaultTextures.baseColorTexture);
+        }
+
+        if (primitive.material.emissiveTexture) {
+            shaders.model.bindEmissiveTexture(primitive.material.emissiveTexture->getTexture());
+        } else {
+            shaders.model.bindEmissiveTexture(defaultTextures.emissiveTexture);
+        }
+
+        if (primitive.material.normalTexture) {
+            shaders.model.bindNormalTexture(primitive.material.normalTexture->getTexture());
+        } else {
+            shaders.model.bindNormalTexture(defaultTextures.normalTexture);
+        }
+
+        if (primitive.material.ambientOcclusionTexture) {
+            shaders.model.bindAmbientOcclusionTexture(primitive.material.ambientOcclusionTexture->getTexture());
+        } else {
+            shaders.model.bindAmbientOcclusionTexture(defaultTextures.ambientOcclusionTexture);
+        }
+
+        if (primitive.material.metallicRoughnessTexture) {
+            shaders.model.bindMetallicRoughnessTexture(primitive.material.metallicRoughnessTexture->getTexture());
+        } else {
+            shaders.model.bindMetallicRoughnessTexture(defaultTextures.metallicRoughnessTexture);
+        }
+
+        shaders.model.draw(primitive.mesh);
+    }
+}
+
+void Renderer::renderComponentModel(ComponentModel& component) {
+    const auto transform = component.getObject().getAbsoluteTransform();
+    if (auto entity = component.getObject().asEntity()) {
+        shaders.model.setObjectId(entityIdToObjectIdColor(entity));
+    }
+    renderModel(component.getModel(), transform);
+}
+
+void Renderer::renderComponentTurret(ComponentTurret& component) {
+    const auto& turret = component.getTurret()->getComponents();
+    const auto absoluteTransform = component.getObject().getAbsoluteTransform();
+    const auto transformInverted = glm::inverse(absoluteTransform);
+
+    auto transform = glm::translate(absoluteTransform, turret.base.offset);
+    renderModel(turret.base.model, transform);
+
+    const auto& rotation = component.getRotation();
+
+    transform = glm::translate(absoluteTransform, turret.arm.offset);
+    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+    renderModel(turret.arm.model, transform);
+
+    transform = glm::translate(absoluteTransform, turret.cannon.offset);
+    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+    transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
+
+    renderModel(turret.cannon.model, transform);
+}
+
+void Renderer::setCamera(Camera& camera) {
+    const auto makeUniform = [&](const bool zero) {
+        auto viewMatrix = camera.getViewMatrix();
+        if (zero) {
+            viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+        }
+        const auto transformationProjectionMatrix = camera.getProjectionMatrix() * viewMatrix;
+        const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
+        const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
+
+        CameraUniform cameraUniform{};
+        cameraUniform.transformationProjectionMatrix = transformationProjectionMatrix;
+        cameraUniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
+        cameraUniform.viewMatrix = viewMatrix;
+        cameraUniform.projectionMatrix = camera.getProjectionMatrix();
+        cameraUniform.viewport = state.viewport;
+        cameraUniform.eyesPos = eyesPos;
+
+        return cameraUniform;
+    };
+
+    {
+        CameraUniform cameraUniform = makeUniform(false);
+
+        if (!state.cameraUbo) {
+            state.cameraUbo = VertexBuffer(VertexBufferType::Uniform);
+            state.cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+        } else {
+            state.cameraUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
+        }
+    }
+
+    {
+        CameraUniform cameraUniform = makeUniform(true);
+
+        if (!state.cameraZeroPosUbo) {
+            state.cameraZeroPosUbo = VertexBuffer(VertexBufferType::Uniform);
+            state.cameraZeroPosUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+        } else {
+            state.cameraZeroPosUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
+        }
+    }
+}
+
+void Renderer::setDirectionalLights(const std::vector<DirectionalLight>& lights) {
+    DirectionalLightsUniform directionalLightsUniform{};
+
+    for (const auto& light : lights) {
+        if (directionalLightsUniform.count >= maxDirectionalLights) {
+            break;
+        }
+
+        const auto dir = glm::normalize(light.direction);
+
+        directionalLightsUniform.directions[directionalLightsUniform.count] = Vector4{dir, 0.0f};
+        directionalLightsUniform.colors[directionalLightsUniform.count] = light.color;
+        directionalLightsUniform.count++;
+    }
+
+    if (!state.directionalLightsUbo) {
+        state.directionalLightsUbo = VertexBuffer(VertexBufferType::Uniform);
+        state.directionalLightsUbo.bufferData(&directionalLightsUniform, sizeof(directionalLightsUniform),
+                                              VertexBufferUsage::DynamicDraw);
+    } else {
+        state.directionalLightsUbo.bufferSubData(&directionalLightsUniform, sizeof(directionalLightsUniform), 0);
+    }
+}
+
+void Renderer::createBrdfTexture() {
+    const auto size = Vector2i{config.brdfSize, config.brdfSize};
+
+    Framebuffer fbo;
+    Renderbuffer rbo;
+
+    fbo.bind();
+    glViewport(0, 0, size.x, size.y);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+    glDisable(GL_BLEND);
+
+    brdf.texture = Texture2D{};
+    brdf.texture.setStorage(0, size, PixelType::Rg16f);
+    fbo.attach(brdf.texture, FramebufferAttachment::Color0, 0);
+
+    rbo.setStorage(size, PixelType::Depth24Stencil8);
+    fbo.attach(rbo, FramebufferAttachment::DepthStencil);
+
+    shaders.brdf.use();
+    shaders.brdf.draw(meshes.fullScreenQuad);
+
+    Framebuffer::DefaultFramebuffer.bind();
+}
+
+/*static const auto pi = 3.14159265358979323846f;
 static const auto pi2 = 1.57079632679489661923f;
 
 // Simple skybox box with two triangles per side.
@@ -83,12 +456,27 @@ Renderer::Renderer(const Config& config, Canvas2D& canvas, AssetManager& assetMa
         texture.setPixels(0, {0, 0}, {8, 8}, PixelType::Rgba8u, pixels.get());
     };
 
+    const auto setColorCubemap = [](TextureCubemap& texture, const Color4& color) {
+        std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
+        for (size_t i = 0; i < 8 * 8 * 4; i += 4) {
+            pixels[i + 0] = static_cast<uint8_t>(color.r * 255.0f);
+            pixels[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
+            pixels[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
+            pixels[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
+        }
+
+        texture.setStorage(0, {8, 8}, PixelType::Rgba8u);
+        for (const auto side : TextureCubemap::sides) {
+            texture.setPixels(0, {0, 0}, side, {8, 8}, PixelType::Rgba8u, pixels.get());
+        }
+    };
+
     setColor(defaultBaseColorTexture, Color4{1.0f, 0.0f, 1.0f, 1.0f});
     setColor(defaultNormalTexture, Color4{0.5f, 0.5f, 1.0f, 1.0f});
     setColor(defaultEmissiveTexture, Color4{0.0f, 0.0f, 0.0f, 1.0f});
     setColor(defaultMetallicRoughnessTexture, Color4{0.0f, 0.5f, 0.5f, 1.0f});
     setColor(defaultAmbientOcclusionTexture, Color4{1.0f, 1.0f, 1.0f, 1.0f});
-    setColor(defaultSkyboxTexture, Color4{0.0f, 0.0f, 0.0f, 0.0f});
+    setColorCubemap(defaultSkyboxTexture, Color4{0.5f, 0.5f, 0.5f, 1.0f});
 
     createFullScreenMesh();
     createBrdfTexture();
@@ -421,550 +809,536 @@ void Renderer::renderCanvas(const Vector2i& viewport, Scene& scene) {
 
     canvas.beginFrame(viewport);
 
-    /*auto& componentSystemCanvasLines = scene.getComponentSystem<ComponentLines>();
+    auto& componentSystemCanvasLines = scene.getComponentSystem<ComponentLines>();
     for (auto& component : componentSystemCanvasLines) {
         renderComponentCanvasLines(*camera, *component);
     }*/
 
-    /*auto& componentSystemCanvasImage = scene.getComponentSystem<ComponentPointCloud>();
-    for (auto& component : componentSystemCanvasImage) {
-        renderComponentCanvasImage(*camera, *component);
-    }*/
+/*auto& componentSystemCanvasImage = scene.getComponentSystem<ComponentPointCloud>();
+for (auto& component : componentSystemCanvasImage) {
+    renderComponentCanvasImage(*camera, *component);
+}
 
-    auto& componentSystemText = scene.getComponentSystem<ComponentText>();
-    for (auto& component : componentSystemText) {
-        renderComponentText(*camera, *component);
-    }
+auto& componentSystemText = scene.getComponentSystem<ComponentText>();
+for (auto& component : componentSystemText) {
+    renderComponentText(*camera, *component);
+}
 
-    canvas.endFrame();
+canvas.endFrame();
 }
 
 void Renderer::renderPbr() {
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+glDisable(GL_DEPTH_TEST);
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 
-    GLuint attachments[1] = {
-        GL_COLOR_ATTACHMENT0,
-    };
-    glDrawBuffers(1, attachments);
+GLuint attachments[1] = {
+    GL_COLOR_ATTACHMENT0,
+};
+glDrawBuffers(1, attachments);
 
-    shaders.pbr.use();
-    shaders.pbr.bindDepthTexture(gBuffer.fboDepth);
-    shaders.pbr.bindBaseColorTexture(gBuffer.fboColorAlpha);
-    shaders.pbr.bindEmissiveTexture(gBuffer.fboEmissive);
-    shaders.pbr.bindMetallicRoughnessAmbientTexture(gBuffer.fboMetallicRoughnessAmbient);
-    shaders.pbr.bindNormalTexture(gBuffer.fboNormal);
-    shaders.pbr.bindBrdfTexture(brdf.texture);
+shaders.pbr.use();
+shaders.pbr.bindDepthTexture(gBuffer.fboDepth);
+shaders.pbr.bindBaseColorTexture(gBuffer.fboColorAlpha);
+shaders.pbr.bindEmissiveTexture(gBuffer.fboEmissive);
+shaders.pbr.bindMetallicRoughnessAmbientTexture(gBuffer.fboMetallicRoughnessAmbient);
+shaders.pbr.bindNormalTexture(gBuffer.fboNormal);
+shaders.pbr.bindBrdfTexture(brdf.texture);
+if (skybox.textures.irradiance) {
     shaders.pbr.bindSkyboxIrradianceTexture(skybox.textures.irradiance);
+} else {
+    shaders.pbr.bindSkyboxIrradianceTexture(defaultSkyboxTexture);
+}
+if (skybox.textures.prefilter) {
     shaders.pbr.bindSkyboxPrefilterTexture(skybox.textures.prefilter);
-    shaders.pbr.bindCameraUniform(cameraUbo);
-    shaders.pbr.bindDirectionalLightsUniform(directionalLightsUbo);
-    shaders.pbr.bindSSAO(ssaoUbo);
-    shaders.pbr.draw(fullScreenMesh);
+} else {
+    shaders.pbr.bindSkyboxIrradianceTexture(defaultSkyboxTexture);
+}
+shaders.pbr.bindCameraUniform(cameraUbo);
+shaders.pbr.bindDirectionalLightsUniform(directionalLightsUbo);
+shaders.pbr.bindSSAO(ssaoUbo);
+shaders.pbr.draw(fullScreenMesh);
 }
 
 void Renderer::renderSceneBackground(const Vector2i& viewport, Scene& scene) {
-    glViewport(0, 0, viewport.x, viewport.y);
-    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
-    glClearBufferfv(GL_COLOR, 0, &black.x);
-    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+glViewport(0, 0, viewport.x, viewport.y);
+static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+glClearBufferfv(GL_COLOR, 0, &black.x);
+glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
-    auto& componentSystemSkybox = scene.getComponentSystem<ComponentSkybox>();
-    auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
+auto& componentSystemSkybox = scene.getComponentSystem<ComponentSkybox>();
+auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
-    auto componentSkybox = componentSystemSkybox.begin();
-    if (componentSkybox != componentSystemSkybox.end()) {
-        auto& component = *componentSkybox;
-        if (skybox.seed != component->getSeed()) {
-            createSkybox(component->getSeed());
-        }
+auto componentSkybox = componentSystemSkybox.begin();
+if (componentSkybox != componentSystemSkybox.end()) {
+    auto& component = *componentSkybox;
+    if (skybox.seed != component->getSeed()) {
+        createSkybox(component->getSeed());
     }
+}
 
-    GLuint attachments[1] = {
-        GL_COLOR_ATTACHMENT0,
-    };
-    glDrawBuffers(1, attachments);
+GLuint attachments[1] = {
+    GL_COLOR_ATTACHMENT0,
+};
+glDrawBuffers(1, attachments);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+glEnable(GL_DEPTH_TEST);
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 
-    shaders.skybox.use();
-    shaders.skybox.bindCameraUniform(cameraZeroPosUbo);
+shaders.skybox.use();
+shaders.skybox.bindCameraUniform(cameraZeroPosUbo);
 
-    if (componentSkybox != componentSystemSkybox.end()) {
-        renderComponentSkybox(**componentSkybox);
-    }
+if (componentSkybox != componentSystemSkybox.end()) {
+    renderComponentSkybox(**componentSkybox);
+} else {
+    renderSkybox(glm::scale(Matrix4{1.0f}, Vector3{100.0f}), defaultSkyboxTexture);
+}
 
-    shaders.planetSurface.use();
-    shaders.planetSurface.bindCameraUniform(cameraUbo);
-    shaders.planetSurface.bindDirectionalLightsUniform(directionalLightsUbo);
+shaders.planetSurface.use();
+shaders.planetSurface.bindCameraUniform(cameraUbo);
+shaders.planetSurface.bindDirectionalLightsUniform(directionalLightsUbo);
 
-    for (auto& component : componentSystemPlanet) {
-        renderComponentPlanetSurface(*component);
-    }
+for (auto& component : componentSystemPlanet) {
+    renderComponentPlanetSurface(*component);
+}
 
-    // glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+// glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
-    shaders.planetAtmosphere.use();
-    shaders.planetAtmosphere.bindCameraUniform(cameraUbo);
-    shaders.planetAtmosphere.bindDirectionalLightsUniform(directionalLightsUbo);
+shaders.planetAtmosphere.use();
+shaders.planetAtmosphere.bindCameraUniform(cameraUbo);
+shaders.planetAtmosphere.bindDirectionalLightsUniform(directionalLightsUbo);
 
-    for (auto& component : componentSystemPlanet) {
-        renderComponentPlanetAtmosphere(*component);
-    }
+for (auto& component : componentSystemPlanet) {
+    renderComponentPlanetAtmosphere(*component);
+}
 }
 
 void Renderer::renderSceneForward(const Vector2i& viewport, Scene& scene) {
-    GLuint attachments[1] = {
-        GL_COLOR_ATTACHMENT0,
-    };
-    glDrawBuffers(1, attachments);
+GLuint attachments[1] = {
+    GL_COLOR_ATTACHMENT0,
+};
+glDrawBuffers(1, attachments);
 
-    blit(viewport, gBuffer.fbo, postProcessing.fbo[postProcessing.inputIdx], FramebufferAttachment::DepthStencil,
-         BufferBit::Depth);
+blit(viewport, gBuffer.fbo, postProcessing.fbo[postProcessing.inputIdx], FramebufferAttachment::DepthStencil,
+     BufferBit::Depth);
 
-    glDisable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+glDisable(GL_BLEND);
+glDisable(GL_DEPTH_TEST);
+glDepthMask(GL_FALSE);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-    auto& componentSystemLines = scene.getComponentSystem<ComponentLines>();
+auto& componentSystemLines = scene.getComponentSystem<ComponentLines>();
 
-    shaders.lines.use();
-    shaders.lines.bindCameraUniform(cameraUbo);
-    auto primary = getPrimaryCamera(scene);
+shaders.lines.use();
+shaders.lines.bindCameraUniform(cameraUbo);
+auto primary = getPrimaryCamera(scene);
 
-    for (auto& component : componentSystemLines) {
-        renderComponentLines(*component);
-    }
+for (auto& component : componentSystemLines) {
+    renderComponentLines(*component);
+}
 
-    auto& componentSystemPointCloud = scene.getComponentSystem<ComponentPointCloud>();
+auto& componentSystemPointCloud = scene.getComponentSystem<ComponentPointCloud>();
 
-    shaders.pointCloud.use();
-    shaders.pointCloud.bindCameraUniform(cameraUbo);
+shaders.pointCloud.use();
+shaders.pointCloud.bindCameraUniform(cameraUbo);
 
-    for (auto& component : componentSystemPointCloud) {
-        renderComponentPointCloud(*component);
-    }
+for (auto& component : componentSystemPointCloud) {
+    renderComponentPointCloud(*component);
+}
 
-    auto& componentSystemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
+auto& componentSystemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
 
-    shaders.particleEmitter.use();
-    shaders.particleEmitter.bindCameraUniform(cameraUbo);
-    shaders.particleEmitter.setTime(time);
+shaders.particleEmitter.use();
+shaders.particleEmitter.bindCameraUniform(cameraUbo);
+shaders.particleEmitter.setTime(time);
 
-    for (auto& component : componentSystemParticleEmitter) {
-        renderComponentParticleEmitter(*component);
-    }
+for (auto& component : componentSystemParticleEmitter) {
+    renderComponentParticleEmitter(*component);
+}
 
-    renderBullets();
+renderBullets();
 
-    glDepthMask(GL_TRUE);
+glDepthMask(GL_TRUE);
 }
 
 void Renderer::renderBullets() {
-    if (!bullets.mesh) {
-        return;
-    }
+if (!bullets.mesh) {
+    return;
+}
 
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    shaders.bullet.use();
-    shaders.bullet.bindCameraUniform(cameraUbo);
-    shaders.bullet.draw(bullets.mesh);
-    glDisable(GL_PROGRAM_POINT_SIZE);
+glEnable(GL_PROGRAM_POINT_SIZE);
+shaders.bullet.use();
+shaders.bullet.bindCameraUniform(cameraUbo);
+shaders.bullet.draw(bullets.mesh);
+glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 void Renderer::renderScenePbr(const Vector2i& viewport, Scene& scene) {
-    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
-    auto& componentSystemTurret = scene.getComponentSystem<ComponentTurret>();
-    auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
-    auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
+auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+auto& componentSystemTurret = scene.getComponentSystem<ComponentTurret>();
+auto& componentSystemPlanet = scene.getComponentSystem<ComponentPlanet>();
 
-    GLuint attachments[5] = {
-        GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4,
-    };
-    glDrawBuffers(5, attachments);
+GLuint attachments[5] = {
+    GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4,
+};
+glDrawBuffers(5, attachments);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_BLEND);
+glEnable(GL_DEPTH_TEST);
+glDepthFunc(GL_LEQUAL);
+glDisable(GL_BLEND);
 
-    glViewport(0, 0, viewport.x, viewport.y);
-    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
-    glClearBufferfv(GL_COLOR, 0, &black.x);
-    glClearBufferfv(GL_COLOR, 4, &black.x);
-    glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+glViewport(0, 0, viewport.x, viewport.y);
+static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+glClearBufferfv(GL_COLOR, 0, &black.x);
+glClearBufferfv(GL_COLOR, 4, &black.x);
+glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
-    shaders.model.use();
-    shaders.model.bindCameraUniform(cameraUbo);
+shaders.model.use();
+shaders.model.bindCameraUniform(cameraUbo);
 
-    for (auto& component : componentSystemModel) {
-        renderComponentModel(*component);
-    }
+for (auto& component : componentSystemModel) {
+    renderComponentModel(*component);
+}
 
-    for (auto& component : componentSystemTurret) {
-        renderComponentTurret(*component);
-    }
+for (auto& component : componentSystemTurret) {
+    renderComponentTurret(*component);
+}
 
-    shaders.grid.use();
-    shaders.grid.bindCameraUniform(cameraUbo);
+shaders.grid.use();
+shaders.grid.bindCameraUniform(cameraUbo);
 
-    for (auto& component : componentSystemGrid) {
-        renderComponentGrid(*component);
-    }
+for (auto& component : componentSystemGrid) {
+    renderComponentGrid(*component);
+}
 }
 
 void Renderer::updateLights(Scene& scene) {
-    auto& componentSystemDirectionalLights = scene.getComponentSystem<ComponentDirectionalLight>();
+auto& componentSystemDirectionalLights = scene.getComponentSystem<ComponentDirectionalLight>();
 
-    DirectionalLightsUniform directionalLightsUniform{};
+DirectionalLightsUniform directionalLightsUniform{};
 
-    for (const auto& component : componentSystemDirectionalLights) {
-        if (directionalLightsUniform.count >= maxDirectionalLights) {
-            break;
-        }
-
-        const auto dir = glm::normalize(component->getObject().getPosition());
-        const auto& color = component->getColor();
-
-        directionalLightsUniform.directions[directionalLightsUniform.count] = Vector4{dir, 0.0f};
-        directionalLightsUniform.colors[directionalLightsUniform.count] = color;
-        directionalLightsUniform.count++;
+for (const auto& component : componentSystemDirectionalLights) {
+    if (directionalLightsUniform.count >= maxDirectionalLights) {
+        break;
     }
 
-    if (!directionalLightsUbo) {
-        directionalLightsUbo = VertexBuffer(VertexBufferType::Uniform);
-        directionalLightsUbo.bufferData(&directionalLightsUniform, sizeof(directionalLightsUniform),
-                                        VertexBufferUsage::DynamicDraw);
-    } else {
-        directionalLightsUbo.bufferSubData(&directionalLightsUniform, sizeof(directionalLightsUniform), 0);
-    }
+    const auto dir = glm::normalize(component->getObject().getPosition());
+    const auto& color = component->getColor();
+
+    directionalLightsUniform.directions[directionalLightsUniform.count] = Vector4{dir, 0.0f};
+    directionalLightsUniform.colors[directionalLightsUniform.count] = color;
+    directionalLightsUniform.count++;
+}
+
+if (!directionalLightsUbo) {
+    directionalLightsUbo = VertexBuffer(VertexBufferType::Uniform);
+    directionalLightsUbo.bufferData(&directionalLightsUniform, sizeof(directionalLightsUniform),
+                                    VertexBufferUsage::DynamicDraw);
+} else {
+    directionalLightsUbo.bufferSubData(&directionalLightsUniform, sizeof(directionalLightsUniform), 0);
+}
 }
 
 void Renderer::updateBullets(Scene& scene) {
-    const auto& data = scene.getBulletsData();
+const auto& data = scene.getBulletsData();
 
-    if (data.empty()) {
-        return;
+if (data.empty()) {
+    return;
+}
+
+if (bullets.size != data.size()) {
+    if (!bullets.mesh) {
+        bullets.mesh = Mesh{};
+        bullets.vbo = VertexBuffer(VertexBufferType::Array);
+        bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
+
+        bullets.mesh.addVertexBuffer(bullets.vbo, ShaderBullet::Position{}, ShaderBullet::Direction{},
+                                     ShaderBullet::Color{}, ShaderBullet::Time{}, ShaderBullet::Speed{});
+        bullets.mesh.setPrimitive(PrimitiveType::Points);
+        bullets.mesh.setCount(data.size());
+    } else {
+        bullets.mesh.bind();
+        bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
     }
-
-    if (bullets.size != data.size()) {
-        if (!bullets.mesh) {
-            bullets.mesh = Mesh{};
-            bullets.vbo = VertexBuffer(VertexBufferType::Array);
-            bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
-
-            bullets.mesh.addVertexBuffer(bullets.vbo, ShaderBullet::Position{}, ShaderBullet::Direction{},
-                                         ShaderBullet::Color{}, ShaderBullet::Time{}, ShaderBullet::Speed{});
-            bullets.mesh.setPrimitive(PrimitiveType::Points);
-            bullets.mesh.setCount(data.size());
-        } else {
-            bullets.mesh.bind();
-            bullets.vbo.bufferData(data.data(), data.size() * sizeof(Scene::Bullet), VertexBufferUsage::DynamicDraw);
-        }
-        bullets.size = data.size();
-    } else if (bullets.mesh) {
-        bullets.vbo.bufferSubData(data.data(), data.size() * sizeof(Scene::Bullet), 0);
-    }
+    bullets.size = data.size();
+} else if (bullets.mesh) {
+    bullets.vbo.bufferSubData(data.data(), data.size() * sizeof(Scene::Bullet), 0);
+}
 }
 
 Camera* Renderer::getPrimaryCamera(Scene& scene) {
-    auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
-    auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
+auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
+auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
 
-    Camera* primary = nullptr;
+Camera* primary = nullptr;
 
-    for (auto& component : componentSystemCameraTurntable) {
-        if (component->getPrimary()) {
-            primary = component;
-        }
+for (auto& component : componentSystemCameraTurntable) {
+    if (component->getPrimary()) {
+        primary = component;
     }
+}
 
-    for (auto& component : componentSystemCameraTop) {
-        if (component->getPrimary()) {
-            primary = component;
-        }
+for (auto& component : componentSystemCameraTop) {
+    if (component->getPrimary()) {
+        primary = component;
     }
+}
 
-    return primary;
+return primary;
 }
 
 void Renderer::updateCameras(const Vector2i& viewport, Scene& scene) {
-    auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
-    auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
+auto& componentSystemCameraTurntable = scene.getComponentSystem<ComponentCameraTurntable>();
+auto& componentSystemCameraTop = scene.getComponentSystem<ComponentCameraTop>();
 
-    for (auto& component : componentSystemCameraTurntable) {
-        component->setViewport(viewport);
+for (auto& component : componentSystemCameraTurntable) {
+    component->setViewport(viewport);
+}
+
+for (auto& component : componentSystemCameraTop) {
+    component->setViewport(viewport);
+}
+
+auto primary = getPrimaryCamera(scene);
+
+const auto makeUniform = [&](const bool zero) {
+    auto viewMatrix = primary->getViewMatrix();
+    if (zero) {
+        viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
     }
+    const auto transformationProjectionMatrix = primary->getProjectionMatrix() * viewMatrix;
+    const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
+    const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
 
-    for (auto& component : componentSystemCameraTop) {
-        component->setViewport(viewport);
+    CameraUniform cameraUniform{};
+    cameraUniform.transformationProjectionMatrix = transformationProjectionMatrix;
+    cameraUniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
+    cameraUniform.viewMatrix = viewMatrix;
+    cameraUniform.projectionMatrix = primary->getProjectionMatrix();
+    cameraUniform.viewport = viewport;
+    cameraUniform.eyesPos = eyesPos;
+
+    return cameraUniform;
+};
+
+if (primary) {
+    cameraViewMatrix = primary->getViewMatrix();
+    CameraUniform cameraUniform = makeUniform(false);
+
+    if (!cameraUbo) {
+        cameraUbo = VertexBuffer(VertexBufferType::Uniform);
+        cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+    } else {
+        cameraUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
     }
+}
 
-    auto primary = getPrimaryCamera(scene);
+if (primary) {
+    CameraUniform cameraUniform = makeUniform(true);
 
-    const auto makeUniform = [&](const bool zero) {
-        auto viewMatrix = primary->getViewMatrix();
-        if (zero) {
-            viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
-        }
-        const auto transformationProjectionMatrix = primary->getProjectionMatrix() * viewMatrix;
-        const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
-        const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
-
-        CameraUniform cameraUniform{};
-        cameraUniform.transformationProjectionMatrix = transformationProjectionMatrix;
-        cameraUniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
-        cameraUniform.viewMatrix = viewMatrix;
-        cameraUniform.projectionMatrix = primary->getProjectionMatrix();
-        cameraUniform.viewport = viewport;
-        cameraUniform.eyesPos = eyesPos;
-
-        return cameraUniform;
-    };
-
-    if (primary) {
-        cameraViewMatrix = primary->getViewMatrix();
-        CameraUniform cameraUniform = makeUniform(false);
-
-        if (!cameraUbo) {
-            cameraUbo = VertexBuffer(VertexBufferType::Uniform);
-            cameraUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
-        } else {
-            cameraUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
-        }
+    if (!cameraZeroPosUbo) {
+        cameraZeroPosUbo = VertexBuffer(VertexBufferType::Uniform);
+        cameraZeroPosUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
+    } else {
+        cameraZeroPosUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
     }
-
-    if (primary) {
-        CameraUniform cameraUniform = makeUniform(true);
-
-        if (!cameraZeroPosUbo) {
-            cameraZeroPosUbo = VertexBuffer(VertexBufferType::Uniform);
-            cameraZeroPosUbo.bufferData(&cameraUniform, sizeof(CameraUniform), VertexBufferUsage::DynamicDraw);
-        } else {
-            cameraZeroPosUbo.bufferSubData(&cameraUniform, sizeof(CameraUniform), 0);
-        }
-    }
+}
 }
 
 void Renderer::renderComponentSkybox(ComponentSkybox& component) {
-    shaders.skybox.setModelMatrix(component.getObject().getTransform());
-    shaders.skybox.bindSkyboxTexture(skybox.textures.texture);
-    shaders.skybox.draw(skybox.mesh);
+renderSkybox(component.getObject().getTransform(), skybox.textures.texture);
+}
+
+void Renderer::renderSkybox(const Matrix4& modelMatrix, const TextureCubemap& cubemap) {
+shaders.skybox.setModelMatrix(modelMatrix);
+shaders.skybox.bindSkyboxTexture(cubemap);
+shaders.skybox.draw(skybox.mesh);
 }
 
 void Renderer::renderComponentPlanetSurface(ComponentPlanet& component) {
-    const auto& transform = component.getObject().getTransform();
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    shaders.planetSurface.setModelMatrix(transform);
-    shaders.planetSurface.setNormalMatrix(transformInverted);
-    shaders.planetSurface.bindSurfaceTexture(planet.surfaceTexture->getTexture());
-    shaders.planetSurface.draw(planet.mesh);
+const auto& transform = component.getObject().getTransform();
+const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+shaders.planetSurface.setModelMatrix(transform);
+shaders.planetSurface.setNormalMatrix(transformInverted);
+shaders.planetSurface.bindSurfaceTexture(planet.surfaceTexture->getTexture());
+shaders.planetSurface.draw(planet.mesh);
 }
 
 void Renderer::renderComponentPlanetAtmosphere(ComponentPlanet& component) {
-    const auto& transform = component.getObject().getTransform();
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    shaders.planetAtmosphere.setModelMatrix(transform);
-    shaders.planetAtmosphere.setNormalMatrix(transformInverted);
-    shaders.planetAtmosphere.draw(planet.mesh);
+const auto& transform = component.getObject().getTransform();
+const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+shaders.planetAtmosphere.setModelMatrix(transform);
+shaders.planetAtmosphere.setNormalMatrix(transformInverted);
+shaders.planetAtmosphere.draw(planet.mesh);
 }
 
 void Renderer::renderComponentParticleEmitter(ComponentParticleEmitter& component) {
-    component.rebuild();
+component.rebuild();
 
-    const auto transform = component.getObject().getAbsoluteTransform();
-    shaders.particleEmitter.setModelMatrix(transform);
-    shaders.particleEmitter.setModelViewMatrix(cameraViewMatrix * transform);
-    shaders.particleEmitter.bindParticleTexture(component.getTexture()->getTexture());
-    shaders.particleEmitter.bindParticleData(component.getUbo());
-    particleEmitter.vao.bind();
-    glDrawArrays(GL_POINTS, 0, component.getCount());
+const auto transform = component.getObject().getAbsoluteTransform();
+shaders.particleEmitter.setModelMatrix(transform);
+shaders.particleEmitter.setModelViewMatrix(cameraViewMatrix * transform);
+shaders.particleEmitter.bindParticleTexture(component.getTexture()->getTexture());
+shaders.particleEmitter.bindParticleData(component.getUbo());
+particleEmitter.vao.bind();
+glDrawArrays(GL_POINTS, 0, component.getCount());
 }
 
 void Renderer::renderComponentPointCloud(ComponentPointCloud& component) {
-    component.recalculate();
+component.recalculate();
 
-    const auto transform = component.getObject().getAbsoluteTransform();
-    shaders.pointCloud.setModelMatrix(transform);
-    shaders.pointCloud.bindTexture(component.getTexture()->getTexture());
-    shaders.pointCloud.draw(component.getMesh());
+const auto transform = component.getObject().getAbsoluteTransform();
+shaders.pointCloud.setModelMatrix(transform);
+shaders.pointCloud.bindTexture(component.getTexture()->getTexture());
+shaders.pointCloud.draw(component.getMesh());
 }
 
 void Renderer::renderComponentLines(ComponentLines& component) {
-    component.recalculate();
+component.recalculate();
 
-    const auto transform = component.getObject().getAbsoluteTransform();
-    shaders.lines.setModelMatrix(transform);
-    shaders.lines.draw(component.getMesh());
+const auto transform = component.getObject().getAbsoluteTransform();
+shaders.lines.setModelMatrix(transform);
+shaders.lines.draw(component.getMesh());
 }
 
 void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    shaders.model.setModelMatrix(transform);
-    shaders.model.setNormalMatrix(transformInverted);
+const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+shaders.model.setModelMatrix(transform);
+shaders.model.setNormalMatrix(transformInverted);
 
-    for (const auto& primitive : model->getPrimitives()) {
-        shaders.model.bindMaterialUniform(primitive.ubo);
+for (const auto& primitive : model->getPrimitives()) {
+    shaders.model.bindMaterialUniform(primitive.ubo);
 
-        if (primitive.material.baseColorTexture) {
-            shaders.model.bindBaseColorTexture(primitive.material.baseColorTexture->getTexture());
-        } else {
-            shaders.model.bindBaseColorTexture(defaultBaseColorTexture);
-        }
-
-        if (primitive.material.emissiveTexture) {
-            shaders.model.bindEmissiveTexture(primitive.material.emissiveTexture->getTexture());
-        } else {
-            shaders.model.bindEmissiveTexture(defaultEmissiveTexture);
-        }
-
-        if (primitive.material.normalTexture) {
-            shaders.model.bindNormalTexture(primitive.material.normalTexture->getTexture());
-        } else {
-            shaders.model.bindNormalTexture(defaultNormalTexture);
-        }
-
-        if (primitive.material.ambientOcclusionTexture) {
-            shaders.model.bindAmbientOcclusionTexture(primitive.material.ambientOcclusionTexture->getTexture());
-        } else {
-            shaders.model.bindAmbientOcclusionTexture(defaultAmbientOcclusionTexture);
-        }
-
-        if (primitive.material.metallicRoughnessTexture) {
-            shaders.model.bindMetallicRoughnessTexture(primitive.material.metallicRoughnessTexture->getTexture());
-        } else {
-            shaders.model.bindMetallicRoughnessTexture(defaultMetallicRoughnessTexture);
-        }
-
-        shaders.model.draw(primitive.mesh);
+    if (primitive.material.baseColorTexture) {
+        shaders.model.bindBaseColorTexture(primitive.material.baseColorTexture->getTexture());
+    } else {
+        shaders.model.bindBaseColorTexture(defaultBaseColorTexture);
     }
+
+    if (primitive.material.emissiveTexture) {
+        shaders.model.bindEmissiveTexture(primitive.material.emissiveTexture->getTexture());
+    } else {
+        shaders.model.bindEmissiveTexture(defaultEmissiveTexture);
+    }
+
+    if (primitive.material.normalTexture) {
+        shaders.model.bindNormalTexture(primitive.material.normalTexture->getTexture());
+    } else {
+        shaders.model.bindNormalTexture(defaultNormalTexture);
+    }
+
+    if (primitive.material.ambientOcclusionTexture) {
+        shaders.model.bindAmbientOcclusionTexture(primitive.material.ambientOcclusionTexture->getTexture());
+    } else {
+        shaders.model.bindAmbientOcclusionTexture(defaultAmbientOcclusionTexture);
+    }
+
+    if (primitive.material.metallicRoughnessTexture) {
+        shaders.model.bindMetallicRoughnessTexture(primitive.material.metallicRoughnessTexture->getTexture());
+    } else {
+        shaders.model.bindMetallicRoughnessTexture(defaultMetallicRoughnessTexture);
+    }
+
+    shaders.model.draw(primitive.mesh);
+}
 }
 
 void Renderer::renderComponentModel(ComponentModel& component) {
-    const auto transform = component.getObject().getAbsoluteTransform();
-    if (auto entity = component.getObject().asEntity()) {
-        shaders.model.setObjectId(entityIdToObjectIdColor(entity));
-    }
-    renderModel(component.getModel(), transform);
+const auto transform = component.getObject().getAbsoluteTransform();
+if (auto entity = component.getObject().asEntity()) {
+    shaders.model.setObjectId(entityIdToObjectIdColor(entity));
+}
+renderModel(component.getModel(), transform);
 }
 
 void Renderer::renderComponentTurret(ComponentTurret& component) {
-    const auto& turret = component.getTurret()->getComponents();
-    const auto absoluteTransform = component.getObject().getAbsoluteTransform();
-    const auto transformInverted = glm::inverse(absoluteTransform);
+const auto& turret = component.getTurret()->getComponents();
+const auto absoluteTransform = component.getObject().getAbsoluteTransform();
+const auto transformInverted = glm::inverse(absoluteTransform);
 
-    auto transform = glm::translate(absoluteTransform, turret.base.offset);
-    renderModel(turret.base.model, transform);
+auto transform = glm::translate(absoluteTransform, turret.base.offset);
+renderModel(turret.base.model, transform);
 
-    const auto& rotation = component.getRotation();
+const auto& rotation = component.getRotation();
 
-    transform = glm::translate(absoluteTransform, turret.arm.offset);
-    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
-    renderModel(turret.arm.model, transform);
+transform = glm::translate(absoluteTransform, turret.arm.offset);
+transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+renderModel(turret.arm.model, transform);
 
-    transform = glm::translate(absoluteTransform, turret.cannon.offset);
-    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
-    transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
+transform = glm::translate(absoluteTransform, turret.cannon.offset);
+transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
+transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
 
-    renderModel(turret.cannon.model, transform);
+renderModel(turret.cannon.model, transform);
 }
 
 void Renderer::renderComponentGrid(ComponentGrid& component) {
-    component.rebuild();
+component.rebuild();
 
-    const auto transform = component.getObject().getAbsoluteTransform();
-    shaders.grid.setModelMatrix(transform);
+const auto transform = component.getObject().getAbsoluteTransform();
+shaders.grid.setModelMatrix(transform);
 
-    if (auto entity = component.getObject().asEntity()) {
-        shaders.grid.setObjectId(entityIdToObjectIdColor(entity));
-    }
-
-    const auto& meshes = component.getMeshes();
-
-    for (const auto& [block, type] : meshes) {
-        for (const auto& primitive : type.primitives) {
-            shaders.grid.bindMaterialUniform(*primitive.ubo);
-
-            if (primitive.material->baseColorTexture) {
-                shaders.grid.bindBaseColorTexture(primitive.material->baseColorTexture->getTexture());
-            } else {
-                shaders.grid.bindBaseColorTexture(defaultBaseColorTexture);
-            }
-
-            if (primitive.material->emissiveTexture) {
-                shaders.grid.bindEmissiveTexture(primitive.material->emissiveTexture->getTexture());
-            } else {
-                shaders.grid.bindEmissiveTexture(defaultEmissiveTexture);
-            }
-
-            if (primitive.material->normalTexture) {
-                shaders.grid.bindNormalTexture(primitive.material->normalTexture->getTexture());
-            } else {
-                shaders.grid.bindNormalTexture(defaultNormalTexture);
-            }
-
-            if (primitive.material->ambientOcclusionTexture) {
-                shaders.grid.bindAmbientOcclusionTexture(primitive.material->ambientOcclusionTexture->getTexture());
-            } else {
-                shaders.grid.bindAmbientOcclusionTexture(defaultAmbientOcclusionTexture);
-            }
-
-            if (primitive.material->metallicRoughnessTexture) {
-                shaders.grid.bindMetallicRoughnessTexture(primitive.material->metallicRoughnessTexture->getTexture());
-            } else {
-                shaders.grid.bindMetallicRoughnessTexture(defaultMetallicRoughnessTexture);
-            }
-
-            shaders.grid.draw(primitive.mesh);
-        }
-    }
+if (auto entity = component.getObject().asEntity()) {
+    shaders.grid.setObjectId(entityIdToObjectIdColor(entity));
 }
 
-/*void Renderer::renderComponentCanvasImage(const Camera& camera, ComponentPointCloud& component) {
-    const auto& size = component.getSize();
-    const auto& image = component.getImage();
-    const auto& color = component.getColor();
+const auto& meshes = component.getMeshes();
 
-    canvas.beginPath();
-    const auto projected = camera.worldToScreen(component.getObject().getPosition()) + component.getOffset();
-    canvas.rectImage(projected - size / 2.0f, size, image->getImage(), color);
-    canvas.fill();
-    canvas.closePath();
-}*/
+for (const auto& [block, type] : meshes) {
+    for (const auto& primitive : type.primitives) {
+        shaders.grid.bindMaterialUniform(*primitive.ubo);
 
-/*void Renderer::renderComponentCanvasLines(const Camera& camera, ComponentLines& component) {
-    const auto width = component.getWidth();
-    const auto& color = component.getColor();
+        if (primitive.material->baseColorTexture) {
+            shaders.grid.bindBaseColorTexture(primitive.material->baseColorTexture->getTexture());
+        } else {
+            shaders.grid.bindBaseColorTexture(defaultBaseColorTexture);
+        }
 
-    canvas.beginPath();
-    canvas.strokeColor(color);
-    canvas.strokeWidth(width);
-    for (const auto& [from, to] : component.getLines()) {
-        canvas.moveTo(camera.worldToScreen(from));
-        canvas.lineTo(camera.worldToScreen(to));
+        if (primitive.material->emissiveTexture) {
+            shaders.grid.bindEmissiveTexture(primitive.material->emissiveTexture->getTexture());
+        } else {
+            shaders.grid.bindEmissiveTexture(defaultEmissiveTexture);
+        }
+
+        if (primitive.material->normalTexture) {
+            shaders.grid.bindNormalTexture(primitive.material->normalTexture->getTexture());
+        } else {
+            shaders.grid.bindNormalTexture(defaultNormalTexture);
+        }
+
+        if (primitive.material->ambientOcclusionTexture) {
+            shaders.grid.bindAmbientOcclusionTexture(primitive.material->ambientOcclusionTexture->getTexture());
+        } else {
+            shaders.grid.bindAmbientOcclusionTexture(defaultAmbientOcclusionTexture);
+        }
+
+        if (primitive.material->metallicRoughnessTexture) {
+            shaders.grid.bindMetallicRoughnessTexture(primitive.material->metallicRoughnessTexture->getTexture());
+        } else {
+            shaders.grid.bindMetallicRoughnessTexture(defaultMetallicRoughnessTexture);
+        }
+
+        shaders.grid.draw(primitive.mesh);
     }
-    canvas.stroke();
-    canvas.closePath();
-}*/
+}
+}
 
 void Renderer::renderComponentText(const Camera& camera, ComponentText& component) {
-    if (!component.getVisible()) {
-        return;
-    }
-
-    canvas.beginPath();
-    canvas.fillColor(component.getColor());
-    canvas.fontFace(component.getFontFace()->getHandle());
-    canvas.fontSize(component.getSize());
-    auto projected = camera.worldToScreen(component.getObject().getPosition()) + component.getOffset();
-    if (component.getCentered()) {
-        projected -= canvas.textBounds(component.getText()) / 2.0f;
-    }
-    canvas.text(projected, component.getText());
-    canvas.closePath();
+if (!component.getVisible()) {
+    return;
 }
+
+canvas.beginPath();
+canvas.fillColor(component.getColor());
+canvas.fontFace(component.getFontFace()->getHandle());
+canvas.fontSize(component.getSize());
+auto projected = camera.worldToScreen(component.getObject().getPosition()) + component.getOffset();
+if (component.getCentered()) {
+    projected -= canvas.textBounds(component.getText()) / 2.0f;
+}
+canvas.text(projected, component.getText());
+canvas.closePath();
+}*/

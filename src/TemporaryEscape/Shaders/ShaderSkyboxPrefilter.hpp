@@ -18,6 +18,11 @@ public:
     explicit ShaderSkyboxPrefilter(const Config& config);
     virtual ~ShaderSkyboxPrefilter() = default;
 
+    ShaderSkyboxPrefilter(const ShaderSkyboxPrefilter& other) = delete;
+    ShaderSkyboxPrefilter(ShaderSkyboxPrefilter&& other) = default;
+    ShaderSkyboxPrefilter& operator=(const ShaderSkyboxPrefilter& other) = delete;
+    ShaderSkyboxPrefilter& operator=(ShaderSkyboxPrefilter&& other) = default;
+
     void setProjectionMatrix(const Matrix4& matrix) const;
     void setViewMatrix(const Matrix4& matrix) const;
     void setRoughness(float value) const;

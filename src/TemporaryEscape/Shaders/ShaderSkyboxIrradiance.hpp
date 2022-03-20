@@ -18,6 +18,11 @@ public:
     explicit ShaderSkyboxIrradiance(const Config& config);
     virtual ~ShaderSkyboxIrradiance() = default;
 
+    ShaderSkyboxIrradiance(const ShaderSkyboxIrradiance& other) = delete;
+    ShaderSkyboxIrradiance(ShaderSkyboxIrradiance&& other) = default;
+    ShaderSkyboxIrradiance& operator=(const ShaderSkyboxIrradiance& other) = delete;
+    ShaderSkyboxIrradiance& operator=(ShaderSkyboxIrradiance&& other) = default;
+
     void setProjectionMatrix(const Matrix4& matrix) const;
     void setViewMatrix(const Matrix4& matrix) const;
     void bindSkyboxTexture(const TextureCubemap& texture) const;

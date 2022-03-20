@@ -19,6 +19,7 @@ struct CustomHelloMessage {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), msg);
         MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -30,6 +31,7 @@ struct CustomEventMessage {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), event);
         MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -43,6 +45,7 @@ struct CustomLongMessage {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), data);
         MESSAGE_APPEND_ARRAY(data);
+        MESSAGE_COPY_DEFAULT();
     };
 };
 

@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}
         RocksDB::rocksdb
         OpenSSL::SSL OpenSSL::Crypto
         OpenAL::OpenAL
+        yaml-cpp
         )
 
 if (WIN32)

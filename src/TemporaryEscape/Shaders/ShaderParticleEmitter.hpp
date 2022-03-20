@@ -22,6 +22,11 @@ public:
 
     explicit ShaderParticleEmitter(const Config& config);
 
+    ShaderParticleEmitter(const ShaderParticleEmitter& other) = delete;
+    ShaderParticleEmitter(ShaderParticleEmitter&& other) = default;
+    ShaderParticleEmitter& operator=(const ShaderParticleEmitter& other) = delete;
+    ShaderParticleEmitter& operator=(ShaderParticleEmitter&& other) = default;
+
     void setTime(float value) const;
     void setModelMatrix(const Matrix4& matrix) const;
     void setModelViewMatrix(const Matrix4& matrix) const;

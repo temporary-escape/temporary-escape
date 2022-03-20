@@ -9,9 +9,9 @@
 namespace Engine {
 class ENGINE_API TextureCubemap : public Texture {
 public:
-    static constexpr std::array<GLenum, 6> Sides = {
-        GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    static constexpr std::array<CubemapSide, 6> sides = {
+        CubemapSide::PositiveX, CubemapSide::NegativeX, CubemapSide::PositiveY,
+        CubemapSide::NegativeY, CubemapSide::PositiveZ, CubemapSide::NegativeZ,
     };
 
     explicit TextureCubemap(const NoCreate&);
@@ -23,5 +23,7 @@ public:
     TextureCubemap& operator=(TextureCubemap&& other) noexcept;
 
     void setStorage(int level, const Vector2i& size, PixelType pixelType);
+    void setPixels(int level, const Vector2i& offset, CubemapSide side, const Vector2i& size, PixelType pixelType,
+                   const void* pixels);
 };
 } // namespace Engine

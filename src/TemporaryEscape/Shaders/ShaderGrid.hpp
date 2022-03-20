@@ -32,6 +32,11 @@ public:
 
     explicit ShaderGrid(const Config& config);
 
+    ShaderGrid(const ShaderGrid& other) = delete;
+    ShaderGrid(ShaderGrid&& other) = default;
+    ShaderGrid& operator=(const ShaderGrid& other) = delete;
+    ShaderGrid& operator=(ShaderGrid&& other) = default;
+
     void setModelMatrix(const Matrix4& matrix) const;
     void setObjectId(const Vector2& color) const;
     void bindBaseColorTexture(const Texture& texture) const;

@@ -9,14 +9,14 @@
 namespace Engine {
 class ENGINE_API NameGenerator {
 public:
-    static const std::vector<std::string> DefaultWords;
+    static const std::vector<std::string> defaultWords;
 
-    explicit NameGenerator(const std::vector<std::string>& words = DefaultWords);
+    explicit NameGenerator(const std::vector<std::string>& words = defaultWords);
     virtual ~NameGenerator() = default;
 
     std::string operator()(std::mt19937_64& rng);
 
-    static NameGenerator Default;
+    static NameGenerator systemsNames;
 
 private:
     void build(const std::vector<std::string>& words);

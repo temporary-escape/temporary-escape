@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-Server::Server(const Config& config, AssetManager& assetManager, Database& db)
+Server::Server(const Config& config, AssetManager& assetManager, TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db), services(config, assetManager, db), tickFlag(true),
       worker(getWorker()), loader(1) {
 

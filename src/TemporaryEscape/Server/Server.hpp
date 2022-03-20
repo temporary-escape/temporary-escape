@@ -5,8 +5,8 @@
 #include "../Future.hpp"
 #include "../Library.hpp"
 #include "../Network/NetworkTcpServer.hpp"
+#include "../Utils/Database.hpp"
 #include "../Utils/Worker.hpp"
-#include "Database.hpp"
 #include "Messages.hpp"
 #include "Schemas.hpp"
 #include "Sector.hpp"
@@ -18,7 +18,7 @@
 namespace Engine {
 class ENGINE_API Server : public NetworkTcpServer<ServerSink> {
 public:
-    explicit Server(const Config& config, AssetManager& assetManager, Database& db);
+    explicit Server(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     virtual ~Server();
 
     void load();
@@ -80,7 +80,7 @@ private:
 
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
     Services services;
     Promise<void> loaded;
 

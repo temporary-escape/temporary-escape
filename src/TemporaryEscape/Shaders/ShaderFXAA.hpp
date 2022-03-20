@@ -20,6 +20,11 @@ public:
 
     explicit ShaderFXAA(const Config& config);
 
+    ShaderFXAA(const ShaderFXAA& other) = delete;
+    ShaderFXAA(ShaderFXAA&& other) = default;
+    ShaderFXAA& operator=(const ShaderFXAA& other) = delete;
+    ShaderFXAA& operator=(ShaderFXAA&& other) = default;
+
     void bindTexture(const Texture& texture) const;
     void setFrameDirection(int value) const;
     void setFrameCount(int value) const;

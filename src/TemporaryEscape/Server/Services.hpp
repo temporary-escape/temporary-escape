@@ -8,7 +8,7 @@
 
 namespace Engine {
 struct ENGINE_API Services {
-    explicit Services(const Config& config, AssetManager& assetManager, Database& db)
+    explicit Services(const Config& config, AssetManager& assetManager, TransactionalDatabase& db)
         : galaxies(config, assetManager, db), regions(config, assetManager, db), systems(config, assetManager, db),
           sectors(config, assetManager, db), players(config, assetManager, db) {
     }

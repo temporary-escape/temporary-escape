@@ -28,14 +28,6 @@ layout (std140) uniform Camera {
     vec3 eyesPos;
 } camera;
 
-#define SSAO_NUM_SAMPLES 8
-#define SSAO_NUM_NOISE 4
-
-layout (std140) uniform SSAO {
-    vec3 samples[SSAO_NUM_SAMPLES];
-    vec3 noise[SSAO_NUM_NOISE];
-} ssao;
-
 const float PI = 3.14159265359;
 
 // ----------------------------------------------------------------------------

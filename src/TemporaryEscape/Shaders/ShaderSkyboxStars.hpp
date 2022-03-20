@@ -15,6 +15,11 @@ public:
     explicit ShaderSkyboxStars(const Config& config);
     virtual ~ShaderSkyboxStars() = default;
 
+    ShaderSkyboxStars(const ShaderSkyboxStars& other) = delete;
+    ShaderSkyboxStars(ShaderSkyboxStars&& other) = default;
+    ShaderSkyboxStars& operator=(const ShaderSkyboxStars& other) = delete;
+    ShaderSkyboxStars& operator=(ShaderSkyboxStars&& other) = default;
+
     void setProjectionMatrix(const Matrix4& matrix) const {
         setUniform(projectionMatrixUniform, matrix);
     }

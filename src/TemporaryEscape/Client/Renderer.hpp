@@ -1,28 +1,98 @@
 #pragma once
 
+#include "../Assets/SkyboxRenderer.hpp"
 #include "../Graphics/Canvas2D.hpp"
 #include "../Graphics/Framebuffer.hpp"
 #include "../Scene/Camera.hpp"
 #include "../Scene/ComponentModel.hpp"
 #include "../Scene/Scene.hpp"
-#include "../Shaders/ShaderBrdf.hpp"
-#include "../Shaders/ShaderBullet.hpp"
-#include "../Shaders/ShaderFXAA.hpp"
-#include "../Shaders/ShaderGrid.hpp"
-#include "../Shaders/ShaderLines.hpp"
-#include "../Shaders/ShaderModel.hpp"
-#include "../Shaders/ShaderParticleEmitter.hpp"
-#include "../Shaders/ShaderPbr.hpp"
-#include "../Shaders/ShaderPlanetAtmosphere.hpp"
-#include "../Shaders/ShaderPlanetSurface.hpp"
-#include "../Shaders/ShaderPointCloud.hpp"
-#include "../Shaders/ShaderSkybox.hpp"
-#include "SkyboxRenderer.hpp"
+#include "GBuffer.hpp"
+#include "Shaders.hpp"
 
 namespace Engine {
 class ENGINE_API Renderer {
 public:
-    static constexpr inline size_t ssaoSamplesNum = 8;
+    struct DirectionalLight {
+        Vector4 color{};
+        Vector3 direction{};
+    };
+
+    explicit Renderer(const Config& config, const Shaders& shaders, SkyboxRenderer& skyboxRenderer);
+
+    void setGBuffer(GBuffer& gBuffer) {
+        state.gBuffer = &gBuffer;
+    }
+
+    void setViewport(const Vector2i& viewport) {
+        state.viewport = viewport;
+    }
+
+    void render(Scene& scene);
+
+private:
+    void setCamera(Camera& camera);
+    void setDirectionalLights(const std::vector<DirectionalLight>& lights);
+    void createBrdfTexture();
+    void renderSceneDeffered(Scene& scene);
+    void renderSceneBackground(Scene& scene);
+    void renderPbrBuffer();
+    void renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform);
+    void renderModel(const AssetModelPtr& model, const Matrix4& transform);
+    void renderComponentModel(ComponentModel& component);
+    void renderComponentTurret(ComponentTurret& component);
+
+    static constexpr inline size_t maxDirectionalLights = 4;
+
+    const Config& config;
+    const Shaders& shaders;
+    SkyboxRenderer& skyboxRenderer;
+
+    struct CameraUniform {
+        Matrix4 transformationProjectionMatrix;
+        Matrix4 viewProjectionInverseMatrix;
+        Matrix4 viewMatrix;
+        Matrix4 projectionMatrix;
+        Vector2i viewport;
+        char padding0[sizeof(int) * 2];
+        Vector3 eyesPos;
+        char padding1[sizeof(float) * 1];
+    };
+
+    struct DirectionalLightsUniform {
+        Vector4 colors[maxDirectionalLights];
+        Vector4 directions[maxDirectionalLights];
+        int count{0};
+    };
+
+    struct MeshesInternal {
+        Mesh fullScreenQuad{NO_CREATE};
+        Mesh skybox{NO_CREATE};
+        Mesh planet{NO_CREATE};
+    } meshes;
+
+    struct DefaultTexturesInternal {
+        Texture2D baseColorTexture{NO_CREATE};
+        Texture2D normalTexture{NO_CREATE};
+        Texture2D emissiveTexture{NO_CREATE};
+        Texture2D metallicRoughnessTexture{NO_CREATE};
+        Texture2D ambientOcclusionTexture{NO_CREATE};
+        TextureCubemap skyboxTexture{NO_CREATE};
+    } defaultTextures;
+
+    struct BrdfInternal {
+        Texture2D texture{NO_CREATE};
+    } brdf;
+
+    struct State {
+        GBuffer* gBuffer{nullptr};
+        Vector2i viewport{};
+        VertexBuffer cameraUbo{NO_CREATE};
+        VertexBuffer cameraZeroPosUbo{NO_CREATE};
+        VertexBuffer directionalLightsUbo{NO_CREATE};
+        Skybox* skybox{nullptr};
+    } state;
+
+    /*static constexpr inline size_t ssaoSamplesNum = 8;
     static constexpr inline size_t ssaoNoiseNum = 4;
     static constexpr inline size_t maxDirectionalLights = 4;
 
@@ -73,12 +143,12 @@ private:
     void renderSceneForward(const Vector2i& viewport, Scene& scene);
     void applyFxaa(const Vector2i& viewport);
     void renderComponentSkybox(ComponentSkybox& component);
+    void renderSkybox(const Matrix4& modelMatrix, const TextureCubemap& cubemap);
     void renderComponentPlanetSurface(ComponentPlanet& component);
     void renderComponentPlanetAtmosphere(ComponentPlanet& component);
     void renderComponentModel(ComponentModel& component);
     void renderModel(const AssetModelPtr& model, const Matrix4& transform);
     void renderComponentTurret(ComponentTurret& component);
-    void renderComponentGrid(ComponentGrid& component);
     void renderComponentParticleEmitter(ComponentParticleEmitter& component);
     void renderComponentPointCloud(ComponentPointCloud& component);
     void renderComponentLines(ComponentLines& component);
@@ -123,7 +193,7 @@ private:
     Texture2D defaultEmissiveTexture;
     Texture2D defaultMetallicRoughnessTexture;
     Texture2D defaultAmbientOcclusionTexture;
-    Texture2D defaultSkyboxTexture;
+    TextureCubemap defaultSkyboxTexture;
 
     struct GBuffer {
         Vector2i size;
@@ -172,6 +242,6 @@ private:
         Mesh mesh{NO_CREATE};
         VertexBuffer vbo{NO_CREATE};
         size_t size{0};
-    } bullets;
+    } bullets;*/
 };
 } // namespace Engine

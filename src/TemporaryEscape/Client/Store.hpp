@@ -41,6 +41,7 @@ public:
     };
 
     struct PlayerStore {
+        Item<std::string> id;
         Item<PlayerLocationData> location;
     } player;
 

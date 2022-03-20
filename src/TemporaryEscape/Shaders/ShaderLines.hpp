@@ -20,6 +20,11 @@ public:
 
     explicit ShaderLines(const Config& config);
 
+    ShaderLines(const ShaderLines& other) = delete;
+    ShaderLines(ShaderLines&& other) = default;
+    ShaderLines& operator=(const ShaderLines& other) = delete;
+    ShaderLines& operator=(ShaderLines&& other) = default;
+
     void setModelMatrix(const Matrix4& matrix) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;
 

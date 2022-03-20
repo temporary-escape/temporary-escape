@@ -6,7 +6,7 @@
 
 using namespace Engine;
 
-ServiceSectors::ServiceSectors(const Config& config, AssetManager& assetManager, Engine::Database& db)
+ServiceSectors::ServiceSectors(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db) {
 }
 
@@ -14,7 +14,7 @@ void ServiceSectors::tick() {
 }
 
 void ServiceSectors::generate() {
-    const auto galaxies = db.seek<GalaxyData>("");
+    const auto galaxies = db.seekAll<GalaxyData>("");
     for (const auto& galaxy : galaxies) {
         generate(galaxy.id);
     }
@@ -28,7 +28,7 @@ std::optional<SectorData> ServiceSectors::find(const std::string& galaxyId, cons
 void ServiceSectors::generate(const std::string& galaxyId) {
     Log::i(CMP, "Generating sectors for galaxy: '{}' ...", galaxyId);
 
-    const auto systems = db.seek<SystemData>("");
+    const auto systems = db.seekAll<SystemData>("");
     for (const auto& system : systems) {
         generate(galaxyId, system.id);
     }
@@ -51,7 +51,7 @@ void ServiceSectors::generate(const std::string& galaxyId, const std::string& sy
     const auto& system = systemOpt.value();
 
     const auto compoundPrefix = fmt::format("{}/{}/", galaxyId, systemId);
-    const auto test = db.seek<SectorData>(compoundPrefix, 1);
+    const auto test = db.seekAll<SectorData>(compoundPrefix, 1);
     if (!test.empty()) {
         // Already generated
         return;

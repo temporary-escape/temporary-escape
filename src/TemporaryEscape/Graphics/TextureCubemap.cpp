@@ -22,7 +22,15 @@ void TextureCubemap::setStorage(const int level, const Vector2i& size, const Pix
     const auto format = toTextureFormat(pixelType);
     const auto type = toTextureType(pixelType);
 
-    for (const auto& side : Sides) {
-        glTexImage2D(side, level, internalFormat, size.x, size.y, 0, format, type, nullptr);
+    for (const auto& side : sides) {
+        glTexImage2D(GLenum(side), level, internalFormat, size.x, size.y, 0, format, type, nullptr);
     }
+}
+
+void TextureCubemap::setPixels(const int level, const Vector2i& offset, const CubemapSide side, const Vector2i& size,
+                               const PixelType pixelType, const void* pixels) {
+    bind();
+    const auto format = toTextureFormat(pixelType);
+    const auto type = toTextureType(pixelType);
+    glTexSubImage2D(GLenum(side), level, offset.x, offset.y, size.x, size.y, format, type, pixels);
 }

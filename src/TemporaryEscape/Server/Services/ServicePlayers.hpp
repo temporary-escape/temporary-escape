@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API ServicePlayers : public Service {
 public:
-    explicit ServicePlayers(const Config& config, AssetManager& assetManager, Database& db);
+    explicit ServicePlayers(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     ~ServicePlayers() override = default;
 
     std::optional<std::string> secretToId(uint64_t);
@@ -18,6 +18,6 @@ public:
 private:
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
 };
 } // namespace Engine

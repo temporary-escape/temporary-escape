@@ -23,8 +23,8 @@ ShaderPbr::ShaderPbr(const Config& config) : Shader("ShaderPbr") {
     directionalLightsIndex = getUniformBlockIndex("DirectionalLights");
     uniformBlockBinding(directionalLightsIndex, Bindings::DirectionalLights);
 
-    ssaoUniformIndex = getUniformBlockIndex("SSAO");
-    uniformBlockBinding(ssaoUniformIndex, Bindings::SSAO);
+    /*ssaoUniformIndex = getUniformBlockIndex("SSAO");
+    uniformBlockBinding(ssaoUniformIndex, Bindings::SSAO);*/
 }
 
 void ShaderPbr::bindDepthTexture(const Texture& texture) const {
@@ -67,6 +67,6 @@ void ShaderPbr::bindDirectionalLightsUniform(const VertexBuffer& ubo) const {
     ubo.bindBufferBase(Bindings::DirectionalLights);
 }
 
-void ShaderPbr::bindSSAO(const VertexBuffer& ubo) const {
+/*void ShaderPbr::bindSSAO(const VertexBuffer& ubo) const {
     ubo.bindBufferBase(Bindings::SSAO);
-}
+}*/

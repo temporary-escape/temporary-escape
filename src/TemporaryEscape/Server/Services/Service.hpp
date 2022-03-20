@@ -2,7 +2,7 @@
 
 #include "../../Assets/AssetManager.hpp"
 #include "../../Config.hpp"
-#include "../Database.hpp"
+#include "../../Utils/Database.hpp"
 #include "../Schemas.hpp"
 
 namespace Engine {

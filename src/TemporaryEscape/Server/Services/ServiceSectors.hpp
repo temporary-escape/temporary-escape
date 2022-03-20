@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API ServiceSectors : public Service {
 public:
-    explicit ServiceSectors(const Config& config, AssetManager& assetManager, Database& db);
+    explicit ServiceSectors(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     ~ServiceSectors() override = default;
 
     void generate();
@@ -20,6 +20,6 @@ public:
 private:
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
 };
 } // namespace Engine

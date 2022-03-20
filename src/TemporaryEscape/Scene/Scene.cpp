@@ -1,4 +1,5 @@
 #include "Scene.hpp"
+#include "../Assets/SkyboxRenderer.hpp"
 
 #define CMP "Scene"
 
@@ -138,6 +139,32 @@ void Scene::update(const float delta) {
             bullet.speed = 0.0f;
         }
     }
+}
+
+std::shared_ptr<Camera> Scene::getPrimaryCamera() const {
+    if (auto ptr = primaryCamera.lock(); ptr != nullptr) {
+        const auto top = ptr->findComponent<ComponentCameraTop>();
+        if (top) {
+            return top;
+        }
+        const auto turntable = ptr->findComponent<ComponentCameraTurntable>();
+        if (turntable) {
+            return turntable;
+        }
+    }
+
+    return nullptr;
+}
+
+std::optional<std::reference_wrapper<Skybox>> Scene::getSkybox(SkyboxRenderer& renderer) {
+    auto& skyboxSystem = getComponentSystem<ComponentSkybox>();
+    if (skyboxSystem.begin() != skyboxSystem.end()) {
+        if (!skybox.texture) {
+            skybox = renderer.renderAndFilter(skyboxSystem.begin().operator*()->getSeed());
+        }
+        return skybox;
+    }
+    return std::nullopt;
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {

@@ -41,6 +41,9 @@ private:
     Path path;
 };
 
+extern Path asFile(const std::string& contents);
+extern Path tmpEmptyFile();
+
 class IoServiceRunner {
 public:
     explicit IoServiceRunner(asio::io_service& service) : service(service) {

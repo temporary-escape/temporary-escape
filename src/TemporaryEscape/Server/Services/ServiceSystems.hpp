@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API ServiceSystems : public Service {
 public:
-    explicit ServiceSystems(const Config& config, AssetManager& assetManager, Database& db);
+    explicit ServiceSystems(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     ~ServiceSystems() override = default;
 
     std::vector<SystemData> getForPlayer(const std::string& playerId, const std::string& galaxyId,
@@ -20,6 +20,6 @@ public:
 private:
     const Config& config;
     AssetManager& assetManager;
-    Database& db;
+    TransactionalDatabase& db;
 };
 } // namespace Engine

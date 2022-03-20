@@ -1,56 +1,56 @@
 #pragma once
 
 #include "../Assets/AssetPlanet.hpp"
+#include "../Utils/Database.hpp"
 #include "../Utils/Msgpack.hpp"
-#include "Database.hpp"
 
 namespace Engine {
-struct PlayerData {
+SCHEMA(PlayerData) {
     std::string id;
     uint64_t secret;
     std::string name;
     bool admin;
 
-    MSGPACK_DEFINE_MAP(id, secret, name, admin);
+    SCHEMA_DEFINE(id, secret, name, admin);
+    SCHEMA_INDEXES(secret);
+    SCHEMA_NAME("PlayerData");
 };
 
-SCHEMA_DEFINE_INDEXED(PlayerData, secret);
-
-struct PlayerLocationData {
+SCHEMA(PlayerLocationData) {
     std::string id;
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
 
-    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, sectorId);
+    SCHEMA_DEFINE(id, galaxyId, systemId, sectorId);
+    SCHEMA_INDEXES_NONE();
+    SCHEMA_NAME("PlayerLocationData");
 };
 
-SCHEMA_DEFINE(PlayerLocationData);
-
-struct GalaxyData {
+SCHEMA(GalaxyData) {
     std::string id;
     std::string name;
     Vector2 pos;
     uint64_t seed = 0;
 
-    MSGPACK_DEFINE_MAP(id, name, pos, seed);
+    SCHEMA_DEFINE(id, name, pos, seed);
+    SCHEMA_INDEXES(name);
+    SCHEMA_NAME("GalaxyData");
 };
 
-SCHEMA_DEFINE_INDEXED(GalaxyData, name);
-
-struct RegionData {
+SCHEMA(RegionData) {
     std::string id;
     std::string galaxyId;
     std::string name;
     Vector2 pos;
     uint64_t seed = 0;
 
-    MSGPACK_DEFINE_MAP(id, galaxyId, name, pos, seed);
+    SCHEMA_DEFINE(id, galaxyId, name, pos, seed);
+    SCHEMA_INDEXES(name);
+    SCHEMA_NAME("RegionData");
 };
 
-SCHEMA_DEFINE_INDEXED(RegionData, name);
-
-struct SystemData {
+SCHEMA(SystemData) {
     std::string id;
     std::string galaxyId;
     std::string regionId;
@@ -59,12 +59,12 @@ struct SystemData {
     uint64_t seed = 0;
     std::vector<std::string> connections;
 
-    MSGPACK_DEFINE_MAP(id, galaxyId, regionId, name, pos, seed, connections);
+    SCHEMA_DEFINE(id, galaxyId, regionId, name, pos, seed, connections);
+    SCHEMA_INDEXES(name);
+    SCHEMA_NAME("SystemData");
 };
 
-SCHEMA_DEFINE_INDEXED(SystemData, name);
-
-struct SectorData {
+SCHEMA(SectorData) {
     std::string id;
     std::string galaxyId;
     std::string systemId;
@@ -73,12 +73,12 @@ struct SectorData {
     uint64_t seed = 0;
     bool generated = false;
 
-    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, pos, seed, generated);
+    SCHEMA_DEFINE(id, galaxyId, systemId, name, pos, seed, generated);
+    SCHEMA_INDEXES(name);
+    SCHEMA_NAME("SectorData");
 };
 
-SCHEMA_DEFINE_INDEXED(SectorData, name);
-
-struct SectorPlanetData {
+SCHEMA(SectorPlanetData) {
     std::string id;
     std::string galaxyId;
     std::string systemId;
@@ -88,8 +88,8 @@ struct SectorPlanetData {
     Vector2 pos;
     AssetPlanetPtr asset;
 
-    MSGPACK_DEFINE_MAP(id, name, isMoon, planet, pos, asset);
+    SCHEMA_DEFINE(id, name, isMoon, planet, pos, asset);
+    SCHEMA_INDEXES_NONE();
+    SCHEMA_NAME("SectorPlanetData");
 };
-
-SCHEMA_DEFINE(SectorPlanetData);
 } // namespace Engine

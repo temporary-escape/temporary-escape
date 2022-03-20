@@ -100,7 +100,8 @@ private:
     }
 };*/
 
-SectorLoader::SectorLoader(const Config& config, AssetManager& assetManager, Database& db, Services& services)
+SectorLoader::SectorLoader(const Config& config, AssetManager& assetManager, TransactionalDatabase& db,
+                           Services& services)
     : config(config), assetManager(assetManager), db(db), services(services) {
 }
 
@@ -134,7 +135,7 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     auto blockTank = assetManager.find<AssetBlock>("block_tank_t1");
 
     auto dummy = std::make_shared<Entity>();
-    auto grid = dummy->addComponent<ComponentGrid>();
+    /*auto grid = dummy->addComponent<ComponentGrid>();
     grid->insert(blockEngineHousing, Vector3i{-1, 0, 0}, 0);
     grid->insert(blockEngineHousing, Vector3i{1, 0, 0}, 0);
     grid->insert(blockEngineNozzle, Vector3i{-1, 0, 1}, 0);
@@ -145,7 +146,7 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     grid->insert(blockSmallReactor, Vector3i{0, 0, -1}, 0);
     grid->insert(blockTank, Vector3i{-1, 0, -2}, 0);
     grid->insert(blockTank, Vector3i{1, 0, -2}, 0);
-    grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);
+    grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);*/
 
     auto turretAsset = assetManager.find<AssetTurret>("turret_01");
 

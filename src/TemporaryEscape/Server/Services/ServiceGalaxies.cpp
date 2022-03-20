@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-ServiceGalaxies::ServiceGalaxies(const Config& config, AssetManager& assetManager, Engine::Database& db)
+ServiceGalaxies::ServiceGalaxies(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db) {
 }
 
@@ -15,7 +15,7 @@ void ServiceGalaxies::tick() {
 void ServiceGalaxies::generate(const uint64_t seed) {
     Log::i(CMP, "Generating galaxies ...");
 
-    const auto test = db.seek<GalaxyData>("");
+    const auto test = db.seekAll<GalaxyData>("");
     if (!test.empty()) {
         Log::i(CMP, "Already generated galaxies");
         return;

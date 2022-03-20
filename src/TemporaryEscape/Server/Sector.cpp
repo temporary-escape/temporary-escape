@@ -8,8 +8,8 @@
 
 using namespace Engine;
 
-Sector::Sector(const Config& config, Services& services, AssetManager& assetManager, Database& db, std::string galaxyId,
-               std::string systemId, std::string sectorId)
+Sector::Sector(const Config& config, Services& services, AssetManager& assetManager, TransactionalDatabase& db,
+               std::string galaxyId, std::string systemId, std::string sectorId)
     : config(config), services(services), assetManager(assetManager), db(db), galaxyId(std::move(galaxyId)),
       systemId(std::move(systemId)), sectorId(std::move(sectorId)), loaded(false),
       vm(std::make_unique<wrenbind17::VM>(config.wrenPaths)) {
@@ -51,6 +51,17 @@ void Sector::load() {
         sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f} * 3.0f);
         sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
         scene.addEntity(sun);
+
+        auto asteroidModel = assetManager.find<AssetModel>("model_asteroid_01_a");
+
+        for (auto y = 0; y < 10; y++) {
+            for (auto x = 0; x < 10; x++) {
+                auto asteroid = std::make_shared<Entity>();
+                asteroid->addComponent<ComponentModel>(asteroidModel);
+                asteroid->translate(Vector3{x * 3.0f, 0.0f, y * 3.0f});
+                scene.addEntity(asteroid);
+            }
+        }
 
         /*auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
         auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
@@ -106,7 +117,7 @@ void Sector::load() {
 }
 
 void Sector::spawnPlayerShip(SessionPtr session) {
-    auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
+    /*auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
     auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
     auto blockFrame = assetManager.find<AssetBlock>("block_frame_t1");
     auto blockBattery = assetManager.find<AssetBlock>("block_battery_t1");
@@ -150,7 +161,7 @@ void Sector::spawnPlayerShip(SessionPtr session) {
 
     dummy->addComponent<ComponentPlayer>(session->getPlayerId());
 
-    scene.addEntity(dummy);
+    scene.addEntity(dummy);*/
 }
 
 void Sector::update(const float delta) {

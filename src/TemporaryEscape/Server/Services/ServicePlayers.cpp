@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-ServicePlayers::ServicePlayers(const Config& config, AssetManager& assetManager, Engine::Database& db)
+ServicePlayers::ServicePlayers(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db) {
 }
 
@@ -56,7 +56,7 @@ PlayerLocationData ServicePlayers::findStartingLocation(const std::string& playe
         if (!location.has_value()) {
             Log::i(CMP, "Choosing starting position for player: '{}'", playerId);
 
-            const auto choices = db.seek<SectorData>("", 1);
+            const auto choices = db.seekAll<SectorData>("", 1);
             if (choices.empty()) {
                 EXCEPTION("No choices for starting sector");
             }

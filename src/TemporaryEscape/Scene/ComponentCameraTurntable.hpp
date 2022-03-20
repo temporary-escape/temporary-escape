@@ -26,6 +26,10 @@ public:
         (void)delta;
     }
 
+    void setZoom(const float value) {
+        zoom = value;
+    }
+
     void update();
     void follow(const std::shared_ptr<Entity>& value);
     void eventMouseMoved(const Vector2i& pos) override;
@@ -35,17 +39,8 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers) override;
     void eventKeyReleased(Key key, Modifiers modifiers) override;
 
-    bool getPrimary() const {
-        return primary;
-    }
-
-    void setPrimary(const bool value) {
-        primary = value;
-    }
-
 private:
     Vector3 position{0.0f};
-    bool primary{true};
     Vector2 rotation{0.0f};
     bool rotate{false};
     Vector2 mousePosOld;

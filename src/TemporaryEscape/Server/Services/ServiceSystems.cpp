@@ -212,7 +212,7 @@ private:
     std::vector<Vector2> positions;
 };
 
-ServiceSystems::ServiceSystems(const Config& config, AssetManager& assetManager, Engine::Database& db)
+ServiceSystems::ServiceSystems(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
     : config(config), assetManager(assetManager), db(db) {
 }
 
@@ -226,11 +226,11 @@ std::vector<SystemData> ServiceSystems::getForPlayer(const std::string& playerId
 
 std::vector<SectorPlanetData> ServiceSystems::getSystemPlanets(const std::string& galaxyId,
                                                                const std::string& systemId) {
-    return db.seek<SectorPlanetData>(fmt::format("{}/{}/", galaxyId, systemId));
+    return db.seekAll<SectorPlanetData>(fmt::format("{}/{}/", galaxyId, systemId));
 }
 
 void ServiceSystems::generate() {
-    const auto galaxies = db.seek<GalaxyData>("");
+    const auto galaxies = db.seekAll<GalaxyData>("");
     for (const auto& galaxy : galaxies) {
         generate(galaxy.id);
     }
@@ -248,13 +248,13 @@ void ServiceSystems::generate(const std::string& galaxyId) {
 
     const auto& galaxy = galaxyOpt.value();
 
-    const auto test = db.seek<SystemData>(fmt::format("{}/", galaxy.id), 1);
+    const auto test = db.seekAll<SystemData>(fmt::format("{}/", galaxy.id), 1);
     if (!test.empty()) {
         Log::i(CMP, "Already generated systems for galaxy: '{}' ...", galaxyId);
         return;
     }
 
-    const auto regions = db.seek<RegionData>(fmt::format("{}/", galaxy.id));
+    const auto regions = db.seekAll<RegionData>(fmt::format("{}/", galaxy.id));
     if (regions.empty()) {
         EXCEPTION("Number of regions in galaxy '{}' must not be zero", galaxy.id);
     }

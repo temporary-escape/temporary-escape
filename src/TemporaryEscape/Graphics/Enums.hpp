@@ -90,6 +90,15 @@ enum class TextureFiltering : GLenum {
     NearestMipMapNearest = GL_NEAREST_MIPMAP_NEAREST,
 };
 
+enum class CubemapSide : GLenum {
+    PositiveX = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+    NegativeX = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+    PositiveY = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+    NegativeY = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    PositiveZ = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+    NegativeZ = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+};
+
 namespace Xml {
 template <> struct Adaptor<TextureWrapping> { static void convert(const Xml::Node& n, TextureWrapping& v); };
 template <> struct Adaptor<TextureFiltering> { static void convert(const Xml::Node& n, TextureFiltering& v); };

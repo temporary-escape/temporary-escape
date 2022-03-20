@@ -11,10 +11,10 @@ namespace Engine {
 class ENGINE_API ViewSpace : public View {
 public:
     explicit ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                       Client& client, Widgets& widgets);
+                       Client& client, Widgets& widgets, Store& store);
 
     void render(const Vector2i& viewport) override;
-    void renderGui(const Vector2i& viewport);
+    void renderGui(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -29,7 +29,7 @@ private:
     Renderer& renderer;
     Client& client;
     Widgets& widgets;
-    Vector2i mousePosCurrent;
+    Store& store;
 
     AssetFontFacePtr fontFaceRegular;
 

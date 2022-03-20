@@ -13,6 +13,11 @@ public:
     explicit ShaderSkyboxNebula(const Config& config);
     virtual ~ShaderSkyboxNebula() = default;
 
+    ShaderSkyboxNebula(const ShaderSkyboxNebula& other) = delete;
+    ShaderSkyboxNebula(ShaderSkyboxNebula&& other) = default;
+    ShaderSkyboxNebula& operator=(const ShaderSkyboxNebula& other) = delete;
+    ShaderSkyboxNebula& operator=(ShaderSkyboxNebula&& other) = default;
+
     void setProjectionMatrix(const Matrix4& matrix) const {
         setUniform(projectionMatrixUniform, matrix);
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ComponentGrid.hpp"
+#include "Component.hpp"
 
 namespace Engine {
 class ENGINE_API Entity;
@@ -38,7 +38,7 @@ public:
     std::tuple<float, float, float> getAngles() const;
 
 private:
-    void initParticles(const std::shared_ptr<Entity>& entity, const ComponentGrid& grid);
+    // void initParticles(const std::shared_ptr<Entity>& entity, const ComponentGrid& grid);
     [[nodiscard]] std::shared_ptr<Entity> getEntity() const;
 
     bool moving{true};
