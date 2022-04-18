@@ -4,6 +4,7 @@
 #include "ComponentCameraTop.hpp"
 #include "ComponentCameraTurntable.hpp"
 #include "ComponentDirectionalLight.hpp"
+#include "ComponentGrid.hpp"
 #include "ComponentLabel.hpp"
 #include "ComponentLines.hpp"
 #include "ComponentModel.hpp"
@@ -48,6 +49,8 @@ using EntityComponentHelper = Component::TraitsMapper<
     Component::Traits<ComponentSkybox,
                       Component::Flags::Syncable>,
     Component::Traits<ComponentModel,
+                      Component::Flags::Syncable>,
+    Component::Traits<ComponentGrid,
                       Component::Flags::Syncable>,
     Component::Traits<ComponentTurret,
                       Component::Flags::Syncable>,

@@ -17,27 +17,13 @@
 
 #define FOR_EACH_EXPAND(x) x
 #define FOR_EACH_1(what, x, ...) what(x)
-#define FOR_EACH_2(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_1(what, __VA_ARGS__))
-#define FOR_EACH_3(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_2(what, __VA_ARGS__))
-#define FOR_EACH_4(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_3(what, __VA_ARGS__))
-#define FOR_EACH_5(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_4(what, __VA_ARGS__))
-#define FOR_EACH_6(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_5(what, __VA_ARGS__))
-#define FOR_EACH_7(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_6(what, __VA_ARGS__))
-#define FOR_EACH_8(what, x, ...)                                                                                       \
-    what(x);                                                                                                           \
-    FOR_EACH_EXPAND(FOR_EACH_7(what, __VA_ARGS__))
+#define FOR_EACH_2(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_1(what, __VA_ARGS__))
+#define FOR_EACH_3(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_2(what, __VA_ARGS__))
+#define FOR_EACH_4(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_3(what, __VA_ARGS__))
+#define FOR_EACH_5(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_4(what, __VA_ARGS__))
+#define FOR_EACH_6(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_5(what, __VA_ARGS__))
+#define FOR_EACH_7(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_6(what, __VA_ARGS__))
+#define FOR_EACH_8(what, x, ...) what(x) FOR_EACH_EXPAND(FOR_EACH_7(what, __VA_ARGS__))
 
 #define FOR_EACH_NARG(...) FOR_EACH_NARG_(__VA_ARGS__, FOR_EACH_RSEQ_N())
 #define FOR_EACH_NARG_(...) FOR_EACH_EXPAND(FOR_EACH_ARG_N(__VA_ARGS__))
@@ -46,3 +32,22 @@
 #define FOR_EACH_CONCATENATE(x, y) x##y
 #define FOR_EACH_(N, what, ...) FOR_EACH_EXPAND(FOR_EACH_CONCATENATE(FOR_EACH_, N)(what, __VA_ARGS__))
 #define FOR_EACH(what, ...) FOR_EACH_(FOR_EACH_NARG(__VA_ARGS__), what, __VA_ARGS__)
+
+#define FOR_EACH_PASS_1(what, p, x, ...) what(p, x)
+#define FOR_EACH_PASS_2(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_1(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_3(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_2(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_4(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_3(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_5(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_4(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_6(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_5(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_7(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_6(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS_8(what, p, x, ...) what(p, x) FOR_EACH_EXPAND(FOR_EACH_PASS_7(what, p, __VA_ARGS__))
+
+#define FOR_EACH_PASS_(N, what, p, ...) FOR_EACH_EXPAND(FOR_EACH_CONCATENATE(FOR_EACH_PASS_, N)(what, p, __VA_ARGS__))
+#define FOR_EACH_PASS(what, p, ...) FOR_EACH_PASS_(FOR_EACH_NARG(__VA_ARGS__), what, p, __VA_ARGS__)
+
+#define ENUM_TO_STRING_ENTRY(p, e) {p::e, #e},
+#define ENUM_TO_STRING(E, ...)                                                                                         \
+    inline const std::string& toString(const E value) {                                                                \
+        static const std::unordered_map<E, std::string> map = {FOR_EACH_PASS(ENUM_TO_STRING_ENTRY, E, __VA_ARGS__)};   \
+        return map.at(value);                                                                                          \
+    }

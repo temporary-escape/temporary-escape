@@ -6,12 +6,16 @@ namespace Engine {
 class ENGINE_API AssetPlanet : public Asset {
 public:
     struct Definition {
+        std::string description;
+
         struct Surface {
             AssetTexturePtr texture;
             float offset{0.0f};
+
+            YAML_DEFINE(texture, offset);
         } surface;
 
-        std::string description;
+        YAML_DEFINE(description, surface);
     };
 
     static std::shared_ptr<AssetPlanet> from(const std::string& name);
@@ -21,7 +25,7 @@ public:
 
     void load(AssetManager& assetManager) override;
 
-    const Texture2D& getTexture() const {
+    const Texture& getTexture() const {
         return definition.surface.texture->getTexture();
     }
 
@@ -39,15 +43,6 @@ private:
 };
 
 using AssetPlanetPtr = std::shared_ptr<AssetPlanet>;
-
-namespace Xml {
-template <> struct Adaptor<AssetPlanet::Definition::Surface> {
-    static void convert(const Xml::Node& n, AssetPlanet::Definition::Surface& v);
-};
-template <> struct Adaptor<AssetPlanet::Definition> {
-    static void convert(const Xml::Node& n, AssetPlanet::Definition& v);
-};
-} // namespace Xml
 } // namespace Engine
 
 namespace msgpack {

@@ -30,3 +30,30 @@ private:
 
 using AssetPtr = std::shared_ptr<Asset>;
 } // namespace Engine
+
+#define MSGPACK_DEFINE_ASSET(Type)                                                                                     \
+    namespace msgpack {                                                                                                \
+    MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {                                                            \
+        namespace adaptor {                                                                                            \
+        template <> struct convert<std::shared_ptr<Engine::Type>> {                                                    \
+            msgpack::object const& operator()(msgpack::object const& o, std::shared_ptr<Engine::Type>& v) const {      \
+                if (o.type != msgpack::type::STR)                                                                      \
+                    throw msgpack::type_error();                                                                       \
+                std::string name;                                                                                      \
+                o.convert(name);                                                                                       \
+                v = Engine::Type::from(name);                                                                          \
+                return o;                                                                                              \
+            }                                                                                                          \
+        };                                                                                                             \
+        template <> struct pack<std::shared_ptr<Engine::Type>> {                                                       \
+            template <typename Stream>                                                                                 \
+            msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o,                                            \
+                                                std::shared_ptr<Engine::Type> const& v) const {                        \
+                o.pack_str(static_cast<uint32_t>(v->getName().size()));                                                \
+                o.pack_str_body(v->getName().c_str(), static_cast<uint32_t>(v->getName().size()));                     \
+                return o;                                                                                              \
+            }                                                                                                          \
+        };                                                                                                             \
+        }                                                                                                              \
+    }                                                                                                                  \
+    }

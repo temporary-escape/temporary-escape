@@ -8,7 +8,15 @@ AssetImage::AssetImage(const Manifest& mod, std::string name, const Path& path)
     : Asset(mod, std::move(name)), path(path) {
 }
 
+AssetImage::AssetImage(const Manifest& mod, std::string name, Canvas2D::Image image)
+    : Asset(mod, std::move(name)), image(image) {
+}
+
 void AssetImage::load(AssetManager& assetManager) {
+    if (path.empty()) {
+        return;
+    }
+
     try {
         PngImporter png(path);
 
@@ -24,8 +32,4 @@ void AssetImage::load(AssetManager& assetManager) {
 
 std::shared_ptr<AssetImage> AssetImage::from(const std::string& name) {
     return AssetManager::singleton().find<AssetImage>(name);
-}
-
-void Xml::Adaptor<AssetImagePtr>::convert(const Xml::Node& n, AssetImagePtr& v) {
-    v = AssetImage::from(n.asString());
 }

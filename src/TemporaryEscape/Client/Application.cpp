@@ -19,7 +19,6 @@ Application::Application(Config& config)
     shaders = std::make_shared<Shaders>(config);
     gbuffer = std::make_shared<GBuffer>();
     skyboxRenderer = std::make_shared<SkyboxRenderer>(config);
-    renderer = std::make_shared<Renderer>(config, *shaders, *skyboxRenderer);
     stats = std::make_shared<Stats>();
     store = std::make_shared<Store>();
 }
@@ -30,41 +29,17 @@ Application::~Application() {
 void Application::update() {
     if (!stagesFuture.valid() && !assetManager) {
         loadingProgress.store(0.1f);
-        loadQueueFuture = loadQueuePromise.future();
+        // loadQueueFuture = loadQueuePromise.future();
         assetManager = std::make_shared<AssetManager>(config, canvas, *textureCompressor);
+        gridBuilder = std::make_shared<Grid::Builder>(*assetManager);
+        renderer = std::make_shared<Renderer>(config, *shaders, *skyboxRenderer, *gridBuilder);
+        imager = std::make_shared<Imager>(config, *assetManager, *renderer);
         stagesFuture = std::async(std::bind(&Application::load, this));
     }
 
-    try {
-        if (stagesFuture.valid()) {
-            if (loadQueueFuture.valid() && loadQueueFuture.ready()) {
-                assetLoadQueue = loadQueueFuture.get();
-            }
-
-            auto wasNotEmpty = !assetLoadQueue.empty();
-
-            const auto start = std::chrono::steady_clock::now();
-            while (!assetLoadQueue.empty()) {
-                assetLoadQueue.front()();
-                assetLoadQueue.pop();
-
-                const auto now = std::chrono::steady_clock::now();
-                const auto test = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-                if (test > (1.0f / 60.0f) * 1000.0f) {
-                    break;
-                }
-
-                loadingProgress.store((assetLoadQueue.size() / assetLoadQueueInitialSize.load()) * 0.7f + 0.1f);
-            }
-
-            if (wasNotEmpty && assetLoadQueue.empty()) {
-                assetLoadQueueFinished.resolve(true);
-            }
-        }
-    } catch (...) {
-        assetLoadQueueFinished.resolve(false);
-        EXCEPTION_NESTED("Failed to load assets");
-    }
+    worker.restart();
+    worker.run();
+    // worker.run_for(std::chrono::milliseconds(10));
 
     try {
         if (stagesFuture.valid() && stagesFuture.ready()) {
@@ -108,6 +83,7 @@ void Application::render(const Vector2i& viewport) {
         widgets = std::make_shared<Widgets>(*gui);
         viewSpace = std::make_shared<ViewSpace>(config, canvas, *assetManager, *renderer, *client, *widgets, *store);
         viewMap = std::make_shared<ViewMap>(config, canvas, *assetManager, *renderer, *client, *widgets, *store);
+        viewBuild = std::make_shared<ViewBuild>(config, canvas, *assetManager, *renderer, *widgets);
         view = viewSpace.get();
     } else if (config.voxelTest && !viewVoxelTest) {
         gui = std::make_shared<GuiContext>(canvas, config, *assetManager);
@@ -128,11 +104,16 @@ void Application::render(const Vector2i& viewport) {
 void Application::renderView(const Vector2i& viewport) {
     const auto t0 = std::chrono::steady_clock::now();
 
+    renderer->setEnableBackground(true);
+
     try {
         view->render(viewport);
     } catch (...) {
         EXCEPTION_NESTED("Failed to render the scene");
     }
+
+    gBuffer.blit(viewport, Framebuffer::DefaultFramebuffer);
+    Framebuffer::DefaultFramebuffer.bind();
 
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -169,18 +150,60 @@ void Application::load() {
     Log::i(CMP, "Loading mods");
     modManager->load(*assetManager, config.assetsPath / "base");
     auto queue = assetManager->getLoadQueue();
-    assetLoadQueueInitialSize.store(queue.size());
-    loadQueuePromise.resolve(std::move(queue));
 
-    Log::i(CMP, "Waiting for assets to load");
-    try {
-        auto future = assetLoadQueueFinished.future();
-        if (!future.get()) {
-            return;
+    std::atomic<bool> error(false);
+    std::shared_ptr<Promise<void>> promise;
+
+    auto const wait = [&]() {
+        promise = std::make_shared<Promise<void>>();
+        worker.post([promise]() { promise->resolve(); });
+        promise->future().get();
+
+        if (error.load()) {
+            loading.store(false);
+            EXCEPTION("Failed to load assets, see the log for errors");
         }
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to wait for assets to load");
+    };
+
+    Log::i(CMP, "Waiting for assets to load...");
+    while (!queue.empty()) {
+        AssetLoadQueue::value_type item;
+        std::swap(item, queue.front());
+        queue.pop();
+
+        worker.post([promise, &error, item = std::move(item)]() {
+            try {
+                item();
+            } catch (std::exception& e) {
+                BACKTRACE(CMP, e, "Failed to load asset");
+                error.store(true);
+            }
+        });
     }
+    wait();
+
+    Log::i(CMP, "Waiting for grid cache to build...");
+    worker.post([promise, &error, this]() {
+        try {
+            gridBuilder->precompute();
+        } catch (std::exception& e) {
+            BACKTRACE(CMP, e, "Failed to build grid cache");
+            error.store(true);
+        }
+    });
+    wait();
+
+    Log::i(CMP, "Waiting for thumbnails to render...");
+    for (const auto& block : assetManager->findAll<AssetBlock>()) {
+        worker.post([promise, block, this]() {
+            try {
+                imager->createThumbnail(block);
+            } catch (std::exception& e) {
+                BACKTRACE(CMP, e, "Failed to render thumbnail");
+            }
+        });
+    }
+    wait();
 
     if (config.voxelTest) {
         loadingProgress.store(1.0f);
@@ -279,6 +302,15 @@ void Application::eventKeyPressed(Key key, Modifiers modifiers) {
         if (view != viewMap.get()) {
             viewMap->load();
             view = viewMap.get();
+        } else {
+            view = viewSpace.get();
+        }
+    }
+
+    if (key == Key::LetterB && viewBuild && viewSpace) {
+        if (view != viewBuild.get()) {
+            viewBuild->load();
+            view = viewBuild.get();
         } else {
             view = viewSpace.get();
         }

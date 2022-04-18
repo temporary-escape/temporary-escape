@@ -22,14 +22,8 @@ void ComponentCameraTurntable::follow(const std::shared_ptr<Entity>& value) {
 
 void ComponentCameraTurntable::eventMouseMoved(const Vector2i& pos) {
     if (rotate) {
-        rotation += (mousePosOld - Vector2(pos)) * 0.2f;
-        while (rotation.x > 360.0f) {
-            rotation.x -= 360.0f;
-        }
-        while (rotation.x < 0.0f) {
-            rotation.x += 360.0f;
-        }
-        rotation.y = glm::clamp(rotation.y, -89.0f, 89.0f);
+        auto newRotation = rotation + (mousePosOld - Vector2(pos)) * 0.2f;
+        setRotation(newRotation);
         mousePosOld = pos;
     }
 }

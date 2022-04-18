@@ -4,10 +4,12 @@
 
 namespace Engine {
 template <typename T> class Span {
-    const T* ptr;
-    std::size_t len;
+    const T* ptr = nullptr;
+    std::size_t len = 0;
 
 public:
+    Span() = default;
+
     Span(const T* ptr, std::size_t len) noexcept : ptr{ptr}, len{len} {
     }
 
@@ -29,5 +31,9 @@ public:
     const T* end() noexcept {
         return ptr + len;
     }
+
+    bool empty() const {
+        return len == 0;
+    }
 };
-}
+} // namespace Engine

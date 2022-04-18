@@ -29,10 +29,10 @@ void main() {
 static const float FULL_SCREEN_QUAD[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 
 TextureCompressor::TextureCompressor(const NoCreate&)
-    : shader(NO_CREATE), fbo(NO_CREATE), fboColor(NO_CREATE), fboDepth(NO_CREATE), vao(NO_CREATE), vbo(NO_CREATE) {
+    : shader(NO_CREATE), fbo(NO_CREATE), fboColor(NO_CREATE), vao(NO_CREATE), vbo(NO_CREATE) {
 }
 
-TextureCompressor::TextureCompressor() : textureSize{0, 0}, shader("TextureCompressor"), vbo{VertexBufferType::Array} {
+TextureCompressor::TextureCompressor() : shader("TextureCompressor"), vbo{VertexBufferType::Array} {
 
     shader.addFragmentShader(SHADER_FRAG);
     shader.addVertexShader(SHADER_VERT);
@@ -55,20 +55,23 @@ Texture2D TextureCompressor::convert(Texture2D& source, const Vector2i& targetSi
 
     const auto levels = static_cast<int>(std::log2(targetSize.x)) - 1;
 
+    // Framebuffer fbo;
+    //  Renderbuffer fboDepth;
+    // Texture2D fboColor;
+
+    fbo.bind();
+
     Texture2D destination{};
     destination.bind();
-    destination.texParameteri(GL_TEXTURE_BASE_LEVEL, 0);
-    destination.texParameteri(GL_TEXTURE_MAX_LEVEL, levels - 1);
+    destination.setMipMapLevel(0, levels - 1);
 
-    if (textureSize != targetSize) {
-        textureSize = targetSize;
-
-        fboDepth.setStorage(targetSize, PixelType::Depth24Stencil8);
-        fbo.attach(fboDepth, FramebufferAttachment::DepthStencil);
-    }
+    // fboDepth.setStorage(targetSize, PixelType::Depth24Stencil8);
+    // fbo.attach(fboDepth, FramebufferAttachment::DepthStencil);
 
     vao.bind();
     shader.use();
+
+    fboColor.setMipMapLevel(0, levels - 1);
 
     for (auto level = 0; level < levels; level++) {
         const auto w = targetSize.x >> level;
@@ -81,10 +84,6 @@ Texture2D TextureCompressor::convert(Texture2D& source, const Vector2i& targetSi
         shader.drawArrays(PrimitiveType::Triangles, 2 * 3);
     }
 
-    fboColor.bind();
-    fboColor.texParameteri(GL_TEXTURE_BASE_LEVEL, 0);
-    fboColor.texParameteri(GL_TEXTURE_MAX_LEVEL, levels - 1);
-
     // GLint totalBytes = 0;
     const auto internalFormat = toTextureInternalFormat(target);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -93,17 +92,22 @@ Texture2D TextureCompressor::convert(Texture2D& source, const Vector2i& targetSi
     for (auto level = 0; level < levels; level++) {
         const auto w = targetSize.x >> level;
 
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboColor, level);
-        fbo.attach(fboColor, FramebufferAttachment::Color0, level);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboColor.getHandle(), level);
+        // fbo.attach(fboColor, FramebufferAttachment::Color0, level);
 
-        destination.bind();
+        destination.bind(0);
+        destination.setStorage(level, {w, w}, target);
         glCopyTexImage2D(GL_TEXTURE_2D, level, internalFormat, 0, 0, w, w, 0);
 
-        /*GLint compressedSize = 0;
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &compressedSize);
-        std::cout << "Mipmap: " << level << " size: " << w << "x" << w << " bytes: " << compressedSize << std::endl;
-        totalBytes += compressedSize;*/
+        // GLint compressedSize = 0;
+        // glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &compressedSize);
+
+        // std::cout << "Mipmap: " << level << " size: " << w << "x" << w << " bytes: " << compressedSize << std::endl;
+        //  totalBytes += compressedSize;
     }
+
+    // glBindTexture(GL_TEXTURE_2D, 0);
+    // Framebuffer::DefaultFramebuffer.bind();
 
     return destination;
 }

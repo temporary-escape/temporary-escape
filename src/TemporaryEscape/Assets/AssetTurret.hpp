@@ -12,13 +12,19 @@ public:
         struct Component {
             AssetModelPtr model;
             Vector3 offset;
+
+            YAML_DEFINE(model, offset);
         };
 
         struct Components {
             Component base;
             Component arm;
             Component cannon;
+
+            YAML_DEFINE(base, arm, cannon);
         } components;
+
+        YAML_DEFINE(title, components);
     };
 
     static std::shared_ptr<AssetTurret> from(const std::string& name);
@@ -42,20 +48,6 @@ private:
 };
 
 using AssetTurretPtr = std::shared_ptr<AssetTurret>;
-
-namespace Xml {
-template <> struct Adaptor<AssetTurret::Definition> {
-    static void convert(const Xml::Node& n, AssetTurret::Definition& v);
-};
-
-template <> struct Adaptor<AssetTurret::Definition::Component> {
-    static void convert(const Xml::Node& n, AssetTurret::Definition::Component& v);
-};
-
-template <> struct Adaptor<AssetTurret::Definition::Components> {
-    static void convert(const Xml::Node& n, AssetTurret::Definition::Components& v);
-};
-} // namespace Xml
 } // namespace Engine
 
 namespace msgpack {

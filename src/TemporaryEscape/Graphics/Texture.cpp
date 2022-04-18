@@ -67,3 +67,9 @@ void Texture::setWrapping(TextureWrapping s, TextureWrapping t) {
     texParameteri(GL_TEXTURE_WRAP_S, GLenum(s));
     texParameteri(GL_TEXTURE_WRAP_T, GLenum(t));
 }
+
+void Texture::setMipMapLevel(GLint min, GLint max) {
+    bind();
+    texParameteri(GL_TEXTURE_BASE_LEVEL, min);
+    texParameteri(GL_TEXTURE_MAX_LEVEL, max);
+}

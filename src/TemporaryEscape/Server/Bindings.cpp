@@ -98,7 +98,6 @@ void Engine::expose(const Config& config, wrenbind17::VM& vm) {
     {
         auto& cls = m.klass<AssetBlock>("AssetBlock");
         cls.propReadonly<&Asset::getName>("name");
-        cls.propReadonly<&AssetBlock::getModel>("model");
         cls.propReadonly<&AssetBlock::getTitle>("title");
     }
 

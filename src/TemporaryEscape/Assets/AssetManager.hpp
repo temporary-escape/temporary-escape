@@ -11,6 +11,7 @@
 #include "AssetParticles.hpp"
 #include "AssetPlanet.hpp"
 #include "AssetSector.hpp"
+#include "AssetShape.hpp"
 #include "AssetTurret.hpp"
 #include "TextureAtlas.hpp"
 #include "TextureCompressor.hpp"
@@ -60,8 +61,10 @@ public:
 
     AssetFontFacePtr addFontFace(const Manifest& mod, const Path& path);
     AssetModelPtr addModel(const Manifest& mod, const Path& path);
+    AssetShapePtr addShape(const Manifest& mod, const Path& path);
     AssetTexturePtr addTexture(const Manifest& mod, const Path& path, TextureType type);
     AssetImagePtr addImage(const Manifest& mod, const Path& path);
+    AssetImagePtr addImage(const Manifest& mod, const std::string& name, Canvas2D::Image image);
     AssetPlanetPtr addPlanet(const Manifest& mod, const Path& path);
     AssetBlockPtr addBlock(const Manifest& mod, const Path& path);
     AssetEntityPtr addEntity(const Manifest& mod, const Path& path);

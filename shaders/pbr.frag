@@ -12,6 +12,7 @@ uniform sampler2D normalTexture;
 uniform samplerCube irradianceTexture;
 uniform samplerCube prefilterTexture;
 uniform sampler2D brdfTexture;
+uniform sampler2D ssaoTexture;
 
 layout (std140) uniform DirectionalLights {
     vec4 colors[4];
@@ -119,8 +120,9 @@ void main() {
     vec3 N = texture(normalTexture, vsOut.texCoords).rgb;
     float metallic = metallicRoughnessAmbient.r;
     float roughness = metallicRoughnessAmbient.g;
-    vec3 emissive = texture(emissiveTexture, vsOut.texCoords).rgb;
+    vec3 emissive = texture(emissiveTexture, vsOut.texCoords).rgb * 1.0;
     float ao = metallicRoughnessAmbient.b;
+    float ssao = texture(ssaoTexture, vsOut.texCoords).r;
 
     // Get world pos from UV and camera projection matrix
     vec3 worldpos = getWorldPos(depth, vsOut.texCoords);
@@ -197,10 +199,13 @@ void main() {
 
     vec3 ambient = (kD * diffuse + specular) * ao;
 
-    vec3 color = ambient + Lo + emissive;
+    vec3 color = (ambient + Lo) * pow(ssao, 1.5) + emissive;
 
     // HDR tonemapping
-    color = color / (color + vec3(1.0));
+    //color = color / (color + vec3(1.0));
+
+    // exposure tone mapping
+    color = vec3(1.0) - exp(-color * 1.25);
 
     // gamma correct
     color = pow(color, vec3(1.0/2.2));

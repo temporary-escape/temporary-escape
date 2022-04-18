@@ -77,6 +77,17 @@ AssetModelPtr AssetManager::addModel(const Manifest& mod, const Path& path) {
     }
 }
 
+AssetShapePtr AssetManager::addShape(const Manifest& mod, const Path& path) {
+    try {
+        const auto baseName = path.stem().string();
+        auto shape = std::make_shared<AssetShape>(mod, baseName, path);
+        add(shape);
+        return shape;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add shape: '{}'", path.string());
+    }
+}
+
 AssetTexturePtr AssetManager::addTexture(const Manifest& mod, const Path& path, const TextureType type) {
     try {
         const auto baseName = path.stem().string();
@@ -96,6 +107,16 @@ AssetImagePtr AssetManager::addImage(const Manifest& mod, const Path& path) {
         return image;
     } catch (...) {
         EXCEPTION_NESTED("Failed to add image: '{}'", path.string());
+    }
+}
+
+AssetImagePtr AssetManager::addImage(const Manifest& mod, const std::string& name, Canvas2D::Image image) {
+    try {
+        auto asset = std::make_shared<AssetImage>(mod, name, image);
+        add(asset);
+        return asset;
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to add image: '{}'", name);
     }
 }
 

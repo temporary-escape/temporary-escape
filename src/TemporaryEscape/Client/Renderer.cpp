@@ -1,6 +1,5 @@
 #include "Renderer.hpp"
 #include "../Assets/AssetManager.hpp"
-#include "../Graphics/MeshPrimitives.hpp"
 #include "../Utils/Random.hpp"
 
 #define CMP "Renderer"
@@ -23,12 +22,13 @@ static Color4 entityIdToObjectIdColor(const EntityPtr& entity) {
     return color;
 }
 
-Renderer::Renderer(const Engine::Config& config, const Engine::Shaders& shaders, SkyboxRenderer& skyboxRenderer)
-    : config(config), shaders(shaders), skyboxRenderer(skyboxRenderer) {
+static float lerp(float a, float b, float f) {
+    return a + f * (b - a);
+}
 
-    meshes.fullScreenQuad = createFullScreenQuad();
-    meshes.skybox = createSkyboxMesh();
-    meshes.planet = createPlanetMesh();
+Renderer::Renderer(const Engine::Config& config, const Engine::Shaders& shaders, SkyboxRenderer& skyboxRenderer,
+                   Grid::Builder& gridBuilder)
+    : config(config), shaders(shaders), skyboxRenderer(skyboxRenderer), gridBuilder(gridBuilder) {
 
     const auto setColor = [](Texture2D& texture, const Color4& color) {
         std::unique_ptr<uint8_t[]> pixels(new uint8_t[8 * 8 * 4]);
@@ -68,9 +68,23 @@ Renderer::Renderer(const Engine::Config& config, const Engine::Shaders& shaders,
     setColorCubemap(defaultTextures.skyboxTexture, Color4{0.5f, 0.5f, 0.5f, 1.0f});
 
     createBrdfTexture();
+
+    particleEmitter.vao = VertexArray();
+
+    ssao.noise = generateSSAONoise();
+    ssao.samples = generateSSAOSamples();
+
+    startTime = std::chrono::steady_clock::now();
 }
 
 void Renderer::render(Scene& scene) {
+    const auto now = std::chrono::steady_clock::now();
+    time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count()) / 1000.0f;
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     if (!state.gBuffer) {
         EXCEPTION(CMP, "No GBuffer set");
     }
@@ -103,16 +117,60 @@ void Renderer::render(Scene& scene) {
         state.skybox = nullptr;
     }
 
-    Framebuffer::DefaultFramebuffer.bind();
-
     state.gBuffer->fbo.bind();
     renderSceneDeffered(scene);
 
-    Framebuffer::DefaultFramebuffer.bind();
-    renderSceneBackground(scene);
-    renderPbrBuffer();
+    glDisable(GL_CULL_FACE);
 
-    // blit(viewport, gBuffer.fbo, Framebuffer::DefaultFramebuffer, FramebufferAttachment::Color3);
+    state.gBuffer->fboAo.bind();
+    renderSSAO();
+
+    state.gBuffer->fboFront.bind();
+    if (state.renderBackground) {
+        renderSceneBackground(scene);
+    }
+    renderPbrBuffer();
+    renderSceneForward(scene);
+    // renderDebugNormals(scene);
+
+    state.gBuffer->fboFxaa.bind();
+    renderFXAA();
+
+    state.gBuffer->fboBloomExtract.bind();
+    renderBloomExtract();
+
+    state.gBuffer->fboBloomBlurVertical.bind();
+    renderBloomBlurVertical();
+
+    state.gBuffer->fboBloomBlurHorizontal.bind();
+    renderBloomBlurHorizontal();
+
+    state.gBuffer->fboBloomCombine.bind();
+    renderBloomCombine();
+
+    /*{
+        const auto& [texture, fbo] = state.gBuffer->getForPostProcessing();
+        Sources sources{
+            texture,
+            state.gBuffer->fboNormal,
+            state.gBuffer->fboDepth,
+            state.gBuffer->fboMetallicRoughnessAmbient,
+            state.gBuffer->fboEmissive,
+        };
+        fxaa.render(state.viewport, sources, fbo, state.cameraUbo);
+    }*/
+
+    /*{
+        const auto& [texture, fbo] = state.gBuffer->getForPostProcessing();
+        Sources sources{
+            texture,
+            state.gBuffer->fboNormal,
+            state.gBuffer->fboDepth,
+            state.gBuffer->fboMetallicRoughnessAmbient,
+            state.gBuffer->fboEmissive,
+        };
+        ssao.render(state.viewport, sources, fbo, state.cameraUbo);
+    }*/
 
     /*postProcessing.fbo[postProcessing.inputIdx].bind();
     renderSceneBackground(viewport, scene);
@@ -128,8 +186,37 @@ void Renderer::render(Scene& scene) {
     renderCanvas(viewport, scene);*/
 }
 
+void Renderer::renderDebugNormals(Scene& scene) {
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+    auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
+
+    shaders.debugNormals.use();
+    shaders.debugNormals.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemModel) {
+        renderDebugNormalsModel(*component);
+    }
+
+    for (auto& component : componentSystemGrid) {
+        renderDebugNormalsGrid(*component);
+    }
+
+    glDepthMask(GL_TRUE);
+}
+
 void Renderer::renderSceneDeffered(Scene& scene) {
     auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
+    auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
     auto& componentSystemTurret = scene.getComponentSystem<ComponentTurret>();
 
     GLuint attachments[5] = {
@@ -144,6 +231,7 @@ void Renderer::renderSceneDeffered(Scene& scene) {
     glViewport(0, 0, state.viewport.x, state.viewport.y);
     static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
     glClearBufferfv(GL_COLOR, 0, &black.x);
+    glClearBufferfv(GL_COLOR, 3, &black.x);
     glClearBufferfv(GL_COLOR, 4, &black.x);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
@@ -157,11 +245,19 @@ void Renderer::renderSceneDeffered(Scene& scene) {
     for (auto& component : componentSystemTurret) {
         renderComponentTurret(*component);
     }
+
+    shaders.grid.use();
+    shaders.grid.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemGrid) {
+        renderComponentGrid(*component);
+    }
 }
 
 void Renderer::renderPbrBuffer() {
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 
@@ -184,9 +280,143 @@ void Renderer::renderPbrBuffer() {
         shaders.pbr.bindSkyboxIrradianceTexture(defaultTextures.skyboxTexture);
         shaders.pbr.bindSkyboxIrradianceTexture(defaultTextures.skyboxTexture);
     }
+    shaders.pbr.bindSSAOTexture(state.gBuffer->fboAoResult);
     shaders.pbr.bindCameraUniform(state.cameraUbo);
     shaders.pbr.bindDirectionalLightsUniform(state.directionalLightsUbo);
     shaders.pbr.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderSSAO() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.ssao.use();
+    shaders.ssao.bindDepthTexture(state.gBuffer->fboDepth);
+    shaders.ssao.bindNormalTexture(state.gBuffer->fboNormal);
+    shaders.ssao.bindCameraUniform(state.cameraUbo);
+    shaders.ssao.setSamples(ssao.samples);
+    shaders.ssao.bindNoiseTexture(ssao.noise);
+    shaders.ssao.setNoiseScale(Vector2{state.viewport} / Vector2{4.0f});
+    shaders.ssao.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderFXAA() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.fxaa.use();
+    shaders.fxaa.setInputSize(state.viewport);
+    shaders.fxaa.setOutputSize(state.viewport);
+    shaders.fxaa.setTextureSize(state.viewport);
+    shaders.fxaa.setFrameCount(0);
+    shaders.fxaa.setFrameDirection(0);
+    shaders.fxaa.setMvpMatrix(Matrix4{1.0f});
+    shaders.fxaa.bindTexture(state.gBuffer->fboFrontColor);
+    shaders.fxaa.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderBloomExtract() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.bloomExtract.use();
+    shaders.bloomExtract.setBrightness(1.0);
+    shaders.bloomExtract.bindTexture(state.gBuffer->fboFrontColor);
+    shaders.bloomExtract.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderBloomBlurVertical() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.bloomBlur.use();
+    shaders.bloomBlur.setHorizontal(false);
+    shaders.bloomBlur.setSize(8);
+    shaders.bloomBlur.bindTexture(state.gBuffer->fboBloomColor);
+    shaders.bloomBlur.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderBloomBlurHorizontal() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.bloomBlur.use();
+    shaders.bloomBlur.setHorizontal(true);
+    shaders.bloomBlur.setSize(8);
+    shaders.bloomBlur.bindTexture(state.gBuffer->fboBloomBlurResult);
+    shaders.bloomBlur.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderBloomCombine() {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    shaders.bloomCombine.use();
+    shaders.bloomCombine.bindColorTexture(state.gBuffer->fboFrontColor);
+    shaders.bloomCombine.bindBloomTexture(state.gBuffer->fboBloomColor);
+    shaders.bloomCombine.draw(meshes.fullScreenQuad);
+
+    glDepthMask(GL_TRUE);
 }
 
 void Renderer::renderSceneBackground(Scene& scene) {
@@ -197,6 +427,7 @@ void Renderer::renderSceneBackground(Scene& scene) {
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 
@@ -205,12 +436,64 @@ void Renderer::renderSceneBackground(Scene& scene) {
 
     auto transform = glm::scale(Matrix4{1.0f}, Vector3{100.0f});
     renderSkybox(state.skybox ? state.skybox->texture : defaultTextures.skyboxTexture, transform);
+
+    glDepthMask(GL_TRUE);
+}
+
+void Renderer::renderSceneForward(Scene& scene) {
+    GLuint attachments[1] = {
+        GL_COLOR_ATTACHMENT0,
+    };
+    glDrawBuffers(1, attachments);
+
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    auto& componentSystemParticleEmitter = scene.getComponentSystem<ComponentParticleEmitter>();
+
+    shaders.particleEmitter.use();
+    shaders.particleEmitter.bindCameraUniform(state.cameraUbo);
+    shaders.particleEmitter.setTime(time);
+
+    for (auto& component : componentSystemParticleEmitter) {
+        renderComponentParticleEmitter(*component);
+    }
+
+    glDepthMask(GL_TRUE);
 }
 
 void Renderer::renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform) {
     shaders.skybox.setModelMatrix(transform);
     shaders.skybox.bindSkyboxTexture(cubemap);
     shaders.skybox.draw(meshes.skybox);
+}
+
+void Renderer::renderDebugNormalsModel(ComponentModel& component) {
+    const auto transform = component.getObject().getAbsoluteTransform();
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.debugNormals.setModelMatrix(transform);
+    shaders.debugNormals.setNormalMatrix(transformInverted);
+
+    for (const auto& primitive : component.getModel()->getPrimitives()) {
+        auto& mesh = primitive.mesh;
+        mesh.bind();
+        glDrawElements(GL_POINTS, mesh.getCount(), GLenum(mesh.getIndexType()), nullptr);
+    }
+}
+
+void Renderer::renderDebugNormalsGrid(ComponentGrid& component) {
+    const auto transform = component.getObject().getAbsoluteTransform();
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.debugNormals.setModelMatrix(transform);
+    shaders.debugNormals.setNormalMatrix(transformInverted);
+
+    for (const auto& primitive : component.getPrimitives()) {
+        auto& mesh = primitive.mesh;
+        mesh.bind();
+        glDrawElements(GL_POINTS, mesh.getCount(), GLenum(mesh.getIndexType()), nullptr);
+    }
 }
 
 void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
@@ -263,6 +546,55 @@ void Renderer::renderComponentModel(ComponentModel& component) {
     renderModel(component.getModel(), transform);
 }
 
+void Renderer::renderComponentGrid(ComponentGrid& component) {
+    component.recalculate(gridBuilder);
+    const auto transform = component.getObject().getAbsoluteTransform();
+
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    shaders.grid.setModelMatrix(transform);
+    shaders.grid.setNormalMatrix(transformInverted);
+
+    if (auto entity = component.getObject().asEntity()) {
+        shaders.grid.setObjectId(entityIdToObjectIdColor(entity));
+    }
+
+    for (const auto& primitive : component.getPrimitives()) {
+        shaders.grid.bindMaterialUniform(primitive.ubo);
+
+        if (primitive.material.baseColorTexture) {
+            shaders.model.bindBaseColorTexture(primitive.material.baseColorTexture->getTexture());
+        } else {
+            shaders.model.bindBaseColorTexture(defaultTextures.baseColorTexture);
+        }
+
+        if (primitive.material.emissiveTexture) {
+            shaders.model.bindEmissiveTexture(primitive.material.emissiveTexture->getTexture());
+        } else {
+            shaders.model.bindEmissiveTexture(defaultTextures.emissiveTexture);
+        }
+
+        if (primitive.material.normalTexture) {
+            shaders.model.bindNormalTexture(primitive.material.normalTexture->getTexture());
+        } else {
+            shaders.model.bindNormalTexture(defaultTextures.normalTexture);
+        }
+
+        if (primitive.material.ambientOcclusionTexture) {
+            shaders.model.bindAmbientOcclusionTexture(primitive.material.ambientOcclusionTexture->getTexture());
+        } else {
+            shaders.model.bindAmbientOcclusionTexture(defaultTextures.ambientOcclusionTexture);
+        }
+
+        if (primitive.material.metallicRoughnessTexture) {
+            shaders.model.bindMetallicRoughnessTexture(primitive.material.metallicRoughnessTexture->getTexture());
+        } else {
+            shaders.model.bindMetallicRoughnessTexture(defaultTextures.metallicRoughnessTexture);
+        }
+
+        shaders.grid.draw(primitive.mesh);
+    }
+}
+
 void Renderer::renderComponentTurret(ComponentTurret& component) {
     const auto& turret = component.getTurret()->getComponents();
     const auto absoluteTransform = component.getObject().getAbsoluteTransform();
@@ -282,6 +614,18 @@ void Renderer::renderComponentTurret(ComponentTurret& component) {
     transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
 
     renderModel(turret.cannon.model, transform);
+}
+
+void Renderer::renderComponentParticleEmitter(ComponentParticleEmitter& component) {
+    component.rebuild();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.particleEmitter.setModelMatrix(transform);
+    shaders.particleEmitter.setModelViewMatrix(state.cameraViewMatrix * transform);
+    shaders.particleEmitter.bindParticleTexture(component.getTexture()->getTexture());
+    shaders.particleEmitter.bindParticleData(component.getUbo());
+    particleEmitter.vao.bind();
+    glDrawArrays(GL_POINTS, 0, component.getCount());
 }
 
 void Renderer::setCamera(Camera& camera) {
@@ -304,6 +648,8 @@ void Renderer::setCamera(Camera& camera) {
 
         return cameraUniform;
     };
+
+    state.cameraViewMatrix = camera.getViewMatrix();
 
     {
         CameraUniform cameraUniform = makeUniform(false);
@@ -374,6 +720,45 @@ void Renderer::createBrdfTexture() {
     shaders.brdf.draw(meshes.fullScreenQuad);
 
     Framebuffer::DefaultFramebuffer.bind();
+}
+
+std::vector<Vector3> Renderer::generateSSAOSamples() {
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (unsigned int i = 0; i < 64; ++i) {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0,
+                         randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        // scale samples s.t. they're more aligned to center of kernel
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+    return ssaoKernel;
+}
+
+Texture2D Renderer::generateSSAONoise() {
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::default_random_engine generator;
+
+    std::vector<glm::vec3> ssaoNoise;
+    for (unsigned int i = 0; i < 16; i++) {
+        glm::vec3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0,
+                        0.0f); // rotate around z-axis (in tangent space)
+        ssaoNoise.push_back(noise);
+    }
+
+    Texture2D texture;
+    texture.setStorage(0, Vector2i{4, 4}, PixelType::Rgb32f);
+    texture.setPixels(0, Vector2i{0, 0}, Vector2i{4, 4}, PixelType::Rgb32f, ssaoNoise.data());
+    texture.setWrapping(TextureWrapping::Repeat, TextureWrapping::Repeat);
+    texture.setFiltering(TextureFiltering::Nearest, TextureFiltering::Nearest);
+    texture.setMipMapLevel(0, 0);
+    return texture;
 }
 
 /*static const auto pi = 3.14159265358979323846f;

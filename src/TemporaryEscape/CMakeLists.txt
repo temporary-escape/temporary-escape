@@ -17,7 +17,6 @@ target_link_libraries(${PROJECT_NAME}
         WrenBind17
         PRIVATE
         glfw
-        Xml2
         NanoVG
         Png
         asio

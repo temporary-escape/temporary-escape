@@ -130,6 +130,7 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
     auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
     auto blockFrame = assetManager.find<AssetBlock>("block_frame_t1");
+    auto modelFrame = assetManager.find<AssetModel>("model_frame");
     auto blockBattery = assetManager.find<AssetBlock>("block_battery_t1");
     auto blockSmallReactor = assetManager.find<AssetBlock>("block_reactor_small_t1");
     auto blockTank = assetManager.find<AssetBlock>("block_tank_t1");
@@ -172,7 +173,7 @@ void SectorLoader::populate(const std::string& galaxyId, const std::string& syst
     scene.addEntity(dummy);
 
     dummy = std::make_shared<Entity>();
-    dummy->addComponent<ComponentModel>(blockFrame->getModel());
+    dummy->addComponent<ComponentModel>(modelFrame);
     dummy->translate(turretCmp->getTarget());
     scene.addEntity(dummy);
 

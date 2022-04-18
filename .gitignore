@@ -33,3 +33,8 @@ install/
 
 # Logs
 *.log
+
+# Krita
+*.kra~
+*-autosave.kra
+*.png~

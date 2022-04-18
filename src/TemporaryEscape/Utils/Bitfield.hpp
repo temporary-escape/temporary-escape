@@ -10,7 +10,7 @@ public:
 
     inline Bitfield& operator=(const T other) {
         auto& value = self();
-        value = (value & ~mask) | ((other & bits) << offset);
+        value = (value & ~mask) | ((static_cast<uint64_t>(other) & bits) << offset);
         return *this;
     }
 

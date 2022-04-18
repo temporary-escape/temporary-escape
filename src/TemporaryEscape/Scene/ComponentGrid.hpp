@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Assets/Primitive.hpp"
 #include "Component.hpp"
 #include "Grid.hpp"
 
@@ -26,7 +27,15 @@ public:
         (void)delta;
     }
 
+    void recalculate(Grid::Builder& gridBuilder);
     void update();
+
+    const std::vector<Primitive>& getPrimitives() const {
+        return primitives;
+    }
+
+private:
+    std::vector<Primitive> primitives;
 
 public:
     MSGPACK_DEFINE_ARRAY();

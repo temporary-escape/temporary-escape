@@ -156,13 +156,12 @@ std::shared_ptr<Camera> Scene::getPrimaryCamera() const {
     return nullptr;
 }
 
-std::optional<std::reference_wrapper<Skybox>> Scene::getSkybox(SkyboxRenderer& renderer) {
+std::optional<std::reference_wrapper<const Skybox>> Scene::getSkybox(SkyboxRenderer& renderer) {
     auto& skyboxSystem = getComponentSystem<ComponentSkybox>();
     if (skyboxSystem.begin() != skyboxSystem.end()) {
-        if (!skybox.texture) {
-            skybox = renderer.renderAndFilter(skyboxSystem.begin().operator*()->getSeed());
-        }
-        return skybox;
+        auto& component = **skyboxSystem.begin();
+        component.recalculate(renderer);
+        return component.getSkybox();
     }
     return std::nullopt;
 }

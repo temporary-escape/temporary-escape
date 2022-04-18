@@ -9,13 +9,13 @@ using namespace Engine;
 Client::Client(const Config& config, Stats& stats, Store& store, const std::string& address, const int port)
     : stats(stats), store(store), sync(getWorker()) {
 
-    const auto profilePath = config.userdataPath / Path("profile.xml");
+    const auto profilePath = config.userdataPath / Path("profile.yml");
     if (Fs::exists(profilePath)) {
-        Xml::loadAsXml(profilePath, localProfile);
+        localProfile.fromYaml(profilePath);
     } else {
         localProfile.secret = randomId();
         localProfile.name = "Some Player";
-        Xml::saveAsXml(profilePath, "profile", localProfile);
+        localProfile.toYaml(profilePath);
     }
 
     connect(address, port);

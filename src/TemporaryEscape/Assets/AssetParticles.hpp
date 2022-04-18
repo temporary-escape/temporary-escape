@@ -16,6 +16,8 @@ public:
         float duration{1.0f};
         float startSize{1.0f};
         float endSize{1.0f};
+
+        YAML_DEFINE(texture, startColor, endColor, force, startRadius, endRadius, count, duration, startSize, endSize);
     };
 
     static std::shared_ptr<AssetParticles> from(const std::string& name);
@@ -72,12 +74,14 @@ private:
 
 using AssetParticlesPtr = std::shared_ptr<AssetParticles>;
 
-namespace Xml {
-template <> struct Adaptor<AssetParticles::Definition> {
-    static void convert(const Xml::Node& n, AssetParticles::Definition& v);
+template <> struct Yaml::Adaptor<AssetParticlesPtr> {
+    static void convert(const Yaml::Node& node, AssetParticlesPtr& value) {
+        value = AssetParticles::from(node.asString());
+    }
+    static void pack(Yaml::Node& node, const AssetParticlesPtr& value) {
+        node.packString(value->getName());
+    }
 };
-template <> struct Adaptor<AssetParticlesPtr> { static void convert(const Xml::Node& n, AssetParticlesPtr& v); };
-} // namespace Xml
 } // namespace Engine
 
 namespace msgpack {

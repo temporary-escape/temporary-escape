@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../Assets/AssetShape.hpp"
 #include "../Assets/SkyboxRenderer.hpp"
 #include "../Graphics/Canvas2D.hpp"
 #include "../Graphics/Framebuffer.hpp"
+#include "../Graphics/MeshPrimitives.hpp"
 #include "../Scene/Camera.hpp"
 #include "../Scene/ComponentModel.hpp"
 #include "../Scene/Scene.hpp"
@@ -17,7 +19,8 @@ public:
         Vector3 direction{};
     };
 
-    explicit Renderer(const Config& config, const Shaders& shaders, SkyboxRenderer& skyboxRenderer);
+    explicit Renderer(const Config& config, const Shaders& shaders, SkyboxRenderer& skyboxRenderer,
+                      Grid::Builder& gridBuilder);
 
     void setGBuffer(GBuffer& gBuffer) {
         state.gBuffer = &gBuffer;
@@ -25,6 +28,10 @@ public:
 
     void setViewport(const Vector2i& viewport) {
         state.viewport = viewport;
+    }
+
+    void setEnableBackground(bool value) {
+        state.renderBackground = value;
     }
 
     void render(Scene& scene);
@@ -35,17 +42,35 @@ private:
     void createBrdfTexture();
     void renderSceneDeffered(Scene& scene);
     void renderSceneBackground(Scene& scene);
+    void renderSceneForward(Scene& scene);
     void renderPbrBuffer();
+    void renderSSAO();
+    void renderFXAA();
+    void renderBloomExtract();
+    void renderBloomBlurVertical();
+    void renderBloomBlurHorizontal();
+    void renderBloomCombine();
+    void renderDebugNormals(Scene& scene);
     void renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform);
     void renderModel(const AssetModelPtr& model, const Matrix4& transform);
     void renderComponentModel(ComponentModel& component);
+    void renderComponentGrid(ComponentGrid& component);
     void renderComponentTurret(ComponentTurret& component);
+    void renderComponentParticleEmitter(ComponentParticleEmitter& component);
+    void renderDebugNormalsModel(ComponentModel& component);
+    void renderDebugNormalsGrid(ComponentGrid& component);
+    Texture2D generateSSAONoise();
+    std::vector<Vector3> generateSSAOSamples();
 
     static constexpr inline size_t maxDirectionalLights = 4;
 
     const Config& config;
     const Shaders& shaders;
     SkyboxRenderer& skyboxRenderer;
+    Grid::Builder& gridBuilder;
+
+    std::chrono::time_point<std::chrono::steady_clock> startTime;
+    float time;
 
     struct CameraUniform {
         Matrix4 transformationProjectionMatrix;
@@ -64,13 +89,13 @@ private:
         int count{0};
     };
 
-    struct MeshesInternal {
-        Mesh fullScreenQuad{NO_CREATE};
-        Mesh skybox{NO_CREATE};
-        Mesh planet{NO_CREATE};
+    struct {
+        Mesh fullScreenQuad = createFullScreenQuad();
+        Mesh skybox = createSkyboxMesh();
+        Mesh planet = createPlanetMesh();
     } meshes;
 
-    struct DefaultTexturesInternal {
+    struct {
         Texture2D baseColorTexture{NO_CREATE};
         Texture2D normalTexture{NO_CREATE};
         Texture2D emissiveTexture{NO_CREATE};
@@ -79,18 +104,32 @@ private:
         TextureCubemap skyboxTexture{NO_CREATE};
     } defaultTextures;
 
-    struct BrdfInternal {
+    struct {
         Texture2D texture{NO_CREATE};
     } brdf;
 
-    struct State {
+    struct {
         GBuffer* gBuffer{nullptr};
         Vector2i viewport{};
         VertexBuffer cameraUbo{NO_CREATE};
         VertexBuffer cameraZeroPosUbo{NO_CREATE};
         VertexBuffer directionalLightsUbo{NO_CREATE};
-        Skybox* skybox{nullptr};
+        const Skybox* skybox{nullptr};
+        Matrix4 cameraViewMatrix;
+        bool renderBackground{true};
     } state;
+
+    struct {
+        VertexArray vao{NO_CREATE};
+    } particleEmitter;
+
+    struct {
+        std::vector<Vector3> samples;
+        Texture2D noise;
+    } ssao;
+
+    // PostProcessingFXAA fxaa;
+    // PostProcessingSSAO ssao;
 
     /*static constexpr inline size_t ssaoSamplesNum = 8;
     static constexpr inline size_t ssaoNoiseNum = 4;

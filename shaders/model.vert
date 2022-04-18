@@ -27,8 +27,8 @@ void main() {
 
     vec4 worldPos = modelMatrix * vec4(vsIn_position.xyz, 1.0);
 
-    vec3 N = normalize(normalMatrix * vsIn_normal);
-    vec3 T = normalize(normalMatrix * vsIn_tangent.xyz);
+    vec3 N = normalize(vec3(modelMatrix * vec4(vsIn_normal, 0.0)));
+    vec3 T = normalize(vec3(modelMatrix * vec4(vsIn_tangent.xyz, 0.0)));
     vec3 B = cross(N, T);
 
     vsOut.TBN = mat3(T, B, N);

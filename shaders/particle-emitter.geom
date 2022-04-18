@@ -52,13 +52,13 @@ void main (void) {
 
     vec3 P = gl_in[0].gl_Position.xyz;
 
-    vec3 va = P - (right + up) * size;
+    vec3 va = P + (-right - up) * size;
     gl_Position = camera.transformationProjectionMatrix * vec4(va, 1.0);
     gsOut.texCoords = vec2(0.0, 0.0);
     gsOut.time = vsOut[0].time;
     EmitVertex();
 
-    vec3 vb = P - (right - up) * size;
+    vec3 vb = P + (-right + up) * size;
     gl_Position = camera.transformationProjectionMatrix * vec4(vb, 1.0);
     gsOut.texCoords = vec2(0.0, 1.0);
     gsOut.time = vsOut[0].time;

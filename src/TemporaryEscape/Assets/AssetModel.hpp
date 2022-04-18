@@ -41,10 +41,14 @@ struct WeightedModel {
     float weight{1.0f};
 };
 
-namespace Xml {
-template <> struct Adaptor<WeightedModel> { static void convert(const Xml::Node& n, WeightedModel& v); };
-template <> struct Adaptor<AssetModelPtr> { static void convert(const Xml::Node& n, AssetModelPtr& v); };
-} // namespace Xml
+template <> struct Yaml::Adaptor<AssetModelPtr> {
+    static void convert(const Yaml::Node& node, AssetModelPtr& value) {
+        value = AssetModel::from(node.asString());
+    }
+    static void pack(Yaml::Node& node, const AssetModelPtr& value) {
+        node.packString(value->getName());
+    }
+};
 } // namespace Engine
 
 namespace msgpack {

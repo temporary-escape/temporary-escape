@@ -8,8 +8,10 @@
 #include "../Utils/RocksDB.hpp"
 #include "Client.hpp"
 #include "GBuffer.hpp"
+#include "Imager.hpp"
 #include "Renderer.hpp"
 #include "Shaders.hpp"
+#include "ViewBuild.hpp"
 #include "ViewMap.hpp"
 #include "ViewSpace.hpp"
 #include "ViewVoxelTest.hpp"
@@ -41,10 +43,7 @@ private:
     Canvas2D::FontHandle defaultFont;
 
     Future<void> stagesFuture;
-    Promise<AssetLoadQueue> loadQueuePromise;
-    Future<AssetLoadQueue> loadQueueFuture;
-    AssetLoadQueue assetLoadQueue;
-    Promise<bool> assetLoadQueueFinished;
+    asio::io_service worker;
 
     GBuffer gBuffer;
 
@@ -52,6 +51,7 @@ private:
     std::shared_ptr<TextureCompressor> textureCompressor;
     std::shared_ptr<SkyboxRenderer> skyboxRenderer;
     std::shared_ptr<AssetManager> assetManager;
+    std::shared_ptr<Grid::Builder> gridBuilder;
     std::shared_ptr<ModManager> modManager;
     std::shared_ptr<TransactionalDatabase> db;
     std::shared_ptr<Store> store;
@@ -61,14 +61,15 @@ private:
     std::shared_ptr<Shaders> shaders;
     std::shared_ptr<GBuffer> gbuffer;
     std::shared_ptr<Renderer> renderer;
+    std::shared_ptr<Imager> imager;
     std::shared_ptr<GuiContext> gui;
     std::shared_ptr<Widgets> widgets;
     std::shared_ptr<ViewSpace> viewSpace;
     std::shared_ptr<ViewMap> viewMap;
     std::shared_ptr<ViewVoxelTest> viewVoxelTest;
+    std::shared_ptr<ViewBuild> viewBuild;
     View* view{nullptr};
 
-    std::atomic<size_t> assetLoadQueueInitialSize;
     std::atomic<bool> loading;
     std::atomic<float> loadingProgress;
 };

@@ -1,9 +1,9 @@
-in VS_OUT {
+in GS_OUT {
     vec3 normal;
     vec2 texCoords;
     mat3 TBN;
     vec3 worldpos;
-} vsOut;
+} gsOut;
 
 layout(location = 0) out vec3 fsOut_baseColor;
 layout(location = 1) out vec3 fsOut_emissive;
@@ -25,21 +25,26 @@ uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D metallicRoughnessTexture;
 
 void main() {
-    vec4 baseColor = texture(baseColorTexture, vsOut.texCoords);
+    vec4 baseColor = texture(baseColorTexture, gsOut.texCoords);
+    baseColor *= material.baseColorFactor.rgba;
     if (baseColor.a < 0.5) {
         discard;
     }
 
-    vec3 normalRaw = vec3(texture(normalTexture, vsOut.texCoords).xy, 0.0) * 2.0 - 1.0;
+    vec3 normalRaw = vec3(texture(normalTexture, gsOut.texCoords).xy, 0.0) * 2.0 - 1.0;
     normalRaw.z = sqrt(1.0 - dot(normalRaw.xy, normalRaw.xy));
-    vec3 emissive = texture(emissiveTexture, vsOut.texCoords).rgb;
-    vec3 metallicRoughness = texture(metallicRoughnessTexture, vsOut.texCoords).rgb;
-    float ambient = texture(ambientOcclusionTexture, vsOut.texCoords).r;
+    vec3 emissive = texture(emissiveTexture, gsOut.texCoords).rgb * vec3(1.0, 0.9, 0.6);
+    vec3 metallicRoughness = texture(metallicRoughnessTexture, gsOut.texCoords).rgb;
+    float ambient = texture(ambientOcclusionTexture, gsOut.texCoords).r;
 
     float metallic = metallicRoughness.b;
     float roughness = metallicRoughness.g;
+    emissive *= material.emissiveFactor.rgb;
+    metallic *= material.metallicRoughnessFactor.b;
+    roughness *= material.metallicRoughnessFactor.g;
 
-    vec3 normal = normalize(vsOut.TBN * normalRaw);
+    vec3 normal = normalize(gsOut.TBN * normalRaw);
+    //vec3 normal = gsOut.normal;
 
     fsOut_baseColor = baseColor.rgb;
     fsOut_emissive = emissive;

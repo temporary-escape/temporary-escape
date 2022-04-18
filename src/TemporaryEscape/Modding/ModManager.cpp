@@ -26,7 +26,7 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
         manifests.push_back(std::make_shared<Manifest>());
         Manifest& manifest = *manifests.back();
 
-        Xml::Document(dir / Path("manifest.xml")).getRoot().convert(manifest);
+        manifest.fromYaml(dir / "manifest.yml");
         manifest.path = dir;
 
         Log::i(CMP, "Loading assets for: '{}'", manifest.name);
@@ -36,19 +36,21 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
 
         iterateDir(dir / Path("models"), {".gltf"}, [&](const Path& path) { assetManager.addModel(manifest, path); });
 
+        iterateDir(dir / Path("shapes"), {".gltf"}, [&](const Path& path) { assetManager.addShape(manifest, path); });
+
         iterateDir(dir / Path("textures"), {".png"},
                    [&](const Path& path) { assetManager.addTexture(manifest, path, TextureType::Generic); });
 
-        iterateDir(dir / Path("particles"), {".xml"},
+        iterateDir(dir / Path("particles"), {".yml"},
                    [&](const Path& path) { assetManager.addParticles(manifest, path); });
 
         iterateDir(dir / Path("images"), {".png"}, [&](const Path& path) { assetManager.addImage(manifest, path); });
 
-        iterateDir(dir / Path("planets"), {".xml"}, [&](const Path& path) { assetManager.addPlanet(manifest, path); });
+        iterateDir(dir / Path("planets"), {".yml"}, [&](const Path& path) { assetManager.addPlanet(manifest, path); });
 
-        iterateDir(dir / Path("blocks"), {".xml"}, [&](const Path& path) { assetManager.addBlock(manifest, path); });
+        iterateDir(dir / Path("blocks"), {".yml"}, [&](const Path& path) { assetManager.addBlock(manifest, path); });
 
-        iterateDir(dir / Path("turrets"), {".xml"}, [&](const Path& path) { assetManager.addTurret(manifest, path); });
+        iterateDir(dir / Path("turrets"), {".yml"}, [&](const Path& path) { assetManager.addTurret(manifest, path); });
 
         iterateDir(dir / Path("entities"), {".wren"},
                    [&](const Path& path) { assetManager.addEntity(manifest, path); });

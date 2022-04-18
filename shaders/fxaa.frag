@@ -271,5 +271,6 @@ vec3 FxaaPixelShader(vec2 pos, sampler2D tex, vec2 rcpFrame)
 
 void main()
 {
-    FragColor = vec4(FxaaPixelShader(vec2(vTexCoord.x, 1.0 - vTexCoord.y), Source, vec2(SourceSize.z, SourceSize.w)), 1.0) * 1.0;
+    float a = COMPAT_TEXTURE(Source, vec2(vTexCoord.x, 1.0 - vTexCoord.y)).a;
+    FragColor = vec4(FxaaPixelShader(vec2(vTexCoord.x, 1.0 - vTexCoord.y), Source, vec2(SourceSize.z, SourceSize.w)), a) * 1.0;
 }

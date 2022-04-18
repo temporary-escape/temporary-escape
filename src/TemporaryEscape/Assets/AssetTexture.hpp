@@ -3,21 +3,42 @@
 #include "../Graphics/Canvas2D.hpp"
 #include "../Graphics/Texture2D.hpp"
 #include "../Utils/Msgpack.hpp"
+#include "../Utils/Yaml.hpp"
 #include "Asset.hpp"
 
 namespace Engine {
+enum class TextureType {
+    Unknown = 0,
+    Generic,
+    BaseColor,
+    Normals,
+    MetallicRoughness,
+    AmbientOcclusion,
+    Emissive,
+};
+
 class ENGINE_API AssetTexture : public Asset {
 public:
     struct Options {
         struct Filtering {
             TextureFiltering minification = TextureFiltering::Linear;
             TextureFiltering magnification = TextureFiltering::Linear;
-        } filtering;
+
+            YAML_DEFINE(minification, magnification);
+        };
 
         struct Wrapping {
             TextureWrapping vertical = TextureWrapping::Repeat;
             TextureWrapping horizontal = TextureWrapping::Repeat;
-        } wrapping;
+
+            YAML_DEFINE(vertical, horizontal);
+        };
+
+        std::optional<bool> isArray;
+        std::optional<Filtering> filtering;
+        std::optional<Wrapping> wrapping;
+
+        YAML_DEFINE(isArray, filtering, wrapping);
     };
 
     static std::shared_ptr<AssetTexture> from(const std::string& name);
@@ -27,7 +48,7 @@ public:
 
     void load(AssetManager& assetManager) override;
 
-    const Texture2D& getTexture() const {
+    const Texture& getTexture() const {
         return texture;
     }
 
@@ -39,22 +60,19 @@ private:
     Path path;
     TextureType type;
     Texture2D texture;
+    Options options{};
 };
 
 using AssetTexturePtr = std::shared_ptr<AssetTexture>;
 
-namespace Xml {
-template <> struct Adaptor<AssetTexture::Options::Filtering> {
-    static void convert(const Xml::Node& n, AssetTexture::Options::Filtering& v);
+template <> struct Yaml::Adaptor<AssetTexturePtr> {
+    static void convert(const Yaml::Node& node, AssetTexturePtr& value) {
+        value = AssetTexture::from(node.asString());
+    }
+    static void pack(Yaml::Node& node, const AssetTexturePtr& value) {
+        node.packString(value->getName());
+    }
 };
-template <> struct Adaptor<AssetTexture::Options::Wrapping> {
-    static void convert(const Xml::Node& n, AssetTexture::Options::Wrapping& v);
-};
-template <> struct Adaptor<AssetTexture::Options> {
-    static void convert(const Xml::Node& n, AssetTexture::Options& v);
-};
-template <> struct Adaptor<AssetTexturePtr> { static void convert(const Xml::Node& n, AssetTexturePtr& v); };
-} // namespace Xml
 } // namespace Engine
 
 namespace msgpack {

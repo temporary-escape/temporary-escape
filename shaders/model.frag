@@ -40,6 +40,7 @@ void main() {
     float roughness = metallicRoughness.g;
 
     vec3 normal = normalize(vsOut.TBN * normalRaw);
+    //vec3 normal = vsOut.normal;
 
     fsOut_baseColor = baseColor.rgb;
     fsOut_emissive = emissive;

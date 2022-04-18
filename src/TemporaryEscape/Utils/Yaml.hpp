@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../Library.hpp"
+#include "../Math/Vector.hpp"
 #include "Exceptions.hpp"
+#include "Macros.hpp"
 #include "Path.hpp"
 #include <functional>
 #include <unordered_map>
@@ -262,7 +264,8 @@ template <typename T> struct Adaptor<std::optional<T>> {
         if (!node || node.isNull()) {
             value = std::nullopt;
         } else {
-            value = node.asString();
+            value = T{};
+            Adaptor<T>::convert(node, value.value());
         }
     }
 
@@ -291,6 +294,24 @@ template <typename T> struct Adaptor<std::vector<T>> {
         for (const auto& item : value) {
             auto child = node.append();
             Adaptor<T>::pack(child, item);
+        }
+    }
+};
+
+template <glm::length_t L, typename T> struct Adaptor<glm::vec<L, T, glm::defaultp>> {
+    static void convert(const Yaml::Node& node, glm::vec<L, T, glm::defaultp>& value) {
+        if (!node || !node.isSequence() || node.size() != L)
+            throw std::bad_cast();
+
+        T* ptr = &value.x;
+        node.forEach([&](const Node& child) { Adaptor<T>::convert(child, *ptr++); });
+    }
+
+    static void pack(Yaml::Node& node, const glm::vec<L, T, glm::defaultp>& value) {
+        const T* src = &value.x;
+        for (auto i = 0; i < L; i++) {
+            auto child = node.append();
+            Adaptor<T>::pack(child, *src++);
         }
     }
 };
@@ -356,10 +377,31 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
 #define YAML_FOR_EACH_8(what, x, ...)                                                                                  \
     what(x);                                                                                                           \
     YAML_EXPAND(YAML_FOR_EACH_7(what, __VA_ARGS__))
+#define YAML_FOR_EACH_9(what, x, ...)                                                                                  \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_8(what, __VA_ARGS__))
+#define YAML_FOR_EACH_10(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_9(what, __VA_ARGS__))
+#define YAML_FOR_EACH_11(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_10(what, __VA_ARGS__))
+#define YAML_FOR_EACH_12(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_11(what, __VA_ARGS__))
+#define YAML_FOR_EACH_13(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_12(what, __VA_ARGS__))
+#define YAML_FOR_EACH_14(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_13(what, __VA_ARGS__))
+#define YAML_FOR_EACH_15(what, x, ...)                                                                                 \
+    what(x);                                                                                                           \
+    YAML_EXPAND(YAML_FOR_EACH_14(what, __VA_ARGS__))
 #define YAML_FOR_EACH_NARG(...) YAML_FOR_EACH_NARG_(__VA_ARGS__, YAML_FOR_EACH_RSEQ_N())
 #define YAML_FOR_EACH_NARG_(...) YAML_EXPAND(YAML_FOR_EACH_ARG_N(__VA_ARGS__))
-#define YAML_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
-#define YAML_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
+#define YAML_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, N, ...) N
+#define YAML_FOR_EACH_RSEQ_N() 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 #define YAML_CONCATENATE(x, y) x##y
 #define YAML_FOR_EACH_(N, what, ...) YAML_EXPAND(YAML_CONCATENATE(YAML_FOR_EACH_, N)(what, __VA_ARGS__))
 #define YAML_FOR_EACH(what, ...) YAML_FOR_EACH_(YAML_FOR_EACH_NARG(__VA_ARGS__), what, __VA_ARGS__)
@@ -369,33 +411,29 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
 #define YAML_CALL_INSERT_FROM_STRING(f) map.insert(std::make_pair(#f, Type::f))
 
 #define YAML_DEFINE(...)                                                                                               \
-    void convert(const Yaml::Node& node) {                                                                             \
-        YAML_FOR_EACH(YAML_CALL_CONVERT, __VA_ARGS__)                                                                  \
-    }                                                                                                                  \
+    void convert(const Yaml::Node& node) { YAML_FOR_EACH(YAML_CALL_CONVERT, __VA_ARGS__) }                             \
                                                                                                                        \
-    void pack(Yaml::Node& node) {                                                                                      \
-        YAML_FOR_EACH(YAML_CALL_PACK, __VA_ARGS__)                                                                     \
-    }                                                                                                                  \
+    void pack(Yaml::Node& node) const { YAML_FOR_EACH(YAML_CALL_PACK, __VA_ARGS__) }                                   \
                                                                                                                        \
-    void fromYaml(const Path& path) {                                                                                  \
+    void fromYaml(const Path& p) {                                                                                     \
         try {                                                                                                          \
-            auto node = Yaml::load(path);                                                                              \
+            auto node = Yaml::load(p);                                                                                 \
             if (!node || !node.isMap()) {                                                                              \
                 EXCEPTION("Root is no a map");                                                                         \
             }                                                                                                          \
             Engine::Yaml::Adaptor<decltype(*this)>::convert(node, *this);                                              \
         } catch (...) {                                                                                                \
-            EXCEPTION_NESTED("Failed to parse yaml document: '{}'", path.string());                                    \
+            EXCEPTION_NESTED("Failed to parse yaml document: '{}'", p.string());                                       \
         }                                                                                                              \
     }                                                                                                                  \
                                                                                                                        \
-    void toYaml(const Path& path) {                                                                                    \
+    void toYaml(const Path& p) const {                                                                                 \
         try {                                                                                                          \
             auto node = Yaml::Node::map();                                                                             \
             Engine::Yaml::Adaptor<decltype(*this)>::pack(node, *this);                                                 \
-            Yaml::save(node, path);                                                                                    \
+            Yaml::save(node, p);                                                                                       \
         } catch (...) {                                                                                                \
-            EXCEPTION_NESTED("Failed to create yaml document: '{}'", path.string());                                   \
+            EXCEPTION_NESTED("Failed to create yaml document: '{}'", p.string());                                      \
         }                                                                                                              \
     }
 

@@ -167,6 +167,11 @@ std::vector<uint8_t> GltfBufferView::getBuffer() const {
     return ret;
 }
 
+Span<uint8_t> GltfBufferView::getSpan() const {
+    const auto* src = reinterpret_cast<const uint8_t*>(view->buffer->data);
+    return {&src[view->offset], size};
+}
+
 GltfAccessor::GltfAccessor(const GltfData& data, cgltf_accessor* accessor)
     : bufferView(data, accessor->buffer_view), data(data) {
 

@@ -3,6 +3,7 @@
 #include "../Library.hpp"
 #include "../Math/Vector.hpp"
 #include "Path.hpp"
+#include "Span.hpp"
 
 #include <optional>
 #include <string>
@@ -102,6 +103,7 @@ public:
     size_t offset;
 
     std::vector<uint8_t> getBuffer() const;
+    Span<uint8_t> getSpan() const;
 
 private:
     GltfData data;

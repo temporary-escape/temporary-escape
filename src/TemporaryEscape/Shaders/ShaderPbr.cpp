@@ -16,6 +16,7 @@ ShaderPbr::ShaderPbr(const Config& config) : Shader("ShaderPbr") {
     setUniform("brdfTexture", int(BrdfTexture));
     setUniform("irradianceTexture", int(SkyboxIrradianceTexture));
     setUniform("prefilterTexture", int(SkyboxPrefilterTexture));
+    setUniform("ssaoTexture", int(SSAOTexture));
 
     cameraUniformIndex = getUniformBlockIndex("Camera");
     uniformBlockBinding(cameraUniformIndex, Bindings::Camera);
@@ -57,6 +58,10 @@ void ShaderPbr::bindSkyboxIrradianceTexture(const Texture& texture) const {
 
 void ShaderPbr::bindSkyboxPrefilterTexture(const Texture& texture) const {
     texture.bind(SkyboxPrefilterTexture);
+}
+
+void ShaderPbr::bindSSAOTexture(const Texture& texture) const {
+    texture.bind(SSAOTexture);
 }
 
 void ShaderPbr::bindCameraUniform(const VertexBuffer& ubo) const {

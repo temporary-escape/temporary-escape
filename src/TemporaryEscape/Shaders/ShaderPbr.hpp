@@ -21,6 +21,7 @@ public:
         BrdfTexture,
         SkyboxIrradianceTexture,
         SkyboxPrefilterTexture,
+        SSAOTexture,
     };
 
     enum Bindings : GLuint {
@@ -44,6 +45,7 @@ public:
     void bindBrdfTexture(const Texture& texture) const;
     void bindSkyboxIrradianceTexture(const Texture& texture) const;
     void bindSkyboxPrefilterTexture(const Texture& texture) const;
+    void bindSSAOTexture(const Texture& texture) const;
     void bindCameraUniform(const VertexBuffer& ubo) const;
     void bindDirectionalLightsUniform(const VertexBuffer& ubo) const;
 

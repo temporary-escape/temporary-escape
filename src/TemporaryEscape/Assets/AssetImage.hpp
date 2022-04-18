@@ -11,6 +11,7 @@ public:
     static std::shared_ptr<AssetImage> from(const std::string& name);
 
     explicit AssetImage(const Manifest& mod, std::string name, const Path& path);
+    explicit AssetImage(const Manifest& mod, std::string name, Canvas2D::Image image);
     virtual ~AssetImage() = default;
 
     void load(AssetManager& assetManager) override;
@@ -26,9 +27,14 @@ private:
 
 using AssetImagePtr = std::shared_ptr<AssetImage>;
 
-namespace Xml {
-template <> struct Adaptor<AssetImagePtr> { static void convert(const Xml::Node& n, AssetImagePtr& v); };
-} // namespace Xml
+template <> struct Yaml::Adaptor<AssetImagePtr> {
+    static void convert(const Yaml::Node& node, AssetImagePtr& value) {
+        value = AssetImage::from(node.asString());
+    }
+    static void pack(Yaml::Node& node, const AssetImagePtr& value) {
+        node.packString(value->getName());
+    }
+};
 } // namespace Engine
 
 namespace msgpack {

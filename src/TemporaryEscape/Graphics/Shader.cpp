@@ -219,6 +219,10 @@ void Shader::uniformBlockBinding(GLuint blockIndex, GLuint blockBinding) const {
     glUniformBlockBinding(program, blockIndex, blockBinding);
 }
 
+template <> void Shader::setUniform<bool>(const GLuint location, const bool& value) const {
+    glUniform1i(location, value);
+}
+
 template <> void Shader::setUniform<int>(const GLuint location, const int& value) const {
     glUniform1i(location, value);
 }
@@ -237,6 +241,14 @@ template <> void Shader::setUniform<Vector2i>(const GLuint location, const Vecto
 
 template <> void Shader::setUniform<Vector3>(const GLuint location, const Vector3& value) const {
     glUniform3f(location, value.x, value.y, value.z);
+}
+
+template <> void Shader::setUniform<float>(const GLuint location, const float* values, const size_t length) const {
+    glUniform1fv(location, length, reinterpret_cast<const float*>(values));
+}
+
+template <> void Shader::setUniform<Vector3>(const GLuint location, const Vector3* values, const size_t length) const {
+    glUniform3fv(location, length, reinterpret_cast<const float*>(values));
 }
 
 template <> void Shader::setUniform<Vector3i>(const GLuint location, const Vector3i& value) const {

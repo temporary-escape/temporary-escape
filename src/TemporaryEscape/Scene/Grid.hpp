@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Assets/AssetBlock.hpp"
+#include "../Assets/AssetShape.hpp"
 #include "../Library.hpp"
 #include "../Math/Utils.hpp"
 #include "../Math/Vector.hpp"
@@ -124,6 +126,7 @@ public:
         Bitfield<uint16_t, 32, 10> type;
         Bitfield<uint8_t, 42, 5> rotation;
         Bitfield<uint8_t, 47, 3> index;
+        Bitfield<uint8_t, 50, 4> shape;
 
         operator bool() const {
             return bool(data);
@@ -135,8 +138,8 @@ public:
         }
 
         [[nodiscard]] std::string string() const {
-            return fmt::format("<index: {}, next: {}, color: {}, type: {}, rotation: {}>", int(index), int(next),
-                               int(color), int(type), int(rotation));
+            return fmt::format("<index: {}, next: {}, color: {}, type: {}, rotation: {} shape: {}>", int(index),
+                               int(next), int(color), int(type), int(rotation), int(shape));
         }
     };
 
@@ -180,8 +183,84 @@ public:
         }
     };
 
+    struct Type {
+        AssetBlockPtr block{nullptr};
+        size_t count{0};
+    };
+
     static constexpr size_t maxNodesPerTree = 256 * 256 * 256;
     static constexpr size_t badIndex = 0xFFFFFF;
+    static constexpr size_t meshBuildWidth = 16;
+    static constexpr size_t cacheBuildWidth = meshBuildWidth + 2;
+
+    using NodesPool = Pool<Node, maxNodesPerTree>;
+
+    static inline int getWidthForLevel(const size_t level) {
+        return static_cast<int>(std::pow(2, level)) / 2;
+    }
+
+    class Builder {
+    public:
+        explicit Builder(AssetManager& assetManager);
+
+        struct ShapePrebuilt {
+            std::vector<Shape::Vertex> vertices;
+            std::vector<uint16_t> indices;
+        };
+
+        struct BlocksData {
+            std::vector<Shape::Vertex> vertices;
+            std::vector<uint32_t> indices;
+        };
+
+        using RawPrimitiveData = std::unordered_map<const Material*, BlocksData>;
+
+        using ShapePrebuiltMasked = std::array<ShapePrebuilt, 64>;
+        using ShapePrebuiltRotated = std::array<ShapePrebuiltMasked, 24>;
+        using ShapesPrebuilt = std::array<ShapePrebuiltRotated, 4>;
+
+        void precompute();
+        void build(const Voxel* cache, const std::vector<Type>& types, RawPrimitiveData& map, const Vector3& offset);
+
+    private:
+        AssetManager& assetManager;
+        ShapesPrebuilt shapes;
+    };
+
+    class Octree;
+
+    class Iterator {
+    public:
+        explicit Iterator(Octree& octree, const size_t idx, size_t level, const Vector3i& origin);
+
+        Node& value();
+        void next();
+        [[nodiscard]] Iterator children();
+
+        operator bool() const {
+            return idx != badIndex;
+        }
+
+        [[nodiscard]] size_t getLevel() const {
+            return level;
+        }
+
+        bool isVoxel() const;
+        int getBranchWidth() const;
+        const Vector3i& getOrigin() const {
+            return origin;
+        }
+        const Vector3i& getPos() const {
+            return pos;
+        }
+
+    private:
+        Octree& octree;
+        size_t idx;
+        size_t level;
+        Vector3i origin;
+        Vector3i pos;
+    };
 
     class Octree {
     public:
@@ -205,21 +284,62 @@ public:
 
         void dump() const;
 
+        NodesPool& pool() {
+            return nodes;
+        }
+
+        [[nodiscard]] const NodesPool& pool() const {
+            return nodes;
+        }
+
+        Iterator iterate() {
+            return Iterator(*this, 0, 0, Vector3i{0});
+        }
+
     private:
         void insert(Node& parent, const Vector3i& origin, const Vector3i& pos, const Voxel& voxel, size_t level);
         [[nodiscard]] std::optional<Voxel> find(const Node& parent, const Vector3i& origin, const Vector3i& pos,
                                                 size_t level) const;
         void dump(const Node& node, size_t level = 0) const;
 
-        Pool<Node, maxNodesPerTree> nodes;
+        NodesPool nodes;
         size_t depth{0};
     };
 
-    void insert(const Vector3i& pos, const Voxel& voxel) {
-        voxels.insert(pos, voxel);
+    void insert(const Vector3i& pos, const AssetBlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
+
+    [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const {
+        return voxels.find(pos);
     }
 
+    void generateMesh(Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+
+    void dump() {
+        voxels.dump();
+    }
+
+    static const Matrix4& getRotationMatrix(const uint8_t rotation);
+
 private:
+    uint16_t insertBlock(const AssetBlockPtr& block);
+    void generateMesh(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+    void generateMeshBlock(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+    void generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const;
+    // void buildBlock(const Voxel& voxel, BlockBuilder& blockBuilder, const Vector3i& pos, TypePrimitiveMap& map);
+
     Octree voxels;
+    std::vector<Type> types;
 };
+
+inline bool Grid::Iterator::isVoxel() const {
+    return octree.getDepth() - level == 0;
+}
+
+inline Grid::Node& Grid::Iterator::value() {
+    return octree.pool().at(idx);
+}
+
+inline int Grid::Iterator::getBranchWidth() const {
+    return Grid::getWidthForLevel(octree.getDepth() - level + 1);
+}
 } // namespace Engine

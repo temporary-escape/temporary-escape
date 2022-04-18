@@ -28,6 +28,7 @@ public:
     void texParameteri(GLenum parameter, GLint value);
     void setFiltering(TextureFiltering min, TextureFiltering mag);
     void setWrapping(TextureWrapping s, TextureWrapping t);
+    void setMipMapLevel(GLint min, GLint max);
 
     GLuint getHandle() const {
         return handle;

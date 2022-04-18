@@ -1,19 +1,10 @@
 #pragma once
 
-#include "../Utils/Xml.hpp"
+#include "../Utils/Yaml.hpp"
 #include <cstdint>
 #include <glad/glad.h>
 
 namespace Engine {
-enum class TextureType {
-    Generic,
-    BaseColor,
-    Normals,
-    MetallicRoughness,
-    AmbientOcclusion,
-    Emissive,
-};
-
 enum class VertexBufferType : GLenum {
     Array = GL_ARRAY_BUFFER,
     Indices = GL_ELEMENT_ARRAY_BUFFER,
@@ -81,6 +72,8 @@ enum class TextureWrapping : GLenum {
     Repeat = GL_REPEAT,
 };
 
+YAML_DEFINE_ENUM(TextureWrapping, ClampToEdge, Repeat);
+
 enum class TextureFiltering : GLenum {
     Linear = GL_LINEAR,
     Nearest = GL_NEAREST,
@@ -90,6 +83,9 @@ enum class TextureFiltering : GLenum {
     NearestMipMapNearest = GL_NEAREST_MIPMAP_NEAREST,
 };
 
+YAML_DEFINE_ENUM(TextureFiltering, Linear, Nearest, LinearMipMapLinear, LinearMipMapNearest, NearestMipMapLinear,
+                 NearestMipMapNearest);
+
 enum class CubemapSide : GLenum {
     PositiveX = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
     NegativeX = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -98,9 +94,4 @@ enum class CubemapSide : GLenum {
     PositiveZ = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
     NegativeZ = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
 };
-
-namespace Xml {
-template <> struct Adaptor<TextureWrapping> { static void convert(const Xml::Node& n, TextureWrapping& v); };
-template <> struct Adaptor<TextureFiltering> { static void convert(const Xml::Node& n, TextureFiltering& v); };
-} // namespace Xml
 } // namespace Engine

@@ -1,0 +1,17 @@
+title: 'Hull T1'
+shapes:
+  - Cube
+  - Wedge
+  - Corner
+  - Penta
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveY
+      - NegativeY
+      - PositiveZ
+      - NegativeZ
+    baseColorTexture: texture_plates_01_diff
+    normalTexture: texture_plates_01_norm
+    metallicRoughnessTexture: texture_plates_01_meta

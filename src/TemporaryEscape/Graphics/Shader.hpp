@@ -49,6 +49,7 @@ public:
         setUniform(getUniformLocation(location), value);
     }
     template <typename T> void setUniform(GLuint location, const T& value) const;
+    template <typename T> void setUniform(GLuint location, const T* values, size_t length) const;
 
     GLuint getHandle() const {
         return program;

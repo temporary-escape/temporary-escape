@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fmt/format.h>
 #include <glm/geometric.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/transform.hpp>
@@ -81,32 +82,62 @@ inline Color4 hsvToRgb(const Vector4& in) {
 }
 } // namespace Engine
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector2 const& v) {
-    os << "[" << v.x << ", " << v.y << "]";
-    return os;
-}
+template <> struct fmt::formatter<Engine::Vector2> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector2i const& v) {
-    os << "[" << v.x << ", " << v.y << "]";
-    return os;
-}
+    template <typename FormatContext> auto format(Engine::Vector2 const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.x, vec.y);
+    }
+};
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector3 const& v) {
-    os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-    return os;
-}
+template <> struct fmt::formatter<Engine::Vector2i> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector3i const& v) {
-    os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-    return os;
-}
+    template <typename FormatContext> auto format(Engine::Vector2i const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.x, vec.y);
+    }
+};
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector4 const& v) {
-    os << "[" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << "]";
-    return os;
-}
+template <> struct fmt::formatter<Engine::Vector3> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
 
-inline std::ostream& operator<<(std::ostream& os, Engine::Vector4i const& v) {
-    os << "[" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << "]";
-    return os;
-}
+    template <typename FormatContext> auto format(Engine::Vector3 const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.x, vec.y, vec.z);
+    }
+};
+
+template <> struct fmt::formatter<Engine::Vector3i> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(Engine::Vector3i const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.x, vec.y, vec.z);
+    }
+};
+
+template <> struct fmt::formatter<Engine::Vector4> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(Engine::Vector4 const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}, {}]", vec.x, vec.y, vec.z, vec.w);
+    }
+};
+
+template <> struct fmt::formatter<Engine::Vector4i> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(Engine::Vector4i const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}, {}]", vec.x, vec.y, vec.z, vec.w);
+    }
+};

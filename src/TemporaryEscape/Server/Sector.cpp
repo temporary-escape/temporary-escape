@@ -52,6 +52,12 @@ void Sector::load() {
         sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
         scene.addEntity(sun);
 
+        auto particles = assetManager.find<AssetParticles>("particles_engine_exhaust_01");
+        auto dummy = std::make_shared<Entity>();
+        dummy->addComponent<ComponentParticleEmitter>(particles);
+        dummy->translate({0.0f, 3.0f, 0.0f});
+        scene.addEntity(dummy);
+
         auto asteroidModel = assetManager.find<AssetModel>("model_asteroid_01_a");
 
         for (auto y = 0; y < 10; y++) {

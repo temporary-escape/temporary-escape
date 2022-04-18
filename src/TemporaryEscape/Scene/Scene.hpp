@@ -71,7 +71,7 @@ public:
     }
 
     std::shared_ptr<Camera> getPrimaryCamera() const;
-    std::optional<std::reference_wrapper<Skybox>> getSkybox(SkyboxRenderer& renderer);
+    std::optional<std::reference_wrapper<const Skybox>> getSkybox(SkyboxRenderer& renderer);
 
 private:
     struct BulletSystem {
@@ -87,7 +87,6 @@ private:
     std::unordered_map<uint64_t, EntityPtr> entityMap;
 
     BulletSystem bullets;
-    Skybox skybox;
     EntityWeakPtr primaryCamera;
 };
 } // namespace Engine

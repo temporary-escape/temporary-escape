@@ -30,6 +30,17 @@ public:
         zoom = value;
     }
 
+    void setRotation(const Vector2& value) {
+        rotation = value;
+        while (rotation.x > 360.0f) {
+            rotation.x -= 360.0f;
+        }
+        while (rotation.x < 0.0f) {
+            rotation.x += 360.0f;
+        }
+        rotation.y = glm::clamp(rotation.y, -89.0f, 89.0f);
+    }
+
     void update();
     void follow(const std::shared_ptr<Entity>& value);
     void eventMouseMoved(const Vector2i& pos) override;
