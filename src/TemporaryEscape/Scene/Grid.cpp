@@ -156,6 +156,22 @@ const Matrix4& Grid::getRotationMatrix(const uint8_t rotation) {
     return matrices.at(rotation);
 }
 
+const Matrix4& Grid::getRotationMatrixInverted(const uint8_t rotation) {
+    static std::vector<Matrix4> matrices;
+
+    if (rotation >= 24) {
+        EXCEPTION("Bad rotation number: {}, must be between [0, 23]", rotation);
+    }
+
+    if (matrices.empty()) {
+        for (auto r = 0; r < 24; r++) {
+            matrices.push_back(glm::inverse(getRotationMatrix(r)));
+        }
+    }
+
+    return matrices.at(rotation);
+}
+
 Grid::Builder::Builder(AssetManager& assetManager) : assetManager(assetManager) {
 }
 
@@ -238,6 +254,51 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
         0b00000000,
     };
 
+    static const auto generateRotatedMasks = []() {
+        std::array<std::array<uint8_t, 24>, 64> results{};
+
+        // For each neighbour combination
+        for (auto m = 0; m < 64; m++) {
+
+            // For each rotation
+            for (auto r = 0; r < 24; r++) {
+                uint8_t result = 0;
+
+                // For each neighbour
+                for (auto n = 0; n < 6; n++) {
+                    if ((m & neighbourMasks[n]) == 0) {
+                        continue;
+                    }
+
+                    const auto rotated = Vector3{getRotationMatrixInverted(r) * Vector4{neighbourOffset[n], 0.0f}};
+
+                    // Find the correct destination bit
+                    auto index = -1;
+                    for (auto t = 0; t < 6; t++) {
+                        const auto d = glm::dot(rotated, Vector3{neighbourOffset[t]});
+
+                        if (d > 0.95f) {
+                            index = t;
+                            break;
+                        }
+                    }
+
+                    if (index == -1) {
+                        EXCEPTION("This should not happen");
+                    }
+
+                    result |= (1 << index);
+                }
+
+                results[m][r] = result;
+            }
+        }
+
+        return results;
+    };
+
+    static std::array<std::array<uint8_t, 24>, 64> rotatedMasks = generateRotatedMasks();
+
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
 
     const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data, const ShapePrebuilt& shape,
@@ -284,6 +345,9 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
                         mask = mask | neighbourMasks[n];
                     }
                 }
+
+                // Rotate mask
+                mask = rotatedMasks[mask][item.rotation];
 
                 if (block->isSingular()) {
                     const auto& shape = shapes.at(item.shape).at(item.rotation).at(mask);

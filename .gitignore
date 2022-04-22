@@ -28,9 +28,6 @@ temp/
 docs/resources/_gen/
 docs/public/
 
-# Install directory
-install/
-
 # Logs
 *.log
 

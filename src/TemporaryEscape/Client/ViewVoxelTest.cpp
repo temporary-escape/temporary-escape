@@ -58,7 +58,7 @@ ViewVoxelTest::ViewVoxelTest(const Config& config, Canvas2D& canvas, AssetManage
     auto grid = ship->addComponent<ComponentGrid>();
     grid->setDirty(true);
 
-    auto block = assetManager.find<AssetBlock>("block_crew_quaters_t1");
+    auto block = assetManager.find<AssetBlock>("block_hull_t1");
     /*for (auto y = 0; y < 1; y++) {
         for (auto x = -20; x < 20; x++) {
             for (auto z = 0; z < 1; z++) {

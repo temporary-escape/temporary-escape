@@ -319,6 +319,7 @@ public:
     }
 
     static const Matrix4& getRotationMatrix(const uint8_t rotation);
+    static const Matrix4& getRotationMatrixInverted(const uint8_t rotation);
 
 private:
     uint16_t insertBlock(const AssetBlockPtr& block);
