@@ -16,7 +16,7 @@
 #include <shared_mutex>
 
 namespace Engine {
-class ENGINE_API Server : public NetworkTcpServer<ServerSink> {
+class ENGINE_API Server : public NetworkTcpServer<Server, ServerSink> {
 public:
     explicit Server(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
     virtual ~Server();
@@ -32,17 +32,14 @@ public:
         return services;
     }
 
-private:
     void onPeerConnected(PeerPtr peer) override;
-    void handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin::Response& res) override;
-    void handle(const PeerPtr& peer, MessagePlayerLocation::Request req, MessagePlayerLocation::Response& res) override;
-    void handle(const PeerPtr& peer, MessageSceneEntities::Request req, MessageSceneEntities::Response& res) override;
-    void handle(const PeerPtr& peer, MessageSceneDeltas::Request req, MessageSceneDeltas::Response& res) override;
-    void handle(const PeerPtr& peer, MessageFetchGalaxy::Request req, MessageFetchGalaxy::Response& res) override;
-    void handle(const PeerPtr& peer, MessageFetchSystems::Request req, MessageFetchSystems::Response& res) override;
-    void handle(const PeerPtr& peer, MessageFetchRegions::Request req, MessageFetchRegions::Response& res) override;
-    void handle(const PeerPtr& peer, MessageShipMovement::Request req, MessageShipMovement::Response& res) override;
+    void handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin::Response& res);
+    void handle(const PeerPtr& peer, MessageFetchGalaxy::Request req, MessageFetchGalaxy::Response& res);
+    void handle(const PeerPtr& peer, MessageFetchSystems::Request req, MessageFetchSystems::Response& res);
+    void handle(const PeerPtr& peer, MessageFetchRegions::Request req, MessageFetchRegions::Response& res);
+    void handle(const PeerPtr& peer, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
+private:
     /*class EventListener : public Network::EventListener {
     public:
         explicit EventListener(Server& server) : server(server) {

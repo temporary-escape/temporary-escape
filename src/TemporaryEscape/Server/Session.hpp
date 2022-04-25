@@ -4,9 +4,11 @@
 #include "Messages.hpp"
 
 namespace Engine {
-class Session {
+class ENGINE_API Server;
+
+class ENGINE_API Session {
 public:
-    explicit Session(std::string playerId, const std::shared_ptr<NetworkTcpPeer<ServerSink>>& stream)
+    explicit Session(std::string playerId, const std::shared_ptr<NetworkTcpPeer<Server, ServerSink>>& stream)
         : playerId(std::move(playerId)), stream(stream) {
     }
 
@@ -23,7 +25,7 @@ public:
 
 private:
     std::string playerId;
-    std::weak_ptr<NetworkTcpPeer<ServerSink>> stream;
+    std::weak_ptr<NetworkTcpPeer<Server, ServerSink>> stream;
 };
 
 using SessionPtr = std::shared_ptr<Session>;

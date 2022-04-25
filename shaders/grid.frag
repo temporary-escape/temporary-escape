@@ -33,7 +33,7 @@ void main() {
 
     vec3 normalRaw = vec3(texture(normalTexture, gsOut.texCoords).xy, 0.0) * 2.0 - 1.0;
     normalRaw.z = sqrt(1.0 - dot(normalRaw.xy, normalRaw.xy));
-    vec3 emissive = texture(emissiveTexture, gsOut.texCoords).rgb * vec3(1.0, 0.9, 0.6);
+    vec3 emissive = texture(emissiveTexture, gsOut.texCoords).rgb;
     vec3 metallicRoughness = texture(metallicRoughnessTexture, gsOut.texCoords).rgb;
     float ambient = texture(ambientOcclusionTexture, gsOut.texCoords).r;
 

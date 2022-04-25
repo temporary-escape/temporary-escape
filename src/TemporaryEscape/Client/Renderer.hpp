@@ -34,6 +34,17 @@ public:
         state.renderBackground = value;
     }
 
+    void setEnableBloom(bool value) {
+        state.renderBloom = value;
+    }
+
+    void blit(const Vector2i& viewport, Framebuffer& target) {
+        if (!state.gBuffer) {
+            EXCEPTION("No GBuffer set");
+        }
+        state.gBuffer->blit(viewport, target, state.renderBloom);
+    }
+
     void render(Scene& scene);
 
 private:
@@ -50,15 +61,14 @@ private:
     void renderBloomBlurVertical();
     void renderBloomBlurHorizontal();
     void renderBloomCombine();
-    void renderDebugNormals(Scene& scene);
     void renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform);
     void renderModel(const AssetModelPtr& model, const Matrix4& transform);
+    void renderComponentLines(ComponentLines& component);
+    void renderComponentPointCloud(ComponentPointCloud& component);
     void renderComponentModel(ComponentModel& component);
     void renderComponentGrid(ComponentGrid& component);
     void renderComponentTurret(ComponentTurret& component);
     void renderComponentParticleEmitter(ComponentParticleEmitter& component);
-    void renderDebugNormalsModel(ComponentModel& component);
-    void renderDebugNormalsGrid(ComponentGrid& component);
     Texture2D generateSSAONoise();
     std::vector<Vector3> generateSSAOSamples();
 
@@ -115,8 +125,10 @@ private:
         VertexBuffer cameraZeroPosUbo{NO_CREATE};
         VertexBuffer directionalLightsUbo{NO_CREATE};
         const Skybox* skybox{nullptr};
+        Matrix4 skyboxTransform{1.0f};
         Matrix4 cameraViewMatrix;
         bool renderBackground{true};
+        bool renderBloom{true};
     } state;
 
     struct {

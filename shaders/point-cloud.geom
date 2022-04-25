@@ -25,29 +25,29 @@ void main (void) {
     vec4 P = gl_in[0].gl_Position;
 
     gsOut.color = vsOut[0].color;
-    vec2 particleSize = vsOut[0].size;
+    vec2 particleSize = vsOut[0].size / camera.viewport;
 
     // a: left-bottom 
     vec2 va = P.xy + vec2(-1.0, -1.0) * particleSize;
-    gl_Position = camera.projectionMatrix * vec4(va, P.zw);
+    gl_Position = vec4(va, P.zw);
     gsOut.texCoords = vec2(0.0, 0.0);
     EmitVertex();
 
     // b: left-top
     vec2 vb = P.xy + vec2(-1.0, 1.0) * particleSize;
-    gl_Position = camera.projectionMatrix * vec4(vb, P.zw);
+    gl_Position = vec4(vb, P.zw);
     gsOut.texCoords = vec2(0.0, 1.0);
     EmitVertex();
 
     // d: right-bottom
     vec2 vd = P.xy + vec2(1.0, -1.0) * particleSize;
-    gl_Position = camera.projectionMatrix * vec4(vd, P.zw);
+    gl_Position = vec4(vd, P.zw);
     gsOut.texCoords = vec2(1.0, 0.0);
     EmitVertex();
 
     // c: right-top
     vec2 vc = P.xy + vec2(1.0, 1.0) * particleSize;
-    gl_Position = camera.projectionMatrix * vec4(vc, P.zw);
+    gl_Position = vec4(vc, P.zw);
     gsOut.texCoords = vec2(1.0, 1.0);
     EmitVertex();
 

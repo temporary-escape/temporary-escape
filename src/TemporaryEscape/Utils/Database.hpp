@@ -312,9 +312,7 @@ template <typename T> void Database::unpackSchema(const Span<char>& data, T& val
 #define SCHEMA_VERSION(N, U, S)                                                                                        \
     template <> struct Engine::Database::SchemaVersion<S> {                                                            \
         using Versioning = U;                                                                                          \
-        static size_t getVersion() {                                                                                   \
-            return U::getVersion<S>();                                                                                 \
-        }                                                                                                              \
+        static size_t getVersion() { return U::getVersion<S>(); }                                                      \
     };                                                                                                                 \
     template <> struct Engine::Database::SchemaUnpacker<S> {                                                           \
         static void unpack(const msgpack::object& obj, S& value, size_t version) {                                     \
@@ -340,9 +338,7 @@ template <typename T> void Database::unpackSchema(const Span<char>& data, T& val
 #define SCHEMA_VERSIONING(U, ...) SCHEMA_VERSIONING_(SCHEMA_FOR_EACH_NARG(__VA_ARGS__), U, __VA_ARGS__)
 
 #define SCHEMA_NAME(Name)                                                                                              \
-    static inline std::string_view getSchemaName() {                                                                   \
-        return Name;                                                                                                   \
-    }
+    static inline std::string_view getSchemaName() { return Name; }
 
 #define SCHEMA_DEFINE(...) MSGPACK_DEFINE_MAP(__VA_ARGS__)
 
@@ -513,7 +509,7 @@ template <typename T>
 std::vector<T> Database::next(const std::string& prefix, const std::string& start, const size_t max,
                               std::string* lastKey) {
     std::vector<T> items;
-    const auto substrLength = T::getSchemaName().size();
+    const auto substrLength = T::getSchemaName().size() + 6; // + strlen(":data:")
     const auto keyStart = Database::keyToSchemaDataKey<T>(start);
     const auto keyPrefix = Database::keyToSchemaDataKey<T>(prefix);
 
@@ -527,11 +523,10 @@ std::vector<T> Database::next(const std::string& prefix, const std::string& star
         items.emplace_back();
         std::swap(items.back(), it.value);
 
-        if (lastKey) {
-            *lastKey = it.key.substr(substrLength);
-        }
-
         if (items.size() == max) {
+            if (lastKey) {
+                *lastKey = it.key.substr(substrLength);
+            }
             break;
         }
 

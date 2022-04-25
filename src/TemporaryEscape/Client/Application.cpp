@@ -20,7 +20,6 @@ Application::Application(Config& config)
     gbuffer = std::make_shared<GBuffer>();
     skyboxRenderer = std::make_shared<SkyboxRenderer>(config);
     stats = std::make_shared<Stats>();
-    store = std::make_shared<Store>();
 }
 
 Application::~Application() {
@@ -38,8 +37,7 @@ void Application::update() {
     }
 
     worker.restart();
-    worker.run();
-    // worker.run_for(std::chrono::milliseconds(10));
+    worker.run_for(std::chrono::milliseconds(10));
 
     try {
         if (stagesFuture.valid() && stagesFuture.ready()) {
@@ -81,8 +79,8 @@ void Application::render(const Vector2i& viewport) {
     } else if (client && !viewSpace) {
         gui = std::make_shared<GuiContext>(canvas, config, *assetManager);
         widgets = std::make_shared<Widgets>(*gui);
-        viewSpace = std::make_shared<ViewSpace>(config, canvas, *assetManager, *renderer, *client, *widgets, *store);
-        viewMap = std::make_shared<ViewMap>(config, canvas, *assetManager, *renderer, *client, *widgets, *store);
+        viewSpace = std::make_shared<ViewSpace>(config, canvas, *assetManager, *renderer, *client, *widgets);
+        viewMap = std::make_shared<ViewMap>(config, canvas, *assetManager, *renderer, *client, *widgets);
         viewBuild = std::make_shared<ViewBuild>(config, canvas, *assetManager, *renderer, *widgets);
         view = viewSpace.get();
     } else if (config.voxelTest && !viewVoxelTest) {
@@ -112,7 +110,7 @@ void Application::renderView(const Vector2i& viewport) {
         EXCEPTION_NESTED("Failed to render the scene");
     }
 
-    gBuffer.blit(viewport, Framebuffer::DefaultFramebuffer);
+    renderer->blit(viewport, Framebuffer::DefaultFramebuffer);
     Framebuffer::DefaultFramebuffer.bind();
 
     glDisable(GL_DEPTH_TEST);
@@ -244,7 +242,7 @@ void Application::load() {
     loadingProgress.store(0.9f);
 
     Log::i(CMP, "Starting client");
-    client = std::make_shared<Client>(config, *stats, *store, "localhost", config.serverPort);
+    client = std::make_shared<Client>(config, *stats, "localhost", config.serverPort);
 
     loadingProgress.store(1.0f);
 

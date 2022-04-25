@@ -72,9 +72,12 @@ struct GBuffer {
         }
     }
 
-    void blit(const Vector2i& viewport, Framebuffer& target) {
-        blit(viewport, fboBloomCombine, target, FramebufferAttachment::Color0, BufferBit::Color);
-        // blit(viewport, fbo, target, FramebufferAttachment::Color3, BufferBit::Color);
+    void blit(const Vector2i& viewport, Framebuffer& target, bool withBloom = true) {
+        if (withBloom) {
+            blit(viewport, fboBloomCombine, target, FramebufferAttachment::Color0, BufferBit::Color);
+        } else {
+            blit(viewport, fboFxaa, target, FramebufferAttachment::Color0, BufferBit::Color);
+        }
     }
 
     std::unique_ptr<char[]> readPixels(const Vector2i& viewport) const {

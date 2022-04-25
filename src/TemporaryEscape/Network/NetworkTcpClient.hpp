@@ -5,12 +5,13 @@
 #include "NetworkTcpConnector.hpp"
 
 namespace Engine {
-template <typename Sink> class ENGINE_API NetworkTcpClient : public Sink::template Client<NetworkTcpConnector<Sink>> {
+template <typename Handler, typename Sink> class ENGINE_API NetworkTcpClient : public Sink::Client {
 public:
-    using Connector = NetworkTcpConnector<Sink>;
+    using Connector = NetworkTcpConnector<Handler, Sink>;
     using ConnectorPtr = std::shared_ptr<Connector>;
 
-    NetworkTcpClient() = default;
+    explicit NetworkTcpClient(Handler& handler) : handler(handler) {
+    }
     virtual ~NetworkTcpClient() = default;
 
     void connect(const std::string& address, uint16_t port) {
@@ -63,14 +64,14 @@ public:
 
     void onReceive(Packet packet) {
         try {
-            Sink::template Client<Connector>::dispatch(worker, connector, std::move(packet));
+            Sink::Client::dispatch(worker, handler, connector, std::move(packet));
         } catch (...) {
             EXCEPTION_NESTED("Failed to dispatch packet id: {}", packet.id);
         }
     }
 
-    template <typename M> void send(M& message) {
-        message.id = Sink::template Client<Connector>::nextRequestId();
+    template <typename M, typename Fn> void send(M& message, Fn&& callback) {
+        Sink::Client::allocateRequestData(std::forward<Fn>(callback), message.id);
         connector->send(message);
     }
 
@@ -85,6 +86,7 @@ public:
 private:
     static inline const char* CMP = "NetworkTcpClient";
 
+    Handler& handler;
     asio::io_service worker;
     Crypto::Ecdhe ecdhe;
     std::thread thread;
@@ -94,11 +96,11 @@ private:
     Promise<void> connected;
 };
 
-template <typename Sink> void NetworkTcpConnector<Sink>::onConnected() {
+template <typename Handler, typename Sink> void NetworkTcpConnector<Handler, Sink>::onConnected() {
     client.onConnected();
 }
 
-template <typename Sink> void NetworkTcpConnector<Sink>::onReceive(Packet packet) {
+template <typename Handler, typename Sink> void NetworkTcpConnector<Handler, Sink>::onReceive(Packet packet) {
     client.onReceive(std::move(packet));
 }
 } // namespace Engine

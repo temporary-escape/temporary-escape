@@ -3,7 +3,6 @@
 #include "../Math/Vector.hpp"
 #include "../Platform/Enums.hpp"
 #include "Renderer.hpp"
-#include "Store.hpp"
 
 namespace Engine {
 class Client;

@@ -37,6 +37,7 @@ void Imager::createThumbnail(const AssetBlockPtr& block) {
     scene.addEntity(entity);
 
     renderer.setEnableBackground(false);
+    renderer.setEnableBloom(true);
 
     for (const auto shapeType : Shape::allTypes) {
         const auto& name = shapeTypeToFileName(shapeType);

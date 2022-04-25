@@ -34,7 +34,6 @@ struct MessagePlayerLocation {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), location);
         MESSAGE_APPEND_DEFAULT();
-        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -46,7 +45,6 @@ struct MessageSceneEntities {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), entities);
         MESSAGE_APPEND_DEFAULT();
-        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -58,7 +56,6 @@ struct MessageSceneDeltas {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), deltas);
         MESSAGE_APPEND_DEFAULT();
-        MESSAGE_COPY_DEFAULT();
     };
 };
 

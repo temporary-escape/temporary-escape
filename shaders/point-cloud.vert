@@ -23,5 +23,5 @@ void main() {
     vsOut.color = vsIn_color;
     vsOut.size = vsIn_size;
 
-    gl_Position = camera.viewMatrix * worldPos;
+    gl_Position = camera.transformationProjectionMatrix * worldPos;
 }

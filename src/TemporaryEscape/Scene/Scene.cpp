@@ -1,5 +1,4 @@
 #include "Scene.hpp"
-#include "../Assets/SkyboxRenderer.hpp"
 
 #define CMP "Scene"
 
@@ -156,14 +155,13 @@ std::shared_ptr<Camera> Scene::getPrimaryCamera() const {
     return nullptr;
 }
 
-std::optional<std::reference_wrapper<const Skybox>> Scene::getSkybox(SkyboxRenderer& renderer) {
+EntityPtr Scene::getSkybox() {
     auto& skyboxSystem = getComponentSystem<ComponentSkybox>();
     if (skyboxSystem.begin() != skyboxSystem.end()) {
         auto& component = **skyboxSystem.begin();
-        component.recalculate(renderer);
-        return component.getSkybox();
+        return component.getObject().asEntity();
     }
-    return std::nullopt;
+    return nullptr;
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {

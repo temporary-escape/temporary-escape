@@ -6,8 +6,8 @@
 
 using namespace Engine;
 
-Client::Client(const Config& config, Stats& stats, Store& store, const std::string& address, const int port)
-    : stats(stats), store(store), sync(getWorker()) {
+Client::Client(const Config& config, Stats& stats, const std::string& address, const int port)
+    : NetworkTcpClient(*this), stats(stats), sync(getWorker()) {
 
     const auto profilePath = config.userdataPath / Path("profile.yml");
     if (Fs::exists(profilePath)) {
@@ -18,14 +18,24 @@ Client::Client(const Config& config, Stats& stats, Store& store, const std::stri
         localProfile.toYaml(profilePath);
     }
 
-    connect(address, port);
+    NetworkTcpClient<Client, ServerSink>::connect(address, port);
+
+    Promise<void> promise;
+    auto future = promise.future();
 
     MessageLogin::Request req{};
     req.secret = localProfile.secret;
     req.name = localProfile.name;
-    send(req);
 
-    auto future = loggedIn.future();
+    send(req, [&](MessageLogin::Response res) {
+        if (!res.error.empty()) {
+            promise.reject<std::runtime_error>(res.error);
+        } else {
+            playerId = res.playerId;
+            promise.resolve();
+        }
+    });
+
     auto t0 = std::chrono::steady_clock::now();
     while (const auto status = future.waitFor(std::chrono::milliseconds(10)) != std::future_status::ready) {
         sync.restart();
@@ -33,7 +43,7 @@ Client::Client(const Config& config, Stats& stats, Store& store, const std::stri
 
         auto now = std::chrono::steady_clock::now();
         if (now - t0 > std::chrono::milliseconds(1000)) {
-            NetworkTcpClient<ServerSink>::stop();
+            NetworkTcpClient<Client, ServerSink>::stop();
             EXCEPTION("Timeout while waiting for login");
         }
     }
@@ -41,7 +51,7 @@ Client::Client(const Config& config, Stats& stats, Store& store, const std::stri
 }
 
 Client::~Client() {
-    NetworkTcpClient<ServerSink>::stop();
+    NetworkTcpClient<Client, ServerSink>::stop();
 }
 
 void Client::update() {
@@ -60,7 +70,7 @@ void Client::update() {
     }
 }
 
-void Client::handle(MessageLogin::Response res) {
+/*void Client::handle(MessageLogin::Response res) {
     if (!res.error.empty()) {
         loggedIn.reject<std::runtime_error>(res.error);
     } else {
@@ -70,7 +80,7 @@ void Client::handle(MessageLogin::Response res) {
         store.player.id = playerId;
         store.player.id.markChanged();
     }
-}
+}*/
 
 void Client::handle(MessagePlayerLocation::Response res) {
     Log::i(CMP, "Sector has changed, creating new scene");
@@ -86,8 +96,7 @@ void Client::handle(MessagePlayerLocation::Response res) {
     scene->addEntity(camera);
     scene->setPrimaryCamera(camera);
 
-    store.player.location = res.location;
-    store.player.location.markChanged();
+    playerLocation = res.location;
 }
 
 void Client::handle(MessageSceneEntities::Response res) {
@@ -124,7 +133,7 @@ void Client::handle(MessageSceneDeltas::Response res) {
     }
 }
 
-void Client::handle(MessageFetchGalaxy::Response res) {
+/*void Client::handle(MessageFetchGalaxy::Response res) {
     store.galaxy.galaxy = std::move(res.galaxy);
     store.galaxy.galaxy.markChanged();
 }
@@ -145,7 +154,7 @@ void Client::handle(MessageFetchSystems::Response res) {
     }
 
     store.galaxy.systems.markChanged();
-}
+}*/
 
-void Client::handle(MessageShipMovement::Response res) {
-}
+/*void Client::handle(MessageShipMovement::Response res) {
+}*/

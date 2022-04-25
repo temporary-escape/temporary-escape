@@ -5,13 +5,14 @@
 #include "NetworkTcpPeer.hpp"
 
 namespace Engine {
-template <typename Sink> class ENGINE_API NetworkTcpServer : public Sink::template Server<NetworkTcpPeer<Sink>> {
+template <typename Handler, typename Sink> class ENGINE_API NetworkTcpServer : public Sink::Server {
 public:
-    using Peer = NetworkTcpPeer<Sink>;
+    using Peer = NetworkTcpPeer<Handler, Sink>;
     using PeerPtr = std::shared_ptr<Peer>;
     using PeerWeakPtr = std::weak_ptr<Peer>;
 
-    NetworkTcpServer() = default;
+    explicit NetworkTcpServer(Handler& handler) : handler(handler) {
+    }
     virtual ~NetworkTcpServer() = default;
 
     void stop() {
@@ -38,7 +39,7 @@ public:
 
     void onPeerReceive(PeerPtr peer, const Packet& packet) {
         try {
-            Sink::template Server<Peer>::dispatch(worker.getService(), peer, packet);
+            Sink::Server::dispatch(worker.getService(), handler, peer, packet);
         } catch (...) {
             EXCEPTION_NESTED("Failed to dispatch packet id: {}", packet.id);
         }
@@ -77,6 +78,7 @@ private:
         }
     }
 
+    Handler& handler;
     BackgroundWorker worker;
     Crypto::Ecdhe ecdhe;
     std::thread thread;
@@ -85,13 +87,15 @@ private:
     std::unique_ptr<asio::ip::tcp::socket> socket;
 };
 
-template <typename Sink> void NetworkTcpPeer<Sink>::onConnected() {
-    server.onPeerConnected(std::dynamic_pointer_cast<NetworkTcpPeer<Sink>>(NetworkTcpStream<Sink>::shared_from_this()));
+template <typename Handler, typename Sink> void NetworkTcpPeer<Handler, Sink>::onConnected() {
+    server.onPeerConnected(
+        std::dynamic_pointer_cast<NetworkTcpPeer<Handler, Sink>>(NetworkTcpStream<Sink>::shared_from_this()));
 }
 
-template <typename Sink> void NetworkTcpPeer<Sink>::onReceive(Packet packet) {
-    server.onPeerReceive(std::dynamic_pointer_cast<NetworkTcpPeer<Sink>>(NetworkTcpStream<Sink>::shared_from_this()),
-                         std::move(packet));
+template <typename Handler, typename Sink> void NetworkTcpPeer<Handler, Sink>::onReceive(Packet packet) {
+    server.onPeerReceive(
+        std::dynamic_pointer_cast<NetworkTcpPeer<Handler, Sink>>(NetworkTcpStream<Sink>::shared_from_this()),
+        std::move(packet));
 }
 
 } // namespace Engine

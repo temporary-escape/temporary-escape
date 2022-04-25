@@ -7,9 +7,8 @@
 using namespace Engine;
 
 ViewSpace::ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                     Client& client, Widgets& widgets, Store& store)
-    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets),
-      store(store) {
+                     Client& client, Widgets& widgets)
+    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets) {
 
     images.info = assetManager.find<AssetImage>("icon_info");
     images.rotation = assetManager.find<AssetImage>("icon_anticlockwise_rotation");
@@ -20,6 +19,8 @@ ViewSpace::ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& asset
 
 void ViewSpace::render(const Vector2i& viewport) {
     if (auto scene = client.getScene(); scene != nullptr) {
+        renderer.setEnableBackground(true);
+        renderer.setEnableBloom(true);
         renderer.render(*scene);
         // selected.hover = renderer.queryEntityAtPos(*scene, mousePosCurrent);
     } else {
@@ -128,7 +129,9 @@ void ViewSpace::eventKeyPressed(Key key, Modifiers modifiers) {
         }
 
         if (changed) {
-            client.send(movement.req);
+            client.send(movement.req, [](MessageShipMovement::Response res) {
+
+            });
         }
     }
 }
@@ -156,7 +159,9 @@ void ViewSpace::eventKeyReleased(Key key, Modifiers modifiers) {
         }
 
         if (changed) {
-            client.send(movement.req);
+            client.send(movement.req, [](MessageShipMovement::Response res) {
+
+            });
         }
     }
 }

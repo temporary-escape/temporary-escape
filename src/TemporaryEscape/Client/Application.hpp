@@ -54,7 +54,6 @@ private:
     std::shared_ptr<Grid::Builder> gridBuilder;
     std::shared_ptr<ModManager> modManager;
     std::shared_ptr<TransactionalDatabase> db;
-    std::shared_ptr<Store> store;
     std::shared_ptr<Stats> stats;
     std::shared_ptr<Server> server;
     std::shared_ptr<Client> client;

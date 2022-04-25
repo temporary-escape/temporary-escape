@@ -6,10 +6,10 @@
 using namespace Engine;
 
 Server::Server(const Config& config, AssetManager& assetManager, TransactionalDatabase& db)
-    : config(config), assetManager(assetManager), db(db), services(config, assetManager, db), tickFlag(true),
-      worker(getWorker()), loader(1) {
+    : NetworkTcpServer(*this), config(config), assetManager(assetManager), db(db), services(config, assetManager, db),
+      tickFlag(true), worker(getWorker()), loader(1) {
 
-    bind(config.serverPort);
+    NetworkTcpServer<Server, ServerSink>::bind(config.serverPort);
     tickThread = std::thread(&Server::tick, this);
 }
 
@@ -35,7 +35,7 @@ void Server::load() {
 
 Server::~Server() {
     Log::i(CMP, "Stopping");
-    NetworkTcpServer<ServerSink>::stop();
+    NetworkTcpServer<Server, ServerSink>::stop();
     tickFlag.store(false);
     tickThread.join();
     loader.stop();
@@ -238,15 +238,6 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
     });
 }
 
-void Server::handle(const PeerPtr& peer, MessagePlayerLocation::Request req, MessagePlayerLocation::Response& res) {
-}
-
-void Server::handle(const PeerPtr& peer, MessageSceneEntities::Request req, MessageSceneEntities::Response& res) {
-}
-
-void Server::handle(const PeerPtr& peer, MessageSceneDeltas::Request req, MessageSceneDeltas::Response& res) {
-}
-
 void Server::handle(const PeerPtr& peer, MessageFetchGalaxy::Request req, MessageFetchGalaxy::Response& res) {
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
@@ -257,12 +248,14 @@ void Server::handle(const PeerPtr& peer, MessageFetchSystems::Request req, Messa
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
     res.systems = services.systems.getForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
+    Log::d(CMP, "Fetch systems sending: {} results before: {} after: {}", res.systems.size(), req.token, res.token);
 }
 
 void Server::handle(const PeerPtr& peer, MessageFetchRegions::Request req, MessageFetchRegions::Response& res) {
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
     res.regions = services.regions.getForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
+    Log::d(CMP, "Fetch regions sending: {} results", res.regions.size());
 }
 
 void Server::handle(const PeerPtr& peer, MessageShipMovement::Request req, MessageShipMovement::Response& res) {

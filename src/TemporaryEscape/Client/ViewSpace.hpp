@@ -11,7 +11,7 @@ namespace Engine {
 class ENGINE_API ViewSpace : public View {
 public:
     explicit ViewSpace(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                       Client& client, Widgets& widgets, Store& store);
+                       Client& client, Widgets& widgets);
 
     void render(const Vector2i& viewport) override;
     void renderGui(const Vector2i& viewport) override;
@@ -29,7 +29,6 @@ private:
     Renderer& renderer;
     Client& client;
     Widgets& widgets;
-    Store& store;
 
     AssetFontFacePtr fontFaceRegular;
 

@@ -70,7 +70,7 @@ ViewVoxelTest::ViewVoxelTest(const Config& config, Canvas2D& canvas, AssetManage
     for (auto s = 0; s < 24; s++) {
         for (auto x = 0; x < 4; x++) {
             for (auto y = 0; y < 1; y++) {
-                grid->insert(Vector3i{x, y, s}, block, s, 0, 0);
+                grid->insert(Vector3i{x, y, s}, block, s, 0, x);
             }
         }
     }
@@ -81,6 +81,8 @@ ViewVoxelTest::ViewVoxelTest(const Config& config, Canvas2D& canvas, AssetManage
 void ViewVoxelTest::render(const Vector2i& viewport) {
     if (scene != nullptr) {
         scene->update(0.1f);
+        renderer.setEnableBackground(true);
+        renderer.setEnableBloom(true);
         renderer.render(*scene);
     }
 }

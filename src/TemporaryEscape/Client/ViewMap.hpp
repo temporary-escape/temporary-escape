@@ -10,7 +10,7 @@ namespace Engine {
 class ENGINE_API ViewMap : public View {
 public:
     explicit ViewMap(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                     Client& client, Widgets& widgets, Store& store);
+                     Client& client, Widgets& widgets);
 
     void load();
     void render(const Vector2i& viewport) override;
@@ -23,15 +23,18 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
 
 private:
-    // void fetchPlayerLocation();
-    // void fetchGalaxy();
-    // void fetchRegions();
-    // void fetchSystems();
-    // void fetchSystemPlanets();
+    void fetchGalaxy();
+    void fetchRegions();
+    void fetchSystems();
+    void fetchSystemPlanets();
+
     void reconstruct();
     // void renderSystems();
     // void renderCurrentPositionGalaxy();
+    void renderRegionLabels();
+    void renderRegionSystemLabels();
     void renderCurrentPositionInfo();
+    void renderCurrentPositionMarker();
 
     const Config& config;
     Canvas2D& canvas;
@@ -39,7 +42,6 @@ private:
     Renderer& renderer;
     Client& client;
     Widgets& widgets;
-    Store& store;
 
     bool loading{false};
     std::unique_ptr<Scene> scene;
@@ -50,10 +52,7 @@ private:
     std::vector<EntityPtr> entitiesSystems;
     std::vector<EntityPtr> entitiesRegions;
 
-    /*struct Data {
-        // Player
-        PlayerLocationData location;
-
+    struct Data {
         // Galaxy
         GalaxyData galaxy;
         std::unordered_map<std::string, SystemData> systems;
@@ -61,7 +60,7 @@ private:
 
         // System
         std::unordered_map<std::string, SectorPlanetData> planets;
-    } data;*/
+    } data;
 
     struct Images {
         AssetImagePtr currentPosition;

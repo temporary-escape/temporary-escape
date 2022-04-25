@@ -7,8 +7,6 @@
 #include <vector>
 
 namespace Engine {
-class ENGINE_API SkyboxRenderer;
-
 class ENGINE_API Scene {
 public:
     struct Bullet {
@@ -71,7 +69,7 @@ public:
     }
 
     std::shared_ptr<Camera> getPrimaryCamera() const;
-    std::optional<std::reference_wrapper<const Skybox>> getSkybox(SkyboxRenderer& renderer);
+    EntityPtr getSkybox();
 
 private:
     struct BulletSystem {

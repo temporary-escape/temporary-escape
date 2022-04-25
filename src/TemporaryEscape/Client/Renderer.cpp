@@ -110,11 +110,15 @@ void Renderer::render(Scene& scene) {
         setDirectionalLights(lights);
     }
 
-    auto skyboxOpt = scene.getSkybox(skyboxRenderer);
-    if (skyboxOpt.has_value()) {
-        state.skybox = &skyboxOpt.value().get();
+    auto entitySkybox = scene.getSkybox();
+    if (entitySkybox) {
+        auto component = entitySkybox->getComponent<ComponentSkybox>();
+        component->recalculate(skyboxRenderer);
+        state.skybox = &component->getSkybox();
+        state.skyboxTransform = entitySkybox->getTransform();
     } else {
         state.skybox = nullptr;
+        state.skyboxTransform = glm::scale(Matrix4{1.0f}, Vector3{100.0f});
     }
 
     state.gBuffer->fbo.bind();
@@ -136,17 +140,19 @@ void Renderer::render(Scene& scene) {
     state.gBuffer->fboFxaa.bind();
     renderFXAA();
 
-    state.gBuffer->fboBloomExtract.bind();
-    renderBloomExtract();
+    if (state.renderBloom) {
+        state.gBuffer->fboBloomExtract.bind();
+        renderBloomExtract();
 
-    state.gBuffer->fboBloomBlurVertical.bind();
-    renderBloomBlurVertical();
+        state.gBuffer->fboBloomBlurVertical.bind();
+        renderBloomBlurVertical();
 
-    state.gBuffer->fboBloomBlurHorizontal.bind();
-    renderBloomBlurHorizontal();
+        state.gBuffer->fboBloomBlurHorizontal.bind();
+        renderBloomBlurHorizontal();
 
-    state.gBuffer->fboBloomCombine.bind();
-    renderBloomCombine();
+        state.gBuffer->fboBloomCombine.bind();
+        renderBloomCombine();
+    }
 
     /*{
         const auto& [texture, fbo] = state.gBuffer->getForPostProcessing();
@@ -184,34 +190,6 @@ void Renderer::render(Scene& scene) {
 
     Framebuffer::DefaultFramebuffer.bind();
     renderCanvas(viewport, scene);*/
-}
-
-void Renderer::renderDebugNormals(Scene& scene) {
-    GLuint attachments[1] = {
-        GL_COLOR_ATTACHMENT0,
-    };
-    glDrawBuffers(1, attachments);
-
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-    auto& componentSystemModel = scene.getComponentSystem<ComponentModel>();
-    auto& componentSystemGrid = scene.getComponentSystem<ComponentGrid>();
-
-    shaders.debugNormals.use();
-    shaders.debugNormals.bindCameraUniform(state.cameraUbo);
-
-    for (auto& component : componentSystemModel) {
-        renderDebugNormalsModel(*component);
-    }
-
-    for (auto& component : componentSystemGrid) {
-        renderDebugNormalsGrid(*component);
-    }
-
-    glDepthMask(GL_TRUE);
 }
 
 void Renderer::renderSceneDeffered(Scene& scene) {
@@ -434,8 +412,7 @@ void Renderer::renderSceneBackground(Scene& scene) {
     shaders.skybox.use();
     shaders.skybox.bindCameraUniform(state.cameraZeroPosUbo);
 
-    auto transform = glm::scale(Matrix4{1.0f}, Vector3{100.0f});
-    renderSkybox(state.skybox ? state.skybox->texture : defaultTextures.skyboxTexture, transform);
+    renderSkybox(state.skybox ? state.skybox->texture : defaultTextures.skyboxTexture, state.skyboxTransform);
 
     glDepthMask(GL_TRUE);
 }
@@ -461,6 +438,24 @@ void Renderer::renderSceneForward(Scene& scene) {
         renderComponentParticleEmitter(*component);
     }
 
+    auto& componentSystemLines = scene.getComponentSystem<ComponentLines>();
+
+    shaders.lines.use();
+    shaders.lines.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemLines) {
+        renderComponentLines(*component);
+    }
+
+    auto& componentSystemPointCloud = scene.getComponentSystem<ComponentPointCloud>();
+
+    shaders.pointCloud.use();
+    shaders.pointCloud.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemPointCloud) {
+        renderComponentPointCloud(*component);
+    }
+
     glDepthMask(GL_TRUE);
 }
 
@@ -468,32 +463,6 @@ void Renderer::renderSkybox(const TextureCubemap& cubemap, const Matrix4& transf
     shaders.skybox.setModelMatrix(transform);
     shaders.skybox.bindSkyboxTexture(cubemap);
     shaders.skybox.draw(meshes.skybox);
-}
-
-void Renderer::renderDebugNormalsModel(ComponentModel& component) {
-    const auto transform = component.getObject().getAbsoluteTransform();
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    shaders.debugNormals.setModelMatrix(transform);
-    shaders.debugNormals.setNormalMatrix(transformInverted);
-
-    for (const auto& primitive : component.getModel()->getPrimitives()) {
-        auto& mesh = primitive.mesh;
-        mesh.bind();
-        glDrawElements(GL_POINTS, mesh.getCount(), GLenum(mesh.getIndexType()), nullptr);
-    }
-}
-
-void Renderer::renderDebugNormalsGrid(ComponentGrid& component) {
-    const auto transform = component.getObject().getAbsoluteTransform();
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    shaders.debugNormals.setModelMatrix(transform);
-    shaders.debugNormals.setNormalMatrix(transformInverted);
-
-    for (const auto& primitive : component.getPrimitives()) {
-        auto& mesh = primitive.mesh;
-        mesh.bind();
-        glDrawElements(GL_POINTS, mesh.getCount(), GLenum(mesh.getIndexType()), nullptr);
-    }
 }
 
 void Renderer::renderModel(const AssetModelPtr& model, const Matrix4& transform) {
@@ -626,6 +595,23 @@ void Renderer::renderComponentParticleEmitter(ComponentParticleEmitter& componen
     shaders.particleEmitter.bindParticleData(component.getUbo());
     particleEmitter.vao.bind();
     glDrawArrays(GL_POINTS, 0, component.getCount());
+}
+
+void Renderer::renderComponentLines(ComponentLines& component) {
+    component.recalculate();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.lines.setModelMatrix(transform);
+    shaders.lines.draw(component.getMesh());
+}
+
+void Renderer::renderComponentPointCloud(ComponentPointCloud& component) {
+    component.recalculate();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.pointCloud.setModelMatrix(transform);
+    shaders.pointCloud.bindTexture(component.getTexture()->getTexture());
+    shaders.pointCloud.draw(component.getMesh());
 }
 
 void Renderer::setCamera(Camera& camera) {

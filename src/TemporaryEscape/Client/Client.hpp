@@ -9,18 +9,24 @@
 #include "../Server/Schemas.hpp"
 #include "../Server/Sector.hpp"
 #include "../Utils/Worker.hpp"
-#include "PlayerLocalProfile.hpp"
+#include "../Utils/Yaml.hpp"
 #include "Request.hpp"
 #include "Stats.hpp"
-#include "Store.hpp"
 
 namespace Engine {
-class ENGINE_API Client : public NetworkTcpClient<ServerSink> {
+struct PlayerLocalProfile {
+    std::string name;
+    uint64_t secret;
+
+    YAML_DEFINE(name, secret);
+};
+
+class ENGINE_API Client : public NetworkTcpClient<Client, ServerSink> {
 public:
-    explicit Client(const Config& config, Stats& stats, Store& store, const std::string& address, int port);
+    explicit Client(const Config& config, Stats& stats, const std::string& address, int port);
     virtual ~Client();
 
-    void fetchGalaxy() {
+    /*void fetchGalaxy() {
         MessageFetchGalaxy::Request req{};
         req.galaxyId = store.player.location.value().galaxyId;
         send(req);
@@ -36,7 +42,7 @@ public:
         MessageFetchRegions::Request req{};
         req.galaxyId = store.player.location.value().galaxyId;
         send(req);
-    }
+    }*/
 
     void update();
 
@@ -44,28 +50,36 @@ public:
         return scene.get();
     }
 
-    template <typename T> void send(T& message) {
-        NetworkTcpClient<ServerSink>::template send(message);
+    const std::string& getPlayerId() const {
+        return playerId;
+    }
+
+    const PlayerLocationData& getPlayerLocation() const {
+        return playerLocation;
+    }
+
+    template <typename M, typename Fn> void send(M& message, Fn&& callback) {
+        NetworkTcpClient<Client, ServerSink>::template send(message, std::forward<Fn>(callback));
         ++stats.network.packetsSent;
     }
 
-    void handle(MessageLogin::Response res) override;
-    void handle(MessagePlayerLocation::Response res) override;
-    void handle(MessageSceneEntities::Response res) override;
-    void handle(MessageSceneDeltas::Response res) override;
-    void handle(MessageFetchGalaxy::Response res) override;
-    void handle(MessageFetchRegions::Response res) override;
-    void handle(MessageFetchSystems::Response res) override;
-    void handle(MessageShipMovement::Response res) override;
+    // void handle(MessageLogin::Response res);
+    void handle(MessagePlayerLocation::Response res);
+    void handle(MessageSceneEntities::Response res);
+    void handle(MessageSceneDeltas::Response res);
+    // void handle(MessageFetchGalaxy::Response res);
+    // void handle(MessageFetchRegions::Response res);
+    // void handle(MessageFetchSystems::Response res);
+    // void handle(MessageShipMovement::Response res);
 
 private:
     Stats& stats;
-    Store& store;
 
     PlayerLocalProfile localProfile;
     std::string playerId;
+    PlayerLocationData playerLocation;
 
-    Promise<void> loggedIn;
+    // Promise<void> loggedIn;
 
     asio::io_service& sync;
     PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
