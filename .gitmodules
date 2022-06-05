@@ -13,3 +13,6 @@
 [submodule "docs/themes/hugo-book"]
 	path = docs/themes/hugo-book
 	url = https://github.com/alex-shpak/hugo-book
+[submodule "libs/voronoi"]
+	path = libs/voronoi
+	url = https://github.com/JCash/voronoi

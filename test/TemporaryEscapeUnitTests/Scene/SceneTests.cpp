@@ -71,7 +71,7 @@ class EntityFoo {
     }
 }
 )"))
-        ->load(assetManager);
+        ->load(assetManager, true);
 
     assetManager.runAllScripts(vm);
 

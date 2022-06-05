@@ -23,7 +23,7 @@ public:
     explicit AssetPlanet(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetPlanet() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const Texture& getTexture() const {
         return definition.surface.texture->getTexture();

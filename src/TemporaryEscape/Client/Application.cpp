@@ -44,7 +44,7 @@ void Application::update() {
             stagesFuture.get();
         }
     } catch (...) {
-        EXCEPTION_NESTED("Failed to initialize game resources");
+        EXCEPTION_NESTED("Failed to initialize game resources")
     }
 }
 
@@ -78,14 +78,14 @@ void Application::render(const Vector2i& viewport) {
         canvas.endFrame();
     } else if (client && !viewSpace) {
         gui = std::make_shared<GuiContext>(canvas, config, *assetManager);
-        widgets = std::make_shared<Widgets>(*gui);
+        widgets = std::make_shared<Widgets>(config, *gui);
         viewSpace = std::make_shared<ViewSpace>(config, canvas, *assetManager, *renderer, *client, *widgets);
         viewMap = std::make_shared<ViewMap>(config, canvas, *assetManager, *renderer, *client, *widgets);
-        viewBuild = std::make_shared<ViewBuild>(config, canvas, *assetManager, *renderer, *widgets);
+        viewBuild = std::make_shared<ViewBuild>(config, canvas, *assetManager, *renderer, *client, *widgets);
         view = viewSpace.get();
     } else if (config.voxelTest && !viewVoxelTest) {
         gui = std::make_shared<GuiContext>(canvas, config, *assetManager);
-        widgets = std::make_shared<Widgets>(*gui);
+        widgets = std::make_shared<Widgets>(config, *gui);
         viewVoxelTest = std::make_shared<ViewVoxelTest>(config, canvas, *assetManager, *renderer, *widgets);
         view = viewVoxelTest.get();
     }
@@ -147,7 +147,7 @@ void Application::renderView(const Vector2i& viewport) {
 void Application::load() {
     Log::i(CMP, "Loading mods");
     modManager->load(*assetManager, config.assetsPath / "base");
-    auto queue = assetManager->getLoadQueue();
+    auto queue = assetManager->getLoadQueue(false);
 
     std::atomic<bool> error(false);
     std::shared_ptr<Promise<void>> promise;
@@ -222,10 +222,10 @@ void Application::load() {
 
     Log::i(CMP, "Using save directory: {}", saveDir.string());
 
-    if (config.saveFolderClean) {
-        Log::w(CMP, "Deleting save directory");
-        Fs::remove_all(saveDir);
-    }
+    // if (config.saveFolderClean) {
+    Log::w(CMP, "Deleting save directory");
+    Fs::remove_all(saveDir);
+    //}
 
     if (!Fs::exists(saveDir) && !Fs::create_directories(saveDir)) {
         EXCEPTION("Failed to create save directory: '{}'", saveDir.string());
@@ -236,13 +236,14 @@ void Application::load() {
     loadingProgress.store(0.8f);
 
     Log::i(CMP, "Starting server");
-    server = std::make_shared<Server>(config, *assetManager, *db);
+    server = std::make_shared<Server>(config, *modManager, *assetManager, *db);
     server->load();
 
     loadingProgress.store(0.9f);
 
     Log::i(CMP, "Starting client");
-    client = std::make_shared<Client>(config, *stats, "localhost", config.serverPort);
+    const auto profilePath = config.userdataPath / Path("profile.yml");
+    client = std::make_shared<Client>(config, *modManager, *stats, "localhost", config.serverPort, profilePath);
 
     loadingProgress.store(1.0f);
 

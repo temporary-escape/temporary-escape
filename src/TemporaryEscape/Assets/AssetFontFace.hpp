@@ -9,7 +9,7 @@ public:
     explicit AssetFontFace(const Manifest& mod, const Config& config, const Path& path);
     virtual ~AssetFontFace() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const Canvas2D::FontHandle& getHandle() const {
         return font;

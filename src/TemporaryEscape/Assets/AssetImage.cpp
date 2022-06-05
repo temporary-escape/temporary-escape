@@ -12,8 +12,8 @@ AssetImage::AssetImage(const Manifest& mod, std::string name, Canvas2D::Image im
     : Asset(mod, std::move(name)), image(image) {
 }
 
-void AssetImage::load(AssetManager& assetManager) {
-    if (path.empty()) {
+void AssetImage::load(AssetManager& assetManager, bool noGraphics) {
+    if (path.empty() || noGraphics) {
         return;
     }
 

@@ -11,7 +11,7 @@ public:
     explicit AssetSector(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetSector() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
 private:
     Path path;

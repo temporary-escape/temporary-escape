@@ -16,7 +16,7 @@ public:
     AssetModel(const AssetModel& other) = delete;
     AssetModel(AssetModel&& other) = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const std::list<Primitive>& getPrimitives() const {
         return primitives;

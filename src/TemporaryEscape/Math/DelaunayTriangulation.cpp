@@ -71,7 +71,7 @@ bool DelaunayTriangulation::Triangle::circumCircleContains(const Vector2& v) con
     return dist <= circum_radius;
 }
 
-DelaunayTriangulation::DelaunayTriangulation(std::vector<Vector2> vertices) : vertices(std::move(vertices)) {
+DelaunayTriangulation::DelaunayTriangulation(const std::vector<Vector2>& vertices) : vertices(std::move(vertices)) {
 }
 
 DelaunayTriangulation::Connections DelaunayTriangulation::solve() {
@@ -185,10 +185,4 @@ DelaunayTriangulation::Connections DelaunayTriangulation::solve() {
     }
 
     return connections;
-
-    /*for (const auto t : triangles) {
-        edges.push_back(Edge{t.a, t.b});
-        edges.push_back(Edge{t.b, t.c});
-        edges.push_back(Edge{t.c, t.a});
-    }*/
 }

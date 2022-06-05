@@ -523,6 +523,14 @@ void GuiContext::label(const std::string& text, const Color4& color, TextAlignVa
     nk_label_colored(ctx.get(), text.c_str(), align, toNkColor(color));
 }
 
+void GuiContext::image(const AssetImagePtr& image) {
+    struct nk_image img {};
+    img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
+    img.w = image->getImage().size.x;
+    img.h = image->getImage().size.y;
+    nk_image(ctx.get(), img);
+}
+
 void GuiContext::title(const std::string& text) {
     setFont(fontFaceBold, config.guiFontSize + 2.0f);
     label(text);
@@ -594,6 +602,21 @@ void GuiContext::tooltip(const float width, const std::function<void()>& fn) {
             nk_tooltip_end(ctx.get());
         }
     }
+}
+
+void GuiContext::input(std::string& text, const size_t max) {
+    std::vector<char> buff;
+    buff.resize(max);
+    std::memcpy(buff.data(), text.data(), std::min(text.size(), max));
+
+    int len = static_cast<int>(text.size());
+    nk_edit_string(ctx.get(), NK_EDIT_FIELD, buff.data(), &len, static_cast<int>(max), nk_filter_default);
+
+    if (len != text.size()) {
+        text.resize(len);
+    }
+
+    std::memcpy(text.data(), buff.data(), len);
 }
 
 void GuiContext::progress(float progress) {
@@ -709,7 +732,7 @@ void GuiContext::applyTheme() {
     window.header.label_active = TEXT_BLACK;
     window.header.padding = nk_vec2(3, 2);
     window.group_padding = nk_vec2(1, 1);
-    window.padding = nk_vec2(4, 8);
+    window.padding = nk_vec2(GuiTheme::padding, GuiTheme::padding);
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
 

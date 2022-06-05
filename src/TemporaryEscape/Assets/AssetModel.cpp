@@ -136,20 +136,20 @@ AssetModel::AssetModel(const Manifest& mod, std::string name, const Path& path)
     : Asset(mod, std::move(name)), path(path), primitives{}, bbMin{0}, bbMax{0}, bbRadius(0) {
 }
 
-void AssetModel::load(AssetManager& assetManager) {
+void AssetModel::load(AssetManager& assetManager, bool noGraphics) {
     try {
         const GltfImporter gltf(path);
         const auto [object, collision] = validateGltfFile(gltf);
 
-        const auto resolveTexture = [this, &assetManager](const std::string& filename,
-                                                          const TextureType type) -> AssetTexturePtr {
+        const auto resolveTexture = [this, noGraphics, &assetManager](const std::string& filename,
+                                                                      const TextureType type) -> AssetTexturePtr {
             try {
                 const auto baseName = Path(filename).stem().string();
                 return assetManager.find<AssetTexture>(baseName);
             } catch (std::exception& e) {
                 const auto file = path.parent_path() / Path(filename);
                 const auto texture = assetManager.addTexture(getMod(), file, type);
-                texture->load(assetManager);
+                texture->load(assetManager, noGraphics);
                 return texture;
             }
         };
@@ -288,6 +288,10 @@ void AssetModel::load(AssetManager& assetManager) {
                 GltfUtils::combine(positions.accessor, normals.accessor, texCoords.accessor, tangents.accessor);
 
             const auto& iboData = part.indices->bufferView.getBuffer();
+
+            if (noGraphics) {
+                continue;
+            }
 
             primitive.mesh = Mesh{};
 

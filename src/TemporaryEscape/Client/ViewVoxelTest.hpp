@@ -30,5 +30,7 @@ private:
     Widgets& widgets;
 
     std::unique_ptr<Scene> scene;
+
+    std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
 };
 } // namespace Engine

@@ -79,27 +79,32 @@ template <typename T> static T pick(const std::vector<T>& vec, const size_t rand
 std::string NameGenerator::operator()(std::mt19937_64& rng) {
     const auto length = distLength(rng);
 
-    std::string ss(SEQUENCE_LENGTH + length, ' ');
+    std::string ss;
+    ss.reserve(SEQUENCE_LENGTH + length);
+
     std::uniform_int_distribution<size_t> dist;
 
     const auto start = pick(sequencesKeys, dist(rng));
+    size_t end = 0;
+
     for (size_t i = 0; i < start.size(); i++) {
-        ss[i] = start[i];
+        ss.push_back(start[i]);
     }
+    end = start.size();
 
     const auto last = [&](const size_t i) -> std::string { return std::string(&ss[i], SEQUENCE_LENGTH); };
 
     for (size_t i = 0; i < length; i++) {
         const auto it = sequences.find(last(i));
         if (it != sequences.end()) {
-            ss[i + SEQUENCE_LENGTH] = pick(it->second, dist(rng));
+            ss.push_back(pick(it->second, dist(rng)));
         } else {
             break;
         }
     }
 
     ss[0] = std::toupper(ss[0]);
-    return ss;
+    return {ss.data(), ss.size()};
 }
 
 NameGenerator NameGenerator::systemsNames(defaultWords);

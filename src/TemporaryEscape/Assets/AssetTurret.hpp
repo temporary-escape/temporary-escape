@@ -32,7 +32,7 @@ public:
     explicit AssetTurret(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetTurret() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const std::string& getTitle() const {
         return definition.title;

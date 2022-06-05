@@ -30,7 +30,9 @@ AssetShape::AssetShape(const Manifest& mod, std::string name, const Path& path)
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetShape::load(AssetManager& assetManager) {
+void AssetShape::load(AssetManager& assetManager, bool noGraphics) {
+    (void)noGraphics;
+
     try {
         const GltfImporter gltf(path);
 

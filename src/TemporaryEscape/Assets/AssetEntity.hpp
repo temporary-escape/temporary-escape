@@ -16,7 +16,7 @@ public:
     explicit AssetEntity(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetEntity() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
     void run(wrenbind17::VM& vm);
     const std::string& getModuleName() const {
         return moduleName;

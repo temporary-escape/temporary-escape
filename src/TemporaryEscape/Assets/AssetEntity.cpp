@@ -8,8 +8,10 @@ AssetEntity::AssetEntity(const Manifest& mod, std::string name, const Path& path
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetEntity::load(AssetManager& assetManager) {
+void AssetEntity::load(AssetManager& assetManager, bool noGraphics) {
     (void)assetManager;
+    (void)noGraphics;
+
     className = path.stem().string();
     const auto dir = getMod().path.stem().string();
     moduleName = fmt::format("{}/entities/{}", dir, className);

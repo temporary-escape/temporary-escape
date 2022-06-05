@@ -13,7 +13,7 @@ public:
     }
     virtual ~Asset() = default;
 
-    virtual void load(AssetManager& assetManager) = 0;
+    virtual void load(AssetManager& assetManager, bool noGraphics) = 0;
 
     const Manifest& getMod() const {
         return mod;

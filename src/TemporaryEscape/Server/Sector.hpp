@@ -3,8 +3,8 @@
 #include "../Scene/Scene.hpp"
 #include "../Utils/Worker.hpp"
 #include "Messages.hpp"
-#include "Services.hpp"
 #include "Session.hpp"
+#include "World.hpp"
 
 namespace wrenbind17 {
 class VM;
@@ -15,7 +15,7 @@ class Server;
 
 class Sector : public Scene::EventListener {
 public:
-    explicit Sector(const Config& config, Services& services, AssetManager& assetManager, TransactionalDatabase& db,
+    explicit Sector(const Config& config, World& world, AssetManager& assetManager, TransactionalDatabase& db,
                     std::string galaxyId, std::string systemId, std::string sectorId);
     virtual ~Sector();
 
@@ -37,7 +37,7 @@ private:
     void spawnPlayerShip(SessionPtr session);
 
     const Config& config;
-    Services& services;
+    World& world;
     AssetManager& assetManager;
     TransactionalDatabase& db;
     std::string galaxyId;

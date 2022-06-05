@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Library.hpp"
-#include "../Math/Vector.hpp"
+#include "Vector.hpp"
 #include <unordered_map>
 #include <vector>
 
@@ -44,10 +44,10 @@ public:
 
     using Connections = std::unordered_map<size_t, std::vector<size_t>>;
 
-    explicit DelaunayTriangulation(std::vector<Vector2> points);
+    explicit DelaunayTriangulation(const std::vector<Vector2>& points);
     Connections solve();
 
 private:
-    std::vector<Vector2> vertices;
+    const std::vector<Vector2>& vertices;
 };
 } // namespace Engine

@@ -1,4 +1,5 @@
 #pragma once
+#include "../Utils/Msgpack.hpp"
 #include "../Utils/Yaml.hpp"
 #include <string>
 
@@ -8,7 +9,9 @@ struct Manifest {
     std::string name;
     std::string description;
     std::string author;
+    std::string version;
 
-    YAML_DEFINE(name, description, author);
+    YAML_DEFINE(name, description, author, version);
+    MSGPACK_DEFINE_MAP(name, description, author, version);
 };
 } // namespace Engine

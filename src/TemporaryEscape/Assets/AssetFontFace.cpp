@@ -7,7 +7,11 @@ AssetFontFace::AssetFontFace(const Manifest& mod, const Config& config, const Pa
     : Asset(mod, path.stem().string()), config(config), path(path), font(0) {
 }
 
-void AssetFontFace::load(AssetManager& assetManager) {
+void AssetFontFace::load(AssetManager& assetManager, bool noGraphics) {
+    if (noGraphics) {
+        return;
+    }
+
     try {
         font = assetManager.createFontHandle(path);
     } catch (...) {

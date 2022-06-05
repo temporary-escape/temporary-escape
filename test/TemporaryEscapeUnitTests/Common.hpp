@@ -98,7 +98,7 @@ namespace Catch {
 template <> struct StringMaker<Vector2> {
     static std::string convert(Vector2 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << "]";
         return ss.str();
     }
 };
@@ -106,7 +106,7 @@ template <> struct StringMaker<Vector2> {
 template <> struct StringMaker<Vector2i> {
     static std::string convert(Vector2i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << "]";
         return ss.str();
     }
 };
@@ -114,7 +114,7 @@ template <> struct StringMaker<Vector2i> {
 template <> struct StringMaker<Vector3> {
     static std::string convert(Vector3 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << "]";
         return ss.str();
     }
 };
@@ -122,7 +122,7 @@ template <> struct StringMaker<Vector3> {
 template <> struct StringMaker<Vector3i> {
     static std::string convert(Vector3i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << "]";
         return ss.str();
     }
 };
@@ -130,7 +130,7 @@ template <> struct StringMaker<Vector3i> {
 template <> struct StringMaker<Vector4> {
     static std::string convert(Vector4 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };
@@ -138,7 +138,7 @@ template <> struct StringMaker<Vector4> {
 template <> struct StringMaker<Vector4i> {
     static std::string convert(Vector4i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };
@@ -146,7 +146,7 @@ template <> struct StringMaker<Vector4i> {
 template <> struct StringMaker<Quaternion> {
     static std::string convert(Quaternion const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };

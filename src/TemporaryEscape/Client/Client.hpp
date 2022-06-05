@@ -3,11 +3,13 @@
 #include "../Config.hpp"
 #include "../Future.hpp"
 #include "../Library.hpp"
+#include "../Modding/ModManager.hpp"
 #include "../Network/NetworkTcpClient.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Messages.hpp"
 #include "../Server/Schemas.hpp"
 #include "../Server/Sector.hpp"
+#include "../Utils/ReturnType.hpp"
 #include "../Utils/Worker.hpp"
 #include "../Utils/Yaml.hpp"
 #include "Request.hpp"
@@ -23,32 +25,48 @@ struct PlayerLocalProfile {
 
 class ENGINE_API Client : public NetworkTcpClient<Client, ServerSink> {
 public:
-    explicit Client(const Config& config, Stats& stats, const std::string& address, int port);
+    explicit Client(const Config& config, ModManager& modManager, Stats& stats, const std::string& address, int port,
+                    const Path& profilePath);
     virtual ~Client();
-
-    /*void fetchGalaxy() {
-        MessageFetchGalaxy::Request req{};
-        req.galaxyId = store.player.location.value().galaxyId;
-        send(req);
-    }
-
-    void fetchGalaxySystems() {
-        MessageFetchSystems::Request req{};
-        req.galaxyId = store.player.location.value().galaxyId;
-        send(req);
-    }
-
-    void fetchGalaxyRegions() {
-        MessageFetchRegions::Request req{};
-        req.galaxyId = store.player.location.value().galaxyId;
-        send(req);
-    }*/
 
     void update();
 
     Scene* getScene() const {
         return scene.get();
     }
+
+#if ENGINE_TESTS
+    template <typename M> typename M::Response sendSync(typename M::Request& req) {
+        auto promise = std::make_shared<Promise<typename M::Response>>();
+        auto future = promise->future();
+
+        NetworkTcpClient<Client, ServerSink>::template send(
+            req, [promise](typename M::Response res) { promise->resolve(std::move(res)); });
+
+        if (future.template waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
+            EXCEPTION("Failed to wait for response of type: '{}'", typeid(typename M::Response).name());
+        }
+        return future.get();
+    }
+
+    template <typename Fn, typename R = return_type_t<Fn>> R check(Fn&& fn) {
+        auto promise = std::make_shared<Promise<R>>();
+        auto future = promise->future();
+
+        sync.post([promise, fn = std::forward<Fn>(fn)] {
+            try {
+                promise->resolve(fn());
+            } catch (std::exception_ptr& eptr) {
+                promise->reject(eptr);
+            }
+        });
+
+        if (future.template waitFor(std::chrono::milliseconds(1000)) != std::future_status::ready) {
+            EXCEPTION("Failed to wait for promise to complete");
+        }
+        return future.get();
+    }
+#endif
 
     const std::string& getPlayerId() const {
         return playerId;
@@ -63,16 +81,15 @@ public:
         ++stats.network.packetsSent;
     }
 
-    // void handle(MessageLogin::Response res);
-    void handle(MessagePlayerLocation::Response res);
+    void handle(MessagePlayerLocationChanged::Response res);
     void handle(MessageSceneEntities::Response res);
     void handle(MessageSceneDeltas::Response res);
-    // void handle(MessageFetchGalaxy::Response res);
-    // void handle(MessageFetchRegions::Response res);
-    // void handle(MessageFetchSystems::Response res);
-    // void handle(MessageShipMovement::Response res);
 
 private:
+    void fetchModInfo(Promise<void>& promise);
+    void doLogin(Promise<void>& promise);
+
+    ModManager& modManager;
     Stats& stats;
 
     PlayerLocalProfile localProfile;

@@ -12,6 +12,7 @@
 #include "ComponentPlanet.hpp"
 #include "ComponentPlayer.hpp"
 #include "ComponentPointCloud.hpp"
+#include "ComponentPolyShape.hpp"
 #include "ComponentScript.hpp"
 #include "ComponentShipControl.hpp"
 #include "ComponentSkybox.hpp"
@@ -41,6 +42,8 @@ using EntityComponentHelper = Component::TraitsMapper<
     Component::Traits<ComponentPointCloud,
                       Component::Flags::None>,
     Component::Traits<ComponentLines,
+                      Component::Flags::None>,
+    Component::Traits<ComponentPolyShape,
                       Component::Flags::None>,
     Component::Traits<ComponentText,
                       Component::Flags::None>,

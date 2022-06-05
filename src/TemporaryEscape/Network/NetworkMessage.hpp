@@ -102,7 +102,7 @@ template <typename Type, typename Request, typename Response> struct NetworkMess
                 Request req{};
                 req.id = res.id;
                 req.token = std::move(res.token);
-                Log::d("NetworkMessage", "Sending again for token: {}", req.token);
+                // Log::d("NetworkMessage", "Sending again for token: {}", req.token);
                 res.copyback(req);
 
                 connector->send(req);

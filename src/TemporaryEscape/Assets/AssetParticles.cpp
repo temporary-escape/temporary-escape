@@ -7,7 +7,9 @@ AssetParticles::AssetParticles(const Manifest& mod, std::string name, const Path
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetParticles::load(AssetManager& assetManager) {
+void AssetParticles::load(AssetManager& assetManager, bool noGraphics) {
+    (void)noGraphics;
+
     try {
         definition.fromYaml(path);
     } catch (...) {

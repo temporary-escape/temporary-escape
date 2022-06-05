@@ -64,6 +64,7 @@ private:
     void renderSkybox(const TextureCubemap& cubemap, const Matrix4& transform);
     void renderModel(const AssetModelPtr& model, const Matrix4& transform);
     void renderComponentLines(ComponentLines& component);
+    void renderComponentPolyShape(ComponentPolyShape& component);
     void renderComponentPointCloud(ComponentPointCloud& component);
     void renderComponentModel(ComponentModel& component);
     void renderComponentGrid(ComponentGrid& component);

@@ -8,6 +8,7 @@
 #include "../Platform/Enums.hpp"
 #include "GuiColors.hpp"
 #include "GuiFlags.hpp"
+#include "GuiTheme.hpp"
 
 #include <functional>
 #include <list>
@@ -41,11 +42,12 @@ public:
     void group(const std::string& name, GuiFlags flags, const std::function<void()>& fn);
     bool button(const std::string& text);
     bool buttonImage(const AssetImagePtr& image, const std::string& text);
-    // bool buttonImage(const IconPtr& image, bool active = false);
     void label(const std::string& text, TextAlignValue align = TextAlign::Left);
     void label(const std::string& text, const Color4& color, TextAlignValue align = TextAlign::Left);
+    void image(const AssetImagePtr& image);
     void title(const std::string& text);
     void text(const std::string& text);
+    void input(std::string& text, size_t max = 128);
     void layoutDynamic(float height, int count);
     void layoutDynamic(float height, int count, const std::function<void()>& fn);
     void layoutDynamicPush(float weight);

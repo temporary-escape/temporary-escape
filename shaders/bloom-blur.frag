@@ -2,7 +2,7 @@ in VS_OUT {
     vec2 texCoords;
 } vsOut;
 
-layout(location = 0) out vec3 o_color;
+layout(location = 0) out vec4 o_color;
 
 uniform sampler2D inputTexture;
 uniform bool horizontal;
@@ -65,5 +65,5 @@ void main() {
         gaussCol += texCol.rgb * weight;
     }
     gaussCol.rgb = clamp(gaussCol.rgb / sum, 0.0, 1.0);
-    o_color = gaussCol.rgb;
+    o_color = vec4(gaussCol.rgb, 1.0);
 }

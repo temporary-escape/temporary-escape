@@ -1,5 +1,6 @@
 #include "../Common.hpp"
 #include <TemporaryEscape/Math/Utils.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 #define TAG "[Math]"
 
@@ -28,4 +29,57 @@ TEST_CASE("Ray box intersection", TAG) {
     REQUIRE(res.value().x == Approx(0.5f));
     REQUIRE(res.value().y == Approx(0.5f));
     REQUIRE(res.value().z == Approx(0.0f));
+}
+
+TEST_CASE("Gift wrap", TAG) {
+    std::vector<Vector2> positions = {
+        {5.0f, 5.0f}, {10.0f, 5.0f}, {5.0f, 0.0f}, {3.0f, 10.0f}, {7.0f, 10.0f}, {0.0f, 5.0f}, {0.0f, 0.0f},
+    };
+
+    std::vector<size_t> connections = {
+        1, 6, 3, 4, 5, 2,
+    };
+
+    const auto findLargestX = [&]() {
+        size_t idx = 0;
+        float current = positions.at(connections.at(0)).x;
+        for (size_t i = 1; i < connections.size(); i++) {
+            const auto& test = positions.at(connections.at(i));
+            if (test.x > current) {
+                current = test.x;
+                idx = i;
+            }
+        }
+        return idx;
+    };
+
+    auto idx = findLargestX();
+
+    auto conns = connections;
+    decltype(connections) copy;
+    conns.erase(conns.begin() + idx);
+    copy.push_back(idx);
+
+    Vector2 forward{1.0f, 0.0f};
+
+    auto center = positions.at(0);
+
+    while (!conns.empty()) {
+        for (size_t i = 0; i < conns.size(); i++) {
+            const auto& pos = positions.at(conns.at(i));
+            const auto dir = glm::normalize(pos - center);
+
+            auto test = glm::angle(forward, dir);
+            auto testOriented = glm::orientedAngle(forward, dir);
+
+            if (testOriented < 0.0f) {
+                testOriented += glm::radians(360.0f);
+            }
+
+            Log::d(TAG, "Pos: {} dir: {} test: {} oriented: {}", pos, dir, glm::degrees(test),
+                   glm::degrees(testOriented));
+        }
+
+        break;
+    }
 }

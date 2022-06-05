@@ -8,9 +8,9 @@
 
 using namespace Engine;
 
-Sector::Sector(const Config& config, Services& services, AssetManager& assetManager, TransactionalDatabase& db,
+Sector::Sector(const Config& config, World& world, AssetManager& assetManager, TransactionalDatabase& db,
                std::string galaxyId, std::string systemId, std::string sectorId)
-    : config(config), services(services), assetManager(assetManager), db(db), galaxyId(std::move(galaxyId)),
+    : config(config), world(world), assetManager(assetManager), db(db), galaxyId(std::move(galaxyId)),
       systemId(std::move(systemId)), sectorId(std::move(sectorId)), loaded(false),
       vm(std::make_unique<wrenbind17::VM>(config.wrenPaths)) {
 
@@ -33,7 +33,7 @@ void Sector::load() {
     loaded = true;
 
     try {
-        auto found = services.sectors.find(galaxyId, systemId, sectorId);
+        auto found = world.findSector(galaxyId, systemId, sectorId);
         if (!found) {
             EXCEPTION("Unable to populate sector: '{}' not found", sectorId);
         }
@@ -244,8 +244,8 @@ void Sector::addPlayer(SessionPtr session) {
         std::transform(scene.getEntities().begin(), scene.getEntities().end(),
                        std::back_inserter(players.back().entitiesToSync), op);
 
-        auto location = services.players.getLocation(session->getPlayerId());
-        MessagePlayerLocation::Response msg{};
+        auto location = world.getPlayerLocation(session->getPlayerId());
+        MessagePlayerLocationChanged::Response msg{};
         msg.location = location;
         session->send(msg);
     });

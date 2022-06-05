@@ -31,7 +31,6 @@ struct CustomEventMessage {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), event);
         MESSAGE_APPEND_DEFAULT();
-        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -51,20 +50,20 @@ struct CustomLongMessage {
 
 using CustomMessageSink = NetworkMessageSink<CustomEventMessage, CustomHelloMessage, CustomLongMessage>;
 
-class CustomServer : public NetworkTcpServer<CustomMessageSink> {
+class CustomServer : public NetworkTcpServer<CustomServer, CustomMessageSink> {
 public:
-    void onPeerConnected(std::shared_ptr<NetworkTcpPeer<CustomMessageSink>> peer) override {
+    CustomServer() : NetworkTcpServer(*this) {
+    }
+
+    void onPeerConnected(std::shared_ptr<NetworkTcpPeer<CustomServer, CustomMessageSink>> peer) override {
         peers.push_back(peer);
     }
 
-    void handle(const PeerPtr& peer, CustomEventMessage::Request req, CustomEventMessage::Response& res) override {
-    }
-
-    void handle(const PeerPtr& peer, CustomHelloMessage::Request req, CustomHelloMessage::Response& res) override {
+    void handle(const PeerPtr& peer, CustomHelloMessage::Request req, CustomHelloMessage::Response& res) {
         res.msg = req.msg + " World!";
     }
 
-    void handle(const PeerPtr& peer, CustomLongMessage::Request req, CustomLongMessage::Response& res) override {
+    void handle(const PeerPtr& peer, CustomLongMessage::Request req, CustomLongMessage::Response& res) {
         auto idx = std::stoll(req.token);
         while (idx < 2100 && res.data.size() < 64) {
             res.data.push_back(idx++);
@@ -75,18 +74,16 @@ public:
         }
     }
 
-    std::vector<std::shared_ptr<NetworkTcpPeer<CustomMessageSink>>> peers;
+    std::vector<std::shared_ptr<NetworkTcpPeer<CustomServer, CustomMessageSink>>> peers;
 };
 
-class CustomClient : public NetworkTcpClient<CustomMessageSink> {
+class CustomClient : public NetworkTcpClient<CustomClient, CustomMessageSink> {
 public:
-    template <typename M> void send(M& message) {
-        NetworkTcpClient::send(message);
+    CustomClient() : NetworkTcpClient(*this) {
     }
 
-    void handle(CustomHelloMessage::Response res) {
-        helloResReceived.store(true);
-        helloRes = std::move(res);
+    template <typename M, typename Fn> void send(M& message, Fn&& callback) {
+        NetworkTcpClient<CustomClient, CustomMessageSink>::template send(message, std::forward<Fn>(callback));
     }
 
     void handle(CustomEventMessage::Response res) {
@@ -94,21 +91,11 @@ public:
         eventRes = std::move(res);
     }
 
-    void handle(CustomLongMessage::Response res) {
-        longResReceived.store(true);
-        longRes = std::move(res);
-    }
-
-    CustomHelloMessage::Response helloRes;
     CustomEventMessage::Response eventRes;
-    CustomLongMessage::Response longRes;
-    std::atomic_bool helloResReceived{false};
     std::atomic_bool eventResReceived{false};
-    std::atomic_bool longResReceived{false};
 };
 
-TEST_CASE("Connect to the server and send packets", TAG) {
-    BackgroundWorker worker;
+TEST_CASE("Connect to the server and close", TAG) {
     CustomServer server;
     CustomClient client;
 
@@ -119,28 +106,64 @@ TEST_CASE("Connect to the server and send packets", TAG) {
 
     REQUIRE(waitForCondition([&]() { return server.peers.size() == 1; }));
 
-    CustomHelloMessage::Request req{};
-    req.msg = "Hello";
-    client.send(req);
+    client.stop();
+    server.stop();
+}
 
-    REQUIRE(waitForCondition([&]() { return client.helloResReceived.load() == true; }));
-    REQUIRE(client.helloRes.msg == "Hello World!");
+TEST_CASE("Connect to the server and send packets", TAG) {
+    CustomServer server;
+    CustomClient client;
 
-    CustomEventMessage::Response res{};
-    res.event = 123;
-    server.peers.front()->send(res);
+    IoServiceRunner clientThread(client.getWorker());
 
-    REQUIRE(waitForCondition([&]() { return client.eventResReceived.load() == true; }));
-    REQUIRE(client.eventRes.event == 123);
+    server.bind(12345);
+    client.connect("localhost", 12345);
 
-    CustomLongMessage::Request req2{};
-    req2.token = "100";
-    client.send(req2);
+    REQUIRE(waitForCondition([&]() { return server.peers.size() == 1; }));
 
-    REQUIRE(waitForCondition([&]() { return client.longResReceived.load() == true; }));
-    REQUIRE(client.longRes.data.size() == 2000);
-    for (size_t i = 0; i < client.longRes.data.size(); i++) {
-        REQUIRE(client.longRes.data.at(i) == i + 100);
+    SECTION("Send message and wait for response") {
+        CustomHelloMessage::Request req{};
+        CustomHelloMessage::Response res;
+        std::atomic_bool received{false};
+
+        req.msg = "Hello";
+
+        client.send(req, [&](CustomHelloMessage::Response r) {
+            res = std::move(r);
+            received.store(true);
+        });
+
+        REQUIRE(waitForCondition([&]() { return received.load() == true; }));
+        REQUIRE(res.msg == "Hello World!");
+    }
+
+    SECTION("Send event message from server") {
+        CustomEventMessage::Response event{};
+        event.event = 123;
+        server.peers.front()->send(event);
+
+        REQUIRE(waitForCondition([&]() { return client.eventResReceived.load() == true; }));
+        REQUIRE(client.eventRes.event == 123);
+    }
+
+    SECTION("Send message and get paginated response") {
+        CustomLongMessage::Request req{};
+        CustomLongMessage::Response res{};
+        std::atomic_bool received{false};
+
+        req.token = "100";
+
+        client.send(req, [&](CustomLongMessage::Response r) {
+            res = std::move(r);
+            received.store(true);
+        });
+
+        REQUIRE(waitForCondition([&]() { return received.load() == true; }));
+
+        REQUIRE(res.data.size() == 2000);
+        for (size_t i = 0; i < res.data.size(); i++) {
+            REQUIRE(res.data.at(i) == i + 100);
+        }
     }
 
     client.stop();

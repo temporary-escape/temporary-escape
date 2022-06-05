@@ -38,6 +38,9 @@ struct Config {
         int totalSystems{2000};
         float galaxyWidth{300.0f};
         float regionDistance{50.0f};
+        int regionMaxCount{20};
+        float factionDistance{20.0f};
+        int factionMaxCount{30};
         int systemPlanetsMin{2};
         int systemPlanetsMax{7};
         int planetMoonsMin{0};

@@ -8,6 +8,7 @@ endif ()
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
+target_compile_definitions(${PROJECT_NAME} PRIVATE ROOT_DIR="${ROOT_DIR}" ENGINE_TESTS=1)
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)

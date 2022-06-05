@@ -7,8 +7,9 @@ AssetSector::AssetSector(const Manifest& mod, std::string name, const Path& path
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetSector::load(AssetManager& assetManager) {
+void AssetSector::load(AssetManager& assetManager, bool noGraphics) {
     (void)assetManager;
+    (void)noGraphics;
 }
 
 std::shared_ptr<AssetSector> AssetSector::from(const std::string& name) {

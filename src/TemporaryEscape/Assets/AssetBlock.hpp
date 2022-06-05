@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AssetImage.hpp"
 #include "AssetTexture.hpp"
 #include "Primitive.hpp"
 #include "Shape.hpp"
@@ -9,27 +10,31 @@ class ENGINE_API AssetBlock : public Asset {
 public:
     struct Definition {
         std::string title;
+        int level;
         std::vector<Shape::Type> shapes;
+
+        struct TextureDefinition {
+            AssetTexturePtr texture;
+            std::optional<Color4> factor{1.0f};
+
+            YAML_DEFINE(texture, factor);
+        };
 
         struct Material {
             std::vector<Shape::Side> faces;
 
-            AssetTexturePtr baseColorTexture{nullptr};
-            std::optional<Color4> baseColorFactor{1.0f};
-            std::optional<AssetTexturePtr> emissiveTexture{nullptr};
-            std::optional<Color4> emissiveFactor{1.0f};
-            std::optional<AssetTexturePtr> normalTexture{nullptr};
-            std::optional<AssetTexturePtr> ambientOcclusionTexture{nullptr};
-            std::optional<AssetTexturePtr> metallicRoughnessTexture{nullptr};
-            std::optional<Color4> metallicRoughnessFactor{1.0f};
+            TextureDefinition baseColor{nullptr};
+            std::optional<TextureDefinition> emissive{};
+            std::optional<TextureDefinition> normal{};
+            std::optional<TextureDefinition> ambientOcclusion{};
+            std::optional<TextureDefinition> metallicRoughness{};
 
-            YAML_DEFINE(faces, baseColorTexture, baseColorFactor, emissiveTexture, emissiveFactor, normalTexture,
-                        ambientOcclusionTexture, metallicRoughnessTexture, metallicRoughnessFactor);
+            YAML_DEFINE(faces, baseColor, emissive, normal, ambientOcclusion, metallicRoughness);
         };
 
         std::vector<Material> materials;
 
-        YAML_DEFINE(title, shapes, materials);
+        YAML_DEFINE(title, level, shapes, materials);
     };
 
     static std::shared_ptr<AssetBlock> from(const std::string& name);
@@ -37,7 +42,7 @@ public:
     explicit AssetBlock(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetBlock() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     [[nodiscard]] const std::string& getTitle() const {
         return definition.title;
@@ -63,11 +68,20 @@ public:
         return materials.front();
     }
 
+    const AssetImagePtr& getImageForShape(const Shape::Type type) const {
+        return images.at(type);
+    }
+
+    void setImageForShape(const Shape::Type type, const AssetImagePtr& image) {
+        images[type] = image;
+    }
+
 private:
     Path path;
     Definition definition;
     std::array<Material*, 7> shapeSideToMaterial;
     std::vector<Material> materials;
+    std::unordered_map<Shape::Type, AssetImagePtr> images;
 };
 
 using AssetBlockPtr = std::shared_ptr<AssetBlock>;

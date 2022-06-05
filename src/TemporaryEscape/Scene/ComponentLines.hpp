@@ -41,6 +41,11 @@ public:
         lines.push_back({from, color, to, color});
     }
 
+    void add(const Vector2& from, const Vector2& to, const Color4& color) {
+        setDirty(true);
+        lines.push_back({Vector3{from.x, 0.0f, from.y}, color, Vector3{to.x, 0.0f, to.y}, color});
+    }
+
     void recalculate() {
         if (!isDirty()) {
             return;

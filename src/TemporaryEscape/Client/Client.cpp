@@ -6,10 +6,10 @@
 
 using namespace Engine;
 
-Client::Client(const Config& config, Stats& stats, const std::string& address, const int port)
-    : NetworkTcpClient(*this), stats(stats), sync(getWorker()) {
+Client::Client(const Config& config, ModManager& modManager, Stats& stats, const std::string& address, const int port,
+               const Path& profilePath)
+    : NetworkTcpClient(*this), modManager(modManager), stats(stats), sync(getWorker()) {
 
-    const auto profilePath = config.userdataPath / Path("profile.yml");
     if (Fs::exists(profilePath)) {
         localProfile.fromYaml(profilePath);
     } else {
@@ -23,18 +23,7 @@ Client::Client(const Config& config, Stats& stats, const std::string& address, c
     Promise<void> promise;
     auto future = promise.future();
 
-    MessageLogin::Request req{};
-    req.secret = localProfile.secret;
-    req.name = localProfile.name;
-
-    send(req, [&](MessageLogin::Response res) {
-        if (!res.error.empty()) {
-            promise.reject<std::runtime_error>(res.error);
-        } else {
-            playerId = res.playerId;
-            promise.resolve();
-        }
-    });
+    fetchModInfo(promise);
 
     auto t0 = std::chrono::steady_clock::now();
     while (const auto status = future.waitFor(std::chrono::milliseconds(10)) != std::future_status::ready) {
@@ -54,6 +43,54 @@ Client::~Client() {
     NetworkTcpClient<Client, ServerSink>::stop();
 }
 
+void Client::fetchModInfo(Promise<void>& promise) {
+    Log::i(CMP, "Fetching server mod info...");
+    MessageModsInfo::Request reqModInfo{};
+    send(reqModInfo, [&](MessageModsInfo::Response res) {
+        const auto& ourManifests = modManager.getManifests();
+
+        for (const auto& manifest : res.manifests) {
+            Log::i(CMP, "Checking for server mod: '{}' @{}", manifest.name, manifest.version);
+
+            const auto it = std::find_if(ourManifests.begin(), ourManifests.end(),
+                                         [&](const auto& m) { return m->name == manifest.name; });
+
+            if (it == ourManifests.end()) {
+                promise.reject<std::runtime_error>(fmt::format("Client is missing mod pack: '{}'", manifest.name));
+                break;
+            }
+
+            const auto& found = *it;
+
+            if (found->version != manifest.version) {
+                promise.reject<std::runtime_error>(
+                    fmt::format("Client has mod pack: '{}' of version: {} but server has: {}", manifest.name,
+                                found->version, manifest.version));
+                break;
+            }
+        }
+
+        doLogin(promise);
+    });
+}
+
+void Client::doLogin(Promise<void>& promise) {
+    Log::i(CMP, "Doing player login...");
+    MessageLogin::Request req{};
+    req.secret = localProfile.secret;
+    req.name = localProfile.name;
+
+    send(req, [&](MessageLogin::Response res) {
+        if (!res.error.empty()) {
+            Log::e(CMP, "Login error: {}", res.error);
+            promise.reject<std::runtime_error>(res.error);
+        } else {
+            playerId = res.playerId;
+            promise.resolve();
+        }
+    });
+}
+
 void Client::update() {
     sync.restart();
     sync.run();
@@ -70,19 +107,7 @@ void Client::update() {
     }
 }
 
-/*void Client::handle(MessageLogin::Response res) {
-    if (!res.error.empty()) {
-        loggedIn.reject<std::runtime_error>(res.error);
-    } else {
-        playerId = res.playerId;
-        loggedIn.resolve();
-
-        store.player.id = playerId;
-        store.player.id.markChanged();
-    }
-}*/
-
-void Client::handle(MessagePlayerLocation::Response res) {
+void Client::handle(MessagePlayerLocationChanged::Response res) {
     Log::i(CMP, "Sector has changed, creating new scene");
 
     camera.reset();
@@ -132,29 +157,3 @@ void Client::handle(MessageSceneDeltas::Response res) {
         EXCEPTION_NESTED("Failed to process scene entities");
     }
 }
-
-/*void Client::handle(MessageFetchGalaxy::Response res) {
-    store.galaxy.galaxy = std::move(res.galaxy);
-    store.galaxy.galaxy.markChanged();
-}
-
-void Client::handle(MessageFetchRegions::Response res) {
-    store.galaxy.regions.value().clear();
-    for (auto& item : res.regions) {
-        store.galaxy.regions.value().insert(std::make_pair(item.id, std::move(item)));
-    }
-
-    store.galaxy.regions.markChanged();
-}
-
-void Client::handle(MessageFetchSystems::Response res) {
-    store.galaxy.systems.value().clear();
-    for (auto& item : res.systems) {
-        store.galaxy.systems.value().insert(std::make_pair(item.id, std::move(item)));
-    }
-
-    store.galaxy.systems.markChanged();
-}*/
-
-/*void Client::handle(MessageShipMovement::Response res) {
-}*/

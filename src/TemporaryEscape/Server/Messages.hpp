@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Modding/Manifest.hpp"
 #include "../Network/NetworkMessage.hpp"
 #include "../Scene/Entity.hpp"
 #include "Schemas.hpp"
@@ -26,7 +27,21 @@ struct MessageLogin {
     };
 };
 
-struct MessagePlayerLocation {
+struct MessageModsInfo {
+    struct Request : Message {
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message));
+    };
+
+    struct Response : Message {
+        std::vector<Manifest> manifests;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), manifests);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
+struct MessagePlayerLocationChanged {
     using Request = NoMessage;
 
     struct Response : Message {
@@ -34,6 +49,20 @@ struct MessagePlayerLocation {
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), location);
         MESSAGE_APPEND_DEFAULT();
+    };
+};
+
+struct MessagePlayerLocation {
+    struct Request : Message {
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message));
+    };
+
+    struct Response : Message {
+        PlayerLocationData location;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), location);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
     };
 };
 
@@ -110,6 +139,23 @@ struct MessageFetchRegions {
     };
 };
 
+struct MessageFetchFactions {
+    struct Request : Message {
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), galaxyId);
+    };
+
+    struct Response : Message {
+        std::vector<FactionData> factions;
+        std::string galaxyId;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), factions, galaxyId);
+        MESSAGE_APPEND_ARRAY(factions);
+        MESSAGE_COPY_FIELDS_1(galaxyId);
+    };
+};
+
 struct MessageShipMovement {
     struct Request : Message {
         bool left{false};
@@ -129,16 +175,34 @@ struct MessageShipMovement {
     };
 };
 
+struct MessageUnlockedBlocks {
+    struct Request : Message {
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message));
+    };
+
+    struct Response : Message {
+        std::vector<AssetBlockPtr> blocks;
+
+        MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), blocks);
+        MESSAGE_APPEND_DEFAULT();
+        MESSAGE_COPY_DEFAULT();
+    };
+};
+
 // clang-format off
 using ServerSink = NetworkMessageSink<
     MessageLogin,
+    MessageModsInfo,
+    MessagePlayerLocationChanged,
     MessagePlayerLocation,
     MessageSceneEntities,
     MessageSceneDeltas,
     MessageFetchGalaxy,
     MessageFetchSystems,
     MessageFetchRegions,
-    MessageShipMovement
+    MessageFetchFactions,
+    MessageShipMovement,
+    MessageUnlockedBlocks
 >;
 // clang-format on
 

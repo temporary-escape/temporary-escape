@@ -43,8 +43,8 @@ struct GBuffer {
 
             fboAoResult.setStorage(0, viewport, PixelType::Red8u);
 
-            fboBloomColor.setStorage(0, viewport, PixelType::Rgb8u);
-            fboBloomBlurResult.setStorage(0, viewport, PixelType::Rgb8u);
+            fboBloomColor.setStorage(0, viewport, PixelType::Rgba8u);
+            fboBloomBlurResult.setStorage(0, viewport, PixelType::Rgba8u);
 
             if (!fboInit) {
                 fboInit = true;

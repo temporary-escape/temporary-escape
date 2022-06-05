@@ -14,13 +14,13 @@ void Imager::createThumbnail(const AssetBlockPtr& block) {
     Scene scene{};
 
     auto entity = std::make_shared<Entity>();
-    entity->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));
+    entity->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.05f, 0.05f, 0.05f, 1.0f}));
     entity->scale(Vector3{1000.0f});
     scene.addEntity(entity);
 
     entity = std::make_shared<Entity>();
     entity->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f} * 3.0f);
-    entity->translate(Vector3{-2.0f, 2.0f, 2.0f});
+    entity->translate(Vector3{1.0f, 1.0f, -2.0f});
     scene.addEntity(entity);
 
     entity = std::make_shared<Entity>();
@@ -39,7 +39,7 @@ void Imager::createThumbnail(const AssetBlockPtr& block) {
     renderer.setEnableBackground(false);
     renderer.setEnableBloom(true);
 
-    for (const auto shapeType : Shape::allTypes) {
+    for (const auto shapeType : block->getAllowedTypes()) {
         const auto& name = shapeTypeToFileName(shapeType);
 
         grid->setDirty(true);
@@ -50,7 +50,9 @@ void Imager::createThumbnail(const AssetBlockPtr& block) {
 
         auto pixels = gBuffer.readPixels(viewport);
         auto image = assetManager.addToAtlas(viewport, pixels.get());
-        assetManager.addImage(block->getMod(), fmt::format("image_{}_{}", block->getName(), name), image);
+        auto ptr = assetManager.addImage(block->getMod(), fmt::format("image_{}_{}", block->getName(), name), image);
+
+        block->setImageForShape(shapeType, ptr);
     }
 }
 

@@ -191,14 +191,14 @@ void AssetManager::add(AssetPtr asset) {
     assets.insert(std::make_pair(asset->getName(), asset));
 }
 
-AssetLoadQueue AssetManager::getLoadQueue() {
+AssetLoadQueue AssetManager::getLoadQueue(bool noGraphics) {
     AssetLoadQueue loadQueue;
 
     for (const auto& [key, asset] : assets) {
-        loadQueue.push([this, asset = asset]() {
+        loadQueue.push([this, noGraphics, asset = asset]() {
             try {
                 Log::d(CMP, "Loading asset '{}/{}'", asset->getMod().name, asset->getName());
-                asset->load(*this);
+                asset->load(*this, noGraphics);
             } catch (...) {
                 EXCEPTION_NESTED("Failed to load asset: '{}'", asset->getName());
             }

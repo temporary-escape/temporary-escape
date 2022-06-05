@@ -7,7 +7,9 @@ AssetPlanet::AssetPlanet(const Manifest& mod, std::string name, const Path& path
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetPlanet::load(AssetManager& assetManager) {
+void AssetPlanet::load(AssetManager& assetManager, bool noGraphics) {
+    (void)noGraphics;
+
     try {
         definition.fromYaml(path);
     } catch (...) {

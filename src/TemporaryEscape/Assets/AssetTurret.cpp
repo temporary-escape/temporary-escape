@@ -7,7 +7,9 @@ AssetTurret::AssetTurret(const Manifest& mod, std::string name, const Path& path
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetTurret::load(AssetManager& assetManager) {
+void AssetTurret::load(AssetManager& assetManager, bool noGraphics) {
+    (void)noGraphics;
+
     try {
         definition.fromYaml(path);
     } catch (...) {

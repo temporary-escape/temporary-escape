@@ -6,8 +6,11 @@ if (MSVC)
     add_compile_options(/wd4251)
 endif ()
 
+get_filename_component(ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
+
 add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
+target_compile_definitions(${PROJECT_NAME} PRIVATE ROOT_DIR="${ROOT_DIR}" ENGINE_TESTS=1)
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
@@ -30,6 +33,6 @@ if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
             ENVIRONMENT "ASAN_SYMBOLIZER_PATH=${TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH}"
             )
     set_property(TEST ${PROJECT_NAME} APPEND PROPERTY
-            ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/../supp:fast_unwind_on_malloc=0"
+            ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/../supp:fast_unwind_on_malloc=0 "
             )
 endif ()

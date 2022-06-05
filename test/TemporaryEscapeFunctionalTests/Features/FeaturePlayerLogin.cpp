@@ -1,23 +1,33 @@
-#include "../Fixtures/FixtureSimpleGalaxy.hpp"
+#include "../Fixtures/FixtureClientServer.hpp"
 
 #define TAG "[FeaturePlayerLogin]"
 
-SCENARIO_METHOD(FixtureSimpleGalaxy, "New player should have a spawn location", TAG) {
-    GIVEN("A universe with no players") {
-        generateGalaxy();
+TEST_CASE_METHOD(FixtureClientServer, "New player should have a spawn location", TAG) {
+    auto client = newClient("Test Player");
+    REQUIRE(client->getScene() != nullptr);
 
-        WHEN("A new player connects") {
-            connectToServer();
+    MessagePlayerLocation::Request req{};
+    const auto res = client->sendSync<MessagePlayerLocation>(req);
 
-            THEN("Player should spawn in sector") {
-                waitForCondition([&]() {
-                    if (client->getScene() == nullptr) {
-                        return false;
-                    }
+    REQUIRE(res.location.galaxyId.empty() == false);
+    REQUIRE(res.location.systemId.empty() == false);
+    REQUIRE(res.location.sectorId.empty() == false);
 
-                    return true;
-                });
-            }
-        }
-    }
+    REQUIRE(waitForCondition([&]() {
+        return client->check([client]() {
+            // Check if any entities are in the scene.
+            // We will have an extra camera entity in the scene created by the client.
+            return client->getScene()->getEntities().size() > 1;
+        });
+    }));
+}
+
+TEST_CASE_METHOD(FixtureClientServer, "New player should have some unlocked blocks", TAG) {
+    auto client = newClient("Test Player");
+    REQUIRE(client->getScene() != nullptr);
+
+    MessageUnlockedBlocks::Request req{};
+    const auto res = client->sendSync<MessageUnlockedBlocks>(req);
+
+    REQUIRE(res.blocks.empty() == false);
 }

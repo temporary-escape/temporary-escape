@@ -1,4 +1,5 @@
 title: 'Hull T1'
+level: 1
 shapes:
   - Cube
   - Wedge
@@ -12,6 +13,9 @@ materials:
       - NegativeY
       - PositiveZ
       - NegativeZ
-    baseColorTexture: texture_plates_01_diff
-    normalTexture: texture_plates_01_norm
-    metallicRoughnessTexture: texture_plates_01_meta
+    baseColor:
+      texture: texture_plates_01_diff
+    normal:
+      texture: texture_plates_01_norm
+    metallicRoughness:
+      texture: texture_plates_01_meta

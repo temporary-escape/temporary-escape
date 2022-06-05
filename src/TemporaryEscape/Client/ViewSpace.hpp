@@ -32,24 +32,24 @@ private:
 
     AssetFontFacePtr fontFaceRegular;
 
-    struct SelectedInternal {
+    struct {
         EntityPtr hover;
     } selected;
 
-    struct ContextMenuInternal {
+    struct {
         bool show{false};
         EntityPtr entity;
         Vector2i pos;
     } contextMenu;
 
-    struct ImagesInternal {
+    struct {
         AssetImagePtr info;
         AssetImagePtr approach;
         AssetImagePtr rotation;
         AssetImagePtr target;
     } images;
 
-    struct MovementInternal {
+    struct {
         MessageShipMovement::Request req;
     } movement;
 };

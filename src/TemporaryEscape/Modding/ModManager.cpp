@@ -29,7 +29,7 @@ void ModManager::load(AssetManager& assetManager, const Path& dir) {
         manifest.fromYaml(dir / "manifest.yml");
         manifest.path = dir;
 
-        Log::i(CMP, "Loading assets for: '{}'", manifest.name);
+        Log::i(CMP, "Loading assets for: '{}' @{}", manifest.name, manifest.version);
 
         iterateDir(dir / Path("fonts"), {".ttf", ".otf"},
                    [&](const Path& path) { assetManager.addFontFace(manifest, path); });

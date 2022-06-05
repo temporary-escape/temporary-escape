@@ -8,7 +8,7 @@ public:
     explicit AssetFontFamily(const Manifest& mod, std::string name);
     virtual ~AssetFontFamily() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
     void add(std::string name, AssetFontFacePtr face);
     const AssetFontFacePtr& get(const std::string& name) const;
 

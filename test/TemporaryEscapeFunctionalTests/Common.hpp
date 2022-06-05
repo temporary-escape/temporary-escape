@@ -2,12 +2,14 @@
 
 #include <TemporaryEscape/Math/Quaternion.hpp>
 #include <TemporaryEscape/Math/Vector.hpp>
+#include <TemporaryEscape/Network/NetworkAsio.hpp>
 #include <TemporaryEscape/Utils/Exceptions.hpp>
 #include <TemporaryEscape/Utils/Path.hpp>
 #include <catch2/catch.hpp>
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 using namespace Engine;
 
@@ -40,6 +42,30 @@ private:
     Path path;
 };
 
+extern Path asFile(const std::string& contents);
+extern Path tmpEmptyFile();
+
+class IoServiceRunner {
+public:
+    explicit IoServiceRunner(asio::io_service& service) : service(service) {
+        work = std::make_unique<asio::io_service::work>(service);
+        thread = std::thread([this]() { this->service.run(); });
+    }
+
+    ~IoServiceRunner() {
+        stop();
+    }
+
+    void stop() {
+        work.reset();
+        thread.join();
+    }
+
+    asio::io_service& service;
+    std::unique_ptr<asio::io_service::work> work;
+    std::thread thread;
+};
+
 static inline bool waitForCondition(const std::function<bool()>& fn) {
     const auto start = std::chrono::steady_clock::now();
 
@@ -56,11 +82,50 @@ static inline bool waitForCondition(const std::function<bool()>& fn) {
     }
 }
 
+template <typename T> class RefCounter : public T {
+public:
+    RefCounter(size_t& counter) : counter(counter) {
+        counter++;
+    }
+    ~RefCounter() {
+        counter--;
+    }
+
+private:
+    size_t& counter;
+};
+
+class TickThread {
+public:
+    explicit TickThread(std::chrono::milliseconds ms, std::function<void()>&& tick) : flag(true) {
+        thread = std::thread([this, ms, tick = std::move(tick)] {
+            while (flag.load()) {
+                const auto t0 = std::chrono::steady_clock::now();
+                tick();
+                const auto t1 = std::chrono::steady_clock::now();
+                const auto diff = t1 - t0;
+                if (diff < ms) {
+                    std::this_thread::sleep_for(ms - diff);
+                }
+            }
+        });
+    }
+
+    ~TickThread() {
+        flag.store(false);
+        thread.join();
+    }
+
+private:
+    std::atomic_bool flag;
+    std::thread thread;
+};
+
 namespace Catch {
 template <> struct StringMaker<Vector2> {
     static std::string convert(Vector2 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << "]";
         return ss.str();
     }
 };
@@ -68,7 +133,7 @@ template <> struct StringMaker<Vector2> {
 template <> struct StringMaker<Vector2i> {
     static std::string convert(Vector2i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << "]";
         return ss.str();
     }
 };
@@ -76,7 +141,7 @@ template <> struct StringMaker<Vector2i> {
 template <> struct StringMaker<Vector3> {
     static std::string convert(Vector3 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << "]";
         return ss.str();
     }
 };
@@ -84,7 +149,7 @@ template <> struct StringMaker<Vector3> {
 template <> struct StringMaker<Vector3i> {
     static std::string convert(Vector3i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << "]";
         return ss.str();
     }
 };
@@ -92,7 +157,7 @@ template <> struct StringMaker<Vector3i> {
 template <> struct StringMaker<Vector4> {
     static std::string convert(Vector4 const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };
@@ -100,7 +165,7 @@ template <> struct StringMaker<Vector4> {
 template <> struct StringMaker<Vector4i> {
     static std::string convert(Vector4i const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };
@@ -108,7 +173,7 @@ template <> struct StringMaker<Vector4i> {
 template <> struct StringMaker<Quaternion> {
     static std::string convert(Quaternion const& value) {
         std::stringstream ss;
-        ss << value;
+        ss << "[" << value.x << ", " << value.y << ", " << value.z << ", " << value.w << "]";
         return ss.str();
     }
 };

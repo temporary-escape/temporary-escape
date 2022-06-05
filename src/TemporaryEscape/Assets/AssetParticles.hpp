@@ -25,7 +25,7 @@ public:
     explicit AssetParticles(const Manifest& mod, std::string name, const Path& path);
     virtual ~AssetParticles() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const AssetTexturePtr& getTexture() const {
         return definition.texture;

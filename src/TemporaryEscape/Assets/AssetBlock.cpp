@@ -9,7 +9,9 @@ AssetBlock::AssetBlock(const Manifest& mod, std::string name, const Path& path)
     : Asset(mod, std::move(name)), path(path) {
 }
 
-void AssetBlock::load(AssetManager& assetManager) {
+void AssetBlock::load(AssetManager& assetManager, bool noGraphics) {
+    (void)noGraphics;
+
     try {
         definition.fromYaml(path);
     } catch (...) {
@@ -30,17 +32,15 @@ void AssetBlock::load(AssetManager& assetManager) {
         materials.emplace_back();
         auto& material = materials.back();
 
-        material.baseColorTexture = def.baseColorTexture;
-        material.uniform.baseColorFactor = def.baseColorFactor.has_value() ? def.baseColorFactor.value() : Color4{1.0f};
-        material.uniform.emissiveFactor = def.emissiveFactor.has_value() ? def.emissiveFactor.value() : Color4{1.0f};
+        material.baseColorTexture = def.baseColor.texture;
+        material.uniform.baseColorFactor = def.baseColor.factor.has_value() ? *def.baseColor.factor : Color4{1.0f};
+        material.uniform.emissiveFactor = def.emissive && def.emissive->factor ? *def.emissive->factor : Color4{1.0f};
         material.uniform.metallicRoughnessFactor =
-            def.metallicRoughnessFactor.has_value() ? def.metallicRoughnessFactor.value() : Color4{1.0f};
-        material.metallicRoughnessTexture =
-            def.metallicRoughnessTexture.has_value() ? def.metallicRoughnessTexture.value() : nullptr;
-        material.emissiveTexture = def.emissiveTexture.has_value() ? def.emissiveTexture.value() : nullptr;
-        material.normalTexture = def.normalTexture.has_value() ? def.normalTexture.value() : nullptr;
-        material.ambientOcclusionTexture =
-            def.ambientOcclusionTexture.has_value() ? def.ambientOcclusionTexture.value() : nullptr;
+            def.metallicRoughness && def.metallicRoughness->factor ? *def.metallicRoughness->factor : Color4{1.0f};
+        material.metallicRoughnessTexture = def.metallicRoughness ? def.metallicRoughness->texture : nullptr;
+        material.emissiveTexture = def.emissive ? def.emissive->texture : nullptr;
+        material.normalTexture = def.normal ? def.normal->texture : nullptr;
+        material.ambientOcclusionTexture = def.ambientOcclusion ? def.ambientOcclusion->texture : nullptr;
 
         map.insert(std::make_pair(&def, materials.size() - 1));
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Assets/AssetImage.hpp"
+#include "../Future.hpp"
 #include "../Gui/GuiContext.hpp"
 #include "../Server/Schemas.hpp"
 #include "View.hpp"
@@ -23,18 +24,29 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
 
 private:
+    struct ReconstructData {
+        std::vector<EntityPtr> entitiesSystems;
+        std::vector<EntityPtr> entitiesRegions;
+        std::vector<EntityPtr> entitiesFactions;
+    };
+
     void fetchGalaxy();
     void fetchRegions();
+    void fetchFactions();
     void fetchSystems();
     void fetchSystemPlanets();
 
-    void reconstruct();
+    void reconstructWith(const ReconstructData& res);
+    ReconstructData reconstruct();
+    Future<ReconstructData> reconstructAsync();
     // void renderSystems();
     // void renderCurrentPositionGalaxy();
     void renderRegionLabels();
     void renderRegionSystemLabels();
     void renderCurrentPositionInfo();
     void renderCurrentPositionMarker();
+
+    // EntityPtr createFactionBorders();
 
     const Config& config;
     Canvas2D& canvas;
@@ -45,28 +57,34 @@ private:
 
     bool loading{false};
     std::unique_ptr<Scene> scene;
-    EntityPtr entityCamera;
+    // EntityPtr entityCamera;
 
     AssetFontFacePtr fontFaceRegular;
 
-    std::vector<EntityPtr> entitiesSystems;
-    std::vector<EntityPtr> entitiesRegions;
+    // std::vector<EntityPtr> entitiesSystems;
+    // std::vector<EntityPtr> entitiesRegions;
+    // EntityPtr entityBorders;
 
-    struct Data {
+    std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
+
+    Future<ReconstructData> reconstructFuture;
+
+    struct {
         // Galaxy
         GalaxyData galaxy;
         std::unordered_map<std::string, SystemData> systems;
         std::unordered_map<std::string, RegionData> regions;
+        std::unordered_map<std::string, FactionData> factions;
 
         // System
         std::unordered_map<std::string, SectorPlanetData> planets;
     } data;
 
-    struct Images {
+    struct {
         AssetImagePtr currentPosition;
     } images;
 
-    struct TexturesInternal {
+    struct {
         AssetTexturePtr star;
     } textures;
 };

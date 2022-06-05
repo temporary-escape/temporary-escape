@@ -16,7 +16,7 @@ public:
     AssetShape(const AssetShape& other) = delete;
     AssetShape(AssetShape&& other) = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const Shape& getShape() const {
         return shape;

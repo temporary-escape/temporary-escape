@@ -130,6 +130,9 @@ void Renderer::render(Scene& scene) {
     renderSSAO();
 
     state.gBuffer->fboFront.bind();
+    static Color4 black{0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, &black.x);
+
     if (state.renderBackground) {
         renderSceneBackground(scene);
     }
@@ -438,6 +441,15 @@ void Renderer::renderSceneForward(Scene& scene) {
         renderComponentParticleEmitter(*component);
     }
 
+    auto& componentSystemPolyShape = scene.getComponentSystem<ComponentPolyShape>();
+
+    shaders.polyShape.use();
+    shaders.polyShape.bindCameraUniform(state.cameraUbo);
+
+    for (auto& component : componentSystemPolyShape) {
+        renderComponentPolyShape(*component);
+    }
+
     auto& componentSystemLines = scene.getComponentSystem<ComponentLines>();
 
     shaders.lines.use();
@@ -603,6 +615,14 @@ void Renderer::renderComponentLines(ComponentLines& component) {
     const auto transform = component.getObject().getAbsoluteTransform();
     shaders.lines.setModelMatrix(transform);
     shaders.lines.draw(component.getMesh());
+}
+
+void Renderer::renderComponentPolyShape(ComponentPolyShape& component) {
+    component.recalculate();
+
+    const auto transform = component.getObject().getAbsoluteTransform();
+    shaders.polyShape.setModelMatrix(transform);
+    shaders.polyShape.draw(component.getMesh());
 }
 
 void Renderer::renderComponentPointCloud(ComponentPointCloud& component) {

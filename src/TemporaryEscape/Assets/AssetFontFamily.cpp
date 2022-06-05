@@ -7,8 +7,9 @@ using namespace Engine;
 AssetFontFamily::AssetFontFamily(const Manifest& mod, std::string name) : Asset(mod, std::move(name)) {
 }
 
-void AssetFontFamily::load(AssetManager& assetManager) {
+void AssetFontFamily::load(AssetManager& assetManager, bool noGraphics) {
     (void)assetManager;
+    (void)noGraphics;
 }
 
 void AssetFontFamily::add(std::string name, AssetFontFacePtr face) {

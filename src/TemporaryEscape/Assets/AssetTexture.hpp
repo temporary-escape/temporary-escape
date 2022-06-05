@@ -46,7 +46,7 @@ public:
     explicit AssetTexture(const Manifest& mod, std::string name, const Path& path, TextureType type);
     virtual ~AssetTexture() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     const Texture& getTexture() const {
         return texture;

@@ -14,7 +14,7 @@ public:
     explicit AssetImage(const Manifest& mod, std::string name, Canvas2D::Image image);
     virtual ~AssetImage() = default;
 
-    void load(AssetManager& assetManager) override;
+    void load(AssetManager& assetManager, bool noGraphics) override;
 
     [[nodiscard]] const Canvas2D::Image& getImage() const {
         return image;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Assets/AssetBlock.hpp"
 #include "../Assets/AssetPlanet.hpp"
 #include "../Utils/Database.hpp"
 #include "../Utils/Msgpack.hpp"
@@ -27,6 +28,15 @@ SCHEMA(PlayerLocationData) {
     SCHEMA_NAME("PlayerLocationData");
 };
 
+SCHEMA(SaveFileData) {
+    uint64_t seed = 0;
+    bool generated = false;
+
+    SCHEMA_DEFINE(seed, generated);
+    SCHEMA_INDEXES_NONE();
+    SCHEMA_NAME("SaveFileData");
+};
+
 SCHEMA(GalaxyData) {
     std::string id;
     std::string name;
@@ -50,16 +60,27 @@ SCHEMA(RegionData) {
     SCHEMA_NAME("RegionData");
 };
 
+SCHEMA(FactionData) {
+    std::string id;
+    std::string name;
+    float color;
+
+    SCHEMA_DEFINE(id, name, color);
+    SCHEMA_INDEXES(name);
+    SCHEMA_NAME("FactionData");
+};
+
 SCHEMA(SystemData) {
     std::string id;
     std::string galaxyId;
     std::string regionId;
     std::string name;
+    std::optional<std::string> factionId;
     Vector2 pos;
     uint64_t seed = 0;
     std::vector<std::string> connections;
 
-    SCHEMA_DEFINE(id, galaxyId, regionId, name, pos, seed, connections);
+    SCHEMA_DEFINE(id, galaxyId, regionId, name, factionId, pos, seed, connections);
     SCHEMA_INDEXES(name);
     SCHEMA_NAME("SystemData");
 };
@@ -91,5 +112,14 @@ SCHEMA(SectorPlanetData) {
     SCHEMA_DEFINE(id, name, isMoon, planet, pos, asset);
     SCHEMA_INDEXES_NONE();
     SCHEMA_NAME("SectorPlanetData");
+};
+
+SCHEMA(PlayerUnlockedBlocks) {
+    std::string id;
+    std::vector<AssetBlockPtr> blocks;
+
+    SCHEMA_DEFINE(id, blocks);
+    SCHEMA_INDEXES_NONE();
+    SCHEMA_NAME("PlayerUnlockedBlocks");
 };
 } // namespace Engine

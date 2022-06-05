@@ -8,11 +8,19 @@
 using namespace Engine;
 
 ViewBuild::ViewBuild(const Config& config, Canvas2D& canvas, AssetManager& assetManager, Renderer& renderer,
-                     Widgets& widgets)
-    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), widgets(widgets) {
+                     Client& client, Widgets& widgets)
+    : config(config), canvas(canvas), assetManager(assetManager), renderer(renderer), client(client), widgets(widgets),
+      loading(true) {
+
+    images.noThumbnail = assetManager.find<AssetImage>("image_no_thumbnail");
+
+    actionBar.blocks[0] = assetManager.find<AssetBlock>("block_hull_t1");
+    actionBar.shapes[0] = Shape::Type::Penta;
 }
 
 void ViewBuild::load() {
+    loading = true;
+
     scene = std::make_unique<Scene>();
 
     auto skybox = std::make_shared<Entity>();
@@ -38,34 +46,98 @@ void ViewBuild::load() {
     grid->setDirty(true);
 
     auto block = assetManager.find<AssetBlock>("block_hull_t1");
-    /*for (auto y = 0; y < 1; y++) {
-        for (auto x = -20; x < 20; x++) {
-            for (auto z = 0; z < 1; z++) {
-                grid->insert(Vector3i{x, y, z}, block, 0, 0, 0);
-            }
-        }
-    }*/
-
-    for (auto s = 0; s < 4; s++) {
-        for (auto x = 0; x < 20; x++) {
-            grid->insert(Vector3i{x, 0, s}, block, 0, 0, s);
-        }
-    }
+    grid->insert(Vector3i{0, 0, 0}, block, 0, 0, Shape::Type::Cube);
 
     scene->addEntity(ship);
+
+    fetchUnlockedBlocks();
 }
 
 void ViewBuild::render(const Vector2i& viewport) {
-    scene->update(0.1f);
-    renderer.render(*scene);
+    if (scene) {
+        const auto now = std::chrono::steady_clock::now();
+        auto timeDiff = now - lastTimePoint;
+        lastTimePoint = now;
+        if (timeDiff > std::chrono::milliseconds(100)) {
+            timeDiff = std::chrono::milliseconds(100);
+        }
+        const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(timeDiff).count() / 1000000.0f;
+        scene->update(delta);
+
+        renderer.setEnableBackground(true);
+        renderer.setEnableBloom(true);
+        renderer.render(*scene);
+    }
 }
 
 void ViewBuild::renderGui(const Vector2i& viewport) {
-    /*canvas.beginPath();
-    canvas.fillColor(Color4{1.0f, 0.0f, 0.0f, 0.2f});
-    canvas.rect(Vector2{50.0f}, Vector2{100.0f});
-    canvas.fill();
-    canvas.closePath();*/
+    if (loading) {
+        widgets.loading("Initializing build data...", 0.9f);
+    } else {
+        renderActionBar();
+        renderBlockBrowser();
+    }
+}
+
+void ViewBuild::renderActionBar() {
+    std::vector<Widgets::ActionBarItem> items;
+    items.resize(10);
+
+    for (size_t i = 0; i < items.size(); i++) {
+        if (!actionBar.blocks[i]) {
+            items[i].image = images.noThumbnail;
+            items[i].onClick = [this]() { blockBrowser.enabled = true; };
+            items[i].tooltip = "Click to browse blocks";
+        } else {
+            items[i].image = actionBar.blocks[i]->getImageForShape(actionBar.shapes[i]);
+            items[i].onClick = nullptr;
+            items[i].tooltip =
+                fmt::format("{} ({})", actionBar.blocks[i]->getTitle(), shapeTypeToFriendlyName(actionBar.shapes[i]));
+        }
+    }
+
+    widgets.actionBar(64.0f, items);
+}
+
+void ViewBuild::renderBlockBrowser() {
+    if (!blockBrowser.enabled) {
+        return;
+    }
+
+    std::vector<Widgets::BlockBrowserItem> items;
+
+    for (const auto& [block, shape] : blockBrowser.available) {
+        items.emplace_back();
+        auto& item = items.back();
+
+        item.image = block->getImageForShape(shape);
+        item.label = fmt::format("{} ({})", block->getTitle(), shapeTypeToFriendlyName(shape));
+        item.onHover = nullptr;
+    }
+
+    auto onClose = [this]() { blockBrowser.enabled = false; };
+
+    widgets.blockBrowser(Vector2i{100.0f, 100.0f}, items, blockBrowser.filter, onClose);
+}
+
+void ViewBuild::fetchUnlockedBlocks() {
+    MessageUnlockedBlocks::Request req{};
+    client.send(req, [this](MessageUnlockedBlocks::Response res) {
+        loading = false;
+        // availableBlocks = std::move(res.blocks);
+        blockBrowser.available.clear();
+
+        for (const auto& block : res.blocks) {
+            for (const auto& shapeType : block->getAllowedTypes()) {
+                blockBrowser.available.emplace_back(block, shapeType);
+            }
+        }
+
+        std::sort(blockBrowser.available.begin(), blockBrowser.available.end(),
+                  [](const auto& a, const auto& b) -> bool {
+                      return std::get<0>(a)->getTitle().compare(std::get<0>(b)->getTitle()) > 0;
+                  });
+    });
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {

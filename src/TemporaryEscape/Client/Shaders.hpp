@@ -14,6 +14,7 @@
 #include "../Shaders/ShaderPlanetAtmosphere.hpp"
 #include "../Shaders/ShaderPlanetSurface.hpp"
 #include "../Shaders/ShaderPointCloud.hpp"
+#include "../Shaders/ShaderPolyShape.hpp"
 #include "../Shaders/ShaderSPBlur.hpp"
 #include "../Shaders/ShaderSSAO.hpp"
 #include "../Shaders/ShaderSkybox.hpp"
@@ -23,7 +24,8 @@ struct Shaders {
     explicit Shaders(const Config& config)
         : skybox(config), model(config), grid(config), brdf(config), pbr(config), planetSurface(config),
           planetAtmosphere(config), particleEmitter(config), bullet(config), fxaa(config), pointCloud(config),
-          lines(config), ssao(config), spBlur(config), bloomExtract(config), bloomBlur(config), bloomCombine(config) {
+          lines(config), ssao(config), spBlur(config), bloomExtract(config), bloomBlur(config), bloomCombine(config),
+          polyShape(config) {
     }
 
     Shaders(const Shaders& other) = delete;
@@ -48,5 +50,6 @@ struct Shaders {
     ShaderBloomExtract bloomExtract;
     ShaderBloomBlur bloomBlur;
     ShaderBloomCombine bloomCombine;
+    ShaderPolyShape polyShape;
 };
 } // namespace Engine

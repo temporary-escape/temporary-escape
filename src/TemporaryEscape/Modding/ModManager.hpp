@@ -13,6 +13,10 @@ public:
 
     void load(AssetManager& assetManager, const Path& dir);
 
+    const std::vector<std::shared_ptr<Manifest>>& getManifests() const {
+        return manifests;
+    }
+
 private:
     std::vector<std::shared_ptr<Manifest>> manifests;
 };

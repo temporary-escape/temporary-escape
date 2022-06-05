@@ -1,0 +1,27 @@
+title: 'Crew Quarters T1'
+level: 1
+shapes:
+  - Cube
+materials:
+  - faces:
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_plates_01_diff
+    normal:
+      texture: texture_plates_01_norm
+    metallicRoughness:
+      texture: texture_plates_01_meta
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveZ
+      - NegativeZ
+    baseColor:
+      texture: texture_plates_quaters_01_diff
+    normal:
+      texture: texture_plates_quaters_01_norm
+    metallicRoughness:
+      texture: texture_plates_quaters_01_meta
+    emissive:
+      texture: texture_plates_quaters_01_emis

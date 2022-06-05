@@ -5,9 +5,9 @@
 
 using namespace Engine;
 
-Server::Server(const Config& config, AssetManager& assetManager, TransactionalDatabase& db)
-    : NetworkTcpServer(*this), config(config), assetManager(assetManager), db(db), services(config, assetManager, db),
-      tickFlag(true), worker(getWorker()), loader(1) {
+Server::Server(const Config& config, ModManager& modManager, AssetManager& assetManager, TransactionalDatabase& db)
+    : NetworkTcpServer(*this), config(config), modManager(modManager), assetManager(assetManager), db(db),
+      world(config, assetManager, db), generator(config, db, world), tickFlag(true), worker(getWorker()), loader(1) {
 
     NetworkTcpServer<Server, ServerSink>::bind(config.serverPort);
     tickThread = std::thread(&Server::tick, this);
@@ -16,10 +16,7 @@ Server::Server(const Config& config, AssetManager& assetManager, TransactionalDa
 void Server::load() {
     loader.post([this]() {
         try {
-            services.galaxies.generate(123456789ULL);
-            services.regions.generate();
-            services.systems.generate();
-            services.sectors.generate();
+            generator.generate(123456789ULL);
             Log::i(CMP, "Universe has been generated and is ready");
 
             loaded.resolve();
@@ -156,7 +153,7 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
     }
 
     // Check if the player is already logged in
-    const auto playerIdFound = services.players.secretToId(req.secret);
+    const auto playerIdFound = world.playerSecretToId(req.secret);
     if (playerIdFound) {
         auto alreadyLoggedIn = false;
         {
@@ -181,7 +178,7 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
     PlayerData player;
     SessionPtr session;
     try {
-        player = services.players.login(req.secret, req.name);
+        player = world.loginPlayer(req.secret, req.name);
         session = std::make_shared<Session>(player.id, peer);
 
         std::unique_lock<std::shared_mutex> lock{players.mutex};
@@ -195,13 +192,13 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
     // Find starting location, so we can move the player to the correct sector
     PlayerLocationData location;
     try {
-        location = services.players.findStartingLocation(player.id);
+        location = world.findPlayerStartingLocation(player.id);
     } catch (...) {
         EXCEPTION_NESTED("Failed to find starting location for player: '{}'", req.name);
     }
 
     // Find the sector
-    auto sectorOpt = services.sectors.find(location.galaxyId, location.systemId, location.sectorId);
+    auto sectorOpt = world.findSector(location.galaxyId, location.systemId, location.sectorId);
     if (!sectorOpt) {
         EXCEPTION_NESTED("Invalid starting location for player: '{}'", req.name);
     }
@@ -214,8 +211,8 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
         auto it = sectors.map.find(sector.id);
         if (it == sectors.map.end()) {
             try {
-                instance = std::make_shared<Sector>(config, services, assetManager, db, sector.galaxyId,
-                                                    sector.systemId, sector.id);
+                instance = std::make_shared<Sector>(config, world, assetManager, db, sector.galaxyId, sector.systemId,
+                                                    sector.id);
                 it = sectors.map.insert(std::make_pair(sector.id, instance)).first;
             } catch (...) {
                 EXCEPTION_NESTED("Failed to start sector '{}'", sector.id);
@@ -238,27 +235,49 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
     });
 }
 
+void Server::handle(const PeerPtr& peer, MessageModsInfo::Request req, MessageModsInfo::Response& res) {
+    const auto& manifests = modManager.getManifests();
+    res.manifests.reserve(manifests.size());
+    for (const auto& manifest : manifests) {
+        res.manifests.push_back(*manifest);
+    }
+}
+
+void Server::handle(const PeerPtr& peer, MessagePlayerLocation::Request req, MessagePlayerLocation::Response& res) {
+    auto session = peerToSession(peer);
+    res.location = world.getPlayerLocation(session->getPlayerId());
+}
+
 void Server::handle(const PeerPtr& peer, MessageFetchGalaxy::Request req, MessageFetchGalaxy::Response& res) {
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
-    res.galaxy = services.galaxies.getForPlayer(session->getPlayerId(), req.galaxyId);
+    res.galaxy = world.getGalaxyForPlayer(session->getPlayerId(), req.galaxyId);
 }
 
 void Server::handle(const PeerPtr& peer, MessageFetchSystems::Request req, MessageFetchSystems::Response& res) {
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
-    res.systems = services.systems.getForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
-    Log::d(CMP, "Fetch systems sending: {} results before: {} after: {}", res.systems.size(), req.token, res.token);
+    res.systems = world.getSystemsForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
 }
 
 void Server::handle(const PeerPtr& peer, MessageFetchRegions::Request req, MessageFetchRegions::Response& res) {
     auto session = peerToSession(peer);
     res.galaxyId = req.galaxyId;
-    res.regions = services.regions.getForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
-    Log::d(CMP, "Fetch regions sending: {} results", res.regions.size());
+    res.regions = world.getRegionsForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
+}
+
+void Server::handle(const PeerPtr& peer, MessageFetchFactions::Request req, MessageFetchFactions::Response& res) {
+    auto session = peerToSession(peer);
+    res.galaxyId = req.galaxyId;
+    res.factions = world.getFactionsForPlayer(session->getPlayerId(), req.galaxyId, req.token, res.token);
 }
 
 void Server::handle(const PeerPtr& peer, MessageShipMovement::Request req, MessageShipMovement::Response& res) {
     auto [session, sector] = peerToSessionSector(peer);
     sector->handle(session, std::move(req), res);
+}
+
+void Server::handle(const PeerPtr& peer, MessageUnlockedBlocks::Request req, MessageUnlockedBlocks::Response& res) {
+    auto session = peerToSession(peer);
+    res.blocks = world.getPlayerUnlockedBlocks(session->getPlayerId());
 }

@@ -48,7 +48,11 @@ AssetTexture::AssetTexture(const Manifest& mod, std::string name, const Path& pa
     }
 }
 
-void AssetTexture::load(AssetManager& assetManager) {
+void AssetTexture::load(AssetManager& assetManager, bool noGraphics) {
+    if (noGraphics) {
+        return;
+    }
+
     try {
         PngImporter image(path);
 

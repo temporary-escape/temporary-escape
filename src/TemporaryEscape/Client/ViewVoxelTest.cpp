@@ -80,7 +80,15 @@ ViewVoxelTest::ViewVoxelTest(const Config& config, Canvas2D& canvas, AssetManage
 
 void ViewVoxelTest::render(const Vector2i& viewport) {
     if (scene != nullptr) {
-        scene->update(0.1f);
+        const auto now = std::chrono::steady_clock::now();
+        auto timeDiff = now - lastTimePoint;
+        lastTimePoint = now;
+        if (timeDiff > std::chrono::milliseconds(100)) {
+            timeDiff = std::chrono::milliseconds(100);
+        }
+        const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(timeDiff).count() / 1000000.0f;
+        scene->update(delta);
+
         renderer.setEnableBackground(true);
         renderer.setEnableBloom(true);
         renderer.render(*scene);

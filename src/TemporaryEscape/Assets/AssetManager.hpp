@@ -71,7 +71,7 @@ public:
     AssetSectorPtr addSector(const Manifest& mod, const Path& path);
     AssetParticlesPtr addParticles(const Manifest& mod, const Path& path);
     AssetTurretPtr addTurret(const Manifest& mod, const Path& path);
-    AssetLoadQueue getLoadQueue();
+    AssetLoadQueue getLoadQueue(bool noGraphics);
 
     Texture2D compressTexture(Texture2D& source, const Vector2i& targetSize, PixelType target);
     Canvas2D::Image addToAtlas(const Vector2i& size, const void* pixels);
