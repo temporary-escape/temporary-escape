@@ -1,5 +1,6 @@
 title: 'Hull T1'
 level: 1
+category: 'Hull'
 shapes:
   - Cube
   - Wedge

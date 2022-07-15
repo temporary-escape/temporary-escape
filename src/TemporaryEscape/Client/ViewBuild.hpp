@@ -23,9 +23,13 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
 
 private:
-    void renderActionBar();
-    void renderBlockBrowser();
+    void actionPlaceBlock();
     void fetchUnlockedBlocks();
+    void setActionBarItem(size_t index, const AssetBlockPtr& block, Shape::Type shape);
+    void setActionBarActive(size_t index);
+    void setActionBarActiveItem(const AssetBlockPtr& block, Shape::Type shape) {
+        setActionBarItem(actionBar.active, block, shape);
+    }
 
     const Config& config;
     Canvas2D& canvas;
@@ -35,9 +39,13 @@ private:
     Widgets& widgets;
 
     std::unique_ptr<Scene> scene;
+    EntityPtr entityShip;
+    EntityPtr entityHelperAdd;
     bool loading;
 
     std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
+    Vector2i mousePos;
+    std::optional<Grid::RayCastResult> rayCastResult;
 
     struct {
         AssetImagePtr noThumbnail;
@@ -47,12 +55,15 @@ private:
         std::array<AssetBlockPtr, 10> blocks;
         std::array<Shape::Type, 10> shapes;
         size_t active = 0;
+        std::vector<Widgets::ActionBarItem> items;
     } actionBar;
 
     struct {
         bool enabled = false;
         std::vector<std::tuple<AssetBlockPtr, Shape::Type>> available;
-        std::string filter;
+        Widgets::BlockBrowserData data;
+        AssetBlockPtr hovered = nullptr;
+        AssetBlockPtr dragging = nullptr;
     } blockBrowser;
 };
 } // namespace Engine

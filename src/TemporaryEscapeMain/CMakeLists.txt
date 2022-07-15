@@ -11,7 +11,7 @@ if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE asan)
 endif ()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC cxxopts::cxxopts TemporaryEscape)
+target_link_libraries(${PROJECT_NAME} PUBLIC CLI11::CLI11 TemporaryEscape)
 
 set_target_properties(${PROJECT_NAME}
         PROPERTIES

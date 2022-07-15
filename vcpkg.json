@@ -19,6 +19,22 @@
       "version>=": "0.1.34"
     },
     {
+      "name": "vulkan",
+      "version>=": "1.1.82.1#2"
+    },
+    {
+      "name": "vulkan-memory-allocator",
+      "version>=": "2021-07-07#1"
+    },
+    {
+      "name": "glslang",
+      "version>=": "11.6.0"
+    },
+    {
+      "name": "spirv-cross",
+      "version>=": "2021-01-15#2"
+    },
+    {
       "name": "fmt",
       "version>=": "8.0.1"
     },
@@ -51,8 +67,8 @@
       "version>=": "1.9.2"
     },
     {
-      "name": "cxxopts",
-      "version>=": "3.0.0"
+      "name": "cli11",
+      "version>=": "2.1.2#1"
     },
     {
       "name": "freetype",

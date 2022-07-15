@@ -16,3 +16,6 @@
 [submodule "libs/voronoi"]
 	path = libs/voronoi
 	url = https://github.com/JCash/voronoi
+[submodule "libs/V-EZ"]
+	path = libs/V-EZ
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/V-EZ.git

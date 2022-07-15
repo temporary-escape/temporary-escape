@@ -11,6 +11,7 @@ public:
     struct Definition {
         std::string title;
         int level;
+        std::string category;
         std::vector<Shape::Type> shapes;
 
         struct TextureDefinition {
@@ -34,7 +35,7 @@ public:
 
         std::vector<Material> materials;
 
-        YAML_DEFINE(title, level, shapes, materials);
+        YAML_DEFINE(title, level, category, shapes, materials);
     };
 
     static std::shared_ptr<AssetBlock> from(const std::string& name);
@@ -46,6 +47,10 @@ public:
 
     [[nodiscard]] const std::string& getTitle() const {
         return definition.title;
+    }
+
+    [[nodiscard]] const std::string& getCategory() const {
+        return definition.category;
     }
 
     [[nodiscard]] const Material& getMaterialForSide(const Shape::Side side) const {
@@ -85,6 +90,11 @@ private:
 };
 
 using AssetBlockPtr = std::shared_ptr<AssetBlock>;
+
+struct AssetBlockShape {
+    AssetBlockPtr block;
+    Shape::Type shape;
+};
 } // namespace Engine
 
 namespace msgpack {

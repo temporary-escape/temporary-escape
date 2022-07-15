@@ -1,7 +1,7 @@
-#include <TemporaryEscape/Client/Application.hpp>
+#include <TemporaryEscape/Client/ClientWindow.hpp>
 #include <TemporaryEscape/Utils/Exceptions.hpp>
 #include <TemporaryEscape/Utils/Log.hpp>
-#include <cxxopts.hpp>
+//#include <cxxopts.hpp>
 
 #ifdef _WIN32
 #include <Shlobj.h>
@@ -49,7 +49,7 @@ std::filesystem::path execDir() {
 }
 
 int main(int argc, char** argv) {
-    cxxopts::Options parser("Temporary Escape", "Space sim multiplayer game");
+    /*cxxopts::Options parser("Temporary Escape", "Space sim multiplayer game");
 
     const auto defaultRoot = execDir();
     const auto defaultUserData = appDataDir();
@@ -66,10 +66,13 @@ int main(int argc, char** argv) {
 
     parser.add_options()("voxel-test", "Toggle ViewVoxelTest");
 
-    parser.add_options()("save-name", "Name of the save folder", cxxopts::value<std::string>());
+    parser.add_options()("save-name", "Name of the save folder", cxxopts::value<std::string>());*/
+
+    const auto defaultRoot = execDir();
+    const auto defaultUserData = appDataDir();
 
     try {
-        auto args = parser.parse(argc, argv);
+        /*auto args = parser.parse(argc, argv);
 
         if (args["version"].as<bool>()) {
             std::cout << "v0.0.1" << std::endl;
@@ -98,11 +101,20 @@ int main(int argc, char** argv) {
         config.voxelTest = args["voxel-test"].as<bool>();
 
         std::filesystem::create_directories(config.userdataPath);
-        std::filesystem::create_directories(config.userdataSavesPath);
+        std::filesystem::create_directories(config.userdataSavesPath);*/
+
+        const auto userdataPath = std::filesystem::absolute(Path(defaultUserData));
+        const auto logPath = userdataPath / "debug.log";
+
+        Log::configure(true, logPath);
+        Log::i("main", "Temporary Escape main");
+        Log::i("main", "Log file location: '{}'", logPath.string());
 
         {
-            Application application(config);
-            application.run();
+            // Application application(config);
+            // application.run();
+            ClientWindow window("Temporary Escape", {1920, 1080});
+            window.Run();
         }
         Log::i("main", "Exit success");
         return EXIT_SUCCESS;

@@ -9,3 +9,7 @@
 #else
 #define ENGINE_API
 #endif
+
+#define NON_COPYABLE(T)                                                                                                \
+    T(const T& other) = delete;                                                                                        \
+    T& operator=(const T& other) = delete;\

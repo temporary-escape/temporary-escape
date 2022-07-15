@@ -12,6 +12,7 @@ static inline size_t coordToIdx(const Vector3i& pos, size_t width) {
 }
 
 template <typename V> static inline glm::vec<3, V> idxToOffset(const int idx, const V s, const glm::vec<3, V>& origin) {
+    // Log::d(CMP, "idxToOffset({}, {}, {})", idx, s, origin);
     using Vec = glm::vec<3, V>;
 
     switch (idx) {
@@ -109,6 +110,25 @@ static uint8_t posToIndex(const Vector3i& pos, const Vector3i& origin) {
             }
         }
     }
+}
+
+static Vector3 vecToNormal(const Vector3& vec) {
+    if (vec.x >= 0.49f) {
+        return Vector3{1.0f, 0.0f, 0.0f};
+    }
+    if (vec.x <= -0.49f) {
+        return Vector3{-1.0f, 0.0f, 0.0f};
+    }
+    if (vec.y >= 0.49f) {
+        return Vector3{0.0f, 1.0f, 0.0f};
+    }
+    if (vec.y <= -0.49f) {
+        return Vector3{0.0f, -1.0f, 0.0f};
+    }
+    if (vec.z >= 0.49f) {
+        return Vector3{0.0f, 0.0f, 1.0f};
+    }
+    return Vector3{0.0f, 0.0f, -1.0f};
 }
 
 static uint8_t enumToMask[7] = {
@@ -389,6 +409,7 @@ void Grid::Octree::insert(const Vector3i& pos, const Voxel& voxel) {
         // dump();
     }
 
+    Log::d(CMP, "Inserting pos: {}", pos);
     insert(nodes.at(0), Vector3i{0}, pos, voxel, 1);
 }
 
@@ -398,6 +419,8 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
     Index childIdx = parent.branch.child;
     const auto insertIdx = posToIndex(pos, origin);
     Index lastChildIdx = 0;
+
+    Log::d(CMP, "Insert at origin: {} pos: {} level: {}", origin, pos, level);
 
     while (childIdx) {
         if (!childIdx || childIdx == badIndex) {
@@ -474,6 +497,58 @@ std::optional<Grid::Voxel> Grid::Octree::find(const Vector3i& pos) const {
         return std::nullopt;
     }
     return find(nodes.at(0), Vector3i{0}, pos, 1);
+}
+
+std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Vector3& from, const Vector3& to) const {
+
+    return rayCast(nodes.at(0), Vector3i{0}, 1, from, to);
+}
+
+std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& parent, const Vector3i& origin, size_t level,
+                                                         const Vector3& from, const Vector3& to) const {
+    std::optional<Grid::RayCastResult> result;
+
+    Index childIdx = parent.branch.child;
+    while (childIdx) {
+        if (!childIdx || childIdx == badIndex) {
+            break;
+        }
+
+        auto& child = nodes.at(childIdx);
+
+        const auto index = depth - level == 0 ? child.voxel.index : child.branch.index;
+
+        const auto half = static_cast<float>(getWidthForLevel(depth - level + 1)) / 2.0f;
+        const auto childPos = idxToOffset<float>(index, half, origin);
+
+        const auto min = Vector3{childPos} - Vector3{half} - Vector3{0.5f};
+        const auto max = Vector3{childPos} + Vector3{half} - Vector3{0.5f};
+
+        const auto pos = intersectBox(min, max, from, to);
+        if (pos) {
+            if (depth - level == 0) {
+                // Bottom
+                if (!result || glm::distance(result.value().hitPos, from) > glm::distance(pos.value(), from)) {
+                    const auto worldChildPos = (max + min) / 2.0f;
+                    const auto diff = pos.value() - worldChildPos;
+                    result = RayCastResult{child, vecToNormal(diff), pos.value(), childPos, worldChildPos};
+                }
+            } else {
+                const auto newOrigin = idxToOffset(index, getWidthForLevel(depth - level + 1) / 2, origin);
+                auto test = rayCast(child, newOrigin, level + 1, from, to);
+                if (test) {
+                    if (!result ||
+                        glm::distance(result.value().hitPos, from) > glm::distance(test.value().hitPos, from)) {
+                        result = test;
+                    }
+                }
+            }
+        }
+
+        childIdx = child.branch.next;
+    }
+
+    return result;
 }
 
 std::optional<Grid::Voxel> Grid::Octree::find(const Node& parent, const Vector3i& origin, const Vector3i& pos,
@@ -706,11 +781,13 @@ void Grid::generateMeshBlock(Iterator& iterator, Grid::Builder& gridBuilder, Gri
     std::memset(cache.get(), 0x00, sizeof(Voxel) * cacheBuildWidth * cacheBuildWidth * cacheBuildWidth);
 
     const auto& origin = iterator.getPos();
+    Log::d(CMP, "generateMeshBlock origin: {}", origin);
     const auto min = origin - Vector3i{iterator.getBranchWidth() / 2};
 
     auto children = iterator.children();
     generateMeshCache(children, cache.get(), min);
 
+    Log::d(CMP, "generateMeshBlock build min: {}", min);
     gridBuilder.build(cache.get(), types, map, min);
 }
 
@@ -720,14 +797,15 @@ void Grid::generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& o
     }
 
     while (iterator) {
+        Log::d(CMP, "buildMesh iterator pos: {} offset: {}", iterator.getPos(), offset);
         const auto pos = iterator.getPos() - offset;
 
         if (!iterator.isVoxel()) {
             auto children = iterator.children();
             generateMeshCache(children, cache, offset);
         } else {
-            // Log::d(CMP, "buildMesh: [{}] {} pos: [{}, {}, {}]", voxels.pool().indexOf(iterator.value()),
-            //        iterator.value().voxel.string(), pos.x, pos.y, pos.z);
+            Log::d(CMP, "buildMesh: [{}] {} pos: [{}, {}, {}]", voxels.pool().indexOf(iterator.value()),
+                   iterator.value().voxel.string(), pos.x, pos.y, pos.z);
 
             auto& dst = cache[coordToIdx(pos + Vector3i{1}, cacheBuildWidth)];
             dst = iterator.value().voxel;
@@ -735,4 +813,8 @@ void Grid::generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& o
 
         iterator.next();
     }
+}
+
+std::optional<Grid::RayCastResult> Grid::rayCast(const Vector3& from, const Vector3& to) const {
+    return voxels.rayCast(from, to);
 }

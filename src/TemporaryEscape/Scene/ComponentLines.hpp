@@ -22,6 +22,9 @@ public:
     ComponentLines() = default;
     explicit ComponentLines(Object& object) : Component(object) {
     }
+    explicit ComponentLines(Object& object, std::vector<Line> lines) : Component(object), lines(std::move(lines)) {
+        setDirty(true);
+    }
     virtual ~ComponentLines() = default;
 
     Delta getDelta() {

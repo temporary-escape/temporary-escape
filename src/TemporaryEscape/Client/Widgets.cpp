@@ -44,7 +44,8 @@ void Widgets::actionBar(const float itemWidth, const std::vector<ActionBarItem>&
                 gui.tooltip(item.tooltip);
             }
 
-            if (gui.buttonImage(item.image, "") && item.onClick) {
+            gui.onNextDropOff(item.onDrop);
+            if (gui.buttonImage(item.image) && item.onClick) {
                 item.onClick();
             }
         }
@@ -66,32 +67,94 @@ void Widgets::blockTooltip(const Vector2i& pos, const AssetBlockPtr& block, cons
     });
 }
 
-void Widgets::blockBrowser(const Vector2i& pos, const std::vector<BlockBrowserItem>& items, std::string& filter,
-                           const std::function<void()>& onClose) {
-    const auto flags = GuiFlag::NoScrollbar | GuiFlag::Background | GuiFlag::Border | GuiFlag::Title;
-    const auto groupFlags = GuiFlag::Border;
+void Widgets::blockBrowser(Widgets::BlockBrowserData& data) {
+    static const auto size = Vector2{1200.0f, 610.0f};
+    const auto pos = Vector2{viewport} / 2.0f - size / 2.0f;
+    static const auto flags = GuiFlag::NoScrollbar | GuiFlag::Background | GuiFlag::Border | GuiFlag::Title;
+    static const auto groupFlags = GuiFlag::Scaleable;
+    static const auto columnsNum = 5;
 
-    const auto size = Vector2i{3 * (128.0f + GuiTheme::padding + 2.0f) + 20.0f, 600.0f};
+    BlockBrowserItem* hovered = nullptr;
 
     gui.window(pos, size, "Block Browser", flags, [&]() {
-        gui.layoutDynamic(30.0f, 1);
-        gui.input(filter);
+        gui.layoutDynamic(30.0f, 3, [&]() {
+            gui.layoutDynamicPush(0.2f);
+            gui.spacing();
 
-        gui.layoutDynamic(500.0f, 1);
-        gui.group("Blocks", groupFlags, [&]() {
-            for (size_t i = 0; i < items.size(); i++) {
-                if (i % 3 == 0) {
-                    gui.layoutDynamic(128.0f, 3);
-                }
-                gui.buttonImage(items.at(i).image, "");
+            gui.layoutDynamicPush(0.7f);
+            gui.input(data.filter);
+
+            gui.layoutDynamicPush(0.1f);
+            if (gui.button("Clear")) {
+                data.filter = "";
             }
         });
 
-        gui.layoutDynamic(30.0f, 3);
+        gui.layoutDynamic(500.0f, 3, [&]() {
+            gui.layoutDynamicPush(0.2f);
+
+            gui.group("Categories", groupFlags, [&]() {
+                for (auto& category : data.categories) {
+                    gui.layoutDynamic(0.0f, 1);
+                    auto shown = category.shown;
+                    gui.selectableLabel(category.label, shown);
+                    if (shown != category.shown && shown) {
+                        for (auto& other : data.categories) {
+                            other.shown = &category == &other;
+                        }
+                    }
+                }
+            });
+
+            gui.layoutDynamicPush(0.5f);
+            gui.group("Blocks", groupFlags, [&]() {
+                auto width = gui.getContentSize().x - GuiTheme::padding;
+                auto column = std::floor(width / columnsNum - GuiTheme::padding);
+
+                for (auto& category : data.categories) {
+                    if (!category.shown) {
+                        continue;
+                    }
+
+                    for (size_t i = 0; i < category.items.size(); i++) {
+                        auto& item = category.items.at(i);
+                        if (i % columnsNum == 0) {
+                            gui.layoutDynamic(column, columnsNum);
+                        }
+                        if (gui.isNextHover()) {
+                            hovered = &item;
+                        }
+                        if (gui.buttonImage(item.image)) {
+                            if (item.onClick) {
+                                item.onClick();
+                            }
+                            gui.setDragAndDrop(item.image, item.drag);
+                        }
+                    }
+
+                    break;
+                }
+            });
+
+            gui.layoutDynamicPush(0.3f);
+            gui.group("Information", 0, [&]() {
+                gui.layoutDynamic(0.0f, 1);
+                gui.label("Title");
+            });
+        });
+
+        static const std::vector<GuiRowTemplate> tmpl = {guiRowVariable(1.0f), guiRowStatic(100.0f)};
+        gui.layoutTemplated(30.0f, tmpl);
         gui.spacing();
-        gui.spacing();
-        if (gui.button("Close") && onClose) {
-            onClose();
+        if (gui.button("Close") && data.onClose) {
+            data.onClose();
         }
     });
+
+    if (hovered != data.hovered) {
+        data.hovered = hovered;
+        if (data.onHover) {
+            data.onHover(hovered);
+        }
+    }
 }

@@ -15,6 +15,7 @@ Entity::Delta Entity::getDelta() const {
     Delta delta{};
     delta.id = id;
     delta.transform = getTransform();
+    delta.visible = isVisible();
 
     for (const auto& ref : components) {
         if (ref.ptr->isDirty()) {
@@ -28,6 +29,7 @@ Entity::Delta Entity::getDelta() const {
 
 void Entity::applyDelta(const Delta& delta) {
     updateTransform(delta.transform);
+    setVisible(delta.visible);
 }
 
 void Entity::setParent(const std::shared_ptr<Entity>& value) {

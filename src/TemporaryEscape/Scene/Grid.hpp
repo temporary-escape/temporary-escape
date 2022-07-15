@@ -199,6 +199,14 @@ public:
         return static_cast<int>(std::pow(2, level)) / 2;
     }
 
+    struct RayCastResult {
+        std::reference_wrapper<const Node> node;
+        Vector3 normal;
+        Vector3 hitPos;
+        Vector3i pos;
+        Vector3 worldPos;
+    };
+
     class Builder {
     public:
         explicit Builder(AssetManager& assetManager);
@@ -278,6 +286,8 @@ public:
 
         [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const;
 
+        [[nodiscard]] std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to) const;
+
         [[nodiscard]] size_t size() const {
             return nodes.size();
         }
@@ -300,6 +310,8 @@ public:
         void insert(Node& parent, const Vector3i& origin, const Vector3i& pos, const Voxel& voxel, size_t level);
         [[nodiscard]] std::optional<Voxel> find(const Node& parent, const Vector3i& origin, const Vector3i& pos,
                                                 size_t level) const;
+        [[nodiscard]] std::optional<RayCastResult> rayCast(const Node& parent, const Vector3i& origin, size_t level,
+                                                           const Vector3& from, const Vector3& to) const;
         void dump(const Node& node, size_t level = 0) const;
 
         NodesPool nodes;
@@ -313,6 +325,8 @@ public:
     }
 
     void generateMesh(Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+
+    [[nodiscard]] std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to) const;
 
     void dump() {
         voxels.dump();

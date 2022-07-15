@@ -10,6 +10,7 @@
 #include "GuiFlags.hpp"
 #include "GuiTheme.hpp"
 
+#include <any>
 #include <functional>
 #include <list>
 #include <queue>
@@ -24,6 +25,29 @@ struct GuiSpace {
     Vector2 pos;
     Vector2 size;
 };
+
+enum class GuiRowTemplateType {
+    Dynamic,
+    Variable,
+    Static,
+};
+
+struct GuiRowTemplate {
+    GuiRowTemplateType type;
+    float value{0.0f};
+};
+
+inline GuiRowTemplate guiRowDynamic() {
+    return GuiRowTemplate{GuiRowTemplateType::Dynamic, 0.0f};
+}
+
+inline GuiRowTemplate guiRowVariable(float width) {
+    return GuiRowTemplate{GuiRowTemplateType::Variable, width};
+}
+
+inline GuiRowTemplate guiRowStatic(float width) {
+    return GuiRowTemplate{GuiRowTemplateType::Static, width};
+}
 
 struct GuiFontData;
 
@@ -41,9 +65,15 @@ public:
                 const std::function<void()>& fn);
     void group(const std::string& name, GuiFlags flags, const std::function<void()>& fn);
     bool button(const std::string& text);
-    bool buttonImage(const AssetImagePtr& image, const std::string& text);
+    void onNextDropOff(const std::function<void(const std::any&)>& fn);
+    void setDragAndDrop(const AssetImagePtr& image, const std::any& data);
+    bool buttonImage(const AssetImagePtr& image);
+    bool buttonImage(const AssetImagePtr& image, const std::string& text,
+                     TextAlignValue align = TextAlign::Left | TextAlign::Middle);
     void label(const std::string& text, TextAlignValue align = TextAlign::Left);
     void label(const std::string& text, const Color4& color, TextAlignValue align = TextAlign::Left);
+    void selectableLabel(const std::string& text, bool& value,
+                         TextAlignValue align = TextAlign::Middle | TextAlign::Left);
     void image(const AssetImagePtr& image);
     void title(const std::string& text);
     void text(const std::string& text);
@@ -51,10 +81,7 @@ public:
     void layoutDynamic(float height, int count);
     void layoutDynamic(float height, int count, const std::function<void()>& fn);
     void layoutDynamicPush(float weight);
-    void layoutTemplated(float height, const std::function<void()>& fn);
-    void layoutTemplatedPushDynamic();
-    void layoutTemplatedPushStatic(float width);
-    void layoutTemplatedPushVariable(float width);
+    void layoutTemplated(float height, const std::vector<GuiRowTemplate>& columns);
     void combo(const std::string& selected, const Vector2& size, const std::function<void()>& fn);
     bool comboItem(const std::string& text);
     void tooltip(const std::string& text);
@@ -63,6 +90,7 @@ public:
     bool isNextHover() const;
 
     Vector2 getContentSize() const;
+    Vector2 getWidgetSize() const;
     Vector2 getMousePos() const;
 
     void keyPressEvent(const Engine::Key& key);
@@ -134,5 +162,13 @@ private:
     AssetFontFacePtr fontFaceRegular;
     AssetFontFacePtr fontFaceBold;
     std::vector<WindowBounds> windowsBounds;
+
+    struct {
+        AssetImagePtr image;
+        bool show{false};
+        std::any data;
+        Vector2 size;
+        bool drop{false};
+    } dragAndDrop;
 };
 } // namespace Engine

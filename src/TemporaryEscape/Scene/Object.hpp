@@ -82,14 +82,23 @@ public:
         dirty = false;
     }
 
+    void setVisible(bool value) {
+        visible = value;
+    }
+
+    bool isVisible() const {
+        return visible;
+    }
+
     std::shared_ptr<Entity> asEntity();
 
 private:
     Matrix4 transform;
     bool dirty{true};
+    bool visible{true};
     Object* parent{nullptr};
 
 public:
-    MSGPACK_DEFINE_ARRAY(transform);
+    MSGPACK_DEFINE_ARRAY(transform, visible);
 };
 } // namespace Engine

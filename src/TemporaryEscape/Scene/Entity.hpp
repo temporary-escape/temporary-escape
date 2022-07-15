@@ -64,7 +64,7 @@ using EntityComponentHelper = Component::TraitsMapper<
     Component::Traits<ComponentShipControl,
                       Component::Flags::None>,
     Component::Traits<ComponentPlanet,
-                      Component::Flags::Syncable>,
+                      Component::Flags::None>,
     Component::Traits<ComponentLabel,
                       Component::Flags::Syncable>,
     Component::Traits<ComponentPlayer,
@@ -90,9 +90,10 @@ public:
     struct Delta {
         uint64_t id{0};
         Matrix4 transform;
+        bool visible{true};
         std::vector<typename EntityComponentHelper::Deltas> components;
 
-        MSGPACK_DEFINE_ARRAY(id, transform, components);
+        MSGPACK_DEFINE_ARRAY(id, transform, visible, components);
     };
 
     // using ComponentsIterator = std::vector<Component::Reference>::iterator;

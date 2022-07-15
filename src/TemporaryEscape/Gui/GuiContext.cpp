@@ -450,6 +450,25 @@ void GuiContext::renderInternal(const Vector2& viewport) {
         }
         }
     }
+
+    if (dragAndDrop.show && dragAndDrop.image) {
+        canvas.beginPath();
+
+        canvas.fillColor(asColor(ctx->style.window.background));
+        canvas.strokeColor(asColor(ctx->style.window.border_color));
+        canvas.strokeWidth(ctx->style.window.border);
+        canvas.rect(getMousePos(), dragAndDrop.size + GuiTheme::padding * 2.0f);
+        canvas.fill();
+        canvas.stroke();
+
+        canvas.fillColor(Color4{1.0f});
+        canvas.rectImage(getMousePos(), dragAndDrop.size + GuiTheme::padding, dragAndDrop.image->getImage(),
+                         Color4{1.0f});
+        canvas.fill();
+
+        canvas.closePath();
+    }
+
     canvas.closePath();
     nk_clear(ctx.get());
     glDisable(GL_SCISSOR_TEST);
@@ -462,6 +481,10 @@ void GuiContext::reset() {
 void GuiContext::render(const Vector2& viewport) {
     this->viewport = viewport;
     renderInternal(this->viewport);
+    if (dragAndDrop.drop) {
+        dragAndDrop.drop = false;
+        dragAndDrop.data.reset();
+    }
 }
 
 void GuiContext::spacing() {
@@ -491,36 +514,71 @@ bool GuiContext::button(const std::string& text) {
     return nk_button_label(ctx.get(), text.c_str()) == nk_true;
 }
 
-bool GuiContext::buttonImage(const AssetImagePtr& image, const std::string& text) {
+void GuiContext::onNextDropOff(const std::function<void(const std::any&)>& fn) {
+    if (isNextHover() && dragAndDrop.drop) {
+        dragAndDrop.drop = false;
+        if (fn) {
+            fn(dragAndDrop.data);
+        }
+        dragAndDrop.data.reset();
+    }
+}
+
+void GuiContext::setDragAndDrop(const AssetImagePtr& image, const std::any& data) {
+    dragAndDrop.data = data;
+    dragAndDrop.image = image;
+    dragAndDrop.size = getWidgetSize();
+}
+
+/*bool GuiContext::draggable(const AssetImagePtr& image, const std::any& data,
+                           const std::function<void(const std::any&)>& fn) {
+    if (isNextHover() && dragAndDrop.drop) {
+        dragAndDrop.drop = false;
+        if (fn) {
+            fn(dragAndDrop.data);
+        }
+        dragAndDrop.data.reset();
+    }
+
+    if (buttonImage(image)) {
+        // Drag and drop start
+        dragAndDrop.data = data;
+        dragAndDrop.image = image;
+        dragAndDrop.size = getWidgetSize();
+        return true;
+    }
+
+    return false;
+}*/
+
+bool GuiContext::buttonImage(const AssetImagePtr& image) {
     struct nk_image img {};
     img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
     img.w = image->getImage().size.x;
     img.h = image->getImage().size.y;
-    return nk_button_image_label(ctx.get(), img, text.c_str(), nk_text_align::NK_TEXT_ALIGN_CENTERED);
-}
-
-/*bool GuiContext::buttonImage(const ImagePtr& image) {
-    struct nk_image img {};
-    img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
-    img.w = image->getSize().x;
-    img.h = image->getSize().y;
     return nk_button_image(ctx.get(), img);
 }
 
-bool GuiContext::buttonImage(const IconPtr& image, const bool active) {
+bool GuiContext::buttonImage(const AssetImagePtr& image, const std::string& text, const TextAlignValue align) {
     struct nk_image img {};
     img.handle.ptr = const_cast<Canvas2D::Image*>(&image.get()->getImage());
-    img.w = image->getSize().x;
-    img.h = image->getSize().y;
-    return cnk_button_image(ctx.get(), img, active);
-}*/
+    img.w = image->getImage().size.x;
+    img.h = image->getImage().size.y;
+    return nk_button_image_label(ctx.get(), img, text.c_str(), align);
+}
 
 void GuiContext::label(const std::string& text, const TextAlignValue align) {
     nk_label(ctx.get(), text.c_str(), align);
 }
 
-void GuiContext::label(const std::string& text, const Color4& color, TextAlignValue align) {
+void GuiContext::label(const std::string& text, const Color4& color, const TextAlignValue align) {
     nk_label_colored(ctx.get(), text.c_str(), align, toNkColor(color));
+}
+
+void GuiContext::selectableLabel(const std::string& text, bool& value, const TextAlignValue align) {
+    nk_bool v = value;
+    nk_selectable_label(ctx.get(), text.c_str(), align, &v);
+    value = v;
 }
 
 void GuiContext::image(const AssetImagePtr& image) {
@@ -555,22 +613,28 @@ void GuiContext::layoutDynamicPush(const float weight) {
     nk_layout_row_push(ctx.get(), weight);
 }
 
-void GuiContext::layoutTemplated(const float height, const std::function<void()>& fn) {
+void GuiContext::layoutTemplated(const float height, const std::vector<GuiRowTemplate>& columns) {
     nk_layout_row_template_begin(ctx.get(), height);
-    fn();
+    for (const auto& column : columns) {
+        switch (column.type) {
+        case GuiRowTemplateType::Dynamic: {
+            nk_layout_row_template_push_dynamic(ctx.get());
+            break;
+        }
+        case GuiRowTemplateType::Static: {
+            nk_layout_row_template_push_static(ctx.get(), column.value);
+            break;
+        }
+        case GuiRowTemplateType::Variable: {
+            nk_layout_row_template_push_variable(ctx.get(), column.value);
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
     nk_layout_row_template_end(ctx.get());
-}
-
-void GuiContext::layoutTemplatedPushDynamic() {
-    nk_layout_row_template_push_dynamic(ctx.get());
-}
-
-void GuiContext::layoutTemplatedPushStatic(const float width) {
-    nk_layout_row_template_push_static(ctx.get(), width);
-}
-
-void GuiContext::layoutTemplatedPushVariable(const float width) {
-    nk_layout_row_template_push_variable(ctx.get(), width);
 }
 
 void GuiContext::combo(const std::string& selected, const Vector2& size, const std::function<void()>& fn) {
@@ -636,6 +700,11 @@ Vector2 GuiContext::getContentSize() const {
     return {content.x, content.y - bounds.h};
 }
 
+Vector2 GuiContext::getWidgetSize() const {
+    const auto size = nk_widget_size(ctx.get());
+    return {size.x, size.y};
+}
+
 Vector2 GuiContext::getMousePos() const {
     const auto& vec = ctx->input.mouse.pos;
     return {vec.x, vec.y};
@@ -669,6 +738,11 @@ void GuiContext::mouseReleaseEvent(const Vector2i& pos, const MouseButton button
     data.mouseRelease.x = pos.x;
     data.mouseRelease.y = pos.y;
     inputEvents.push({data, InputEventType::MouseRelease});
+
+    if (dragAndDrop.data.has_value() || dragAndDrop.show) {
+        dragAndDrop.show = false;
+        dragAndDrop.drop = true;
+    }
 }
 
 void GuiContext::mouseMoveEvent(const Vector2i& pos) {
@@ -676,10 +750,12 @@ void GuiContext::mouseMoveEvent(const Vector2i& pos) {
     data.mouseMove.x = pos.x;
     data.mouseMove.y = pos.y;
     inputEvents.push({data, InputEventType::MouseMove});
-}
 
-/*void GuiContext::mouseScrollEvent(const Platform::MouseScrollEvent& event) {
-}*/
+    if (dragAndDrop.data.has_value() && !dragAndDrop.show) {
+        dragAndDrop.show = true;
+        dragAndDrop.drop = false;
+    }
+}
 
 void GuiContext::textInputEvent(const int c) {
     InputEventData data{};
@@ -731,7 +807,7 @@ void GuiContext::applyTheme() {
     window.header.label_hover = TEXT_BLACK;
     window.header.label_active = TEXT_BLACK;
     window.header.padding = nk_vec2(3, 2);
-    window.group_padding = nk_vec2(1, 1);
+    window.group_padding = nk_vec2(0, 0);
     window.padding = nk_vec2(GuiTheme::padding, GuiTheme::padding);
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
@@ -784,7 +860,8 @@ void GuiContext::applyTheme() {
     button.border = 1.0f;
     button.border_color = BORDER_GREY;
     button.rounding = 0;
-    // button.padding = nk_vec2(0, 0);
+    // button.padding.x = 0;
+    // button.padding.y = 0;
 
     checkbox.text_normal = TEXT_WHITE;
     checkbox.text_hover = TEXT_WHITE;

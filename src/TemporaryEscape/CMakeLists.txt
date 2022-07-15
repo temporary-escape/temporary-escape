@@ -1,6 +1,6 @@
 project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 
-file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
+file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp ${CMAKE_CURRENT_LIST_DIR}/*.h)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 target_compile_definitions(${PROJECT_NAME} PUBLIC GAME_VERSION=${VERSION_STRING})
@@ -17,6 +17,9 @@ target_link_libraries(${PROJECT_NAME}
         WrenBind17
         PRIVATE
         glfw
+        Vulkan::Vulkan
+        unofficial::vulkan-memory-allocator::vulkan-memory-allocator
+        HLSL SPIRV glslang OGLCompiler spirv-cross-glsl
         NanoVG
         Png
         asio

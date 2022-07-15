@@ -180,7 +180,7 @@ private:
 RocksDB::RocksDB(const Path& path) {
     rocksdb::Options options;
     options.create_if_missing = true;
-    options.info_log_level = rocksdb::InfoLogLevel::INFO_LEVEL;
+    options.info_log_level = rocksdb::InfoLogLevel::WARN_LEVEL;
     options.info_log = std::make_shared<DefaultLogger>();
 
     rocksdb::BlockBasedTableOptions tableOptions;

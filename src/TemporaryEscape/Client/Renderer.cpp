@@ -156,43 +156,6 @@ void Renderer::render(Scene& scene) {
         state.gBuffer->fboBloomCombine.bind();
         renderBloomCombine();
     }
-
-    /*{
-        const auto& [texture, fbo] = state.gBuffer->getForPostProcessing();
-        Sources sources{
-            texture,
-            state.gBuffer->fboNormal,
-            state.gBuffer->fboDepth,
-            state.gBuffer->fboMetallicRoughnessAmbient,
-            state.gBuffer->fboEmissive,
-        };
-        fxaa.render(state.viewport, sources, fbo, state.cameraUbo);
-    }*/
-
-    /*{
-        const auto& [texture, fbo] = state.gBuffer->getForPostProcessing();
-        Sources sources{
-            texture,
-            state.gBuffer->fboNormal,
-            state.gBuffer->fboDepth,
-            state.gBuffer->fboMetallicRoughnessAmbient,
-            state.gBuffer->fboEmissive,
-        };
-        ssao.render(state.viewport, sources, fbo, state.cameraUbo);
-    }*/
-
-    /*postProcessing.fbo[postProcessing.inputIdx].bind();
-    renderSceneBackground(viewport, scene);
-    renderPbr();
-    renderSceneForward(viewport, scene);
-
-    applyFxaa(viewport);
-
-    blit(viewport, postProcessing.fbo[postProcessing.inputIdx], Framebuffer::DefaultFramebuffer,
-         FramebufferAttachment::Color0, BufferBit::Color);
-
-    Framebuffer::DefaultFramebuffer.bind();
-    renderCanvas(viewport, scene);*/
 }
 
 void Renderer::renderSceneDeffered(Scene& scene) {
@@ -220,10 +183,16 @@ void Renderer::renderSceneDeffered(Scene& scene) {
     shaders.model.bindCameraUniform(state.cameraUbo);
 
     for (auto& component : componentSystemModel) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentModel(*component);
     }
 
     for (auto& component : componentSystemTurret) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentTurret(*component);
     }
 
@@ -231,6 +200,9 @@ void Renderer::renderSceneDeffered(Scene& scene) {
     shaders.grid.bindCameraUniform(state.cameraUbo);
 
     for (auto& component : componentSystemGrid) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentGrid(*component);
     }
 }
@@ -438,6 +410,9 @@ void Renderer::renderSceneForward(Scene& scene) {
     shaders.particleEmitter.setTime(time);
 
     for (auto& component : componentSystemParticleEmitter) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentParticleEmitter(*component);
     }
 
@@ -447,6 +422,9 @@ void Renderer::renderSceneForward(Scene& scene) {
     shaders.polyShape.bindCameraUniform(state.cameraUbo);
 
     for (auto& component : componentSystemPolyShape) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentPolyShape(*component);
     }
 
@@ -456,6 +434,9 @@ void Renderer::renderSceneForward(Scene& scene) {
     shaders.lines.bindCameraUniform(state.cameraUbo);
 
     for (auto& component : componentSystemLines) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentLines(*component);
     }
 
@@ -465,6 +446,9 @@ void Renderer::renderSceneForward(Scene& scene) {
     shaders.pointCloud.bindCameraUniform(state.cameraUbo);
 
     for (auto& component : componentSystemPointCloud) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
         renderComponentPointCloud(*component);
     }
 
