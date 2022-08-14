@@ -25,6 +25,7 @@
 #pragma once
 
 #include "GraphicsState.h"
+#include "PipelineCache.h"
 #include "VEZ.h"
 #include <map>
 #include <string>
@@ -97,6 +98,7 @@ private:
     std::unordered_map<uint32_t, std::vector<VezPipelineResource>> m_bindings;
     std::unordered_map<uint32_t, DescriptorSetLayout*> m_descriptorSetLayouts;
     std::unordered_map<uint64_t, VkAccessFlags> m_bindingAccessFlags;
+    std::vector<PipelineCache::PipelinePermutationHash> m_associatedHashes;
 
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 

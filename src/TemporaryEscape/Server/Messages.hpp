@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Modding/Manifest.hpp"
+#include "../Assets/Registry.hpp"
 #include "../Network/NetworkMessage.hpp"
 #include "../Scene/Entity.hpp"
 #include "Schemas.hpp"
@@ -33,7 +33,7 @@ struct MessageModsInfo {
     };
 
     struct Response : Message {
-        std::vector<Manifest> manifests;
+        std::vector<ModManifest> manifests;
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), manifests);
         MESSAGE_APPEND_DEFAULT();
@@ -181,7 +181,7 @@ struct MessageUnlockedBlocks {
     };
 
     struct Response : Message {
-        std::vector<AssetBlockPtr> blocks;
+        std::vector<BlockPtr> blocks;
 
         MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Message), blocks);
         MESSAGE_APPEND_DEFAULT();

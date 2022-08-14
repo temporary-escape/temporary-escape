@@ -35,16 +35,17 @@ class RenderPass;
 
 class PipelineCache {
 public:
+    using PipelinePermutationHash = std::vector<uint64_t>;
+
     PipelineCache(Device* device);
 
     ~PipelineCache();
 
-    VkResult GetHandle(const Pipeline* pipeline, const RenderPass* pRenderPass, const GraphicsState* pState,
-                       VkPipeline* pHandle);
+    std::pair<VkResult, PipelinePermutationHash> GetHandle(const Pipeline* pipeline, const RenderPass* pRenderPass,
+                                                           const GraphicsState* pState, VkPipeline* pHandle);
+    void EraseHash(PipelinePermutationHash hash);
 
 private:
-    typedef std::vector<uint64_t> PipelinePermutationHash;
-
     VkResult CreateGraphicsPipeline(const Pipeline* pipeline, const RenderPass* pRenderPass,
                                     const GraphicsState* pState, VkPipeline* pHandle);
 

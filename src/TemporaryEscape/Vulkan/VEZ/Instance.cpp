@@ -74,8 +74,7 @@ VkResult Instance::Create(const VezInstanceCreateInfo* pCreateInfo, Instance** p
 
         // Wrap native Vulkan handles in PhysicalDevice class.
         for (auto& pd : physicalDevices) {
-            auto pdImpl = new PhysicalDevice(instance, pd);
-            instance->m_physicalDevices.push_back(pdImpl);
+            instance->m_physicalDevices.emplace_back(instance, pd);
         }
     }
 
@@ -93,5 +92,6 @@ VkResult Instance::Create(const VezInstanceCreateInfo* pCreateInfo, Instance** p
 void Instance::Destroy(Instance* pInstance) {
     delete pInstance->m_threadPool;
     vkDestroyInstance(pInstance->GetHandle(), nullptr);
+    delete pInstance;
 }
 } // namespace vez

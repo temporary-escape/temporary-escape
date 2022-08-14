@@ -1,13 +1,19 @@
-#include "ComponentDebug.hpp"
+#include "ComponentWireframe.hpp"
 
 using namespace Engine;
 
-void ComponentDebug::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (vertices.empty()) {
-        return;
-    }
+ComponentWireframe::ComponentWireframe(Engine::Object& object) : Component{object} {
+    setDirty(false);
+}
 
-    if (isDirty()) {
+ComponentWireframe::ComponentWireframe(Engine::Object& object, std::vector<Vector3> vertices,
+                                       std::vector<uint32_t> indices, const Color4& color) :
+    Component{object}, vertices{std::move(vertices)}, indices{std::move(indices)}, color{color} {
+    setDirty(true);
+}
+
+void ComponentWireframe::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    if (isDirty() && !vertices.empty()) {
         setDirty(false);
 
         if (!vboFormat) {
@@ -16,13 +22,12 @@ void ComponentDebug::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulk
                     0,
                     {
                         {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                        {1, 0, VulkanVertexInputFormat::Format::Vec4},
                     },
                 },
             });
         }
 
-        const auto vboSize = vertices.capacity() * sizeof(Vertex);
+        const auto vboSize = vertices.capacity() * sizeof(Vector3);
         if (!vbo || vbo.getSize() != vboSize) {
             vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic, vboSize);
             vbo.subData(vertices.data(), 0, vboSize);
@@ -52,32 +57,28 @@ void ComponentDebug::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulk
     vulkan.bindIndexBuffer(ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     vulkan.pushConstant(0, getObject().getAbsoluteTransform());
+    vulkan.pushConstant(sizeof(Matrix4), color);
     vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);
 }
 
-void ComponentDebug::clear() {
-    vertices.clear();
-    indices.clear();
-    setDirty(true);
-}
-
-void ComponentDebug::addBox(const Matrix4& transform, float width, const Color4& color) {
+void ComponentWireframe::setBox(float width, const Color4& color) {
+    this->color = color;
     const auto half = width / 2.0f;
     const auto start = vertices.size();
     vertices.reserve(vertices.size() + (1024 - vertices.size() % 1024));
     indices.reserve(indices.size() + (1024 - indices.size() % 1024));
 
     // Bottom
-    vertices.push_back({Vector3{transform * Vector4{-half, -half, -half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{-half, -half, half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{half, -half, half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{half, -half, -half, 1.0f}}, color});
+    vertices.push_back(Vector3{-half, -half, -half});
+    vertices.push_back(Vector3{-half, -half, half});
+    vertices.push_back(Vector3{half, -half, half});
+    vertices.push_back(Vector3{half, -half, -half});
 
     // Top
-    vertices.push_back({Vector3{transform * Vector4{-half, half, -half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{-half, half, half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{half, half, half, 1.0f}}, color});
-    vertices.push_back({Vector3{transform * Vector4{half, half, -half, 1.0f}}, color});
+    vertices.push_back(Vector3{-half, half, -half});
+    vertices.push_back(Vector3{-half, half, half});
+    vertices.push_back(Vector3{half, half, half});
+    vertices.push_back(Vector3{half, half, -half});
 
     // Bottom
     indices.push_back(start);

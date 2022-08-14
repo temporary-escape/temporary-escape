@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetEntity.hpp"
 #include "Component.hpp"
 #include <wrenbind17/wrenbind17.hpp>
 
@@ -25,28 +24,28 @@ public:
         (void)delta;
     }
 
-    void setScript(wrenbind17::Variable value) {
+    /*void setScript(wrenbind17::Variable value) {
         script = std::move(value);
-    }
+    }*/
 
-    wrenbind17::Variable& getScript() {
+    /*wrenbind17::Variable& getScript() {
         return script;
-    }
+    }*/
 
-    template <typename... Args> wrenbind17::Any call(const std::string& signature, Args&&... args) {
+    /*template <typename... Args> wrenbind17::Any call(const std::string& signature, Args&&... args) {
         auto func = script.func(signature);
         if (!func) {
             throw std::out_of_range("No such function");
         }
         return func(std::forward<Args>(args)...);
-    }
+    }*/
 
-    void clear() {
+    /*void clear() {
         script.reset();
-    }
+    }*/
 
 private:
-    wrenbind17::Variable script;
+    // wrenbind17::Variable script;
 
 public:
     MSGPACK_DEFINE_ARRAY();

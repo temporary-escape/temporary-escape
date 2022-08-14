@@ -1,180 +1,187 @@
-#include "ClientWindow.hpp"
+#include "Application.hpp"
+
+#define CMP "Application"
 
 using namespace Engine;
 
-struct Vertex {
-    float x, y, z;
-    float nx, ny, nz;
-    float u, v;
-};
+Application::Application(const Config& config) :
+    VulkanWindow(config.windowName, {config.windowWidth, config.windowHeight}),
+    config{config},
+    renderer{config, *this, rendererPipelines},
+    canvas{*this},
+    font{*this, config.fontsPath, "iosevka-aile", 42.0f} {
 
-static const std::string fragmentShader = R"(#version 450
-#extension GL_ARB_separate_shader_objects : enable
-
-layout(location = 0) in VS_OUT
-{
-    vec3 pos;
-    vec3 normal;
-    vec2 texCoord;
-} ps_in;
-
-layout(location = 0) out vec4 outColor;
-
-void main()
-{
-    outColor = vec4(ps_in.texCoord, 1.0, 1.0);
-}
-)";
-
-static const std::string vertexShader = R"(#version 450
-#extension GL_ARB_separate_shader_objects : enable
-
-layout(binding = 0) uniform UniformBufferObject
-{
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-};
-
-layout(location = 0) in vec3 in_Position;
-layout(location = 1) in vec3 in_Normal;
-layout(location = 2) in vec2 in_TexCoord;
-
-layout(location = 0) out VS_OUT
-{
-    vec3 pos;
-    vec3 normal;
-    vec2 texCoord;
-} vs_out;
-
-out gl_PerVertex{
-    vec4 gl_Position;
-};
-
-void main()
-{
-    vs_out.pos = in_Position;
-    vs_out.normal = in_Normal;
-    vs_out.texCoord = in_TexCoord;
-    gl_Position = proj * view * model * vec4(in_Position, 1.0f);
-}
-)";
-
-ClientWindow::ClientWindow(const Config& config)
-    : VulkanWindow(config.windowName, {config.windowWidth, config.windowHeight}), Game{config, *this} {
-    // A single quad with positions, normals and uvs.
-    Vertex vertices[] = {{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
-                         {1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f},
-                         {1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f},
-                         {-1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f}};
-
-    vbo = createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Static, sizeof(vertices));
-    vbo.subData(vertices, 0, sizeof(vertices));
-
-    // A single quad with positions, normals and uvs.
-    uint32_t indices[] = {
-        0, 1, 2, 0, 2, 3,
-    };
-
-    ibo = createBuffer(VulkanBuffer::Type::Index, VulkanBuffer::Usage::Static, sizeof(indices));
-    ibo.subData(indices, 0, sizeof(indices));
-
-    ubo = createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(CameraUniformBuffer));
-
-    shader = createPipeline({
-        {vertexShader, ShaderType::Vertex},
-        {fragmentShader, ShaderType::Fragment},
+    shaderQueue.push([this]() {
+        rendererPipelines.pbr = createPipeline({
+            {this->config.shadersPath / "pass-pbr.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-pbr.vert", "", ShaderType::Vertex},
+        });
     });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.skybox = createPipeline({
+            {this->config.shadersPath / "pass-skybox.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-skybox.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        scenePipelines.debug = createPipeline({
+            {this->config.shadersPath / "component-debug.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "component-debug.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        scenePipelines.grid = createPipeline({
+            {this->config.shadersPath / "component-grid.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "component-grid.geom", "", ShaderType::Geometry},
+            {this->config.shadersPath / "component-grid.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        scenePipelines.wireframe = createPipeline({
+            {this->config.shadersPath / "component-wireframe.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "component-wireframe.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    status.message = "Loading shaders...";
+    status.value = 0.1f;
 }
 
-ClientWindow::~ClientWindow() {
-    vbo.reset();
-    ibo.reset();
-    ubo.reset();
-    shader.reset();
+Application::~Application() {
 }
 
-void ClientWindow::update(float deltaTime) {
-    this->lastDeltaTime = deltaTime;
-    const auto windowSize = getWindowSize();
-
-    // Calculate elapsed time.
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float elapsedTime =
-        std::chrono::duration_cast<std::chrono::microseconds>(currentTime - startTime).count() / 1000.0f;
-
-    // Calculate appropriate matrices for the current frame.
-    CameraUniformBuffer ub = {};
-    ub.model = glm::rotate(glm::mat4(1.0f), elapsedTime * glm::radians(0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ub.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ub.projection = glm::perspective(glm::radians(45.0f), windowSize.x / static_cast<float>(windowSize.y), 0.1f, 10.0f);
-    ub.projection[1][1] *= -1.0f;
-
-    auto* data = ubo.map<CameraUniformBuffer>();
-    *data = ub;
-    ubo.unmap();
-}
-
-void ClientWindow::render(const Vector2i& viewport) {
+void Application::render(const Vector2i& viewport, const float deltaTime) {
     startCommandBuffer();
 
-    const auto windowSize = getWindowSize();
+    if (loadGame) {
+        loadGame = false;
+        try {
+            game = std::make_unique<Game>(config, *this, *registry, canvas, font, scenePipelines);
+        } catch (...) {
+            EXCEPTION_NESTED("Something went wrong during game init");
+        }
+    }
 
-    // Set the viewport state and dimensions.
-    setViewport({0, 0}, windowSize);
-    setScissor({0, 0}, windowSize);
-    setViewportState();
+    if (loadAssets && !registry->isReady()) {
+        status.message = "Loading assets...";
+        status.value = 0.5f;
 
-    VulkanFramebuffer::AttachmentReference colorAttachment{};
-    VulkanFramebuffer::AttachmentReference depthStencilAttachment{};
-    colorAttachment.clearValue.color = {0.3f, 0.3f, 0.3f, 0.0f};
-    depthStencilAttachment.clearValue.depthStencil.depth = 1.0f;
-    depthStencilAttachment.clearValue.depthStencil.stencil = 0;
+        registry->load(*this);
+        if (registry->isReady()) {
+            status.message = "Loading scene...";
+            status.value = 0.7f;
+            loadGame = true;
+        }
+    }
 
-    beginRenderPass(getDefaultFramebuffer(), {colorAttachment, depthStencilAttachment});
+    if (loadRegistry) {
+        status.message = "Loading mods...";
+        status.value = 0.2f;
 
-    /*// Bind the pipeline and associated resources.
-    bindPipeline(shader);
-    bindUniformBuffer(ubo);
-    // vezCmdBindImageView(m_imageView, m_sampler, 0, 1, 0);
+        futureRegistry = async([this]() {
+            try {
+                registry = std::make_unique<Registry>(this->config);
+            } catch (...) {
+                EXCEPTION_NESTED("Failed to load mods");
+            }
+            loadAssets = true;
+        });
+        loadRegistry = false;
+    }
 
-    // Set depth stencil state.
-    setDepthStencilState(true, true);
+    if (loadShaders && !shaderQueue.empty()) {
+        shaderQueue.front()();
+        shaderQueue.pop();
 
-    // Bind the vertex buffer and index buffers.
-    bindVertexBuffer(vbo);
-    bindIndexBuffer(ibo);
+        if (shaderQueue.empty()) {
+            loadRegistry = true;
+        }
+    }
 
-    // Draw the quad.
-    drawIndexed(6, 1, 0, 0, 0);*/
+    if (futureRegistry.valid() && futureRegistry.ready()) {
+        futureRegistry.get();
+    }
 
-    Game::render(windowSize, lastDeltaTime);
+    if (game) {
+        try {
+            game->update(deltaTime);
+        } catch (...) {
+            EXCEPTION_NESTED("Something went wrong during game update");
+        }
+    }
 
-    // End the render pass.
-    endRenderPass();
+    renderer.update(viewport);
+    renderer.begin();
+    if (game) {
+        try {
+            renderer.render(viewport, *game);
+        } catch (...) {
+            EXCEPTION_NESTED("Something went wrong during render frame");
+        }
+    } else {
+        renderStatus(viewport);
+    }
+    renderer.end();
 
     endCommandBuffer();
-    submitQueue();
+    renderer.present();
+
+    if (!loadShaders && !shaderQueue.empty()) {
+        loadShaders = true;
+    }
 }
 
-void ClientWindow::eventMouseMoved(const Vector2i& pos) {
+void Application::renderStatus(const Vector2i& viewport) {
+    canvas.begin(viewport);
+
+    static const Vector2 size{400.0f, 60.0f};
+    const auto pos = Vector2{viewport} / 2.0f - size / 2.0f;
+
+    canvas.text(pos + Vector2{0.0f, 0.0f}, status.message, font.regular, 21.0f, Color4{1.0f});
+    canvas.rect(pos + Vector2{0.0f, 30.0f}, {size.x * status.value, 25.0f}, Color4{1.0f});
+
+    canvas.end();
 }
 
-void ClientWindow::eventMousePressed(const Vector2i& pos, MouseButton button) {
+void Application::eventMouseMoved(const Vector2i& pos) {
+    if (game) {
+        game->eventMouseMoved(pos);
+    }
 }
 
-void ClientWindow::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
+    if (game) {
+        game->eventMousePressed(pos, button);
+    }
 }
 
-void ClientWindow::eventMouseScroll(int xscroll, int yscroll) {
+void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    if (game) {
+        game->eventMouseReleased(pos, button);
+    }
 }
 
-void ClientWindow::eventKeyPressed(Key key, Modifiers modifiers) {
+void Application::eventMouseScroll(int xscroll, int yscroll) {
+    if (game) {
+        game->eventMouseScroll(xscroll, yscroll);
+    }
 }
 
-void ClientWindow::eventKeyReleased(Key key, Modifiers modifiers) {
+void Application::eventKeyPressed(Key key, Modifiers modifiers) {
+    if (game) {
+        game->eventKeyPressed(key, modifiers);
+    }
 }
 
-void ClientWindow::eventWindowResized(const Vector2i& size) {
+void Application::eventKeyReleased(Key key, Modifiers modifiers) {
+    if (game) {
+        game->eventKeyReleased(key, modifiers);
+    }
+}
+
+void Application::eventWindowResized(const Vector2i& size) {
 }

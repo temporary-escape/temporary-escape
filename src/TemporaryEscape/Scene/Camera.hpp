@@ -36,8 +36,16 @@ public:
         isOrtho = true;
     }
 
-    void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, 1.0f, 0.0f}) {
+    void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, -1.0f, 0.0f}) {
         object->updateTransform(glm::inverse(glm::lookAt(eye, target, up)));
+    }
+
+    Vector3 getForward() const {
+        return glm::normalize(Vector3{glm::row(getViewMatrix(), 2)});
+    }
+
+    Vector3 getSideways() const {
+        return glm::normalize(Vector3{glm::row(getViewMatrix(), 0)});
     }
 
     Matrix4 getViewMatrix() const {
@@ -58,6 +66,21 @@ public:
 
     Vector3 getEyesPos() const {
         return object->getPosition();
+    }
+
+    const Vector2i& getViewport() const {
+        return viewport;
+    }
+
+    float getPitch() const {
+        // return glm::acos(glm::dot(getForward(), Vector3{0.0f, -1.0f, 0.0f}));
+        const auto forward = getForward();
+        return glm::asin(forward.y);
+    }
+
+    float getYaw() const {
+        const auto forward = getForward();
+        return glm::atan(forward.x, forward.z);
     }
 
 private:

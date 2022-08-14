@@ -3,22 +3,17 @@
 #include "Component.hpp"
 
 namespace Engine {
-class ENGINE_API ComponentDebug : public Component {
+class ENGINE_API ComponentWireframe : public Component {
 public:
-    struct Vertex {
-        Vector3 position;
-        Color4 color;
-    };
-
     struct Delta {
         MSGPACK_DEFINE_ARRAY();
     };
 
-    ComponentDebug() = default;
-    explicit ComponentDebug(Object& object) : Component(object) {
-    }
-
-    virtual ~ComponentDebug() = default;
+    ComponentWireframe() = default;
+    explicit ComponentWireframe(Object& object);
+    explicit ComponentWireframe(Object& object, std::vector<Vector3> vertices, std::vector<uint32_t> indices,
+                                const Color4& color);
+    virtual ~ComponentWireframe() = default;
 
     Delta getDelta() {
         return {};
@@ -27,15 +22,13 @@ public:
     void applyDelta(Delta& delta) {
         (void)delta;
     }
-
+    void setBox(float width, const Color4& color);
     void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
-    void clear();
-    void addBox(const Matrix4& transform, float width, const Color4& color);
-
 private:
-    std::vector<Vertex> vertices;
+    std::vector<Vector3> vertices;
     std::vector<uint32_t> indices;
+    Color4 color;
     VulkanBuffer vbo;
     VulkanBuffer ibo;
     VulkanVertexInputFormat vboFormat;

@@ -221,6 +221,10 @@ VkResult Pipeline::Create(Device* pDevice, const VezComputePipelineCreateInfo* p
 }
 
 Pipeline::~Pipeline() {
+    // Remove all associated Vulkan pipelines from the pipeline cache
+    for (auto hash : m_associatedHashes)
+        m_device->GetPipelineCache()->EraseHash(hash);
+
     // Destroy pipeline layout.
     if (m_pipelineLayout != VK_NULL_HANDLE)
         vkDestroyPipelineLayout(m_device->GetHandle(), m_pipelineLayout, nullptr);
@@ -232,7 +236,11 @@ Pipeline::~Pipeline() {
 
 VkPipeline Pipeline::GetHandle(const RenderPass* pRenderPass, const GraphicsState* pState) {
     VkPipeline handle = VK_NULL_HANDLE;
-    m_device->GetPipelineCache()->GetHandle(this, pRenderPass, pState, &handle);
+    auto result = m_device->GetPipelineCache()->GetHandle(this, pRenderPass, pState, &handle);
+
+    if (result.first == VK_SUCCESS && !result.second.empty()) {
+        m_associatedHashes.emplace_back(result.second);
+    }
     return handle;
 }
 

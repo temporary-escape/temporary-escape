@@ -6,31 +6,20 @@
 
 using namespace Engine;
 
-AsyncTask::AsyncTask(std::string name, std::function<void()> callback) :
-    name{std::move(name)}, callback{std::move(callback)} {
+AsyncTask::AsyncTask(std::function<void()> callback) : callback{std::move(callback)} {
+    future = std::async([this]() {
+        try {
+            this->callback();
+            done = true;
+        } catch (...) {
+            EXCEPTION_NESTED("Task failed");
+        }
+    });
 }
 
 void AsyncTask::resolve() {
-    if (ready && !started) {
-        started = true;
-        future = std::async([this]() {
-            Log::d(CMP, "Starting task: {}", name);
-            try {
-                callback();
-                done = true;
-                Log::d(CMP, "Completed task: {}", name);
-            } catch (...) {
-                Log::e(CMP, "Task failed: {}", name);
-                EXCEPTION_NESTED("Task failed: {}", name);
-            }
-        });
-    } else if (ready) {
-        if (future.valid() && future.ready()) {
-            future.get();
-            if (onDone) {
-                onDone();
-            }
-        }
+    if (future.valid() && future.ready()) {
+        future.get();
     }
 }
 
@@ -46,10 +35,7 @@ AsyncTask& AsyncTask::operator=(AsyncTask&& other) noexcept {
 }
 
 void AsyncTask::swap(AsyncTask& other) noexcept {
-    std::swap(name, other.name);
-    std::swap(started, other.started);
     std::swap(future, other.future);
     std::swap(callback, other.callback);
-    std::swap(started, other.started);
     std::swap(done, other.done);
 }

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "ComponentCamera.hpp"
-#include "ComponentCameraTop.hpp"
-#include "ComponentCameraTurntable.hpp"
+#include "ComponentDebug.hpp"
 #include "ComponentDirectionalLight.hpp"
 #include "ComponentGrid.hpp"
 #include "ComponentLabel.hpp"
@@ -19,6 +18,7 @@
 #include "ComponentText.hpp"
 #include "ComponentTurret.hpp"
 #include "ComponentUserInput.hpp"
+#include "ComponentWireframe.hpp"
 #include "Object.hpp"
 
 #include <iostream>
@@ -31,19 +31,19 @@ class Scene;
 // clang-format off
 using EntityComponentHelper = Component::TraitsMapper<
     // DO NOT CHANGE THE ORDER! ADD NEW COMPONENTS AT THE BOTTOM!
+    Component::Traits<ComponentDebug,
+                      Component::Flags::None>,
     Component::Traits<ComponentScript,
                       Component::Flags::None>,
     Component::Traits<ComponentCamera,
-                      Component::Flags::None>,
-    Component::Traits<ComponentCameraTurntable,
-                      Component::Flags::None>,
-    Component::Traits<ComponentCameraTop,
                       Component::Flags::None>,
     Component::Traits<ComponentPointCloud,
                       Component::Flags::None>,
     Component::Traits<ComponentLines,
                       Component::Flags::None>,
     Component::Traits<ComponentPolyShape,
+                      Component::Flags::None>,
+    Component::Traits<ComponentWireframe,
                       Component::Flags::None>,
     Component::Traits<ComponentText,
                       Component::Flags::None>,

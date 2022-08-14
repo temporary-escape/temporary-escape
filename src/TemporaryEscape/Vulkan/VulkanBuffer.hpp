@@ -36,6 +36,10 @@ public:
     }
     void unmap();
 
+    [[nodiscard]] size_t getSize() const {
+        return size;
+    }
+
     [[nodiscard]] VkBuffer& getHandle() {
         return buffer;
     }
@@ -44,9 +48,14 @@ public:
         return buffer;
     }
 
+    [[nodiscard]] operator bool() const {
+        return buffer != VK_NULL_HANDLE;
+    }
+
 private:
     VkDevice device{VK_NULL_HANDLE};
     VkBuffer buffer{VK_NULL_HANDLE};
+    size_t size{0};
 };
 
 static_assert(std::is_move_constructible<VulkanBuffer>::value, "VulkanBuffer must be move constructible");

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../Assets/AssetManager.hpp"
+#include "../Assets/Registry.hpp"
 #include "../Config.hpp"
 #include "../Future.hpp"
 #include "../Library.hpp"
-#include "../Modding/ModManager.hpp"
 #include "../Network/NetworkTcpServer.hpp"
 #include "../Utils/Database.hpp"
 #include "../Utils/Worker.hpp"
@@ -18,8 +17,7 @@
 namespace Engine {
 class ENGINE_API Server : public NetworkTcpServer<Server, ServerSink> {
 public:
-    explicit Server(const Config& config, ModManager& modManager, AssetManager& assetManager,
-                    TransactionalDatabase& db);
+    explicit Server(const Config& config, Registry& registry, TransactionalDatabase& db);
     virtual ~Server();
 
     void load();
@@ -41,8 +39,7 @@ private:
     std::tuple<SessionPtr, SectorPtr> peerToSessionSector(const PeerPtr& peer);
 
     const Config& config;
-    ModManager& modManager;
-    AssetManager& assetManager;
+    Registry& registry;
     TransactionalDatabase& db;
     World world;
     Generator generator;

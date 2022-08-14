@@ -2,15 +2,17 @@
 
 #include "../Vulkan/VulkanWindow.hpp"
 #include "Game.hpp"
+#include "Renderer.hpp"
+#include <queue>
 
 namespace Engine {
-class ClientWindow : public VulkanWindow, public Game {
+class Application : public VulkanWindow {
 public:
-    explicit ClientWindow(const Config& config);
-    virtual ~ClientWindow();
+    explicit Application(const Config& config);
+    virtual ~Application();
 
-    void update(float deltaTime) override;
-    void render(const Vector2i& viewport) override;
+    void render(const Vector2i& viewport, float deltaTime) override;
+
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -20,16 +22,24 @@ public:
     void eventWindowResized(const Vector2i& size) override;
 
 private:
-    struct CameraUniformBuffer {
-        Matrix4 model;
-        Matrix4 view;
-        Matrix4 projection;
-    };
+    void renderStatus(const Vector2i& viewport);
 
-    float lastDeltaTime;
-    VulkanBuffer vbo;
-    VulkanBuffer ibo;
-    VulkanBuffer ubo;
-    VulkanPipeline shader;
+    const Config& config;
+    Renderer::Pipelines rendererPipelines;
+    Scene::Pipelines scenePipelines;
+    Renderer renderer;
+    Canvas canvas;
+    FontFamily font;
+    Status status;
+
+    std::unique_ptr<Registry> registry;
+    std::unique_ptr<Game> game;
+
+    std::queue<std::function<void()>> shaderQueue;
+    bool loadShaders{false};
+    Future<void> futureRegistry;
+    bool loadRegistry{false};
+    bool loadAssets{false};
+    bool loadGame{false};
 };
 } // namespace Engine

@@ -1,14 +1,21 @@
 #pragma once
-#include "../Assets/Skybox.hpp"
+
 #include "../Utils/Exceptions.hpp"
+#include "../Vulkan/VulkanPipeline.hpp"
 #include "Entity.hpp"
 
 #include <unordered_map>
 #include <vector>
 
 namespace Engine {
-class ENGINE_API Scene {
+class ENGINE_API Scene : public UserInput::Handler {
 public:
+    struct Pipelines {
+        VulkanPipeline debug;
+        VulkanPipeline grid;
+        VulkanPipeline wireframe;
+    };
+
     struct Bullet {
         Vector3 pos;
         Vector3 dir;
@@ -29,7 +36,11 @@ public:
     explicit Scene(EventListener& eventListener = defaultEventListener);
     virtual ~Scene();
 
+    std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
     void update(float delta);
+    void renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines,
+                   const VoxelShapeCache& voxelShapeCache);
+    void renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines);
     void removeEntity(const EntityPtr& entity);
     void addEntity(EntityPtr entity);
     void updateEntity(const Entity::Delta& delta);
@@ -57,18 +68,13 @@ public:
         return entities;
     }
 
-    void eventMouseMoved(const Vector2i& pos);
-    void eventMousePressed(const Vector2i& pos, MouseButton button);
-    void eventMouseReleased(const Vector2i& pos, MouseButton button);
-    void eventMouseScroll(int xscroll, int yscroll);
-    void eventKeyPressed(Key key, Modifiers modifiers);
-    void eventKeyReleased(Key key, Modifiers modifiers);
+    void eventUserInput(const UserInput::Event& event) override;
 
     void setPrimaryCamera(const EntityPtr& entity) {
         primaryCamera = entity;
     }
 
-    std::shared_ptr<Camera> getPrimaryCamera() const;
+    std::shared_ptr<ComponentCamera> getPrimaryCamera() const;
     EntityPtr getSkybox();
 
 private:

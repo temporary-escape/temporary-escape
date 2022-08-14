@@ -9,13 +9,21 @@ namespace Engine {
 struct Config {
     std::chrono::microseconds tickLengthUs =
         std::chrono::microseconds(static_cast<int64_t>((1 / 20.0f) * 1000.0 * 1000.0));
+
+    // Window related variables
+    std::string windowName = "Temporary Escape";
     int windowWidth = 1920;
     int windowHeight = 1080;
+
+    // Paths of interests
     Path assetsPath;
     Path userdataPath;
     Path cwdPath;
+    Path fontsPath;
     Path userdataSavesPath;
     Path shadersPath;
+    Path shapesPath;
+
     std::optional<std::string> saveFolderName;
     bool saveFolderClean = false;
     bool voxelTest = false;

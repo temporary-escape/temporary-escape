@@ -15,7 +15,7 @@ class Server;
 
 class Sector : public Scene::EventListener {
 public:
-    explicit Sector(const Config& config, World& world, AssetManager& assetManager, TransactionalDatabase& db,
+    explicit Sector(const Config& config, World& world, Registry& registry, TransactionalDatabase& db,
                     std::string galaxyId, std::string systemId, std::string sectorId);
     virtual ~Sector();
 
@@ -38,7 +38,7 @@ private:
 
     const Config& config;
     World& world;
-    AssetManager& assetManager;
+    Registry& registry;
     TransactionalDatabase& db;
     std::string galaxyId;
     std::string systemId;

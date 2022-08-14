@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Graphics/PixelType.hpp"
 #include "../Library.hpp"
 #include "../Math/Vector.hpp"
 #include "Path.hpp"
@@ -8,6 +7,13 @@
 namespace Engine {
 class ImageImporter {
 public:
+    enum class PixelType {
+        Rgb8u,
+        Rgba8u,
+        Rgb16u,
+        Rgba16u,
+    };
+
     virtual ~ImageImporter() = default;
 
     [[nodiscard]] virtual PixelType getPixelType() const = 0;

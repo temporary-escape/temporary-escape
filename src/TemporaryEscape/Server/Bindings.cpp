@@ -1,11 +1,11 @@
 #include "Bindings.hpp"
-#include "../Assets/AssetManager.hpp"
+#include "../Assets/Registry.hpp"
 #include "../Scene/Scene.hpp"
 #include <wrenbind17/wrenbind17.hpp>
 
 using namespace Engine;
 
-struct GlobalsHelper {
+/*struct GlobalsHelper {
     explicit GlobalsHelper(const std::string& ptrStr) {
         vm = reinterpret_cast<wrenbind17::VM*>(std::stoull(ptrStr));
         const auto it = vms.find(vm);
@@ -28,9 +28,9 @@ struct GlobalsHelper {
     }
 
     static inline std::set<wrenbind17::VM*> vms;
-};
+};*/
 
-struct LogHelper {
+/*struct LogHelper {
     static void i(const std::string& msg) {
         Log::i("Wren", msg);
     }
@@ -46,9 +46,9 @@ struct LogHelper {
     static void d(const std::string& msg) {
         Log::d("Wren", msg);
     }
-};
+};*/
 
-struct EntityHelper {
+/*struct EntityHelper {
     static void addComponentScript(Entity& self, wrenbind17::Variable script) {
         auto cmp = self.addComponent<ComponentScript>();
         cmp->setScript(std::move(script));
@@ -58,14 +58,14 @@ struct EntityHelper {
         auto cmp = self.getComponent<ComponentScript>();
         return cmp->getScript();
     }
-};
+};*/
 
 void Engine::unexpose(const Config& config, wrenbind17::VM& vm) {
-    GlobalsHelper::vms.erase(&vm);
+    // GlobalsHelper::vms.erase(&vm);
 }
 
 void Engine::expose(const Config& config, wrenbind17::VM& vm) {
-    GlobalsHelper::vms.insert(&vm);
+    /*GlobalsHelper::vms.insert(&vm);
 
     auto& m = vm.module("Engine");
 
@@ -130,5 +130,5 @@ class EntityFactory {
         return entity
     }
 }
-)");
+)");*/
 }

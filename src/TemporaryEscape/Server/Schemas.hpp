@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Assets/AssetBlock.hpp"
-#include "../Assets/AssetPlanet.hpp"
+#include "../Assets/Block.hpp"
 #include "../Utils/Database.hpp"
 #include "../Utils/Msgpack.hpp"
 
@@ -107,16 +106,16 @@ SCHEMA(SectorPlanetData) {
     bool isMoon{false};
     std::optional<std::string> planet{std::nullopt};
     Vector2 pos;
-    AssetPlanetPtr asset;
+    // AssetPlanetPtr asset;
 
-    SCHEMA_DEFINE(id, name, isMoon, planet, pos, asset);
+    SCHEMA_DEFINE(id, name, isMoon, planet, pos);
     SCHEMA_INDEXES_NONE();
     SCHEMA_NAME("SectorPlanetData");
 };
 
 SCHEMA(PlayerUnlockedBlocks) {
     std::string id;
-    std::vector<AssetBlockPtr> blocks;
+    std::vector<BlockPtr> blocks;
 
     SCHEMA_DEFINE(id, blocks);
     SCHEMA_INDEXES_NONE();

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetImage.hpp"
-#include "../Graphics/Mesh.hpp"
-#include "../Library.hpp"
-#include "../Shaders/ShaderPointCloud.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -22,8 +18,7 @@ public:
     };
 
     ComponentPointCloud() = default;
-    explicit ComponentPointCloud(Object& object, AssetTexturePtr texture)
-        : Component(object), texture(std::move(texture)) {
+    explicit ComponentPointCloud(Object& object) : Component(object) {
     }
     virtual ~ComponentPointCloud() = default;
 
@@ -35,13 +30,13 @@ public:
         (void)delta;
     }
 
-    const AssetTexturePtr& getTexture() const {
+    /*const AssetTexturePtr& getTexture() const {
         return texture;
     }
 
     const Mesh& getMesh() const {
         return mesh;
-    }
+    }*/
 
     void add(const Vector3& pos, const Vector2& size, const Color4& color) {
         setDirty(true);
@@ -58,7 +53,7 @@ public:
             return;
         }
 
-        if (!vbo) {
+        /*if (!vbo) {
             vbo = VertexBuffer(VertexBufferType::Array);
         }
 
@@ -71,15 +66,15 @@ public:
             mesh.setPrimitive(PrimitiveType::Points);
         }
 
-        mesh.setCount(points.size());
+        mesh.setCount(points.size());*/
         setDirty(false);
     }
 
 private:
-    AssetTexturePtr texture;
+    // AssetTexturePtr texture;
     std::vector<Point> points;
-    Mesh mesh{NO_CREATE};
-    VertexBuffer vbo{NO_CREATE};
+    // Mesh mesh{NO_CREATE};
+    // VertexBuffer vbo{NO_CREATE};
 
 public:
     MSGPACK_DEFINE_ARRAY();

@@ -19,21 +19,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#include <cstring>
-#include "Device.h"
 #include "Image.h"
+#include "Device.h"
+#include <cstring>
 
-namespace vez
-{
-    Image* Image::CreateFromHandle(Device* device, const VezImageCreateInfo* pCreateInfo, VkImageLayout defaultLayout, VkImage image, VmaAllocation allocation)
-    {
-        // Create a new Image object instance.
-        Image* instance = new Image;
-        instance->m_device = device;
-        memcpy(&instance->m_createInfo, pCreateInfo, sizeof(VezImageCreateInfo));
-        instance->m_defaultImageLayout = defaultLayout;
-        instance->m_handle = image;
-        instance->m_allocation = allocation;
-        return instance;
-    }    
+namespace vez {
+Image* Image::CreateFromHandle(Device* device, const VezImageCreateInfo* pCreateInfo, VkImageLayout defaultLayout,
+                               VkImage image, VmaAllocation allocation) {
+    // Create a new Image object instance.
+    Image* instance = new Image;
+    instance->m_device = device;
+    memcpy(&instance->m_createInfo, pCreateInfo, sizeof(VezImageCreateInfo));
+    instance->m_defaultImageLayout = defaultLayout;
+    instance->m_handle = image;
+    instance->m_allocation = allocation;
+    return instance;
 }
+} // namespace vez

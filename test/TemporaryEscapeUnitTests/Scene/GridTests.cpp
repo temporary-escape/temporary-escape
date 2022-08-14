@@ -302,3 +302,210 @@ TEST_CASE("Octree insert voxels at range [0, 0, 0] - [7, 0, 0]", TAG) {
         }
     }
 }
+
+TEST_CASE("Octree insert and iterate two blocks", TAG) {
+    Grid::Octree tree;
+
+    Grid::Voxel voxel{};
+    voxel.type = 1;
+    voxel.color = 7;
+    voxel.rotation = 13;
+
+    tree.insert(Vector3i{0, 0, 0}, voxel);
+    tree.insert(Vector3i{-1, 0, 0}, voxel);
+
+    REQUIRE(tree.getDepth() == 2);
+    REQUIRE(tree.getWidth() == 2);
+
+    tree.dump();
+
+    auto level0 = tree.iterate();
+    REQUIRE(!!level0);
+    REQUIRE(level0.getLevel() == 0);
+    REQUIRE(level0.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level0.getPos() == Vector3i{0, 0, 0});
+    REQUIRE(level0.isVoxel() == false);
+
+    auto level1 = level0.children();
+    REQUIRE(!!level1);
+    REQUIRE(level1.getLevel() == 1);
+    REQUIRE(level1.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level1.getPos() == Vector3i{1, 1, 1});
+    REQUIRE(level1.isVoxel() == false);
+
+    auto children1 = level1.children();
+
+    level1.next();
+    REQUIRE(!!level1);
+
+    REQUIRE(level1.getLevel() == 1);
+    REQUIRE(level1.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level1.getPos() == Vector3i{-1, 1, 1});
+    REQUIRE(level1.isVoxel() == false);
+
+    auto children2 = level1.children();
+
+    level1.next();
+    REQUIRE(!level1);
+
+    REQUIRE(!!children1);
+    REQUIRE(children1.getLevel() == 2);
+    REQUIRE(children1.getOrigin() == Vector3i{1, 1, 1});
+    REQUIRE(children1.getPos() == Vector3i{0, 0, 0});
+    REQUIRE(children1.isVoxel() == true);
+
+    REQUIRE(!!children2);
+    REQUIRE(children2.getLevel() == 2);
+    REQUIRE(children2.getOrigin() == Vector3i{-1, 1, 1});
+    REQUIRE(children2.getPos() == Vector3i{-1, 0, 0});
+    REQUIRE(children2.isVoxel() == true);
+}
+
+TEST_CASE("Octree insert and iterate three blocks", TAG) {
+    Grid::Octree tree;
+
+    Grid::Voxel voxel{};
+    voxel.type = 1;
+    voxel.color = 7;
+    voxel.rotation = 13;
+
+    tree.insert(Vector3i{0, 0, 0}, voxel);
+    tree.insert(Vector3i{-1, 0, 0}, voxel);
+    tree.dump();
+    tree.insert(Vector3i{2, 0, 0}, voxel);
+
+    REQUIRE(tree.getDepth() == 3);
+    REQUIRE(tree.getWidth() == 4);
+
+    tree.dump();
+
+    auto level0 = tree.iterate();
+    REQUIRE(!!level0);
+    REQUIRE(level0.getLevel() == 0);
+    REQUIRE(level0.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level0.getPos() == Vector3i{0, 0, 0});
+    REQUIRE(level0.isVoxel() == false);
+
+    auto level1 = level0.children();
+    REQUIRE(!!level1);
+    REQUIRE(level1.getLevel() == 1);
+    REQUIRE(level1.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level1.getPos() == Vector3i{2, 2, 2});
+    REQUIRE(level1.isVoxel() == false);
+
+    auto level2 = level1.children();
+    REQUIRE(!!level2);
+    REQUIRE(level2.getLevel() == 2);
+    REQUIRE(level2.getOrigin() == Vector3i{2, 2, 2});
+    REQUIRE(level2.getPos() == Vector3i{1, 1, 1});
+    REQUIRE(level2.isVoxel() == false);
+
+    auto level3 = level2.children();
+    REQUIRE(!!level3);
+    REQUIRE(level3.getLevel() == 3);
+    REQUIRE(level3.getOrigin() == Vector3i{1, 1, 1});
+    REQUIRE(level3.getPos() == Vector3i{0, 0, 0});
+    REQUIRE(level3.isVoxel() == true);
+    level3.next();
+    REQUIRE(!level3);
+
+    level2.next();
+    REQUIRE(!!level2);
+    REQUIRE(level2.getLevel() == 2);
+    REQUIRE(level2.getOrigin() == Vector3i{2, 2, 2});
+    REQUIRE(level2.getPos() == Vector3i{3, 1, 1});
+    REQUIRE(level2.isVoxel() == false);
+
+    level3 = level2.children();
+    REQUIRE(!!level3);
+    REQUIRE(level3.getLevel() == 3);
+    REQUIRE(level3.getOrigin() == Vector3i{3, 1, 1});
+    REQUIRE(level3.getPos() == Vector3i{2, 0, 0});
+    REQUIRE(level3.isVoxel() == true);
+    level3.next();
+    REQUIRE(!level3);
+
+    level1.next();
+    REQUIRE(!!level1);
+
+    REQUIRE(level1.getLevel() == 1);
+    REQUIRE(level1.getOrigin() == Vector3i{0, 0, 0});
+    REQUIRE(level1.getPos() == Vector3i{-2, 2, 2});
+    REQUIRE(level1.isVoxel() == false);
+
+    level2 = level1.children();
+    REQUIRE(!!level2);
+    REQUIRE(level2.getLevel() == 2);
+    REQUIRE(level2.getOrigin() == Vector3i{-2, 2, 2});
+    REQUIRE(level2.getPos() == Vector3i{-1, 1, 1});
+    REQUIRE(level2.isVoxel() == false);
+
+    level3 = level2.children();
+    REQUIRE(!!level3);
+    REQUIRE(level3.getLevel() == 3);
+    REQUIRE(level3.getOrigin() == Vector3i{-1, 1, 1});
+    REQUIRE(level3.getPos() == Vector3i{-1, 0, 0});
+    REQUIRE(level3.isVoxel() == true);
+    level3.next();
+    REQUIRE(!level3);
+
+    level2.next();
+    REQUIRE(!level2);
+
+    level1.next();
+    REQUIRE(!level1);
+
+    level0.next();
+    REQUIRE(!level0);
+}
+
+TEST_CASE("Octree insert expand twice", TAG) {
+    Grid::Octree tree;
+
+    Grid::Voxel voxel{};
+    voxel.type = 1;
+    voxel.color = 7;
+    voxel.rotation = 13;
+
+    tree.insert(Vector3i{0, 0, 0}, voxel);
+    tree.insert(Vector3i{-1, 0, 0}, voxel);
+    tree.insert(Vector3i{1, 0, 0}, voxel);
+    tree.dump();
+    tree.insert(Vector3i{-1, 0, 1}, voxel);
+    tree.dump();
+
+    auto opt = tree.find(Vector3i{0, 0, 1});
+    REQUIRE(opt.has_value() == false);
+
+    opt = tree.find(Vector3i{1, 0, 1});
+    REQUIRE(opt.has_value() == false);
+
+    opt = tree.find(Vector3i{-1, 0, 1});
+    REQUIRE(opt.has_value() == true);
+
+    // Root
+    auto it = tree.iterate();
+    REQUIRE(!!it);
+
+    // First level
+    it = it.children();
+    REQUIRE(!!it);
+    it.next();
+    REQUIRE(!!it);
+
+    // Second level
+    it = it.children();
+    REQUIRE(!!it);
+    // [-1, 0, 0]
+    REQUIRE(it.isVoxel() == true);
+    REQUIRE(it.value().voxel.index == 7);
+    REQUIRE(it.getPos() == Vector3i{-1, 0, 0});
+
+    it.next();
+    REQUIRE(!!it);
+
+    // [-1, 0, 1]
+    REQUIRE(it.isVoxel() == true);
+    REQUIRE(it.value().voxel.index == 4);
+    REQUIRE(it.getPos() == Vector3i{-1, 0, 1});
+}

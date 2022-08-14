@@ -2,6 +2,7 @@
 
 #include "Quaternion.hpp"
 #include "Vector.hpp"
+#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/transform.hpp>

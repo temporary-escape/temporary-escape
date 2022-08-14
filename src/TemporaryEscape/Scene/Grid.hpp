@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../Assets/AssetBlock.hpp"
-#include "../Assets/AssetShape.hpp"
+#include "../Assets/Block.hpp"
+#include "../Assets/VoxelShapeCache.hpp"
+#include "../Config.hpp"
 #include "../Library.hpp"
 #include "../Math/Utils.hpp"
 #include "../Math/Vector.hpp"
@@ -184,9 +185,16 @@ public:
     };
 
     struct Type {
-        AssetBlockPtr block{nullptr};
+        BlockPtr block{nullptr};
         size_t count{0};
     };
+
+    struct BlocksData {
+        std::vector<VoxelShape::Vertex> vertices;
+        std::vector<uint32_t> indices;
+    };
+
+    using RawPrimitiveData = std::unordered_map<const Material*, BlocksData>;
 
     static constexpr size_t maxNodesPerTree = 256 * 256 * 256;
     static constexpr size_t badIndex = 0xFFFFFF;
@@ -207,39 +215,14 @@ public:
         Vector3 worldPos;
     };
 
-    class Builder {
-    public:
-        explicit Builder(AssetManager& assetManager);
-
-        struct ShapePrebuilt {
-            std::vector<Shape::Vertex> vertices;
-            std::vector<uint16_t> indices;
-        };
-
-        struct BlocksData {
-            std::vector<Shape::Vertex> vertices;
-            std::vector<uint32_t> indices;
-        };
-
-        using RawPrimitiveData = std::unordered_map<const Material*, BlocksData>;
-
-        using ShapePrebuiltMasked = std::array<ShapePrebuilt, 64>;
-        using ShapePrebuiltRotated = std::array<ShapePrebuiltMasked, 24>;
-        using ShapesPrebuilt = std::array<ShapePrebuiltRotated, 4>;
-
-        void precompute();
-        void build(const Voxel* cache, const std::vector<Type>& types, RawPrimitiveData& map, const Vector3& offset);
-
-    private:
-        AssetManager& assetManager;
-        ShapesPrebuilt shapes;
-    };
-
     class Octree;
 
     class Iterator {
     public:
-        explicit Iterator(Octree& octree, const size_t idx, size_t level, const Vector3i& origin);
+        Iterator() = default;
+        explicit Iterator(Octree& octree, size_t idx, size_t level, const Vector3i& origin);
+        Iterator(const Iterator& other) = default;
+        Iterator& operator=(const Iterator& other) = default;
 
         Node& value();
         void next();
@@ -253,21 +236,21 @@ public:
             return level;
         }
 
-        bool isVoxel() const;
-        int getBranchWidth() const;
-        const Vector3i& getOrigin() const {
+        [[nodiscard]] bool isVoxel() const;
+        [[nodiscard]] int getBranchWidth() const;
+        [[nodiscard]] const Vector3i& getOrigin() const {
             return origin;
         }
-        const Vector3i& getPos() const {
+        [[nodiscard]] const Vector3i& getPos() const {
             return pos;
         }
 
     private:
-        Octree& octree;
-        size_t idx;
-        size_t level;
-        Vector3i origin;
-        Vector3i pos;
+        Octree* octree{nullptr};
+        size_t idx{badIndex};
+        size_t level{0};
+        Vector3i origin{0};
+        Vector3i pos{0};
     };
 
     class Octree {
@@ -318,13 +301,13 @@ public:
         size_t depth{0};
     };
 
-    void insert(const Vector3i& pos, const AssetBlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
+    void insert(const Vector3i& pos, const BlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
 
     [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const {
         return voxels.find(pos);
     }
 
-    void generateMesh(Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+    void generateMesh(const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
 
     [[nodiscard]] std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to) const;
 
@@ -332,14 +315,17 @@ public:
         voxels.dump();
     }
 
-    static const Matrix4& getRotationMatrix(const uint8_t rotation);
-    static const Matrix4& getRotationMatrixInverted(const uint8_t rotation);
+    Iterator iterate() {
+        return voxels.iterate();
+    }
 
 private:
-    uint16_t insertBlock(const AssetBlockPtr& block);
-    void generateMesh(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
-    void generateMeshBlock(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map);
+    uint16_t insertBlock(const BlockPtr& block);
+    void generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
+    void generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
     void generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const;
+    void build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
+               RawPrimitiveData& map, const Vector3& offset);
     // void buildBlock(const Voxel& voxel, BlockBuilder& blockBuilder, const Vector3i& pos, TypePrimitiveMap& map);
 
     Octree voxels;
@@ -347,14 +333,14 @@ private:
 };
 
 inline bool Grid::Iterator::isVoxel() const {
-    return octree.getDepth() - level == 0;
+    return octree->getDepth() - level == 0;
 }
 
 inline Grid::Node& Grid::Iterator::value() {
-    return octree.pool().at(idx);
+    return octree->pool().at(idx);
 }
 
 inline int Grid::Iterator::getBranchWidth() const {
-    return Grid::getWidthForLevel(octree.getDepth() - level + 1);
+    return Grid::getWidthForLevel(octree->getDepth() - level + 1);
 }
 } // namespace Engine

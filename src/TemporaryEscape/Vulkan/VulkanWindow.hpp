@@ -2,40 +2,29 @@
 
 #include "../Utils/Exceptions.hpp"
 #include "../Utils/Log.hpp"
-#include "VEZ/AppBase.h"
 #include "VulkanDevice.hpp"
 #include "Window.hpp"
 
+struct GLFWwindow;
+
 namespace Engine {
-class VulkanWindow : public vez::AppBase, public VulkanDevice, public Window {
+class VulkanWindow : public VulkanDevice, public Window {
 public:
-    explicit VulkanWindow(const std::string& name, const Vector2i& size);
-    virtual ~VulkanWindow() = default;
+    explicit VulkanWindow(const std::string& name, const Vector2i& size, bool enableValidationLayers = true);
+    virtual ~VulkanWindow();
 
-    virtual void initialize() = 0;
-    virtual void cleanup() = 0;
-    virtual void update(float timeElapsed) = 0;
-    virtual void eventResized(const Vector2i& size) = 0;
-
-    VkDevice getDevice() override;
-    VezFramebuffer getFramebuffer() override;
-    VezSwapchain getSwapchain() override;
-    VkImage getColorAttachment() override;
-
-protected:
-    void Initialize() override;
-    void Cleanup() override;
-    void Draw() override;
-    void OnKeyDown(int key, int mods) override;
-    void OnKeyUp(int key, int mods) override;
-    void OnMouseDown(int button, int x, int y) override;
-    void OnMouseMove(int x, int y) override;
-    void OnMouseUp(int button, int x, int y) override;
-    void OnMouseScroll(float x, float y) override;
-    void OnResize(int width, int height) override;
-    void Update(float timeElapsed) override;
+    void run();
+    Vector2i getWindowSize() override;
 
 private:
+    static void mouseMovedCallback(GLFWwindow* window, double x, double y);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void mouseScrollCallback(GLFWwindow* window, double xscroll, double yscroll);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void windowSizeCallback(GLFWwindow* window, int width, int height);
+
+    GLFWwindow* window{nullptr};
     Vector2i mousePos;
+    Vector2i currentWindowSize;
 };
 } // namespace Engine

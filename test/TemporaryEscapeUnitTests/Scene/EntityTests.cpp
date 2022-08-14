@@ -161,12 +161,12 @@ TEST_CASE("Adding entity with component to the scene", TAG) {
     static size_t counter = 0;
 
     auto entity = std::make_shared<EntityRefCounter>(counter);
-    entity->addComponent<ComponentCameraTurntable>();
+    entity->addComponent<ComponentCamera>();
 
     Scene scene{};
     scene.addEntity(entity);
 
-    const auto& cameraSystem = scene.getComponentSystem<ComponentCameraTurntable>();
+    const auto& cameraSystem = scene.getComponentSystem<ComponentCamera>();
 
     REQUIRE(cameraSystem.size() == 1);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Library.hpp"
+#include "../Utils/Path.hpp"
 #include "VEZ/VEZ.h"
 #include <string>
 #include <type_traits>
@@ -10,9 +11,11 @@ namespace Engine {
 enum class ShaderType {
     Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
     Vertex = VK_SHADER_STAGE_VERTEX_BIT,
+    Geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
 };
 
 struct ShaderSource {
+    Path path;
     std::string glsl;
     ShaderType type;
 };
@@ -35,6 +38,10 @@ public:
 
     [[nodiscard]] const VezPipeline& getHandle() const {
         return desc.pipeline;
+    }
+
+    [[nodiscard]] operator bool() const {
+        return desc.pipeline != VK_NULL_HANDLE;
     }
 
 private:

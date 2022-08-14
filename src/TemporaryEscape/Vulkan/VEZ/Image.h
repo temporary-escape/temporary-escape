@@ -26,30 +26,39 @@
 struct VmaAllocation_T;
 typedef struct VmaAllocation_T* VmaAllocation;
 
-namespace vez
-{
-    class Device;
+namespace vez {
+class Device;
 
-    class Image
-    {
-    public:
-        static Image* CreateFromHandle(Device* device, const VezImageCreateInfo* pCreateInfo, VkImageLayout defaultLayout, VkImage image, VmaAllocation allocation);
+class Image {
+public:
+    static Image* CreateFromHandle(Device* device, const VezImageCreateInfo* pCreateInfo, VkImageLayout defaultLayout,
+                                   VkImage image, VmaAllocation allocation);
 
-        Device* GetDevice() { return m_device; }
+    Device* GetDevice() {
+        return m_device;
+    }
 
-        const VezImageCreateInfo& GetCreateInfo() { return m_createInfo; }
+    const VezImageCreateInfo& GetCreateInfo() {
+        return m_createInfo;
+    }
 
-        VkImage& GetHandle() { return m_handle; }
+    VkImage& GetHandle() {
+        return m_handle;
+    }
 
-        VmaAllocation GetAllocation() { return m_allocation; }
+    VmaAllocation GetAllocation() {
+        return m_allocation;
+    }
 
-        VkImageLayout GetDefaultImageLayout() { return m_defaultImageLayout; }
+    VkImageLayout GetDefaultImageLayout() {
+        return m_defaultImageLayout;
+    }
 
-    private:
-        Device* m_device = nullptr;
-        VezImageCreateInfo m_createInfo;
-        VkImage m_handle = VK_NULL_HANDLE;
-        VmaAllocation m_allocation = VK_NULL_HANDLE;
-        VkImageLayout m_defaultImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    };    
-}
+private:
+    Device* m_device = nullptr;
+    VezImageCreateInfo m_createInfo;
+    VkImage m_handle = VK_NULL_HANDLE;
+    VmaAllocation m_allocation = VK_NULL_HANDLE;
+    VkImageLayout m_defaultImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+};
+} // namespace vez

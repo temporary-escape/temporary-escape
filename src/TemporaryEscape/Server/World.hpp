@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Assets/AssetManager.hpp"
+#include "../Assets/Registry.hpp"
 #include "../Config.hpp"
 #include "../Utils/Database.hpp"
 #include "Schemas.hpp"
@@ -8,7 +8,7 @@
 namespace Engine {
 class ENGINE_API World {
 public:
-    explicit World(const Config& config, AssetManager& assetManager, TransactionalDatabase& db);
+    explicit World(const Config& config, Registry& registry, TransactionalDatabase& db);
     ~World() = default;
 
     // Players
@@ -16,7 +16,7 @@ public:
     PlayerData loginPlayer(uint64_t secret, const std::string& name);
     PlayerLocationData findPlayerStartingLocation(const std::string& playerId);
     PlayerLocationData getPlayerLocation(const std::string& playerId);
-    std::vector<AssetBlockPtr> getPlayerUnlockedBlocks(const std::string& playerId);
+    std::vector<BlockPtr> getPlayerUnlockedBlocks(const std::string& playerId);
 
     // Galaxies
     GalaxyData getGalaxyForPlayer(const std::string& playerId, const std::string& galaxyId);
@@ -47,7 +47,7 @@ public:
 
 private:
     const Config& config;
-    AssetManager& assetManager;
+    Registry& registry;
     TransactionalDatabase& db;
 };
 } // namespace Engine

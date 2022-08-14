@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetTurret.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -14,7 +13,7 @@ public:
     };
 
     ComponentTurret() = default;
-    explicit ComponentTurret(Object& object, AssetTurretPtr turret) : Component(object), turret(std::move(turret)) {
+    explicit ComponentTurret(Object& object) : Component(object) {
     }
     virtual ~ComponentTurret() = default;
 
@@ -27,10 +26,6 @@ public:
 
     void applyDelta(Delta& delta) {
         (void)delta;
-    }
-
-    const AssetTurretPtr& getTurret() const {
-        return turret;
     }
 
     const Vector3& getTarget() const {
@@ -77,7 +72,6 @@ public:
     void update(const float delta);
 
 private:
-    AssetTurretPtr turret;
     Vector3 target;
     bool firing{true};
     Vector3 rotation;
@@ -86,6 +80,6 @@ private:
     float counter{0.0f};
 
 public:
-    MSGPACK_DEFINE_ARRAY(turret, target, firing);
+    MSGPACK_DEFINE_ARRAY(target, firing);
 };
 } // namespace Engine

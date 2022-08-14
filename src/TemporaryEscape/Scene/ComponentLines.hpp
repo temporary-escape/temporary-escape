@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../Graphics/Mesh.hpp"
 #include "../Library.hpp"
-#include "../Shaders/ShaderLines.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -35,9 +33,9 @@ public:
         (void)delta;
     }
 
-    const Mesh& getMesh() const {
+    /*const Mesh& getMesh() const {
         return mesh;
-    }
+    }*/
 
     void add(const Vector3& from, const Vector3& to, const Color4& color) {
         setDirty(true);
@@ -54,7 +52,7 @@ public:
             return;
         }
 
-        if (!vbo) {
+        /*if (!vbo) {
             vbo = VertexBuffer(VertexBufferType::Array);
         }
 
@@ -66,14 +64,14 @@ public:
             mesh.setPrimitive(PrimitiveType::Lines);
         }
 
-        mesh.setCount(lines.size() * 2);
+        mesh.setCount(lines.size() * 2);*/
         setDirty(false);
     }
 
 private:
     std::vector<Line> lines;
-    Mesh mesh{NO_CREATE};
-    VertexBuffer vbo{NO_CREATE};
+    // Mesh mesh{NO_CREATE};
+    // VertexBuffer vbo{NO_CREATE};
 
 public:
     MSGPACK_DEFINE_ARRAY();

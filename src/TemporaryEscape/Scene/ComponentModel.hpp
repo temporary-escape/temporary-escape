@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetModel.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -11,7 +10,7 @@ public:
     };
 
     ComponentModel() = default;
-    explicit ComponentModel(Object& object, AssetModelPtr model) : Component(object), model(std::move(model)) {
+    explicit ComponentModel(Object& object) : Component(object) {
     }
 
     virtual ~ComponentModel() = default;
@@ -24,14 +23,14 @@ public:
         (void)delta;
     }
 
-    const AssetModelPtr& getModel() const {
+    /*const AssetModelPtr& getModel() const {
         return model;
-    }
+    }*/
 
 private:
-    AssetModelPtr model{nullptr};
+    // AssetModelPtr model{nullptr};
 
 public:
-    MSGPACK_DEFINE_ARRAY(model);
+    MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

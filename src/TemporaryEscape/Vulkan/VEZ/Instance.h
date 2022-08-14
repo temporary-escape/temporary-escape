@@ -20,32 +20,36 @@
 // THE SOFTWARE.
 //
 #pragma once
+#include "VEZ.h"
 #include <string>
 #include <vector>
-#include "VEZ.h"
 
-namespace vez
-{
-    class ThreadPool;
-    class PhysicalDevice;
+namespace vez {
+class ThreadPool;
+class PhysicalDevice;
 
-    class Instance
-    {
-    public:
-        static VkResult Create(const VezInstanceCreateInfo* pCreateInfo, Instance** ppInstance);
+class Instance {
+public:
+    static VkResult Create(const VezInstanceCreateInfo* pCreateInfo, Instance** ppInstance);
 
-        static void Destroy(Instance* pInstance);
+    static void Destroy(Instance* pInstance);
 
-        VkInstance GetHandle() const { return m_handle; }
+    VkInstance GetHandle() const {
+        return m_handle;
+    }
 
-        const std::vector<PhysicalDevice*>& GetPhysicalDevices() { return m_physicalDevices; }
+    std::vector<PhysicalDevice>& GetPhysicalDevices() {
+        return m_physicalDevices;
+    }
 
-        ThreadPool* GetThreadPool() { return m_threadPool; }
+    ThreadPool* GetThreadPool() {
+        return m_threadPool;
+    }
 
-    private:
-        VkInstance m_handle = VK_NULL_HANDLE;
-        std::vector<std::string> m_validationLayers;
-        std::vector<PhysicalDevice*> m_physicalDevices;
-        ThreadPool* m_threadPool = nullptr;
-    };    
-}
+private:
+    VkInstance m_handle = VK_NULL_HANDLE;
+    std::vector<std::string> m_validationLayers;
+    std::vector<PhysicalDevice> m_physicalDevices;
+    ThreadPool* m_threadPool = nullptr;
+};
+} // namespace vez

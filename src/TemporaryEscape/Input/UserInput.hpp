@@ -1,7 +1,11 @@
+#pragma once
+
 #include "../Config.hpp"
 #include "../Math/Vector.hpp"
 #include "../Vulkan/Window.hpp"
 #include "Inputs.hpp"
+#include <unordered_set>
+#include <vector>
 
 namespace Engine {
 class ENGINE_API UserInput {
@@ -41,10 +45,12 @@ private:
         Source source{Source::Key};
         Key key{Key::None};
         Modifiers modifiers{0};
+        MouseButton button{MouseButton::None};
     };
 
     const Config& config;
     Handler& handler;
     std::vector<Binding> bindings;
+    std::unordered_set<MouseButton> buttons;
 };
 } // namespace Engine

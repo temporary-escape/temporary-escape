@@ -5,8 +5,8 @@
 
 using namespace Engine;
 
-World::World(const Config& config, AssetManager& assetManager, Engine::TransactionalDatabase& db)
-    : config(config), assetManager(assetManager), db(db) {
+World::World(const Config& config, Registry& registry, Engine::TransactionalDatabase& db)
+    : config{config}, registry{registry}, db{db} {
 }
 
 void World::tick() {
@@ -84,11 +84,11 @@ PlayerLocationData World::getPlayerLocation(const std::string& playerId) {
     return location.value();
 }
 
-std::vector<AssetBlockPtr> World::getPlayerUnlockedBlocks(const std::string& playerId) {
+std::vector<BlockPtr> World::getPlayerUnlockedBlocks(const std::string& playerId) {
     const auto found = db.get<PlayerUnlockedBlocks>(playerId);
 
     if (!found) {
-        const auto allBlocks = assetManager.findAll<AssetBlock>();
+        const auto allBlocks = registry.getBlocks().findAll();
 
         PlayerUnlockedBlocks data{};
         data.id = playerId;

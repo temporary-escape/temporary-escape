@@ -39,6 +39,7 @@ enum class Key {
     SpaceBar,
     LeftControl,
     Delete,
+    LeftShift,
 };
 
 enum class Modifier : int {

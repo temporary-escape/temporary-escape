@@ -1,7 +1,7 @@
-#include <TemporaryEscape/Client/ClientWindow.hpp>
+#include <CLI/CLI.hpp>
+#include <TemporaryEscape/Client/Application.hpp>
 #include <TemporaryEscape/Utils/Exceptions.hpp>
 #include <TemporaryEscape/Utils/Log.hpp>
-//#include <cxxopts.hpp>
 
 #ifdef _WIN32
 #include <Shlobj.h>
@@ -49,27 +49,15 @@ std::filesystem::path execDir() {
 }
 
 int main(int argc, char** argv) {
-    /*cxxopts::Options parser("Temporary Escape", "Space sim multiplayer game");
-
     const auto defaultRoot = execDir();
     const auto defaultUserData = appDataDir();
 
-    parser.add_options()("version", "Print out game version");
+    CLI::App parser{"Temporary Escape"};
 
-    parser.add_options()("r,root", "Path to the root game folder",
-                         cxxopts::value<std::string>()->default_value(defaultRoot.string()));
+    Path rootPath;
+    parser.add_option("--root", rootPath, "Root directory")->check(CLI::ExistingDirectory)->default_val(defaultRoot);
 
-    parser.add_options()("u,userdata", "Path to the user data folder",
-                         cxxopts::value<std::string>()->default_value(defaultUserData.string()));
-
-    parser.add_options()("save-clean", "Delete the save folder and create a new one");
-
-    parser.add_options()("voxel-test", "Toggle ViewVoxelTest");
-
-    parser.add_options()("save-name", "Name of the save folder", cxxopts::value<std::string>());*/
-
-    const auto defaultRoot = execDir();
-    const auto defaultUserData = appDataDir();
+    CLI11_PARSE(parser, argc, argv);
 
     try {
         /*auto args = parser.parse(argc, argv);
@@ -110,11 +98,22 @@ int main(int argc, char** argv) {
         Log::i("main", "Temporary Escape main");
         Log::i("main", "Log file location: '{}'", logPath.string());
 
+        rootPath = std::filesystem::absolute(rootPath);
+        Config config{};
+        config.assetsPath = rootPath / "assets";
+        config.wrenPaths = {config.assetsPath.string()};
+        config.userdataPath = std::filesystem::absolute(defaultUserData);
+        config.userdataSavesPath = config.userdataPath / "Saves";
+        config.shadersPath = rootPath / "shaders";
+        config.fontsPath = rootPath / "fonts";
+        config.shapesPath = rootPath / "shapes";
+
+        std::filesystem::create_directories(config.userdataPath);
+        std::filesystem::create_directories(config.userdataSavesPath);
+
         {
-            // Application application(config);
-            // application.run();
-            ClientWindow window("Temporary Escape", {1920, 1080});
-            window.Run();
+            Application window(config);
+            window.run();
         }
         Log::i("main", "Exit success");
         return EXIT_SUCCESS;

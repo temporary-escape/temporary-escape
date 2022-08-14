@@ -2,6 +2,7 @@
 
 #include "../Library.hpp"
 #include "Vector.hpp"
+#include <array>
 #include <vector>
 
 namespace Engine {

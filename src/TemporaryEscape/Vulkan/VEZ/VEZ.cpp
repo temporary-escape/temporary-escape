@@ -74,9 +74,9 @@ VkResult VKAPI_CALL vezCreateInstance(const VezInstanceCreateInfo* pCreateInfo, 
     vez::ObjectLookup::AddObjectImpl(*pInstance, instanceImpl);
 
     // Add all of the instance's physical devices to ObjectLookup.
-    const auto& physicalDevices = instanceImpl->GetPhysicalDevices();
-    for (auto pd : physicalDevices)
-        vez::ObjectLookup::AddObjectImpl(pd->GetHandle(), pd);
+    auto& physicalDevices = instanceImpl->GetPhysicalDevices();
+    for (auto& pd : physicalDevices)
+        vez::ObjectLookup::AddObjectImpl(pd.GetHandle(), &pd);
 
     // Return success.
     return VK_SUCCESS;
@@ -88,8 +88,8 @@ void VKAPI_CALL vezDestroyInstance(VkInstance instance) {
     if (instanceImpl) {
         // Remove instance's physical devices from ObjectLookup.
         const auto& physicalDevices = instanceImpl->GetPhysicalDevices();
-        for (auto pd : physicalDevices)
-            vez::ObjectLookup::RemoveObjectImpl(pd->GetHandle());
+        for (auto& pd : physicalDevices)
+            vez::ObjectLookup::RemoveObjectImpl(pd.GetHandle());
 
         // Destroy Instance object and remove from ObjectLookup.
         vez::Instance::Destroy(instanceImpl);
@@ -110,7 +110,7 @@ VkResult VKAPI_CALL vezEnumeratePhysicalDevices(VkInstance instance, uint32_t* p
         *pPhysicalDeviceCount = static_cast<uint32_t>(physicalDevices.size());
         if (pPhysicalDevices) {
             for (auto i = 0U; i < *pPhysicalDeviceCount; ++i) {
-                pPhysicalDevices[i] = physicalDevices[i]->GetHandle();
+                pPhysicalDevices[i] = physicalDevices[i].GetHandle();
             }
         }
     }
@@ -293,12 +293,8 @@ VkResult VKAPI_CALL vezCreateSwapchain(VkDevice device, const VezSwapchainCreate
 }
 
 void VKAPI_CALL vezDestroySwapchain(VkDevice device, VezSwapchain swapchain) {
-    // Lookup object handle.
-    auto deviceImpl = vez::ObjectLookup::GetObjectImpl(device);
-    if (deviceImpl) {
-        // Destroy swapchain.
-        delete reinterpret_cast<vez::Swapchain*>(swapchain);
-    }
+    // Destroy swapchain.
+    delete reinterpret_cast<vez::Swapchain*>(swapchain);
 }
 
 void VKAPI_CALL vezGetSwapchainSurfaceFormat(VezSwapchain swapchain, VkSurfaceFormatKHR* pFormat) {

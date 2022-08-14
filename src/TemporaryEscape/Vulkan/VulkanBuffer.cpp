@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-VulkanBuffer::VulkanBuffer(VkDevice device, Type type, Usage usage, size_t size) : device(device) {
+VulkanBuffer::VulkanBuffer(VkDevice device, Type type, Usage usage, size_t size) : device{device}, size{size} {
     VezBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | static_cast<VkBufferUsageFlags>(type);

@@ -12,10 +12,10 @@ layout (std140, binding = 0) uniform CameraMatrices {
 
 layout(push_constant) uniform Uniforms {
     mat4 modelMatrix;
+    vec4 color;
 } uniforms;
 
 layout(location = 0) in vec3 in_Position;
-layout(location = 1) in vec4 in_Color;
 
 layout(location = 0) out VS_OUT {
     vec4 color;
@@ -26,7 +26,7 @@ out gl_PerVertex {
 };
 
 void main() {
-    vs_out.color = in_Color;
+    vs_out.color = uniforms.color;
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
     gl_Position = camera.transformationProjectionMatrix * worldPos;
 }

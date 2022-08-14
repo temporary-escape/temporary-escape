@@ -2,6 +2,7 @@
 
 #include "../Assets/Primitive.hpp"
 #include "Component.hpp"
+#include "ComponentDebug.hpp"
 #include "Grid.hpp"
 
 namespace Engine {
@@ -15,7 +16,7 @@ public:
 
     ComponentGrid() {
     }
-    explicit ComponentGrid(Object& object) : Component(object) {
+    explicit ComponentGrid(Object& object, ComponentDebug* debug = nullptr) : Component{object}, debug{debug} {
     }
     virtual ~ComponentGrid() = default;
 
@@ -27,14 +28,18 @@ public:
         (void)delta;
     }
 
-    void recalculate(Grid::Builder& gridBuilder);
+    void recalculate(VulkanDevice& vulkan, const VoxelShapeCache& voxelShapeCache);
+    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
     void update();
 
-    const std::vector<Primitive>& getPrimitives() const {
+    [[nodiscard]] const std::vector<Primitive>& getPrimitives() const {
         return primitives;
     }
 
 private:
+    void debugIterate(Grid::Iterator iterator);
+
+    ComponentDebug* debug{nullptr};
     std::vector<Primitive> primitives;
 
 public:

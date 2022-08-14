@@ -2,10 +2,24 @@
 
 #include "Format.hpp"
 #include <filesystem>
+#include <set>
+#include <string>
 
 namespace Engine {
 using Path = std::filesystem::path;
 namespace Fs = std::filesystem;
+
+template <typename Fn> static void iterateDir(const Path& dir, const std::set<std::string>& exts, const Fn& fn) {
+    if (Fs::exists(dir) && Fs::is_directory(dir)) {
+        for (const auto& it : Fs::recursive_directory_iterator(dir)) {
+            const auto ext = it.path().extension().string();
+            if (it.is_regular_file() && exts.find(ext) != exts.end()) {
+                const auto path = Fs::absolute(it.path());
+                fn(path);
+            }
+        }
+    }
+}
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Path> {

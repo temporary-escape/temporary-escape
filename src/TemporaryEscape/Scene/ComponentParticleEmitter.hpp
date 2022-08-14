@@ -1,6 +1,5 @@
 #pragma once
-#include "../Assets/AssetParticles.hpp"
-#include "../Graphics/Mesh.hpp"
+
 #include "Component.hpp"
 
 namespace Engine {
@@ -11,8 +10,7 @@ public:
     };
 
     ComponentParticleEmitter() = default;
-    explicit ComponentParticleEmitter(Object& object, AssetParticlesPtr asset)
-        : Component(object), asset{std::move(asset)} {
+    explicit ComponentParticleEmitter(Object& object) : Component(object) {
     }
 
     virtual ~ComponentParticleEmitter() = default;
@@ -25,7 +23,7 @@ public:
         (void)delta;
     }
 
-    void setOffset(const Vector3& value) {
+    /*void setOffset(const Vector3& value) {
         uniform.offset = value;
     }
 
@@ -103,13 +101,13 @@ public:
 
     const Color4& getEndColor() const {
         return uniform.endColor;
-    }
+    }*/
 
-    const AssetTexturePtr& getTexture() const {
+    /*const AssetTexturePtr& getTexture() const {
         return asset->getTexture();
-    }
+    }*/
 
-    void rebuild() {
+    /*void rebuild() {
         if (!shouldRebuild) {
             return;
         }
@@ -134,14 +132,14 @@ public:
         }
 
         shouldRebuild = false;
-    }
+    }*/
 
-    const VertexBuffer& getUbo() const {
+    /*const VertexBuffer& getUbo() const {
         return ubo;
-    }
+    }*/
 
 private:
-    struct Uniform { // glsl layout(std140)
+    /*struct Uniform { // glsl layout(std140)
         Color4 startColor{1.0f};
         Color4 endColor{1.0f};
         Vector3 offset{0.0f};
@@ -160,9 +158,9 @@ private:
 
     AssetParticlesPtr asset{nullptr};
     VertexBuffer ubo{NO_CREATE};
-    bool shouldRebuild{true};
+    bool shouldRebuild{true};*/
 
 public:
-    MSGPACK_DEFINE_ARRAY(asset, uniform);
+    MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

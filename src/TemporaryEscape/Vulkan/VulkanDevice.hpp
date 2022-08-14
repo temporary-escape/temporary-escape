@@ -2,58 +2,87 @@
 
 #include "../Math/Matrix.hpp"
 #include "VulkanBuffer.hpp"
+#include "VulkanFramebuffer.hpp"
 #include "VulkanPipeline.hpp"
+#include "VulkanTexture.hpp"
+#include "VulkanVertexInputFormat.hpp"
 
 struct GLFWwindow;
 
 namespace Engine {
+using VulkanBlendState = VezColorBlendAttachmentState;
+
 class VulkanDevice {
 public:
     VulkanDevice() = default;
+    virtual ~VulkanDevice() = default;
 
-    void init(GLFWwindow* window);
-    void reset();
+    virtual Vector2i getWindowSize() = 0;
 
+    void setViewport(const Vector2i& pos, const Vector2i& size);
+    void setScissor(const Vector2i& pos, const Vector2i& size);
+    void setViewportState();
+
+    [[nodiscard]] VulkanTexture::Format getSwapchainFormat() const;
     VulkanBuffer createBuffer(VulkanBuffer::Type type, VulkanBuffer::Usage usage, size_t size);
     VulkanPipeline createPipeline(const std::vector<ShaderSource>& sources);
+    VulkanTexture createTexture(const VulkanTexture::Descriptor& desc);
+    VulkanVertexInputFormat createVertexInputFormat(const std::vector<VulkanVertexInputFormat::Binding>& bindings);
+    VulkanFramebuffer createFramebuffer(const Vector2i& size,
+                                        const std::vector<VulkanFramebufferAttachment>& attachments);
 
-    void bindVertexBuffer(VulkanBuffer& buffer, size_t offset = 0);
-    void bindIndexBuffer(VulkanBuffer& buffer, size_t offset = 0);
-    void bindUniformBuffer(VulkanBuffer& buffer, size_t offset = 0);
-    void bindPipeline(VulkanPipeline& pipeline);
+    void bindVertexBuffer(const VulkanBuffer& buffer, size_t offset);
+    void bindIndexBuffer(const VulkanBuffer& buffer, size_t offset, VkIndexType indexType);
+    void bindUniformBuffer(const VulkanBuffer& buffer, uint32_t binding, size_t offset = 0);
+    void bindPipeline(const VulkanPipeline& pipeline);
+    void bindVertexInputFormat(const VulkanVertexInputFormat& vertexInputFormat);
+    void bindTexture(const VulkanTexture& texture, uint32_t binding);
 
+    void beginRenderPass(VulkanFramebuffer& fbo, const std::vector<VulkanFramebufferAttachmentReference>& attachments);
+    void nextSubpass();
+    void endRenderPass();
+    void setRasterization(VkPolygonMode mode = VkPolygonMode::VK_POLYGON_MODE_FILL,
+                          VkCullModeFlags cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT,
+                          VkFrontFace frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    void setInputAssembly(VkPrimitiveTopology topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                          bool restart = false);
+    void setDepthStencilState(bool write, bool test, VkCompareOp compareOp = VK_COMPARE_OP_LESS_OR_EQUAL);
+    void setBlendState(const std::vector<VulkanBlendState>& blendStates);
+
+    void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
+                     uint32_t firstInstance);
+    void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+
+    void pushConstant(uint32_t offset, const Matrix4& value);
+    void pushConstant(uint32_t offset, const Color4& value);
     void startCommandBuffer();
     void endCommandBuffer();
     void submitQueue();
+    void submitPresentQueue(VulkanTexture& front);
+
+    void deviceWaitIdle();
+
+protected:
+    bool getValidationLayerSupported();
+
+    void initInstance(const std::string& name, std::vector<const char*> instanceLayers,
+                      std::vector<const char*> instanceExtensions);
+    void initSurface(GLFWwindow* window);
+    void reset();
+    void resizeDefaultFramebuffer(const Vector2i& size);
 
 private:
     VkShaderModule CreateShaderModule(const std::string& code, const std::string& entryPoint,
                                       VkShaderStageFlagBits stage);
 
-    std::string m_name;
-    int m_width = 0, m_height = 0;
-    int m_physicalDeviceIndex = 0;
-    bool m_enableValidationLayers = false;
-    bool m_manageFramebuffer = false;
-    VkSampleCountFlagBits m_sampleCountFlag = VK_SAMPLE_COUNT_1_BIT;
-    std::vector<std::string> m_deviceExtensions;
-    GLFWwindow* m_window = nullptr;
-    VkInstance m_instance = VK_NULL_HANDLE;
-    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
-    VkDevice m_device = VK_NULL_HANDLE;
-    VezSwapchain m_swapchain = VK_NULL_HANDLE;
-
-    struct {
-        VkImage colorImage = VK_NULL_HANDLE;
-        VkImageView colorImageView = VK_NULL_HANDLE;
-        VkImage depthStencilImage = VK_NULL_HANDLE;
-        VkImageView depthStencilImageView = VK_NULL_HANDLE;
-        VezFramebuffer handle = VK_NULL_HANDLE;
-    } m_framebuffer;
-
-    bool m_quitSignaled = false;
-    std::string m_windowTitleText;
+    std::vector<std::string> deviceExtensions;
+    VkInstance instance = VK_NULL_HANDLE;
+    int physicalDeviceIndex = 0;
+    VkSampleCountFlagBits sampleCountFlag = VK_SAMPLE_COUNT_1_BIT;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VezSwapchain swapchain = VK_NULL_HANDLE;
 
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;

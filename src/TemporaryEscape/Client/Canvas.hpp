@@ -1,18 +1,18 @@
 #pragma once
 
 #include "../Font/FontFace.hpp"
-#include "VulkanDevice.hpp"
+#include "../Vulkan/VulkanDevice.hpp"
 
 namespace Engine {
-class VulkanCanvas {
+class Canvas {
 public:
-    explicit VulkanCanvas(VulkanDevice& vulkan);
+    explicit Canvas(VulkanDevice& vulkan);
 
     void begin(const Vector2i& viewport);
     void end();
     void rect(const Vector2& pos, const Vector2& size, const Color4& color);
     void rectOutline(const Vector2& pos, const Vector2& size, const Color4& color);
-    void text(const Vector2& pos, const std::string& text, const FontFace& font, const Color4& color);
+    void text(const Vector2& pos, const std::string& text, const FontFace& font, float height, const Color4& color);
     void image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color);
 
 private:

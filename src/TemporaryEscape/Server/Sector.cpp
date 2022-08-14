@@ -8,14 +8,20 @@
 
 using namespace Engine;
 
-Sector::Sector(const Config& config, World& world, AssetManager& assetManager, TransactionalDatabase& db,
-               std::string galaxyId, std::string systemId, std::string sectorId)
-    : config(config), world(world), assetManager(assetManager), db(db), galaxyId(std::move(galaxyId)),
-      systemId(std::move(systemId)), sectorId(std::move(sectorId)), loaded(false),
-      vm(std::make_unique<wrenbind17::VM>(config.wrenPaths)) {
+Sector::Sector(const Config& config, World& world, Registry& registry, TransactionalDatabase& db, std::string galaxyId,
+               std::string systemId, std::string sectorId) :
+    config(config),
+    world(world),
+    registry{registry},
+    db{db},
+    galaxyId{std::move(galaxyId)},
+    systemId{std::move(systemId)},
+    sectorId{std::move(sectorId)},
+    loaded{false},
+    vm(std::make_unique<wrenbind17::VM>(config.wrenPaths)) {
 
     expose(config, *vm);
-    assetManager.runAllScripts(*vm);
+    // assetManager.runAllScripts(*vm);
 
     Log::i(CMP, "Started sector: '{}'", this->sectorId);
 }
@@ -52,7 +58,7 @@ void Sector::load() {
         sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
         scene.addEntity(sun);
 
-        auto particles = assetManager.find<AssetParticles>("particles_engine_exhaust_01");
+        /*auto particles = assetManager.find<AssetParticles>("particles_engine_exhaust_01");
         auto dummy = std::make_shared<Entity>();
         dummy->addComponent<ComponentParticleEmitter>(particles);
         dummy->translate({0.0f, 3.0f, 0.0f});
@@ -67,7 +73,7 @@ void Sector::load() {
                 asteroid->translate(Vector3{x * 3.0f, 0.0f, y * 3.0f});
                 scene.addEntity(asteroid);
             }
-        }
+        }*/
 
         /*auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
         auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");

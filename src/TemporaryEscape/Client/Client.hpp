@@ -3,7 +3,6 @@
 #include "../Config.hpp"
 #include "../Future.hpp"
 #include "../Library.hpp"
-#include "../Modding/ModManager.hpp"
 #include "../Network/NetworkTcpClient.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Messages.hpp"
@@ -25,7 +24,7 @@ struct PlayerLocalProfile {
 
 class ENGINE_API Client : public NetworkTcpClient<Client, ServerSink> {
 public:
-    explicit Client(const Config& config, ModManager& modManager, Stats& stats, const std::string& address, int port,
+    explicit Client(const Config& config, Registry& registry, Stats& stats, const std::string& address, int port,
                     const Path& profilePath);
     virtual ~Client();
 
@@ -89,9 +88,8 @@ private:
     void fetchModInfo(Promise<void>& promise);
     void doLogin(Promise<void>& promise);
 
-    ModManager& modManager;
+    Registry& registry;
     Stats& stats;
-
     PlayerLocalProfile localProfile;
     std::string playerId;
     PlayerLocationData playerLocation;

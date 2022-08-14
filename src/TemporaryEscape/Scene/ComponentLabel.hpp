@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetImage.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -8,14 +7,12 @@ class ENGINE_API ComponentLabel : public Component {
 public:
     struct Delta {
         std::string label;
-        AssetImagePtr image;
 
-        MSGPACK_DEFINE_ARRAY(label, image);
+        MSGPACK_DEFINE_ARRAY(label);
     };
 
     ComponentLabel() = default;
-    explicit ComponentLabel(Object& object, std::string label, AssetImagePtr image)
-        : Component(object), label(std::move(label)), image(std::move(image)) {
+    explicit ComponentLabel(Object& object, std::string label) : Component(object), label{std::move(label)} {
     }
 
     virtual ~ComponentLabel() = default;
@@ -23,7 +20,7 @@ public:
     Delta getDelta() {
         Delta delta{};
         delta.label = label;
-        delta.image = image;
+        // delta.image = image;
         return delta;
     }
 
@@ -40,18 +37,18 @@ public:
         setDirty(true);
     }
 
-    const AssetImagePtr& getImage() const {
+    /*const AssetImagePtr& getImage() const {
         return image;
     }
 
     void setImage(AssetImagePtr value) {
         image = std::move(value);
         setDirty(true);
-    }
+    }*/
 
 private:
     std::string label;
-    AssetImagePtr image;
+    // AssetImagePtr image;
     Color4 color;
 
 public:

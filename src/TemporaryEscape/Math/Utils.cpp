@@ -5,7 +5,7 @@
 using namespace Engine;
 
 std::optional<Vector3> Engine::intersectBox(const Vector3& min, const Vector3& max, const Vector3& from,
-                                             const Vector3& to) {
+                                            const Vector3& to) {
 
     auto dir = to - from;
     const auto ml = glm::length(dir);
@@ -79,7 +79,7 @@ Vector3 Engine::intersectBoxNormal(const Vector3& center, const Vector3& pos) {
 }
 
 Vector3 Engine::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
-                               const Vector2& pos) {
+                              const Vector2& pos) {
     const Vector4 rayClip((pos.x - 0) / float(viewport.x) * 2.0f - 1.0f,
                           -((pos.y - 0) / float(viewport.y) * 2.0f - 1.0f), 0.5f, 0.0f);
 
@@ -92,7 +92,7 @@ Vector3 Engine::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projecti
 }
 
 Vector2 Engine::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
-                               const Vector3& pos) {
+                              const Vector3& pos) {
     const auto vp = projectionMatrix * glm::inverse(viewMatrix);
     const auto clipSpace = vp * Vector4{pos, 1.0f};
     auto ndcSpace = Vector3{clipSpace} / clipSpace.w;

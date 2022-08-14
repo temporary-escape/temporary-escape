@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Graphics/Shader.hpp"
 #include "../Utils/Log.hpp"
+#include "../Vulkan/VulkanDevice.hpp"
 #include "Object.hpp"
 
 #include <memory>

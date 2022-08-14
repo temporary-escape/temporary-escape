@@ -1,10 +1,10 @@
 #include "../Common.hpp"
-#include <TemporaryEscape/Assets/AssetManager.hpp>
+#include <TemporaryEscape/Assets/Registry.hpp>
 #include <TemporaryEscape/Scene/Scene.hpp>
 #include <TemporaryEscape/Server/Bindings.hpp>
 #include <wrenbind17/wrenbind17.hpp>
 
-#define TAG "[Scene]"
+/*#define TAG "[Scene]"
 
 using EntityRefCounter = RefCounter<Entity>;
 
@@ -121,4 +121,4 @@ class SceneTest {
     vm = wrenbind17::VM{};
 
     REQUIRE(EntityRefCounterHelper::counter == 0);
-}
+}*/

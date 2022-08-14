@@ -37,6 +37,6 @@ private:
     int depth = 0;
     int bpp = 0;
     size_t size = 0;
-    PixelType pixelType = PixelType::None;
+    PixelType pixelType = PixelType::Rgba8u;
 };
 } // namespace Engine

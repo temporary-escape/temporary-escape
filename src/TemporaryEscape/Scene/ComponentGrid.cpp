@@ -1,5 +1,4 @@
 #include "ComponentGrid.hpp"
-#include "../Shaders/ShaderGrid.hpp"
 
 #define CMP "ComponentGrid"
 
@@ -8,19 +7,35 @@ using namespace Engine;
 void ComponentGrid::update() {
 }
 
-void ComponentGrid::recalculate(Grid::Builder& gridBuilder) {
+void ComponentGrid::debugIterate(Grid::Iterator iterator) {
+    while (iterator) {
+        if (iterator.isVoxel()) {
+            auto pos = iterator.getPos();
+            Log::d(CMP, "Add box: {}", pos);
+            debug->addBox(glm::translate(pos), 0.95f, Color4{1.0f, 0.0f, 0.0f, 1.0f});
+        } else {
+            debugIterate(iterator.children());
+        }
+
+        iterator.next();
+    }
+}
+
+void ComponentGrid::recalculate(VulkanDevice& vulkan, const VoxelShapeCache& voxelShapeCache) {
     if (!isDirty()) {
         return;
     }
 
     setDirty(false);
 
-    Grid::Builder::RawPrimitiveData map;
-    generateMesh(gridBuilder, map);
+    if (debug) {
+        debug->clear();
+        auto iterator = iterate();
+        debugIterate(iterator);
+    }
 
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    Grid::RawPrimitiveData map;
+    generateMesh(voxelShapeCache, map);
 
     primitives.clear();
 
@@ -35,29 +50,54 @@ void ComponentGrid::recalculate(Grid::Builder& gridBuilder) {
         primitives.emplace_back();
         auto& primitive = primitives.back();
 
-        primitive.mesh = Mesh{};
+        primitive.material = material;
 
-        primitive.ibo = VertexBuffer(VertexBufferType::Indices);
-        primitive.ibo.bufferData(data.indices.data(), data.indices.size() * sizeof(uint32_t),
-                                 VertexBufferUsage::StaticDraw);
-        primitive.mesh.setIndexBuffer(primitive.ibo, IndexType::UnsignedInt);
+        const auto vboSize = data.vertices.size() * sizeof(VoxelShape::Vertex);
+        primitive.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic, vboSize);
+        primitive.vbo.subData(data.vertices.data(), 0, vboSize);
 
-        primitive.vbo = VertexBuffer(VertexBufferType::Array);
-        primitive.vbo.bufferData(data.vertices.data(), data.vertices.size() * sizeof(Shape::Vertex),
-                                 VertexBufferUsage::StaticDraw);
+        const auto iboSize = data.indices.size() * sizeof(uint32_t);
+        primitive.ibo = vulkan.createBuffer(VulkanBuffer::Type::Index, VulkanBuffer::Usage::Dynamic, iboSize);
+        primitive.ibo.subData(data.indices.data(), 0, iboSize);
 
-        primitive.mesh.addVertexBuffer(primitive.vbo, ShaderGrid::Position{}, ShaderGrid::Normal{},
-                                       ShaderGrid::Tangent{});
+        primitive.vboFormat = vulkan.createVertexInputFormat({
+            {
+                0,
+                {
+                    {0, 0, VulkanVertexInputFormat::Format::Vec3},
+                    {1, 0, VulkanVertexInputFormat::Format::Vec3},
+                    {2, 0, VulkanVertexInputFormat::Format::Vec4},
+                },
+            },
+        });
 
-        primitive.mesh.setPrimitive(PrimitiveType::Triangles);
-        primitive.mesh.setCount(static_cast<GLint>(data.indices.size()));
+        primitive.count = data.indices.size();
+        primitive.indexType = VkFormat::VK_FORMAT_R32_UINT;
+        primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    }
+}
 
-        primitive.material = *material;
-        primitive.ubo = VertexBuffer(VertexBufferType::Uniform);
-        primitive.ubo.bufferData(&primitive.material.uniform, sizeof(Material::Uniform), VertexBufferUsage::StaticDraw);
+void ComponentGrid::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    if (primitives.empty()) {
+        return;
+    }
 
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    const auto transform = getObject().getAbsoluteTransform();
+    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    vulkan.pushConstant(0, transform);
+    vulkan.pushConstant(sizeof(Matrix4), transformInverted);
+
+    for (const auto& primitive : primitives) {
+        vulkan.bindVertexBuffer(primitive.vbo, 0);
+        vulkan.bindVertexInputFormat(primitive.vboFormat);
+        vulkan.bindIndexBuffer(primitive.ibo, 0, VK_INDEX_TYPE_UINT32);
+        vulkan.bindUniformBuffer(primitive.material->ubo, 1);
+        vulkan.bindTexture(primitive.material->baseColorTexture->getVulkanTexture(), 2);
+        vulkan.bindTexture(primitive.material->emissiveTexture->getVulkanTexture(), 3);
+        vulkan.bindTexture(primitive.material->normalTexture->getVulkanTexture(), 4);
+        vulkan.bindTexture(primitive.material->ambientOcclusionTexture->getVulkanTexture(), 5);
+        vulkan.bindTexture(primitive.material->metallicRoughnessTexture->getVulkanTexture(), 6);
+        vulkan.setInputAssembly(primitive.topology);
+        vulkan.drawIndexed(primitive.count, 1, 0, 0, 0);
     }
 }

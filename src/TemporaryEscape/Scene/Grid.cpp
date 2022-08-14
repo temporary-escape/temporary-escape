@@ -1,5 +1,4 @@
 #include "Grid.hpp"
-#include "../Assets/AssetManager.hpp"
 
 #define CMP "Grid"
 
@@ -9,6 +8,41 @@ static inline size_t coordToIdx(const Vector3i& pos, size_t width) {
     // return x + Grid::cacheBuildWidth * (y + Grid::cacheBuildWidth * z);
 
     return pos.x + (pos.y * width) + (pos.z * width * width);
+}
+
+template <typename V> static inline glm::vec<3, V> idxToOffsetVoxel(const int idx, const glm::vec<3, V>& origin) {
+    // Log::d(CMP, "idxToOffset({}, {}, {})", idx, s, origin);
+    using Vec = glm::vec<3, V>;
+
+    switch (idx) {
+    case 0: {
+        return origin + Vec{0, 0, 0};
+    }
+    case 1: {
+        return origin + Vec{-1, 0, 0};
+    }
+    case 2: {
+        return origin + Vec{-1, 0, -1};
+    }
+    case 3: {
+        return origin + Vec{0, 0, -1};
+    }
+    case 4: {
+        return origin + Vec{0, -1, 0};
+    }
+    case 5: {
+        return origin + Vec{-1, -1, 0};
+    }
+    case 6: {
+        return origin + Vec{-1, -1, -1};
+    }
+    case 7: {
+        return origin + Vec{0, -1, -1};
+    }
+    default: {
+        throw std::out_of_range("Invalid index");
+    }
+    }
 }
 
 template <typename V> static inline glm::vec<3, V> idxToOffset(const int idx, const V s, const glm::vec<3, V>& origin) {
@@ -131,136 +165,16 @@ static Vector3 vecToNormal(const Vector3& vec) {
     return Vector3{0.0f, 0.0f, -1.0f};
 }
 
-static uint8_t enumToMask[7] = {
-    0x00, // Default
-    0x01, // PositiveX
-    0x02, // NegativeX
-    0x04, // PositiveY
-    0x08, // NegativeY
-    0x10, // PositiveZ
-    0x20, // NegativeZ
-};
-
-const Matrix4& Grid::getRotationMatrix(const uint8_t rotation) {
-    static std::vector<Matrix4> matrices;
-
-    static std::array<Matrix4, 4> orientationsA = {
-        glm::rotate(glm::radians(0.0f), Vector3{0.0f, 1.0f, 0.0f}),
-        glm::rotate(glm::radians(90.0f), Vector3{0.0f, 1.0f, 0.0f}),
-        glm::rotate(glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f}),
-        glm::rotate(glm::radians(270.0f), Vector3{0.0f, 1.0f, 0.0f}),
-    };
-
-    static std::array<Matrix4, 6> orientationsB = {
-        glm::rotate(glm::radians(0.0f), Vector3{0.0f, 0.0f, 1.0f}),
-        glm::rotate(glm::radians(90.0f), Vector3{0.0f, 0.0f, 1.0f}),
-        glm::rotate(glm::radians(180.0f), Vector3{0.0f, 0.0f, 1.0f}),
-        glm::rotate(glm::radians(270.0f), Vector3{0.0f, 0.0f, 1.0f}),
-        glm::rotate(glm::radians(90.0f), Vector3{1.0f, 0.0f, 0.0f}),
-        glm::rotate(glm::radians(-90.0f), Vector3{1.0f, 0.0f, 0.0f}),
-    };
-
-    if (rotation >= 24) {
-        EXCEPTION("Bad rotation number: {}, must be between [0, 23]", rotation);
-    }
-
-    if (matrices.empty()) {
-        for (auto i = 0; i < 24; i++) {
-            const auto a = i / 6;
-            const auto b = i % 6;
-
-            matrices.push_back(orientationsB.at(b) * orientationsA.at(a));
-        }
-    }
-
-    return matrices.at(rotation);
-}
-
-const Matrix4& Grid::getRotationMatrixInverted(const uint8_t rotation) {
-    static std::vector<Matrix4> matrices;
-
-    if (rotation >= 24) {
-        EXCEPTION("Bad rotation number: {}, must be between [0, 23]", rotation);
-    }
-
-    if (matrices.empty()) {
-        for (auto r = 0; r < 24; r++) {
-            matrices.push_back(glm::inverse(getRotationMatrix(r)));
-        }
-    }
-
-    return matrices.at(rotation);
-}
-
-Grid::Builder::Builder(AssetManager& assetManager) : assetManager(assetManager) {
-}
-
-void Grid::Builder::precompute() {
-    if (Shape::typeNames.size() != shapes.size()) {
-        EXCEPTION("shapeNames.size() != shapes.size()");
-    }
-
-    for (const auto shapeType : Shape::allTypes) {
-        const auto& name = shapeTypeToFileName(shapeType);
-        const auto asset = assetManager.find<AssetShape>(name);
-
-        auto& shapeRotations = shapes.at(shapeType);
-
-        // For all rotations
-        for (size_t r = 0; r < 24; r++) {
-            auto& shapeMasks = shapeRotations.at(r);
-            const auto& rotationMatrix = getRotationMatrix(r);
-
-            const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(rotationMatrix)));
-
-            // For all mask variations
-            for (uint8_t mask = 0; mask < 64; mask++) {
-                auto& shape = shapeMasks.at(mask);
-
-                // For all sides
-                for (const auto& node : asset->getShape().sides) {
-                    if (node.side == Shape::Side::Default) {
-                        EXCEPTION("TODO");
-                    }
-
-                    if ((mask & enumToMask[node.side]) == 0) {
-                        continue;
-                    }
-
-                    const auto vertexOffset = shape.vertices.size();
-                    shape.vertices.reserve(vertexOffset + node.vertices.size());
-                    for (const auto& v : node.vertices) {
-                        shape.vertices.push_back(v);
-                    }
-
-                    const auto indexOffset = shape.indices.size();
-                    shape.indices.reserve(indexOffset + node.indices.size());
-                    for (const auto& i : node.indices) {
-                        shape.indices.push_back(i + vertexOffset);
-                    }
-                }
-
-                for (auto& v : shape.vertices) {
-                    v.position = Vector3{rotationMatrix * Vector4{v.position, 1.0f}};
-                    v.normal = Vector3{transformInverted * Vector4{v.normal, 0.0f}};
-                    v.tangent = Vector4{transformInverted * v.tangent, 0.0f};
-                    // v.tangent = v.tangent;
-                }
-            }
-        }
-    }
-}
-
-void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, RawPrimitiveData& map,
-                          const Vector3& offset) {
+void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
+                 RawPrimitiveData& map, const Vector3& offset) {
     static const Vector3i neighbourOffset[6] = {
         Vector3i{1, 0, 0},  Vector3i{-1, 0, 0}, Vector3i{0, 1, 0},
         Vector3i{0, -1, 0}, Vector3i{0, 0, -1}, Vector3i{0, 0, 1},
     };
 
-    static const Shape::Side neighbourSides[6] = {
-        Shape::Side::PositiveX, Shape::Side::NegativeX, Shape::Side::PositiveY,
-        Shape::Side::NegativeY, Shape::Side::PositiveZ, Shape::Side::NegativeZ,
+    static const VoxelShape::Face neighbourSides[6] = {
+        VoxelShape::Face::PositiveX, VoxelShape::Face::NegativeX, VoxelShape::Face::PositiveY,
+        VoxelShape::Face::NegativeY, VoxelShape::Face::PositiveZ, VoxelShape::Face::NegativeZ,
     };
 
     static const uint8_t neighbourMasks[6] = {
@@ -290,7 +204,8 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
                         continue;
                     }
 
-                    const auto rotated = Vector3{getRotationMatrixInverted(r) * Vector4{neighbourOffset[n], 0.0f}};
+                    const auto rotated =
+                        Vector3{VoxelShapeCache::getRotationMatrixInverted(r) * Vector4{neighbourOffset[n], 0.0f}};
 
                     // Find the correct destination bit
                     auto index = -1;
@@ -321,8 +236,8 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
 
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
 
-    const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data, const ShapePrebuilt& shape,
-                                         const Vector3& pos) {
+    const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data,
+                                         const VoxelShapeCache::ShapePrebuilt& shape, const Vector3& pos) {
         const auto vertexOffset = data.vertices.size();
         data.vertices.reserve(vertexOffset + shape.vertices.size());
         for (const auto& v : shape.vertices) {
@@ -370,7 +285,7 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
                 mask = rotatedMasks[mask][item.rotation];
 
                 if (block->isSingular()) {
-                    const auto& shape = shapes.at(item.shape).at(item.rotation).at(mask);
+                    const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(mask);
                     auto& data = map[&block->getMaterial()];
                     appendShapeVertices(data, shape, posf);
                 } else {
@@ -379,7 +294,7 @@ void Grid::Builder::build(const Voxel* cache, const std::vector<Type>& types, Ra
                         if (!shapeMask) {
                             continue;
                         }
-                        const auto& shape = shapes.at(item.shape).at(item.rotation).at(shapeMask);
+                        const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(shapeMask);
 
                         const auto& material = block->getMaterialForSide(neighbourSides[n]);
 
@@ -404,6 +319,7 @@ Grid::Octree::Octree() {
 
 void Grid::Octree::insert(const Vector3i& pos, const Voxel& voxel) {
     while (isOutside(pos)) {
+        Log::d(CMP, "Expand by one");
         expand(0, 1);
         // Log::d(CMP, "After expand");
         // dump();
@@ -597,19 +513,21 @@ void Grid::Octree::expand(const Index idx, const size_t level) {
     parent.branch.child = badIndex;
     Index lastNewChildIdx = badIndex;
 
-    const auto addChildToParent = [&](Index grandChildIdx) {
+    const auto addChildToParent = [&](const Index grandChildIdx, const int index) {
         // Log::d(CMP, "addChildToParent() grandChildIdx: {}", grandChildIdx);
         auto& newChild = nodes.insert();
         newChild.branch.child = grandChildIdx;
         newChild.branch.next = badIndex;
+        newChild.branch.index = index;
+        Log::d(CMP, "new child: [{}] {}", nodes.indexOf(newChild), newChild.branch.string());
 
         if (nodes.at(idx).branch.child == badIndex) {
             lastNewChildIdx = nodes.indexOf(newChild);
-            nodes.at(idx).branch.child = lastNewChildIdx;
+            nodes.at(idx).branch.child = nodes.indexOf(newChild);
         } else {
             auto& sibling = nodes.at(lastNewChildIdx);
             lastNewChildIdx = nodes.indexOf(newChild);
-            sibling.branch.next = lastNewChildIdx;
+            sibling.branch.next = nodes.indexOf(newChild);
         }
     };
 
@@ -619,17 +537,20 @@ void Grid::Octree::expand(const Index idx, const size_t level) {
         // children.push_back(&child);
 
         Index nextChild;
+        int addChildIndex = 0;
         if (depth - level == 0) {
             nextChild = child.voxel.next;
             child.voxel.next = badIndex;
+            addChildIndex = child.voxel.index;
             child.voxel.index = idxToMove(child.voxel.index);
         } else {
             nextChild = child.branch.next;
             child.branch.next = badIndex;
+            addChildIndex = child.branch.index;
             child.branch.index = idxToMove(child.branch.index);
         }
 
-        addChildToParent(childIdx);
+        addChildToParent(childIdx, addChildIndex);
 
         childIdx = nextChild;
     }
@@ -671,11 +592,11 @@ void Grid::Octree::dump(const Grid::Node& node, size_t level) const {
 
 bool Grid::Octree::isOutside(const Vector3i& pos) const {
     const auto w = getWidth();
-    if (pos.x >= w || pos.x < -w)
+    if (pos.x >= w || pos.x <= -w)
         return true;
-    if (pos.y >= w || pos.y < -w)
+    if (pos.y >= w || pos.y <= -w)
         return true;
-    if (pos.z >= w || pos.z < -w)
+    if (pos.z >= w || pos.z <= -w)
         return true;
     return false;
 }
@@ -684,28 +605,29 @@ int Grid::Octree::getWidth() const {
     return getWidthForLevel(depth);
 }
 
-Grid::Iterator::Iterator(Octree& octree, const size_t idx, size_t level, const Vector3i& origin)
-    : octree(octree), idx(idx), level(level), origin(origin) {
+Grid::Iterator::Iterator(Octree& octree, const size_t idx, size_t level, const Vector3i& origin) :
+    octree{&octree}, idx{idx}, level{level}, origin{origin} {
 
     if (level == 0) {
         pos = origin;
     } else if (idx != badIndex && isVoxel()) {
-        pos = idxToOffset(value().voxel.index, getBranchWidth() / 2.0f, Vector3{origin});
+        pos = idxToOffsetVoxel(value().voxel.index, Vector3{origin});
     } else if (idx != badIndex) {
         pos = idxToOffset(value().branch.index, getBranchWidth() / 2.0f, Vector3{origin});
     }
 }
 
 void Grid::Iterator::next() {
-    if (octree.getDepth() - level == 0) {
-        idx = octree.pool().at(idx).voxel.next;
+    if (octree->getDepth() - level == 0) {
+        idx = octree->pool().at(idx).voxel.next;
     } else {
-        idx = octree.pool().at(idx).branch.next;
+        idx = octree->pool().at(idx).branch.next;
     }
 
     if (idx != badIndex) {
         if (isVoxel()) {
-            pos = idxToOffset(value().voxel.index, getBranchWidth() / 2.0f, Vector3{origin});
+            // pos = idxToOffset(value().voxel.index, getBranchWidth() / 2.0f, Vector3{origin});
+            pos = idxToOffsetVoxel(value().voxel.index, Vector3{origin});
         } else {
             pos = idxToOffset(value().branch.index, getBranchWidth() / 2.0f, Vector3{origin});
         }
@@ -713,13 +635,13 @@ void Grid::Iterator::next() {
 }
 
 Grid::Iterator Grid::Iterator::children() {
-    if (bool(*this) && octree.getDepth() - level > 0) {
-        return Iterator(octree, value().branch.child, level + 1, pos);
+    if (bool(*this) && octree->getDepth() - level > 0) {
+        return Iterator(*octree, value().branch.child, level + 1, pos);
     }
-    return Iterator(octree, badIndex, level + 1, Vector3i{0});
+    return Iterator(*octree, badIndex, level + 1, Vector3i{0});
 }
 
-void Grid::insert(const Vector3i& pos, const AssetBlockPtr& block, const uint8_t rotation, const uint8_t color,
+void Grid::insert(const Vector3i& pos, const BlockPtr& block, const uint8_t rotation, const uint8_t color,
                   const uint8_t shape) {
     const auto type = insertBlock(block);
     Voxel voxel{};
@@ -730,7 +652,7 @@ void Grid::insert(const Vector3i& pos, const AssetBlockPtr& block, const uint8_t
     voxels.insert(pos, voxel);
 }
 
-uint16_t Grid::insertBlock(const AssetBlockPtr& block) {
+uint16_t Grid::insertBlock(const BlockPtr& block) {
     for (size_t i = 0; i < types.size(); i++) {
         auto& type = types.at(i);
         if (type.block == block) {
@@ -746,12 +668,12 @@ uint16_t Grid::insertBlock(const AssetBlockPtr& block) {
     return types.size() - 1;
 }
 
-void Grid::generateMesh(Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map) {
+void Grid::generateMesh(const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
     auto it = voxels.iterate();
-    generateMesh(it, gridBuilder, map);
+    generateMesh(it, voxelShapeCache, map);
 }
 
-void Grid::generateMesh(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map) {
+void Grid::generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
     if (!iterator) {
         return;
     }
@@ -761,10 +683,10 @@ void Grid::generateMesh(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Bu
 
         if (!iterator.isVoxel()) {
             if (iterator.getBranchWidth() <= meshBuildWidth) {
-                generateMeshBlock(iterator, gridBuilder, map);
+                generateMeshBlock(iterator, voxelShapeCache, map);
             } else {
                 auto children = iterator.children();
-                generateMesh(children, gridBuilder, map);
+                generateMesh(children, voxelShapeCache, map);
             }
         }
 
@@ -772,7 +694,7 @@ void Grid::generateMesh(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Bu
     }
 }
 
-void Grid::generateMeshBlock(Iterator& iterator, Grid::Builder& gridBuilder, Grid::Builder::RawPrimitiveData& map) {
+void Grid::generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
     if (!iterator) {
         return;
     }
@@ -788,7 +710,7 @@ void Grid::generateMeshBlock(Iterator& iterator, Grid::Builder& gridBuilder, Gri
     generateMeshCache(children, cache.get(), min);
 
     Log::d(CMP, "generateMeshBlock build min: {}", min);
-    gridBuilder.build(cache.get(), types, map, min);
+    build(voxelShapeCache, cache.get(), types, map, min);
 }
 
 void Grid::generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const {

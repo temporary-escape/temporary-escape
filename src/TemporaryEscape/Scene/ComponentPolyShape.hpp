@@ -1,9 +1,6 @@
 #pragma once
 
-#include "../Assets/AssetImage.hpp"
-#include "../Graphics/Mesh.hpp"
 #include "../Library.hpp"
-#include "../Shaders/ShaderPolyShape.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -33,9 +30,9 @@ public:
         (void)delta;
     }
 
-    const Mesh& getMesh() const {
+    /*const Mesh& getMesh() const {
         return mesh;
-    }
+    }*/
 
     void add(const Vector3& pos, const Color4& color) {
         setDirty(true);
@@ -52,7 +49,7 @@ public:
             return;
         }
 
-        if (!vbo) {
+        /*if (!vbo) {
             vbo = VertexBuffer(VertexBufferType::Array);
         }
 
@@ -64,14 +61,14 @@ public:
             mesh.setPrimitive(PrimitiveType::Triangles);
         }
 
-        mesh.setCount(points.size());
+        mesh.setCount(points.size());*/
         setDirty(false);
     }
 
 private:
     std::vector<Point> points;
-    Mesh mesh{NO_CREATE};
-    VertexBuffer vbo{NO_CREATE};
+    // Mesh mesh{NO_CREATE};
+    // VertexBuffer vbo{NO_CREATE};
 
 public:
     MSGPACK_DEFINE_ARRAY();

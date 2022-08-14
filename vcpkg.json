@@ -7,6 +7,10 @@
       "version>=": "1.2.11#13"
     },
     {
+      "name": "utfcpp",
+      "version>=": "3.2.1"
+    },
+    {
       "name": "glfw3",
       "version>=": "3.3.6"
     },
@@ -33,6 +37,10 @@
     {
       "name": "spirv-cross",
       "version>=": "2021-01-15#2"
+    },
+    {
+      "name": "nuklear",
+      "version>=": "2021-03-18#1"
     },
     {
       "name": "fmt",

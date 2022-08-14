@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/AssetFontFace.hpp"
 #include "../Library.hpp"
 #include "Component.hpp"
 
@@ -12,9 +11,8 @@ public:
     };
 
     ComponentText() = default;
-    explicit ComponentText(Object& object, AssetFontFacePtr fontFace, std::string text, const Color4& color,
-                           const float size)
-        : Component(object), fontFace(std::move(fontFace)), text(std::move(text)), color(color), size(size) {
+    explicit ComponentText(Object& object, std::string text, const Color4& color, const float size) :
+        Component(object), text{std::move(text)}, color{color}, size{size} {
     }
     virtual ~ComponentText() = default;
 
@@ -26,13 +24,13 @@ public:
         (void)delta;
     }
 
-    const AssetFontFacePtr& getFontFace() const {
+    /*const AssetFontFacePtr& getFontFace() const {
         return fontFace;
     }
 
     void setFontFace(AssetFontFacePtr value) {
         fontFace = std::move(value);
-    }
+    }*/
 
     const std::string& getText() const {
         return text;
@@ -82,7 +80,7 @@ public:
     }
 
 private:
-    AssetFontFacePtr fontFace;
+    // AssetFontFacePtr fontFace;
     std::string text;
     Color4 color;
     float size{18.0f};

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/SkyboxRenderer.hpp"
 #include "Component.hpp"
 
 namespace Engine {
@@ -11,9 +10,9 @@ public:
     };
 
     ComponentSkybox() = default;
-    explicit ComponentSkybox(Object& object, uint64_t seed) : Component(object), skybox{}, seed(seed) {
+    explicit ComponentSkybox(Object& object, const Color4& color) : Component{object}, color{color} {
     }
-    explicit ComponentSkybox(Object& object, Skybox skybox) : Component(object), skybox(std::move(skybox)), seed(0U) {
+    explicit ComponentSkybox(Object& object, uint64_t seed) : Component{object}, seed{seed} {
     }
     virtual ~ComponentSkybox() = default;
 
@@ -29,21 +28,26 @@ public:
         return seed;
     }
 
-    const Skybox& getSkybox() const {
-        return skybox;
+    const Color4& getColor() const {
+        return color;
     }
 
-    void recalculate(SkyboxRenderer& skyboxRenderer) {
+    /*const Skybox& getSkybox() const {
+        return skybox;
+    }*/
+
+    /*void recalculate(SkyboxRenderer& skyboxRenderer) {
         if (!skybox.texture) {
             skybox = skyboxRenderer.renderAndFilter(seed);
         }
-    }
+    }*/
 
 private:
-    Skybox skybox;
-    uint64_t seed;
+    uint64_t seed{0};
+    Color4 color;
+    VulkanTexture texture;
 
 public:
-    MSGPACK_DEFINE_ARRAY(seed);
+    MSGPACK_DEFINE_ARRAY(seed, color);
 };
 } // namespace Engine

@@ -6,9 +6,9 @@
 
 using namespace Engine;
 
-Client::Client(const Config& config, ModManager& modManager, Stats& stats, const std::string& address, const int port,
-               const Path& profilePath)
-    : NetworkTcpClient(*this), modManager(modManager), stats(stats), sync(getWorker()) {
+Client::Client(const Config& config, Registry& registry, Stats& stats, const std::string& address, const int port,
+               const Path& profilePath) :
+    NetworkTcpClient{*this}, registry{registry}, stats{stats}, sync{getWorker()} {
 
     if (Fs::exists(profilePath)) {
         localProfile.fromYaml(profilePath);
@@ -47,7 +47,7 @@ void Client::fetchModInfo(Promise<void>& promise) {
     Log::i(CMP, "Fetching server mod info...");
     MessageModsInfo::Request reqModInfo{};
     send(reqModInfo, [&](MessageModsInfo::Response res) {
-        const auto& ourManifests = modManager.getManifests();
+        /*const auto& ourManifests = modManager.getManifests();
 
         for (const auto& manifest : res.manifests) {
             Log::i(CMP, "Checking for server mod: '{}' @{}", manifest.name, manifest.version);
@@ -68,7 +68,7 @@ void Client::fetchModInfo(Promise<void>& promise) {
                                 found->version, manifest.version));
                 break;
             }
-        }
+        }*/
 
         doLogin(promise);
     });
@@ -115,9 +115,10 @@ void Client::handle(MessagePlayerLocationChanged::Response res) {
     scene = std::make_unique<Scene>();
 
     camera = std::make_shared<Entity>();
-    auto cmp = camera->addComponent<ComponentCameraTurntable>();
-    auto userInput = camera->addComponent<ComponentUserInput>(*cmp);
+    auto cmp = camera->addComponent<ComponentCamera>();
+    // auto userInput = camera->addComponent<ComponentUserInput>(*cmp);
     cmp->setProjection(70.0f);
+    cmp->lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene->addEntity(camera);
     scene->setPrimaryCamera(camera);
 
@@ -136,9 +137,10 @@ void Client::handle(MessageSceneEntities::Response res) {
             }
             scene->addEntity(entity);
 
-            if (auto cmp = entity->findComponent<ComponentPlayer>(); cmp != nullptr && cmp->getPlayerId() == playerId) {
-                camera->getComponent<ComponentCameraTurntable>()->follow(entity);
-            }
+            // TODO:
+            /*if (auto cmp = entity->findComponent<ComponentPlayer>(); cmp != nullptr && cmp->getPlayerId() == playerId)
+            { camera->getComponent<ComponentCameraTurntable>()->follow(entity);
+            }*/
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to process scene entities");

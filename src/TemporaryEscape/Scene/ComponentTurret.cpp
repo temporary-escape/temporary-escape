@@ -3,7 +3,7 @@
 using namespace Engine;
 
 void ComponentTurret::update(const float delta) {
-    const auto absoluteTransform = getObject().getAbsoluteTransform();
+    /*const auto absoluteTransform = getObject().getAbsoluteTransform();
 
     // Transform target world position into local coordinate system (to cancel our rotation).
     const auto transformInverted = glm::inverse(absoluteTransform);
@@ -33,5 +33,5 @@ void ComponentTurret::update(const float delta) {
         counter -= delta;
     } else {
         counter = 0.0f;
-    }
+    }*/
 }

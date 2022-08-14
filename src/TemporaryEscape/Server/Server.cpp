@@ -5,9 +5,16 @@
 
 using namespace Engine;
 
-Server::Server(const Config& config, ModManager& modManager, AssetManager& assetManager, TransactionalDatabase& db)
-    : NetworkTcpServer(*this), config(config), modManager(modManager), assetManager(assetManager), db(db),
-      world(config, assetManager, db), generator(config, db, world), tickFlag(true), worker(getWorker()), loader(1) {
+Server::Server(const Config& config, Registry& registry, TransactionalDatabase& db) :
+    NetworkTcpServer(*this),
+    config(config),
+    registry(registry),
+    db(db),
+    world(config, registry, db),
+    generator(config, db, world),
+    tickFlag(true),
+    worker(getWorker()),
+    loader(1) {
 
     NetworkTcpServer<Server, ServerSink>::bind(config.serverPort);
     tickThread = std::thread(&Server::tick, this);
@@ -211,8 +218,8 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
         auto it = sectors.map.find(sector.id);
         if (it == sectors.map.end()) {
             try {
-                instance = std::make_shared<Sector>(config, world, assetManager, db, sector.galaxyId, sector.systemId,
-                                                    sector.id);
+                instance =
+                    std::make_shared<Sector>(config, world, registry, db, sector.galaxyId, sector.systemId, sector.id);
                 it = sectors.map.insert(std::make_pair(sector.id, instance)).first;
             } catch (...) {
                 EXCEPTION_NESTED("Failed to start sector '{}'", sector.id);
@@ -236,11 +243,11 @@ void Server::handle(const PeerPtr& peer, MessageLogin::Request req, MessageLogin
 }
 
 void Server::handle(const PeerPtr& peer, MessageModsInfo::Request req, MessageModsInfo::Response& res) {
-    const auto& manifests = modManager.getManifests();
+    /*const auto& manifests = modManager.getManifests();
     res.manifests.reserve(manifests.size());
     for (const auto& manifest : manifests) {
         res.manifests.push_back(*manifest);
-    }
+    }*/
 }
 
 void Server::handle(const PeerPtr& peer, MessagePlayerLocation::Request req, MessagePlayerLocation::Response& res) {

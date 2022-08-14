@@ -1,14 +1,120 @@
 #include "Scene.hpp"
+#include "../Assets/Registry.hpp"
 
 #define CMP "Scene"
 
 using namespace Engine;
 
-Scene::Scene(EventListener& eventListener)
-    : eventListener(eventListener), nextId(0), systems{EntityComponentHelper::generateComponentSystemsMap()} {
+Scene::Scene(EventListener& eventListener) :
+    eventListener{eventListener}, nextId{0}, systems{EntityComponentHelper::generateComponentSystemsMap()} {
 }
 
 Scene::~Scene() = default;
+
+void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines,
+                      const VoxelShapeCache& voxelShapeCache) {
+    const auto camera = getPrimaryCamera();
+    camera->render(vulkan, viewport);
+
+    {
+        auto& system = getComponentSystem<ComponentGrid>();
+
+        for (auto& component : system) {
+            component->recalculate(vulkan, voxelShapeCache);
+        }
+    }
+
+    {
+        if (!pipelines.grid) {
+            EXCEPTION("Scene shader grid not initialized");
+        }
+
+        auto& system = getComponentSystem<ComponentGrid>();
+
+        vulkan.bindPipeline(pipelines.grid);
+        vulkan.bindUniformBuffer(camera->getUbo(), 0);
+        vulkan.setDepthStencilState(true, true);
+        VulkanBlendState blendState{};
+        blendState.blendEnable = true;
+        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+        vulkan.setBlendState({blendState});
+
+        for (auto& component : system) {
+            if (!component->getObject().isVisible()) {
+                continue;
+            }
+            component->render(vulkan, viewport, pipelines.debug);
+        }
+    }
+}
+
+void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines) {
+    const auto camera = getPrimaryCamera();
+
+    {
+        if (!pipelines.debug) {
+            EXCEPTION("Scene shader debug not initialized");
+        }
+
+        auto& system = getComponentSystem<ComponentDebug>();
+
+        vulkan.bindPipeline(pipelines.debug);
+        vulkan.bindUniformBuffer(camera->getUbo(), 0);
+        vulkan.setDepthStencilState(true, true);
+        VulkanBlendState blendState{};
+        blendState.blendEnable = true;
+        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+        vulkan.setBlendState({blendState});
+
+        for (auto& component : system) {
+            if (!component->getObject().isVisible()) {
+                continue;
+            }
+            component->render(vulkan, viewport, pipelines.debug);
+        }
+    }
+
+    {
+        if (!pipelines.wireframe) {
+            EXCEPTION("Scene shader wireframe not initialized");
+        }
+
+        auto& system = getComponentSystem<ComponentWireframe>();
+
+        vulkan.bindPipeline(pipelines.wireframe);
+        vulkan.bindUniformBuffer(camera->getUbo(), 0);
+        vulkan.setDepthStencilState(true, true);
+        VulkanBlendState blendState{};
+        blendState.blendEnable = true;
+        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+        vulkan.setBlendState({blendState});
+
+        for (auto& component : system) {
+            if (!component->getObject().isVisible()) {
+                continue;
+            }
+            component->render(vulkan, viewport, pipelines.wireframe);
+        }
+    }
+}
 
 void Scene::addEntity(EntityPtr entity) {
     if (entity->getId() == 0) {
@@ -60,7 +166,7 @@ void Scene::removeEntity(const EntityPtr& entity) {
     entity->clearChildren();
     entity->setParent(nullptr);
     if (entity->hasComponent<ComponentScript>()) {
-        entity->getComponent<ComponentScript>()->clear();
+        // entity->getComponent<ComponentScript>()->clear();
     }
 
     entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
@@ -102,14 +208,9 @@ void Scene::addBullet(const Vector3& pos, const Vector3& dir) {
 }
 
 void Scene::update(const float delta) {
-    auto& systemCameraTurntable = getComponentSystem<ComponentCameraTurntable>();
-    for (auto& component : systemCameraTurntable) {
-        component->update();
-    }
-
-    auto& systemCameraTop = getComponentSystem<ComponentCameraTop>();
-    for (auto& component : systemCameraTop) {
-        component->update();
+    auto& systemCamera = getComponentSystem<ComponentCamera>();
+    for (auto& component : systemCamera) {
+        component->update(delta);
     }
 
     auto& systemShipControl = getComponentSystem<ComponentShipControl>();
@@ -140,15 +241,11 @@ void Scene::update(const float delta) {
     }
 }
 
-std::shared_ptr<Camera> Scene::getPrimaryCamera() const {
+std::shared_ptr<ComponentCamera> Scene::getPrimaryCamera() const {
     if (auto ptr = primaryCamera.lock(); ptr != nullptr) {
-        const auto top = ptr->findComponent<ComponentCameraTop>();
-        if (top) {
-            return top;
-        }
-        const auto turntable = ptr->findComponent<ComponentCameraTurntable>();
-        if (turntable) {
-            return turntable;
+        const auto camera = ptr->findComponent<ComponentCamera>();
+        if (camera) {
+            return camera;
         }
     }
 
@@ -164,44 +261,22 @@ EntityPtr Scene::getSkybox() {
     return nullptr;
 }
 
-void Scene::eventMouseMoved(const Vector2i& pos) {
+void Scene::eventUserInput(const UserInput::Event& event) {
     auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
     for (auto& component : componentSystemUserInput) {
-        component->eventMouseMoved(pos);
+        component->eventUserInput(event);
     }
 }
 
-void Scene::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMousePressed(pos, button);
+std::tuple<Vector3, Vector3> Scene::screenToWorld(const Vector2& mousePos, float length) {
+    const auto camera = getPrimaryCamera();
+    if (!camera) {
+        EXCEPTION("Error during screenToWorld no camera in scene");
     }
-}
 
-void Scene::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMouseReleased(pos, button);
-    }
-}
-
-void Scene::eventMouseScroll(const int xscroll, const int yscroll) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMouseScroll(xscroll, yscroll);
-    }
-}
-
-void Scene::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventKeyPressed(key, modifiers);
-    }
-}
-
-void Scene::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventKeyReleased(key, modifiers);
-    }
+    const auto x = static_cast<float>(camera->getViewport().x) - mousePos.x; // WTF?
+    const auto y = mousePos.y;
+    const auto ray = camera->screenToWorld({x, y}) * -length;
+    const auto eyes = camera->getEyesPos();
+    return {eyes, eyes + ray};
 }

@@ -56,8 +56,16 @@ PipelineCache::~PipelineCache() {
         vkDestroyPipelineCache(m_device->GetHandle(), m_vulkanPipelineCache, nullptr);
 }
 
-VkResult PipelineCache::GetHandle(const Pipeline* pipeline, const RenderPass* pRenderPass, const GraphicsState* pState,
-                                  VkPipeline* pHandle) {
+void PipelineCache::EraseHash(PipelinePermutationHash hash) {
+    auto it = m_allPipelinesCache.find(hash);
+    if (it != m_allPipelinesCache.end()) {
+        vkDestroyPipeline(m_device->GetHandle(), it->second, nullptr);
+        m_allPipelinesCache.erase(hash);
+    }
+}
+
+std::pair<VkResult, GraphicsStateHash> PipelineCache::GetHandle(const Pipeline* pipeline, const RenderPass* pRenderPass,
+                                                                const GraphicsState* pState, VkPipeline* pHandle) {
     // Get the hash for the pipeline (compute pipeline hashes are only a single 64-bit entry with the memory address of
     // the Pipeline class object).
     GraphicsStateHash hash;
@@ -74,7 +82,7 @@ VkResult PipelineCache::GetHandle(const Pipeline* pipeline, const RenderPass* pR
     if (it != m_allPipelinesCache.end()) {
         *pHandle = it->second;
         m_spinLock.Unlock();
-        return VK_SUCCESS;
+        return {VK_SUCCESS, {}};
     } else {
         // Unlock access to cache while pipeline is created.
         m_spinLock.Unlock();
@@ -92,13 +100,13 @@ VkResult PipelineCache::GetHandle(const Pipeline* pipeline, const RenderPass* pR
 
         // Add the pipeline object handle to the cache if creation was successful.
         if (result == VK_SUCCESS)
-            m_allPipelinesCache.emplace(std::move(hash), *pHandle);
+            m_allPipelinesCache.emplace(hash, *pHandle);
 
         // Release access to cache.
         m_spinLock.Unlock();
 
         // Return the result.
-        return result;
+        return {result, hash};
     }
 }
 

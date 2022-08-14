@@ -3,7 +3,7 @@ project(TemporaryEscape VERSION "${PROJECT_VERSION}")
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp ${CMAKE_CURRENT_LIST_DIR}/*.h)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-target_compile_definitions(${PROJECT_NAME} PUBLIC GAME_VERSION=${VERSION_STRING})
+target_compile_definitions(${PROJECT_NAME} PUBLIC GAME_VERSION=${VERSION_STRING} GLM_FORCE_LEFT_HANDED=1)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         glm::glm
@@ -16,6 +16,8 @@ target_link_libraries(${PROJECT_NAME}
         Wren
         WrenBind17
         PRIVATE
+        utf8cpp
+        nuklear
         glfw
         Vulkan::Vulkan
         unofficial::vulkan-memory-allocator::vulkan-memory-allocator
@@ -24,7 +26,6 @@ target_link_libraries(${PROJECT_NAME}
         Png
         asio
         asio::asio
-        Nuklear
         Stb
         RocksDB::rocksdb
         OpenSSL::SSL OpenSSL::Crypto
@@ -44,6 +45,7 @@ endif ()
 # Library definitions
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         ENGINE_EXPORTS=1
+        ENGINE_SOURCE_PATH="${CMAKE_CURRENT_LIST_DIR}"
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
         _CRT_SECURE_NO_WARNINGS=1)
 

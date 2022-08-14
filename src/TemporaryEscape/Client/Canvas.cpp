@@ -62,8 +62,8 @@ void main()
 
 Canvas::Canvas(VulkanDevice& vulkan) : vulkan{vulkan} {
     shader = vulkan.createPipeline({
-        {fragmentShaderSource, ShaderType::Fragment},
-        {vertexShaderSource, ShaderType::Vertex},
+        {"", fragmentShaderSource, ShaderType::Fragment},
+        {"", vertexShaderSource, ShaderType::Vertex},
     });
 
     vertices.reserve(64 * 1024);
@@ -85,8 +85,8 @@ Canvas::Canvas(VulkanDevice& vulkan) : vulkan{vulkan} {
     });
 
     VulkanTexture::Descriptor textureDesc{};
-    textureDesc.format = VulkanTexture::Format::RGBA8;
-    textureDesc.type = VulkanTexture::Type::Texture2D;
+    textureDesc.format = VulkanTexture::Format::VK_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
     textureDesc.size = {4, 4};
     defaultTexture = vulkan.createTexture(textureDesc);
 
@@ -114,7 +114,7 @@ void Canvas::end() {
     vbo.unmap();
 
     vulkan.bindPipeline(shader);
-    vulkan.bindUniformBuffer(ubo);
+    vulkan.bindUniformBuffer(ubo, 0);
     vulkan.setDepthStencilState(false, false);
     VulkanBlendState blendState{};
     blendState.blendEnable = true;
@@ -126,7 +126,7 @@ void Canvas::end() {
     blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
     blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
     vulkan.setBlendState({blendState});
-    vulkan.bindVertexBuffer(vbo);
+    vulkan.bindVertexBuffer(vbo, 0);
     vulkan.bindVertexInputFormat(vboFormat);
 
     for (const auto& cmd : commands) {
@@ -207,7 +207,8 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const Color4& 
     cmd.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 }
 
-void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const Color4& color) {
+void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const float height,
+                  const Color4& color) {
     const auto start = vertices.size();
 
     auto it = text.c_str();
@@ -215,6 +216,8 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
 
     size_t total = 0;
     auto pen = pos /* + Vector2{0.0f, font.getSize()}*/;
+
+    const auto scale = height / font.getSize();
 
     while (it < end) {
         const auto code = utf8::next(it, end);
@@ -230,7 +233,7 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
         auto& v4 = vertices.emplace_back();
         auto& v5 = vertices.emplace_back();
 
-        v0.pos = p + Vector2{0.0f, -glyph.size.y};
+        v0.pos = p + Vector2{0.0f, -glyph.size.y * scale};
         v0.color = color;
         v0.uv = Vector2{glyph.uv.x, glyph.uv.y};
         v0.mode.x = 1.0f;
@@ -240,7 +243,7 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
         v1.uv = Vector2{glyph.uv.x, glyph.uv.y + glyph.st.y};
         v1.mode.x = 1.0f;
 
-        v2.pos = p + Vector2{glyph.size.x, -glyph.size.y};
+        v2.pos = p + Vector2{glyph.size.x * scale, -glyph.size.y * scale};
         v2.color = color;
         v2.uv = Vector2{glyph.uv.x + glyph.st.x, glyph.uv.y};
         v2.mode.x = 1.0f;
@@ -248,12 +251,12 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
         v3 = v2;
         v4 = v1;
 
-        v5.pos = p + Vector2{glyph.size.x, 0.0f};
+        v5.pos = p + Vector2{glyph.size.x * scale, 0.0f};
         v5.color = color;
         v5.uv = Vector2{glyph.uv.x + glyph.st.x, glyph.uv.y + glyph.st.y};
         v5.mode.x = 1.0f;
 
-        pen += Vector2{glyph.advance, 0.0f};
+        pen += Vector2{glyph.advance * scale, 0.0f};
     }
 
     auto& cmd = commands.emplace_back();

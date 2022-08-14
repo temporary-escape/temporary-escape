@@ -21,54 +21,66 @@
 //
 #pragma once
 
+#include "VEZ.h"
+#include <map>
 #include <queue>
 #include <tuple>
-#include <map>
-#include "VEZ.h"
 
-namespace vez
-{
-    class Device;
-    class CommandBuffer;
+namespace vez {
+class Device;
+class CommandBuffer;
 
-    class Queue
-    {
-    public:
-        Queue(Device* device, VkQueue queue, uint32_t queueFamilyIndex, uint32_t index, const VkQueueFamilyProperties& propertiesd);
+class Queue {
+public:
+    Queue(Device* device, VkQueue queue, uint32_t queueFamilyIndex, uint32_t index,
+          const VkQueueFamilyProperties& propertiesd);
+    Queue(const Queue&) = delete;
+    Queue& operator=(const Queue&) = delete;
+    ~Queue();
 
-        Device* GetDevice() const { return m_device; }
+    Device* GetDevice() const {
+        return m_device;
+    }
 
-        VkQueue GetHandle() const { return m_handle; }
+    VkQueue GetHandle() const {
+        return m_handle;
+    }
 
-        uint32_t GetFamilyIndex() const { return m_queueFamilyIndex; }
+    uint32_t GetFamilyIndex() const {
+        return m_queueFamilyIndex;
+    }
 
-        uint32_t GetIndex() const { return m_index; }
+    uint32_t GetIndex() const {
+        return m_index;
+    }
 
-        VkQueueFlags GetFlags() const { return m_properties.queueFlags; }
+    VkQueueFlags GetFlags() const {
+        return m_properties.queueFlags;
+    }
 
-        VkResult Submit(uint32_t submitCount, const VezSubmitInfo* pSubmits, VkFence* pFence);
+    VkResult Submit(uint32_t submitCount, const VezSubmitInfo* pSubmits, VkFence* pFence);
 
-        VkResult Present(const VezPresentInfo* pPresentInfo);
+    VkResult Present(const VezPresentInfo* pPresentInfo);
 
-        VkResult WaitIdle();
+    VkResult WaitIdle();
 
-    private:
-        VkResult AcquireCommandBuffer(CommandBuffer** pCommandBuffer);
+private:
+    VkResult AcquireCommandBuffer(CommandBuffer** pCommandBuffer);
 
-        Device* m_device = nullptr;
-        VkQueue m_handle = VK_NULL_HANDLE;
-        uint32_t m_queueFamilyIndex = 0;
-        uint32_t m_index = 0;
-        VkQueueFamilyProperties m_properties;
+    Device* m_device = nullptr;
+    VkQueue m_handle = VK_NULL_HANDLE;
+    uint32_t m_queueFamilyIndex = 0;
+    uint32_t m_index = 0;
+    VkQueueFamilyProperties m_properties;
 
-        // The purpose of this queue is to reuse command buffers by checking the fence status of the submission.
-        // Each fence has a list of waitSemaphores it is responsible for releasing back to the SyncPrimitivesPool instance.
-        std::queue<std::tuple<CommandBuffer*, VkFence>> m_presentCmdBuffers;
+    // The purpose of this queue is to reuse command buffers by checking the fence status of the submission.
+    // Each fence has a list of waitSemaphores it is responsible for releasing back to the SyncPrimitivesPool instance.
+    std::queue<std::tuple<CommandBuffer*, VkFence>> m_presentCmdBuffers;
 
-        // The final vkQueuePresent call has a single waitSemaphore, which must be released back to the SyncPrimitivesPool.
-        // Since vkQueuePresent does not signal a fence, the list of swapchains and their indices will be used as a hash to determine
-        // when to release the waitSemaphores.
-        typedef std::vector<uint64_t> PresentHash;
-        std::map<PresentHash, VkSemaphore> m_presentWaitSemaphores;
-    };
-}
+    // The final vkQueuePresent call has a single waitSemaphore, which must be released back to the SyncPrimitivesPool.
+    // Since vkQueuePresent does not signal a fence, the list of swapchains and their indices will be used as a hash to
+    // determine when to release the waitSemaphores.
+    typedef std::vector<uint64_t> PresentHash;
+    std::map<PresentHash, VkSemaphore> m_presentWaitSemaphores;
+};
+} // namespace vez

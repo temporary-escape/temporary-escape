@@ -1,27 +1,18 @@
 #pragma once
 
-#include "../Platform/Enums.hpp"
+#include "../Input/UserInput.hpp"
+#include "../Vulkan/Enums.hpp"
 #include "Component.hpp"
 
 namespace Engine {
-class UserInputHandler {
-public:
-    virtual void eventMouseMoved(const Vector2i& pos) = 0;
-    virtual void eventMousePressed(const Vector2i& pos, MouseButton button) = 0;
-    virtual void eventMouseReleased(const Vector2i& pos, MouseButton button) = 0;
-    virtual void eventMouseScroll(int xscroll, int yscroll) = 0;
-    virtual void eventKeyPressed(Key key, Modifiers modifiers) = 0;
-    virtual void eventKeyReleased(Key key, Modifiers modifiers) = 0;
-};
-
-class ENGINE_API ComponentUserInput : public Component {
+class ENGINE_API ComponentUserInput : public Component, UserInput::Handler {
 public:
     struct Delta {
         MSGPACK_DEFINE_ARRAY();
     };
 
     ComponentUserInput() = default;
-    explicit ComponentUserInput(Object& object, UserInputHandler& handler) : Component(object), handler(&handler) {
+    explicit ComponentUserInput(Object& object, UserInput::Handler& handler) : Component(object), handler(&handler) {
     }
     virtual ~ComponentUserInput() = default;
 
@@ -33,39 +24,9 @@ public:
         (void)delta;
     }
 
-    void eventMouseMoved(const Vector2i& pos) {
+    void eventUserInput(const UserInput::Event& event) override {
         if (handler && !disable) {
-            handler->eventMouseMoved(pos);
-        }
-    }
-
-    void eventMousePressed(const Vector2i& pos, MouseButton button) {
-        if (handler && !disable) {
-            handler->eventMousePressed(pos, button);
-        }
-    }
-
-    void eventMouseReleased(const Vector2i& pos, MouseButton button) {
-        if (handler && !disable) {
-            handler->eventMouseReleased(pos, button);
-        }
-    }
-
-    void eventMouseScroll(int xscroll, int yscroll) {
-        if (handler && !disable) {
-            handler->eventMouseScroll(xscroll, yscroll);
-        }
-    }
-
-    void eventKeyPressed(Key key, Modifiers modifiers) {
-        if (handler && !disable) {
-            handler->eventKeyPressed(key, modifiers);
-        }
-    }
-
-    void eventKeyReleased(Key key, Modifiers modifiers) {
-        if (handler && !disable) {
-            handler->eventKeyReleased(key, modifiers);
+            handler->eventUserInput(event);
         }
     }
 
@@ -78,7 +39,7 @@ public:
     }
 
 private:
-    UserInputHandler* handler{nullptr};
+    UserInput::Handler* handler{nullptr};
     bool disable{false};
 
 public:
