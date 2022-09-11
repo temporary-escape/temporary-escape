@@ -5,11 +5,25 @@
 using namespace Engine;
 
 Application::Application(const Config& config) :
-    VulkanWindow(config.windowName, {config.windowWidth, config.windowHeight}),
+    VulkanWindow(config, config.windowName, {config.windowWidth, config.windowHeight}),
     config{config},
     renderer{config, *this, rendererPipelines},
     canvas{*this},
     font{*this, config.fontsPath, "iosevka-aile", 42.0f} {
+
+    shaderQueue.push([this]() {
+        rendererPipelines.brdf = createPipeline({
+            {this->config.shadersPath / "brdf.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "brdf.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.copy = createPipeline({
+            {this->config.shadersPath / "pass-copy.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-copy.vert", "", ShaderType::Vertex},
+        });
+    });
 
     shaderQueue.push([this]() {
         rendererPipelines.pbr = createPipeline({
@@ -26,6 +40,41 @@ Application::Application(const Config& config) :
     });
 
     shaderQueue.push([this]() {
+        rendererPipelines.fxaa = createPipeline({
+            {this->config.shadersPath / "pass-fxaa.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-fxaa.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.ssao = createPipeline({
+            {this->config.shadersPath / "pass-ssao.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-ssao.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.bloomExtract = createPipeline({
+            {this->config.shadersPath / "pass-bloom-extract.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-bloom-extract.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.bloomBlur = createPipeline({
+            {this->config.shadersPath / "pass-bloom-blur.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-bloom-blur.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
+        rendererPipelines.bloomCombine = createPipeline({
+            {this->config.shadersPath / "pass-bloom-combine.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "pass-bloom-combine.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.push([this]() {
         scenePipelines.debug = createPipeline({
             {this->config.shadersPath / "component-debug.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-debug.vert", "", ShaderType::Vertex},
@@ -35,7 +84,7 @@ Application::Application(const Config& config) :
     shaderQueue.push([this]() {
         scenePipelines.grid = createPipeline({
             {this->config.shadersPath / "component-grid.frag", "", ShaderType::Fragment},
-            {this->config.shadersPath / "component-grid.geom", "", ShaderType::Geometry},
+            //{this->config.shadersPath / "component-grid.geom", "", ShaderType::Geometry},
             {this->config.shadersPath / "component-grid.vert", "", ShaderType::Vertex},
         });
     });
@@ -118,11 +167,20 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     renderer.begin();
     if (game) {
         try {
-            renderer.render(viewport, *game);
+            game->render(viewport, renderer);
         } catch (...) {
-            EXCEPTION_NESTED("Something went wrong during render frame");
+            EXCEPTION_NESTED("Render frame caught exception");
+        }
+
+        // renderer.renderPassFront(false);
+
+        try {
+            game->renderCanvas(viewport);
+        } catch (...) {
+            EXCEPTION_NESTED("Render canvas caught exception");
         }
     } else {
+        renderer.renderPassFront(true);
         renderStatus(viewport);
     }
     renderer.end();
@@ -184,4 +242,10 @@ void Application::eventKeyReleased(Key key, Modifiers modifiers) {
 }
 
 void Application::eventWindowResized(const Vector2i& size) {
+}
+
+void Application::eventCharTyped(uint32_t code) {
+    if (game) {
+        game->eventCharTyped(code);
+    }
 }

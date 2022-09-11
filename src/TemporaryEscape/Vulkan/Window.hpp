@@ -18,5 +18,6 @@ public:
     virtual void eventKeyPressed(Key key, Modifiers modifiers) = 0;
     virtual void eventKeyReleased(Key key, Modifiers modifiers) = 0;
     virtual void eventWindowResized(const Vector2i& size) = 0;
+    virtual void eventCharTyped(uint32_t code) = 0;
 };
 } // namespace Engine

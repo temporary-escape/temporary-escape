@@ -21,7 +21,7 @@ Game::~Game() {
 
 void Game::update(float deltaTime) {
     if (!viewBuild) {
-        viewBuild = std::make_unique<ViewBuild>(config, vulkan, scenePipelines, registry, canvas, nuklear);
+        viewBuild = std::make_unique<ViewBuild>(config, vulkan, scenePipelines, registry, canvas, font, nuklear);
         view = viewBuild.get();
     }
 
@@ -30,15 +30,9 @@ void Game::update(float deltaTime) {
     }
 }
 
-void Game::renderPbr(const Vector2i& viewport) {
+void Game::render(const Vector2i& viewport, Renderer& renderer) {
     if (view) {
-        view->renderPbr(viewport);
-    }
-}
-
-void Game::renderFwd(const Vector2i& viewport) {
-    if (view) {
-        view->renderFwd(viewport);
+        view->render(viewport, renderer);
     }
 }
 
@@ -106,4 +100,8 @@ void Game::eventKeyReleased(Key key, Modifiers modifiers) {
 }
 
 void Game::eventWindowResized(const Vector2i& size) {
+}
+
+void Game::eventCharTyped(uint32_t code) {
+    nuklear.eventCharTyped(code);
 }

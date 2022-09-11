@@ -104,12 +104,14 @@ int main(int argc, char** argv) {
         config.wrenPaths = {config.assetsPath.string()};
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";
+        config.shaderCachePath = config.userdataPath / "Shaders";
         config.shadersPath = rootPath / "shaders";
         config.fontsPath = rootPath / "fonts";
         config.shapesPath = rootPath / "shapes";
 
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
+        std::filesystem::create_directories(config.shaderCachePath);
 
         {
             Application window(config);

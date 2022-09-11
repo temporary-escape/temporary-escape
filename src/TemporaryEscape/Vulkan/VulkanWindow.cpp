@@ -109,11 +109,26 @@ static Key toKey(int key) {
     case GLFW_KEY_LEFT_CONTROL: {
         return Key::LeftControl;
     }
+    case GLFW_KEY_RIGHT_CONTROL: {
+        return Key::RightControl;
+    }
     case GLFW_KEY_DELETE: {
         return Key::Delete;
     }
     case GLFW_KEY_LEFT_SHIFT: {
         return Key::LeftShift;
+    }
+    case GLFW_KEY_RIGHT_SHIFT: {
+        return Key::RightShift;
+    }
+    case GLFW_KEY_BACKSPACE: {
+        return Key::Backspace;
+    }
+    case GLFW_KEY_ENTER: {
+        return Key::Enter;
+    }
+    case GLFW_KEY_TAB: {
+        return Key::Tab;
     }
     default: {
         return Key::None;
@@ -181,8 +196,9 @@ static void errorCallback(const int error, const char* description) {
     Log::e(CMP, "{}", description);
 }
 
-VulkanWindow::VulkanWindow(const std::string& name, const Vector2i& size, bool enableValidationLayers) :
-    currentWindowSize(size) {
+VulkanWindow::VulkanWindow(const Config& config, const std::string& name, const Vector2i& size,
+                           bool enableValidationLayers) :
+    VulkanDevice{config}, currentWindowSize{size} {
     const auto standardValidationFound = getValidationLayerSupported();
 
     glfwSetErrorCallback(errorCallback);
@@ -234,7 +250,8 @@ VulkanWindow::VulkanWindow(const std::string& name, const Vector2i& size, bool e
     glfwSetCursorPosCallback(window, &mouseMovedCallback);
     glfwSetMouseButtonCallback(window, &mouseButtonCallback);
     glfwSetScrollCallback(window, &mouseScrollCallback);
-    glfwSetWindowSizeCallback(window, windowSizeCallback);
+    glfwSetWindowSizeCallback(window, &windowSizeCallback);
+    glfwSetCharCallback(window, &charCallback);
 
     // Display the window.
     glfwShowWindow(window);
@@ -328,4 +345,9 @@ void VulkanWindow::windowSizeCallback(GLFWwindow* window, int width, int height)
     const Vector2i size = {width, height};
 
     Log::d(CMP, "windowSizeCallback new size: {}", size);
+}
+
+void VulkanWindow::charCallback(GLFWwindow* window, unsigned int codepoint) {
+    auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
+    self.eventCharTyped(codepoint);
 }

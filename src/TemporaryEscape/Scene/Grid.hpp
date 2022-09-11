@@ -190,7 +190,7 @@ public:
     };
 
     struct BlocksData {
-        std::vector<VoxelShape::Vertex> vertices;
+        std::vector<VoxelShape::VertexFinal> vertices;
         std::vector<uint32_t> indices;
     };
 

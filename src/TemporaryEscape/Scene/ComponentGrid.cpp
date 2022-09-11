@@ -52,7 +52,7 @@ void ComponentGrid::recalculate(VulkanDevice& vulkan, const VoxelShapeCache& vox
 
         primitive.material = material;
 
-        const auto vboSize = data.vertices.size() * sizeof(VoxelShape::Vertex);
+        const auto vboSize = data.vertices.size() * sizeof(VoxelShape::VertexFinal);
         primitive.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic, vboSize);
         primitive.vbo.subData(data.vertices.data(), 0, vboSize);
 
@@ -66,7 +66,8 @@ void ComponentGrid::recalculate(VulkanDevice& vulkan, const VoxelShapeCache& vox
                 {
                     {0, 0, VulkanVertexInputFormat::Format::Vec3},
                     {1, 0, VulkanVertexInputFormat::Format::Vec3},
-                    {2, 0, VulkanVertexInputFormat::Format::Vec4},
+                    {2, 0, VulkanVertexInputFormat::Format::Vec2},
+                    {3, 0, VulkanVertexInputFormat::Format::Vec4},
                 },
             },
         });
@@ -82,8 +83,8 @@ void ComponentGrid::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulka
         return;
     }
 
-    const auto transform = getObject().getAbsoluteTransform();
-    const auto transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
+    const Matrix4 transform = getObject().getAbsoluteTransform();
+    const Matrix3 transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
     vulkan.pushConstant(0, transform);
     vulkan.pushConstant(sizeof(Matrix4), transformInverted);
 

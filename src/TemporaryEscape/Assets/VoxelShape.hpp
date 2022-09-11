@@ -8,13 +8,20 @@
 
 namespace Engine {
 struct ENGINE_API VoxelShape {
-    struct Vertex {
+    struct VertexCached {
         Vector3 position;
         Vector3 normal;
+    };
+
+    struct VertexFinal {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 texCoords;
         Vector4 tangent;
     };
 
-    static_assert(sizeof(Vertex) == sizeof(Vector3) * 2 + sizeof(Vector4), "struct Vertex must be tightly packed");
+    static_assert(sizeof(VertexCached) == sizeof(float) * 6, "struct Vertex must be tightly packed");
+    static_assert(sizeof(VertexFinal) == sizeof(float) * 12, "struct VertexFinal must be tightly packed");
 
     enum Face : size_t {
         Default = 0,
@@ -61,7 +68,7 @@ struct ENGINE_API VoxelShape {
 
     struct Node {
         Face side = Face::Default;
-        std::vector<Vertex> vertices;
+        std::vector<VertexCached> vertices;
         std::vector<uint16_t> indices;
 
         operator bool() const {

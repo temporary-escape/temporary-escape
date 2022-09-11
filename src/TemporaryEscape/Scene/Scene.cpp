@@ -5,14 +5,24 @@
 
 using namespace Engine;
 
-Scene::Scene(EventListener& eventListener) :
-    eventListener{eventListener}, nextId{0}, systems{EntityComponentHelper::generateComponentSystemsMap()} {
+Scene::Scene(const VoxelShapeCache* voxelShapeCache, Pipelines* pipelines, EventListener& eventListener) :
+    voxelShapeCache{voxelShapeCache},
+    pipelines{pipelines},
+    eventListener{eventListener},
+    nextId{0},
+    systems{EntityComponentHelper::generateComponentSystemsMap()} {
 }
 
 Scene::~Scene() = default;
 
-void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines,
-                      const VoxelShapeCache& voxelShapeCache) {
+void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
+    if (!pipelines) {
+        EXCEPTION("Scene shaders not initialized");
+    }
+    if (!voxelShapeCache) {
+        EXCEPTION("Scene voxel shape cache not initialized");
+    }
+
     const auto camera = getPrimaryCamera();
     camera->render(vulkan, viewport);
 
@@ -20,22 +30,22 @@ void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines&
         auto& system = getComponentSystem<ComponentGrid>();
 
         for (auto& component : system) {
-            component->recalculate(vulkan, voxelShapeCache);
+            component->recalculate(vulkan, *voxelShapeCache);
         }
     }
 
     {
-        if (!pipelines.grid) {
+        if (!pipelines->grid) {
             EXCEPTION("Scene shader grid not initialized");
         }
 
         auto& system = getComponentSystem<ComponentGrid>();
 
-        vulkan.bindPipeline(pipelines.grid);
+        vulkan.bindPipeline(pipelines->grid);
         vulkan.bindUniformBuffer(camera->getUbo(), 0);
         vulkan.setDepthStencilState(true, true);
         VulkanBlendState blendState{};
-        blendState.blendEnable = true;
+        blendState.blendEnable = false;
         blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
         blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
         blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
@@ -43,28 +53,32 @@ void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines&
         blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
         blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
         blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-        vulkan.setBlendState({blendState});
+        vulkan.setBlendState({blendState, blendState, blendState, blendState});
 
         for (auto& component : system) {
             if (!component->getObject().isVisible()) {
                 continue;
             }
-            component->render(vulkan, viewport, pipelines.debug);
+            component->render(vulkan, viewport, pipelines->grid);
         }
     }
 }
 
-void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines) {
+void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
+    if (!pipelines) {
+        EXCEPTION("Scene shaders not initialized");
+    }
+
     const auto camera = getPrimaryCamera();
 
     {
-        if (!pipelines.debug) {
+        if (!pipelines->debug) {
             EXCEPTION("Scene shader debug not initialized");
         }
 
         auto& system = getComponentSystem<ComponentDebug>();
 
-        vulkan.bindPipeline(pipelines.debug);
+        vulkan.bindPipeline(pipelines->debug);
         vulkan.bindUniformBuffer(camera->getUbo(), 0);
         vulkan.setDepthStencilState(true, true);
         VulkanBlendState blendState{};
@@ -82,18 +96,18 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines&
             if (!component->getObject().isVisible()) {
                 continue;
             }
-            component->render(vulkan, viewport, pipelines.debug);
+            component->render(vulkan, viewport, pipelines->debug);
         }
     }
 
     {
-        if (!pipelines.wireframe) {
+        if (!pipelines->wireframe) {
             EXCEPTION("Scene shader wireframe not initialized");
         }
 
         auto& system = getComponentSystem<ComponentWireframe>();
 
-        vulkan.bindPipeline(pipelines.wireframe);
+        vulkan.bindPipeline(pipelines->wireframe);
         vulkan.bindUniformBuffer(camera->getUbo(), 0);
         vulkan.setDepthStencilState(true, true);
         VulkanBlendState blendState{};
@@ -111,7 +125,7 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines&
             if (!component->getObject().isVisible()) {
                 continue;
             }
-            component->render(vulkan, viewport, pipelines.wireframe);
+            component->render(vulkan, viewport, pipelines->wireframe);
         }
     }
 }

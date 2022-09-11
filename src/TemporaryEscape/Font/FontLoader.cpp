@@ -52,7 +52,7 @@ FontLoader::Glyph FontLoader::getGlyph(int code) {
     glyph.bitmapSize.y = face->glyph->bitmap.rows;
     glyph.bitmapPitch = face->glyph->bitmap.pitch;
     glyph.advance = face->glyph->advance.x;
-    glyph.ascend = static_cast<float>((face->glyph->metrics.height >> 6) - face->glyph->bitmap_top);
+    glyph.ascend = face->glyph->bitmap.rows - face->glyph->bitmap_top;
 
     glyph.bitmap = std::make_unique<char[]>(glyph.bitmapSize.x * glyph.bitmapSize.y);
     std::memcpy(glyph.bitmap.get(), face->glyph->bitmap.buffer, glyph.bitmapSize.x * glyph.bitmapSize.y);

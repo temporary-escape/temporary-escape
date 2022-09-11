@@ -20,9 +20,8 @@ Skybox::Skybox(VulkanDevice& vulkan, const Color4& color) {
     desc.layers = 6;
     desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
     desc.viewType = VulkanTexture::ViewType::VK_IMAGE_VIEW_TYPE_CUBE;
-    desc.usage = VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    desc.usage =
+        VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT | VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     texture = vulkan.createTexture(desc);
 
     for (auto i = 0; i < 6; i++) {

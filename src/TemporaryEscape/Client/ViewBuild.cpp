@@ -1,18 +1,21 @@
 #include "ViewBuild.hpp"
+#include "../Graphics/Renderer.hpp"
 
 #define CMP "ViewBuild"
 
 using namespace Engine;
 
 ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry,
-                     Canvas& canvas, Nuklear& nuklear) :
+                     Canvas& canvas, FontFamily& font, Nuklear& nuklear) :
     config{config},
     vulkan{vulkan},
     scenePipelines{scenePipelines},
     registry{registry},
     canvas{canvas},
+    font{font},
     nuklear{nuklear},
-    skybox{vulkan, Color4{0.3f, 0.3f, 0.3f, 1.0f}} {
+    skybox{vulkan, Color4{0.03f, 0.03f, 0.03f, 1.0f}},
+    scene{&registry.getVoxelShapeCache(), &scenePipelines} {
 
     // auto skybox = std::make_shared<Entity>();
     // skybox->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));
@@ -21,7 +24,7 @@ ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipeline
 
     auto sun = std::make_shared<Entity>();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
-    sun->translate(Vector3{3.0f, 3.0f, 1.0f});
+    sun->translate(Vector3{3.0f, 1.0f, 3.0f});
     scene.addEntity(sun);
 
     auto camera = std::make_shared<Entity>();
@@ -38,26 +41,36 @@ ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipeline
     auto grid = entityShip->addComponent<ComponentGrid>(debug.get());
     grid->setDirty(true);
 
-    auto block = registry.getBlocks().find("block_hull_t1");
+    /*auto block = registry.getBlocks().find("block_hull_t1");
     grid->insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
     grid->insert(Vector3i{1, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
-    grid->insert(Vector3i{2, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    grid->insert(Vector3i{2, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);*/
 
-    block = registry.getBlocks().find("block_crew_quarters_t1");
+    /*block = registry.getBlocks().find("block_crew_quarters_t1");
     grid->insert(Vector3i{0, 0, 1}, block, 0, 0, VoxelShape::Type::Cube);
     grid->insert(Vector3i{0, 0, 2}, block, 0, 0, VoxelShape::Type::Cube);
-    grid->insert(Vector3i{0, 0, 3}, block, 0, 0, VoxelShape::Type::Cube);
+    grid->insert(Vector3i{0, 0, 3}, block, 0, 0, VoxelShape::Type::Cube);*/
+
+    auto block = registry.getBlocks().find("block_crew_quarters_t1");
+    for (auto a = 0; a < 4; a++) {
+        for (auto b = 0; b < 4; b++) {
+            grid->insert(Vector3i{a, 0, b}, block, a * b, 0, VoxelShape::Type::Cube);
+        }
+    }
+    grid->insert(Vector3i{2, 1, 2}, block, 0, 0, VoxelShape::Type::Cube);
 
     entityHelperAdd = std::make_shared<Entity>();
     auto wireframe = entityHelperAdd->addComponent<ComponentWireframe>();
     wireframe->setBox(1.05f, Color4{0.25f, 1.0f, 0.25f, 1.0f});
+
+    // entityShip->rotate(Vector3{0.0f, 1.0f, 0.0f}, 90.0f);
 
     scene.addEntity(entityShip);
     scene.addEntity(entityHelperAdd);
     entityHelperAdd->setVisible(false);
 }
 
-void ViewBuild::update(float deltaTime) {
+void ViewBuild::update(const float deltaTime) {
     auto grid = entityShip->getComponent<ComponentGrid>();
 
     const auto [eyes, worldPos] = scene.screenToWorld(raycastScreenPos, 10.0f);
@@ -73,16 +86,13 @@ void ViewBuild::update(float deltaTime) {
     scene.update(deltaTime);
 }
 
-void ViewBuild::renderPbr(const Vector2i& viewport) {
-    scene.renderPbr(vulkan, viewport, scenePipelines, registry.getVoxelShapeCache());
-}
-
-void ViewBuild::renderFwd(const Vector2i& viewport) {
-    scene.renderFwd(vulkan, viewport, scenePipelines);
+void ViewBuild::render(const Vector2i& viewport, Renderer& renderer) {
+    renderer.render(viewport, scene, skybox);
 }
 
 void ViewBuild::renderCanvas(const Vector2i& viewport) {
-    canvas.rect({0.0f, 0.0f}, {32.0f, 32.0f}, Color4{1.0f, 0.0f, 0.0f, 1.0f});
+    // canvas.rect({0.0f, 0.0f}, {32.0f, 32.0f}, Color4{1.0f, 0.0f, 0.0f, 1.0f});
+    // canvas.text({50.0f, 50.0f}, "Hello World! qgWQ_Ap.", font.regular, 10.5f, Color4{1.0f});
 }
 
 const Skybox* ViewBuild::getSkybox() {

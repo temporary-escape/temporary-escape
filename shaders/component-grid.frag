@@ -15,36 +15,30 @@ layout(binding = 4) uniform sampler2D normalTexture;
 layout(binding = 5) uniform sampler2D ambientOcclusionTexture;
 layout(binding = 6) uniform sampler2D metallicRoughnessTexture;
 
-layout(location = 0) in GS_OUT {
+layout(location = 0) in VS_OUT {
     vec3 normal;
     vec2 texCoords;
-    mat3 TBN;
     vec3 worldpos;
-} gs_out;
+    mat3 TBN;
+} vs_out;
 
-layout(location = 1) out vec4 outColor;
-layout(location = 2) out vec4 outEmissive;
-layout(location = 3) out vec4 outMetallicRoughnessAmbient;
-layout(location = 4) out vec4 outNormal;
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outEmissive;
+layout(location = 2) out vec4 outMetallicRoughnessAmbient;
+layout(location = 3) out vec4 outNormal;
 
 void main() {
-    vec4 baseColor = texture(baseColorTexture, gs_out.texCoords);
-    baseColor *= material.baseColorFactor.rgba;
-    if (baseColor.a < 0.5) {
-        discard;
-    }
+    vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
+    vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
+    normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;
+    vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
 
-    vec3 normalRaw = vec3(texture(normalTexture, gs_out.texCoords).xy, 0.0) * 2.0 - 1.0;
-    normalRaw *=  vec3(1.0, -1.0, 1.0);
+    vec3 emissive = texture(emissiveTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb;
+    vec3 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rgb * material.metallicRoughnessFactor.rgb;
+    float ambient = texture(ambientOcclusionTexture, vs_out.texCoords).r * material.ambientOcclusionFactor.r;
 
-    normalRaw.z = sqrt(1.0 - dot(normalRaw.xy, normalRaw.xy));
-    vec3 normal = normalize(gs_out.TBN * normalRaw);
-    vec3 emissive = texture(emissiveTexture, gs_out.texCoords).rgb;
-    vec3 metallicRoughness = texture(metallicRoughnessTexture, gs_out.texCoords).rgb;
-    float ambient = texture(ambientOcclusionTexture, gs_out.texCoords).r;
-
-    outColor = vec4(baseColor.rgb, 1.0f);
-    outEmissive = vec4(emissive, 1.0f);
-    outMetallicRoughnessAmbient = vec4(metallicRoughness.g, metallicRoughness.b, ambient, 1.0f);
-    outNormal = vec4(normal, 1.0f);
+    outColor = vec4(baseColor.rgb, 1.0);
+    outEmissive = vec4(emissive, 1.0);
+    outMetallicRoughnessAmbient = vec4(metallicRoughness.g, metallicRoughness.b, ambient, 1.0);
+    outNormal = vec4(normal * 0.5 + 0.5, 1.0);
 }

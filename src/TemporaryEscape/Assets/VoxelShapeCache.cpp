@@ -197,7 +197,7 @@ static VoxelShape load(const Path& path) {
             for (size_t i = 0; i < positions.size(); i++) {
                 data.vertices[i].position = *(position++);
                 data.vertices[i].normal = *(normal++);
-                data.vertices[i].tangent = *(tangent++);
+                // data.vertices[i].tangent = *(tangent++);
             }
 
             shape.sides.push_back(std::move(data));
@@ -270,7 +270,7 @@ void VoxelShapeCache::precompute() {
                 for (auto& v : shape.vertices) {
                     v.position = Vector3{rotationMatrix * Vector4{v.position, 1.0f}};
                     v.normal = Vector3{transformInverted * Vector4{v.normal, 0.0f}};
-                    v.tangent = Vector4{transformInverted * v.tangent, 0.0f};
+                    // v.tangent = Vector4{transformInverted * v.tangent, 0.0f};
                     // v.tangent = v.tangent;
                 }
             }

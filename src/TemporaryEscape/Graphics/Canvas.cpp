@@ -96,6 +96,7 @@ Canvas::Canvas(VulkanDevice& vulkan) : vulkan{vulkan} {
 }
 
 void Canvas::begin(const Vector2i& viewport) {
+    lastViewport = viewport;
     vertices.clear();
     commands.clear();
 
@@ -130,14 +131,27 @@ void Canvas::end() {
     vulkan.bindVertexInputFormat(vboFormat);
 
     for (const auto& cmd : commands) {
-        vulkan.setInputAssembly(cmd.primitive);
-        if (cmd.texture) {
-            vulkan.bindTexture(*cmd.texture, 1);
-        } else {
-            vulkan.bindTexture(defaultTexture, 1);
+        if (cmd.type == Command::Type::Draw) {
+            vulkan.setInputAssembly(cmd.draw.primitive);
+            if (cmd.draw.texture) {
+                vulkan.bindTexture(*cmd.draw.texture, 1);
+            } else {
+                vulkan.bindTexture(defaultTexture, 1);
+            }
+            vulkan.draw(cmd.draw.length, 1, cmd.draw.start, 0);
+        } else if (cmd.type == Command::Type::Scissor) {
+            vulkan.setScissor(cmd.scissor.pos, cmd.scissor.size);
         }
-        vulkan.draw(cmd.length, 1, cmd.start, 0);
     }
+
+    vulkan.setScissor({0, 0}, lastViewport);
+}
+
+void Canvas::scissor(const Vector2& pos, const Vector2& size) {
+    auto& cmd = commands.emplace_back();
+    cmd.type = Command::Type::Scissor;
+    cmd.scissor.pos = pos;
+    cmd.scissor.size = size;
 }
 
 void Canvas::rect(const Vector2& pos, const Vector2& size, const Color4& color) {
@@ -170,9 +184,10 @@ void Canvas::rect(const Vector2& pos, const Vector2& size, const Color4& color) 
     v5.mode.x = 0.0f;
 
     auto& cmd = commands.emplace_back();
-    cmd.start = start;
-    cmd.length = 6;
-    cmd.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    cmd.type = Command::Type::Draw;
+    cmd.draw.start = start;
+    cmd.draw.length = 6;
+    cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
 void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const Color4& color) {
@@ -202,9 +217,10 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const Color4& 
     v4 = v0;
 
     auto& cmd = commands.emplace_back();
-    cmd.start = start;
-    cmd.length = 5;
-    cmd.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    cmd.type = Command::Type::Draw;
+    cmd.draw.start = start;
+    cmd.draw.length = 5;
+    cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 }
 
 void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const float height,
@@ -224,7 +240,7 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
         const auto& glyph = font.getGlyph(code);
         total++;
 
-        const auto p = pen + Vector2{0.0f, glyph.ascend};
+        const auto p = pen + Vector2{0.0f, glyph.ascend * scale};
 
         auto& v0 = vertices.emplace_back();
         auto& v1 = vertices.emplace_back();
@@ -260,10 +276,11 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
     }
 
     auto& cmd = commands.emplace_back();
-    cmd.start = start;
-    cmd.length = total * 6;
-    cmd.texture = &font.getTexture();
-    cmd.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    cmd.type = Command::Type::Draw;
+    cmd.draw.start = start;
+    cmd.draw.length = total * 6;
+    cmd.draw.texture = &font.getTexture();
+    cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
 void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color) {
@@ -299,8 +316,9 @@ void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture&
     v5.mode.x = 1.0f;
 
     auto& cmd = commands.emplace_back();
-    cmd.start = start;
-    cmd.length = 6;
-    cmd.texture = &texture;
-    cmd.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    cmd.type = Command::Type::Draw;
+    cmd.draw.start = start;
+    cmd.draw.length = 6;
+    cmd.draw.texture = &texture;
+    cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }

@@ -99,7 +99,7 @@ void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
     static const auto deg180 = glm::radians(180.0f);
 
     const auto mid = Vector2{Camera::getViewport()} / 2.0f;
-    const auto target = mid + diff * -0.5f;
+    const auto target = mid + diff * -0.75f;
     const auto newForward = glm::normalize(Camera::screenToWorld(target));
 
     auto newPitch = glm::asin(newForward.y);

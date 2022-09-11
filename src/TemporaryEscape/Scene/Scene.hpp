@@ -33,14 +33,14 @@ public:
 
     static inline EventListener defaultEventListener;
 
-    explicit Scene(EventListener& eventListener = defaultEventListener);
+    explicit Scene(const VoxelShapeCache* voxelShapeCache = nullptr, Pipelines* pipelines = nullptr,
+                   EventListener& eventListener = defaultEventListener);
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
     void update(float delta);
-    void renderPbr(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines,
-                   const VoxelShapeCache& voxelShapeCache);
-    void renderFwd(VulkanDevice& vulkan, const Vector2i& viewport, Pipelines& pipelines);
+    void renderPbr(VulkanDevice& vulkan, const Vector2i& viewport);
+    void renderFwd(VulkanDevice& vulkan, const Vector2i& viewport);
     void removeEntity(const EntityPtr& entity);
     void addEntity(EntityPtr entity);
     void updateEntity(const Entity::Delta& delta);
@@ -83,6 +83,8 @@ private:
         size_t next{0};
     };
 
+    const VoxelShapeCache* voxelShapeCache{nullptr};
+    Pipelines* pipelines{nullptr};
     EventListener& eventListener;
 
     uint64_t nextId;

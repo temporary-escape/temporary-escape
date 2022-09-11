@@ -99,3 +99,50 @@ Vector2 Engine::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projecti
     ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
     return ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
 }
+
+// Adapted from https://github.com/ghewgill/picomath/blob/master/javascript/erf.js
+double erf(double x) {
+    // constants
+    static const auto a1 = 0.254829592;
+    static const auto a2 = -0.284496736;
+    static const auto a3 = 1.421413741;
+    static const auto a4 = -1.453152027;
+    static const auto a5 = 1.061405429;
+    static const auto p = 0.3275911;
+
+    // A&S formula 7.1.26
+    const auto t = 1.0 / (1.0 + p * glm::abs(x));
+    const auto y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * glm::exp(-x * x);
+
+    return static_cast<double>(glm::sign(x)) * y;
+}
+
+double defIntGaussian(double x, double mu, double sigma) {
+    return 0.5 * erf((x - mu) / (1.4142135623730951 * sigma));
+}
+
+// Adapted from https://observablehq.com/@jobleonard/gaussian-kernel-calculater
+std::vector<double> Engine::gaussianKernel(const size_t size, const double sigma, const double mu, const double step) {
+    const auto end = 0.5 * static_cast<double>(size);
+    const auto start = -end;
+    std::vector<double> coeff;
+    auto sum = 0.0;
+    auto x = start;
+    auto last_int = defIntGaussian(x, mu, sigma);
+    auto acc = 0.0;
+    while (x < end) {
+        x += step;
+        const auto new_int = defIntGaussian(x, mu, sigma);
+        auto c = new_int - last_int;
+        coeff.push_back(c);
+        sum += c;
+        last_int = new_int;
+    }
+
+    // normalize
+    sum = 1 / sum;
+    for (double& i : coeff) {
+        i *= sum;
+    }
+    return coeff;
+}

@@ -165,6 +165,44 @@ static Vector3 vecToNormal(const Vector3& vec) {
     return Vector3{0.0f, 0.0f, -1.0f};
 }
 
+Vector2 boxProjection(Vector3 normal, Vector3 position) {
+    const float uvScale = 0.25;
+    const float offset = 0.5;
+
+    Vector3 absnorm = glm::abs(normal);
+    Vector2 texCoords{0.0f, 0.0f};
+
+    if (absnorm.x > absnorm.y && absnorm.x > absnorm.z) {
+        // x major
+        if (normal.x >= 0.0f) {
+            texCoords = Vector2{position.y, position.z} * uvScale + offset;
+            texCoords.y = 1.0f - texCoords.y;
+        } else {
+            texCoords = Vector2{position.y, position.z} * uvScale + offset;
+        }
+    } else if (absnorm.y > absnorm.z) {
+        // y major
+        if (normal.y >= 0.0f) {
+            texCoords = Vector2{position.z, position.x} * uvScale + offset;
+            // texCoords.x = 1.0 - texCoords.x;
+            texCoords.y = 1.0f - texCoords.y;
+        } else {
+            texCoords = Vector2{position.x, position.z} * uvScale + offset;
+            texCoords.y = 1.0f - texCoords.y;
+        }
+    } else {
+        // z major
+        if (normal.z >= 0.0f) {
+            texCoords = Vector2{position.y, position.x} * uvScale + offset;
+        } else {
+            texCoords = Vector2{position.y, position.x} * uvScale + offset;
+            texCoords.y = 1.0f - texCoords.y;
+        }
+    }
+
+    return texCoords;
+}
+
 void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
                  RawPrimitiveData& map, const Vector3& offset) {
     static const Vector3i neighbourOffset[6] = {
@@ -238,17 +276,52 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
 
     const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data,
                                          const VoxelShapeCache::ShapePrebuilt& shape, const Vector3& pos) {
-        const auto vertexOffset = data.vertices.size();
-        data.vertices.reserve(vertexOffset + shape.vertices.size());
-        for (const auto& v : shape.vertices) {
-            data.vertices.push_back(v);
-            data.vertices.back().position += pos + offset;
+        auto vertexOffset = data.vertices.size();
+        std::cout << "vertexOffset: " << vertexOffset << " adding: " << shape.vertices.size() << std::endl;
+        data.vertices.resize(vertexOffset + shape.vertices.size());
+        for (size_t i = 0; i < shape.vertices.size(); i++) {
+            const auto& src = shape.vertices[i];
+            auto& dst = data.vertices[vertexOffset + i];
+            dst.position = src.position;
+            dst.normal = src.normal;
+            dst.position += pos + offset;
+            dst.tangent = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
+            dst.texCoords = boxProjection(dst.normal, dst.position);
         }
 
         const auto indexOffset = data.indices.size();
+        std::cout << "indexOffset: " << indexOffset << " adding: " << shape.indices.size() << std::endl;
+
         data.indices.reserve(indexOffset + shape.indices.size());
         for (const auto& i : shape.indices) {
             data.indices.push_back(i + vertexOffset);
+            std::cout << "push back: " << data.indices.back() << std::endl;
+        }
+
+        if (shape.indices.size() % 3 != 0) {
+            EXCEPTION("Indices must be divisible by 3");
+        }
+
+        for (size_t i = indexOffset; i < indexOffset + shape.indices.size(); i += 3) {
+            std::cout << "Triangle: " << data.indices[i + 0] << ", " << data.indices[i + 1] << ", "
+                      << data.indices[i + 2] << " total: " << data.vertices.size() << std::endl;
+            auto& v0 = data.vertices[data.indices[i + 0]];
+            auto& v1 = data.vertices[data.indices[i + 1]];
+            auto& v2 = data.vertices[data.indices[i + 2]];
+
+            const auto deltaPos1 = v1.position - v0.position;
+            const auto deltaPos2 = v2.position - v0.position;
+
+            const auto deltaUv1 = v1.texCoords - v0.texCoords;
+            const auto deltaUv2 = v2.texCoords - v0.texCoords;
+
+            float r = 1.0f / (deltaUv1.x * deltaUv2.y - deltaUv1.y * deltaUv2.x);
+            auto tangent = Vector4{Vector3{deltaPos1 * deltaUv2.y - deltaPos2 * deltaUv1.y} * r, 0.0f};
+            tangent = glm::normalize(tangent);
+
+            v0.tangent = tangent;
+            v1.tangent = tangent;
+            v2.tangent = tangent;
         }
     };
 

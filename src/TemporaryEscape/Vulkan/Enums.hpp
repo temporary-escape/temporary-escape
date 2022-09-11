@@ -38,8 +38,13 @@ enum class Key {
     LetterZ,
     SpaceBar,
     LeftControl,
+    RightControl,
     Delete,
     LeftShift,
+    RightShift,
+    Backspace,
+    Enter,
+    Tab,
 };
 
 enum class Modifier : int {

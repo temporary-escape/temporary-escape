@@ -10,7 +10,7 @@ public:
     explicit VoxelShapeCache(const Config& config);
 
     struct ShapePrebuilt {
-        std::vector<VoxelShape::Vertex> vertices;
+        std::vector<VoxelShape::VertexCached> vertices;
         std::vector<uint16_t> indices;
     };
 

@@ -1,5 +1,6 @@
 #include "VulkanDevice.hpp"
 #include "../Utils/Exceptions.hpp"
+#include "../Utils/Md5.hpp"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <array>
@@ -8,6 +9,9 @@
 #define CMP "VulkanDevice"
 
 using namespace Engine;
+
+VulkanDevice::VulkanDevice(const Config& config) : config{config} {
+}
 
 bool VulkanDevice::getValidationLayerSupported() {
     // Enumerate all available instance layers.
@@ -264,12 +268,36 @@ VulkanDevice::createVertexInputFormat(const std::vector<VulkanVertexInputFormat:
 
 VkShaderModule VulkanDevice::CreateShaderModule(const std::string& code, const std::string& entryPoint,
                                                 VkShaderStageFlagBits stage) {
+    const auto codeMd5 = md5sum(code.data(), code.size());
+    const auto binaryPath = config.shaderCachePath / (codeMd5 + ".bin");
+
     // Create the shader module.
     VezShaderModuleCreateInfo createInfo = {};
     createInfo.stage = stage;
-    createInfo.codeSize = static_cast<uint32_t>(code.size());
-    createInfo.pGLSLSource = code.c_str();
     createInfo.pEntryPoint = entryPoint.c_str();
+
+    std::vector<char> binaryData;
+    if (Fs::exists(binaryPath) && Fs::is_regular_file(binaryPath)) {
+        Log::i(CMP, "Loading shader module binary: '{}'", binaryPath);
+        std::fstream file(binaryPath, std::ios::in | std::ios::binary);
+        if (!file) {
+            EXCEPTION("Failed to open file: '{}'", binaryPath);
+        }
+
+        file.seekg(0, std::ios::end);
+        const auto binaryLength = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        binaryData.resize(binaryLength);
+        file.read(binaryData.data(), binaryLength);
+
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(binaryData.data());
+        createInfo.codeSize = binaryData.size();
+
+    } else {
+        createInfo.codeSize = static_cast<uint32_t>(code.size());
+        createInfo.pGLSLSource = code.c_str();
+    }
 
     VkShaderModule shaderModule = VK_NULL_HANDLE;
     auto result = vezCreateShaderModule(device, &createInfo, &shaderModule);
@@ -286,6 +314,27 @@ VkShaderModule VulkanDevice::CreateShaderModule(const std::string& code, const s
         EXCEPTION("Failed to compile shader error: {}", infoLog);
     }
 
+    if (binaryData.empty()) {
+        uint32_t binaryLength{0};
+        result = vezGetShaderModuleBinary(shaderModule, &binaryLength, nullptr);
+        if (result != VK_SUCCESS || binaryLength == 0) {
+            EXCEPTION("Failed to get shader module binary length");
+        }
+
+        binaryData.resize(binaryLength);
+        result = vezGetShaderModuleBinary(shaderModule, &binaryLength, reinterpret_cast<uint32_t*>(binaryData.data()));
+        if (result != VK_SUCCESS || binaryLength == 0) {
+            EXCEPTION("Failed to get shader module binary data");
+        }
+
+        Log::i(CMP, "Saving shader module binary: '{}'", binaryPath);
+        std::fstream file(binaryPath, std::ios::out | std::ios::binary);
+        if (!file) {
+            EXCEPTION("Failed to create file: '{}'", binaryPath);
+        }
+        file.write(binaryData.data(), binaryData.size());
+    }
+
     return shaderModule;
 }
 
@@ -299,7 +348,7 @@ VulkanPipeline VulkanDevice::createPipeline(const std::vector<ShaderSource>& sou
         std::string glsl;
 
         if (!sources[i].path.empty()) {
-            Log::d(CMP, "Loading shader: '{}'", sources[i].path);
+            Log::i(CMP, "Loading shader: '{}'", sources[i].path);
             std::ifstream file(sources[i].path);
             if (!file) {
                 EXCEPTION("Failed to open file: '{}'", sources[i].path);
@@ -387,8 +436,21 @@ void VulkanDevice::bindTexture(const VulkanTexture& texture, uint32_t binding) {
     vezCmdBindImageView(texture.getView(), texture.getSampler(), 0, binding, 0);
 }
 
+void VulkanDevice::pushConstant(uint32_t offset, const bool value) {
+    int v = value;
+    vezCmdPushConstants(offset, sizeof(int), &v);
+}
+
+void VulkanDevice::pushConstant(uint32_t offset, const float value) {
+    vezCmdPushConstants(offset, sizeof(int), &value);
+}
+
 void VulkanDevice::pushConstant(uint32_t offset, const Matrix4& value) {
     vezCmdPushConstants(offset, sizeof(Matrix4), &value);
+}
+
+void VulkanDevice::pushConstant(uint32_t offset, const Vector2& value) {
+    vezCmdPushConstants(offset, sizeof(Vector2), &value);
 }
 
 void VulkanDevice::pushConstant(uint32_t offset, const Color4& value) {

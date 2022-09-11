@@ -24,7 +24,7 @@ void Registry::load(VulkanDevice& vulkan) {
                 createTextureOfColor(vulkan, Color4{1.0f, 0.0f, 1.0f, 1.0f}, "default_baseColor");
             defaultTextures->ambient = createTextureOfColor(vulkan, Color4{1.0f, 0.0f, 0.0f, 1.0f}, "default_ambient");
             defaultTextures->emissive =
-                createTextureOfColor(vulkan, Color4{0.0f, 1.0f, 0.0f, 1.0f}, "default_emissive");
+                createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, "default_emissive");
             defaultTextures->metallicRoughness =
                 createTextureOfColor(vulkan, Color4{0.0f, 0.5f, 0.5f, 1.0f}, "default_metallicRoughness");
             defaultTextures->normal = createTextureOfColor(vulkan, Color4{0.5f, 0.5f, 1.0f, 1.0f}, "default_normal");
@@ -118,9 +118,8 @@ TexturePtr Registry::createTextureOfColor(VulkanDevice& vulkan, const Color4& co
     desc.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
     desc.levels = 1;
     desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
-    desc.usage = VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    desc.usage =
+        VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT | VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     asset->getVulkanTexture() = vulkan.createTexture(desc);
     asset->getVulkanTexture().subData(0, {0, 0}, {4, 4}, pixels.get());
 

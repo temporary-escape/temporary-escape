@@ -21,6 +21,7 @@ struct Config {
     Path cwdPath;
     Path fontsPath;
     Path userdataSavesPath;
+    Path shaderCachePath;
     Path shadersPath;
     Path shapesPath;
 

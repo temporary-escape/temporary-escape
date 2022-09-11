@@ -56,8 +56,9 @@ void Nuklear::render() {
         case NK_COMMAND_SCISSOR: {
             const auto c = reinterpret_cast<const struct nk_command_scissor*>(cmd);
             // glScissor(c->x, viewport.y() - c->y + c->h, c->w, c->h);
-            /*canvas.scissor({static_cast<float>(c->x), static_cast<float>(c->y)},
-                           {static_cast<float>(c->w), static_cast<float>(c->h)});*/
+            canvas.scissor({static_cast<float>(c->x), static_cast<float>(c->y)},
+                           {static_cast<float>(c->w), static_cast<float>(c->h)});
+
             break;
         }
         case NK_COMMAND_LINE: {
@@ -186,6 +187,35 @@ static nk_buttons toNkButtons(const MouseButton button) {
     }
 }
 
+static nk_keys toNkKeys(const Key key) {
+    switch (key) {
+    case Key::LeftShift: {
+        return nk_keys::NK_KEY_SHIFT;
+    }
+    case Key::RightShift: {
+        return nk_keys::NK_KEY_SHIFT;
+    }
+    case Key::Backspace: {
+        return nk_keys::NK_KEY_BACKSPACE;
+    }
+    case Key::LeftControl: {
+        return nk_keys::NK_KEY_CTRL;
+    }
+    case Key::RightControl: {
+        return nk_keys::NK_KEY_CTRL;
+    }
+    case Key::Delete: {
+        return nk_keys::NK_KEY_DEL;
+    }
+    case Key::Tab: {
+        return nk_keys::NK_KEY_TAB;
+    }
+    default: {
+        return nk_keys::NK_KEY_NONE;
+    }
+    }
+}
+
 void Nuklear::eventMousePressed(const Vector2i& pos, MouseButton button) {
     inputEvents.emplace_back([=]() { nk_input_button(ctx.get(), toNkButtons(button), pos.x, pos.y, true); });
 }
@@ -199,9 +229,21 @@ void Nuklear::eventMouseScroll(int xscroll, int yscroll) {
 }
 
 void Nuklear::eventKeyPressed(Key key, Modifiers modifiers) {
+    const auto k = toNkKeys(key);
+    if (k != nk_keys::NK_KEY_NONE) {
+        inputEvents.emplace_back([=]() { nk_input_key(ctx.get(), toNkKeys(key), true); });
+    }
 }
 
 void Nuklear::eventKeyReleased(Key key, Modifiers modifiers) {
+    const auto k = toNkKeys(key);
+    if (k != nk_keys::NK_KEY_NONE) {
+        inputEvents.emplace_back([=]() { nk_input_key(ctx.get(), toNkKeys(key), false); });
+    }
+}
+
+void Nuklear::eventCharTyped(uint32_t code) {
+    inputEvents.emplace_back([=]() { nk_input_unicode(ctx.get(), code); });
 }
 
 static nk_color HEX(const uint32_t v) {

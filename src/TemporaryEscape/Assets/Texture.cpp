@@ -28,6 +28,9 @@ void Texture::load(Registry& registry, VulkanDevice& vulkan) {
 
         VulkanTexture::Descriptor desc{};
         desc.size = image.getSize();
+        desc.addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        desc.addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        desc.addressModeW = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
         switch (image.getPixelType()) {
         case ImageImporter::PixelType::Rgb8u: {

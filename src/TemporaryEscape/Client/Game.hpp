@@ -5,10 +5,10 @@
 #include "../Config.hpp"
 #include "../Font/FontFamily.hpp"
 #include "../Future.hpp"
+#include "../Graphics/Canvas.hpp"
+#include "../Graphics/Nuklear.hpp"
 #include "../Utils/AsyncTask.hpp"
 #include "../Vulkan/VulkanDevice.hpp"
-#include "Canvas.hpp"
-#include "Nuklear.hpp"
 #include "ViewBuild.hpp"
 
 namespace Engine {
@@ -24,8 +24,7 @@ public:
     virtual ~Game();
 
     void update(float deltaTime) override;
-    void renderPbr(const Vector2i& viewport) override;
-    void renderFwd(const Vector2i& viewport) override;
+    void render(const Vector2i& viewport, Renderer& renderer) override;
     void renderCanvas(const Vector2i& viewport) override;
     const Skybox* getSkybox() override;
 
@@ -37,6 +36,7 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers);
     void eventKeyReleased(Key key, Modifiers modifiers);
     void eventWindowResized(const Vector2i& size);
+    void eventCharTyped(uint32_t code);
 
 private:
     // void eventInitDone();

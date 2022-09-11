@@ -24,7 +24,7 @@ VulkanTexture::VulkanTexture(VkDevice device, const Descriptor& desc) : device(d
     imageViewCreateInfo.image = image;
     imageViewCreateInfo.viewType = desc.viewType;
     imageViewCreateInfo.format = desc.format;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    imageViewCreateInfo.subresourceRange.layerCount = desc.layers;
     imageViewCreateInfo.subresourceRange.levelCount = 1;
     if (vezCreateImageView(device, &imageViewCreateInfo, &view) != VK_SUCCESS) {
         EXCEPTION("Failed to create image view for vulkan texture of size: {} format: {} type: {} ", desc.size,
@@ -35,9 +35,9 @@ VulkanTexture::VulkanTexture(VkDevice device, const Descriptor& desc) : device(d
     createInfo.magFilter = VK_FILTER_LINEAR;
     createInfo.minFilter = VK_FILTER_LINEAR;
     createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    createInfo.addressModeU = desc.addressModeU;
+    createInfo.addressModeV = desc.addressModeV;
+    createInfo.addressModeW = desc.addressModeW;
     if (vezCreateSampler(device, &createInfo, &sampler) != VK_SUCCESS) {
         EXCEPTION("Failed to create image sampler for vulkan texture of size: {} format: {} type: {} ", desc.size,
                   desc.format, desc.type);

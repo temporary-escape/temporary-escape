@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Config.hpp"
 #include "../Math/Matrix.hpp"
 #include "VulkanBuffer.hpp"
 #include "VulkanFramebuffer.hpp"
@@ -14,7 +15,7 @@ using VulkanBlendState = VezColorBlendAttachmentState;
 
 class VulkanDevice {
 public:
-    VulkanDevice() = default;
+    explicit VulkanDevice(const Config& config);
     virtual ~VulkanDevice() = default;
 
     virtual Vector2i getWindowSize() = 0;
@@ -53,6 +54,9 @@ public:
                      uint32_t firstInstance);
     void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 
+    void pushConstant(uint32_t offset, bool value);
+    void pushConstant(uint32_t offset, float value);
+    void pushConstant(uint32_t offset, const Vector2& value);
     void pushConstant(uint32_t offset, const Matrix4& value);
     void pushConstant(uint32_t offset, const Color4& value);
     void startCommandBuffer();
@@ -75,6 +79,7 @@ private:
     VkShaderModule CreateShaderModule(const std::string& code, const std::string& entryPoint,
                                       VkShaderStageFlagBits stage);
 
+    const Config& config;
     std::vector<std::string> deviceExtensions;
     VkInstance instance = VK_NULL_HANDLE;
     int physicalDeviceIndex = 0;

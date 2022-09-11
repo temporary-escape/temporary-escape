@@ -49,6 +49,7 @@ public:
     void eventMouseScroll(int xscroll, int yscroll);
     void eventKeyPressed(Key key, Modifiers modifiers);
     void eventKeyReleased(Key key, Modifiers modifiers);
+    void eventCharTyped(uint32_t code);
 
 private:
     void applyTheme();

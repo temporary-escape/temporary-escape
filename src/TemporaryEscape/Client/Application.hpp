@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Graphics/Renderer.hpp"
 #include "../Vulkan/VulkanWindow.hpp"
 #include "Game.hpp"
-#include "Renderer.hpp"
 #include <queue>
 
 namespace Engine {
@@ -20,6 +20,7 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers) override;
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventWindowResized(const Vector2i& size) override;
+    void eventCharTyped(uint32_t code) override;
 
 private:
     void renderStatus(const Vector2i& viewport);

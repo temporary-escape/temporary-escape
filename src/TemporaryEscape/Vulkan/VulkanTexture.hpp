@@ -21,6 +21,9 @@ public:
         ViewType viewType{ViewType::VK_IMAGE_VIEW_TYPE_2D};
         int levels{1};
         int layers{1};
+        VkSamplerAddressMode addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        VkSamplerAddressMode addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        VkSamplerAddressMode addressModeW = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     };
 
     NON_COPYABLE(VulkanTexture);
