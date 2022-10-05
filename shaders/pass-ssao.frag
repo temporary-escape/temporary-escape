@@ -67,10 +67,11 @@ vec3 getViewPos(float depth, vec2 texCoords) {
 void main() {
     float depth = texture(depthTexture, vs_out.texCoords).r;
     vec3 fragPos = getViewPos(depth, vs_out.texCoords);
-    vec3 worldNormal = texture(normalTexture, vs_out.texCoords).rgb;
+    vec3 worldNormal = texture(normalTexture, vs_out.texCoords).rgb * 2.0 - 1.0;
     vec3 normal = vec4(camera.viewMatrix * vec4(worldNormal, 0.0f)).xyz;
     if (depth > 0.999) {
-        normal = vec3(0.0, 0.0, 1.0);
+        outColor = vec4(1.0);
+        discard;
     }
     // fragPos.z = depth;
     // screenSpaceNormal = mix(screenSpaceNormal, vec4(0.0, 0.0, 1.0, 1.0), depth);
@@ -83,6 +84,8 @@ void main() {
 
     float occlusion = 0.0;
     // int i = 8;
+
+    float ldepth = getLinearDepth(depth);
 
     for (int i = 0; i < kernelSize; ++i)
     {
@@ -102,7 +105,6 @@ void main() {
         // get sample depth
         float sampleDepth = texture(depthTexture, offset.xy).r;// get depth value of kernel sample
         sampleDepth = getLinearDepth(sampleDepth);
-        float ldepth = getLinearDepth(depth);
 
         // range check & accumulate
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(ldepth - sampleDepth));

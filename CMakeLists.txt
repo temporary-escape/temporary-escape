@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
+project(TemporaryEscape VERSION "${PROJECT_VERSION}")
+
 set(CMAKE_MODULE_PATH
-        "${CMAKE_CURRENT_LIST_DIR}/modules"
+        "${CMAKE_CURRENT_LIST_DIR}/cmake/modules"
         )
 
 execute_process(COMMAND git describe --always
@@ -49,7 +51,6 @@ find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
 find_package(unofficial-nuklear CONFIG REQUIRED)
 find_package(fmt REQUIRED)
-find_package(NanoVG REQUIRED)
 find_package(Png REQUIRED)
 find_package(Cgltf REQUIRED)
 find_package(msgpack CONFIG REQUIRED)
@@ -59,13 +60,10 @@ find_package(Catch2 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(freetype CONFIG REQUIRED)
-find_package(Wren REQUIRED)
-find_package(WrenBind17 REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(Voronoi REQUIRED)
 
 if (UNIX)
     if (APPLE)
