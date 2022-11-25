@@ -1,0 +1,17 @@
+{
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/microsoft/vcpkg",
+    "baseline": "1085a57da0725c19e19586025438e8c16f34c890"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/matusnovak/vcpkg-registry",
+      "packages": [
+        "msgnet"
+      ],
+      "baseline": "c7b39a7600f8d4a64044488dffb50c6aa8c2b3cc"
+    }
+  ]
+}

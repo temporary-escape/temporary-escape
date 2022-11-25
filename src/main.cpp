@@ -1,7 +1,7 @@
 #include <CLI/CLI.hpp>
-#include <Engine/Client/Application.hpp>
-#include <Engine/Utils/Exceptions.hpp>
-#include <Engine/Utils/Log.hpp>
+#include <engine/client/application.hpp>
+#include <engine/utils/exceptions.hpp>
+#include <engine/utils/log.hpp>
 
 using namespace Engine;
 
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         const auto userdataPath = std::filesystem::absolute(Path(defaultUserData));
         const auto logPath = userdataPath / "debug.log";
 
-        Log::configure(true, logPath);
+        // Log::configure(true, logPath);
         Log::i("main", "Temporary Escape main");
         Log::i("main", "Log file location: '{}'", logPath.string());
 

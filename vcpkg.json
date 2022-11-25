@@ -59,6 +59,10 @@
       "version>=": "3.3.0"
     },
     {
+      "name": "msgnet",
+      "version>=": "0.1.4"
+    },
+    {
       "name": "asio",
       "version>=": "1.20.0"
     },

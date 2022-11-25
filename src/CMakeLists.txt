@@ -1,7 +1,7 @@
 add_library(${PROJECT_NAME}Engine INTERFACE)
 
 # Get all folders in this directory
-file(GLOB ENGINE_DIRECTORIES LIST_DIRECTORIES true "${CMAKE_CURRENT_LIST_DIR}/Engine/*")
+file(GLOB ENGINE_DIRECTORIES LIST_DIRECTORIES true "${CMAKE_CURRENT_LIST_DIR}/engine/*")
 foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
     if (NOT IS_DIRECTORY ${ENGINE_DIRECTORY})
         continue()
@@ -10,9 +10,15 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
     # Get the name of the folder
     get_filename_component(COMPONENT_NAME ${ENGINE_DIRECTORY} NAME)
 
+    # Capitalize first letter
+    # https://stackoverflow.com/questions/11845823/converting-part-of-a-string-to-upper-case-in-cmake
+    string(SUBSTRING ${COMPONENT_NAME} 0 1 COMPONENT_NAME_SUB)
+    string(TOUPPER ${COMPONENT_NAME_SUB} COMPONENT_NAME_SUB)
+    string(REGEX REPLACE "^.(.*)" "${COMPONENT_NAME_SUB}\\1" COMPONENT_NAME "${COMPONENT_NAME}")
+
     # Find all source files in the folder
     file(GLOB_RECURSE SOURCES ${ENGINE_DIRECTORY}/*.cpp ${ENGINE_DIRECTORY}/*.hpp ${ENGINE_DIRECTORY}/*.h)
-    file(GLOB COMMON_HEADERS ${CMAKE_CURRENT_LIST_DIR}/Engine/*.hpp ${CMAKE_CURRENT_LIST_DIR}/Engine/*.h)
+    file(GLOB COMMON_HEADERS ${CMAKE_CURRENT_LIST_DIR}/engine/*.hpp ${CMAKE_CURRENT_LIST_DIR}/engine/*.h)
 
     # Create a library using the folder as its name
     set(LIBRARY_NAME "Engine${COMPONENT_NAME}")
@@ -39,19 +45,20 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
             msgpackc msgpackc-cxx
             RocksDB::rocksdb
             glad::glad
-            freetype)
+            freetype
+            asio
+            asio::asio
+            Vulkan::Vulkan
+            utf8cpp
+            MsgNet::MsgNet)
 
     # Engine private dependencies
     target_link_libraries(${LIBRARY_NAME} PRIVATE
-            utf8cpp
             nuklear
             glfw
-            Vulkan::Vulkan
             unofficial::vulkan-memory-allocator::vulkan-memory-allocator
             HLSL SPIRV glslang OGLCompiler spirv-cross-glsl
             Png
-            asio
-            asio::asio
             Stb
             RocksDB::rocksdb
             OpenSSL::SSL OpenSSL::Crypto

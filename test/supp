@@ -1,3 +1,0 @@
-leak:basic_string.tcc
-leak:Database.cpp
-leak:vm.hpp

@@ -64,6 +64,8 @@ find_package(RocksDB CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(lz4 CONFIG REQUIRED)
+find_package(MsgNet CONFIG REQUIRED)
 
 if (UNIX)
     if (APPLE)

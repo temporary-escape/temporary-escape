@@ -25,7 +25,7 @@ out gl_PerVertex {
 };
 
 void main() {
-    vs_out.texCoords = in_Position * 0.5 + 0.5;
+    vs_out.texCoords = in_Position;
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
     gl_Position = camera.transformationProjectionMatrix * worldPos;
 }
