@@ -45,10 +45,11 @@ struct MessageFetchRegionsResponse {
 
 class ServiceRegions : public Service {
 public:
-    explicit ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db, MsgNet::Server& server,
+    explicit ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);
 
     void create(const RegionData& region);
+    std::vector<RegionData> getForGalaxy(const std::string& galaxyId);
     void handle(const PeerPtr& peer, MessageFetchRegionRequest req, MessageFetchRegionResponse& res);
     void handle(const PeerPtr& peer, MessageFetchRegionsRequest req, MessageFetchRegionsResponse& res);
 

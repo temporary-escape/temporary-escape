@@ -24,16 +24,6 @@ static bool almostEqual(const Vector2& v1, const Vector2& v2) {
     return almostEqual(v1.x, v2.x) && almostEqual(v1.y, v2.y);
 }
 
-static bool almostEqual(const DelaunayTriangulation::Edge& e1, const DelaunayTriangulation::Edge& e2) {
-    return (almostEqual(e1.v, e2.v) && almostEqual(e1.w, e2.w)) || (almostEqual(e1.v, e2.w) && almostEqual(e1.w, e2.v));
-}
-
-static bool almostEqual(const DelaunayTriangulation::Triangle& t1, const DelaunayTriangulation::Triangle& t2) {
-    return (almostEqual(t1.a, t2.a) || almostEqual(t1.a, t2.b) || almostEqual(t1.a, t2.c)) &&
-           (almostEqual(t1.b, t2.a) || almostEqual(t1.b, t2.b) || almostEqual(t1.b, t2.c)) &&
-           (almostEqual(t1.c, t2.a) || almostEqual(t1.c, t2.b) || almostEqual(t1.c, t2.c));
-}
-
 static float norm2(const Vector2& v) {
     return v.x * v.x + v.y * v.y;
 }
@@ -44,37 +34,74 @@ static float dist2(const Vector2& a, const Vector2& b) {
     return dx * dx + dy * dy;
 }
 
-bool DelaunayTriangulation::Triangle::containsVertex(const Vector2& v) const {
-    return almostEqual(a, v) || almostEqual(b, v) || almostEqual(c, v);
+class Edge {
+public:
+    Edge() = default;
+    explicit Edge(const Vector2& v, const Vector2& w) : v(v), w(w) {
+    }
+
+    Vector2 v{};
+    Vector2 w{};
+    bool isBad{false};
+
+    bool operator==(const Edge& other) const {
+        return v == other.v && w == other.w;
+    }
+};
+
+class Triangle {
+public:
+    Triangle() = default;
+    explicit Triangle(const Vector2& a, const Vector2& b, const Vector2& c) : a(a), b(b), c(c) {
+    }
+
+    Vector2 a{};
+    Vector2 b{};
+    Vector2 c{};
+    bool isBad{false};
+
+    [[nodiscard]] bool containsVertex(const Vector2& v) const {
+        return almostEqual(a, v) || almostEqual(b, v) || almostEqual(c, v);
+    }
+    [[nodiscard]] bool circumCircleContains(const Vector2& v) const {
+        const auto ab = norm2(a);
+        const auto cd = norm2(b);
+        const auto ef = norm2(c);
+
+        const auto ax = a.x;
+        const auto ay = a.y;
+        const auto bx = b.x;
+        const auto by = b.y;
+        const auto cx = c.x;
+        const auto cy = c.y;
+
+        const auto circum_x =
+            (ab * (cy - by) + cd * (ay - cy) + ef * (by - ay)) / (ax * (cy - by) + bx * (ay - cy) + cx * (by - ay));
+        const auto circum_y =
+            (ab * (cx - bx) + cd * (ax - cx) + ef * (bx - ax)) / (ay * (cx - bx) + by * (ax - cx) + cy * (bx - ax));
+
+        const Vector2 circum(circum_x / 2, circum_y / 2);
+        const auto circum_radius = dist2(a, circum);
+        const auto dist = dist2(v, circum);
+        return dist <= circum_radius;
+    }
+
+    bool operator==(const Triangle& other) const {
+        return a == other.a && b == other.b && c == other.c;
+    }
+};
+
+static bool almostEqual(const Edge& e1, const Edge& e2) {
+    return (almostEqual(e1.v, e2.v) && almostEqual(e1.w, e2.w)) || (almostEqual(e1.v, e2.w) && almostEqual(e1.w, e2.v));
 }
 
-bool DelaunayTriangulation::Triangle::circumCircleContains(const Vector2& v) const {
-    const auto ab = norm2(a);
-    const auto cd = norm2(b);
-    const auto ef = norm2(c);
-
-    const auto ax = a.x;
-    const auto ay = a.y;
-    const auto bx = b.x;
-    const auto by = b.y;
-    const auto cx = c.x;
-    const auto cy = c.y;
-
-    const auto circum_x =
-        (ab * (cy - by) + cd * (ay - cy) + ef * (by - ay)) / (ax * (cy - by) + bx * (ay - cy) + cx * (by - ay));
-    const auto circum_y =
-        (ab * (cx - bx) + cd * (ax - cx) + ef * (bx - ax)) / (ay * (cx - bx) + by * (ax - cx) + cy * (bx - ax));
-
-    const Vector2 circum(circum_x / 2, circum_y / 2);
-    const auto circum_radius = dist2(a, circum);
-    const auto dist = dist2(v, circum);
-    return dist <= circum_radius;
+static bool almostEqual(const Triangle& t1, const Triangle& t2) {
+    return (almostEqual(t1.a, t2.a) || almostEqual(t1.a, t2.b) || almostEqual(t1.a, t2.c)) &&
+           (almostEqual(t1.b, t2.a) || almostEqual(t1.b, t2.b) || almostEqual(t1.b, t2.c)) &&
+           (almostEqual(t1.c, t2.a) || almostEqual(t1.c, t2.b) || almostEqual(t1.c, t2.c));
 }
 
-DelaunayTriangulation::DelaunayTriangulation(const std::vector<Vector2>& vertices) : vertices(std::move(vertices)) {
-}
-
-DelaunayTriangulation::Connections DelaunayTriangulation::solve() {
+DelaunayTriangulationResult Engine::delaunayTriangulation(const std::vector<Vector2>& vertices) {
     // Determinate the super triangle
     auto minX = vertices[0].x;
     auto minY = vertices[0].y;
@@ -149,7 +176,7 @@ DelaunayTriangulation::Connections DelaunayTriangulation::solve() {
         vertexToIndex.insert(std::make_pair(vertices.at(i), i));
     }
 
-    Connections connections;
+    DelaunayTriangulationResult connections;
     connections.reserve(vertices.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         connections.insert(std::make_pair(i, std::vector<size_t>{}));

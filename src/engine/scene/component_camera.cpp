@@ -2,6 +2,9 @@
 
 using namespace Engine;
 
+// TODO
+static const Config config{};
+
 void ComponentCamera::update(const float delta) {
     if (!isOrthographic()) {
         auto pos = getObject().getPosition();
@@ -80,62 +83,6 @@ void ComponentCamera::moveToOrtographic(const Vector3& position) {
     lookAt(position, position - Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f});
 }
 
-void ComponentCamera::eventUserInput(const UserInput::Event& event) {
-    if (isOrthographic()) {
-        if (event.type == Input::CameraPan) {
-            panFlag = event.started;
-            mousePosOld = event.value;
-        } else if (event.type == Input::PointerMovement && panFlag) {
-            const auto from = screenToWorld(mousePosOld);
-            const auto to = screenToWorld(event.value);
-
-            const auto diff = Vector3{from.x - to.x, 0.0f, from.z - to.z};
-            moveToOrtographic(getObject().getPosition() + diff * Vector3{1.0f, 1.0f, -1.0f});
-
-            mousePosOld = event.value;
-        } else if (event.type == Input::CameraZoomIn || event.type == Input::CameraZoomOut) {
-            auto zoom = getOrthoScale();
-            const auto factor = map(zoom, zoomMin, zoomMax, 2.0f, 200.0f);
-            zoom += static_cast<float>(-event.value.y) * factor;
-
-            if (zoom < zoomMin) {
-                zoom = zoomMin;
-            } else if (zoom > zoomMax) {
-                zoom = zoomMax;
-            }
-
-            setOrthographic(zoom);
-        }
-    } else {
-        if (event.type == Input::CameraFreeLookForward) {
-            move[0] = event.started;
-        } else if (event.type == Input::CameraFreeLookBackwards) {
-            move[1] = event.started;
-        } else if (event.type == Input::CameraFreeLookLeft) {
-            move[2] = event.started;
-        } else if (event.type == Input::CameraFreeLookRight) {
-            move[3] = event.started;
-        } else if (event.type == Input::CameraFreeLookUp) {
-            move[4] = event.started;
-        } else if (event.type == Input::CameraFreeLookDown) {
-            move[5] = event.started;
-        } else if (event.type == Input::CameraFreeLookFast) {
-            fast = event.started;
-        } else if (event.type == Input::CameraFreeLookRotation) {
-            if (event.started && !rotationStarted) {
-                rotationStarted = true;
-                rotationInputValue = event.value;
-            } else if (event.started && rotationStarted) {
-                const auto diff = event.value - rotationInputValue;
-                rotationInputValue = event.value;
-                updateRotationFreeLook(diff * Vector2{1.0f, -1.0f});
-            } else if (!event.started) {
-                rotationStarted = false;
-            }
-        }
-    }
-}
-
 void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
     static const auto pitchMin = glm::radians(-80.0f);
     static const auto pitchMax = glm::radians(80.0f);
@@ -160,4 +107,121 @@ void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
     forward = glm::normalize(glm::rotateY(forward, newYaw));
 
     lookAt(getEyesPos(), getEyesPos() + forward);
+}
+
+void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
+    if (isOrthographic()) {
+        if (panFlag) {
+            const auto from = screenToWorld(mousePosOld);
+            const auto to = screenToWorld(pos);
+
+            const auto diff = Vector3{from.x - to.x, 0.0f, from.z - to.z};
+            moveToOrtographic(getObject().getPosition() + diff * Vector3{1.0f, 1.0f, -1.0f});
+
+            mousePosOld = pos;
+        }
+    } else {
+        if (rotationStarted) {
+            const auto diff = Vector2{pos} - rotationInputValue;
+            rotationInputValue = pos;
+            updateRotationFreeLook(diff * Vector2{1.0f, -1.0f});
+        }
+    }
+}
+
+void ComponentCamera::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    if (isOrthographic()) {
+        if (button == MouseButton::Right && !panFlag) {
+            panFlag = true;
+            mousePosOld = pos;
+        }
+    } else {
+        if (button == MouseButton::Right && !rotationStarted) {
+            rotationStarted = true;
+            rotationInputValue = pos;
+        }
+    }
+}
+
+void ComponentCamera::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+    if (isOrthographic()) {
+        if (button == MouseButton::Right) {
+            panFlag = false;
+        }
+    } else {
+        if (button == MouseButton::Right) {
+            rotationStarted = false;
+        }
+    }
+}
+
+void ComponentCamera::eventMouseScroll(const int xscroll, const int yscroll) {
+    if (isOrthographic()) {
+        auto zoom = getOrthoScale();
+        const auto factor = map(zoom, zoomMin, zoomMax, 2.0f, 200.0f);
+        zoom += static_cast<float>(-yscroll * 0.1f) * factor;
+
+        if (zoom < zoomMin) {
+            zoom = zoomMin;
+        } else if (zoom > zoomMax) {
+            zoom = zoomMax;
+        }
+
+        setOrthographic(zoom);
+    }
+}
+
+void ComponentCamera::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    if (!isOrthographic()) {
+        if (config.input.cameraForward(key, modifiers)) {
+            move[0] = true;
+        }
+        if (config.input.cameraBackwards(key, modifiers)) {
+            move[1] = true;
+        }
+        if (config.input.cameraLeft(key, modifiers)) {
+            move[2] = true;
+        }
+        if (config.input.cameraRight(key, modifiers)) {
+            move[3] = true;
+        }
+        if (config.input.cameraUp(key, modifiers)) {
+            move[4] = true;
+        }
+        if (config.input.cameraDown(key, modifiers)) {
+            move[5] = true;
+        }
+        if (config.input.cameraFast(key, modifiers)) {
+            fast = true;
+        }
+    }
+}
+
+void ComponentCamera::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    if (!isOrthographic()) {
+        if (config.input.cameraForward(key, modifiers)) {
+            move[0] = false;
+        }
+        if (config.input.cameraBackwards(key, modifiers)) {
+            move[1] = false;
+        }
+        if (config.input.cameraLeft(key, modifiers)) {
+            move[2] = false;
+        }
+        if (config.input.cameraRight(key, modifiers)) {
+            move[3] = false;
+        }
+        if (config.input.cameraUp(key, modifiers)) {
+            move[4] = false;
+        }
+        if (config.input.cameraDown(key, modifiers)) {
+            move[5] = false;
+        }
+        if (config.input.cameraFast(key, modifiers)) {
+            fast = false;
+        }
+    }
+}
+
+void ComponentCamera::eventCharTyped(const uint32_t code) {
 }

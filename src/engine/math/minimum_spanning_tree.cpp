@@ -5,10 +5,7 @@
 
 using namespace Engine;
 
-MinimumSpanningTree::MinimumSpanningTree(const std::vector<Vector2>& positions) : positions(positions) {
-}
-
-MinimumSpanningTree::Result MinimumSpanningTree::solve() {
+MinimumSpanningTreeResult Engine::minimumSpanningTree(const std::vector<Vector2>& positions) {
     struct WeightedConnection {
         float weight = 0.0f;
         size_t src = 0;
@@ -119,7 +116,7 @@ MinimumSpanningTree::Result MinimumSpanningTree::solve() {
     std::vector<bool> added;
     added.resize(positions.size(), false);
 
-    Result result;
+    MinimumSpanningTreeResult result;
 
     while (!q.empty()) {
         auto item = q.top();

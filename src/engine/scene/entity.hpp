@@ -6,6 +6,7 @@
 #include "component_debug.hpp"
 #include "component_directional_light.hpp"
 #include "component_grid.hpp"
+#include "component_icon_point_cloud.hpp"
 #include "component_label.hpp"
 #include "component_lines.hpp"
 #include "component_model.hpp"
@@ -39,6 +40,8 @@ using EntityComponentHelper = Component::TraitsMapper<
     Component::Traits<ComponentCamera,
                       Component::Flags::None>,
     Component::Traits<ComponentPointCloud,
+                      Component::Flags::None>,
+    Component::Traits<ComponentIconPointCloud,
                       Component::Flags::None>,
     Component::Traits<ComponentLines,
                       Component::Flags::None>,

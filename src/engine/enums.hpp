@@ -48,6 +48,7 @@ enum class Key {
 };
 
 enum class Modifier : int {
+    None = 0,
     Ctrl = 1 << 0,
     Shift = 1 << 1,
     Alt = 1 << 2,

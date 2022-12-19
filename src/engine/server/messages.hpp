@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../assets/registry.hpp"
+#include "../network/message.hpp"
 #include "../scene/entity.hpp"
 #include "world.hpp"
-#include <msgnet/message.hpp>
 
 #include <chrono>
 

@@ -18,19 +18,18 @@ SCHEMA(SystemData) {
     SCHEMA_NAME("SystemData");
 };
 
-SCHEMA(SectorPlanetData) {
+SCHEMA(PlanetaryBodyData) {
     std::string id;
     std::string galaxyId;
     std::string systemId;
     std::string name;
     bool isMoon{false};
-    std::optional<std::string> planet{std::nullopt};
+    std::optional<std::string> parent;
     Vector2 pos;
-    // AssetPlanetPtr asset;
 
-    SCHEMA_DEFINE(id, name, isMoon, planet, pos);
+    SCHEMA_DEFINE(id, name, isMoon, parent, pos);
     SCHEMA_INDEXES_NONE();
-    SCHEMA_NAME("SectorPlanetData");
+    SCHEMA_NAME("PlanetaryBodyData");
 };
 
 struct MessageFetchSystemRequest {
@@ -61,16 +60,36 @@ struct MessageFetchSystemsResponse {
     MESSAGE_DEFINE(MessageFetchSystemsResponse, systems, token, hasNext);
 };
 
+struct MessageFetchPlanetaryBodiesRequest {
+    std::string galaxyId;
+    std::string systemId;
+    std::string token;
+
+    MESSAGE_DEFINE(MessageFetchPlanetaryBodiesRequest, galaxyId, systemId, token);
+};
+
+struct MessageFetchPlanetaryBodiesResponse {
+    std::vector<PlanetaryBodyData> bodies;
+    std::string token;
+    bool hasNext{false};
+
+    MESSAGE_DEFINE(MessageFetchPlanetaryBodiesResponse, bodies, token, hasNext);
+};
+
 class ServiceSystems : public Service {
 public:
-    explicit ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db, MsgNet::Server& server,
+    explicit ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);
 
     void create(const SystemData& system);
-    void create(const SectorPlanetData& planet);
+    void update(const SystemData& system);
+    void create(const PlanetaryBodyData& planetaryBody);
+    std::vector<SystemData> getForGalaxy(const std::string& galaxyId);
+    std::vector<PlanetaryBodyData> getPlanetaryBodies(const std::string& galaxyId, const std::string& systemId);
 
     void handle(const PeerPtr& peer, MessageFetchSystemRequest req, MessageFetchSystemResponse& res);
     void handle(const PeerPtr& peer, MessageFetchSystemsRequest req, MessageFetchSystemsResponse& res);
+    void handle(const PeerPtr& peer, MessageFetchPlanetaryBodiesRequest req, MessageFetchPlanetaryBodiesResponse& res);
 
 private:
     const Config& config;

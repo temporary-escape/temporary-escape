@@ -5,24 +5,26 @@
 #include "../database/database.hpp"
 #include "../future.hpp"
 #include "../library.hpp"
+#include "../network/server.hpp"
 #include "../utils/worker.hpp"
 #include "generator.hpp"
 #include "messages.hpp"
 #include "sector.hpp"
 #include "session.hpp"
-#include <msgnet/server.hpp>
 #include <shared_mutex>
 
 namespace Engine {
-class ENGINE_API Server : public MsgNet::Server, public Service::SessionValidator {
+class ENGINE_API Python;
+
+class ENGINE_API Server : public Network::Server, public Service::SessionValidator {
 public:
     struct Certs {
         Certs() : key{}, cert{key}, dh{} {
         }
 
-        MsgNet::Pkey key;
-        MsgNet::Cert cert;
-        MsgNet::Dh dh;
+        Network::Pkey key;
+        Network::Cert cert;
+        Network::Dh dh;
     };
 
     explicit Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db);
@@ -39,7 +41,7 @@ public:
     void handle(const PeerPtr& peer, MessageShipMovementRequest req, MessageShipMovementResponse& res);
     void handle(const PeerPtr& peer, MessagePingResponse res);
 
-    std::shared_ptr<Service::Session> find(const std::shared_ptr<MsgNet::Peer>& peer) override;
+    std::shared_ptr<Service::Session> find(const std::shared_ptr<Network::Peer>& peer) override;
 
 private:
     void addPeerToLobby(const PeerPtr& peer);
@@ -63,13 +65,13 @@ public:
 private:
     const Config& config;
     Registry& registry;
-    TransactionalDatabase& db;
     World world;
-    Generator generator;
+    std::unique_ptr<Generator> generator;
 
     std::thread tickThread;
     std::atomic_bool tickFlag;
 
+    std::unique_ptr<Python> python;
     BackgroundWorker worker;
     Worker::Strand commands;
 
@@ -78,15 +80,13 @@ private:
 
     struct {
         std::shared_mutex mutex;
-        std::unordered_set<MsgNet::Peer*> lobby;
-        std::unordered_map<MsgNet::Peer*, SessionPtr> sessions;
+        std::unordered_set<Network::Peer*> lobby;
+        std::unordered_map<Network::Peer*, SessionPtr> sessions;
     } players;
 
     struct {
         std::shared_mutex mutex;
         std::unordered_map<std::string, std::shared_ptr<Sector>> map;
     } sectors;
-
-    std::unique_ptr<MsgNet::Server> server;
 };
 } // namespace Engine

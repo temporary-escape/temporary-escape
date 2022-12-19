@@ -92,12 +92,37 @@ Vector3 Engine::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projecti
 }
 
 Vector2 Engine::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
-                              const Vector3& pos) {
+                              const Vector3& pos, const bool invert) {
     const auto vp = projectionMatrix * glm::inverse(viewMatrix);
     const auto clipSpace = vp * Vector4{pos, 1.0f};
     auto ndcSpace = Vector3{clipSpace} / clipSpace.w;
     ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
-    return ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
+    const auto res = ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
+    if (invert) {
+        return {res.x, static_cast<float>(viewport.y) - res.y};
+    }
+    return res;
+}
+
+std::vector<Vector2> Engine::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix,
+                                           const Vector2i& viewport, const std::vector<Vector3>& positions,
+                                           const bool invert) {
+    const auto vp = projectionMatrix * glm::inverse(viewMatrix);
+
+    std::vector<Vector2> results;
+    results.resize(positions.size());
+
+    for (size_t i = 0; i < positions.size(); i++) {
+        const auto clipSpace = vp * Vector4{positions[i], 1.0f};
+        auto ndcSpace = Vector3{clipSpace} / clipSpace.w;
+        ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
+        results[i] = ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
+        if (invert) {
+            results[i] = Vector2{results[i].x, static_cast<float>(viewport.y) - results[i].y};
+        }
+    }
+
+    return results;
 }
 
 // Adapted from https://github.com/ghewgill/picomath/blob/master/javascript/erf.js

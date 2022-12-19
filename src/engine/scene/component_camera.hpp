@@ -4,7 +4,7 @@
 #include "component_user_input.hpp"
 
 namespace Engine {
-class ENGINE_API ComponentCamera : public Component, public Camera, public UserInput::Handler {
+class ENGINE_API ComponentCamera : public Component, public Camera, public UserInput {
 public:
     struct Uniform {
         Matrix4 transformationProjectionMatrix;
@@ -36,7 +36,13 @@ public:
 
     void update(float delta);
     void render(VulkanDevice& vulkan, const Vector2i& viewport);
-    void eventUserInput(const UserInput::Event& event) override;
+    void eventMouseMoved(const Vector2i& pos) override;
+    void eventMousePressed(const Vector2i& pos, MouseButton button) override;
+    void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
+    void eventMouseScroll(int xscroll, int yscroll) override;
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
+    void eventCharTyped(uint32_t code) override;
 
     const VulkanBuffer& getUbo() const {
         return ubo;

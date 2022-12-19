@@ -1,18 +1,12 @@
 #pragma once
 
+#include "../library.hpp"
 #include "vector.hpp"
 #include <unordered_map>
 #include <vector>
 
 namespace Engine {
-class MinimumSpanningTree {
-public:
-    using Result = std::unordered_map<size_t, std::vector<size_t>>;
+using MinimumSpanningTreeResult = std::unordered_map<size_t, std::vector<size_t>>;
 
-    explicit MinimumSpanningTree(const std::vector<Vector2>& positions);
-    Result solve();
-
-private:
-    const std::vector<Vector2>& positions;
-};
+ENGINE_API MinimumSpanningTreeResult minimumSpanningTree(const std::vector<Vector2>& positions);
 } // namespace Engine

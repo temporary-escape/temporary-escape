@@ -1,9 +1,14 @@
 #include "flood_fill.hpp"
+#include "../utils/exceptions.hpp"
 #include <unordered_set>
 
 using namespace Engine;
 
-void FloodFill::operator()(const std::function<void(size_t, size_t)>& yield) const {
+void Engine::floodFill(const std::vector<Vector2>& positions,
+                       const std::unordered_map<size_t, std::vector<size_t>>& connections,
+                       const std::unordered_map<size_t, Vector2>& startingPoints,
+                       const std::function<void(size_t, size_t)>& yield) {
+
     const auto getNearestPoint = [&](const Vector2& pos) -> size_t {
         const Vector2* found = &positions.at(0);
         for (size_t i = 1; i < positions.size(); i++) {
@@ -15,7 +20,9 @@ void FloodFill::operator()(const std::function<void(size_t, size_t)>& yield) con
             }
         }
 
-        assert(found != nullptr);
+        if (found == nullptr) {
+            EXCEPTION("Unable to find starting point");
+        }
         return found - positions.data();
     };
 

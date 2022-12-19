@@ -33,7 +33,7 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
 
             PRIVATE
             ENGINE_EXPORTS=1
-            ENGINE_SOURCE_PATH="${CMAKE_CURRENT_LIST_DIR}/Engine"
+            "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine"
             _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
             _CRT_SECURE_NO_WARNINGS=1)
 
@@ -45,12 +45,10 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
             msgpackc msgpackc-cxx
             RocksDB::rocksdb
             glad::glad
-            freetype
             asio
             asio::asio
             Vulkan::Vulkan
-            utf8cpp
-            MsgNet::MsgNet)
+            utf8cpp)
 
     # Engine private dependencies
     target_link_libraries(${LIBRARY_NAME} PRIVATE
@@ -60,11 +58,14 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
             HLSL SPIRV glslang OGLCompiler spirv-cross-glsl
             Png
             Stb
+            freetype
             RocksDB::rocksdb
             OpenSSL::SSL OpenSSL::Crypto
             OpenAL::OpenAL
             yaml-cpp
-            )
+            lz4::lz4
+            Python3::Python
+            pybind11::lto pybind11::embed pybind11::module)
 
     # Platform specific dependencies
     if (WIN32)

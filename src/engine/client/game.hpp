@@ -16,6 +16,7 @@
 #include "view_build.hpp"
 #include "view_galaxy.hpp"
 #include "view_space.hpp"
+#include "view_system.hpp"
 
 namespace Engine {
 class ENGINE_API TransactionalDatabase;
@@ -25,25 +26,23 @@ struct ENGINE_API Status {
     float value{1.0f};
 };
 
-class ENGINE_API Game : public View {
+class ENGINE_API Game : public UserInput {
 public:
     explicit Game(const Config& config, VulkanDevice& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
                   Scene::Pipelines& scenePipelines, SkyboxGenerator& skyboxGenerator, Status& status);
     virtual ~Game();
 
-    void update(float deltaTime) override;
-    void render(const Vector2i& viewport, Renderer& renderer) override;
-    void renderCanvas(const Vector2i& viewport) override;
+    void update(float deltaTime);
+    void render(const Vector2i& viewport, Renderer& renderer);
+    void renderCanvas(const Vector2i& viewport);
 
-    void eventUserInput(const UserInput::Event& event) override;
-    void eventMouseMoved(const Vector2i& pos);
-    void eventMousePressed(const Vector2i& pos, MouseButton button);
-    void eventMouseReleased(const Vector2i& pos, MouseButton button);
-    void eventMouseScroll(int xscroll, int yscroll);
-    void eventKeyPressed(Key key, Modifiers modifiers);
-    void eventKeyReleased(Key key, Modifiers modifiers);
-    void eventWindowResized(const Vector2i& size);
-    void eventCharTyped(uint32_t code);
+    void eventMouseMoved(const Vector2i& pos) override;
+    void eventMousePressed(const Vector2i& pos, MouseButton button) override;
+    void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
+    void eventMouseScroll(int xscroll, int yscroll) override;
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
+    void eventCharTyped(uint32_t code) override;
 
     bool hasView() const {
         return view != nullptr;
@@ -62,7 +61,6 @@ private:
     Status& status;
     Stats stats;
     // bool shouldLoadShaders{false};
-    UserInput userInput;
     Nuklear nuklear;
     Server::Certs serverCerts;
 
@@ -78,6 +76,7 @@ private:
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;
     std::unique_ptr<ViewGalaxy> viewGalaxy;
+    std::unique_ptr<ViewSystem> viewSystem;
     View* view{nullptr};
     // std::string statusText;
     // float statusValue{0.0f};

@@ -58,7 +58,6 @@ int main(int argc, char** argv) {
         rootPath = std::filesystem::absolute(rootPath);
         Config config{};
         config.assetsPath = rootPath / "assets";
-        config.wrenPaths = {config.assetsPath.string()};
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";
         config.shaderCachePath = config.userdataPath / "Shaders";

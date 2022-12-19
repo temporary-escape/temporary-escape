@@ -3,32 +3,36 @@
 #include "../graphics/nuklear.hpp"
 
 namespace Engine {
-class ENGINE_API GuiWindow {
+class ENGINE_API GuiWindow : public NuklearWindow {
 public:
-    explicit GuiWindow(Nuklear& nuklear);
-
+    GuiWindow();
     virtual ~GuiWindow() = default;
 
-    void draw(const Vector2i& viewport);
+    void draw(Nuklear& nuklear, const Vector2& viewport) override;
 
     const Vector2& getSize() const;
     const Vector2& getPos() const;
     Nuklear::Flags getFlags() const;
-    void setSize(const Vector2& size);
-    void setPos(const Vector2& pos);
-    void setFlags(unsigned int flags);
+    void setSize(const Vector2& value);
+    void setEnabled(bool value);
+    void setPos(const Vector2& value);
+    void setFlags(unsigned int value);
     const std::string& getTitle() const;
-    void setTitle(const std::string& title);
+    void setTitle(const std::string& value);
     void setBordered();
     void setWithBackground();
     void setNoScrollbar();
     void setDynamic();
 
-protected:
-    virtual void beforeDraw(const Vector2i& viewport);
-    virtual void drawLayout() = 0;
+    bool isEnabled() const {
+        return enabled;
+    }
 
-    Nuklear& nuklear;
+protected:
+    virtual void beforeDraw(const Vector2& viewport);
+    virtual void drawLayout(Nuklear& nuklear) = 0;
+
+    bool enabled{true};
     std::string title;
     Vector2 size{100.0f, 100.0f};
     Vector2 pos{0.0f, 0.0f};

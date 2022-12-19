@@ -15,7 +15,7 @@ Client::Client(const Config& config, Registry& registry, Scene::Pipelines& scene
 
     localProfile.fromYaml(profilePath);
 
-    MsgNet::Client::start();
+    Network::Client::start();
 
     HANDLE_REQUEST(MessagePlayerLocationChanged);
     HANDLE_REQUEST(MessagePingRequest);
@@ -26,13 +26,13 @@ Client::~Client() {
 }
 
 void Client::stop() {
-    MsgNet::Client::stop();
+    Network::Client::stop();
 }
 
 Future<void> Client::connect(const std::string& address, const int port) {
     return std::async([this, address, port]() {
         Log::i(CMP, "Connecting to: {} port: {}", address, port);
-        MsgNet::Client::connect(address, port);
+        Network::Client::connect(address, port);
 
         Log::i(CMP, "Connected!");
 

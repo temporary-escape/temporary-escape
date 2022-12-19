@@ -12,70 +12,70 @@ Application::Application(const Config& config) :
     canvas{*this},
     font{*this, config.fontsPath, "iosevka-aile", 42.0f} {
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.brdf = createPipeline({
             {this->config.shadersPath / "brdf.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "brdf.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.copy = createPipeline({
             {this->config.shadersPath / "pass-copy.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-copy.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.pbr = createPipeline({
             {this->config.shadersPath / "pass-pbr.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-pbr.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.skybox = createPipeline({
             {this->config.shadersPath / "pass-skybox.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-skybox.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.fxaa = createPipeline({
             {this->config.shadersPath / "pass-fxaa.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-fxaa.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.ssao = createPipeline({
             {this->config.shadersPath / "pass-ssao.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-ssao.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.bloomExtract = createPipeline({
             {this->config.shadersPath / "pass-bloom-extract.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-bloom-extract.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.bloomBlur = createPipeline({
             {this->config.shadersPath / "pass-bloom-blur.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-bloom-blur.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         rendererPipelines.bloomCombine = createPipeline({
             {this->config.shadersPath / "pass-bloom-combine.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "pass-bloom-combine.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         skyboxGeneratorPipelines.stars = createPipeline({
             {this->config.shadersPath / "skybox-stars.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "skybox-stars.geom", "", ShaderType::Geometry},
@@ -83,53 +83,68 @@ Application::Application(const Config& config) :
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         skyboxGeneratorPipelines.nebula = createPipeline({
             {this->config.shadersPath / "skybox-nebula.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "skybox-nebula.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         skyboxGeneratorPipelines.irradiance = createPipeline({
             {this->config.shadersPath / "skybox-irradiance.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "skybox-irradiance.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         skyboxGeneratorPipelines.prefilter = createPipeline({
             {this->config.shadersPath / "skybox-prefilter.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "skybox-prefilter.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         scenePipelines.debug = createPipeline({
             {this->config.shadersPath / "component-debug.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-debug.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         scenePipelines.grid = createPipeline({
             {this->config.shadersPath / "component-grid.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-grid.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         scenePipelines.wireframe = createPipeline({
             {this->config.shadersPath / "component-wireframe.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-wireframe.vert", "", ShaderType::Vertex},
         });
     });
 
-    shaderQueue.push([this]() {
+    shaderQueue.emplace([this]() {
         scenePipelines.pointCloud = createPipeline({
             {this->config.shadersPath / "component-point-cloud.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-point-cloud.geom", "", ShaderType::Geometry},
             {this->config.shadersPath / "component-point-cloud.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.emplace([this]() {
+        scenePipelines.iconPointCloud = createPipeline({
+            {this->config.shadersPath / "component-icon-point-cloud.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "component-icon-point-cloud.geom", "", ShaderType::Geometry},
+            {this->config.shadersPath / "component-icon-point-cloud.vert", "", ShaderType::Vertex},
+        });
+    });
+
+    shaderQueue.emplace([this]() {
+        scenePipelines.lines = createPipeline({
+            {this->config.shadersPath / "component-lines.frag", "", ShaderType::Fragment},
+            {this->config.shadersPath / "component-lines.vert", "", ShaderType::Vertex},
         });
     });
 

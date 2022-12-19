@@ -4,15 +4,14 @@
 #include "../config.hpp"
 #include "../future.hpp"
 #include "../library.hpp"
+#include "../network/client.hpp"
 #include "../scene/scene.hpp"
 #include "../server/messages.hpp"
 #include "../server/sector.hpp"
 #include "../utils/return_type.hpp"
 #include "../utils/worker.hpp"
 #include "../utils/yaml.hpp"
-#include "request.hpp"
 #include "stats.hpp"
-#include <msgnet/client.hpp>
 
 namespace Engine {
 struct PlayerLocalProfile {
@@ -22,7 +21,7 @@ struct PlayerLocalProfile {
     YAML_DEFINE(name, secret);
 };
 
-class ENGINE_API Client : public MsgNet::Client {
+class ENGINE_API Client : public Network::Client {
 public:
     explicit Client(const Config& config, Registry& registry, Scene::Pipelines& scenePipelines, Stats& stats,
                     const Path& profilePath);

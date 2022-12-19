@@ -6,12 +6,12 @@
 namespace Engine {
 class ENGINE_API GuiBlockSelector : public GuiWindow {
 public:
-    explicit GuiBlockSelector(Nuklear& nuklear);
+    explicit GuiBlockSelector();
 
     ~GuiBlockSelector() override = default;
 
 private:
-    void drawLayout() override;
-    void beforeDraw(const Vector2i& viewport) override;
+    void drawLayout(Nuklear& nuklear) override;
+    void beforeDraw(const Vector2& viewport) override;
 };
 } // namespace Engine

@@ -49,6 +49,7 @@ private:
     std::vector<Point> points;
     VulkanBuffer vbo;
     VulkanVertexInputFormat vboFormat;
+    size_t count{0};
 
 public:
     MSGPACK_DEFINE_ARRAY();

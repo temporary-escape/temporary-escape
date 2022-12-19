@@ -2,8 +2,8 @@
 
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
+#include "../window.hpp"
 #include "vulkan_device.hpp"
-#include "window.hpp"
 
 struct GLFWwindow;
 

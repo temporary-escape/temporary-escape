@@ -6,9 +6,10 @@ namespace Engine {
 SCHEMA(FactionData) {
     std::string id;
     std::string name;
-    float color;
+    float color{0.0f};
+    std::string homeSectorId;
 
-    SCHEMA_DEFINE(id, name, color);
+    SCHEMA_DEFINE(id, name, color, homeSectorId);
     SCHEMA_INDEXES(name);
     SCHEMA_NAME("FactionData");
 };
@@ -44,8 +45,9 @@ struct MessageFetchFactionsResponse {
 class ServiceFactions : public Service {
 public:
     explicit ServiceFactions(const Config& config, Registry& registry, TransactionalDatabase& db,
-                             MsgNet::Server& server, Service::SessionValidator& sessionValidator);
+                             Network::Server& server, Service::SessionValidator& sessionValidator);
 
+    std::vector<FactionData> get();
     void create(const FactionData& faction);
     void handle(const PeerPtr& peer, MessageFetchFactionRequest req, MessageFetchFactionResponse& res);
     void handle(const PeerPtr& peer, MessageFetchFactionsRequest req, MessageFetchFactionsResponse& res);

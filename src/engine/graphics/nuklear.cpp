@@ -41,6 +41,10 @@ void Nuklear::end() {
     nk_clear(ctx.get());
 }
 
+void Nuklear::draw(NuklearWindow& window) {
+    window.draw(*this, getViewport());
+}
+
 void Nuklear::input() {
     nk_input_begin(ctx.get());
     for (const auto& event : inputEvents) {
@@ -163,7 +167,10 @@ void Nuklear::layoutDynamic(float height, int count) {
     nk_layout_row_dynamic(ctx.get(), height, count);
 }
 
-bool Nuklear::button(const std::string& text) {
+bool Nuklear::button(const std::string& text, const TextAlign align) {
+    nk_style_button& style = ctx->style.button;
+    style.text_alignment = static_cast<nk_flags>(align);
+
     return nk_button_label(ctx.get(), text.c_str()) == nk_true;
 }
 

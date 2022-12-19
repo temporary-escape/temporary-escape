@@ -23,7 +23,7 @@ Vector2 GalaxyDistribution::operator()(std::mt19937_64& rng) {
         const auto sa = std::sin(angle);
         vec = Vector2{ca * vec.x - sa * vec.y, sa * vec.x + ca * vec.y};
 
-        fixed = Vector2i{vec};
+        fixed = Vector2i{vec} / 10;
 
         const auto test = *reinterpret_cast<uint64_t*>(&fixed.x);
         if (positions.find(test) == positions.end()) {

@@ -15,7 +15,6 @@ Game::Game(const Config& config, VulkanDevice& vulkan, Registry& registry, Canva
     scenePipelines{scenePipelines},
     skyboxGenerator{skyboxGenerator},
     status{status},
-    userInput{config, *this},
     nuklear{canvas, font.regular, 19.0f},
     serverCerts{} {
 }
@@ -49,11 +48,10 @@ void Game::update(float deltaTime) {
         status.message = "Entering universe...";
         status.value = 1.0f;
 
-        viewSpace = std::make_unique<ViewSpace>(config, vulkan, registry, canvas, font, nuklear, skyboxGenerator.get(),
-                                                *client);
+        viewSpace = std::make_unique<ViewSpace>(config, vulkan, registry, skyboxGenerator.get(), *client);
 
-        viewGalaxy =
-            std::make_unique<ViewGalaxy>(config, vulkan, scenePipelines, registry, canvas, font, nuklear, *client);
+        viewGalaxy = std::make_unique<ViewGalaxy>(config, vulkan, scenePipelines, registry, *client);
+        viewSystem = std::make_unique<ViewSystem>(config, vulkan, scenePipelines, registry, *client);
     }
 
     if (server && serverLoad.valid() && serverLoad.ready() && !client) {
@@ -111,6 +109,7 @@ void Game::update(float deltaTime) {
             Fs::create_directories(path);
         }
         Log::i(CMP, "Starting database with save: '{}'", path);
+
         db = std::make_unique<RocksDB>(path);
     }
 
@@ -133,24 +132,51 @@ void Game::renderCanvas(const Vector2i& viewport) {
     canvas.begin(viewport);
 
     if (view) {
-        view->renderCanvas(viewport);
+        view->renderCanvas(viewport, canvas);
+
+        nuklear.begin(viewport);
+        view->renderGui(viewport, nuklear);
+        nuklear.end();
     }
 
-    /*nuklear.begin(viewport);
-
-    const auto flags = Nuklear::WindowFlags::Border | Nuklear::WindowFlags::Background | Nuklear::WindowFlags::Title;
-    if (nuklear.beginWindow("Hello World!", {200.0f, 200.0f}, {500.0f, 500.0f}, flags)) {
-        nuklear.layoutDynamic(30.0f, 1);
-        nuklear.button("Click me");
-        nuklear.endWindow();
-    }
-
-    nuklear.end();*/
     canvas.end();
 }
 
-void Game::eventUserInput(const UserInput::Event& event) {
-    if (event.started && event.type == Input::GuiToggleGalaxyMap) {
+void Game::eventMouseMoved(const Vector2i& pos) {
+    nuklear.eventMouseMoved(pos);
+    if (view) {
+        view->eventMouseMoved(pos);
+    }
+}
+
+void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    nuklear.eventMousePressed(pos, button);
+    if (view) {
+        view->eventMousePressed(pos, button);
+    }
+}
+
+void Game::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+    nuklear.eventMouseReleased(pos, button);
+    if (view) {
+        view->eventMouseReleased(pos, button);
+    }
+}
+
+void Game::eventMouseScroll(const int xscroll, const int yscroll) {
+    nuklear.eventMouseScroll(xscroll, yscroll);
+    if (view) {
+        view->eventMouseScroll(xscroll, yscroll);
+    }
+}
+
+void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    nuklear.eventKeyPressed(key, modifiers);
+    if (view) {
+        view->eventKeyPressed(key, modifiers);
+    }
+
+    if (config.input.galaxyMapToggle(key, modifiers)) {
         if (view != viewGalaxy.get()) {
             Log::i(CMP, "Switching to galaxy map scene...");
             view = viewGalaxy.get();
@@ -159,44 +185,28 @@ void Game::eventUserInput(const UserInput::Event& event) {
             Log::i(CMP, "Switching to space scene...");
             view = viewSpace.get();
         }
-    } else if (view) {
-        view->eventUserInput(event);
+    } else if (config.input.systemMapToggle(key, modifiers)) {
+        if (view != viewSystem.get()) {
+            Log::i(CMP, "Switching to system map scene...");
+            view = viewSystem.get();
+            viewSystem->load();
+        } else {
+            Log::i(CMP, "Switching to system scene...");
+            view = viewSpace.get();
+        }
     }
 }
 
-void Game::eventMouseMoved(const Vector2i& pos) {
-    nuklear.eventMouseMoved(pos);
-    userInput.eventMouseMoved(pos);
-}
-
-void Game::eventMousePressed(const Vector2i& pos, MouseButton button) {
-    nuklear.eventMousePressed(pos, button);
-    userInput.eventMousePressed(pos, button);
-}
-
-void Game::eventMouseReleased(const Vector2i& pos, MouseButton button) {
-    nuklear.eventMouseReleased(pos, button);
-    userInput.eventMouseReleased(pos, button);
-}
-
-void Game::eventMouseScroll(int xscroll, int yscroll) {
-    nuklear.eventMouseScroll(xscroll, yscroll);
-    userInput.eventMouseScroll(xscroll, yscroll);
-}
-
-void Game::eventKeyPressed(Key key, Modifiers modifiers) {
-    nuklear.eventKeyPressed(key, modifiers);
-    userInput.eventKeyPressed(key, modifiers);
-}
-
-void Game::eventKeyReleased(Key key, Modifiers modifiers) {
+void Game::eventKeyReleased(const Key key, const Modifiers modifiers) {
     nuklear.eventKeyReleased(key, modifiers);
-    userInput.eventKeyReleased(key, modifiers);
+    if (view) {
+        view->eventKeyReleased(key, modifiers);
+    }
 }
 
-void Game::eventWindowResized(const Vector2i& size) {
-}
-
-void Game::eventCharTyped(uint32_t code) {
+void Game::eventCharTyped(const uint32_t code) {
     nuklear.eventCharTyped(code);
+    if (view) {
+        view->eventCharTyped(code);
+    }
 }

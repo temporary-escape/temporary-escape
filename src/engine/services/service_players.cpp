@@ -7,7 +7,7 @@ using namespace Engine;
 #define CMP "ServicePlayers"
 
 ServicePlayers::ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db,
-                               MsgNet::Server& server, Service::SessionValidator& sessionValidator) :
+                               Network::Server& server, Service::SessionValidator& sessionValidator) :
     config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
 
     HANDLE_REQUEST(MessagePlayerLocationRequest, MessagePlayerLocationResponse);

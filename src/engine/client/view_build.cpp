@@ -5,17 +5,12 @@
 
 using namespace Engine;
 
-ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry,
-                     Canvas& canvas, FontFamily& font, Nuklear& nuklear) :
+ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry) :
     config{config},
     vulkan{vulkan},
     registry{registry},
-    canvas{canvas},
-    font{font},
-    nuklear{nuklear},
     skybox{vulkan, Color4{0.03f, 0.03f, 0.03f, 1.0f}},
-    scene{&registry.getVoxelShapeCache(), &scenePipelines},
-    guiBlockSelector{nuklear} {
+    scene{&registry.getVoxelShapeCache(), &scenePipelines} {
 
     // auto skybox = std::make_shared<Entity>();
     // skybox->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));
@@ -87,22 +82,62 @@ void ViewBuild::update(const float deltaTime) {
 }
 
 void ViewBuild::render(const Vector2i& viewport, Renderer& renderer) {
-    renderer.render(viewport, scene, skybox);
+    Renderer::Options options{};
+    options.blurStrength = 0.2f;
+    renderer.render(viewport, scene, skybox, options);
 }
 
-void ViewBuild::renderCanvas(const Vector2i& viewport) {
+void ViewBuild::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
     // canvas.rect({0.0f, 0.0f}, {32.0f, 32.0f}, Color4{1.0f, 0.0f, 0.0f, 1.0f});
     // canvas.text({50.0f, 50.0f}, "Hello World! qgWQ_Ap.", font.regular, 10.5f, Color4{1.0f});
 
-    nuklear.begin(viewport);
+    /*nuklear.begin(viewport);
     guiBlockSelector.draw(viewport);
-    nuklear.end();
+    nuklear.end();*/
 }
 
-void ViewBuild::eventUserInput(const UserInput::Event& event) {
-    scene.eventUserInput(event);
+void ViewBuild::renderGui(const Vector2i& viewport, Nuklear& nuklear) {
+}
 
-    if (event.type == Input::PointerMovement) {
-        raycastScreenPos = event.value;
-    }
+void ViewBuild::eventMouseMoved(const Vector2i& pos) {
+    scene.eventMouseMoved(pos);
+
+    raycastScreenPos = pos;
+}
+
+void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    scene.eventMousePressed(pos, button);
+
+    /*contextMenu.pos = camera->worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
+        contextMenu.enabled = true;
+        contextMenu.items = {
+            {"View", [this]() { contextMenu.enabled = false; }},
+            {"Info", [this]() { contextMenu.enabled = false; }},
+        };*/
+}
+
+void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+    scene.eventMouseReleased(pos, button);
+}
+
+void ViewBuild::eventMouseScroll(const int xscroll, const int yscroll) {
+    scene.eventMouseScroll(xscroll, yscroll);
+}
+
+void ViewBuild::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    scene.eventKeyPressed(key, modifiers);
+}
+
+void ViewBuild::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    scene.eventKeyReleased(key, modifiers);
+}
+
+void ViewBuild::eventCharTyped(const uint32_t code) {
+    scene.eventCharTyped(code);
+}
+
+void ViewBuild::onEnter() {
+}
+
+void ViewBuild::onExit() {
 }

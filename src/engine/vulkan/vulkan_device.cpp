@@ -254,10 +254,12 @@ void VulkanDevice::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t f
 }
 
 VulkanBuffer VulkanDevice::createBuffer(VulkanBuffer::Type type, VulkanBuffer::Usage usage, size_t size) {
+    Log::d(CMP, "Creating VBO of size: {} bytes", size);
     return VulkanBuffer(device, type, usage, size);
 }
 
 VulkanTexture VulkanDevice::createTexture(const VulkanTexture::Descriptor& desc) {
+    Log::d(CMP, "Creating VBO of size: {} pixels", desc.size);
     return VulkanTexture(device, desc);
 }
 

@@ -50,6 +50,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
                 static_cast<float>(res->y) / static_cast<float>(config.imageAtlasSize),
             };
 
+            allocation.texture = &layer->getTexture();
+
             return allocation;
         }
     }
@@ -67,6 +69,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
         static_cast<float>(res->x) / static_cast<float>(config.imageAtlasSize),
         static_cast<float>(res->y) / static_cast<float>(config.imageAtlasSize),
     };
+
+    allocation.texture = &layer->getTexture();
 
     return allocation;
 }

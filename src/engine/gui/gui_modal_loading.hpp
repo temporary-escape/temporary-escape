@@ -6,8 +6,7 @@
 namespace Engine {
 class ENGINE_API GuiModalLoading : public GuiWindow {
 public:
-    explicit GuiModalLoading(Nuklear& nuklear, const std::string& title);
-
+    explicit GuiModalLoading(const std::string& title);
     ~GuiModalLoading() override = default;
 
     void setProgress(const float value) {
@@ -15,8 +14,8 @@ public:
     }
 
 private:
-    void drawLayout() override;
-    void beforeDraw(const Vector2i& viewport) override;
+    void drawLayout(Nuklear& nuklear) override;
+    void beforeDraw(const Vector2& viewport) override;
 
     float progress;
 };

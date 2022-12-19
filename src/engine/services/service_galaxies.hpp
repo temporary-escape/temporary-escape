@@ -29,10 +29,10 @@ struct MessageFetchGalaxyResponse {
 class ServiceGalaxies : public Service {
 public:
     explicit ServiceGalaxies(const Config& config, Registry& registry, TransactionalDatabase& db,
-                             MsgNet::Server& server, Service::SessionValidator& sessionValidator);
+                             Network::Server& server, Service::SessionValidator& sessionValidator);
 
+    GalaxyData get(const std::string& id);
     void create(const GalaxyData& galaxy);
-
     void handle(const PeerPtr& peer, MessageFetchGalaxyRequest req, MessageFetchGalaxyResponse& res);
 
 private:

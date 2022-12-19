@@ -59,10 +59,6 @@
       "version>=": "3.3.0"
     },
     {
-      "name": "msgnet",
-      "version>=": "0.1.4"
-    },
-    {
       "name": "asio",
       "version>=": "1.20.0"
     },
@@ -111,6 +107,18 @@
     {
       "name": "yaml-cpp",
       "version>=": "0.7.0#1"
+    },
+    {
+      "name": "lz4",
+      "version>=": "1.9.3#3"
+    },
+    {
+      "name": "python3",
+      "version>=": "3.10.1#4"
+    },
+    {
+      "name": "pybind11",
+      "version>=": "2.9.0"
     }
   ],
   "builtin-baseline": "1085a57da0725c19e19586025438e8c16f34c890"

@@ -37,6 +37,18 @@ public:
         return mesh;
     }*/
 
+    void set(std::vector<Line> values) {
+        setDirty(true);
+        lines = std::move(values);
+    }
+
+    void append(const std::vector<Line>& values) {
+        setDirty(true);
+        const auto offset = lines.size();
+        lines.resize(lines.size() + values.size());
+        std::memcpy(lines.data() + offset, values.data(), values.size() * sizeof(Line));
+    }
+
     void add(const Vector3& from, const Vector3& to, const Color4& color) {
         setDirty(true);
         lines.push_back({from, color, to, color});
@@ -54,6 +66,7 @@ private:
     std::vector<Line> lines;
     VulkanBuffer vbo;
     VulkanVertexInputFormat vboFormat;
+    size_t count{0};
 
 public:
     MSGPACK_DEFINE_ARRAY();

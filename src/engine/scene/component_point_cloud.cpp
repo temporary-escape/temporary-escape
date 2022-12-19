@@ -1,11 +1,15 @@
 #include "component_point_cloud.hpp"
 
+#define CMP "ComponentPointCloud"
+
 using namespace Engine;
 
 void ComponentPointCloud::recalculate(VulkanDevice& vulkan) {
     if (!isDirty()) {
         return;
     }
+
+    Log::d(CMP, "Recreating with {} points", points.size());
 
     vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Static, sizeof(Point) * points.size());
     vbo.subData(points.data(), 0, sizeof(Point) * points.size());
@@ -21,15 +25,19 @@ void ComponentPointCloud::recalculate(VulkanDevice& vulkan) {
         },
     });
 
+    count = points.size();
+    points.clear();
+    points.shrink_to_fit();
+
     setDirty(false);
 }
 
 void ComponentPointCloud::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (points.empty()) {
+    recalculate(vulkan);
+
+    if (!count) {
         return;
     }
-
-    recalculate(vulkan);
 
     const Matrix4 transform = getObject().getAbsoluteTransform();
     vulkan.pushConstant(0, transform);
@@ -38,5 +46,5 @@ void ComponentPointCloud::render(VulkanDevice& vulkan, const Vector2i& viewport,
     vulkan.bindVertexInputFormat(vboFormat);
     vulkan.bindTexture(texture->getVulkanTexture(), 1);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vulkan.draw(points.size(), 1, 0, 0);
+    vulkan.draw(count, 1, 0, 0);
 }

@@ -60,7 +60,11 @@ public:
         return Engine::screenToWorld(object->getTransform(), projectionMatrix, viewport, pos);
     }
 
-    Vector2 worldToScreen(const Vector3& pos) const {
+    Vector2 worldToScreen(const Vector3& pos, bool invert = false) const {
+        return Engine::worldToScreen(object->getTransform(), projectionMatrix, viewport, pos, invert);
+    }
+
+    std::vector<Vector2> worldToScreen(const std::vector<Vector3>& pos) const {
         return Engine::worldToScreen(object->getTransform(), projectionMatrix, viewport, pos);
     }
 

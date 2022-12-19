@@ -13,7 +13,10 @@ extern ENGINE_API Vector3 intersectBoxNormal(const Vector3& center, const Vector
 extern ENGINE_API Vector3 screenToWorld(const Matrix4& viewMatrix, const Matrix4& projectionMatrix,
                                         const Vector2i& viewport, const Vector2& pos);
 extern ENGINE_API Vector2 worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix,
-                                        const Vector2i& viewport, const Vector3& pos);
+                                        const Vector2i& viewport, const Vector3& pos, bool invert = false);
+extern ENGINE_API std::vector<Vector2> worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix,
+                                                     const Vector2i& viewport, const std::vector<Vector3>& positions,
+                                                     bool invert = false);
 extern ENGINE_API std::vector<double> gaussianKernel(size_t size = 5, double sigma = 1.0, double mu = 0.0,
                                                      double step = 1.0);
 

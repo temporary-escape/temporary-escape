@@ -1,6 +1,7 @@
 #include "server.hpp"
 #include "../utils/random.hpp"
-#include "server.hpp"
+#include "generator_default.hpp"
+#include "python.hpp"
 #include <memory>
 
 #define CMP "Server"
@@ -9,22 +10,22 @@ using namespace Engine;
 
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req, Res)                                                                                       \
-    MsgNet::Server::addHandler([this](const PeerPtr& peer, Req req) -> Res {                                           \
+    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> Res {                                          \
         Res res{};                                                                                                     \
         this->handle(peer, std::move(req), res);                                                                       \
         return res;                                                                                                    \
     });
 #define HANDLE_REQUEST_VOID(Req)                                                                                       \
-    MsgNet::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); });
+    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); });
 
 Server::Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db) :
-    MsgNet::Server{static_cast<unsigned int>(config.serverPort), certs.key, certs.dh, certs.cert},
+    Network::Server{static_cast<unsigned int>(config.serverPort), certs.key, certs.dh, certs.cert},
     config{config},
     registry{registry},
-    db{db},
     world{config, registry, db, *this, *this},
-    generator{config, db, world},
+    generator{std::make_unique<GeneratorDefault>(config, world)},
     tickFlag{true},
+    python{std::make_unique<Python>()},
     worker{4},
     commands{worker.strand()} {
 
@@ -37,7 +38,7 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
 Future<void> Server::load() {
     return std::async([this]() {
         try {
-            generator.generate(123456789ULL);
+            generator->generate(123456789ULL);
             tickThread = std::thread(&Server::tick, this);
             Log::i(CMP, "Universe has been generated and is ready");
         } catch (...) {
@@ -45,7 +46,7 @@ Future<void> Server::load() {
         }
 
         try {
-            MsgNet::Server::start();
+            Network::Server::start();
             Log::i(CMP, "TCP server started");
         } catch (...) {
             EXCEPTION_NESTED("Failed to start the server");
@@ -67,7 +68,7 @@ void Server::stop() {
         tickThread.join();
     }
     worker.stop();
-    MsgNet::Server::stop();
+    Network::Server::stop();
 }
 
 Server::~Server() {
@@ -208,8 +209,7 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 
     try {
         Log::i(CMP, "Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
-        auto instance =
-            std::make_shared<Sector>(config, world, registry, db, sector.galaxyId, sector.systemId, sector.id);
+        auto instance = std::make_shared<Sector>(config, world, registry, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, instance));
 
         return instance;
@@ -442,6 +442,6 @@ void Server::postDispatch(std::function<void()> fn) {
     worker.postSafe(std::forward<decltype(fn)>(fn));
 }
 
-std::shared_ptr<Service::Session> Server::find(const std::shared_ptr<MsgNet::Peer>& peer) {
+std::shared_ptr<Service::Session> Server::find(const std::shared_ptr<Network::Peer>& peer) {
     return peerToSession(peer);
 }

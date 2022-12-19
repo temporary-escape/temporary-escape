@@ -3,7 +3,7 @@
 #include "../assets/registry.hpp"
 #include "../config.hpp"
 #include "../database/database.hpp"
-#include <msgnet/server.hpp>
+#include "../network/server.hpp"
 
 #define HANDLE_REQUEST(Req, Res)                                                                                       \
     server.addHandler([this](const PeerPtr& peer, Req req) -> Res {                                                    \
@@ -15,7 +15,7 @@
 namespace Engine {
 class ENGINE_API Service {
 public:
-    using PeerPtr = std::shared_ptr<MsgNet::Peer>;
+    using PeerPtr = std::shared_ptr<Network::Peer>;
 
     class Session {
     public:
@@ -28,7 +28,7 @@ public:
     public:
         virtual ~SessionValidator() = default;
 
-        virtual std::shared_ptr<Session> find(const std::shared_ptr<MsgNet::Peer>& peer) = 0;
+        virtual std::shared_ptr<Session> find(const std::shared_ptr<Network::Peer>& peer) = 0;
     };
 
     virtual ~Service() = default;

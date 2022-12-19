@@ -2,13 +2,17 @@
 
 using namespace Engine;
 
-GuiWindow::GuiWindow(Nuklear& nuklear) : nuklear{nuklear} {
+GuiWindow::GuiWindow() : title{std::to_string(reinterpret_cast<uint64_t>(this))} {
 }
 
-void GuiWindow::draw(const Vector2i& viewport) {
+void GuiWindow::draw(Nuklear& nuklear, const Vector2& viewport) {
+    if (!enabled) {
+        return;
+    }
+
     beforeDraw(viewport);
     if (nuklear.beginWindow(title, pos, size, flags)) {
-        drawLayout();
+        drawLayout(nuklear);
         nuklear.endWindow();
     }
 }
@@ -25,19 +29,23 @@ Nuklear::Flags GuiWindow::getFlags() const {
     return flags;
 }
 
-void GuiWindow::setSize(const Vector2& size) {
-    GuiWindow::size = size;
+void GuiWindow::setSize(const Vector2& value) {
+    size = value;
 }
 
-void GuiWindow::setPos(const Vector2& pos) {
-    GuiWindow::pos = pos;
+void GuiWindow::setPos(const Vector2& value) {
+    pos = value;
 }
 
-void GuiWindow::setFlags(unsigned int flags) {
-    GuiWindow::flags = flags;
+void GuiWindow::setFlags(unsigned int value) {
+    flags = value;
 }
 
-void GuiWindow::beforeDraw(const Vector2i& viewport) {
+void GuiWindow::setEnabled(bool value) {
+    enabled = value;
+}
+
+void GuiWindow::beforeDraw(const Vector2& viewport) {
     (void)viewport;
 }
 
@@ -45,8 +53,8 @@ const std::string& GuiWindow::getTitle() const {
     return title;
 }
 
-void GuiWindow::setTitle(const std::string& title) {
-    GuiWindow::title = title;
+void GuiWindow::setTitle(const std::string& value) {
+    title = value;
     flags = flags | Nuklear::WindowFlags::Title;
 }
 

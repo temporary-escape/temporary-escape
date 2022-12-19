@@ -20,13 +20,18 @@ public:
         VulkanPipeline copy;
     };
 
+    struct Options {
+        float blurStrength{0.2f};
+        float exposure{1.8f};
+    };
+
     explicit Renderer(const Config& config, VulkanDevice& vulkan, Pipelines& pipelines);
     ~Renderer();
 
     void update(const Vector2i& viewport);
     void begin();
     void end();
-    void render(const Vector2i& viewport, Scene& scene, Skybox& skybox);
+    void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
     void renderPassFront(bool clear);
     void present();
 

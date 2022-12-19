@@ -6,12 +6,11 @@
 
 using namespace Engine;
 
-Sector::Sector(const Config& config, World& world, Registry& registry, TransactionalDatabase& db, std::string galaxyId,
-               std::string systemId, std::string sectorId) :
+Sector::Sector(const Config& config, World& world, Registry& registry, std::string galaxyId, std::string systemId,
+               std::string sectorId) :
     config(config),
     world(world),
     registry{registry},
-    db{db},
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
     sectorId{std::move(sectorId)},

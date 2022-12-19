@@ -65,7 +65,8 @@ void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
 }
 
 void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
-    using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*>;
+    using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*, ComponentLines*,
+                                          ComponentIconPointCloud*>;
 
     struct Renderable {
         VariantComponent cmp;
@@ -95,6 +96,18 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
         sorted.emplace_back(Renderable{component, component->getRenderOrder()});
     }
     for (auto component : getComponentSystem<ComponentPointCloud>()) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
+        sorted.emplace_back(Renderable{component, component->getRenderOrder()});
+    }
+    for (auto component : getComponentSystem<ComponentLines>()) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
+        sorted.emplace_back(Renderable{component, component->getRenderOrder()});
+    }
+    for (auto component : getComponentSystem<ComponentIconPointCloud>()) {
         if (!component->getObject().isVisible()) {
             continue;
         }
@@ -151,6 +164,38 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
         vulkan.setBlendState({blendState});
     };
 
+    const auto setupRenderLines = [this, &camera, &vulkan]() {
+        vulkan.bindPipeline(pipelines->lines);
+        vulkan.bindUniformBuffer(camera->getUbo(), 0);
+        vulkan.setDepthStencilState(false, true);
+        VulkanBlendState blendState{};
+        blendState.blendEnable = true;
+        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+        vulkan.setBlendState({blendState});
+    };
+
+    const auto setupRenderIconPointCloud = [this, &camera, &vulkan]() {
+        vulkan.bindPipeline(pipelines->iconPointCloud);
+        vulkan.bindUniformBuffer(camera->getUbo(), 0);
+        vulkan.setDepthStencilState(false, true);
+        VulkanBlendState blendState{};
+        blendState.blendEnable = true;
+        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+        vulkan.setBlendState({blendState});
+    };
+
     size_t currentIndex = -1;
 
     for (const auto& renderable : sorted) {
@@ -173,7 +218,7 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
                 currentIndex = 1;
             }
 
-            component.render(vulkan, viewport, pipelines->debug);
+            component.render(vulkan, viewport, pipelines->wireframe);
         } else if (variant.index() == 2) {
             auto& component = *std::get<ComponentPointCloud*>(variant);
 
@@ -182,7 +227,25 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
                 currentIndex = 2;
             }
 
-            component.render(vulkan, viewport, pipelines->debug);
+            component.render(vulkan, viewport, pipelines->pointCloud);
+        } else if (variant.index() == 3) {
+            auto& component = *std::get<ComponentLines*>(variant);
+
+            if (currentIndex != 3) {
+                setupRenderLines();
+                currentIndex = 3;
+            }
+
+            component.render(vulkan, viewport, pipelines->lines);
+        } else if (variant.index() == 4) {
+            auto& component = *std::get<ComponentIconPointCloud*>(variant);
+
+            if (currentIndex != 4) {
+                setupRenderIconPointCloud();
+                currentIndex = 4;
+            }
+
+            component.render(vulkan, viewport, pipelines->iconPointCloud);
         }
     }
 
@@ -390,10 +453,52 @@ EntityPtr Scene::getSkybox() {
     return nullptr;
 }
 
-void Scene::eventUserInput(const UserInput::Event& event) {
+void Scene::eventMouseMoved(const Vector2i& pos) {
     auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
     for (auto& component : componentSystemUserInput) {
-        component->eventUserInput(event);
+        component->eventMouseMoved(pos);
+    }
+}
+
+void Scene::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventMousePressed(pos, button);
+    }
+}
+
+void Scene::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventMouseReleased(pos, button);
+    }
+}
+
+void Scene::eventMouseScroll(const int xscroll, const int yscroll) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventMouseScroll(xscroll, yscroll);
+    }
+}
+
+void Scene::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventKeyPressed(key, modifiers);
+    }
+}
+
+void Scene::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventKeyReleased(key, modifiers);
+    }
+}
+
+void Scene::eventCharTyped(const uint32_t code) {
+    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
+    for (auto& component : componentSystemUserInput) {
+        component->eventCharTyped(code);
     }
 }
 

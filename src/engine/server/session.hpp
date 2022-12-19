@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../network/peer.hpp"
 #include "../services/service.hpp"
 #include "messages.hpp"
-#include <msgnet.hpp>
 
 namespace Engine {
 class ENGINE_API Session : public Service::Session {
@@ -11,7 +11,7 @@ public:
         PingSent,
     };
 
-    explicit Session(std::string playerId, const std::shared_ptr<MsgNet::Peer>& stream) :
+    explicit Session(std::string playerId, const std::shared_ptr<Network::Peer>& stream) :
         playerId{std::move(playerId)}, stream{stream}, lastPingTime{}, flags{0} {
     }
 
@@ -47,7 +47,7 @@ public:
 
 private:
     std::string playerId;
-    std::weak_ptr<MsgNet::Peer> stream;
+    std::weak_ptr<Network::Peer> stream;
     std::chrono::steady_clock::time_point lastPingTime;
     uint64_t flags;
 };

@@ -50,7 +50,7 @@ struct MessagePlayerLocationResponse {
 
 class ServicePlayers : public Service {
 public:
-    explicit ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db, MsgNet::Server& server,
+    explicit ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);
 
     std::optional<std::string> secretToId(uint64_t);

@@ -3,11 +3,15 @@
 using namespace Engine;
 
 ServiceFactions::ServiceFactions(const Config& config, Registry& registry, TransactionalDatabase& db,
-                                 MsgNet::Server& server, Service::SessionValidator& sessionValidator) :
+                                 Network::Server& server, Service::SessionValidator& sessionValidator) :
     config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
 
     HANDLE_REQUEST(MessageFetchFactionRequest, MessageFetchFactionResponse);
     HANDLE_REQUEST(MessageFetchFactionsRequest, MessageFetchFactionsResponse);
+}
+
+std::vector<FactionData> ServiceFactions::get() {
+    return db.seekAll<FactionData>("");
 }
 
 void ServiceFactions::create(const FactionData& faction) {

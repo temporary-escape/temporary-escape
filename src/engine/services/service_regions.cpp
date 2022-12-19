@@ -3,15 +3,19 @@
 using namespace Engine;
 
 ServiceRegions::ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db,
-                               MsgNet::Server& server, Service::SessionValidator& sessionValidator) :
+                               Network::Server& server, Service::SessionValidator& sessionValidator) :
     config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
 
-    HANDLE_REQUEST(MessageFetchRegionRequest, MessageFetchRegionResponse);
-    HANDLE_REQUEST(MessageFetchRegionsRequest, MessageFetchRegionsResponse);
+    HANDLE_REQUEST(MessageFetchRegionRequest, MessageFetchRegionResponse)
+    HANDLE_REQUEST(MessageFetchRegionsRequest, MessageFetchRegionsResponse)
 }
 
 void ServiceRegions::create(const RegionData& region) {
     db.put(fmt::format("{}/{}", region.galaxyId, region.id), region);
+}
+
+std::vector<RegionData> ServiceRegions::getForGalaxy(const std::string& galaxyId) {
+    return db.seekAll<RegionData>(fmt::format("{}/", galaxyId));
 }
 
 void ServiceRegions::handle(const PeerPtr& peer, MessageFetchRegionRequest req, MessageFetchRegionResponse& res) {

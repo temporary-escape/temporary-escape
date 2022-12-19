@@ -1,11 +1,15 @@
 #include "component_lines.hpp"
 
+#define CMP "ComponentLines"
+
 using namespace Engine;
 
 void ComponentLines::recalculate(VulkanDevice& vulkan) {
     if (!isDirty()) {
         return;
     }
+
+    Log::d(CMP, "Recreating with {} lines", lines.size());
 
     vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Static, sizeof(Line) * lines.size());
     vbo.subData(lines.data(), 0, sizeof(Line) * lines.size());
@@ -20,21 +24,25 @@ void ComponentLines::recalculate(VulkanDevice& vulkan) {
         },
     });
 
+    count = lines.size() * 2;
+    lines.clear();
+    lines.shrink_to_fit();
+
     setDirty(false);
 }
 
 void ComponentLines::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (lines.empty()) {
+    recalculate(vulkan);
+
+    if (!count) {
         return;
     }
-
-    recalculate(vulkan);
 
     const Matrix4 transform = getObject().getAbsoluteTransform();
     vulkan.pushConstant(0, transform);
 
     vulkan.bindVertexBuffer(vbo, 0);
     vulkan.bindVertexInputFormat(vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vulkan.draw(lines.size() * 2, 1, 0, 0);
+    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vulkan.draw(count, 1, 0, 0);
 }

@@ -216,7 +216,7 @@ void Renderer::end() {
     vulkan.endRenderPass();
 }
 
-void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox) {
+void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
     // ======================================== PBR scene ========================================
     VulkanFramebufferAttachmentReference pbrColorAttachment{};
     pbrColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -373,8 +373,8 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox) {
     vulkan.beginRenderPass(gBuffer.bloomFbos[0], {tempColorAttachment});
 
     vulkan.bindPipeline(pipelines.bloomCombine);
-    vulkan.pushConstant(0, 0.2f);
-    vulkan.pushConstant(sizeof(float), 1.8f);
+    vulkan.pushConstant(0, options.blurStrength);
+    vulkan.pushConstant(sizeof(float), options.exposure);
     vulkan.bindTexture(gBuffer.forwardColor, 0);
     vulkan.bindTexture(gBuffer.bloomColors[1], 1);
     renderFullScreenQuad();
