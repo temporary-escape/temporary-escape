@@ -22,6 +22,8 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventWindowResized(const Vector2i& size) override;
     void eventCharTyped(uint32_t code) override;
+    void eventWindowBlur() override;
+    void eventWindowFocus() override;
 
 private:
     void renderStatus(const Vector2i& viewport);

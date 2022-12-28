@@ -30,6 +30,7 @@ struct Config {
     std::string windowName = "Temporary Escape";
     int windowWidth = 1920;
     int windowHeight = 1080;
+    bool enableValidationLayers = true;
 
     // Paths of interests
     std::filesystem::path assetsPath;

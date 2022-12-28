@@ -306,3 +306,9 @@ void Application::eventCharTyped(uint32_t code) {
         game->eventCharTyped(code);
     }
 }
+
+void Application::eventWindowBlur() {
+}
+
+void Application::eventWindowFocus() {
+}

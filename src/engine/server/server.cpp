@@ -25,7 +25,7 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
     world{config, registry, db, *this, *this},
     generator{std::make_unique<GeneratorDefault>(config, world)},
     tickFlag{true},
-    python{std::make_unique<Python>()},
+    //python{std::make_unique<Python>()},
     worker{4},
     commands{worker.strand()} {
 

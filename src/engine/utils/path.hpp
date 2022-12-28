@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace Engine {
 using Path = std::filesystem::path;
@@ -25,6 +26,10 @@ inline ENGINE_API void iterateDir(const Path& dir, const std::set<std::string>& 
 
 ENGINE_API Path getAppDataPath();
 ENGINE_API Path getExecutablePath();
+ENGINE_API std::string readFileStr(const Path& path);
+ENGINE_API std::vector<char> readFileBinary(const Path& path);
+ENGINE_API void writeFileBinary(const Path& path, const void* data, size_t size);
+ENGINE_API void writeFileBinary(const Path& path, const std::vector<char>& data);
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Path> {

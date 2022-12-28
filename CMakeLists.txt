@@ -21,7 +21,7 @@ else ()
     set(PROJECT_VERSION "0.0.1")
 endif ()
 
-project(TemporaryEscape VERSION "${PROJECT_VERSION}")
+project(TemporaryEscape)
 
 option(TEMPORARY_ESCAPE_BUILD_TESTS "Build with tests" OFF)
 option(TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH "Path to the llvm-symbolizer to enable address sanitizer" FALSE)

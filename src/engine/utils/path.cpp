@@ -1,4 +1,6 @@
 #include "path.hpp"
+#include "exceptions.hpp"
+#include <fstream>
 
 #ifdef _WIN32
 #include <Shlobj.h>
@@ -43,4 +45,43 @@ Path Engine::getExecutablePath() {
     result.resize(std::strlen(result.c_str()));
     return std::filesystem::path(result).parent_path();
 #endif
+}
+
+std::string Engine::readFileStr(const Path& path) {
+    std::ifstream file(path, std::ios::in);
+    if (!file) {
+        EXCEPTION("Failed to open file: '{}'", path);
+    }
+
+    return {(std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()};
+}
+
+std::vector<char> Engine::readFileBinary(const Path& path) {
+    std::vector<char> data;
+
+    std::fstream file(path, std::ios::in | std::ios::binary);
+    if (!file) {
+        EXCEPTION("Failed to open file: '{}'", path);
+    }
+
+    file.seekg(0, std::ios::end);
+    data.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
+
+    file.read(data.data(), data.size());
+
+    return data;
+}
+
+void Engine::writeFileBinary(const Path& path, const void* data, const size_t size) {
+    std::fstream file(path, std::ios::out | std::ios::binary);
+    if (!file) {
+        EXCEPTION("Failed to open file: '{}'", path);
+    }
+
+    file.write(reinterpret_cast<const char*>(data), size);
+}
+
+void Engine::writeFileBinary(const Path& path, const std::vector<char>& data) {
+    writeFileBinary(path, data.data(), data.size());
 }
