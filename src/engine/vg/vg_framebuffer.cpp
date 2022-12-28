@@ -10,7 +10,7 @@ VgFramebuffer::VgFramebuffer(const Config& config, VkDevice device, const Create
 }
 
 VgFramebuffer::~VgFramebuffer() {
-    cleanup();
+    destroy();
 }
 
 VgFramebuffer::VgFramebuffer(VgFramebuffer&& other) noexcept {
@@ -29,7 +29,7 @@ void VgFramebuffer::swap(VgFramebuffer& other) noexcept {
     std::swap(framebuffer, other.framebuffer);
 }
 
-void VgFramebuffer::cleanup() {
+void VgFramebuffer::destroy() {
     if (framebuffer) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
         framebuffer = VK_NULL_HANDLE;

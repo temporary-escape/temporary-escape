@@ -16,7 +16,7 @@ VgCommandBuffer::VgCommandBuffer(const Config& config, VkDevice device, VkComman
 }
 
 VgCommandBuffer::~VgCommandBuffer() {
-    cleanup();
+    destroy();
 }
 
 VgCommandBuffer::VgCommandBuffer(VgCommandBuffer&& other) noexcept {
@@ -35,15 +35,18 @@ void VgCommandBuffer::swap(VgCommandBuffer& other) noexcept {
     std::swap(commandBuffer, other.commandBuffer);
 }
 
-void VgCommandBuffer::cleanup() {
+void VgCommandBuffer::destroy() {
     commandBuffer = VK_NULL_HANDLE;
 }
 
-void VgCommandBuffer::startCommandBuffer() {
+void VgCommandBuffer::startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo) {
     vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
 
-    VkCommandBufferBeginInfo beginInfo{};
+    /*VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if (oneTimeSubmit) {
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    }*/
 
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         EXCEPTION("Failed to begin recording command buffer!");
@@ -87,7 +90,22 @@ void VgCommandBuffer::bindPipeline(const VgPipeline& pipeline) {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
 }
 
+void VgCommandBuffer::bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers) {
+    std::vector<VkBuffer> handles{buffers.size()};
+    std::vector<VkDeviceSize> offsets{buffers.size()};
+    for (size_t i = 0; i < buffers.size(); i++) {
+        handles.at(i) = buffers.at(i).buffer.get().getHandle();
+        offsets.at(i) = buffers.at(i).offset;
+    }
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), handles.data(), offsets.data());
+}
+
 void VgCommandBuffer::drawVertices(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
                                    const uint32_t firstInstance) {
     vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void VgCommandBuffer::copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region) {
+    vkCmdCopyBuffer(commandBuffer, src.getHandle(), dst.getHandle(), 1, &region);
 }

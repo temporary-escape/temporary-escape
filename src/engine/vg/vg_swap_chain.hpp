@@ -39,9 +39,9 @@ public:
         return swapChain != VK_NULL_HANDLE;
     }
 
-private:
-    void cleanup();
+    void destroy();
 
+private:
     VkDevice device{VK_NULL_HANDLE};
     VkSwapchainKHR swapChain{VK_NULL_HANDLE};
     VkFormat swapChainImageFormat;

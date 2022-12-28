@@ -30,7 +30,12 @@ struct Config {
     std::string windowName = "Temporary Escape";
     int windowWidth = 1920;
     int windowHeight = 1080;
-    bool enableValidationLayers = true;
+
+    struct {
+        bool enableValidationLayers = true;
+        bool vsync = true;
+        size_t maxFramesInFlight = 2;
+    } vulkan;
 
     // Paths of interests
     std::filesystem::path assetsPath;

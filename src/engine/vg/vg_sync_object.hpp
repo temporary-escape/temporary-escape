@@ -33,9 +33,9 @@ public:
         return inFlightFence != VK_NULL_HANDLE;
     }
 
-private:
-    void cleanup();
+    void destroy();
 
+private:
     VkDevice device{VK_NULL_HANDLE};
     VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
     VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};

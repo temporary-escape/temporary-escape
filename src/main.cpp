@@ -4,27 +4,20 @@
 #include <engine/utils/log.hpp>
 #include <engine/vg/vg_renderer.hpp>
 
+using namespace Engine;
+
 static const std::string vertCode = R"(#version 450
 
-vec2 positions[3] = vec2[](
-    vec2(0.0, -0.5),
-    vec2(0.5, 0.5),
-    vec2(-0.5, 0.5)
-);
-
-vec3 colors[3] = vec3[](
-    vec3(1.0, 0.0, 0.0),
-    vec3(0.0, 1.0, 0.0),
-    vec3(0.0, 0.0, 1.0)
-);
+layout(location = 0) in vec2 in_Position;
+layout(location = 1) in vec3 in_Color;
 
 layout(location = 0) out VS_OUT {
     vec3 color;
 } vs_out;
 
 void main() {
-    vs_out.color = colors[gl_VertexIndex];
-    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
+    vs_out.color = in_Color;
+    gl_Position = vec4(in_Position, 0.0, 1.0);
 }
 )";
 
@@ -41,20 +34,58 @@ void main() {
 }
 )";
 
-using namespace Engine;
+struct Vertex {
+    Vector2 pos;
+    Vector3 color;
+};
+
+const std::vector<Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+};
 
 class VgApplication : public VgRenderer {
 public:
     VgApplication(const Config& config) : VgRenderer{config} {
+        VgBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+
+        vbo = createBuffer(bufferInfo);
+        vbo.subData(vertices.data(), 0, vertices.size() * sizeof(Vertex));
+
         auto vert = createShaderModule(vertCode, VK_SHADER_STAGE_VERTEX_BIT);
         auto frag = createShaderModule(fragCode, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VgPipeline::CreateInfo pipelineInfo{};
         pipelineInfo.shaderModules = {&vert, &frag};
 
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
         pipelineInfo.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        pipelineInfo.vertexInputInfo.vertexBindingDescriptionCount = 0;
-        pipelineInfo.vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        pipelineInfo.vertexInputInfo.vertexBindingDescriptionCount = 1;
+        pipelineInfo.vertexInputInfo.vertexAttributeDescriptionCount = 2;
+        pipelineInfo.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        pipelineInfo.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         pipelineInfo.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         pipelineInfo.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -111,7 +142,8 @@ public:
         bindPipeline(pipeline);
         setViewport({0, 0}, viewport);
         setScissor({0, 0}, viewport);
-        drawVertices(3, 1, 0, 0);
+        bindBuffers({{vbo, 0}});
+        drawVertices(vertices.size(), 1, 0, 0);
 
         endRenderPass();
     }
@@ -147,6 +179,7 @@ public:
     }
 
     VgPipeline pipeline;
+    VgBuffer vbo;
 };
 
 int main(int argc, char** argv) {

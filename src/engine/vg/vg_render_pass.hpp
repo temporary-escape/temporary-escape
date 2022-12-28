@@ -28,9 +28,9 @@ public:
         return renderPass != VK_NULL_HANDLE;
     }
 
-private:
-    void cleanup();
+    void destroy();
 
+private:
     VkDevice device{VK_NULL_HANDLE};
     VkRenderPass renderPass{VK_NULL_HANDLE};
 };

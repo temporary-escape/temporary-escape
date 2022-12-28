@@ -17,7 +17,7 @@ VgRenderPass::VgRenderPass(const Config& config, VkDevice device, const CreateIn
 }
 
 VgRenderPass::~VgRenderPass() {
-    cleanup();
+    destroy();
 }
 
 VgRenderPass::VgRenderPass(VgRenderPass&& other) noexcept {
@@ -36,7 +36,7 @@ void VgRenderPass::swap(VgRenderPass& other) noexcept {
     std::swap(renderPass, other.renderPass);
 }
 
-void VgRenderPass::cleanup() {
+void VgRenderPass::destroy() {
     if (renderPass) {
         vkDestroyRenderPass(device, renderPass, nullptr);
         renderPass = VK_NULL_HANDLE;

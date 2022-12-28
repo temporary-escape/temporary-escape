@@ -66,7 +66,10 @@ void VgRenderer::createSwapChainFramebuffers() {
 }
 
 void VgRenderer::render(const Vector2i& viewport, float deltaTime) {
-    startCommandBuffer();
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    startCommandBuffer(beginInfo);
 
     draw(viewport, deltaTime);
 

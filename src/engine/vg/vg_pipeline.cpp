@@ -8,7 +8,7 @@ VgPipeline::VgPipeline(const Config& config, VkDevice device, const VgRenderPass
     device{device} {
 
     if (vkCreatePipelineLayout(device, &createInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        cleanup();
+        destroy();
         EXCEPTION("Failed to create pipeline layout!");
     }
 
@@ -19,7 +19,7 @@ VgPipeline::VgPipeline(const Config& config, VkDevice device, const VgRenderPass
         const auto& shaderModule = *createInfo.shaderModules.at(i);
 
         if (!shaderModule || shaderModule.getHandle() == VK_NULL_HANDLE) {
-            cleanup();
+            destroy();
             EXCEPTION("Can not create pipeline with uninitialized shader module");
         }
 
@@ -46,13 +46,13 @@ VgPipeline::VgPipeline(const Config& config, VkDevice device, const VgRenderPass
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
-        cleanup();
+        destroy();
         EXCEPTION("failed to create graphics pipeline!");
     }
 }
 
 VgPipeline::~VgPipeline() {
-    cleanup();
+    destroy();
 }
 
 VgPipeline::VgPipeline(VgPipeline&& other) noexcept {
@@ -72,7 +72,7 @@ void VgPipeline::swap(VgPipeline& other) noexcept {
     std::swap(pipeline, other.pipeline);
 }
 
-void VgPipeline::cleanup() {
+void VgPipeline::destroy() {
     if (pipelineLayout) {
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         pipelineLayout = VK_NULL_HANDLE;

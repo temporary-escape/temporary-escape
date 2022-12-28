@@ -55,15 +55,13 @@ VgShaderModule::VgShaderModule(const Config& config, VkDevice device, const std:
         writeFileBinary(binaryPath, spirv.data(), spirv.size() * sizeof(uint32_t));
     }
 
-    Log::d(CMP, "Creating shader module stage: {} size: {}", stage, createInfo.codeSize);
-
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         EXCEPTION("Failed to create shader module!");
     }
 }
 
 VgShaderModule::~VgShaderModule() {
-    cleanup();
+    destroy();
 }
 
 VgShaderModule::VgShaderModule(VgShaderModule&& other) noexcept {
@@ -83,7 +81,7 @@ void VgShaderModule::swap(VgShaderModule& other) noexcept {
     std::swap(stage, other.stage);
 }
 
-void VgShaderModule::cleanup() {
+void VgShaderModule::destroy() {
     if (shaderModule) {
         vkDestroyShaderModule(device, shaderModule, nullptr);
         shaderModule = VK_NULL_HANDLE;

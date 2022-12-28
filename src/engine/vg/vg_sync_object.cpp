@@ -15,13 +15,13 @@ VgSyncObject::VgSyncObject(const Config& config, VkDevice device) : device{devic
         vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
         vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
 
-        cleanup();
+        destroy();
         EXCEPTION("Failed to create synchronization objects for a frame!");
     }
 }
 
 VgSyncObject::~VgSyncObject() {
-    cleanup();
+    destroy();
 }
 
 VgSyncObject::VgSyncObject(VgSyncObject&& other) noexcept {
@@ -42,7 +42,7 @@ void VgSyncObject::swap(VgSyncObject& other) noexcept {
     std::swap(inFlightFence, other.inFlightFence);
 }
 
-void VgSyncObject::cleanup() {
+void VgSyncObject::destroy() {
     if (imageAvailableSemaphore) {
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
         imageAvailableSemaphore = VK_NULL_HANDLE;

@@ -29,9 +29,9 @@ public:
         return shaderModule != VK_NULL_HANDLE;
     }
 
-private:
-    void cleanup();
+    void destroy();
 
+private:
     VkDevice device{VK_NULL_HANDLE};
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkShaderStageFlagBits stage;

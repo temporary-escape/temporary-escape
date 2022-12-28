@@ -25,9 +25,9 @@ public:
         return framebuffer != VK_NULL_HANDLE;
     }
 
-private:
-    void cleanup();
+    void destroy();
 
+private:
     VkDevice device{VK_NULL_HANDLE};
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
 };

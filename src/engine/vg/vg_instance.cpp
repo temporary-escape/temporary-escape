@@ -167,14 +167,30 @@ static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
     return availableFormats[0];
 }
 
-static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes,
+                                              const bool vsyncEnabled) {
+    // Try to match the correct present mode to the vsync state.
+    std::vector<VkPresentModeKHR> desiredModes;
+    if (vsyncEnabled) {
+        desiredModes = {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR};
+    } else {
+        desiredModes = {VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR};
+    }
+
+    // Iterate over all available present mdoes and match to one of the desired ones.
     for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return availablePresentMode;
+        for (auto mode : desiredModes) {
+            if (availablePresentMode == mode)
+                return availablePresentMode;
         }
     }
 
-    return VK_PRESENT_MODE_FIFO_KHR;
+    // If no match was found, return the first present mode or default to FIFO.
+    if (availablePresentModes.size() > 0) {
+        return availablePresentModes[0];
+    } else {
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
 }
 
 static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, const Vector2i& framebufferSize) {
@@ -196,7 +212,8 @@ static const char* name = "TemporaryEscape";
 
 VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} {
 
-    if (config.enableValidationLayers && !checkValidationLayerSupport()) {
+    if (config.vulkan.enableValidationLayers && !checkValidationLayerSupport()) {
+        destroy();
         EXCEPTION("validation layers requested, but not available!");
     }
 
@@ -206,14 +223,14 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo appCreateInfo{};
     appCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     appCreateInfo.pApplicationInfo = &appInfo;
 
     auto extensions = getRequiredExtensions();
-    if (config.enableValidationLayers) {
+    if (config.vulkan.enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -221,7 +238,7 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
     appCreateInfo.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (config.enableValidationLayers) {
+    if (config.vulkan.enableValidationLayers) {
         appCreateInfo.enabledLayerCount = static_cast<uint32_t>(vgValidationLayers.size());
         appCreateInfo.ppEnabledLayerNames = vgValidationLayers.data();
 
@@ -234,17 +251,18 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
     }
 
     if (vkCreateInstance(&appCreateInfo, nullptr, &instance) != VK_SUCCESS) {
+        destroy();
         EXCEPTION("failed to create instance!");
     }
 
     surface = createSurface(instance);
 
-    if (config.enableValidationLayers) {
+    if (config.vulkan.enableValidationLayers) {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
         if (createDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-            cleanup();
+            destroy();
             EXCEPTION("Failed to set up debug messenger!");
         }
     }
@@ -253,7 +271,7 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
     if (deviceCount == 0) {
-        cleanup();
+        destroy();
         EXCEPTION("Failed to find GPUs with Vulkan support!");
     }
 
@@ -268,7 +286,7 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
     }
 
     if (physicalDevice == VK_NULL_HANDLE) {
-        cleanup();
+        destroy();
         EXCEPTION("Failed to find a suitable GPU!");
     }
 
@@ -279,10 +297,10 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
 }
 
 VgInstance::~VgInstance() {
-    cleanup();
+    destroy();
 }
 
-void VgInstance::cleanup() {
+void VgInstance::destroy() {
     if (debugMessenger) {
         destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         debugMessenger = VK_NULL_HANDLE;
@@ -307,7 +325,7 @@ VkSwapchainCreateInfoKHR VgInstance::getSwapChainInfo() {
     const auto swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, config.vulkan.vsync);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, getFramebufferSize());
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -345,4 +363,17 @@ VkSwapchainCreateInfoKHR VgInstance::getSwapChainInfo() {
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     return createInfo;
+}
+
+uint32_t VgInstance::findMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    EXCEPTION("Failed to find suitable memory type!");
 }

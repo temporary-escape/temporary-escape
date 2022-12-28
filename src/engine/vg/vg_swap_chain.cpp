@@ -5,7 +5,7 @@ using namespace Engine;
 
 VgSwapChain::VgSwapChain(VkDevice device, const VkSwapchainCreateInfoKHR& createInfo) : device{device} {
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-        cleanup();
+        destroy();
         EXCEPTION("failed to create swap chain!");
     }
 
@@ -36,17 +36,17 @@ VgSwapChain::VgSwapChain(VkDevice device, const VkSwapchainCreateInfoKHR& create
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
         if (vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
-            cleanup();
+            destroy();
             EXCEPTION("failed to create image views!");
         }
     }
 }
 
 VgSwapChain::~VgSwapChain() {
-    cleanup();
+    destroy();
 }
 
-void VgSwapChain::cleanup() {
+void VgSwapChain::destroy() {
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }

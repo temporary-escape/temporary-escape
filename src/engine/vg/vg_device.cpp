@@ -1,5 +1,12 @@
+// clang-format off
+#define VMA_IMPLEMENTATION
+#define VMA_VULKAN_VERSION 1001000
+#include <vk_mem_alloc.h>
+// clang-format on
 #include "vg_device.hpp"
 #include "../utils/exceptions.hpp"
+
+#define CMP "VgDevice"
 
 using namespace Engine;
 
@@ -32,7 +39,7 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     createInfo.enabledExtensionCount = static_cast<uint32_t>(vgDeviceExtensions.size());
     createInfo.ppEnabledExtensionNames = vgDeviceExtensions.data();
 
-    if (config.enableValidationLayers) {
+    if (config.vulkan.enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(vgValidationLayers.size());
         createInfo.ppEnabledLayerNames = vgValidationLayers.data();
     } else {
@@ -60,6 +67,40 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     }
 
     syncObject = createSyncObject();
+
+    VmaAllocatorCreateInfo allocatorCreateInfo = {};
+    allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
+    allocatorCreateInfo.physicalDevice = getPhysicalDevice();
+    allocatorCreateInfo.device = device;
+    allocatorCreateInfo.instance = getInstance();
+
+    if (vmaCreateAllocator(&allocatorCreateInfo, &allocator) != VK_SUCCESS) {
+        cleanup();
+        EXCEPTION("Failed to create VMA allocator!");
+    }
+
+    // Get required alignment flush size for selected physical device.
+    VkPhysicalDeviceProperties physicalDeviceProperties = {};
+    vkGetPhysicalDeviceProperties(getPhysicalDevice(), &physicalDeviceProperties);
+    alignedFlushSize = physicalDeviceProperties.limits.nonCoherentAtomSize;
+
+    Log::i(CMP, "Using aligned flush size: {} bytes", alignedFlushSize);
+
+    // Allocate command buffer for memory transfers only
+    transferCommandBuffer = createCommandBuffer();
+
+    // Pinned buffer to be used for memory transfer
+    VgBuffer::CreateInfo transferBufferCreateInfo{};
+    transferBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    transferBufferCreateInfo.size = 8 * 1024 * 1024;
+    transferBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    transferBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    transferBufferCreateInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+    transferBufferCreateInfo.memoryFlags =
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    transferBuffer = createBuffer(transferBufferCreateInfo);
+
+    Log::i(CMP, "Using buffer flush size: {} bytes", transferBuffer.getSize());
 }
 
 VgDevice::~VgDevice() {
@@ -67,13 +108,21 @@ VgDevice::~VgDevice() {
 }
 
 void VgDevice::cleanup() {
+    transferCommandBuffer.destroy();
+
     if (commandPool) {
         vkDestroyCommandPool(device, commandPool, nullptr);
         commandPool = VK_NULL_HANDLE;
     }
 
-    swapChain = VgSwapChain{};
-    syncObject = VgSyncObject{};
+    swapChain.destroy();
+    syncObject.destroy();
+    transferBuffer.destroy();
+
+    if (allocator) {
+        vmaDestroyAllocator(allocator);
+        allocator = VK_NULL_HANDLE;
+    }
 
     if (device) {
         vkDestroyDevice(device, nullptr);
@@ -130,6 +179,10 @@ VgSyncObject VgDevice::createSyncObject() {
 
 VgCommandBuffer VgDevice::createCommandBuffer() {
     return VgCommandBuffer{config, device, commandPool};
+}
+
+VgBuffer VgDevice::createBuffer(const VgBuffer::CreateInfo& createInfo) {
+    return VgBuffer{config, *this, createInfo};
 }
 
 void VgDevice::waitDeviceIdle() {
@@ -194,8 +247,77 @@ void VgDevice::recreateSwapChain() {
 
     waitDeviceIdle();
 
-    swapChain = VgSwapChain{};
+    swapChain.destroy();
     swapChain = VgSwapChain(device, getSwapChainInfo());
 
     onSwapChainChanged();
+}
+
+void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
+    // Adapted from: https://github.com/GPUOpen-LibrariesAndSDKs/V-EZ/blob/master/Source/Core/Device.cpp
+
+    if (!transferBuffer.getMappedPtr()) {
+        EXCEPTION("Transfer buffer has no mapped memory!");
+    }
+
+    auto src = reinterpret_cast<const char*>(data);
+    VkDeviceSize dstOffset = 0;
+    auto bytesRemaining = size;
+
+    while (bytesRemaining) {
+        // Determine total byte size to copy this iteration.
+        auto bytesToCopy = std::min(transferBuffer.getSize(), bytesRemaining);
+
+        std::memcpy(transferBuffer.getMappedPtr(), src, bytesToCopy);
+
+        // Flush must be aligned according to physical device's limits.
+        auto alignedBytesToCopy = static_cast<VkDeviceSize>(std::ceil(static_cast<float>(bytesToCopy) /
+                                                                      static_cast<float>(alignedFlushSize))) *
+                                  alignedFlushSize;
+
+        // Flush the memory write.
+        VmaAllocationInfo allocInfo = {};
+        vmaGetAllocationInfo(allocator, transferBuffer.getAllocation(), &allocInfo);
+
+        VkMappedMemoryRange memoryRange = {};
+        memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        memoryRange.memory = allocInfo.deviceMemory;
+        memoryRange.offset = 0;
+        memoryRange.size = alignedBytesToCopy;
+        if (vkFlushMappedMemoryRanges(device, 1, &memoryRange) != VK_SUCCESS) {
+            EXCEPTION("Failed to upload buffer data, flush mapped memory ranges error");
+        }
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        transferCommandBuffer.startCommandBuffer(beginInfo);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = dstOffset;
+        transferCommandBuffer.copyBuffer(transferBuffer, dst, copyRegion);
+
+        transferCommandBuffer.endCommandBuffer();
+
+        auto commandBuffer = transferCommandBuffer.getHandle();
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+            EXCEPTION("Failed to upload buffer data, submit error");
+        }
+
+        if (vkQueueWaitIdle(graphicsQueue) != VK_SUCCESS) {
+            EXCEPTION("Failed to upload buffer data, wait queue error");
+        }
+
+        // Update running counters
+        bytesRemaining -= bytesToCopy;
+        src += bytesToCopy;
+        dstOffset += bytesToCopy;
+    }
 }
