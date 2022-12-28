@@ -11,10 +11,12 @@ struct VgVertexBufferBindRef {
     VkDeviceSize offset;
 };
 
+class VgDevice;
+
 class VgCommandBuffer {
 public:
     VgCommandBuffer() = default;
-    explicit VgCommandBuffer(const Config& config, VkDevice device, VkCommandPool commandPool);
+    explicit VgCommandBuffer(const Config& config, VgDevice& device, VkCommandPool commandPool);
     ~VgCommandBuffer();
     VgCommandBuffer(const VgCommandBuffer& other) = delete;
     VgCommandBuffer(VgCommandBuffer&& other) noexcept;
@@ -27,7 +29,7 @@ public:
     }
 
     operator bool() const {
-        return commandBuffer != VK_NULL_HANDLE;
+        return getHandle() != VK_NULL_HANDLE;
     }
 
     void startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo);
@@ -45,7 +47,8 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
+    VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT]{VK_NULL_HANDLE, VK_NULL_HANDLE};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 };
 } // namespace Engine

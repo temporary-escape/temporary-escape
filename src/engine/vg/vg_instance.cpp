@@ -325,7 +325,7 @@ VkSwapchainCreateInfoKHR VgInstance::getSwapChainInfo() {
     const auto swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, config.vulkan.vsync);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, /*config.vulkan.vsync*/ false);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, getFramebufferSize());
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;

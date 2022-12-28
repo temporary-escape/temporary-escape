@@ -9,6 +9,8 @@
 #define VMA_VULKAN_VERSION 1001000
 #include <vk_mem_alloc.h>
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 namespace Engine {
 struct VgQueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -31,5 +33,11 @@ static inline const std::vector<const char*> vgValidationLayers = {
 
 static const std::vector<const char*> vgDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+};
+
+class VgDisposable {
+public:
+    virtual ~VgDisposable() = default;
+    virtual void destroy() = 0;
 };
 } // namespace Engine

@@ -80,7 +80,6 @@ void VgRenderer::render(const Vector2i& viewport, float deltaTime) {
 
     // Do we need to recreate the swap chain?
     if (lastViewportSize != viewport) {
-        Log::i(CMP, "Recreating swap chain");
         recreateSwapChain();
     }
 

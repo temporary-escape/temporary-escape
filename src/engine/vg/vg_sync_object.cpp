@@ -59,7 +59,10 @@ void VgSyncObject::destroy() {
     }
 }
 
+void VgSyncObject::reset() {
+    vkResetFences(device, 1, &inFlightFence);
+}
+
 void VgSyncObject::wait() {
     vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &inFlightFence);
 }

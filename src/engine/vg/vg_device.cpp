@@ -66,7 +66,9 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
         EXCEPTION("Failed to create command pool!");
     }
 
-    syncObject = createSyncObject();
+    for (auto& syncObject : syncObjects) {
+        syncObject = createSyncObject();
+    }
 
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
@@ -108,6 +110,8 @@ VgDevice::~VgDevice() {
 }
 
 void VgDevice::cleanup() {
+    destroyDisposables();
+
     transferCommandBuffer.destroy();
 
     if (commandPool) {
@@ -116,7 +120,10 @@ void VgDevice::cleanup() {
     }
 
     swapChain.destroy();
-    syncObject.destroy();
+    for (auto& syncObject : syncObjects) {
+        syncObject.destroy();
+    }
+
     transferBuffer.destroy();
 
     if (allocator) {
@@ -131,11 +138,15 @@ void VgDevice::cleanup() {
 }
 
 void VgDevice::onNextFrame() {
-    syncObject.wait();
+    getCurrentSyncObject().wait();
 
-    const auto result =
-        vkAcquireNextImageKHR(device, swapChain.getHandle(), UINT64_MAX, syncObject.getImageAvailableSemaphore(),
-                              VK_NULL_HANDLE, &swapChainFramebufferIndex);
+    // Destroy buffers we no longer need
+    destroyDisposables();
+
+    // Grab the next swap image index
+    const auto result = vkAcquireNextImageKHR(device, swapChain.getHandle(), UINT64_MAX,
+                                              getCurrentSyncObject().getImageAvailableSemaphore(), VK_NULL_HANDLE,
+                                              &swapChainFramebufferIndex);
 
     // Do we need to recreate the swap chain?
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -147,10 +158,13 @@ void VgDevice::onNextFrame() {
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         EXCEPTION("Failed to acquire swap chain image!");
     }
+
+    getCurrentSyncObject().reset();
 }
 
 void VgDevice::onExit() {
     waitDeviceIdle();
+    exitTriggered = true;
 }
 
 VgShaderModule VgDevice::createShaderModule(const Path& path, VkShaderStageFlagBits stage) {
@@ -178,7 +192,7 @@ VgSyncObject VgDevice::createSyncObject() {
 }
 
 VgCommandBuffer VgDevice::createCommandBuffer() {
-    return VgCommandBuffer{config, device, commandPool};
+    return VgCommandBuffer{config, *this, commandPool};
 }
 
 VgBuffer VgDevice::createBuffer(const VgBuffer::CreateInfo& createInfo) {
@@ -193,7 +207,7 @@ void VgDevice::submitCommandBuffer(const VgCommandBuffer& commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {syncObject.getImageAvailableSemaphore()};
+    VkSemaphore waitSemaphores[] = {getCurrentSyncObject().getImageAvailableSemaphore()};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -201,14 +215,14 @@ void VgDevice::submitCommandBuffer(const VgCommandBuffer& commandBuffer) {
 
     const auto commandBufferHandle = commandBuffer.getHandle();
 
-    VkSemaphore signalSemaphores[] = {syncObject.getRenderFinishedSemaphore()};
+    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore()};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBufferHandle;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, syncObject.getHandle()) != VK_SUCCESS) {
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, getCurrentSyncObject().getHandle()) != VK_SUCCESS) {
         EXCEPTION("Failed to submit draw command buffer!");
     }
 }
@@ -217,7 +231,7 @@ void VgDevice::submitPresentQueue() {
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    VkSemaphore signalSemaphores[] = {syncObject.getRenderFinishedSemaphore()};
+    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore()};
 
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
@@ -237,9 +251,11 @@ void VgDevice::submitPresentQueue() {
     }
 
     // Something else happened?
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    else if (result != VK_SUCCESS) {
         EXCEPTION("Failed to present swap chain image!");
     }
+
+    currentFrameNum = (currentFrameNum + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void VgDevice::recreateSwapChain() {
@@ -320,4 +336,19 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
         src += bytesToCopy;
         dstOffset += bytesToCopy;
     }
+}
+
+void VgDevice::dispose(std::shared_ptr<VgDisposable> disposable) {
+    if (exitTriggered) {
+        disposable->destroy();
+        return;
+    }
+    disposables.push_back(std::move(disposable));
+}
+
+void VgDevice::destroyDisposables() {
+    for (auto& disposable : disposables) {
+        disposable->destroy();
+    }
+    disposables.clear();
 }

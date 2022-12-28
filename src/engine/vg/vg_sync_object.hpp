@@ -15,6 +15,7 @@ public:
     VgSyncObject& operator=(VgSyncObject&& other) noexcept;
     void swap(VgSyncObject& other) noexcept;
 
+    void reset();
     void wait();
 
     VkSemaphore getImageAvailableSemaphore() const {

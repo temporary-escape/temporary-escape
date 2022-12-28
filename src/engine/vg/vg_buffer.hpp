@@ -25,33 +25,40 @@ public:
     void subData(const void* data, size_t offset, size_t size);
 
     VkBuffer getHandle() const {
-        return buffer;
+        return state->buffer;
     }
 
     VmaAllocation getAllocation() const {
-        return allocation;
+        return state->allocation;
     }
 
     void* getMappedPtr() const {
-        return mappedPtr;
+        return state->mappedPtr;
     }
 
     VkDeviceSize getSize() const {
-        return bufferSize;
+        return state->bufferSize;
     }
 
     operator bool() const {
-        return buffer != VK_NULL_HANDLE;
+        return state->buffer != VK_NULL_HANDLE;
     }
 
     void destroy();
 
 private:
-    VgDevice* device{nullptr};
-    VkBuffer buffer{VK_NULL_HANDLE};
-    VmaAllocation allocation{VK_NULL_HANDLE};
-    VkDeviceSize bufferSize{0};
-    void* mappedPtr{nullptr};
-    VmaMemoryUsage memoryUsage;
+    class BufferState : public VgDisposable {
+    public:
+        void destroy() override;
+
+        VgDevice* device{nullptr};
+        VkBuffer buffer{VK_NULL_HANDLE};
+        VmaAllocation allocation{VK_NULL_HANDLE};
+        VkDeviceSize bufferSize{0};
+        void* mappedPtr{nullptr};
+        VmaMemoryUsage memoryUsage;
+    };
+
+    std::shared_ptr<BufferState> state;
 };
 } // namespace Engine

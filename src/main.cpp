@@ -137,6 +137,25 @@ public:
     }
 
     void draw(const Vector2i& viewport, float deltaTime) override {
+        /*static float degrees = 0.0f;
+
+        VgBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+
+        std::vector<Vertex> rotated{vertices.size()};
+        for (size_t i = 0; i < vertices.size(); i++) {
+            rotated.at(i).pos = glm::rotate(vertices.at(i).pos, glm::radians(degrees));
+            rotated.at(i).color = vertices.at(i).color;
+        }
+        degrees += deltaTime * 15.0f;
+
+        vbo = createBuffer(bufferInfo);
+        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));*/
+
         beginRenderPass(getSwapChainFramebuffer(), viewport);
 
         bindPipeline(pipeline);

@@ -1,18 +1,21 @@
 #include "vg_command_buffer.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgCommandBuffer::VgCommandBuffer(const Config& config, VkDevice device, VkCommandPool commandPool) : device{device} {
+VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VkCommandPool commandPool) : device{&device} {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(device.getHandle(), &allocInfo, commandBuffers) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate command buffers!");
     }
+
+    commandBuffer = commandBuffers[0];
 }
 
 VgCommandBuffer::~VgCommandBuffer() {
@@ -32,6 +35,7 @@ VgCommandBuffer& VgCommandBuffer::operator=(VgCommandBuffer&& other) noexcept {
 
 void VgCommandBuffer::swap(VgCommandBuffer& other) noexcept {
     std::swap(device, other.device);
+    std::swap(commandBuffers, other.commandBuffers);
     std::swap(commandBuffer, other.commandBuffer);
 }
 
@@ -40,6 +44,8 @@ void VgCommandBuffer::destroy() {
 }
 
 void VgCommandBuffer::startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo) {
+    commandBuffer = commandBuffers[device->getCurrentFrameNum()];
+
     vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
 
     /*VkCommandBufferBeginInfo beginInfo{};

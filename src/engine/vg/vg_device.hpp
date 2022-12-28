@@ -48,15 +48,26 @@ public:
         return allocator;
     }
 
+    uint32_t getCurrentFrameNum() const {
+        return currentFrameNum;
+    }
+
     void uploadBufferData(const void* data, size_t size, VgBuffer& dst);
+
+    void dispose(std::shared_ptr<VgDisposable> disposable);
 
 protected:
     virtual void onSwapChainChanged() = 0;
     void onNextFrame() override;
     void onExit() override;
 
+    VgSyncObject& getCurrentSyncObject() {
+        return syncObjects[currentFrameNum];
+    }
+
 private:
     void cleanup();
+    void destroyDisposables();
 
     const Config& config;
     VkDevice device{VK_NULL_HANDLE};
@@ -64,11 +75,14 @@ private:
     VkQueue presentQueue{VK_NULL_HANDLE};
     VkCommandPool commandPool{VK_NULL_HANDLE};
     VgSwapChain swapChain;
-    VgSyncObject syncObject;
+    VgSyncObject syncObjects[MAX_FRAMES_IN_FLIGHT];
     VgCommandBuffer transferCommandBuffer;
     VgBuffer transferBuffer;
     VmaAllocator_T* allocator{VK_NULL_HANDLE};
     uint32_t swapChainFramebufferIndex{0};
     VkDeviceSize alignedFlushSize{0};
+    size_t currentFrameNum{0};
+    std::list<std::shared_ptr<VgDisposable>> disposables;
+    bool exitTriggered{false};
 };
 } // namespace Engine
