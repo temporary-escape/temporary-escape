@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../utils/path.hpp"
 #include "vg_buffer.hpp"
 #include "vg_pipeline.hpp"
 #include "vg_types.hpp"
@@ -12,11 +11,12 @@ struct VgVertexBufferBindRef {
 };
 
 class VgDevice;
+class VgCommandPool;
 
 class VgCommandBuffer {
 public:
     VgCommandBuffer() = default;
-    explicit VgCommandBuffer(const Config& config, VgDevice& device, VkCommandPool commandPool);
+    explicit VgCommandBuffer(const Config& config, VgDevice& device, VgCommandPool& commandPool);
     ~VgCommandBuffer();
     VgCommandBuffer(const VgCommandBuffer& other) = delete;
     VgCommandBuffer(VgCommandBuffer&& other) noexcept;

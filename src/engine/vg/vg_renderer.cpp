@@ -8,7 +8,7 @@ using namespace Engine;
 
 VgRenderer::VgRenderer(const Config& config) :
     VgDevice{config},
-    VgCommandBuffer{createCommandBuffer()},
+    VgCommandBuffer{getCommandPool().createCommandBuffer()},
     lastViewportSize{config.windowWidth, config.windowHeight} {
 
     createRenderPass();

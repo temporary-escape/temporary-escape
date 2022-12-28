@@ -137,7 +137,7 @@ public:
     }
 
     void draw(const Vector2i& viewport, float deltaTime) override {
-        /*static float degrees = 0.0f;
+        static float degrees = 0.0f;
 
         VgBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -154,7 +154,7 @@ public:
         degrees += deltaTime * 15.0f;
 
         vbo = createBuffer(bufferInfo);
-        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));*/
+        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));
 
         beginRenderPass(getSwapChainFramebuffer(), viewport);
 

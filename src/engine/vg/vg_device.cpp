@@ -61,10 +61,7 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
 
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-        cleanup();
-        EXCEPTION("Failed to create command pool!");
-    }
+    commandPool = createCommandPool(poolInfo);
 
     for (auto& syncObject : syncObjects) {
         syncObject = createSyncObject();
@@ -89,7 +86,7 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     Log::i(CMP, "Using aligned flush size: {} bytes", alignedFlushSize);
 
     // Allocate command buffer for memory transfers only
-    transferCommandBuffer = createCommandBuffer();
+    transferCommandBuffer = commandPool.createCommandBuffer();
 
     // Pinned buffer to be used for memory transfer
     VgBuffer::CreateInfo transferBufferCreateInfo{};
@@ -114,10 +111,7 @@ void VgDevice::cleanup() {
 
     transferCommandBuffer.destroy();
 
-    if (commandPool) {
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        commandPool = VK_NULL_HANDLE;
-    }
+    commandPool.destroy();
 
     swapChain.destroy();
     for (auto& syncObject : syncObjects) {
@@ -135,6 +129,12 @@ void VgDevice::cleanup() {
         vkDestroyDevice(device, nullptr);
         device = VK_NULL_HANDLE;
     }
+}
+
+void VgDevice::getGpuMemoryStats() {
+    VmaBudget info;
+    vmaGetBudget(allocator, &info);
+    Log::d(CMP, "Allocator budget: {} usage: {}", info.budget, info.usage);
 }
 
 void VgDevice::onNextFrame() {
@@ -191,8 +191,8 @@ VgSyncObject VgDevice::createSyncObject() {
     return VgSyncObject{config, device};
 }
 
-VgCommandBuffer VgDevice::createCommandBuffer() {
-    return VgCommandBuffer{config, *this, commandPool};
+VgCommandPool VgDevice::createCommandPool(const VgCommandPool::CreateInfo& createInfo) {
+    return VgCommandPool{config, *this, createInfo};
 }
 
 VgBuffer VgDevice::createBuffer(const VgBuffer::CreateInfo& createInfo) {

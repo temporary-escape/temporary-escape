@@ -2,6 +2,7 @@
 
 #include "vg_buffer.hpp"
 #include "vg_command_buffer.hpp"
+#include "vg_command_pool.hpp"
 #include "vg_framebuffer.hpp"
 #include "vg_instance.hpp"
 #include "vg_pipeline.hpp"
@@ -24,7 +25,7 @@ public:
     VgRenderPass createRenderPass(const VgRenderPass::CreateInfo& createInfo);
     VgFramebuffer createFramebuffer(const VgFramebuffer::CreateInfo& createInfo);
     VgSyncObject createSyncObject();
-    VgCommandBuffer createCommandBuffer();
+    VgCommandPool createCommandPool(const VgCommandPool::CreateInfo& createInfo);
     VgBuffer createBuffer(const VgBuffer::CreateInfo& createInfo);
 
     VkDevice getHandle() const {
@@ -40,8 +41,12 @@ public:
     void submitPresentQueue();
     void recreateSwapChain();
 
-    const VgSwapChain& getSwapChain() const {
+    VgSwapChain& getSwapChain() {
         return swapChain;
+    }
+
+    VgCommandPool& getCommandPool() {
+        return commandPool;
     }
 
     VmaAllocator_T* getAllocator() const {
@@ -55,6 +60,8 @@ public:
     void uploadBufferData(const void* data, size_t size, VgBuffer& dst);
 
     void dispose(std::shared_ptr<VgDisposable> disposable);
+
+    void getGpuMemoryStats();
 
 protected:
     virtual void onSwapChainChanged() = 0;
@@ -73,7 +80,7 @@ private:
     VkDevice device{VK_NULL_HANDLE};
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
-    VkCommandPool commandPool{VK_NULL_HANDLE};
+    VgCommandPool commandPool;
     VgSwapChain swapChain;
     VgSyncObject syncObjects[MAX_FRAMES_IN_FLIGHT];
     VgCommandBuffer transferCommandBuffer;

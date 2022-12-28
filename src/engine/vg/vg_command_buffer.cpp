@@ -1,13 +1,14 @@
 #include "vg_command_buffer.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_command_pool.hpp"
 #include "vg_device.hpp"
 
 using namespace Engine;
 
-VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VkCommandPool commandPool) : device{&device} {
+VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VgCommandPool& commandPool) : device{&device} {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = commandPool.getHandle();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
