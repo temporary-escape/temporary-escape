@@ -203,7 +203,7 @@ void VgWindow::run() {
         }
 
         double curTime = glfwGetTime();
-        render(windowSize, static_cast<float>(curTime - lastTime));
+        onFrameDraw(windowSize, static_cast<float>(curTime - lastTime));
         lastTime = curTime;
     }
 

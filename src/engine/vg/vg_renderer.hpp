@@ -13,56 +13,64 @@ public:
     void beginRenderPass(const VgFramebuffer& framebuffer, const Vector2i& size);
 
     void beginRenderPass(const VkRenderPassBeginInfo& renderPassInfo) {
-        getCurrentCommandBuffer().beginRenderPass(renderPassInfo);
+        getCommandBuffer().beginRenderPass(renderPassInfo);
     }
     void endRenderPass() {
-        getCurrentCommandBuffer().endRenderPass();
+        getCommandBuffer().endRenderPass();
     }
 
     void setViewport(const Vector2i& pos, const Vector2i& size, const float minDepth = 0.0f,
                      const float maxDepth = 1.0f) {
-        getCurrentCommandBuffer().setViewport(pos, size, minDepth, maxDepth);
+        getCommandBuffer().setViewport(pos, size, minDepth, maxDepth);
     }
 
     void setScissor(const Vector2i& pos, const Vector2i& size) {
-        getCurrentCommandBuffer().setScissor(pos, size);
+        getCommandBuffer().setScissor(pos, size);
     }
 
     void bindPipeline(const VgPipeline& pipeline) {
-        getCurrentCommandBuffer().bindPipeline(pipeline);
+        getCommandBuffer().bindPipeline(pipeline);
         currentPipelineLayout = pipeline.getLayout();
     }
 
     void bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers) {
-        getCurrentCommandBuffer().bindBuffers(buffers);
+        getCommandBuffer().bindBuffers(buffers);
     }
 
-    void drawVertices(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
-                      const uint32_t firstInstance) {
-        getCurrentCommandBuffer().drawVertices(vertexCount, instanceCount, firstVertex, firstInstance);
+    void bindIndexBuffer(const VgBuffer& buffer, const VkDeviceSize offset, const VkIndexType indexType) {
+        getCommandBuffer().bindIndexBuffer(buffer, offset, indexType);
+    }
+
+    void draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
+              const uint32_t firstInstance) {
+        getCommandBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);
+    }
+
+    void drawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex,
+                     const int32_t vertexOffset, const uint32_t firstInstance) {
+        getCommandBuffer().drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region) {
-        getCurrentCommandBuffer().copyBuffer(src, dst, region);
+        getCommandBuffer().copyBuffer(src, dst, region);
     }
 
-    void bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms,
+    void bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgBufferBinding>& uniforms,
                          const std::vector<VgTextureBinding>& textures);
 
 protected:
-    void render(const Vector2i& viewport, float deltaTime) override;
+    void onFrameDraw(const Vector2i& viewport, float deltaTime) override;
     void onSwapChainChanged() override;
-    virtual void draw(const Vector2i& viewport, float deltaTime) = 0;
 
 private:
     void createRenderPass();
     void createSwapChainFramebuffers();
-    VgCommandBuffer& getCurrentCommandBuffer() {
-        return commandBuffers[getCurrentFrameNum()];
+    VgCommandBuffer& getCommandBuffer() {
+        return commandBuffers.at(getCurrentFrameNum());
     }
 
     VgRenderPass renderPass;
-    VgCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
+    std::array<VgCommandBuffer, MAX_FRAMES_IN_FLIGHT> commandBuffers;
     std::vector<VgFramebuffer> swapChainFramebuffers;
     Vector2i lastViewportSize;
     VkPipelineLayout currentPipelineLayout{VK_NULL_HANDLE};

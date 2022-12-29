@@ -65,4 +65,9 @@ private:
 
     std::shared_ptr<BufferState> state;
 };
+
+struct VgBufferBinding {
+    uint32_t binding{0};
+    VgBuffer* uniform{nullptr};
+};
 } // namespace Engine

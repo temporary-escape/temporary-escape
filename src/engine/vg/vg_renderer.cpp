@@ -1,6 +1,5 @@
 #include "vg_renderer.hpp"
 #include "../utils/exceptions.hpp"
-#include "../utils/log.hpp"
 
 #define CMP "VgRenderer"
 
@@ -67,17 +66,17 @@ void VgRenderer::createSwapChainFramebuffers() {
     }
 }
 
-void VgRenderer::render(const Vector2i& viewport, float deltaTime) {
-    auto& commandBuffer = getCurrentCommandBuffer();
+void VgRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
+    auto& commandBuffer = getCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    commandBuffer.startCommandBuffer(beginInfo);
+    commandBuffer.start(beginInfo);
 
-    draw(viewport, deltaTime);
+    render(viewport, deltaTime);
 
-    commandBuffer.endCommandBuffer();
+    commandBuffer.end();
     submitCommandBuffer(commandBuffer);
 
     submitPresentQueue();
@@ -110,10 +109,10 @@ void VgRenderer::beginRenderPass(const VgFramebuffer& framebuffer, const Vector2
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    getCurrentCommandBuffer().beginRenderPass(renderPassInfo);
+    getCommandBuffer().beginRenderPass(renderPassInfo);
 }
 
-void VgRenderer::bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms,
+void VgRenderer::bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgBufferBinding>& uniforms,
                                  const std::vector<VgTextureBinding>& textures) {
 
     auto& pool = getCurrentDescriptorPool();
@@ -121,7 +120,7 @@ void VgRenderer::bindDescriptors(VgDescriptorSetLayout& layout, const std::vecto
     auto descriptorSet = createDescriptorSet(pool, layout);
     descriptorSet.bind(uniforms, textures);
 
-    getCurrentCommandBuffer().bindDescriptorSet(descriptorSet, currentPipelineLayout);
+    getCommandBuffer().bindDescriptorSet(descriptorSet, currentPipelineLayout);
 }
 
 void VgRenderer::onSwapChainChanged() {

@@ -39,7 +39,7 @@ void VgDescriptorSet::swap(VgDescriptorSet& other) noexcept {
     std::swap(device, other.device);
 }
 
-void VgDescriptorSet::bind(const std::vector<VgUniformBufferBinding>& uniforms,
+void VgDescriptorSet::bind(const std::vector<VgBufferBinding>& uniforms,
                            const std::vector<VgTextureBinding>& textures) {
 
     std::vector<VkDescriptorBufferInfo> bufferInfos{uniforms.size()};

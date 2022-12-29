@@ -18,6 +18,7 @@ public:
 protected:
     virtual void onNextFrame() = 0;
     virtual void onExit() = 0;
+    virtual void onFrameDraw(const Vector2i& viewport, float timeDelta) = 0;
     std::vector<const char*> getRequiredExtensions();
     VkSurfaceKHR createSurface(VkInstance instance);
 

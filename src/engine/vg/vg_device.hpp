@@ -6,6 +6,7 @@
 #include "vg_descriptor_pool.hpp"
 #include "vg_descriptor_set.hpp"
 #include "vg_descriptor_set_layout.hpp"
+#include "vg_double_buffer.hpp"
 #include "vg_framebuffer.hpp"
 #include "vg_instance.hpp"
 #include "vg_pipeline.hpp"
@@ -14,7 +15,6 @@
 #include "vg_swap_chain.hpp"
 #include "vg_sync_object.hpp"
 #include "vg_texture.hpp"
-#include "vg_uniform_buffer.hpp"
 
 struct VmaAllocator_T;
 
@@ -36,8 +36,18 @@ public:
     VgDescriptorPool createDescriptorPool();
     VgDescriptorSetLayout createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
     VgDescriptorSet createDescriptorSet(VgDescriptorPool& pool, VgDescriptorSetLayout& layout);
-    VgUniformBuffer createUniformBuffer(size_t size, VgUniformBuffer::Usage usage);
+    VgDoubleBuffer createDoubleBuffer(const VgBuffer::CreateInfo& createInfo);
     VgTexture createTexture(const VgTexture::CreateInfo& createInfo);
+    void waitDeviceIdle();
+    void submitCommandBuffer(const VgCommandBuffer& commandBuffer);
+    void submitPresentQueue();
+    void recreateSwapChain();
+    void uploadBufferData(const void* data, size_t size, VgBuffer& dst);
+    void copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, int level, int layer, const VkOffset3D& offset,
+                           const VkExtent3D& extent);
+    void dispose(std::shared_ptr<VgDisposable> disposable);
+    void getGpuMemoryStats();
+    void transitionImageLayout(VgTexture& texture, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
     VkDevice& getHandle() {
         return device;
@@ -47,14 +57,9 @@ public:
         return device;
     }
 
-    void waitDeviceIdle();
-
     uint32_t getSwapChainFramebufferIndex() const {
         return swapChainFramebufferIndex;
     }
-    void submitCommandBuffer(const VgCommandBuffer& commandBuffer);
-    void submitPresentQueue();
-    void recreateSwapChain();
 
     VgSwapChain& getSwapChain() {
         return swapChain;
@@ -72,30 +77,20 @@ public:
         return currentFrameNum;
     }
 
-    void uploadBufferData(const void* data, size_t size, VgBuffer& dst);
-    void copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, int level, int layer, const VkOffset3D& offset,
-                           const VkExtent3D& extent);
-
-    void dispose(std::shared_ptr<VgDisposable> disposable);
-
-    void getGpuMemoryStats();
-
-    void transitionImageLayout(VgTexture& texture, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-protected:
-    virtual void onSwapChainChanged() = 0;
-    void onNextFrame() override;
-    void onExit() override;
-
     VgSyncObject& getCurrentSyncObject() {
-        return syncObjects[currentFrameNum];
+        return syncObjects.at(currentFrameNum);
     }
 
     VgDescriptorPool& getCurrentDescriptorPool() {
-        return descriptorPools[currentFrameNum];
+        return descriptorPools.at(currentFrameNum);
     }
 
+protected:
+    virtual void onSwapChainChanged() = 0;
+
 private:
+    void onNextFrame() override;
+    void onExit() override;
     void cleanup();
     void destroyDisposables();
 
@@ -105,8 +100,8 @@ private:
     VkQueue presentQueue{VK_NULL_HANDLE};
     VgCommandPool commandPool;
     VgSwapChain swapChain;
-    VgSyncObject syncObjects[MAX_FRAMES_IN_FLIGHT];
-    VgDescriptorPool descriptorPools[MAX_FRAMES_IN_FLIGHT];
+    std::array<VgSyncObject, MAX_FRAMES_IN_FLIGHT> syncObjects;
+    std::array<VgDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
     VgBuffer transferBuffer;
     VmaAllocator_T* allocator{VK_NULL_HANDLE};
     uint32_t swapChainFramebufferIndex{0};

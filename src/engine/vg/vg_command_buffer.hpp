@@ -38,8 +38,8 @@ public:
         return state && state->commandBuffer != VK_NULL_HANDLE;
     }
 
-    void startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo);
-    void endCommandBuffer();
+    void start(const VkCommandBufferBeginInfo& beginInfo);
+    void end();
 
     void beginRenderPass(const VkRenderPassBeginInfo& renderPassInfo);
     void endRenderPass();
@@ -48,7 +48,10 @@ public:
     void setScissor(const Vector2i& pos, const Vector2i& size);
     void bindPipeline(const VgPipeline& pipeline);
     void bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers);
-    void drawVertices(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+    void bindIndexBuffer(const VgBuffer& buffer, VkDeviceSize offset, VkIndexType indexType);
+    void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+    void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
+                     uint32_t firstInstance);
     void copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region);
     void copyBufferToImage(const VgBuffer& src, const VgTexture& dst, const VkBufferImageCopy& region);
     void bindDescriptorSet(const VgDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout);

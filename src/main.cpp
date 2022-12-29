@@ -51,10 +51,15 @@ struct Vertex {
     Vector2 texCoord;
 };
 
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+static const std::vector<Vertex> vertices = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+};
+
+static const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0,
 };
 
 struct UniformBuffer {
@@ -74,7 +79,20 @@ public:
         vbo = createBuffer(bufferInfo);
         vbo.subData(vertices.data(), 0, vertices.size() * sizeof(Vertex));
 
-        ubo = createUniformBuffer(sizeof(UniformBuffer), VgUniformBuffer::Usage::Dynamic);
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(UniformBuffer);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY;
+        ubo = createDoubleBuffer(bufferInfo);
+
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(indices[0]) * indices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+        ibo = createBuffer(bufferInfo);
+        ibo.subData(indices.data(), 0, indices.size() * sizeof(indices[0]));
 
         auto pixels = PngImporter{"/home/mnovak/Desktop/avatar-2.png"};
 
@@ -186,7 +204,7 @@ public:
         pipeline = createPipeline(pipelineInfo);
     }
 
-    void draw(const Vector2i& viewport, float deltaTime) override {
+    void render(const Vector2i& viewport, float deltaTime) override {
         /*static float degrees = 0.0f;
 
         VgBuffer::CreateInfo bufferInfo{};
@@ -219,8 +237,9 @@ public:
         setViewport({0, 0}, viewport);
         setScissor({0, 0}, viewport);
         bindBuffers({{vbo, 0}});
-        bindDescriptors(descriptorSetLayout, {{0, &ubo}}, {{1, &texture}});
-        drawVertices(vertices.size(), 1, 0, 0);
+        bindIndexBuffer(ibo, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+        bindDescriptors(descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}}, {{1, &texture}});
+        drawIndexed(indices.size(), 1, 0, 0, 0);
 
         endRenderPass();
     }
@@ -257,7 +276,8 @@ public:
 
     VgPipeline pipeline;
     VgBuffer vbo;
-    VgUniformBuffer ubo;
+    VgBuffer ibo;
+    VgDoubleBuffer ubo;
     VgDescriptorSetLayout descriptorSetLayout;
     VgTexture texture;
 };

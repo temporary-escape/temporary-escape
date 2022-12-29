@@ -225,8 +225,8 @@ VgDescriptorSet VgDevice::createDescriptorSet(VgDescriptorPool& pool, VgDescript
     return VgDescriptorSet{config, *this, pool, layout};
 }
 
-VgUniformBuffer VgDevice::createUniformBuffer(const size_t size, const VgUniformBuffer::Usage usage) {
-    return VgUniformBuffer{config, *this, size, usage};
+VgDoubleBuffer VgDevice::createDoubleBuffer(const VgBuffer::CreateInfo& createInfo) {
+    return VgDoubleBuffer{config, *this, createInfo};
 }
 
 VgTexture VgDevice::createTexture(const VgTexture::CreateInfo& createInfo) {
@@ -343,7 +343,7 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        transferCommandBuffer.startCommandBuffer(beginInfo);
+        transferCommandBuffer.start(beginInfo);
 
         VkBufferCopy copyRegion{};
         copyRegion.size = size;
@@ -351,7 +351,7 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
         copyRegion.dstOffset = dstOffset;
         transferCommandBuffer.copyBuffer(transferBuffer, dst, copyRegion);
 
-        transferCommandBuffer.endCommandBuffer();
+        transferCommandBuffer.end();
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -383,7 +383,7 @@ void VgDevice::transitionImageLayout(VgTexture& texture, const VkFormat format, 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    transferCommandBuffer.startCommandBuffer(beginInfo);
+    transferCommandBuffer.start(beginInfo);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -420,7 +420,7 @@ void VgDevice::transitionImageLayout(VgTexture& texture, const VkFormat format, 
 
     transferCommandBuffer.pipelineBarrier(sourceStage, destinationStage, barrier);
 
-    transferCommandBuffer.endCommandBuffer();
+    transferCommandBuffer.end();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -446,7 +446,7 @@ void VgDevice::copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, con
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    transferCommandBuffer.startCommandBuffer(beginInfo);
+    transferCommandBuffer.start(beginInfo);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -461,7 +461,7 @@ void VgDevice::copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, con
 
     transferCommandBuffer.copyBufferToImage(buffer, texture, region);
 
-    transferCommandBuffer.endCommandBuffer();
+    transferCommandBuffer.end();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

@@ -56,7 +56,7 @@ void VgCommandBuffer::free() {
     state.reset();
 }
 
-void VgCommandBuffer::startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo) {
+void VgCommandBuffer::start(const VkCommandBufferBeginInfo& beginInfo) {
     vkResetCommandBuffer(state->commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
 
     if (vkBeginCommandBuffer(state->commandBuffer, &beginInfo) != VK_SUCCESS) {
@@ -64,7 +64,7 @@ void VgCommandBuffer::startCommandBuffer(const VkCommandBufferBeginInfo& beginIn
     }
 }
 
-void VgCommandBuffer::endCommandBuffer() {
+void VgCommandBuffer::end() {
     if (vkEndCommandBuffer(state->commandBuffer) != VK_SUCCESS) {
         EXCEPTION("Failed to record command buffer!");
     }
@@ -112,13 +112,22 @@ void VgCommandBuffer::bindBuffers(const std::vector<VgVertexBufferBindRef>& buff
     vkCmdBindVertexBuffers(state->commandBuffer, 0, buffers.size(), handles.data(), offsets.data());
 }
 
-void VgCommandBuffer::drawVertices(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
-                                   const uint32_t firstInstance) {
+void VgCommandBuffer::draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex,
+                           const uint32_t firstInstance) {
     vkCmdDraw(state->commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void VgCommandBuffer::drawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex,
+                                  const int32_t vertexOffset, const uint32_t firstInstance) {
+    vkCmdDrawIndexed(state->commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VgCommandBuffer::copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region) {
     vkCmdCopyBuffer(state->commandBuffer, src.getHandle(), dst.getHandle(), 1, &region);
+}
+
+void VgCommandBuffer::bindIndexBuffer(const VgBuffer& buffer, const VkDeviceSize offset, const VkIndexType indexType) {
+    vkCmdBindIndexBuffer(state->commandBuffer, buffer.getHandle(), offset, indexType);
 }
 
 void VgCommandBuffer::copyBufferToImage(const VgBuffer& src, const VgTexture& dst, const VkBufferImageCopy& region) {
