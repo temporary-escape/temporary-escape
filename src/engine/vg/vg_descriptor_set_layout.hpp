@@ -18,7 +18,11 @@ public:
     VgDescriptorSetLayout& operator=(VgDescriptorSetLayout&& other) noexcept;
     void swap(VgDescriptorSetLayout& other) noexcept;
 
-    VkDescriptorSetLayout getHandle() const {
+    VkDescriptorSetLayout& getHandle() {
+        return state->descriptorSetLayout;
+    }
+
+    const VkDescriptorSetLayout& getHandle() const {
         return state->descriptorSetLayout;
     }
 

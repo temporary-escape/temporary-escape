@@ -30,6 +30,7 @@ public:
 
     void bindPipeline(const VgPipeline& pipeline) {
         getCurrentCommandBuffer().bindPipeline(pipeline);
+        currentPipelineLayout = pipeline.getLayout();
     }
 
     void bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers) {
@@ -44,6 +45,8 @@ public:
     void copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region) {
         getCurrentCommandBuffer().copyBuffer(src, dst, region);
     }
+
+    void bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms);
 
 protected:
     void render(const Vector2i& viewport, float deltaTime) override;
@@ -61,5 +64,6 @@ private:
     VgCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
     std::vector<VgFramebuffer> swapChainFramebuffers;
     Vector2i lastViewportSize;
+    VkPipelineLayout currentPipelineLayout{VK_NULL_HANDLE};
 };
 } // namespace Engine

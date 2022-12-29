@@ -12,6 +12,7 @@ struct VgVertexBufferBindRef {
 
 class VgDevice;
 class VgCommandPool;
+class VgDescriptorSet;
 
 class VgCommandBuffer {
 public:
@@ -24,7 +25,11 @@ public:
     VgCommandBuffer& operator=(VgCommandBuffer&& other) noexcept;
     void swap(VgCommandBuffer& other) noexcept;
 
-    VkCommandBuffer getHandle() const {
+    VkCommandBuffer& getHandle() {
+        return commandBuffer;
+    }
+
+    const VkCommandBuffer& getHandle() const {
         return commandBuffer;
     }
 
@@ -44,6 +49,7 @@ public:
     void bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers);
     void drawVertices(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     void copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region);
+    void bindDescriptorSet(const VgDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout);
     void destroy();
 
 private:

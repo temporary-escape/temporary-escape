@@ -19,7 +19,11 @@ public:
 
     VgCommandBuffer createCommandBuffer();
 
-    VkCommandPool getHandle() const {
+    VkCommandPool& getHandle() {
+        return commandPool;
+    }
+
+    const VkCommandPool& getHandle() const {
         return commandPool;
     }
 

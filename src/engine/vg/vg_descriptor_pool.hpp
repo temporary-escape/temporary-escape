@@ -20,6 +20,14 @@ public:
 
     void destroy();
 
+    VkDescriptorPool& getHandle() {
+        return descriptorPool;
+    }
+
+    const VkDescriptorPool& getHandle() const {
+        return descriptorPool;
+    }
+
 private:
     const Config* config{nullptr};
     VgDevice* device{nullptr};

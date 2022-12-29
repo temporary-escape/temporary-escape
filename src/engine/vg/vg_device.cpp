@@ -149,6 +149,8 @@ void VgDevice::getGpuMemoryStats() {
 void VgDevice::onNextFrame() {
     getCurrentSyncObject().wait();
 
+    getCurrentDescriptorPool().reset();
+
     // Destroy buffers we no longer need
     destroyDisposables();
 
@@ -214,6 +216,22 @@ VgDescriptorSetLayout VgDevice::createDescriptorSetLayout(const VgDescriptorSetL
 
 VgDescriptorPool VgDevice::createDescriptorPool() {
     return VgDescriptorPool{config, *this};
+}
+
+VgDescriptorSetLayout VgDevice::createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+    return VgDescriptorSetLayout{config, *this, layoutInfo};
+}
+
+VgDescriptorSet VgDevice::createDescriptorSet(VgDescriptorPool& pool, VgDescriptorSetLayout& layout) {
+    return VgDescriptorSet{config, *this, pool, layout};
+}
+
+VgUniformBuffer VgDevice::createUniformBuffer(const size_t size, const VgUniformBuffer::Usage usage) {
+    return VgUniformBuffer{config, *this, size, usage};
 }
 
 void VgDevice::waitDeviceIdle() {

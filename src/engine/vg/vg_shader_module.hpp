@@ -21,7 +21,11 @@ public:
         return stage;
     }
 
-    VkShaderModule getHandle() const {
+    VkShaderModule& getHandle() {
+        return shaderModule;
+    }
+
+    const VkShaderModule& getHandle() const {
         return shaderModule;
     }
 

@@ -113,6 +113,15 @@ void VgRenderer::beginRenderPass(const VgFramebuffer& framebuffer, const Vector2
     getCurrentCommandBuffer().beginRenderPass(renderPassInfo);
 }
 
+void VgRenderer::bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms) {
+    auto& pool = getCurrentDescriptorPool();
+
+    auto descriptorSet = createDescriptorSet(pool, layout);
+    descriptorSet.bind(uniforms);
+
+    getCurrentCommandBuffer().bindDescriptorSet(descriptorSet, currentPipelineLayout);
+}
+
 void VgRenderer::onSwapChainChanged() {
     createSwapChainFramebuffers();
 }

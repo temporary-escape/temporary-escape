@@ -15,7 +15,11 @@ public:
     VgSwapChain& operator=(VgSwapChain&& other) noexcept;
     void swap(VgSwapChain& other) noexcept;
 
-    VkSwapchainKHR getHandle() const {
+    VkSwapchainKHR& getHandle() {
+        return swapChain;
+    }
+
+    const VkSwapchainKHR& getHandle() const {
         return swapChain;
     }
 

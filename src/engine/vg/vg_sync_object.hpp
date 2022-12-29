@@ -26,7 +26,11 @@ public:
         return renderFinishedSemaphore;
     }
 
-    VkFence getHandle() const {
+    VkFence& getHandle() {
+        return inFlightFence;
+    }
+
+    const VkFence& getHandle() const {
         return inFlightFence;
     }
 

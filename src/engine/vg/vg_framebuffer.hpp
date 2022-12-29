@@ -17,7 +17,11 @@ public:
     VgFramebuffer& operator=(VgFramebuffer&& other) noexcept;
     void swap(VgFramebuffer& other) noexcept;
 
-    VkFramebuffer getHandle() const {
+    VkFramebuffer& getHandle() {
+        return framebuffer;
+    }
+
+    const VkFramebuffer& getHandle() const {
         return framebuffer;
     }
 

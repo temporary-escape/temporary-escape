@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vg_types.hpp"
+#include "vg_uniform_buffer.hpp"
 
 namespace Engine {
 class VgDevice;
@@ -9,8 +10,6 @@ class VgDescriptorSetLayout;
 
 class VgDescriptorSet {
 public:
-    struct CreateInfo {};
-
     VgDescriptorSet() = default;
     explicit VgDescriptorSet(const Config& config, VgDevice& device, VgDescriptorPool& descriptorPool,
                              VgDescriptorSetLayout& layout);
@@ -21,24 +20,22 @@ public:
     VgDescriptorSet& operator=(VgDescriptorSet&& other) noexcept;
     void swap(VgDescriptorSet& other) noexcept;
 
-    VkDescriptorSet getHandle() const {
-        return state->descriptorSet;
+    void bind(const std::vector<VgUniformBufferBinding>& uniforms);
+
+    VkDescriptorSet& getHandle() {
+        return descriptorSet;
+    }
+
+    const VkDescriptorSet& getHandle() const {
+        return descriptorSet;
     }
 
     operator bool() const {
         return getHandle() != VK_NULL_HANDLE;
     }
 
-    void destroy();
-
 private:
-    class DescriptionSetState : public VgDisposable {
-    public:
-        void destroy() override;
-
-        VgDevice* device{nullptr};
-        VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
-    };
-    std::shared_ptr<DescriptionSetState> state;
+    VkDevice device{VK_NULL_HANDLE};
+    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 };
 } // namespace Engine

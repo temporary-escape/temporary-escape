@@ -29,11 +29,19 @@ public:
     VgPipeline& operator=(VgPipeline&& other) noexcept;
     void swap(VgPipeline& other) noexcept;
 
-    VkPipelineLayout getLayout() const {
+    VkPipelineLayout& getLayout() {
         return pipelineLayout;
     }
 
-    VkPipeline getHandle() const {
+    const VkPipelineLayout& getLayout() const {
+        return pipelineLayout;
+    }
+
+    VkPipeline& getHandle() {
+        return pipeline;
+    }
+
+    const VkPipeline& getHandle() const {
         return pipeline;
     }
 

@@ -20,7 +20,11 @@ public:
     VgRenderPass& operator=(VgRenderPass&& other) noexcept;
     void swap(VgRenderPass& other) noexcept;
 
-    VkRenderPass getHandle() const {
+    VkRenderPass& getHandle() {
+        return renderPass;
+    }
+
+    const VkRenderPass& getHandle() const {
         return renderPass;
     }
 

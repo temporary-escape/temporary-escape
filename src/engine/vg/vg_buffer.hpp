@@ -24,7 +24,11 @@ public:
 
     void subData(const void* data, size_t offset, size_t size);
 
-    VkBuffer getHandle() const {
+    VkBuffer& getHandle() {
+        return state->buffer;
+    }
+
+    const VkBuffer& getHandle() const {
         return state->buffer;
     }
 

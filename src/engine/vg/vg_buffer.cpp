@@ -52,7 +52,9 @@ void VgBuffer::destroy() {
 }
 
 void VgBuffer::subData(const void* data, const size_t offset, const size_t size) {
-    if (state->memoryUsage == VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY) {
+    if (state->memoryUsage == VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY ||
+        state->memoryUsage == VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU) {
+
         void* dst;
         if (vmaMapMemory(state->device->getAllocator(), state->allocation, &dst) != VK_SUCCESS) {
             EXCEPTION("Failed to map buffer memory!");

@@ -11,13 +11,17 @@ static const std::string vertCode = R"(#version 450
 layout(location = 0) in vec2 in_Position;
 layout(location = 1) in vec3 in_Color;
 
+layout (std140, binding = 0) uniform UniformBuffer {
+    mat4 model;
+} models;
+
 layout(location = 0) out VS_OUT {
     vec3 color;
 } vs_out;
 
 void main() {
     vs_out.color = in_Color;
-    gl_Position = vec4(in_Position, 0.0, 1.0);
+    gl_Position = models.model * vec4(in_Position, 0.0, 1.0);
 }
 )";
 
@@ -45,6 +49,10 @@ const std::vector<Vertex> vertices = {
     {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
 };
 
+struct UniformBuffer {
+    Matrix4 model{};
+};
+
 class VgApplication : public VgRenderer {
 public:
     VgApplication(const Config& config) : VgRenderer{config} {
@@ -57,6 +65,16 @@ public:
 
         vbo = createBuffer(bufferInfo);
         vbo.subData(vertices.data(), 0, vertices.size() * sizeof(Vertex));
+
+        ubo = createUniformBuffer(sizeof(UniformBuffer), VgUniformBuffer::Usage::Dynamic);
+
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.pImmutableSamplers = nullptr;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        descriptorSetLayout = createDescriptorSetLayout({uboLayoutBinding});
 
         auto vert = createShaderModule(vertCode, VK_SHADER_STAGE_VERTEX_BIT);
         auto frag = createShaderModule(fragCode, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -130,14 +148,15 @@ public:
         pipelineInfo.dynamicState.pDynamicStates = dynamicStates.data();
 
         pipelineInfo.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineInfo.pipelineLayoutInfo.setLayoutCount = 0;
+        pipelineInfo.pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
         pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 0;
 
         pipeline = createPipeline(pipelineInfo);
     }
 
     void draw(const Vector2i& viewport, float deltaTime) override {
-        static float degrees = 0.0f;
+        /*static float degrees = 0.0f;
 
         VgBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -154,7 +173,14 @@ public:
         degrees += deltaTime * 15.0f;
 
         vbo = createBuffer(bufferInfo);
-        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));
+        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));*/
+
+        static float degrees = 0.0f;
+        degrees += deltaTime * 15.0f;
+
+        UniformBuffer uniformBuffer;
+        uniformBuffer.model = glm::rotate(Matrix4{1.0f}, glm::radians(degrees), {0.0f, 0.0f, 1.0f});
+        ubo.subData(&uniformBuffer, 0, sizeof(UniformBuffer));
 
         beginRenderPass(getSwapChainFramebuffer(), viewport);
 
@@ -162,6 +188,7 @@ public:
         setViewport({0, 0}, viewport);
         setScissor({0, 0}, viewport);
         bindBuffers({{vbo, 0}});
+        bindDescriptors(descriptorSetLayout, {{0, &ubo}});
         drawVertices(vertices.size(), 1, 0, 0);
 
         endRenderPass();
@@ -199,6 +226,8 @@ public:
 
     VgPipeline pipeline;
     VgBuffer vbo;
+    VgUniformBuffer ubo;
+    VgDescriptorSetLayout descriptorSetLayout;
 };
 
 int main(int argc, char** argv) {

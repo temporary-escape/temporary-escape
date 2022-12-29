@@ -111,3 +111,8 @@ void VgCommandBuffer::drawVertices(const uint32_t vertexCount, const uint32_t in
 void VgCommandBuffer::copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region) {
     vkCmdCopyBuffer(commandBuffer, src.getHandle(), dst.getHandle(), 1, &region);
 }
+
+void VgCommandBuffer::bindDescriptorSet(const VgDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout) {
+    auto set = descriptorSet.getHandle();
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &set, 0, nullptr);
+}

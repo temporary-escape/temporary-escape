@@ -4,6 +4,7 @@
 #include "vg_command_buffer.hpp"
 #include "vg_command_pool.hpp"
 #include "vg_descriptor_pool.hpp"
+#include "vg_descriptor_set.hpp"
 #include "vg_descriptor_set_layout.hpp"
 #include "vg_framebuffer.hpp"
 #include "vg_instance.hpp"
@@ -12,6 +13,7 @@
 #include "vg_shader_module.hpp"
 #include "vg_swap_chain.hpp"
 #include "vg_sync_object.hpp"
+#include "vg_uniform_buffer.hpp"
 
 struct VmaAllocator_T;
 
@@ -31,8 +33,15 @@ public:
     VgBuffer createBuffer(const VgBuffer::CreateInfo& createInfo);
     VgDescriptorSetLayout createDescriptorSetLayout(const VgDescriptorSetLayout::CreateInfo& createInfo);
     VgDescriptorPool createDescriptorPool();
+    VgDescriptorSetLayout createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+    VgDescriptorSet createDescriptorSet(VgDescriptorPool& pool, VgDescriptorSetLayout& layout);
+    VgUniformBuffer createUniformBuffer(size_t size, VgUniformBuffer::Usage usage);
 
-    VkDevice getHandle() const {
+    VkDevice& getHandle() {
+        return device;
+    }
+
+    const VkDevice& getHandle() const {
         return device;
     }
 
@@ -67,6 +76,8 @@ public:
 
     void getGpuMemoryStats();
 
+    void createDescriptors(VgDescriptorSetLayout& layout, const std::vector<VkDescriptorBufferInfo>& uniforms);
+
 protected:
     virtual void onSwapChainChanged() = 0;
     void onNextFrame() override;
@@ -74,6 +85,10 @@ protected:
 
     VgSyncObject& getCurrentSyncObject() {
         return syncObjects[currentFrameNum];
+    }
+
+    VgDescriptorPool& getCurrentDescriptorPool() {
+        return descriptorPools[currentFrameNum];
     }
 
 private:
