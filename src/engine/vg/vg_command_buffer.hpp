@@ -48,7 +48,6 @@ public:
 
 private:
     VgDevice* device{nullptr};
-    VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT]{VK_NULL_HANDLE, VK_NULL_HANDLE};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
 };
 } // namespace Engine

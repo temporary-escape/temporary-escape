@@ -3,6 +3,8 @@
 #include "vg_buffer.hpp"
 #include "vg_command_buffer.hpp"
 #include "vg_command_pool.hpp"
+#include "vg_descriptor_pool.hpp"
+#include "vg_descriptor_set_layout.hpp"
 #include "vg_framebuffer.hpp"
 #include "vg_instance.hpp"
 #include "vg_pipeline.hpp"
@@ -27,6 +29,8 @@ public:
     VgSyncObject createSyncObject();
     VgCommandPool createCommandPool(const VgCommandPool::CreateInfo& createInfo);
     VgBuffer createBuffer(const VgBuffer::CreateInfo& createInfo);
+    VgDescriptorSetLayout createDescriptorSetLayout(const VgDescriptorSetLayout::CreateInfo& createInfo);
+    VgDescriptorPool createDescriptorPool();
 
     VkDevice getHandle() const {
         return device;
@@ -83,6 +87,7 @@ private:
     VgCommandPool commandPool;
     VgSwapChain swapChain;
     VgSyncObject syncObjects[MAX_FRAMES_IN_FLIGHT];
+    VgDescriptorPool descriptorPools[MAX_FRAMES_IN_FLIGHT];
     VgCommandBuffer transferCommandBuffer;
     VgBuffer transferBuffer;
     VmaAllocator_T* allocator{VK_NULL_HANDLE};

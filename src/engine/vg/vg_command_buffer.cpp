@@ -10,13 +10,11 @@ VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VgComma
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool.getHandle();
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+    allocInfo.commandBufferCount = 1;
 
-    if (vkAllocateCommandBuffers(device.getHandle(), &allocInfo, commandBuffers) != VK_SUCCESS) {
-        EXCEPTION("Failed to allocate command buffers!");
+    if (vkAllocateCommandBuffers(device.getHandle(), &allocInfo, &commandBuffer) != VK_SUCCESS) {
+        EXCEPTION("Failed to allocate command buffer!");
     }
-
-    commandBuffer = commandBuffers[0];
 }
 
 VgCommandBuffer::~VgCommandBuffer() {
@@ -36,7 +34,6 @@ VgCommandBuffer& VgCommandBuffer::operator=(VgCommandBuffer&& other) noexcept {
 
 void VgCommandBuffer::swap(VgCommandBuffer& other) noexcept {
     std::swap(device, other.device);
-    std::swap(commandBuffers, other.commandBuffers);
     std::swap(commandBuffer, other.commandBuffer);
 }
 
@@ -45,8 +42,6 @@ void VgCommandBuffer::destroy() {
 }
 
 void VgCommandBuffer::startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo) {
-    commandBuffer = commandBuffers[device->getCurrentFrameNum()];
-
     vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
 
     /*VkCommandBufferBeginInfo beginInfo{};

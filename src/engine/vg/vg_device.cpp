@@ -67,6 +67,10 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
         syncObject = createSyncObject();
     }
 
+    for (auto& descriptorPool : descriptorPools) {
+        descriptorPool = createDescriptorPool();
+    }
+
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
     allocatorCreateInfo.physicalDevice = getPhysicalDevice();
@@ -114,8 +118,13 @@ void VgDevice::cleanup() {
     commandPool.destroy();
 
     swapChain.destroy();
+
     for (auto& syncObject : syncObjects) {
         syncObject.destroy();
+    }
+
+    for (auto& descriptorPool : descriptorPools) {
+        descriptorPool.destroy();
     }
 
     transferBuffer.destroy();
@@ -197,6 +206,14 @@ VgCommandPool VgDevice::createCommandPool(const VgCommandPool::CreateInfo& creat
 
 VgBuffer VgDevice::createBuffer(const VgBuffer::CreateInfo& createInfo) {
     return VgBuffer{config, *this, createInfo};
+}
+
+VgDescriptorSetLayout VgDevice::createDescriptorSetLayout(const VgDescriptorSetLayout::CreateInfo& createInfo) {
+    return VgDescriptorSetLayout{config, *this, createInfo};
+}
+
+VgDescriptorPool VgDevice::createDescriptorPool() {
+    return VgDescriptorPool{config, *this};
 }
 
 void VgDevice::waitDeviceIdle() {

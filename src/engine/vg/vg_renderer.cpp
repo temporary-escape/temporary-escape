@@ -7,9 +7,11 @@
 using namespace Engine;
 
 VgRenderer::VgRenderer(const Config& config) :
-    VgDevice{config},
-    VgCommandBuffer{getCommandPool().createCommandBuffer()},
-    lastViewportSize{config.windowWidth, config.windowHeight} {
+    VgDevice{config}, lastViewportSize{config.windowWidth, config.windowHeight} {
+
+    for (auto& commandBuffer : commandBuffers) {
+        commandBuffer = getCommandPool().createCommandBuffer();
+    }
 
     createRenderPass();
     createSwapChainFramebuffers();
@@ -66,15 +68,17 @@ void VgRenderer::createSwapChainFramebuffers() {
 }
 
 void VgRenderer::render(const Vector2i& viewport, float deltaTime) {
+    auto& commandBuffer = getCurrentCommandBuffer();
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    startCommandBuffer(beginInfo);
+    commandBuffer.startCommandBuffer(beginInfo);
 
     draw(viewport, deltaTime);
 
-    endCommandBuffer();
-    submitCommandBuffer(*this);
+    commandBuffer.endCommandBuffer();
+    submitCommandBuffer(commandBuffer);
 
     submitPresentQueue();
 
@@ -106,7 +110,7 @@ void VgRenderer::beginRenderPass(const VgFramebuffer& framebuffer, const Vector2
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    VgCommandBuffer::beginRenderPass(renderPassInfo);
+    getCurrentCommandBuffer().beginRenderPass(renderPassInfo);
 }
 
 void VgRenderer::onSwapChainChanged() {
