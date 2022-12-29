@@ -2,6 +2,7 @@
 #include <engine/client/application.hpp>
 #include <engine/utils/exceptions.hpp>
 #include <engine/utils/log.hpp>
+#include <engine/utils/png_importer.hpp>
 #include <engine/vg/vg_renderer.hpp>
 
 using namespace Engine;
@@ -10,6 +11,7 @@ static const std::string vertCode = R"(#version 450
 
 layout(location = 0) in vec2 in_Position;
 layout(location = 1) in vec3 in_Color;
+layout(location = 2) in vec2 in_TexCoord;
 
 layout (std140, binding = 0) uniform UniformBuffer {
     mat4 model;
@@ -17,10 +19,12 @@ layout (std140, binding = 0) uniform UniformBuffer {
 
 layout(location = 0) out VS_OUT {
     vec3 color;
+    vec2 texCoord;
 } vs_out;
 
 void main() {
     vs_out.color = in_Color;
+    vs_out.texCoord = in_TexCoord;
     gl_Position = models.model * vec4(in_Position, 0.0, 1.0);
 }
 )";
@@ -29,24 +33,28 @@ static const std::string fragCode = R"(#version 450
 
 layout(location = 0) in VS_OUT {
     vec3 color;
+    vec2 texCoord;
 } vs_out;
+
+layout(binding = 1) uniform sampler2D colorTexture;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vec4(vs_out.color, 1.0);
+    outColor = vec4(texture(colorTexture, vs_out.texCoord).rgb * vs_out.color, 1.0);
 }
 )";
 
 struct Vertex {
     Vector2 pos;
     Vector3 color;
+    Vector2 texCoord;
 };
 
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 };
 
 struct UniformBuffer {
@@ -68,13 +76,31 @@ public:
 
         ubo = createUniformBuffer(sizeof(UniformBuffer), VgUniformBuffer::Usage::Dynamic);
 
+        auto pixels = PngImporter{"/home/mnovak/Desktop/avatar-2.png"};
+
+        VgTexture::CreateInfo textureInfo{};
+        textureInfo.image.extent.width = pixels.getSize().x;
+        textureInfo.image.extent.height = pixels.getSize().y;
+        textureInfo.image.format = toVkFormat(pixels.getPixelType());
+        textureInfo.view.format = textureInfo.image.format;
+        texture = createTexture(textureInfo);
+        texture.subData(0, {0, 0}, 0, pixels.getSize(), pixels.getData());
+
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.pImmutableSamplers = nullptr;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        descriptorSetLayout = createDescriptorSetLayout({uboLayoutBinding});
+
+        VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+        samplerLayoutBinding.binding = 1;
+        samplerLayoutBinding.descriptorCount = 1;
+        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.pImmutableSamplers = nullptr;
+        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        descriptorSetLayout = createDescriptorSetLayout({uboLayoutBinding, samplerLayoutBinding});
 
         auto vert = createShaderModule(vertCode, VK_SHADER_STAGE_VERTEX_BIT);
         auto frag = createShaderModule(fragCode, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -87,7 +113,7 @@ public:
         bindingDescription.stride = sizeof(Vertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -99,9 +125,14 @@ public:
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
         pipelineInfo.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         pipelineInfo.vertexInputInfo.vertexBindingDescriptionCount = 1;
-        pipelineInfo.vertexInputInfo.vertexAttributeDescriptionCount = 2;
+        pipelineInfo.vertexInputInfo.vertexAttributeDescriptionCount = 3;
         pipelineInfo.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
         pipelineInfo.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -188,7 +219,7 @@ public:
         setViewport({0, 0}, viewport);
         setScissor({0, 0}, viewport);
         bindBuffers({{vbo, 0}});
-        bindDescriptors(descriptorSetLayout, {{0, &ubo}});
+        bindDescriptors(descriptorSetLayout, {{0, &ubo}}, {{1, &texture}});
         drawVertices(vertices.size(), 1, 0, 0);
 
         endRenderPass();
@@ -228,6 +259,7 @@ public:
     VgBuffer vbo;
     VgUniformBuffer ubo;
     VgDescriptorSetLayout descriptorSetLayout;
+    VgTexture texture;
 };
 
 int main(int argc, char** argv) {

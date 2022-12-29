@@ -46,7 +46,8 @@ public:
         getCurrentCommandBuffer().copyBuffer(src, dst, region);
     }
 
-    void bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms);
+    void bindDescriptors(VgDescriptorSetLayout& layout, const std::vector<VgUniformBufferBinding>& uniforms,
+                         const std::vector<VgTextureBinding>& textures);
 
 protected:
     void render(const Vector2i& viewport, float deltaTime) override;

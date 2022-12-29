@@ -290,9 +290,7 @@ VgInstance::VgInstance(const Config& config) : VgWindow{config}, config{config} 
         EXCEPTION("Failed to find a suitable GPU!");
     }
 
-    VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-
     Log::i(CMP, "Chosen GPU device name: {}", physicalDeviceProperties.deviceName);
 }
 

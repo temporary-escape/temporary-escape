@@ -89,9 +89,6 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
 
     Log::i(CMP, "Using aligned flush size: {} bytes", alignedFlushSize);
 
-    // Allocate command buffer for memory transfers only
-    transferCommandBuffer = commandPool.createCommandBuffer();
-
     // Pinned buffer to be used for memory transfer
     VgBuffer::CreateInfo transferBufferCreateInfo{};
     transferBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -112,8 +109,6 @@ VgDevice::~VgDevice() {
 
 void VgDevice::cleanup() {
     destroyDisposables();
-
-    transferCommandBuffer.destroy();
 
     commandPool.destroy();
 
@@ -234,6 +229,10 @@ VgUniformBuffer VgDevice::createUniformBuffer(const size_t size, const VgUniform
     return VgUniformBuffer{config, *this, size, usage};
 }
 
+VgTexture VgDevice::createTexture(const VgTexture::CreateInfo& createInfo) {
+    return VgTexture{config, *this, createInfo};
+}
+
 void VgDevice::waitDeviceIdle() {
     vkDeviceWaitIdle(device);
 }
@@ -311,6 +310,8 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
         EXCEPTION("Transfer buffer has no mapped memory!");
     }
 
+    auto transferCommandBuffer = getCommandPool().createCommandBuffer();
+
     auto src = reinterpret_cast<const char*>(data);
     VkDeviceSize dstOffset = 0;
     auto bytesRemaining = size;
@@ -352,11 +353,10 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
 
         transferCommandBuffer.endCommandBuffer();
 
-        auto commandBuffer = transferCommandBuffer.getHandle();
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.pCommandBuffers = &transferCommandBuffer.getHandle();
 
         if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
             EXCEPTION("Failed to upload buffer data, submit error");
@@ -371,6 +371,112 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
         src += bytesToCopy;
         dstOffset += bytesToCopy;
     }
+
+    transferCommandBuffer.free();
+}
+
+void VgDevice::transitionImageLayout(VgTexture& texture, const VkFormat format, const VkImageLayout oldLayout,
+                                     const VkImageLayout newLayout) {
+
+    auto transferCommandBuffer = getCommandPool().createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    transferCommandBuffer.startCommandBuffer(beginInfo);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags sourceStage;
+    VkPipelineStageFlags destinationStage;
+
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+               newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        EXCEPTION("Unsupported layout transition during image layout transition!");
+    }
+
+    transferCommandBuffer.pipelineBarrier(sourceStage, destinationStage, barrier);
+
+    transferCommandBuffer.endCommandBuffer();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &transferCommandBuffer.getHandle();
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, submit error");
+    }
+
+    if (vkQueueWaitIdle(graphicsQueue) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
+
+    transferCommandBuffer.free();
+}
+
+void VgDevice::copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, const int level, const int layer,
+                                 const VkOffset3D& offset, const VkExtent3D& extent) {
+
+    auto transferCommandBuffer = getCommandPool().createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    transferCommandBuffer.startCommandBuffer(beginInfo);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = level;
+    region.imageSubresource.baseArrayLayer = layer;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = offset;
+    region.imageExtent = extent;
+
+    transferCommandBuffer.copyBufferToImage(buffer, texture, region);
+
+    transferCommandBuffer.endCommandBuffer();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &transferCommandBuffer.getHandle();
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, submit error");
+    }
+
+    if (vkQueueWaitIdle(graphicsQueue) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
+
+    transferCommandBuffer.free();
 }
 
 void VgDevice::dispose(std::shared_ptr<VgDisposable> disposable) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vg_texture.hpp"
 #include "vg_types.hpp"
 #include "vg_uniform_buffer.hpp"
 
@@ -20,7 +21,7 @@ public:
     VgDescriptorSet& operator=(VgDescriptorSet&& other) noexcept;
     void swap(VgDescriptorSet& other) noexcept;
 
-    void bind(const std::vector<VgUniformBufferBinding>& uniforms);
+    void bind(const std::vector<VgUniformBufferBinding>& uniforms, const std::vector<VgTextureBinding>& textures);
 
     VkDescriptorSet& getHandle() {
         return descriptorSet;

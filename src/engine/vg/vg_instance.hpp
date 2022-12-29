@@ -19,6 +19,10 @@ public:
         return instance;
     }
 
+    const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() const {
+        return physicalDeviceProperties;
+    }
+
     void destroy();
 
 private:
@@ -27,5 +31,6 @@ private:
     VkSurfaceKHR surface{VK_NULL_HANDLE};
     VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
+    VkPhysicalDeviceProperties physicalDeviceProperties;
 };
 } // namespace Engine

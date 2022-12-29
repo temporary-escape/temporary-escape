@@ -2,6 +2,7 @@
 
 #include "vg_buffer.hpp"
 #include "vg_pipeline.hpp"
+#include "vg_texture.hpp"
 #include "vg_types.hpp"
 
 namespace Engine {
@@ -26,15 +27,15 @@ public:
     void swap(VgCommandBuffer& other) noexcept;
 
     VkCommandBuffer& getHandle() {
-        return commandBuffer;
+        return state->commandBuffer;
     }
 
     const VkCommandBuffer& getHandle() const {
-        return commandBuffer;
+        return state->commandBuffer;
     }
 
     operator bool() const {
-        return getHandle() != VK_NULL_HANDLE;
+        return state && state->commandBuffer != VK_NULL_HANDLE;
     }
 
     void startCommandBuffer(const VkCommandBufferBeginInfo& beginInfo);
@@ -49,11 +50,22 @@ public:
     void bindBuffers(const std::vector<VgVertexBufferBindRef>& buffers);
     void drawVertices(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     void copyBuffer(const VgBuffer& src, const VgBuffer& dst, const VkBufferCopy& region);
+    void copyBufferToImage(const VgBuffer& src, const VgTexture& dst, const VkBufferImageCopy& region);
     void bindDescriptorSet(const VgDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout);
+    void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
+                         VkImageMemoryBarrier& barrier);
     void destroy();
+    void free();
 
 private:
-    VgDevice* device{nullptr};
-    VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+    class CommandBufferState : public VgDisposable {
+    public:
+        void destroy() override;
+
+        VgDevice* device{nullptr};
+        VkCommandPool commandPool{VK_NULL_HANDLE};
+        VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+    };
+    std::shared_ptr<CommandBufferState> state;
 };
 } // namespace Engine

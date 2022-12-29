@@ -3,6 +3,7 @@
 #include "../config.hpp"
 #include "../library.hpp"
 #include "../math/vector.hpp"
+#include "../utils/image_importer.hpp"
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.h>
@@ -40,4 +41,7 @@ public:
     virtual ~VgDisposable() = default;
     virtual void destroy() = 0;
 };
+
+VkFormat toVkFormat(const ImageImporter::PixelType pixelType);
+VkDeviceSize getFormatDataSize(const VkFormat format, const VkExtent3D& extent);
 } // namespace Engine

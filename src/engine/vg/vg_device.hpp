@@ -13,6 +13,7 @@
 #include "vg_shader_module.hpp"
 #include "vg_swap_chain.hpp"
 #include "vg_sync_object.hpp"
+#include "vg_texture.hpp"
 #include "vg_uniform_buffer.hpp"
 
 struct VmaAllocator_T;
@@ -36,6 +37,7 @@ public:
     VgDescriptorSetLayout createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
     VgDescriptorSet createDescriptorSet(VgDescriptorPool& pool, VgDescriptorSetLayout& layout);
     VgUniformBuffer createUniformBuffer(size_t size, VgUniformBuffer::Usage usage);
+    VgTexture createTexture(const VgTexture::CreateInfo& createInfo);
 
     VkDevice& getHandle() {
         return device;
@@ -71,12 +73,14 @@ public:
     }
 
     void uploadBufferData(const void* data, size_t size, VgBuffer& dst);
+    void copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, int level, int layer, const VkOffset3D& offset,
+                           const VkExtent3D& extent);
 
     void dispose(std::shared_ptr<VgDisposable> disposable);
 
     void getGpuMemoryStats();
 
-    void createDescriptors(VgDescriptorSetLayout& layout, const std::vector<VkDescriptorBufferInfo>& uniforms);
+    void transitionImageLayout(VgTexture& texture, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 protected:
     virtual void onSwapChainChanged() = 0;
@@ -103,7 +107,6 @@ private:
     VgSwapChain swapChain;
     VgSyncObject syncObjects[MAX_FRAMES_IN_FLIGHT];
     VgDescriptorPool descriptorPools[MAX_FRAMES_IN_FLIGHT];
-    VgCommandBuffer transferCommandBuffer;
     VgBuffer transferBuffer;
     VmaAllocator_T* allocator{VK_NULL_HANDLE};
     uint32_t swapChainFramebufferIndex{0};
