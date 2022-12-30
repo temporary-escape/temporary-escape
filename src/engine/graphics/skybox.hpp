@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../vulkan/vulkan_device.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 
 namespace Engine {
 class Skybox {
 public:
     Skybox() = default;
-    explicit Skybox(VulkanDevice& vulkan, const Color4& color);
+    explicit Skybox(VulkanRenderer& vulkan, const Color4& color);
 
     VulkanTexture& getTexture() {
         return texture;

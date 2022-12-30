@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API FontFamily {
 public:
-    explicit FontFamily(VulkanDevice& vulkan, const Path& dir, const std::string& name, float size);
+    explicit FontFamily(VulkanRenderer& vulkan, const Path& dir, const std::string& name, float size);
 
     FontFace regular;
     FontFace bold;

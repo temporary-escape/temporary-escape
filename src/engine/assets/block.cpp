@@ -21,7 +21,7 @@ Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::mo
     }
 }
 
-void Block::load(Registry& registry, VulkanDevice& vulkan) {
+void Block::load(Registry& registry, VulkanRenderer& vulkan) {
     auto& defaults = registry.getDefaultTextures();
 
     std::unordered_map<const Definition::MaterialDefinition*, size_t> map;
@@ -57,9 +57,10 @@ void Block::load(Registry& registry, VulkanDevice& vulkan) {
     }
 
     for (auto& material : materials) {
-        material.ubo =
-            vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(Material::Uniform));
-        material.ubo.subData(&material.uniform, 0, sizeof(Material::Uniform));
+        // material.ubo =
+        //     vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic,
+        //     sizeof(Material::Uniform));
+        // material.ubo.subData(&material.uniform, 0, sizeof(Material::Uniform));
     }
 }
 

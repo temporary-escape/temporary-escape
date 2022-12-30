@@ -9,7 +9,7 @@ using namespace Engine;
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Texture::load(Registry& registry, VulkanDevice& vulkan) {
+void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
     (void)registry;
 
     Options options{};
@@ -26,7 +26,7 @@ void Texture::load(Registry& registry, VulkanDevice& vulkan) {
     try {
         PngImporter image(path);
 
-        VulkanTexture::Descriptor desc{};
+        /*VulkanTexture::Descriptor desc{};
         desc.size = image.getSize();
         desc.addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
         desc.addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -58,7 +58,7 @@ void Texture::load(Registry& registry, VulkanDevice& vulkan) {
         desc.levels = 1;
 
         texture = vulkan.createTexture(desc);
-        texture.subData(0, {0, 0}, image.getSize(), image.getData());
+        texture.subData(0, {0, 0}, image.getSize(), image.getData());*/
 
         // TODO: Filtering and wrapping
 

@@ -45,7 +45,7 @@ public:
     };
 
     explicit Texture(std::string name, Path path);
-    void load(Registry& registry, VulkanDevice& vulkan) override;
+    void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     VulkanTexture& getVulkanTexture() {
         return texture;

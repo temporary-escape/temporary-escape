@@ -59,13 +59,12 @@ public:
         lines.push_back({Vector3{from.x, 0.0f, from.y}, color, Vector3{to.x, 0.0f, to.y}, color});
     }
 
-    void recalculate(VulkanDevice& vulkan);
-    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
+    void recalculate(VulkanRenderer& vulkan);
+    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
 private:
     std::vector<Line> lines;
     VulkanBuffer vbo;
-    VulkanVertexInputFormat vboFormat;
     size_t count{0};
 
 public:

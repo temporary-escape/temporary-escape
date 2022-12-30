@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils/path.hpp"
-#include "../vulkan/vulkan_device.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 #include <unordered_map>
 
 namespace Engine {
@@ -16,7 +16,7 @@ public:
         float ascend;
     };
 
-    explicit FontFace(VulkanDevice& vulkan, const Path& path, float size);
+    explicit FontFace(VulkanRenderer& vulkan, const Path& path, float size);
     ~FontFace();
 
     const Glyph& getGlyph(const uint32_t code) const {

@@ -2,8 +2,8 @@
 
 using namespace Engine;
 
-Skybox::Skybox(VulkanDevice& vulkan, const Color4& color) {
-    static const Vector2i size = {8, 8};
+Skybox::Skybox(VulkanRenderer& vulkan, const Color4& color) {
+    /*static const Vector2i size = {8, 8};
     std::unique_ptr<uint8_t[]> pixels(new uint8_t[size.x * size.y * 4]);
 
     for (size_t i = 0; i < size.x * size.y * 4; i += 4) {
@@ -33,5 +33,5 @@ Skybox::Skybox(VulkanDevice& vulkan, const Color4& color) {
         texture.subData(0, {0, 0}, i, size, pixels.get());
         irradiance.subData(0, {0, 0}, i, size, pixels.get());
         prefilter.subData(0, {0, 0}, i, size, pixels.get());
-    }
+    }*/
 }

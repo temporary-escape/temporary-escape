@@ -12,7 +12,8 @@ class Client;
 
 class ViewSpace : public View {
 public:
-    explicit ViewSpace(const Config& config, VulkanDevice& vulkan, Registry& registry, Skybox& skybox, Client& client);
+    explicit ViewSpace(const Config& config, VulkanRenderer& vulkan, Registry& registry, Skybox& skybox,
+                       Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -31,7 +32,6 @@ public:
 
 private:
     const Config& config;
-    VulkanDevice& vulkan;
     Registry& registry;
     Skybox& skyboxSystem;
     Client& client;

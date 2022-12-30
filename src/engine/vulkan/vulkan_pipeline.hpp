@@ -1,59 +1,60 @@
 #pragma once
 
-#include "../library.hpp"
 #include "../utils/path.hpp"
-#include "vez/VEZ.h"
-#include <string>
-#include <type_traits>
-#include <vector>
+#include "vulkan_render_pass.hpp"
+#include "vulkan_shader_module.hpp"
 
 namespace Engine {
-enum class ShaderType {
-    Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
-    Vertex = VK_SHADER_STAGE_VERTEX_BIT,
-    Geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
-};
+class ENGINE_API VulkanDevice;
 
-struct ShaderSource {
-    Path path;
-    std::string glsl;
-    ShaderType type;
-};
-
-class VulkanPipeline {
+class ENGINE_API VulkanPipeline : public VulkanDisposable {
 public:
-    NON_COPYABLE(VulkanPipeline);
-
-    VulkanPipeline() = default;
-    explicit VulkanPipeline(VkDevice device, VezPipeline pipeline, std::vector<VkShaderModule> shaderModules);
-    ~VulkanPipeline();
-    VulkanPipeline(VulkanPipeline&& other) noexcept;
-    VulkanPipeline& operator=(VulkanPipeline&& other) noexcept;
-    void swap(VulkanPipeline& other) noexcept;
-    void reset();
-
-    [[nodiscard]] VezPipeline& getHandle() {
-        return desc.pipeline;
-    }
-
-    [[nodiscard]] const VezPipeline& getHandle() const {
-        return desc.pipeline;
-    }
-
-    [[nodiscard]] operator bool() const {
-        return desc.pipeline != VK_NULL_HANDLE;
-    }
-
-private:
-    struct PipelineDescription {
-        VezPipeline pipeline = VK_NULL_HANDLE;
-        std::vector<VkShaderModule> shaderModules;
+    struct CreateInfo {
+        std::vector<VulkanShaderModule*> shaderModules;
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+        VkPipelineViewportStateCreateInfo viewportState{};
+        VkPipelineRasterizationStateCreateInfo rasterizer{};
+        VkPipelineMultisampleStateCreateInfo multisampling{};
+        VkPipelineColorBlendStateCreateInfo colorBlending{};
+        VkPipelineDynamicStateCreateInfo dynamicState{};
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     };
 
-    VkDevice device{VK_NULL_HANDLE};
-    PipelineDescription desc{};
-};
+    VulkanPipeline() = default;
+    explicit VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& renderPass, const CreateInfo& createInfo);
+    ~VulkanPipeline();
+    VulkanPipeline(const VulkanPipeline& other) = delete;
+    VulkanPipeline(VulkanPipeline&& other) noexcept;
+    VulkanPipeline& operator=(const VulkanPipeline& other) = delete;
+    VulkanPipeline& operator=(VulkanPipeline&& other) noexcept;
+    void swap(VulkanPipeline& other) noexcept;
 
-static_assert(std::is_move_constructible<VulkanPipeline>::value, "VulkanPipeline must be move constructible");
-static_assert(std::is_move_assignable<VulkanPipeline>::value, "VulkanPipeline must be move assignable");
+    VkPipelineLayout& getLayout() {
+        return pipelineLayout;
+    }
+
+    const VkPipelineLayout& getLayout() const {
+        return pipelineLayout;
+    }
+
+    VkPipeline& getHandle() {
+        return pipeline;
+    }
+
+    const VkPipeline& getHandle() const {
+        return pipeline;
+    }
+
+    operator bool() const {
+        return pipeline != VK_NULL_HANDLE;
+    }
+
+    void destroy() override;
+
+private:
+    VkDevice device{VK_NULL_HANDLE};
+    VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
+    VkPipeline pipeline{VK_NULL_HANDLE};
+};
 } // namespace Engine

@@ -13,7 +13,7 @@ ComponentWireframe::ComponentWireframe(Engine::Object& object, std::vector<Vecto
 }
 
 void ComponentWireframe::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (isDirty() && !vertices.empty()) {
+    /*if (isDirty() && !vertices.empty()) {
         setDirty(false);
 
         if (!vboFormat) {
@@ -58,7 +58,7 @@ void ComponentWireframe::render(VulkanDevice& vulkan, const Vector2i& viewport, 
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     vulkan.pushConstant(0, getObject().getAbsoluteTransform());
     vulkan.pushConstant(sizeof(Matrix4), color);
-    vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);
+    vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);*/
 }
 
 void ComponentWireframe::setBox(float width, const Color4& color) {

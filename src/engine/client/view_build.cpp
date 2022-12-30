@@ -5,12 +5,11 @@
 
 using namespace Engine;
 
-ViewBuild::ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry) :
+ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, Registry& registry) :
     config{config},
-    vulkan{vulkan},
     registry{registry},
     skybox{vulkan, Color4{0.03f, 0.03f, 0.03f, 1.0f}},
-    scene{&registry.getVoxelShapeCache(), &scenePipelines} {
+    scene{&registry.getVoxelShapeCache()} {
 
     // auto skybox = std::make_shared<Entity>();
     // skybox->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));

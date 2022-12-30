@@ -3,11 +3,11 @@
 #include <engine/utils/exceptions.hpp>
 #include <engine/utils/log.hpp>
 #include <engine/utils/png_importer.hpp>
-#include <engine/vg/vg_renderer.hpp>
+#include <engine/vulkan/vulkan_renderer.hpp>
 
 using namespace Engine;
 
-static const std::string vertCode = R"(#version 450
+/*static const std::string vertCode = R"(#version 450
 
 layout(location = 0) in vec2 in_Position;
 layout(location = 1) in vec3 in_Color;
@@ -66,18 +66,18 @@ struct UniformBuffer {
     Matrix4 model{};
 };
 
-class VgApplication : public VgRenderer {
+class VgApplication : public VulkanRenderer {
 public:
-    VgApplication(const Config& config) : VgRenderer{config} {
-        VgBuffer::CreateInfo bufferInfo{};
+    VgApplication(const Config& config) : VulkanRenderer{config} {
+        VulkanBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY;
 
         vbo = createBuffer(bufferInfo);
-        vbo.subData(vertices.data(), 0, vertices.size() * sizeof(Vertex));
+        vbo.subDataLocal(vertices.data(), 0, vertices.size() * sizeof(Vertex));
 
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(UniformBuffer);
@@ -88,21 +88,22 @@ public:
 
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(indices[0]) * indices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY;
         ibo = createBuffer(bufferInfo);
-        ibo.subData(indices.data(), 0, indices.size() * sizeof(indices[0]));
+        ibo.subDataLocal(indices.data(), 0, indices.size() * sizeof(indices[0]));
 
         auto pixels = PngImporter{"/home/mnovak/Desktop/avatar-2.png"};
 
-        VgTexture::CreateInfo textureInfo{};
+        VulkanTexture::CreateInfo textureInfo{};
         textureInfo.image.extent.width = pixels.getSize().x;
         textureInfo.image.extent.height = pixels.getSize().y;
         textureInfo.image.format = toVkFormat(pixels.getPixelType());
         textureInfo.view.format = textureInfo.image.format;
         texture = createTexture(textureInfo);
         texture.subData(0, {0, 0}, 0, pixels.getSize(), pixels.getData());
+        texture.finalize();
 
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
@@ -123,7 +124,7 @@ public:
         auto vert = createShaderModule(vertCode, VK_SHADER_STAGE_VERTEX_BIT);
         auto frag = createShaderModule(fragCode, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        VgPipeline::CreateInfo pipelineInfo{};
+        VulkanPipeline::CreateInfo pipelineInfo{};
         pipelineInfo.shaderModules = {&vert, &frag};
 
         VkVertexInputBindingDescription bindingDescription{};
@@ -205,33 +206,14 @@ public:
     }
 
     void render(const Vector2i& viewport, float deltaTime) override {
-        /*static float degrees = 0.0f;
-
-        VgBuffer::CreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
-
-        std::vector<Vertex> rotated{vertices.size()};
-        for (size_t i = 0; i < vertices.size(); i++) {
-            rotated.at(i).pos = glm::rotate(vertices.at(i).pos, glm::radians(degrees));
-            rotated.at(i).color = vertices.at(i).color;
-        }
-        degrees += deltaTime * 15.0f;
-
-        vbo = createBuffer(bufferInfo);
-        vbo.subData(rotated.data(), 0, rotated.size() * sizeof(Vertex));*/
-
         static float degrees = 0.0f;
         degrees += deltaTime * 15.0f;
 
         UniformBuffer uniformBuffer;
         uniformBuffer.model = glm::rotate(Matrix4{1.0f}, glm::radians(degrees), {0.0f, 0.0f, 1.0f});
-        ubo.subData(&uniformBuffer, 0, sizeof(UniformBuffer));
+        ubo.subDataLocal(&uniformBuffer, 0, sizeof(UniformBuffer));
 
-        VgRenderPassBeginInfo renderPassInfo{};
+        VulkanRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.framebuffer = &getSwapChainFramebuffer();
         renderPassInfo.renderPass = &getRenderPass();
         renderPassInfo.offset = {0, 0};
@@ -294,13 +276,13 @@ public:
     void eventWindowFocus() override {
     }
 
-    VgPipeline pipeline;
-    VgBuffer vbo;
-    VgBuffer ibo;
-    VgDoubleBuffer ubo;
-    VgDescriptorSetLayout descriptorSetLayout;
-    VgTexture texture;
-};
+    VulkanPipeline pipeline;
+    VulkanBuffer vbo;
+    VulkanBuffer ibo;
+    VulkanDoubleBuffer ubo;
+    VulkanDescriptorSetLayout descriptorSetLayout;
+    VulkanTexture texture;
+};*/
 
 int main(int argc, char** argv) {
     const auto defaultRoot = std::filesystem::absolute(getExecutablePath() / ".." / "..");
@@ -367,7 +349,7 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(config.shaderCachePath);
 
         {
-            VgApplication window(config);
+            Application window{config};
             window.run();
         }
         Log::i("main", "Exit success");

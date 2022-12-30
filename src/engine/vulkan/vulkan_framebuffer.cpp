@@ -1,12 +1,17 @@
 #include "vulkan_framebuffer.hpp"
+#include "../utils/exceptions.hpp"
+#include "vulkan_device.hpp"
 
 using namespace Engine;
 
-VulkanFramebuffer::VulkanFramebuffer(VkDevice device, VezFramebuffer handle) : device(device), handle(handle) {
+VulkanFramebuffer::VulkanFramebuffer(VulkanDevice& device, const CreateInfo& createInfo) : device{device.getDevice()} {
+    if (vkCreateFramebuffer(device.getDevice(), &createInfo, nullptr, &framebuffer) != VK_SUCCESS) {
+        EXCEPTION("Failed to create framebuffer!");
+    }
 }
 
 VulkanFramebuffer::~VulkanFramebuffer() {
-    reset();
+    destroy();
 }
 
 VulkanFramebuffer::VulkanFramebuffer(VulkanFramebuffer&& other) noexcept {
@@ -17,20 +22,17 @@ VulkanFramebuffer& VulkanFramebuffer::operator=(VulkanFramebuffer&& other) noexc
     if (this != &other) {
         swap(other);
     }
-
     return *this;
 }
 
 void VulkanFramebuffer::swap(VulkanFramebuffer& other) noexcept {
-    auto temp = other.handle;
-    other.handle = handle;
-    handle = temp;
     std::swap(device, other.device);
+    std::swap(framebuffer, other.framebuffer);
 }
 
-void VulkanFramebuffer::reset() {
-    if (handle) {
-        vezDestroyFramebuffer(device, handle);
+void VulkanFramebuffer::destroy() {
+    if (framebuffer) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+        framebuffer = VK_NULL_HANDLE;
     }
-    handle = VK_NULL_HANDLE;
 }

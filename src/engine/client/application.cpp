@@ -5,14 +5,14 @@
 using namespace Engine;
 
 Application::Application(const Config& config) :
-    VulkanWindow(config, config.windowName, {config.windowWidth, config.windowHeight}),
+    VulkanRenderer{config},
     config{config},
-    renderer{config, *this, rendererPipelines},
-    skyboxGenerator{config, *this, skyboxGeneratorPipelines},
+    renderer{config, *this},
+    skyboxGenerator{config, *this},
     canvas{*this},
     font{*this, config.fontsPath, "iosevka-aile", 42.0f} {
 
-    shaderQueue.emplace([this]() {
+    /*shaderQueue.emplace([this]() {
         rendererPipelines.brdf = createPipeline({
             {this->config.shadersPath / "brdf.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "brdf.vert", "", ShaderType::Vertex},
@@ -146,7 +146,7 @@ Application::Application(const Config& config) :
             {this->config.shadersPath / "component-lines.frag", "", ShaderType::Fragment},
             {this->config.shadersPath / "component-lines.vert", "", ShaderType::Vertex},
         });
-    });
+    });*/
 
     status.message = "Loading shaders...";
     status.value = 0.1f;
@@ -156,7 +156,49 @@ Application::~Application() {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
-    startCommandBuffer();
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &getSwapChainFramebuffer();
+    renderPassInfo.renderPass = &getRenderPass();
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+
+    VkClearValue clearColor = {{{0.3f, 0.3f, 0.3f, 1.0f}}};
+    renderPassInfo.clearValues = {clearColor};
+
+    auto vkb = createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+    vkb.beginRenderPass(renderPassInfo);
+
+    canvas.begin(viewport);
+
+    static const Vector2 size{400.0f, 60.0f};
+    const auto pos = Vector2{viewport} / 2.0f - size / 2.0f;
+
+    canvas.text(pos + Vector2{0.0f, 0.0f}, status.message, font.regular, 21.0f, Color4{1.0f});
+    canvas.rect(pos + Vector2{0.0f, 30.0f}, {size.x * status.value, 25.0f}, Color4{1.0f});
+
+    canvas.end(vkb);
+
+    /*cmd.bindPipeline(pipeline);
+    cmd.setViewport({0, 0}, viewport);
+    cmd.setScissor({0, 0}, viewport);
+    cmd.bindBuffers({{vbo, 0}});
+    cmd.bindIndexBuffer(ibo, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+    cmd.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}}, {{1, &texture}});
+    cmd.drawIndexed(indices.size(), 1, 0, 0, 0);*/
+
+    vkb.endRenderPass();
+    vkb.end();
+
+    submitCommandBuffer(vkb);
+
+    dispose(std::move(vkb));
+
+    /*startCommandBuffer();
 
     if (loadGame) {
         loadGame = false;
@@ -247,10 +289,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     if (!loadShaders && !shaderQueue.empty()) {
         loadShaders = true;
-    }
+    }*/
 }
 
-void Application::renderStatus(const Vector2i& viewport) {
+/*void Application::renderStatus(const Vector2i& viewport) {
     canvas.begin(viewport);
 
     static const Vector2 size{400.0f, 60.0f};
@@ -260,7 +302,7 @@ void Application::renderStatus(const Vector2i& viewport) {
     canvas.rect(pos + Vector2{0.0f, 30.0f}, {size.x * status.value, 25.0f}, Color4{1.0f});
 
     canvas.end();
-}
+}*/
 
 void Application::eventMouseMoved(const Vector2i& pos) {
     if (game) {

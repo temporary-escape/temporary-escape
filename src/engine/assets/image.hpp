@@ -2,7 +2,6 @@
 
 #include "../utils/path.hpp"
 #include "../utils/yaml.hpp"
-#include "../vulkan/vulkan_texture.hpp"
 #include "asset.hpp"
 #include "image_atlas.hpp"
 
@@ -10,7 +9,7 @@ namespace Engine {
 class ENGINE_API Image : public Asset {
 public:
     explicit Image(std::string name, Path path);
-    void load(Registry& registry, VulkanDevice& vulkan) override;
+    void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const ImageAtlas::Allocation& getAllocation() const {
         return allocation;

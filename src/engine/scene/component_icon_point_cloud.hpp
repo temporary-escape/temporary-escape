@@ -38,13 +38,12 @@ public:
         imagePoints[image].push_back({pos, size, color, image->getAllocation().uv, image->getAllocation().st});
     }
 
-    void recalculate(VulkanDevice& vulkan);
-    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
+    void recalculate(VulkanRenderer& vulkan);
+    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
 private:
     std::unordered_map<ImagePtr, std::vector<Point>> imagePoints;
     std::unordered_map<ImagePtr, VulkanBuffer> vbos;
-    VulkanVertexInputFormat vboFormat;
 
 public:
     MSGPACK_DEFINE_ARRAY();

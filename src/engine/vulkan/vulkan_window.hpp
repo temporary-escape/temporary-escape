@@ -1,21 +1,26 @@
 #pragma once
 
-#include "../utils/exceptions.hpp"
-#include "../utils/log.hpp"
 #include "../window.hpp"
-#include "vulkan_device.hpp"
+#include "vulkan_types.hpp"
 
 struct GLFWwindow;
 
 namespace Engine {
-class VulkanWindow : public VulkanDevice, public Window {
+class ENGINE_API VulkanWindow : public Window {
 public:
-    explicit VulkanWindow(const Config& config, const std::string& name, const Vector2i& size,
-                          bool enableValidationLayers = true);
+    explicit VulkanWindow(const Config& config);
     virtual ~VulkanWindow();
 
     void run();
-    Vector2i getWindowSize() override;
+    Vector2i getFramebufferSize();
+    void waitUntilValidFramebufferSize();
+
+protected:
+    virtual void onNextFrame() = 0;
+    virtual void onExit() = 0;
+    virtual void onFrameDraw(const Vector2i& viewport, float timeDelta) = 0;
+    std::vector<const char*> getRequiredExtensions();
+    VkSurfaceKHR createSurface(VkInstance instance);
 
 private:
     static void mouseMovedCallback(GLFWwindow* window, double x, double y);
@@ -25,7 +30,7 @@ private:
     static void windowSizeCallback(GLFWwindow* window, int width, int height);
     static void charCallback(GLFWwindow* window, unsigned int codepoint);
 
-    GLFWwindow* window{nullptr};
+    std::shared_ptr<GLFWwindow> window;
     Vector2i mousePos;
     Vector2i currentWindowSize;
 };

@@ -5,9 +5,8 @@
 
 using namespace Engine;
 
-Scene::Scene(const VoxelShapeCache* voxelShapeCache, Pipelines* pipelines, EventListener& eventListener) :
+Scene::Scene(const VoxelShapeCache* voxelShapeCache, EventListener& eventListener) :
     voxelShapeCache{voxelShapeCache},
-    pipelines{pipelines},
     eventListener{eventListener},
     nextId{0},
     systems{EntityComponentHelper::generateComponentSystemsMap()} {
@@ -16,14 +15,14 @@ Scene::Scene(const VoxelShapeCache* voxelShapeCache, Pipelines* pipelines, Event
 Scene::~Scene() = default;
 
 void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
-    if (!pipelines) {
+    /*if (!pipelines) {
         EXCEPTION("Scene shaders not initialized");
-    }
-    if (!voxelShapeCache) {
+    }*/
+    /*if (!voxelShapeCache) {
         EXCEPTION("Scene voxel shape cache not initialized");
-    }
+    }*/
 
-    const auto camera = getPrimaryCamera();
+    /*const auto camera = getPrimaryCamera();
     camera->render(vulkan, viewport);
 
     {
@@ -32,9 +31,9 @@ void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
         for (auto& component : system) {
             component->recalculate(vulkan, *voxelShapeCache);
         }
-    }
+    }*/
 
-    {
+    /*{
         if (!pipelines->grid) {
             EXCEPTION("Scene shader grid not initialized");
         }
@@ -61,11 +60,11 @@ void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
             }
             component->render(vulkan, viewport, pipelines->grid);
         }
-    }
+    }*/
 }
 
 void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
-    using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*, ComponentLines*,
+    /*using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*, ComponentLines*,
                                           ComponentIconPointCloud*>;
 
     struct Renderable {
@@ -247,7 +246,7 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
 
             component.render(vulkan, viewport, pipelines->iconPointCloud);
         }
-    }
+    }*/
 
     /*{
         if (!pipelines->debug) {

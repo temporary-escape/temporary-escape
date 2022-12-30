@@ -1,15 +1,16 @@
 #pragma once
 
 #include "../font/font_face.hpp"
-#include "../vulkan/vulkan_device.hpp"
+#include "../math/matrix.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 
 namespace Engine {
 class Canvas {
 public:
-    explicit Canvas(VulkanDevice& vulkan);
+    explicit Canvas(VulkanRenderer& vulkan);
 
     void begin(const Vector2i& viewport);
-    void end();
+    void end(VulkanCommandBuffer& vkb);
     void scissor(const Vector2& pos, const Vector2& size);
     void rect(const Vector2& pos, const Vector2& size, const Color4& color);
     void rectOutline(const Vector2& pos, const Vector2& size, const Color4& color);
@@ -21,22 +22,24 @@ private:
         Vector2 pos;
         Vector2 uv;
         Vector4 color;
-        Vector4 mode;
+    };
+
+    struct CommandDraw {
+        size_t start{0};
+        size_t length{0};
+        const VulkanTexture* texture{nullptr};
+        int mode{0};
+    };
+
+    struct CommandScissor {
+        Vector2i pos;
+        Vector2i size;
     };
 
     struct Command {
         union {
-            struct {
-                size_t start{0};
-                size_t length{0};
-                VkPrimitiveTopology primitive{VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-                const VulkanTexture* texture{nullptr};
-            } draw{};
-
-            struct {
-                Vector2i pos;
-                Vector2i size;
-            } scissor;
+            CommandDraw draw{};
+            CommandScissor scissor;
         };
 
         enum Type {
@@ -52,14 +55,28 @@ private:
         Matrix4 mvp;
     };
 
-    VulkanDevice& vulkan;
+    void createPipeline();
+    void createDescriptorSetLayout();
+    void createVertexBuffer();
+    void createIndexBuffer();
+    void createUniformBuffer();
+    void createDefaultTexture();
+    CommandDraw& addDrawCommand();
+    Vertex* allocate();
+
+    VulkanRenderer& vulkan;
     Vector2i lastViewport;
-    VulkanPipeline shader;
-    VulkanBuffer vbo;
-    VulkanVertexInputFormat vboFormat;
-    VulkanBuffer ubo;
+    VulkanPipeline pipeline;
+    VulkanDescriptorSetLayout descriptorSetLayout;
+    VulkanDoubleBuffer vbo;
+    VulkanDoubleBuffer ibo;
+    VulkanDoubleBuffer ubo;
     VulkanTexture defaultTexture;
     std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
     std::vector<Command> commands;
+    size_t vertexOffset{0};
+    size_t commandCount{0};
+    size_t indexOffset{0};
 };
 } // namespace Engine

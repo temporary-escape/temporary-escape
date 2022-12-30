@@ -1,4 +1,6 @@
 #include "vulkan_window.hpp"
+#include "../utils/exceptions.hpp"
+#include "../utils/log.hpp"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
@@ -136,70 +138,13 @@ static Key toKey(int key) {
     }
 }
 
-static void setWindowCenter(GLFWwindow* window) {
-    // Get window position and size
-    int posX, posY;
-    glfwGetWindowPos(window, &posX, &posY);
-
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-
-    // Halve the window size and use it to adjust the window position to the center of the window
-    width >>= 1;
-    height >>= 1;
-
-    posX += width;
-    posY += height;
-
-    // Get the list of monitors
-    int count;
-    GLFWmonitor** monitors = glfwGetMonitors(&count);
-    if (monitors == nullptr)
-        return;
-
-    // Figure out which monitor the window is in
-    GLFWmonitor* owner = NULL;
-    int owner_x, owner_y, owner_width, owner_height;
-
-    for (int i = 0; i < count; i++) {
-        // Get the monitor position
-        int monitor_x, monitor_y;
-        glfwGetMonitorPos(monitors[i], &monitor_x, &monitor_y);
-
-        // Get the monitor size from its video mode
-        int monitor_width, monitor_height;
-        GLFWvidmode* monitor_vidmode = (GLFWvidmode*)glfwGetVideoMode(monitors[i]);
-
-        if (monitor_vidmode == NULL)
-            continue;
-
-        monitor_width = monitor_vidmode->width;
-        monitor_height = monitor_vidmode->height;
-
-        // Set the owner to this monitor if the center of the window is within its bounding box
-        if ((posX > monitor_x && posX < (monitor_x + monitor_width)) &&
-            (posY > monitor_y && posY < (monitor_y + monitor_height))) {
-            owner = monitors[i];
-            owner_x = monitor_x;
-            owner_y = monitor_y;
-            owner_width = monitor_width;
-            owner_height = monitor_height;
-        }
-    }
-
-    // Set the window position to the center of the owner monitor
-    if (owner != NULL)
-        glfwSetWindowPos(window, owner_x + (owner_width >> 1) - width, owner_y + (owner_height >> 1) - height);
-}
-
 static void errorCallback(const int error, const char* description) {
     Log::e(CMP, "{}", description);
 }
 
-VulkanWindow::VulkanWindow(const Config& config, const std::string& name, const Vector2i& size,
-                           bool enableValidationLayers) :
-    VulkanDevice{config}, currentWindowSize{size} {
-    const auto standardValidationFound = getValidationLayerSupported();
+static const char* name = "TemporaryEscape";
+
+VulkanWindow::VulkanWindow(const Engine::Config& config) : currentWindowSize{config.windowWidth, config.windowHeight} {
 
     glfwSetErrorCallback(errorCallback);
 
@@ -211,99 +156,112 @@ VulkanWindow::VulkanWindow(const Config& config, const std::string& name, const 
         EXCEPTION("Vulkan is not supported on this platform");
     }
 
-    // Initialize a Vulkan instance with the validation layers enabled and extensions required by glfw.
-    uint32_t instanceExtensionCount = 0U;
-    auto instanceExtensionsStr = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
-
-    std::vector<const char*> instanceExtensions;
-    for (auto i = 0; i < instanceExtensionCount; i++) {
-        instanceExtensions.push_back(instanceExtensionsStr[i]);
-    }
-
-    std::vector<const char*> instanceLayers;
-    if (enableValidationLayers && standardValidationFound) {
-        instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-    }
-
-    if (enableValidationLayers && !standardValidationFound) {
-        Log::e(CMP, "Vulkan validation layers requested but not found");
-    }
-
-    initInstance(name, instanceLayers, instanceExtensions);
-
-    // Initialize a window using GLFW and hint no graphics API should be used on the backend.
-    glfwDefaultWindowHints();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
-    window = glfwCreateWindow(size.x, size.y, name.c_str(), nullptr, nullptr);
-    if (!window) {
+    auto windowPtr = glfwCreateWindow(config.windowWidth, config.windowHeight, name, nullptr, nullptr);
+    if (!windowPtr) {
         EXCEPTION("Failed to create GLFW window");
     }
 
-    setWindowCenter(window);
+    window = std::shared_ptr<GLFWwindow>(windowPtr, [](auto* w) { glfwDestroyWindow(w); });
 
-    initSurface(window);
-
-    glfwSetWindowUserPointer(window, this);
-    glfwSetKeyCallback(window, &keyCallback);
-    glfwSetCursorPosCallback(window, &mouseMovedCallback);
-    glfwSetMouseButtonCallback(window, &mouseButtonCallback);
-    glfwSetScrollCallback(window, &mouseScrollCallback);
-    glfwSetWindowSizeCallback(window, &windowSizeCallback);
-    glfwSetCharCallback(window, &charCallback);
-
-    // Display the window.
-    glfwShowWindow(window);
+    glfwSetWindowUserPointer(window.get(), this);
+    glfwSetKeyCallback(window.get(), &keyCallback);
+    glfwSetCursorPosCallback(window.get(), &mouseMovedCallback);
+    glfwSetMouseButtonCallback(window.get(), &mouseButtonCallback);
+    glfwSetScrollCallback(window.get(), &mouseScrollCallback);
+    glfwSetWindowSizeCallback(window.get(), &windowSizeCallback);
+    glfwSetCharCallback(window.get(), &charCallback);
 }
 
 VulkanWindow::~VulkanWindow() {
-    reset();
-
-    // Destroy the GLFW window.
-    glfwDestroyWindow(window);
-
     // Terminate the GLFW library.
     glfwTerminate();
 }
 
-Vector2i VulkanWindow::getWindowSize() {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    return {width, height};
-}
-
 void VulkanWindow::run() {
+    // Display the window.
+    glfwShowWindow(window.get());
+
     // Track time elapsed from one Update call to the next.
     double lastTime = glfwGetTime();
 
     // Message loop.
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window.get())) {
+        onNextFrame();
+
         // Check for window messages to process.
         glfwPollEvents();
 
-        const auto windowSize = getWindowSize();
+        const auto windowSize = getFramebufferSize();
         if (windowSize != currentWindowSize) {
-            resizeDefaultFramebuffer(windowSize);
+            // resizeDefaultFramebuffer(windowSize);
             currentWindowSize = windowSize;
             eventWindowResized(windowSize);
         }
 
         double curTime = glfwGetTime();
-        render(windowSize, static_cast<float>(curTime - lastTime));
+        onFrameDraw(windowSize, static_cast<float>(curTime - lastTime));
         lastTime = curTime;
     }
 
-    deviceWaitIdle();
+    onExit();
 }
 
-void VulkanWindow::mouseMovedCallback(GLFWwindow* window, const double x, const double y) {
+std::vector<const char*> VulkanWindow::getRequiredExtensions() {
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+    return extensions;
+}
+
+VkSurfaceKHR VulkanWindow::createSurface(VkInstance instance) {
+    VkSurfaceKHR surface;
+    if (glfwCreateWindowSurface(instance, window.get(), nullptr, &surface) != VK_SUCCESS) {
+        EXCEPTION("Failed to create window surface!");
+    }
+    return surface;
+}
+
+Vector2i VulkanWindow::getFramebufferSize() {
+    int width, height;
+    glfwGetFramebufferSize(window.get(), &width, &height);
+    return {width, height};
+}
+
+void VulkanWindow::waitUntilValidFramebufferSize() {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window.get(), &width, &height);
+
+    auto eventTriggered = false;
+
+    while (width == 0 || height == 0) {
+        if (!eventTriggered) {
+            eventTriggered = true;
+            eventWindowBlur();
+        }
+
+        glfwGetFramebufferSize(window.get(), &width, &height);
+        glfwWaitEvents();
+    }
+
+    if (eventTriggered) {
+        eventWindowFocus();
+    }
+}
+
+void VulkanWindow::mouseMovedCallback(GLFWwindow* window, double x, double y) {
     auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
     self.mousePos = {static_cast<int>(x), static_cast<int>(y)};
     self.eventMouseMoved(self.mousePos);
 }
 
-void VulkanWindow::mouseButtonCallback(GLFWwindow* window, const int button, const int action, int mods) {
+void VulkanWindow::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     (void)mods;
 
     auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
@@ -316,8 +274,13 @@ void VulkanWindow::mouseButtonCallback(GLFWwindow* window, const int button, con
     }
 }
 
-void VulkanWindow::keyCallback(GLFWwindow* window, const int key, const int scancode, const int action,
-                               const int mods) {
+void VulkanWindow::mouseScrollCallback(GLFWwindow* window, double xscroll, double yscroll) {
+    auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
+
+    self.eventMouseScroll(static_cast<int>(xscroll), static_cast<int>(yscroll));
+}
+
+void VulkanWindow::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     (void)scancode;
     (void)mods;
 
@@ -331,12 +294,6 @@ void VulkanWindow::keyCallback(GLFWwindow* window, const int key, const int scan
     } else if (action == GLFW_RELEASE) {
         self.eventKeyReleased(k, modifiers);
     }
-}
-
-void VulkanWindow::mouseScrollCallback(GLFWwindow* window, const double xscroll, const double yscroll) {
-    auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
-
-    self.eventMouseScroll(static_cast<int>(xscroll), static_cast<int>(yscroll));
 }
 
 void VulkanWindow::windowSizeCallback(GLFWwindow* window, int width, int height) {

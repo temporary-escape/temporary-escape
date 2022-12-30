@@ -10,14 +10,12 @@ using namespace Engine;
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{24.0f, 24.0f};
 
-ViewGalaxy::ViewGalaxy(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry,
-                       Client& client) :
+ViewGalaxy::ViewGalaxy(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client) :
     config{config},
-    vulkan{vulkan},
     registry{registry},
     client{client},
     skybox{vulkan, Color4{0.1f, 0.1f, 0.1f, 1.0f}},
-    scene{&registry.getVoxelShapeCache(), &scenePipelines} {
+    scene{&registry.getVoxelShapeCache()} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
 

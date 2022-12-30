@@ -34,7 +34,7 @@ findOne(const Container& container, const std::function<bool(const typename Cont
 Model::Model(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Model::load(Registry& registry, VulkanDevice& vulkan) {
+void Model::load(Registry& registry, VulkanRenderer& vulkan) {
     (void)registry;
 
     const auto resolveTexture = [this, &registry](const std::string& filename) -> TexturePtr {
@@ -237,37 +237,11 @@ void Model::load(Registry& registry, VulkanDevice& vulkan) {
             }
             }
 
-            switch (part.type) {
-            case GltfPrimitiveType::Lines: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-                break;
-            }
-            case GltfPrimitiveType::LineStrip: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-                break;
-            }
-            case GltfPrimitiveType::Triangles: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-                break;
-            }
-            case GltfPrimitiveType::TriangleFan: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-                break;
-            }
-            case GltfPrimitiveType::TriangleStrip: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-                break;
-            }
-            case GltfPrimitiveType::Points: {
-                primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-                break;
-            }
-            default: {
+            if (part.type != GltfPrimitiveType::Triangles) {
                 EXCEPTION("Invalid primitive type");
             }
-            }
 
-            const auto vboData =
+            /*const auto vboData =
                 GltfUtils::combine(positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
 
             const auto& iboData = part.indices->bufferView.getBuffer();
@@ -296,7 +270,7 @@ void Model::load(Registry& registry, VulkanDevice& vulkan) {
                         {3, 0, VulkanVertexInputFormat::Format::Vec4},
                     },
                 },
-            });
+            });*/
         }
 
         bbRadius = std::max(std::abs(bbMin.x), bbRadius);

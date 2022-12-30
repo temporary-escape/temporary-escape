@@ -97,7 +97,7 @@ public:
     }
 
     void init();
-    void load(VulkanDevice& vulkan);
+    void load(VulkanRenderer& vulkan);
     bool isReady();
 
     const VoxelShapeCache& getVoxelShapeCache() const {
@@ -116,7 +116,7 @@ public:
 
 private:
     void addManifest(const Path& path);
-    TexturePtr createTextureOfColor(VulkanDevice& vulkan, const Color4& color, const std::string& name);
+    TexturePtr createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name);
 
     template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext) {
         if (!Fs::exists(path)) {
@@ -135,7 +135,7 @@ private:
         auto asset = std::make_shared<T>(path.stem().string(), path);
         assets.insert(asset->getName(), asset);
         std::lock_guard<std::mutex> lock{loadMutex};
-        loadQueue.emplace_back([=](VulkanDevice& vulkan) {
+        loadQueue.emplace_back([=](VulkanRenderer& vulkan) {
             Log::i("Registry", "Loading asset: '{}'", path);
             asset->load(*this, vulkan);
         });
@@ -152,6 +152,6 @@ private:
     Category<Model> models;
     std::vector<ModManifest> manifests;
     std::mutex loadMutex;
-    std::list<std::function<void(VulkanDevice&)>> loadQueue;
+    std::list<std::function<void(VulkanRenderer&)>> loadQueue;
 };
 } // namespace Engine

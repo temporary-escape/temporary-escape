@@ -10,14 +10,14 @@
 namespace Engine {
 class ENGINE_API Scene : public UserInput {
 public:
-    struct Pipelines {
+    /*struct Pipelines {
         VulkanPipeline debug;
         VulkanPipeline grid;
         VulkanPipeline wireframe;
         VulkanPipeline pointCloud;
         VulkanPipeline iconPointCloud;
         VulkanPipeline lines;
-    };
+    };*/
 
     struct Bullet {
         Vector3 pos;
@@ -36,7 +36,7 @@ public:
 
     static inline EventListener defaultEventListener;
 
-    explicit Scene(const VoxelShapeCache* voxelShapeCache = nullptr, Pipelines* pipelines = nullptr,
+    explicit Scene(const VoxelShapeCache* voxelShapeCache = nullptr,
                    EventListener& eventListener = defaultEventListener);
     virtual ~Scene();
 
@@ -93,7 +93,7 @@ private:
     };
 
     const VoxelShapeCache* voxelShapeCache{nullptr};
-    Pipelines* pipelines{nullptr};
+    //Pipelines* pipelines{nullptr};
     EventListener& eventListener;
 
     uint64_t nextId;

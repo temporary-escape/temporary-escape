@@ -50,14 +50,12 @@ static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, 
     return lines;
 }
 
-ViewSystem::ViewSystem(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines, Registry& registry,
-                       Client& client) :
+ViewSystem::ViewSystem(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client) :
     config{config},
-    vulkan{vulkan},
     registry{registry},
     client{client},
     skybox{vulkan, Color4{0.1f, 0.1f, 0.1f, 1.0f}},
-    scene{&registry.getVoxelShapeCache(), &scenePipelines} {
+    scene{&registry.getVoxelShapeCache()} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
     images.systemMoon = registry.getImages().find("icon_world");

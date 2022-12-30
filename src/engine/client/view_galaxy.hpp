@@ -16,8 +16,7 @@ class Client;
 
 class ViewGalaxy : public View {
 public:
-    explicit ViewGalaxy(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines,
-                        Registry& registry, Client& client);
+    explicit ViewGalaxy(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client);
     ~ViewGalaxy() = default;
 
     void update(float deltaTime) override;
@@ -50,7 +49,6 @@ private:
     const SystemData* rayCast(const Vector2& mousePos);
 
     const Config& config;
-    VulkanDevice& vulkan;
     Registry& registry;
     Client& client;
     Skybox skybox;

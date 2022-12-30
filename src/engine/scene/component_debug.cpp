@@ -2,8 +2,8 @@
 
 using namespace Engine;
 
-void ComponentDebug::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (vertices.empty()) {
+void ComponentDebug::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    /*if (vertices.empty()) {
         return;
     }
 
@@ -52,7 +52,7 @@ void ComponentDebug::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulk
     vulkan.bindIndexBuffer(ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     vulkan.pushConstant(0, getObject().getAbsoluteTransform());
-    vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);
+    vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);*/
 }
 
 void ComponentDebug::clear() {

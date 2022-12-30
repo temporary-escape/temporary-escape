@@ -9,9 +9,8 @@ using namespace Engine;
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
 
-Client::Client(const Config& config, Registry& registry, Scene::Pipelines& scenePipelines, Stats& stats,
-               const Path& profilePath) :
-    registry{registry}, scenePipelines{scenePipelines}, stats{stats} {
+Client::Client(const Config& config, Registry& registry, Stats& stats, const Path& profilePath) :
+    registry{registry}, stats{stats} {
 
     localProfile.fromYaml(profilePath);
 
@@ -145,7 +144,7 @@ void Client::handle(MessagePlayerLocationChanged res) {
 
     camera.reset();
     scene.reset();
-    scene = std::make_unique<Scene>(&registry.getVoxelShapeCache(), &scenePipelines);
+    scene = std::make_unique<Scene>(&registry.getVoxelShapeCache());
 
     auto sun = std::make_shared<Entity>();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});

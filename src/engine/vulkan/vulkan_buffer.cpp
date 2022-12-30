@@ -1,22 +1,27 @@
 #include "vulkan_buffer.hpp"
 #include "../utils/exceptions.hpp"
+#include "vulkan_device.hpp"
 
 using namespace Engine;
 
-VulkanBuffer::VulkanBuffer(VkDevice device, Type type, Usage usage, size_t size) : device{device}, size{size} {
-    VezBufferCreateInfo bufferCreateInfo = {};
-    bufferCreateInfo.size = size;
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | static_cast<VkBufferUsageFlags>(type);
+VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
+    device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
 
-    const auto flags = static_cast<VezMemoryFlags>(usage);
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = createInfo.memoryUsage;
+    allocInfo.flags = createInfo.memoryFlags;
 
-    if (vezCreateBuffer(device, flags, &bufferCreateInfo, &buffer) != VK_SUCCESS) {
-        EXCEPTION("vezCreateBuffer failed to create vertex buffer of size {}", size);
+    VmaAllocationInfo allocationInfo;
+    if (vmaCreateBuffer(allocator, &createInfo, &allocInfo, &buffer, &allocation, &allocationInfo) != VK_SUCCESS) {
+        EXCEPTION("Failed to allocate buffer memory!");
     }
+
+    bufferSize = createInfo.size;
+    mappedPtr = allocationInfo.pMappedData;
 }
 
 VulkanBuffer::~VulkanBuffer() {
-    reset();
+    destroy();
 }
 
 VulkanBuffer::VulkanBuffer(VulkanBuffer&& other) noexcept {
@@ -27,44 +32,45 @@ VulkanBuffer& VulkanBuffer::operator=(VulkanBuffer&& other) noexcept {
     if (this != &other) {
         swap(other);
     }
-
     return *this;
 }
 
 void VulkanBuffer::swap(VulkanBuffer& other) noexcept {
-    std::swap(buffer, other.buffer);
     std::swap(device, other.device);
-    std::swap(size, other.size);
+    std::swap(allocator, other.allocator);
+    std::swap(allocation, other.allocation);
+    std::swap(buffer, other.buffer);
+    std::swap(bufferSize, other.bufferSize);
+    std::swap(mappedPtr, other.mappedPtr);
 }
 
-void VulkanBuffer::subData(const void* data, const size_t offset, const size_t size) {
-    if (buffer == VK_NULL_HANDLE) {
-        EXCEPTION("vezBufferSubData failed to create vertex buffer");
-    }
-
-    if (vezBufferSubData(device, buffer, 0, size, data) != VK_SUCCESS) {
-        EXCEPTION("vezBufferSubData failed to set vertex buffer of size {}", size);
+void VulkanBuffer::destroy() {
+    if (buffer) {
+        vmaDestroyBuffer(allocator, buffer, allocation);
+        buffer = VK_NULL_HANDLE;
+        allocation = VK_NULL_HANDLE;
     }
 }
 
-void VulkanBuffer::reset() {
-    if (device && buffer) {
-        vezDestroyBuffer(device, buffer);
+void VulkanBuffer::subDataLocal(const void* data, size_t offset, size_t size) {
+    auto* dst = reinterpret_cast<char*>(mappedPtr);
+    if (!mappedPtr) {
+        dst = reinterpret_cast<char*>(mapMemory());
     }
-    device = VK_NULL_HANDLE;
-    buffer = VK_NULL_HANDLE;
+    std::memcpy(dst + offset, data, size);
+    if (!mappedPtr) {
+        unmapMemory();
+    }
 }
 
-void* VulkanBuffer::mapPtr(const size_t size) {
-    void* data = nullptr;
-    auto result = vezMapBuffer(device, buffer, 0, size, &data);
-    if (result != VK_SUCCESS) {
-        EXCEPTION("vezMapBuffer failed");
+void* VulkanBuffer::mapMemory() {
+    void* dst;
+    if (vmaMapMemory(allocator, allocation, &dst) != VK_SUCCESS) {
+        EXCEPTION("Failed to map buffer memory!");
     }
-
-    return data;
+    return dst;
 }
 
-void VulkanBuffer::unmap() {
-    vezUnmapBuffer(device, buffer);
+void VulkanBuffer::unmapMemory() {
+    vmaUnmapMemory(allocator, allocation);
 }

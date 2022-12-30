@@ -5,14 +5,13 @@
 
 using namespace Engine;
 
-Game::Game(const Config& config, VulkanDevice& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
-           Scene::Pipelines& scenePipelines, SkyboxGenerator& skyboxGenerator, Status& status) :
+Game::Game(const Config& config, VulkanRenderer& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
+           SkyboxGenerator& skyboxGenerator, Status& status) :
     config{config},
     vulkan{vulkan},
     registry{registry},
     canvas{canvas},
     font{font},
-    scenePipelines{scenePipelines},
     skyboxGenerator{skyboxGenerator},
     status{status},
     nuklear{canvas, font.regular, 19.0f},
@@ -50,8 +49,8 @@ void Game::update(float deltaTime) {
 
         viewSpace = std::make_unique<ViewSpace>(config, vulkan, registry, skyboxGenerator.get(), *client);
 
-        viewGalaxy = std::make_unique<ViewGalaxy>(config, vulkan, scenePipelines, registry, *client);
-        viewSystem = std::make_unique<ViewSystem>(config, vulkan, scenePipelines, registry, *client);
+        viewGalaxy = std::make_unique<ViewGalaxy>(config, vulkan, registry, *client);
+        viewSystem = std::make_unique<ViewSystem>(config, vulkan, registry, *client);
     }
 
     if (server && serverLoad.valid() && serverLoad.ready() && !client) {
@@ -69,7 +68,7 @@ void Game::update(float deltaTime) {
             localProfile.toYaml(profilePath);
         }
 
-        client = std::make_unique<Client>(config, registry, scenePipelines, stats, profilePath);
+        client = std::make_unique<Client>(config, registry, stats, profilePath);
 
         // Client event: sector data retrieved
         client->onSectorUpdated([this](SystemData& system) {
@@ -129,7 +128,7 @@ void Game::render(const Vector2i& viewport, Renderer& renderer) {
 }
 
 void Game::renderCanvas(const Vector2i& viewport) {
-    canvas.begin(viewport);
+    /*canvas.begin(viewport);
 
     if (view) {
         view->renderCanvas(viewport, canvas);
@@ -139,7 +138,7 @@ void Game::renderCanvas(const Vector2i& viewport) {
         nuklear.end();
     }
 
-    canvas.end();
+    canvas.end();*/
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {

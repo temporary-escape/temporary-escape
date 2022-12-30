@@ -28,7 +28,7 @@ public:
         (void)delta;
     }
 
-    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
+    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
     void clear();
     void addBox(const Matrix4& transform, float width, const Color4& color);
@@ -38,7 +38,6 @@ private:
     std::vector<uint32_t> indices;
     VulkanBuffer vbo;
     VulkanBuffer ibo;
-    VulkanVertexInputFormat vboFormat;
 
 public:
     MSGPACK_DEFINE_ARRAY();

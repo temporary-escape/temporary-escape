@@ -16,8 +16,7 @@ class Client;
 
 class ViewSystem : public View {
 public:
-    explicit ViewSystem(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines,
-                        Registry& registry, Client& client);
+    explicit ViewSystem(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -46,7 +45,6 @@ private:
     const SystemData* rayCast(const Vector2& mousePos);
 
     const Config& config;
-    VulkanDevice& vulkan;
     Registry& registry;
     Client& client;
     Skybox skybox;

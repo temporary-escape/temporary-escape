@@ -9,17 +9,17 @@ using namespace Engine;
 Image::Image(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Image::load(Registry& registry, VulkanDevice& vulkan) {
+void Image::load(Registry& registry, VulkanRenderer& vulkan) {
     (void)registry;
 
     try {
-        PngImporter image(path);
+        PngImporter image{path};
 
-        VulkanTexture::Descriptor desc{};
+        /*VulkanTexture::Descriptor desc{};
         desc.size = image.getSize();
         if (image.getPixelType() != ImageImporter::PixelType::Rgba8u) {
             EXCEPTION("Image must be of format RGBA 8bit");
-        }
+        }*/
 
         allocation = registry.getImageAtlas().add(image.getSize(), image.getData());
 

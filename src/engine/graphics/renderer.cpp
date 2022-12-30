@@ -5,8 +5,7 @@
 
 using namespace Engine;
 
-Renderer::Renderer(const Config& config, VulkanDevice& vulkan, Pipelines& pipelines) :
-    config{config}, vulkan{vulkan}, pipelines{pipelines} {
+Renderer::Renderer(const Config& config, VulkanDevice& vulkan) : config{config}, vulkan{vulkan} {
     createGaussianKernel(15, 6.5);
     createSsaoNoise();
     createSsaoSamples();
@@ -18,7 +17,7 @@ Renderer::~Renderer() {
 }
 
 void Renderer::update(const Vector2i& viewport) {
-    if (gBuffer.size != viewport && viewport.x != 0 && viewport.y != 0) {
+    /*if (gBuffer.size != viewport && viewport.x != 0 && viewport.y != 0) {
         gBuffer.size = viewport;
 
         const auto swapchainFormat = vulkan.getSwapchainFormat();
@@ -203,21 +202,21 @@ void Renderer::update(const Vector2i& viewport) {
         vulkan.deviceWaitIdle();
 
         Log::d(CMP, "BRDF texture created of size: {}", brdf.size);
-    }
+    }*/
 }
 
 void Renderer::begin() {
-    vulkan.setViewport({0, 0}, gBuffer.size);
+    /*vulkan.setViewport({0, 0}, gBuffer.size);
     vulkan.setScissor({0, 0}, gBuffer.size);
-    vulkan.setViewportState();
+    vulkan.setViewportState();*/
 }
 
 void Renderer::end() {
-    vulkan.endRenderPass();
+    // vulkan.endRenderPass();
 }
 
 void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
-    // ======================================== PBR scene ========================================
+    /*// ======================================== PBR scene ========================================
     VulkanFramebufferAttachmentReference pbrColorAttachment{};
     pbrColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
 
@@ -391,7 +390,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     vulkan.bindPipeline(pipelines.fxaa);
     vulkan.pushConstant(0, Vector2{viewport});
     vulkan.bindTexture(gBuffer.bloomColors[0], 0);
-    renderFullScreenQuad();
+    renderFullScreenQuad();*/
 
     /*try {
         scene.renderFwd(vulkan, viewport);
@@ -401,7 +400,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
 }
 
 void Renderer::renderPassFront(bool clear) {
-    VulkanFramebufferAttachmentReference frontColorAttachment{};
+    /*VulkanFramebufferAttachmentReference frontColorAttachment{};
     frontColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
     if (clear) {
         frontColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -409,15 +408,15 @@ void Renderer::renderPassFront(bool clear) {
         frontColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
     }
 
-    vulkan.beginRenderPass(gBuffer.frontFbo, {frontColorAttachment});
+    vulkan.beginRenderPass(gBuffer.frontFbo, {frontColorAttachment});*/
 }
 
 void Renderer::present() {
-    vulkan.submitPresentQueue(gBuffer.frontColor);
+    // vulkan.submitPresentQueue(gBuffer.frontColor);
 }
 
 void Renderer::createGaussianKernel(const size_t size, double sigma) {
-    const auto weights = gaussianKernel((size - 1) * 2 + 1, sigma);
+    /*const auto weights = gaussianKernel((size - 1) * 2 + 1, sigma);
     GaussianWeightsUniform data;
 
     for (size_t i = 0; i < size; i++) {
@@ -428,15 +427,11 @@ void Renderer::createGaussianKernel(const size_t size, double sigma) {
 
     gaussianWeights.ubo =
         vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Static, sizeof(GaussianWeightsUniform));
-    gaussianWeights.ubo.subData(&data, 0, sizeof(GaussianWeightsUniform));
-}
-
-static float lerp(float a, float b, float f) {
-    return a + f * (b - a);
+    gaussianWeights.ubo.subData(&data, 0, sizeof(GaussianWeightsUniform));*/
 }
 
 void Renderer::createSsaoNoise() {
-    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    /*std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
     std::random_device rd;
     std::default_random_engine generator{rd()};
 
@@ -455,11 +450,11 @@ void Renderer::createSsaoNoise() {
     desc.usage =
         VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT | VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ssaoSamples.noise = vulkan.createTexture(desc);
-    ssaoSamples.noise.subData(0, {0, 0}, desc.size, ssaoNoise.data());
+    ssaoSamples.noise.subData(0, {0, 0}, desc.size, ssaoNoise.data());*/
 }
 
 void Renderer::createFullScreenQuad() {
-    static const std::vector<Vector2> vertices = {
+    /*static const std::vector<Vector2> vertices = {
         {-1.0f, -1.0f},
         {1.0f, -1.0f},
         {1.0f, 1.0f},
@@ -485,11 +480,11 @@ void Renderer::createFullScreenQuad() {
                 {0, 0, VulkanVertexInputFormat::Format::Vec2},
             },
         },
-    });
+    });*/
 }
 
 void Renderer::renderFullScreenQuad() {
-    vulkan.setDepthStencilState(false, false);
+    /*vulkan.setDepthStencilState(false, false);
     VulkanBlendState blendState{};
     blendState.blendEnable = false;
     blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
@@ -505,11 +500,11 @@ void Renderer::renderFullScreenQuad() {
     vulkan.bindVertexInputFormat(fullScreenQuad.vboFormat);
     vulkan.bindIndexBuffer(fullScreenQuad.ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.drawIndexed(6, 1, 0, 0, 0);
+    vulkan.drawIndexed(6, 1, 0, 0, 0);*/
 }
 
 void Renderer::createSkyboxMesh() {
-    static const std::vector<uint32_t> indices = {
+    /*static const std::vector<uint32_t> indices = {
         0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
         12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 21, 23,
     };
@@ -561,11 +556,11 @@ void Renderer::createSkyboxMesh() {
                 {0, 0, VulkanVertexInputFormat::Format::Vec3},
             },
         },
-    });
+    });*/
 }
 
 void Renderer::renderSkyboxMesh() {
-    vulkan.setDepthStencilState(false, true);
+    /*vulkan.setDepthStencilState(false, true);
     VulkanBlendState blendState{};
     blendState.blendEnable = false;
     blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
@@ -583,11 +578,11 @@ void Renderer::renderSkyboxMesh() {
     vulkan.bindVertexInputFormat(skyboxMesh.vboFormat);
     vulkan.bindIndexBuffer(skyboxMesh.ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.drawIndexed(6 * 6, 1, 0, 0, 0);
+    vulkan.drawIndexed(6 * 6, 1, 0, 0, 0);*/
 }
 
 void Renderer::updateDirectionalLightsUniform(Scene& scene) {
-    DirectionalLightsUniform uniform{};
+    /*DirectionalLightsUniform uniform{};
 
     auto& system = scene.getComponentSystem<ComponentDirectionalLight>();
     for (const auto& component : system) {
@@ -608,11 +603,11 @@ void Renderer::updateDirectionalLightsUniform(Scene& scene) {
         auto dst = directionalLights.ubo.mapPtr(sizeof(DirectionalLightsUniform));
         std::memcpy(dst, &uniform, sizeof(DirectionalLightsUniform));
         directionalLights.ubo.unmap();
-    }
+    }*/
 }
 
 void Renderer::createSsaoSamples() {
-    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    /*std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
     std::random_device rd;
     std::default_random_engine generator{rd()};
 
@@ -633,5 +628,5 @@ void Renderer::createSsaoSamples() {
 
     ssaoSamples.ubo =
         vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(SsaoSamplesUniform));
-    ssaoSamples.ubo.subData(&uniform, 0, sizeof(SsaoSamplesUniform));
+    ssaoSamples.ubo.subData(&uniform, 0, sizeof(SsaoSamplesUniform));*/
 }

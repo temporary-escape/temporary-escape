@@ -41,14 +41,13 @@ public:
         points.clear();
     }
 
-    void recalculate(VulkanDevice& vulkan);
-    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
+    void recalculate(VulkanRenderer& vulkan);
+    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
 private:
     TexturePtr texture;
     std::vector<Point> points;
     VulkanBuffer vbo;
-    VulkanVertexInputFormat vboFormat;
     size_t count{0};
 
 public:

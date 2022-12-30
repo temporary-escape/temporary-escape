@@ -35,7 +35,7 @@ public:
     }
 
     void update(float delta);
-    void render(VulkanDevice& vulkan, const Vector2i& viewport);
+    // void render(VulkanDevice& vulkan, const Vector2i& viewport);
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;

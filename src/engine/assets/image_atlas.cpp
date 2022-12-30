@@ -5,8 +5,8 @@
 
 using namespace Engine;
 
-ImageAtlas::Layer::Layer(const Config& config, VulkanDevice& vulkan) : packer{2048, Vector2i{config.imageAtlasSize}} {
-    VulkanTexture::Descriptor desc{};
+ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) : packer{2048, Vector2i{config.imageAtlasSize}} {
+    /*VulkanTexture::Descriptor desc{};
     desc.levels = 1;
     desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
     desc.format = VulkanTexture::Format::VK_FORMAT_R8G8B8A8_UNORM;
@@ -16,7 +16,7 @@ ImageAtlas::Layer::Layer(const Config& config, VulkanDevice& vulkan) : packer{20
     auto pixels = std::unique_ptr<char[]>(new char[config.imageAtlasSize * config.imageAtlasSize * 4]);
     std::memset(pixels.get(), 0x00, config.imageAtlasSize * config.imageAtlasSize * 4);
 
-    texture.subData(0, {0, 0}, {config.imageAtlasSize, config.imageAtlasSize}, pixels.get());
+    texture.subData(0, {0, 0}, {config.imageAtlasSize, config.imageAtlasSize}, pixels.get());*/
 }
 
 std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const void* pixels) {
@@ -25,11 +25,11 @@ std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const void*
         return std::nullopt;
     }
 
-    texture.subData(0, *res, size, pixels);
+    // texture.subData(0, *res, size, pixels);
     return res;
 }
 
-ImageAtlas::ImageAtlas(const Config& config, VulkanDevice& vulkan) : config{config}, vulkan{vulkan} {
+ImageAtlas::ImageAtlas(const Config& config, VulkanRenderer& vulkan) : config{config}, vulkan{vulkan} {
 }
 
 ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels) {

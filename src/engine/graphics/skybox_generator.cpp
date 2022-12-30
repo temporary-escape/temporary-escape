@@ -54,8 +54,8 @@ struct StarVertex {
     Color4 color;
 };
 
-SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanDevice& vulkan, SkyboxGenerator::Pipelines& pipelines) :
-    config{config}, vulkan{vulkan}, pipelines{pipelines}, skybox{vulkan, skyboxDefaultColor} {
+SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan) :
+    config{config}, vulkan{vulkan}, skybox{vulkan, skyboxDefaultColor} {
 
     prepareFbo();
     prepareNebulaMesh();
@@ -136,7 +136,7 @@ void SkyboxGenerator::render() {
 }
 
 void SkyboxGenerator::prepareFbo() {
-    auto desc = VulkanTexture::Descriptor{};
+    /*auto desc = VulkanTexture::Descriptor{};
     desc.size = Vector2i{config.skyboxSize, config.skyboxSize};
     desc.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
     desc.levels = 1;
@@ -165,11 +165,11 @@ void SkyboxGenerator::prepareFbo() {
     irradiance.texture = vulkan.createTexture(desc);
 
     attachments = {{irradiance.texture}};
-    irradiance.fbo = vulkan.createFramebuffer(desc.size, attachments);
+    irradiance.fbo = vulkan.createFramebuffer(desc.size, attachments);*/
 }
 
 void SkyboxGenerator::prepareNebulaMesh() {
-    nebula.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic,
+    /*nebula.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic,
                                      sizeof(float) * skyboxVertices.size());
     nebula.vbo.subData(skyboxVertices.data(), 0, sizeof(float) * skyboxVertices.size());
 
@@ -182,11 +182,11 @@ void SkyboxGenerator::prepareNebulaMesh() {
         },
     });
 
-    nebula.count = skyboxVertices.size();
+    nebula.count = skyboxVertices.size();*/
 }
 
 void SkyboxGenerator::prepareCubemap() {
-    const auto size = Vector2i{config.skyboxSize, config.skyboxSize};
+    /*const auto size = Vector2i{config.skyboxSize, config.skyboxSize};
 
     Log::d(CMP, "Preparing skybox cubemap of size: {}", size);
 
@@ -214,11 +214,11 @@ void SkyboxGenerator::prepareCubemap() {
     desc.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
     desc.size = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
     desc.levels = static_cast<uint32_t>(std::log2(config.skyboxIrradianceSize));
-    skybox.getIrradiance() = vulkan.createTexture(desc);
+    skybox.getIrradiance() = vulkan.createTexture(desc);*/
 }
 
 void SkyboxGenerator::prepareStars(Stars& stars, const size_t count) {
-    Log::d(CMP, "Preparing skybox vertex buffer for: {} stars", count);
+    /*Log::d(CMP, "Preparing skybox vertex buffer for: {} stars", count);
 
     std::uniform_real_distribution<float> distPosition(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.9f, 1.0f);
@@ -249,11 +249,11 @@ void SkyboxGenerator::prepareStars(Stars& stars, const size_t count) {
                 {2, 0, VulkanVertexInputFormat::Format::Vec4},
             },
         },
-    });
+    });*/
 }
 
 void SkyboxGenerator::renderStars(Stars& stars, const int side, const float particleSize, const bool clear) {
-    Log::d(CMP, "Rendering skybox stars cube side index: {}", side);
+    /*Log::d(CMP, "Rendering skybox stars cube side index: {}", side);
 
     const auto viewport = Vector2i{config.skyboxSize, config.skyboxSize};
 
@@ -294,11 +294,11 @@ void SkyboxGenerator::renderStars(Stars& stars, const int side, const float part
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
     vulkan.draw(stars.count, 1, 0, 0);
 
-    vulkan.endRenderPass();
+    vulkan.endRenderPass();*/
 }
 
 void SkyboxGenerator::prepareNebulaUbo() {
-    struct NebulaUniform {
+    /*struct NebulaUniform {
         Color4 uColor;
         Vector4 uOffset;
         float uScale;
@@ -333,11 +333,11 @@ void SkyboxGenerator::prepareNebulaUbo() {
         if (dist(rng) < 0.5f) {
             break;
         }
-    }
+    }*/
 }
 
 void SkyboxGenerator::renderNebula(VulkanBuffer& ubo, const int side) {
-    Log::d(CMP, "Rendering skybox nebula for side index: {}", side);
+    /*Log::d(CMP, "Rendering skybox nebula for side index: {}", side);
 
     const auto viewport = Vector2i{config.skyboxSize, config.skyboxSize};
 
@@ -373,11 +373,11 @@ void SkyboxGenerator::renderNebula(VulkanBuffer& ubo, const int side) {
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     vulkan.draw(nebula.count, 1, 0, 0);
 
-    vulkan.endRenderPass();
+    vulkan.endRenderPass();*/
 }
 
 void SkyboxGenerator::renderIrradiance(const int side) {
-    Log::d(CMP, "Rendering skybox irradiance texture for side index: {}", side);
+    /*Log::d(CMP, "Rendering skybox irradiance texture for side index: {}", side);
 
     const auto viewport = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
 
@@ -413,11 +413,11 @@ void SkyboxGenerator::renderIrradiance(const int side) {
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     vulkan.draw(nebula.count, 1, 0, 0);
 
-    vulkan.endRenderPass();
+    vulkan.endRenderPass();*/
 }
 
 void SkyboxGenerator::renderPrefilter(const int side, const int level) {
-    Log::d(CMP, "Rendering skybox prefilter texture for side index: {} level: {}", side, level);
+    /*Log::d(CMP, "Rendering skybox prefilter texture for side index: {} level: {}", side, level);
 
     const auto viewport = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
 
@@ -457,11 +457,11 @@ void SkyboxGenerator::renderPrefilter(const int side, const int level) {
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     vulkan.draw(nebula.count, 1, 0, 0);
 
-    vulkan.endRenderPass();
+    vulkan.endRenderPass();*/
 }
 
 void SkyboxGenerator::blit(VulkanTexture& source, VulkanTexture& target, const int side, const int width) {
-    Log::d(CMP, "Copying skybox cubemap for side index: {}", side);
+    /*Log::d(CMP, "Copying skybox cubemap for side index: {}", side);
 
     const auto size = Vector2i{width, width};
 
@@ -490,7 +490,7 @@ void SkyboxGenerator::blit(VulkanTexture& source, VulkanTexture& target, const i
         blitInfo.dst.size = Vector3i{size.x >> level, size.y >> level, 1};
 
         vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);
-    }
+    }*/
 }
 
 /*void SkyboxGenerator::generateMipMaps(VulkanTexture& source, int side, int width) {
@@ -515,7 +515,7 @@ void SkyboxGenerator::blit(VulkanTexture& source, VulkanTexture& target, const i
 
 void SkyboxGenerator::blitLevel(VulkanTexture& source, VulkanTexture& target, const int side, const int width,
                                 const int level) {
-    Log::d(CMP, "Copying skybox cubemap for side index: {} level: {}", side, level);
+    /*Log::d(CMP, "Copying skybox cubemap for side index: {} level: {}", side, level);
 
     const auto size = Vector2i{width, width};
 
@@ -530,7 +530,7 @@ void SkyboxGenerator::blitLevel(VulkanTexture& source, VulkanTexture& target, co
     blitInfo.dst.baseArrayLayer = side;
     blitInfo.dst.size = Vector3i{size.x >> level, size.y >> level, 1};
 
-    vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);
+    vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);*/
 }
 
 bool SkyboxGenerator::isReady() const {

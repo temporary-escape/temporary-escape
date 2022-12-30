@@ -7,7 +7,7 @@ namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
     explicit Model(std::string name, Path path);
-    void load(Registry& registry, VulkanDevice& vulkan) override;
+    void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     const std::vector<Primitive>& getPrimitives() const {
         return primitives;

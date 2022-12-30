@@ -1,82 +1,119 @@
 #pragma once
 
-#include "../library.hpp"
-#include "../math/vector.hpp"
-#include "vez/VEZ.h"
-#include <type_traits>
+#include "../utils/path.hpp"
+#include "vulkan_types.hpp"
 
 namespace Engine {
-class ENGINE_API VulkanTexture {
-public:
-    using Format = VkFormat;
-    using Type = VkImageType;
-    using Usage = VkImageUsageFlagBits;
-    using ViewType = VkImageViewType;
+class ENGINE_API VulkanDevice;
 
-    struct Descriptor {
-        Type type{Type::VK_IMAGE_TYPE_2D};
-        Format format{Format::VK_FORMAT_R8G8B8A8_UNORM};
-        VkImageUsageFlags usage{Usage::VK_IMAGE_USAGE_SAMPLED_BIT | Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT};
-        Vector2i size;
-        ViewType viewType{ViewType::VK_IMAGE_VIEW_TYPE_2D};
-        int levels{1};
-        int layers{1};
-        VkSamplerAddressMode addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        VkSamplerAddressMode addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        VkSamplerAddressMode addressModeW = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+class ENGINE_API VulkanTexture : public VulkanDisposable {
+public:
+    struct CreateInfo {
+        CreateInfo() {
+            image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image.imageType = VK_IMAGE_TYPE_2D;
+            image.extent.depth = 1;
+            image.mipLevels = 1;
+            image.arrayLayers = 1;
+            image.tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL;
+            image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            image.samples = VK_SAMPLE_COUNT_1_BIT;
+            image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+            view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            view.subresourceRange.baseMipLevel = 0;
+            view.subresourceRange.levelCount = 1;
+            view.subresourceRange.baseArrayLayer = 0;
+            view.subresourceRange.layerCount = 1;
+
+            sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            sampler.magFilter = VK_FILTER_LINEAR;
+            sampler.minFilter = VK_FILTER_LINEAR;
+            sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            sampler.anisotropyEnable = VK_FALSE;
+            sampler.maxAnisotropy = 1.0f;
+            sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            sampler.unnormalizedCoordinates = VK_FALSE;
+            sampler.compareEnable = VK_FALSE;
+            sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+            sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        }
+
+        VkImageCreateInfo image{};
+        VkImageViewCreateInfo view{};
+        VkSamplerCreateInfo sampler{};
     };
 
-    NON_COPYABLE(VulkanTexture);
-
     VulkanTexture() = default;
-    explicit VulkanTexture(VkDevice device, const Descriptor& desc);
+    explicit VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo);
     ~VulkanTexture();
+    VulkanTexture(const VulkanTexture& other) = delete;
     VulkanTexture(VulkanTexture&& other) noexcept;
+    VulkanTexture& operator=(const VulkanTexture& other) = delete;
     VulkanTexture& operator=(VulkanTexture&& other) noexcept;
     void swap(VulkanTexture& other) noexcept;
 
-    void subData(int level, const Vector2i& offset, const Vector2i& size, const void* data) {
-        subData(level, offset, 0, size, data);
-    }
-    void subData(int level, const Vector2i& offset, int layer, const Vector2i& size, const void* data);
-    void reset();
+    // void subData(int level, const Vector2i& offset, int layer, const Vector2i& size, const void* data);
+    // void finalize();
 
-    [[nodiscard]] VkImage& getHandle() {
+    VkImage& getHandle() {
         return image;
     }
 
-    [[nodiscard]] const VkImage& getHandle() const {
+    const VkImage& getHandle() const {
         return image;
     }
 
-    [[nodiscard]] VkImageView& getView() {
+    VkImageView& getImageView() {
         return view;
     }
 
-    [[nodiscard]] const VkImageView& getView() const {
+    const VkImageView& getImageView() const {
         return view;
     }
 
-    [[nodiscard]] VkSampler& getSampler() {
+    VkSampler& getSampler() {
         return sampler;
     }
 
-    [[nodiscard]] const VkSampler& getSampler() const {
+    const VkSampler& getSampler() const {
         return sampler;
     }
 
-    [[nodiscard]] operator bool() const {
+    VmaAllocation getAllocation() const {
+        return allocation;
+    }
+
+    VkFormat getFormat() const {
+        return format;
+    }
+
+    VkDeviceSize getDataSize() const;
+
+    operator bool() const {
         return image != VK_NULL_HANDLE;
     }
 
+    void destroy() override;
+
 private:
-    Descriptor desc;
     VkDevice device{VK_NULL_HANDLE};
+    VmaAllocator allocator{VK_NULL_HANDLE};
+    VmaAllocation allocation{VK_NULL_HANDLE};
     VkImage image{VK_NULL_HANDLE};
     VkImageView view{VK_NULL_HANDLE};
     VkSampler sampler{VK_NULL_HANDLE};
+    VkFormat format{VK_FORMAT_UNDEFINED};
+    VkExtent3D extent{0, 0};
 };
 
-static_assert(std::is_move_constructible<VulkanTexture>::value, "VulkanTexture must be move constructible");
-static_assert(std::is_move_assignable<VulkanTexture>::value, "VulkanTexture must be move assignable");
+struct ENGINE_API VulkanTextureBinding {
+    uint32_t binding{0};
+    const VulkanTexture* texture{nullptr};
+};
 } // namespace Engine

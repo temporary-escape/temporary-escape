@@ -9,14 +9,14 @@
 namespace Engine {
 class ENGINE_API SkyboxGenerator {
 public:
-    struct Pipelines {
+    /*struct Pipelines {
         VulkanPipeline stars;
         VulkanPipeline nebula;
         VulkanPipeline irradiance;
         VulkanPipeline prefilter;
-    };
+    };*/
 
-    explicit SkyboxGenerator(const Config& config, VulkanDevice& vulkan, Pipelines& pipelines);
+    explicit SkyboxGenerator(const Config& config, VulkanRenderer& vulkan);
 
     void updateSeed(uint64_t seed);
     void generate(uint64_t seed);
@@ -32,7 +32,7 @@ public:
 private:
     struct Stars {
         VulkanBuffer vbo;
-        VulkanVertexInputFormat vboFormat;
+        // VulkanVertexInputFormat vboFormat;
         size_t count{0};
     };
 
@@ -50,7 +50,6 @@ private:
 
     const Config& config;
     VulkanDevice& vulkan;
-    Pipelines& pipelines;
     Skybox skybox;
     std::optional<uint64_t> seed;
 
@@ -59,7 +58,7 @@ private:
 
     struct {
         VulkanBuffer vbo;
-        VulkanVertexInputFormat vboFormat;
+        // VulkanVertexInputFormat vboFormat;
         std::list<VulkanBuffer> ubos;
         size_t count{0};
     } nebula;

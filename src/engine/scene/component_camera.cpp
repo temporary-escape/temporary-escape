@@ -33,7 +33,7 @@ void ComponentCamera::update(const float delta) {
     }
 }
 
-void ComponentCamera::render(VulkanDevice& vulkan, const Vector2i& viewport) {
+/*void ComponentCamera::render(VulkanDevice& vulkan, const Vector2i& viewport) {
 
     const auto makeUniform = [this, viewport](const bool zero) {
         auto viewMatrix = getViewMatrix();
@@ -77,7 +77,7 @@ void ComponentCamera::render(VulkanDevice& vulkan, const Vector2i& viewport) {
         std::memcpy(dst, &uniform, sizeof(Uniform));
         uboZeroPos.unmap();
     }
-}
+}*/
 
 void ComponentCamera::moveToOrtographic(const Vector3& position) {
     lookAt(position, position - Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f});

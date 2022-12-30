@@ -1,53 +1,40 @@
 #include "vulkan_texture.hpp"
 #include "../utils/exceptions.hpp"
-
-#define CMP "VulkanTexture"
+#include "vulkan_device.hpp"
 
 using namespace Engine;
 
-VulkanTexture::VulkanTexture(VkDevice device, const Descriptor& desc) : device(device), desc(desc) {
-    // Create the AppBase::GetDevice() side image.
-    VezImageCreateInfo imageCreateInfo = {};
-    imageCreateInfo.imageType = desc.type;
-    imageCreateInfo.format = desc.format;
-    imageCreateInfo.extent = {static_cast<uint32_t>(desc.size.x), static_cast<uint32_t>(desc.size.y), 1};
-    imageCreateInfo.mipLevels = desc.levels;
-    imageCreateInfo.arrayLayers = desc.layers;
-    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage = desc.usage;
-    if (vezCreateImage(device, VEZ_MEMORY_GPU_ONLY, &imageCreateInfo, &image) != VK_SUCCESS) {
-        EXCEPTION("Failed to create vulkan texture of size: {} format: {} type: {}", desc.size, desc.format, desc.type);
+VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo) :
+    device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+    allocInfo.flags = 0;
+
+    VmaAllocationInfo allocationInfo;
+    if (vmaCreateImage(allocator, &createInfo.image, &allocInfo, &image, &allocation, &allocationInfo) != VK_SUCCESS) {
+        destroy();
+        EXCEPTION("Failed to allocate image memory!");
     }
 
-    VezImageViewCreateInfo imageViewCreateInfo = {};
-    imageViewCreateInfo.image = image;
-    imageViewCreateInfo.viewType = desc.viewType;
-    imageViewCreateInfo.format = desc.format;
-    imageViewCreateInfo.subresourceRange.layerCount = desc.layers;
-    imageViewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
-    if (vezCreateImageView(device, &imageViewCreateInfo, &view) != VK_SUCCESS) {
-        EXCEPTION("Failed to create image view for vulkan texture of size: {} format: {} type: {} ", desc.size,
-                  desc.format, desc.type);
+    if (vkCreateSampler(device.getDevice(), &createInfo.sampler, nullptr, &sampler) != VK_SUCCESS) {
+        destroy();
+        EXCEPTION("Failed to allocate image sampler!");
     }
 
-    VezSamplerCreateInfo createInfo = {};
-    createInfo.magFilter = VK_FILTER_LINEAR;
-    createInfo.minFilter = VK_FILTER_LINEAR;
-    createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    createInfo.addressModeU = desc.addressModeU;
-    createInfo.addressModeV = desc.addressModeV;
-    createInfo.addressModeW = desc.addressModeW;
-    createInfo.minLod = 0.0f;
-    createInfo.maxLod = static_cast<float>(imageCreateInfo.mipLevels);
-    if (vezCreateSampler(device, &createInfo, &sampler) != VK_SUCCESS) {
-        EXCEPTION("Failed to create image sampler for vulkan texture of size: {} format: {} type: {} ", desc.size,
-                  desc.format, desc.type);
+    auto createInfoView = createInfo.view;
+    createInfoView.image = image;
+
+    if (vkCreateImageView(device.getDevice(), &createInfoView, nullptr, &view) != VK_SUCCESS) {
+        EXCEPTION("Failed to allocate image view!");
     }
+
+    format = createInfo.image.format;
+    extent = createInfo.image.extent;
 }
 
 VulkanTexture::~VulkanTexture() {
-    reset();
+    destroy();
 }
 
 VulkanTexture::VulkanTexture(VulkanTexture&& other) noexcept {
@@ -58,43 +45,38 @@ VulkanTexture& VulkanTexture::operator=(VulkanTexture&& other) noexcept {
     if (this != &other) {
         swap(other);
     }
-
     return *this;
 }
 
 void VulkanTexture::swap(VulkanTexture& other) noexcept {
-    std::swap(desc, other.desc);
+    std::swap(device, other.device);
+    std::swap(allocator, other.allocator);
+    std::swap(allocation, other.allocation);
     std::swap(image, other.image);
     std::swap(view, other.view);
     std::swap(sampler, other.sampler);
-    std::swap(device, other.device);
+    std::swap(format, other.format);
+    std::swap(extent, other.extent);
 }
 
-void VulkanTexture::subData(int level, const Vector2i& offset, int layer, const Vector2i& size, const void* data) {
-    VezImageSubDataInfo subDataInfo = {};
-    subDataInfo.imageSubresource.mipLevel = level;
-    subDataInfo.imageSubresource.baseArrayLayer = layer;
-    subDataInfo.imageSubresource.layerCount = 1;
-    subDataInfo.imageOffset = {
-        static_cast<int32_t>(offset.x),
-        static_cast<int32_t>(offset.y),
-        0,
-    };
-    subDataInfo.imageExtent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
-    if (vezImageSubData(device, image, &subDataInfo, data) != VK_SUCCESS) {
-        EXCEPTION("Failed to submit pixels for vulkan texture of size: {} offset: {} format: {} type: {}", size, offset,
-                  desc.format, desc.type);
+void VulkanTexture::destroy() {
+    if (sampler) {
+        vkDestroySampler(device, sampler, nullptr);
+        sampler = VK_NULL_HANDLE;
+    }
+
+    if (view) {
+        vkDestroyImageView(device, view, nullptr);
+        view = VK_NULL_HANDLE;
+    }
+
+    if (image) {
+        vmaDestroyImage(allocator, image, allocation);
+        image = VK_NULL_HANDLE;
+        allocation = VK_NULL_HANDLE;
     }
 }
 
-void VulkanTexture::reset() {
-    if (device && image) {
-        vezDestroyImageView(device, view);
-        vezDestroyImage(device, image);
-        vezDestroySampler(device, sampler);
-    }
-    device = VK_NULL_HANDLE;
-    image = VK_NULL_HANDLE;
-    view = VK_NULL_HANDLE;
-    sampler = VK_NULL_HANDLE;
+VkDeviceSize VulkanTexture::getDataSize() const {
+    return getFormatDataSize(format, extent);
 }

@@ -21,8 +21,8 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
     }
 }
 
-void ComponentGrid::recalculate(VulkanDevice& vulkan, const VoxelShapeCache& voxelShapeCache) {
-    if (!isDirty()) {
+void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
+    /*if (!isDirty()) {
         return;
     }
 
@@ -75,11 +75,11 @@ void ComponentGrid::recalculate(VulkanDevice& vulkan, const VoxelShapeCache& vox
         primitive.count = data.indices.size();
         primitive.indexType = VkFormat::VK_FORMAT_R32_UINT;
         primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    }
+    }*/
 }
 
-void ComponentGrid::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (primitives.empty()) {
+void ComponentGrid::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    /*if (primitives.empty()) {
         return;
     }
 
@@ -100,5 +100,5 @@ void ComponentGrid::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulka
         vulkan.bindTexture(primitive.material->metallicRoughnessTexture->getVulkanTexture(), 6);
         vulkan.setInputAssembly(primitive.topology);
         vulkan.drawIndexed(primitive.count, 1, 0, 0, 0);
-    }
+    }*/
 }

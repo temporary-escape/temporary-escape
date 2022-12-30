@@ -12,7 +12,7 @@ Registry::Registry(const Config& config) : config{config} {
     init();
 }
 
-void Registry::load(VulkanDevice& vulkan) {
+void Registry::load(VulkanRenderer& vulkan) {
     try {
         if (!atlas) {
             atlas = std::make_unique<ImageAtlas>(config, vulkan);
@@ -100,7 +100,7 @@ Registry& Registry::getInstance() {
     return *instance;
 }
 
-TexturePtr Registry::createTextureOfColor(VulkanDevice& vulkan, const Color4& color, const std::string& name) {
+TexturePtr Registry::createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name) {
     auto asset = std::make_shared<Texture>(name, "");
     textures.insert(name, asset);
 
@@ -113,7 +113,7 @@ TexturePtr Registry::createTextureOfColor(VulkanDevice& vulkan, const Color4& co
         pixels[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
     }
 
-    auto desc = VulkanTexture::Descriptor{};
+    /*auto desc = VulkanTexture::Descriptor{};
     desc.size = Vector2i{4, 4};
     desc.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
     desc.levels = 1;
@@ -121,7 +121,7 @@ TexturePtr Registry::createTextureOfColor(VulkanDevice& vulkan, const Color4& co
     desc.usage =
         VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT | VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     asset->getVulkanTexture() = vulkan.createTexture(desc);
-    asset->getVulkanTexture().subData(0, {0, 0}, {4, 4}, pixels.get());
+    asset->getVulkanTexture().subData(0, {0, 0}, {4, 4}, pixels.get());*/
 
     return asset;
 }

@@ -8,8 +8,8 @@
 
 using namespace Engine;
 
-FontFace::FontFace(VulkanDevice& vulkan, const Path& path, const float size) : size{size} {
-    auto loader = FontLoader(path, size);
+FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) : size{size} {
+    auto loader = FontLoader{path, size};
 
     std::vector<std::tuple<int, FontLoader::Glyph>> raw;
 
@@ -31,23 +31,32 @@ FontFace::FontFace(VulkanDevice& vulkan, const Path& path, const float size) : s
         }
     }
 
-    std::vector<Vector2i> positions;
-    positions.resize(raw.size());
+    std::vector<Vector2i> positions{raw.size()};
 
     int finalWidth = 0;
+    int finalHeight = 0;
 
     for (int width = 512; width <= 8192; width = width << 1) {
-        Packer packer{raw.size(), {width, width}};
         bool failed = false;
 
-        for (size_t i = 0; i < raw.size(); i++) {
-            auto res = packer.add(std::get<1>(raw[i]).bitmapSize + padding * 2);
-            if (!res) {
-                failed = true;
-                break;
+        for (int height = width / 2; height <= width; height = height << 1) {
+            Packer packer{raw.size(), {width, height}};
+            failed = false;
+
+            for (size_t i = 0; i < raw.size(); i++) {
+                auto res = packer.add(std::get<1>(raw[i]).bitmapSize + padding * 2);
+                if (!res) {
+                    failed = true;
+                    break;
+                }
+
+                positions[i] = *res + padding;
             }
 
-            positions[i] = *res + padding;
+            if (!failed) {
+                finalHeight = height;
+                break;
+            }
         }
 
         if (!failed) {
@@ -56,13 +65,13 @@ FontFace::FontFace(VulkanDevice& vulkan, const Path& path, const float size) : s
         }
     }
 
-    if (finalWidth == 0) {
+    if (finalWidth == 0 || finalHeight == 0) {
         EXCEPTION("Unable to pack all glyphs for font: '{}' size: {}", path, size);
     }
 
-    std::unique_ptr<char[]> pixels(new char[finalWidth * finalWidth]);
+    std::unique_ptr<char[]> pixels{new char[finalWidth * finalHeight]};
     auto dst = pixels.get();
-    std::memset(pixels.get(), 0x00, finalWidth * finalWidth);
+    std::memset(pixels.get(), 0x00, finalWidth * finalHeight);
 
     for (size_t i = 0; i < raw.size(); i++) {
         const auto& data = std::get<1>(raw[i]);
@@ -83,11 +92,11 @@ FontFace::FontFace(VulkanDevice& vulkan, const Path& path, const float size) : s
         glyph.advance = static_cast<float>(data.advance >> 6);
         glyph.uv = Vector2{
             static_cast<float>(pos.x) / static_cast<float>(finalWidth),
-            static_cast<float>(pos.y) / static_cast<float>(finalWidth),
+            static_cast<float>(pos.y) / static_cast<float>(finalHeight),
         };
         glyph.st = Vector2{
             static_cast<float>(data.bitmapSize.x) / static_cast<float>(finalWidth),
-            static_cast<float>(data.bitmapSize.y) / static_cast<float>(finalWidth),
+            static_cast<float>(data.bitmapSize.y) / static_cast<float>(finalHeight),
         };
         glyph.box = data.box;
         glyph.size = data.bitmapSize;
@@ -98,19 +107,54 @@ FontFace::FontFace(VulkanDevice& vulkan, const Path& path, const float size) : s
 
     unknown = &glyphs.at(0);
 
-    VulkanTexture::Descriptor desc{};
-    desc.format = VulkanTexture::Format::VK_FORMAT_R8_UNORM;
-    desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
-    desc.size = {finalWidth, finalWidth};
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = VK_FORMAT_R8_UNORM;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = {static_cast<uint32_t>(finalWidth), static_cast<uint32_t>(finalHeight), 1};
+    textureInfo.image.mipLevels = 1;
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    texture = vulkan.createTexture(desc);
-    texture.subData(0, {0, 0}, desc.size, pixels.get());
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = VK_FORMAT_R8_UNORM;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
 
-    Log::i(CMP, "Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth});
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.anisotropyEnable = VK_FALSE;
+    textureInfo.sampler.maxAnisotropy = 1.0f;
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    texture = vulkan.createTexture(textureInfo);
+
+    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    vulkan.copyDataToImage(texture, 0, {0, 0}, 0, {finalWidth, finalHeight}, pixels.get());
+
+    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    Log::i(CMP, "Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth, finalHeight});
 }
 
-FontFace::~FontFace() {
-}
+FontFace::~FontFace() = default;
 
 Vector2 FontFace::getBounds(const std::string_view& text, const float height) const {
     auto it = text.data();

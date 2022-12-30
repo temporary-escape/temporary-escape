@@ -6,8 +6,8 @@
 
 using namespace Engine;
 
-ViewSpace::ViewSpace(const Config& config, VulkanDevice& vulkan, Registry& registry, Skybox& skybox, Client& client) :
-    config{config}, vulkan{vulkan}, registry{registry}, skyboxSystem{skybox}, client{client} {
+ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, Registry& registry, Skybox& skybox, Client& client) :
+    config{config}, registry{registry}, skyboxSystem{skybox}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {

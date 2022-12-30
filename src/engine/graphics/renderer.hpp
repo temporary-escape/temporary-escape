@@ -2,13 +2,13 @@
 
 #include "../config.hpp"
 #include "../scene/scene.hpp"
-#include "../vulkan/vulkan_device.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 #include "skybox.hpp"
 
 namespace Engine {
 class ENGINE_API Renderer {
 public:
-    struct Pipelines {
+    /*struct Pipelines {
         VulkanPipeline brdf;
         VulkanPipeline pbr;
         VulkanPipeline skybox;
@@ -18,14 +18,14 @@ public:
         VulkanPipeline bloomCombine;
         VulkanPipeline ssao;
         VulkanPipeline copy;
-    };
+    };*/
 
     struct Options {
         float blurStrength{0.2f};
         float exposure{1.8f};
     };
 
-    explicit Renderer(const Config& config, VulkanDevice& vulkan, Pipelines& pipelines);
+    explicit Renderer(const Config& config, VulkanDevice& vulkan);
     ~Renderer();
 
     void update(const Vector2i& viewport);
@@ -64,23 +64,23 @@ private:
 
     const Config& config;
     VulkanDevice& vulkan;
-    Pipelines& pipelines;
+    // Pipelines& pipelines;
 
     struct {
         VulkanBuffer vbo;
         VulkanBuffer ibo;
-        VulkanVertexInputFormat vboFormat;
+        /// VulkanVertexInputFormat vboFormat;
     } fullScreenQuad;
 
     struct {
         VulkanBuffer vbo;
         VulkanBuffer ibo;
-        VulkanVertexInputFormat vboFormat;
+        // VulkanVertexInputFormat vboFormat;
     } skyboxMesh;
 
     struct {
         VulkanTexture texture;
-        VulkanFramebuffer fbo;
+        // VulkanFramebuffer fbo;
         Vector2i size{0, 0};
     } brdf;
 

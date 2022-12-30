@@ -4,8 +4,8 @@
 
 using namespace Engine;
 
-void ComponentLines::recalculate(VulkanDevice& vulkan) {
-    if (!isDirty()) {
+void ComponentLines::recalculate(VulkanRenderer& vulkan) {
+    /*if (!isDirty()) {
         return;
     }
 
@@ -28,11 +28,11 @@ void ComponentLines::recalculate(VulkanDevice& vulkan) {
     lines.clear();
     lines.shrink_to_fit();
 
-    setDirty(false);
+    setDirty(false);*/
 }
 
-void ComponentLines::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    recalculate(vulkan);
+void ComponentLines::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    /*recalculate(vulkan);
 
     if (!count) {
         return;
@@ -44,5 +44,5 @@ void ComponentLines::render(VulkanDevice& vulkan, const Vector2i& viewport, Vulk
     vulkan.bindVertexBuffer(vbo, 0);
     vulkan.bindVertexInputFormat(vboFormat);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vulkan.draw(count, 1, 0, 0);
+    vulkan.draw(count, 1, 0, 0);*/
 }

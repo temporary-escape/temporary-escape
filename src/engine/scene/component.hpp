@@ -2,7 +2,7 @@
 
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
-#include "../vulkan/vulkan_device.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 #include "object.hpp"
 #include <memory>
 #include <unordered_set>

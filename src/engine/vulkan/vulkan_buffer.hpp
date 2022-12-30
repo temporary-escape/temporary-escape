@@ -1,63 +1,70 @@
 #pragma once
 
-#include "../library.hpp"
-#include "vez/VEZ.h"
-#include <type_traits>
+#include "../utils/path.hpp"
+#include "vulkan_types.hpp"
 
 namespace Engine {
-class VulkanBuffer {
+class ENGINE_API VulkanDevice;
+class ENGINE_API VulkanAllocator;
+
+class ENGINE_API VulkanBuffer {
 public:
-    enum class Usage {
-        Static = VEZ_MEMORY_GPU_ONLY,
-        Dynamic = VEZ_MEMORY_CPU_TO_GPU,
+    struct CreateInfo : VkBufferCreateInfo {
+        VmaMemoryUsage memoryUsage{VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY};
+        VmaAllocationCreateFlags memoryFlags{0};
     };
-
-    enum class Type {
-        Vertex = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        Index = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        Uniform = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-    };
-
-    NON_COPYABLE(VulkanBuffer);
 
     VulkanBuffer() = default;
-    explicit VulkanBuffer(VkDevice device, Type type, Usage usage, size_t size);
+    explicit VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo);
     ~VulkanBuffer();
+    VulkanBuffer(const VulkanBuffer& other) = delete;
     VulkanBuffer(VulkanBuffer&& other) noexcept;
+    VulkanBuffer& operator=(const VulkanBuffer& other) = delete;
     VulkanBuffer& operator=(VulkanBuffer&& other) noexcept;
     void swap(VulkanBuffer& other) noexcept;
 
-    void subData(const void* data, size_t offset, size_t size);
-    void reset();
+    void subDataLocal(const void* data, size_t offset, size_t size);
+    void* mapMemory();
+    void unmapMemory();
+    // void subData(const void* data, size_t offset, size_t size);
 
-    void* mapPtr(size_t size);
-    template <typename T> T* map() {
-        return reinterpret_cast<T*>(mapPtr(sizeof(T)));
-    }
-    void unmap();
-
-    [[nodiscard]] size_t getSize() const {
-        return size;
-    }
-
-    [[nodiscard]] VkBuffer& getHandle() {
+    VkBuffer& getHandle() {
         return buffer;
     }
 
-    [[nodiscard]] const VkBuffer& getHandle() const {
+    const VkBuffer& getHandle() const {
         return buffer;
     }
 
-    [[nodiscard]] operator bool() const {
+    VmaAllocation getAllocation() const {
+        return allocation;
+    }
+
+    void* getMappedPtr() const {
+        return mappedPtr;
+    }
+
+    VkDeviceSize getSize() const {
+        return bufferSize;
+    }
+
+    operator bool() const {
         return buffer != VK_NULL_HANDLE;
     }
 
+    void destroy();
+
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VkDevice device{nullptr};
     VkBuffer buffer{VK_NULL_HANDLE};
-    size_t size{0};
+    VmaAllocator allocator{VK_NULL_HANDLE};
+    VmaAllocation allocation{VK_NULL_HANDLE};
+    VkDeviceSize bufferSize{0};
+    void* mappedPtr{nullptr};
 };
 
-static_assert(std::is_move_constructible<VulkanBuffer>::value, "VulkanBuffer must be move constructible");
-static_assert(std::is_move_assignable<VulkanBuffer>::value, "VulkanBuffer must be move assignable");
+struct ENGINE_API VulkanBufferBinding {
+    uint32_t binding{0};
+    VulkanBuffer* uniform{nullptr};
+};
 } // namespace Engine

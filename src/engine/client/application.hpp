@@ -2,12 +2,12 @@
 
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
-#include "../vulkan/vulkan_window.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 #include "game.hpp"
 #include <queue>
 
 namespace Engine {
-class Application : public VulkanWindow {
+class Application : public VulkanRenderer {
 public:
     explicit Application(const Config& config);
     virtual ~Application();
@@ -26,12 +26,12 @@ public:
     void eventWindowFocus() override;
 
 private:
-    void renderStatus(const Vector2i& viewport);
+    // void renderStatus(const Vector2i& viewport);
 
     const Config& config;
-    Renderer::Pipelines rendererPipelines;
-    SkyboxGenerator::Pipelines skyboxGeneratorPipelines;
-    Scene::Pipelines scenePipelines;
+    // Renderer::Pipelines rendererPipelines;
+    // SkyboxGenerator::Pipelines skyboxGeneratorPipelines;
+    // Scene::Pipelines scenePipelines;
     Renderer renderer;
     SkyboxGenerator skyboxGenerator;
     Canvas canvas;

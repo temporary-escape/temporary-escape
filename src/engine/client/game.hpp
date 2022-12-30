@@ -10,7 +10,6 @@
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox_generator.hpp"
 #include "../server/server.hpp"
-#include "../vulkan/vulkan_device.hpp"
 #include "client.hpp"
 #include "stats.hpp"
 #include "view_build.hpp"
@@ -28,8 +27,8 @@ struct ENGINE_API Status {
 
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, VulkanDevice& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
-                  Scene::Pipelines& scenePipelines, SkyboxGenerator& skyboxGenerator, Status& status);
+    explicit Game(const Config& config, VulkanRenderer& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
+                  SkyboxGenerator& skyboxGenerator, Status& status);
     virtual ~Game();
 
     void update(float deltaTime);
@@ -52,11 +51,11 @@ private:
     // void eventInitDone();
 
     const Config& config;
-    VulkanDevice& vulkan;
+    VulkanRenderer& vulkan;
     Registry& registry;
     Canvas& canvas;
     FontFamily& font;
-    Scene::Pipelines& scenePipelines;
+    // Scene::Pipelines& scenePipelines;
     SkyboxGenerator& skyboxGenerator;
     Status& status;
     Stats stats;

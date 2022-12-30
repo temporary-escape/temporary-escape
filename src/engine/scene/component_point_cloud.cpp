@@ -4,8 +4,8 @@
 
 using namespace Engine;
 
-void ComponentPointCloud::recalculate(VulkanDevice& vulkan) {
-    if (!isDirty()) {
+void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
+    /*if (!isDirty()) {
         return;
     }
 
@@ -29,11 +29,11 @@ void ComponentPointCloud::recalculate(VulkanDevice& vulkan) {
     points.clear();
     points.shrink_to_fit();
 
-    setDirty(false);
+    setDirty(false);*/
 }
 
-void ComponentPointCloud::render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    recalculate(vulkan);
+void ComponentPointCloud::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    /*recalculate(vulkan);
 
     if (!count) {
         return;
@@ -46,5 +46,5 @@ void ComponentPointCloud::render(VulkanDevice& vulkan, const Vector2i& viewport,
     vulkan.bindVertexInputFormat(vboFormat);
     vulkan.bindTexture(texture->getVulkanTexture(), 1);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vulkan.draw(count, 1, 0, 0);
+    vulkan.draw(count, 1, 0, 0);*/
 }

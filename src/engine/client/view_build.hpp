@@ -9,8 +9,7 @@
 namespace Engine {
 class ViewBuild : public View {
 public:
-    explicit ViewBuild(const Config& config, VulkanDevice& vulkan, Scene::Pipelines& scenePipelines,
-                       Registry& registry);
+    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, Registry& registry);
     ~ViewBuild() = default;
 
     void update(float deltaTime) override;
@@ -29,7 +28,6 @@ public:
 
     const Config& config;
     Registry& registry;
-    VulkanDevice& vulkan;
 
     Vector2 raycastScreenPos;
     std::optional<Grid::RayCastResult> raycastResult;

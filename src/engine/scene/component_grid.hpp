@@ -28,8 +28,8 @@ public:
         (void)delta;
     }
 
-    void recalculate(VulkanDevice& vulkan, const VoxelShapeCache& voxelShapeCache);
-    void render(VulkanDevice& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
+    void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
+    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
     void update();
 
     [[nodiscard]] const std::vector<Primitive>& getPrimitives() const {

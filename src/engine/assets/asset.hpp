@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vulkan/vulkan_device.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
 #include <msgpack.hpp>
 
 namespace Engine {
@@ -12,7 +12,7 @@ public:
     }
     virtual ~Asset() = default;
 
-    virtual void load(Registry& registry, VulkanDevice& vulkan) = 0;
+    virtual void load(Registry& registry, VulkanRenderer& vulkan) = 0;
 
     [[nodiscard]] const std::string& getName() const {
         return name;

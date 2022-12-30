@@ -39,7 +39,7 @@ public:
     };
 
     explicit Block(std::string name, Path path);
-    void load(Registry& registry, VulkanDevice& vulkan) override;
+    void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const std::string& getTitle() const {
         return definition.title;

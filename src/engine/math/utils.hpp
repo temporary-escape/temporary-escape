@@ -23,4 +23,8 @@ extern ENGINE_API std::vector<double> gaussianKernel(size_t size = 5, double sig
 template <typename T> inline T map(T x, T in_min, T in_max, T out_min, T out_max) {
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+
+template <typename T> inline T lerp(T a, T b, T f) {
+    return a + f * (b - a);
+}
 } // namespace Engine

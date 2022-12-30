@@ -31,7 +31,7 @@ private:
     Color4 color;
     VulkanBuffer vbo;
     VulkanBuffer ibo;
-    VulkanVertexInputFormat vboFormat;
+    // VulkanVertexInputFormat vboFormat;
 
 public:
     MSGPACK_DEFINE_ARRAY();
