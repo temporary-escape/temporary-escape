@@ -1,11 +1,11 @@
 #include "vg_command_buffer.hpp"
 #include "../utils/exceptions.hpp"
 #include "vg_command_pool.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VgCommandPool& commandPool) :
+VgCommandBuffer::VgCommandBuffer(const Config& config, VgRenderer& device, VgCommandPool& commandPool) :
     state{std::make_shared<CommandBufferState>()} {
 
     state->device = &device;
@@ -17,7 +17,7 @@ VgCommandBuffer::VgCommandBuffer(const Config& config, VgDevice& device, VgComma
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
-    if (vkAllocateCommandBuffers(device.getHandle(), &allocInfo, &state->commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo, &state->commandBuffer) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate command buffer!");
     }
 }
@@ -171,7 +171,7 @@ void VgCommandBuffer::bindDescriptors(VgPipeline& pipeline, VgDescriptorSetLayou
 
 void VgCommandBuffer::CommandBufferState::destroy() {
     if (commandBuffer) {
-        vkFreeCommandBuffers(device->getHandle(), commandPool, 1, &commandBuffer);
+        vkFreeCommandBuffers(device->getDevice(), commandPool, 1, &commandBuffer);
         commandBuffer = VK_NULL_HANDLE;
     }
 }

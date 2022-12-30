@@ -4,12 +4,12 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 
 class VgAllocator {
 public:
     VgAllocator() = default;
-    explicit VgAllocator(const Config& config, VgDevice& device);
+    explicit VgAllocator(const Config& config, VgRenderer& device);
     ~VgAllocator();
     VgAllocator(const VgAllocator& other) = delete;
     VgAllocator(VgAllocator&& other) noexcept;

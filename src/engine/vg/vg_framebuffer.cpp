@@ -1,10 +1,11 @@
 #include "vg_framebuffer.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgFramebuffer::VgFramebuffer(const Config& config, VkDevice device, const CreateInfo& createInfo) : device{device} {
-    if (vkCreateFramebuffer(device, &createInfo, nullptr, &framebuffer) != VK_SUCCESS) {
+VgFramebuffer::VgFramebuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo) : device{&device} {
+    if (vkCreateFramebuffer(device.getDevice(), &createInfo, nullptr, &framebuffer) != VK_SUCCESS) {
         EXCEPTION("Failed to create framebuffer!");
     }
 }
@@ -31,7 +32,7 @@ void VgFramebuffer::swap(VgFramebuffer& other) noexcept {
 
 void VgFramebuffer::destroy() {
     if (framebuffer) {
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
+        vkDestroyFramebuffer(device->getDevice(), framebuffer, nullptr);
         framebuffer = VK_NULL_HANDLE;
     }
 }

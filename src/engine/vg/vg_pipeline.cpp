@@ -1,13 +1,15 @@
 #include "vg_pipeline.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgPipeline::VgPipeline(const Config& config, VkDevice device, const VgRenderPass& renderPass,
+VgPipeline::VgPipeline(const Config& config, VgDevice& device, const VgRenderPass& renderPass,
                        const CreateInfo& createInfo) :
-    device{device} {
+    device{&device} {
 
-    if (vkCreatePipelineLayout(device, &createInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(device.getDevice(), &createInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) !=
+        VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to create pipeline layout!");
     }
@@ -45,7 +47,8 @@ VgPipeline::VgPipeline(const Config& config, VkDevice device, const VgRenderPass
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
+        VK_SUCCESS) {
         destroy();
         EXCEPTION("failed to create graphics pipeline!");
     }
@@ -74,12 +77,12 @@ void VgPipeline::swap(VgPipeline& other) noexcept {
 
 void VgPipeline::destroy() {
     if (pipelineLayout) {
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        vkDestroyPipelineLayout(device->getDevice(), pipelineLayout, nullptr);
         pipelineLayout = VK_NULL_HANDLE;
     }
 
     if (pipeline) {
-        vkDestroyPipeline(device, pipeline, nullptr);
+        vkDestroyPipeline(device->getDevice(), pipeline, nullptr);
         pipeline = VK_NULL_HANDLE;
     }
 }

@@ -4,6 +4,8 @@
 #include "vg_types.hpp"
 
 namespace Engine {
+class VgDevice;
+
 class VgRenderPass {
 public:
     struct CreateInfo {
@@ -12,7 +14,7 @@ public:
     };
 
     VgRenderPass() = default;
-    explicit VgRenderPass(const Config& config, VkDevice device, const CreateInfo& createInfo);
+    explicit VgRenderPass(const Config& config, VgDevice& device, const CreateInfo& createInfo);
     ~VgRenderPass();
     VgRenderPass(const VgRenderPass& other) = delete;
     VgRenderPass(VgRenderPass&& other) noexcept;
@@ -35,7 +37,7 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
     VkRenderPass renderPass{VK_NULL_HANDLE};
 };
 } // namespace Engine

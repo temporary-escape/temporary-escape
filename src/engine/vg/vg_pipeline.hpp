@@ -5,6 +5,8 @@
 #include "vg_shader_module.hpp"
 
 namespace Engine {
+class VgDevice;
+
 class VgPipeline {
 public:
     struct CreateInfo {
@@ -20,7 +22,7 @@ public:
     };
 
     VgPipeline() = default;
-    explicit VgPipeline(const Config& config, VkDevice device, const VgRenderPass& renderPass,
+    explicit VgPipeline(const Config& config, VgDevice& device, const VgRenderPass& renderPass,
                         const CreateInfo& createInfo);
     ~VgPipeline();
     VgPipeline(const VgPipeline& other) = delete;
@@ -52,7 +54,7 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
     VkPipeline pipeline{VK_NULL_HANDLE};
 };

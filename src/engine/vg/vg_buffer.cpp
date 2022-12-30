@@ -1,10 +1,10 @@
 #include "vg_buffer.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgBuffer::VgBuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo) :
+VgBuffer::VgBuffer(const Config& config, VgRenderer& device, const CreateInfo& createInfo) :
     state{std::make_shared<BufferState>()} {
 
     state->device = &device;

@@ -1,15 +1,15 @@
 #include "vg_descriptor_set_layout.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgDescriptorSetLayout::VgDescriptorSetLayout(const Config& config, VgDevice& device, const CreateInfo& createInfo) :
+VgDescriptorSetLayout::VgDescriptorSetLayout(const Config& config, VgRenderer& device, const CreateInfo& createInfo) :
     state{std::make_shared<DescriptionSetLayoutState>()} {
 
     state->device = &device;
 
-    if (vkCreateDescriptorSetLayout(device.getHandle(), &createInfo, nullptr, &state->descriptorSetLayout) !=
+    if (vkCreateDescriptorSetLayout(device.getDevice(), &createInfo, nullptr, &state->descriptorSetLayout) !=
         VK_SUCCESS) {
         EXCEPTION("Failed to create descriptor set layout!");
     }
@@ -44,7 +44,7 @@ void VgDescriptorSetLayout::destroy() {
 
 void VgDescriptorSetLayout::DescriptionSetLayoutState::destroy() {
     if (descriptorSetLayout) {
-        vkDestroyDescriptorSetLayout(device->getHandle(), descriptorSetLayout, nullptr);
+        vkDestroyDescriptorSetLayout(device->getDevice(), descriptorSetLayout, nullptr);
         descriptorSetLayout = VK_NULL_HANDLE;
     }
 }

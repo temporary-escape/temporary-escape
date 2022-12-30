@@ -3,6 +3,7 @@
 #include "../utils/log.hpp"
 #include "../utils/md5.hpp"
 #include "glsl_compiler.hpp"
+#include "vg_renderer.hpp"
 
 #define CMP "VgShaderModule"
 
@@ -13,13 +14,17 @@ static std::string loadShaderFile(const Path& path) {
     return readFileStr(path);
 }
 
-VgShaderModule::VgShaderModule(const Config& config, VkDevice device, const Path& path, VkShaderStageFlagBits stage) :
-    VgShaderModule{config, device, loadShaderFile(path), stage} {
+VgShaderModule::VgShaderModule(const Config& config, VgRenderer& renderer, const Path& path,
+                               VkShaderStageFlagBits stage) :
+    VgShaderModule{config, renderer, loadShaderFile(path), stage} {
 }
 
-VgShaderModule::VgShaderModule(const Config& config, VkDevice device, const std::string& glsl,
+VgShaderModule::VgShaderModule(const Config& config, VgRenderer& renderer, const std::string& glsl,
                                VkShaderStageFlagBits stage) :
-    device{device}, stage{stage} {
+    state{std::make_shared<ShaderModuleState>()} {
+
+    state->renderer = &renderer;
+    state->stage = stage;
 
     const auto codeMd5 = md5sum(glsl.data(), glsl.size());
     const auto binaryPath = config.shaderCachePath / (codeMd5 + ".bin");
@@ -55,7 +60,7 @@ VgShaderModule::VgShaderModule(const Config& config, VkDevice device, const std:
         writeFileBinary(binaryPath, spirv.data(), spirv.size() * sizeof(uint32_t));
     }
 
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(renderer.getDevice(), &createInfo, nullptr, &state->shaderModule) != VK_SUCCESS) {
         EXCEPTION("Failed to create shader module!");
     }
 }
@@ -76,14 +81,20 @@ VgShaderModule& VgShaderModule::operator=(VgShaderModule&& other) noexcept {
 }
 
 void VgShaderModule::swap(VgShaderModule& other) noexcept {
-    std::swap(device, other.device);
-    std::swap(shaderModule, other.shaderModule);
-    std::swap(stage, other.stage);
+    std::swap(state, other.state);
 }
 
 void VgShaderModule::destroy() {
+    if (state && state->renderer) {
+        state->renderer->dispose(state);
+    }
+
+    state.reset();
+}
+
+void VgShaderModule::ShaderModuleState::destroy() {
     if (shaderModule) {
-        vkDestroyShaderModule(device, shaderModule, nullptr);
+        vkDestroyShaderModule(renderer->getDevice(), shaderModule, nullptr);
         shaderModule = VK_NULL_HANDLE;
     }
 }

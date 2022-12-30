@@ -4,12 +4,14 @@
 #include "vg_types.hpp"
 
 namespace Engine {
+class VgRenderer;
+
 class VgShaderModule {
 public:
     VgShaderModule() = default;
-    explicit VgShaderModule(const Config& config, VkDevice device, const std::string& glsl,
+    explicit VgShaderModule(const Config& config, VgRenderer& renderer, const std::string& glsl,
                             VkShaderStageFlagBits stage);
-    explicit VgShaderModule(const Config& config, VkDevice device, const Path& path, VkShaderStageFlagBits stage);
+    explicit VgShaderModule(const Config& config, VgRenderer& renderer, const Path& path, VkShaderStageFlagBits stage);
     ~VgShaderModule();
     VgShaderModule(const VgShaderModule& other) = delete;
     VgShaderModule(VgShaderModule&& other) noexcept;
@@ -18,26 +20,33 @@ public:
     void swap(VgShaderModule& other) noexcept;
 
     VkShaderStageFlagBits getStage() const {
-        return stage;
+        return state->stage;
     }
 
     VkShaderModule& getHandle() {
-        return shaderModule;
+        return state->shaderModule;
     }
 
     const VkShaderModule& getHandle() const {
-        return shaderModule;
+        return state->shaderModule;
     }
 
     operator bool() const {
-        return shaderModule != VK_NULL_HANDLE;
+        return state->shaderModule != VK_NULL_HANDLE;
     }
 
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
-    VkShaderModule shaderModule{VK_NULL_HANDLE};
-    VkShaderStageFlagBits stage;
+    class ShaderModuleState : public VgDisposable {
+    public:
+        void destroy() override;
+
+        VgRenderer* renderer{nullptr};
+        VkShaderModule shaderModule{VK_NULL_HANDLE};
+        VkShaderStageFlagBits stage;
+    };
+
+    std::shared_ptr<ShaderModuleState> state;
 };
 } // namespace Engine

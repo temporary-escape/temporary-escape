@@ -3,12 +3,12 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 
 class VgDescriptorPool {
 public:
     VgDescriptorPool() = default;
-    explicit VgDescriptorPool(const Config& config, VgDevice& device);
+    explicit VgDescriptorPool(const Config& config, VgRenderer& device);
     ~VgDescriptorPool();
     VgDescriptorPool(const VgDescriptorPool& other) = delete;
     VgDescriptorPool(VgDescriptorPool&& other) noexcept;
@@ -30,7 +30,7 @@ public:
 
 private:
     const Config* config{nullptr};
-    VgDevice* device{nullptr};
+    VgRenderer* device{nullptr};
     VkDescriptorPool descriptorPool{VK_NULL_HANDLE};
 };
 } // namespace Engine

@@ -5,14 +5,14 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 class VgDescriptorPool;
 class VgDescriptorSetLayout;
 
 class VgDescriptorSet {
 public:
     VgDescriptorSet() = default;
-    explicit VgDescriptorSet(const Config& config, VgDevice& device, VgDescriptorPool& descriptorPool,
+    explicit VgDescriptorSet(const Config& config, VgRenderer& device, VgDescriptorPool& descriptorPool,
                              VgDescriptorSetLayout& layout);
     ~VgDescriptorSet();
     VgDescriptorSet(const VgDescriptorSet& other) = delete;

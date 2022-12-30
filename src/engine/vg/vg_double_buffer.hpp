@@ -8,7 +8,7 @@ public:
     using CreateInfo = VgBuffer::CreateInfo;
 
     VgDoubleBuffer() = default;
-    explicit VgDoubleBuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo);
+    explicit VgDoubleBuffer(const Config& config, VgRenderer& device, const CreateInfo& createInfo);
     ~VgDoubleBuffer();
     VgDoubleBuffer(const VgDoubleBuffer& other) = delete;
     VgDoubleBuffer(VgDoubleBuffer&& other) noexcept;
@@ -37,7 +37,7 @@ public:
     }
 
 private:
-    VgDevice* device{nullptr};
+    VgRenderer* device{nullptr};
     std::array<VgBuffer, MAX_FRAMES_IN_FLIGHT> buffers;
 };
 } // namespace Engine

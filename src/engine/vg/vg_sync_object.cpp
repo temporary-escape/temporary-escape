@@ -1,9 +1,10 @@
 #include "vg_sync_object.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgSyncObject::VgSyncObject(const Config& config, VkDevice device) : device{device} {
+VgSyncObject::VgSyncObject(const Config& config, VgDevice& device) : device{&device} {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -11,9 +12,9 @@ VgSyncObject::VgSyncObject(const Config& config, VkDevice device) : device{devic
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+    if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
 
         destroy();
         EXCEPTION("Failed to create synchronization objects for a frame!");
@@ -44,25 +45,25 @@ void VgSyncObject::swap(VgSyncObject& other) noexcept {
 
 void VgSyncObject::destroy() {
     if (imageAvailableSemaphore) {
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        vkDestroySemaphore(device->getDevice(), imageAvailableSemaphore, nullptr);
         imageAvailableSemaphore = VK_NULL_HANDLE;
     }
 
     if (renderFinishedSemaphore) {
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device->getDevice(), renderFinishedSemaphore, nullptr);
         renderFinishedSemaphore = VK_NULL_HANDLE;
     }
 
     if (inFlightFence) {
-        vkDestroyFence(device, inFlightFence, nullptr);
+        vkDestroyFence(device->getDevice(), inFlightFence, nullptr);
         inFlightFence = VK_NULL_HANDLE;
     }
 }
 
 void VgSyncObject::reset() {
-    vkResetFences(device, 1, &inFlightFence);
+    vkResetFences(device->getDevice(), 1, &inFlightFence);
 }
 
 void VgSyncObject::wait() {
-    vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(device->getDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 }

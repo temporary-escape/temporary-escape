@@ -1,12 +1,12 @@
 #include "vg_descriptor_set.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgDescriptorSet::VgDescriptorSet(const Config& config, VgDevice& device, VgDescriptorPool& descriptorPool,
+VgDescriptorSet::VgDescriptorSet(const Config& config, VgRenderer& device, VgDescriptorPool& descriptorPool,
                                  VgDescriptorSetLayout& layout) :
-    device{device.getHandle()} {
+    device{device.getDevice()} {
 
     auto layoutPtr = layout.getHandle();
 
@@ -16,7 +16,7 @@ VgDescriptorSet::VgDescriptorSet(const Config& config, VgDevice& device, VgDescr
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layoutPtr;
 
-    if (vkAllocateDescriptorSets(device.getHandle(), &allocInfo, &descriptorSet) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(device.getDevice(), &allocInfo, &descriptorSet) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate descriptor sets!");
     }
 }

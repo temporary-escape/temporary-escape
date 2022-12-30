@@ -4,12 +4,14 @@
 #include "vg_types.hpp"
 
 namespace Engine {
+class VgDevice;
+
 class VgFramebuffer {
 public:
     using CreateInfo = VkFramebufferCreateInfo;
 
     VgFramebuffer() = default;
-    explicit VgFramebuffer(const Config& config, VkDevice device, const CreateInfo& createInfo);
+    explicit VgFramebuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo);
     ~VgFramebuffer();
     VgFramebuffer(const VgFramebuffer& other) = delete;
     VgFramebuffer(VgFramebuffer&& other) noexcept;
@@ -32,7 +34,7 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
 };
 } // namespace Engine

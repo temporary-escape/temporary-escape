@@ -9,7 +9,7 @@ public:
     using CreateInfo = VkCommandPoolCreateInfo;
 
     VgCommandPool() = default;
-    explicit VgCommandPool(const Config& config, VgDevice& device, const CreateInfo& createInfo);
+    explicit VgCommandPool(const Config& config, VgRenderer& device, const CreateInfo& createInfo);
     ~VgCommandPool();
     VgCommandPool(const VgCommandPool& other) = delete;
     VgCommandPool(VgCommandPool&& other) noexcept;
@@ -35,7 +35,7 @@ public:
 
 private:
     const Config* config{nullptr};
-    VgDevice* device{nullptr};
+    VgRenderer* device{nullptr};
     VkCommandPool commandPool{VK_NULL_HANDLE};
 };
 } // namespace Engine

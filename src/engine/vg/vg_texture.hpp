@@ -4,7 +4,7 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 
 class VgTexture {
 public:
@@ -50,7 +50,7 @@ public:
     };
 
     VgTexture() = default;
-    explicit VgTexture(const Config& config, VgDevice& device, const CreateInfo& createInfo);
+    explicit VgTexture(const Config& config, VgRenderer& device, const CreateInfo& createInfo);
     ~VgTexture();
     VgTexture(const VgTexture& other) = delete;
     VgTexture(VgTexture&& other) noexcept;
@@ -105,7 +105,7 @@ private:
     public:
         void destroy() override;
 
-        VgDevice* device{nullptr};
+        VgRenderer* device{nullptr};
         VmaAllocation allocation{VK_NULL_HANDLE};
         VkImage image{VK_NULL_HANDLE};
         VkImageView view{VK_NULL_HANDLE};

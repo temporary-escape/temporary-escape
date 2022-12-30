@@ -10,7 +10,7 @@ struct VgVertexBufferBindRef {
     VkDeviceSize offset;
 };
 
-class VgDevice;
+class VgRenderer;
 class VgCommandPool;
 class VgDescriptorSet;
 class VgFramebuffer;
@@ -29,7 +29,7 @@ struct VgRenderPassBeginInfo {
 class VgCommandBuffer {
 public:
     VgCommandBuffer() = default;
-    explicit VgCommandBuffer(const Config& config, VgDevice& device, VgCommandPool& commandPool);
+    explicit VgCommandBuffer(const Config& config, VgRenderer& device, VgCommandPool& commandPool);
     ~VgCommandBuffer();
     VgCommandBuffer(const VgCommandBuffer& other) = delete;
     VgCommandBuffer(VgCommandBuffer&& other) noexcept;
@@ -78,7 +78,7 @@ private:
     public:
         void destroy() override;
 
-        VgDevice* device{nullptr};
+        VgRenderer* device{nullptr};
         VkCommandPool commandPool{VK_NULL_HANDLE};
         VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     };

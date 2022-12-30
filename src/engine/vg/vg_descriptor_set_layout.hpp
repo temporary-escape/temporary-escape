@@ -3,14 +3,14 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 
 class VgDescriptorSetLayout {
 public:
     using CreateInfo = VkDescriptorSetLayoutCreateInfo;
 
     VgDescriptorSetLayout() = default;
-    explicit VgDescriptorSetLayout(const Config& config, VgDevice& device, const CreateInfo& createInfo);
+    explicit VgDescriptorSetLayout(const Config& config, VgRenderer& device, const CreateInfo& createInfo);
     ~VgDescriptorSetLayout();
     VgDescriptorSetLayout(const VgDescriptorSetLayout& other) = delete;
     VgDescriptorSetLayout(VgDescriptorSetLayout&& other) noexcept;
@@ -37,7 +37,7 @@ private:
     public:
         void destroy() override;
 
-        VgDevice* device{nullptr};
+        VgRenderer* device{nullptr};
         VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     };
     std::shared_ptr<DescriptionSetLayoutState> state;

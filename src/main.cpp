@@ -3,7 +3,7 @@
 #include <engine/utils/exceptions.hpp>
 #include <engine/utils/log.hpp>
 #include <engine/utils/png_importer.hpp>
-#include <engine/vg/vg_device.hpp>
+#include <engine/vg/vg_renderer.hpp>
 
 using namespace Engine;
 
@@ -66,9 +66,9 @@ struct UniformBuffer {
     Matrix4 model{};
 };
 
-class VgApplication : public VgDevice {
+class VgApplication : public VgRenderer {
 public:
-    VgApplication(const Config& config) : VgDevice{config} {
+    VgApplication(const Config& config) : VgRenderer{config} {
         VgBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(vertices[0]) * vertices.size();

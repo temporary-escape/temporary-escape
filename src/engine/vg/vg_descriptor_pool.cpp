@@ -1,10 +1,10 @@
 #include "vg_descriptor_pool.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgDescriptorPool::VgDescriptorPool(const Config& config, VgDevice& device) : config{&config}, device{&device} {
+VgDescriptorPool::VgDescriptorPool(const Config& config, VgRenderer& device) : config{&config}, device{&device} {
 
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -19,7 +19,7 @@ VgDescriptorPool::VgDescriptorPool(const Config& config, VgDevice& device) : con
     poolInfo.maxSets = /*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) **/ 64;
     // poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    if (vkCreateDescriptorPool(device.getHandle(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to create descriptor pool!");
     }
@@ -48,11 +48,11 @@ void VgDescriptorPool::swap(VgDescriptorPool& other) noexcept {
 
 void VgDescriptorPool::destroy() {
     if (descriptorPool) {
-        vkDestroyDescriptorPool(device->getHandle(), descriptorPool, nullptr);
+        vkDestroyDescriptorPool(device->getDevice(), descriptorPool, nullptr);
         descriptorPool = VK_NULL_HANDLE;
     }
 }
 
 void VgDescriptorPool::reset() {
-    vkResetDescriptorPool(device->getHandle(), descriptorPool, 0);
+    vkResetDescriptorPool(device->getDevice(), descriptorPool, 0);
 }

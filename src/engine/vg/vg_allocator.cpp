@@ -5,15 +5,15 @@
 // clang-format on
 #include "vg_allocator.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgAllocator::VgAllocator(const Config& config, VgDevice& device) {
+VgAllocator::VgAllocator(const Config& config, VgRenderer& device) {
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
     allocatorCreateInfo.physicalDevice = device.getPhysicalDevice();
-    allocatorCreateInfo.device = device.getHandle();
+    allocatorCreateInfo.device = device.getDevice();
     allocatorCreateInfo.instance = device.getInstance();
 
     if (vmaCreateAllocator(&allocatorCreateInfo, &allocator) != VK_SUCCESS) {

@@ -23,9 +23,9 @@ public:
         return physicalDeviceProperties;
     }
 
+private:
     void destroy();
 
-private:
     const Config& config;
     VkInstance instance{VK_NULL_HANDLE};
     VkSurfaceKHR surface{VK_NULL_HANDLE};

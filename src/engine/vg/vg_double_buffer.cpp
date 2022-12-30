@@ -1,9 +1,10 @@
 #include "vg_double_buffer.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgDoubleBuffer::VgDoubleBuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo) : device{&device} {
+VgDoubleBuffer::VgDoubleBuffer(const Config& config, VgRenderer& device, const CreateInfo& createInfo) :
+    device{&device} {
     for (auto& buffer : buffers) {
         buffer = device.createBuffer(createInfo);
     }

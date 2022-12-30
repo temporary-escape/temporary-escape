@@ -4,10 +4,12 @@
 #include <vector>
 
 namespace Engine {
+class VgDevice;
+
 class VgSwapChain {
 public:
     VgSwapChain() = default;
-    explicit VgSwapChain(VkDevice device, const VkSwapchainCreateInfoKHR& createInfo);
+    explicit VgSwapChain(VgDevice& device, const VkSwapchainCreateInfoKHR& createInfo);
     ~VgSwapChain();
     VgSwapChain(const VgSwapChain& other) = delete;
     VgSwapChain(VgSwapChain&& other) noexcept;
@@ -46,7 +48,7 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
     VkSwapchainKHR swapChain{VK_NULL_HANDLE};
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;

@@ -4,10 +4,12 @@
 #include "vg_types.hpp"
 
 namespace Engine {
+class VgDevice;
+
 class VgSyncObject {
 public:
     VgSyncObject() = default;
-    explicit VgSyncObject(const Config& config, VkDevice device);
+    explicit VgSyncObject(const Config& config, VgDevice& device);
     ~VgSyncObject();
     VgSyncObject(const VgSyncObject& other) = delete;
     VgSyncObject(VgSyncObject&& other) noexcept;
@@ -41,7 +43,7 @@ public:
     void destroy();
 
 private:
-    VkDevice device{VK_NULL_HANDLE};
+    VgDevice* device{nullptr};
     VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
     VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};
     VkFence inFlightFence{VK_NULL_HANDLE};

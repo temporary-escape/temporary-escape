@@ -1,12 +1,12 @@
 #include "vg_command_pool.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgCommandPool::VgCommandPool(const Config& config, VgDevice& device, const CreateInfo& createInfo) :
+VgCommandPool::VgCommandPool(const Config& config, VgRenderer& device, const CreateInfo& createInfo) :
     config{&config}, device{&device} {
-    if (vkCreateCommandPool(device.getHandle(), &createInfo, nullptr, &commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(device.getDevice(), &createInfo, nullptr, &commandPool) != VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to create command pool!");
     }
@@ -35,7 +35,7 @@ void VgCommandPool::swap(VgCommandPool& other) noexcept {
 
 void VgCommandPool::destroy() {
     if (commandPool) {
-        vkDestroyCommandPool(device->getHandle(), commandPool, nullptr);
+        vkDestroyCommandPool(device->getDevice(), commandPool, nullptr);
         commandPool = VK_NULL_HANDLE;
     }
 }

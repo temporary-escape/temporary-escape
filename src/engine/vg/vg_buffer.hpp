@@ -4,7 +4,7 @@
 #include "vg_types.hpp"
 
 namespace Engine {
-class VgDevice;
+class VgRenderer;
 
 class VgBuffer {
 public:
@@ -14,7 +14,7 @@ public:
     };
 
     VgBuffer() = default;
-    explicit VgBuffer(const Config& config, VgDevice& device, const CreateInfo& createInfo);
+    explicit VgBuffer(const Config& config, VgRenderer& device, const CreateInfo& createInfo);
     ~VgBuffer();
     VgBuffer(const VgBuffer& other) = delete;
     VgBuffer(VgBuffer&& other) noexcept;
@@ -55,7 +55,7 @@ private:
     public:
         void destroy() override;
 
-        VgDevice* device{nullptr};
+        VgRenderer* device{nullptr};
         VkBuffer buffer{VK_NULL_HANDLE};
         VmaAllocation allocation{VK_NULL_HANDLE};
         VkDeviceSize bufferSize{0};

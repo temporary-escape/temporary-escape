@@ -1,9 +1,10 @@
 #include "vg_render_pass.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgRenderPass::VgRenderPass(const Config& config, VkDevice device, const CreateInfo& createInfo) : device{device} {
+VgRenderPass::VgRenderPass(const Config& config, VgDevice& device, const CreateInfo& createInfo) : device{&device} {
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(createInfo.attachments.size());
@@ -11,7 +12,7 @@ VgRenderPass::VgRenderPass(const Config& config, VkDevice device, const CreateIn
     renderPassInfo.subpassCount = static_cast<uint32_t>(createInfo.subPasses.size());
     renderPassInfo.pSubpasses = createInfo.subPasses.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         EXCEPTION("Failed to create render pass!");
     }
 }
@@ -38,7 +39,7 @@ void VgRenderPass::swap(VgRenderPass& other) noexcept {
 
 void VgRenderPass::destroy() {
     if (renderPass) {
-        vkDestroyRenderPass(device, renderPass, nullptr);
+        vkDestroyRenderPass(device->getDevice(), renderPass, nullptr);
         renderPass = VK_NULL_HANDLE;
     }
 }

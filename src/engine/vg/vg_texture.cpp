@@ -1,10 +1,10 @@
 #include "vg_texture.hpp"
 #include "../utils/exceptions.hpp"
-#include "vg_device.hpp"
+#include "vg_renderer.hpp"
 
 using namespace Engine;
 
-VgTexture::VgTexture(const Config& config, VgDevice& device, const CreateInfo& createInfo) :
+VgTexture::VgTexture(const Config& config, VgRenderer& device, const CreateInfo& createInfo) :
     state{std::make_shared<BufferState>()} {
 
     state->device = &device;
@@ -23,7 +23,7 @@ VgTexture::VgTexture(const Config& config, VgDevice& device, const CreateInfo& c
     auto createInfoSampler = createInfo.sampler;
     createInfoSampler.maxAnisotropy = device.getPhysicalDeviceProperties().limits.maxSamplerAnisotropy;
 
-    if (vkCreateSampler(device.getHandle(), &createInfoSampler, nullptr, &state->sampler) != VK_SUCCESS) {
+    if (vkCreateSampler(device.getDevice(), &createInfoSampler, nullptr, &state->sampler) != VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to allocate image sampler!");
     }
@@ -31,7 +31,7 @@ VgTexture::VgTexture(const Config& config, VgDevice& device, const CreateInfo& c
     auto createInfoView = createInfo.view;
     createInfoView.image = state->image;
 
-    if (vkCreateImageView(device.getHandle(), &createInfoView, nullptr, &state->view) != VK_SUCCESS) {
+    if (vkCreateImageView(device.getDevice(), &createInfoView, nullptr, &state->view) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate image view!");
     }
 
@@ -94,12 +94,12 @@ void VgTexture::subData(int level, const Vector2i& offset, int layer, const Vect
 
 void VgTexture::BufferState::destroy() {
     if (sampler) {
-        vkDestroySampler(device->getHandle(), sampler, nullptr);
+        vkDestroySampler(device->getDevice(), sampler, nullptr);
         sampler = VK_NULL_HANDLE;
     }
 
     if (view) {
-        vkDestroyImageView(device->getHandle(), view, nullptr);
+        vkDestroyImageView(device->getDevice(), view, nullptr);
         view = VK_NULL_HANDLE;
     }
 

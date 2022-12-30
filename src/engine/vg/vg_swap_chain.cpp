@@ -1,18 +1,19 @@
 #include "vg_swap_chain.hpp"
 #include "../utils/exceptions.hpp"
+#include "vg_device.hpp"
 
 using namespace Engine;
 
-VgSwapChain::VgSwapChain(VkDevice device, const VkSwapchainCreateInfoKHR& createInfo) : device{device} {
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+VgSwapChain::VgSwapChain(VgDevice& device, const VkSwapchainCreateInfoKHR& createInfo) : device{&device} {
+    if (vkCreateSwapchainKHR(device.getDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
         destroy();
         EXCEPTION("failed to create swap chain!");
     }
 
     uint32_t imageCount;
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, swapChainImages.data());
 
     swapChainImageFormat = createInfo.imageFormat;
     swapChainExtent = createInfo.imageExtent;
@@ -35,7 +36,8 @@ VgSwapChain::VgSwapChain(VkDevice device, const VkSwapchainCreateInfoKHR& create
         imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
         imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(device, &imageViewCreateInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+        if (vkCreateImageView(device.getDevice(), &imageViewCreateInfo, nullptr, &swapChainImageViews[i]) !=
+            VK_SUCCESS) {
             destroy();
             EXCEPTION("failed to create image views!");
         }
@@ -48,12 +50,12 @@ VgSwapChain::~VgSwapChain() {
 
 void VgSwapChain::destroy() {
     for (auto imageView : swapChainImageViews) {
-        vkDestroyImageView(device, imageView, nullptr);
+        vkDestroyImageView(device->getDevice(), imageView, nullptr);
     }
     swapChainImageViews.clear();
 
     if (swapChain) {
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySwapchainKHR(device->getDevice(), swapChain, nullptr);
         swapChain = VK_NULL_HANDLE;
     }
 }
