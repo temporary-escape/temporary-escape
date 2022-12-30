@@ -14,8 +14,8 @@ VgTexture::VgTexture(const Config& config, VgDevice& device, const CreateInfo& c
     allocInfo.flags = 0;
 
     VmaAllocationInfo allocationInfo;
-    if (vmaCreateImage(device.getAllocator(), &createInfo.image, &allocInfo, &state->image, &state->allocation,
-                       &allocationInfo) != VK_SUCCESS) {
+    if (vmaCreateImage(device.getAllocator().getHandle(), &createInfo.image, &allocInfo, &state->image,
+                       &state->allocation, &allocationInfo) != VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to allocate image memory!");
     }
@@ -104,7 +104,7 @@ void VgTexture::BufferState::destroy() {
     }
 
     if (image) {
-        vmaDestroyImage(device->getAllocator(), image, allocation);
+        vmaDestroyImage(device->getAllocator().getHandle(), image, allocation);
         image = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
     }

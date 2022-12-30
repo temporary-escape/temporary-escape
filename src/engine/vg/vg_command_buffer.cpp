@@ -70,8 +70,20 @@ void VgCommandBuffer::end() {
     }
 }
 
-void VgCommandBuffer::beginRenderPass(const VkRenderPassBeginInfo& renderPassInfo) {
-    vkCmdBeginRenderPass(state->commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+void VgCommandBuffer::beginRenderPass(const VgRenderPassBeginInfo& renderPassInfo) {
+    VkRenderPassBeginInfo info{};
+
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    info.renderPass = renderPassInfo.renderPass->getHandle();
+    info.framebuffer = renderPassInfo.framebuffer->getHandle();
+    info.renderArea.offset = {renderPassInfo.offset.x, renderPassInfo.offset.y};
+    info.renderArea.extent =
+        VkExtent2D{static_cast<uint32_t>(renderPassInfo.size.x), static_cast<uint32_t>(renderPassInfo.size.y)};
+
+    info.clearValueCount = static_cast<uint32_t>(renderPassInfo.clearValues.size());
+    info.pClearValues = renderPassInfo.clearValues.data();
+
+    vkCmdBeginRenderPass(state->commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void VgCommandBuffer::endRenderPass() {
@@ -144,6 +156,17 @@ void VgCommandBuffer::bindDescriptorSet(const VgDescriptorSet& descriptorSet, Vk
 void VgCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                                       VkImageMemoryBarrier& barrier) {
     vkCmdPipelineBarrier(state->commandBuffer, source, destination, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+void VgCommandBuffer::bindDescriptors(VgPipeline& pipeline, VgDescriptorSetLayout& layout,
+                                      const std::vector<VgBufferBinding>& uniforms,
+                                      const std::vector<VgTextureBinding>& textures) {
+    auto& pool = state->device->getCurrentDescriptorPool();
+
+    auto descriptorSet = state->device->createDescriptorSet(pool, layout);
+    descriptorSet.bind(uniforms, textures);
+
+    bindDescriptorSet(descriptorSet, pipeline.getLayout());
 }
 
 void VgCommandBuffer::CommandBufferState::destroy() {

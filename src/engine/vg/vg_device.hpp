@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vg_allocator.hpp"
 #include "vg_buffer.hpp"
 #include "vg_command_buffer.hpp"
 #include "vg_command_pool.hpp"
@@ -27,10 +28,14 @@ public:
     VgShaderModule createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage);
     VgShaderModule createShaderModule(const Path& path, VkShaderStageFlagBits stage);
     VgPipeline createPipeline(const VgRenderPass& renderPass, const VgPipeline::CreateInfo& createInfo);
+    VgPipeline createPipeline(const VgPipeline::CreateInfo& createInfo) {
+        return createPipeline(renderPass, createInfo);
+    }
     VgRenderPass createRenderPass(const VgRenderPass::CreateInfo& createInfo);
     VgFramebuffer createFramebuffer(const VgFramebuffer::CreateInfo& createInfo);
     VgSyncObject createSyncObject();
     VgCommandPool createCommandPool(const VgCommandPool::CreateInfo& createInfo);
+    VgCommandBuffer createCommandBuffer();
     VgBuffer createBuffer(const VgBuffer::CreateInfo& createInfo);
     VgDescriptorSetLayout createDescriptorSetLayout(const VgDescriptorSetLayout::CreateInfo& createInfo);
     VgDescriptorPool createDescriptorPool();
@@ -65,11 +70,23 @@ public:
         return swapChain;
     }
 
+    const VgSwapChain& getSwapChain() const {
+        return swapChain;
+    }
+
     VgCommandPool& getCommandPool() {
         return commandPool;
     }
 
-    VmaAllocator_T* getAllocator() const {
+    const VgCommandPool& getCommandPool() const {
+        return commandPool;
+    }
+
+    VgAllocator& getAllocator() {
+        return allocator;
+    }
+
+    const VgAllocator& getAllocator() const {
         return allocator;
     }
 
@@ -81,18 +98,43 @@ public:
         return syncObjects.at(currentFrameNum);
     }
 
+    const VgSyncObject& getCurrentSyncObject() const {
+        return syncObjects.at(currentFrameNum);
+    }
+
     VgDescriptorPool& getCurrentDescriptorPool() {
         return descriptorPools.at(currentFrameNum);
     }
 
-protected:
-    virtual void onSwapChainChanged() = 0;
+    const VgDescriptorPool& getCurrentDescriptorPool() const {
+        return descriptorPools.at(currentFrameNum);
+    }
+
+    VgFramebuffer& getSwapChainFramebuffer() {
+        return swapChainFramebuffers.at(getSwapChainFramebufferIndex());
+    }
+
+    const VgFramebuffer& getSwapChainFramebuffer() const {
+        return swapChainFramebuffers.at(getSwapChainFramebufferIndex());
+    }
+
+    VgRenderPass& getRenderPass() {
+        return renderPass;
+    }
+
+    const VgRenderPass& getRenderPass() const {
+        return renderPass;
+    }
 
 private:
     void onNextFrame() override;
     void onExit() override;
-    void cleanup();
+    void onFrameDraw(const Vector2i& viewport, float deltaTime) override;
+    void createRenderPass();
+    void createSwapChainFramebuffers();
+    void destroy();
     void destroyDisposables();
+    void destroyDisposablesAll();
 
     const Config& config;
     VkDevice device{VK_NULL_HANDLE};
@@ -103,11 +145,14 @@ private:
     std::array<VgSyncObject, MAX_FRAMES_IN_FLIGHT> syncObjects;
     std::array<VgDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
     VgBuffer transferBuffer;
-    VmaAllocator_T* allocator{VK_NULL_HANDLE};
+    VgAllocator allocator;
     uint32_t swapChainFramebufferIndex{0};
     VkDeviceSize alignedFlushSize{0};
     size_t currentFrameNum{0};
-    std::list<std::shared_ptr<VgDisposable>> disposables;
+    std::array<std::list<std::shared_ptr<VgDisposable>>, MAX_FRAMES_IN_FLIGHT> disposables;
     bool exitTriggered{false};
+    VgRenderPass renderPass;
+    std::vector<VgFramebuffer> swapChainFramebuffers;
+    Vector2i lastViewportSize;
 };
 } // namespace Engine

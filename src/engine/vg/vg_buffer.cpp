@@ -14,7 +14,7 @@ VgBuffer::VgBuffer(const Config& config, VgDevice& device, const CreateInfo& cre
     allocInfo.flags = createInfo.memoryFlags;
 
     VmaAllocationInfo allocationInfo;
-    if (vmaCreateBuffer(device.getAllocator(), &createInfo, &allocInfo, &state->buffer, &state->allocation,
+    if (vmaCreateBuffer(device.getAllocator().getHandle(), &createInfo, &allocInfo, &state->buffer, &state->allocation,
                         &allocationInfo) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate buffer memory!");
     }
@@ -56,11 +56,11 @@ void VgBuffer::subData(const void* data, const size_t offset, const size_t size)
         state->memoryUsage == VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU) {
 
         void* dst;
-        if (vmaMapMemory(state->device->getAllocator(), state->allocation, &dst) != VK_SUCCESS) {
+        if (vmaMapMemory(state->device->getAllocator().getHandle(), state->allocation, &dst) != VK_SUCCESS) {
             EXCEPTION("Failed to map buffer memory!");
         }
         memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
-        vmaUnmapMemory(state->device->getAllocator(), state->allocation);
+        vmaUnmapMemory(state->device->getAllocator().getHandle(), state->allocation);
     } else {
         state->device->uploadBufferData(data, size, *this);
     }
@@ -68,7 +68,7 @@ void VgBuffer::subData(const void* data, const size_t offset, const size_t size)
 
 void VgBuffer::BufferState::destroy() {
     if (buffer) {
-        vmaDestroyBuffer(device->getAllocator(), buffer, allocation);
+        vmaDestroyBuffer(device->getAllocator().getHandle(), buffer, allocation);
         buffer = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
     }

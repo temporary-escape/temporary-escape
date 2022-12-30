@@ -3,7 +3,7 @@
 #include <engine/utils/exceptions.hpp>
 #include <engine/utils/log.hpp>
 #include <engine/utils/png_importer.hpp>
-#include <engine/vg/vg_renderer.hpp>
+#include <engine/vg/vg_device.hpp>
 
 using namespace Engine;
 
@@ -66,9 +66,9 @@ struct UniformBuffer {
     Matrix4 model{};
 };
 
-class VgApplication : public VgRenderer {
+class VgApplication : public VgDevice {
 public:
-    VgApplication(const Config& config) : VgRenderer{config} {
+    VgApplication(const Config& config) : VgDevice{config} {
         VgBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(vertices[0]) * vertices.size();
@@ -231,17 +231,37 @@ public:
         uniformBuffer.model = glm::rotate(Matrix4{1.0f}, glm::radians(degrees), {0.0f, 0.0f, 1.0f});
         ubo.subData(&uniformBuffer, 0, sizeof(UniformBuffer));
 
-        beginRenderPass(getSwapChainFramebuffer(), viewport);
+        VgRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.framebuffer = &getSwapChainFramebuffer();
+        renderPassInfo.renderPass = &getRenderPass();
+        renderPassInfo.offset = {0, 0};
+        renderPassInfo.size = viewport;
 
-        bindPipeline(pipeline);
-        setViewport({0, 0}, viewport);
-        setScissor({0, 0}, viewport);
-        bindBuffers({{vbo, 0}});
-        bindIndexBuffer(ibo, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
-        bindDescriptors(descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}}, {{1, &texture}});
-        drawIndexed(indices.size(), 1, 0, 0, 0);
+        VkClearValue clearColor = {{{0.3f, 0.3f, 0.3f, 1.0f}}};
+        renderPassInfo.clearValues = {clearColor};
 
-        endRenderPass();
+        auto cmd = createCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        cmd.start(beginInfo);
+
+        cmd.beginRenderPass(renderPassInfo);
+
+        cmd.bindPipeline(pipeline);
+        cmd.setViewport({0, 0}, viewport);
+        cmd.setScissor({0, 0}, viewport);
+        cmd.bindBuffers({{vbo, 0}});
+        cmd.bindIndexBuffer(ibo, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+        cmd.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}}, {{1, &texture}});
+        cmd.drawIndexed(indices.size(), 1, 0, 0, 0);
+
+        cmd.endRenderPass();
+
+        cmd.end();
+
+        submitCommandBuffer(cmd);
     }
 
     void eventMouseMoved(const Vector2i& pos) override {

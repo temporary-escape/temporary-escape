@@ -1,8 +1,3 @@
-// clang-format off
-#define VMA_IMPLEMENTATION
-#define VMA_VULKAN_VERSION 1001000
-#include <vk_mem_alloc.h>
-// clang-format on
 #include "vg_device.hpp"
 #include "../utils/exceptions.hpp"
 
@@ -10,7 +5,9 @@
 
 using namespace Engine;
 
-VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
+VgDevice::VgDevice(const Config& config) :
+    VgInstance{config}, config{config}, lastViewportSize{config.windowWidth, config.windowHeight} {
+
     const auto indices = getQueueFamilies();
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -47,7 +44,7 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     }
 
     if (vkCreateDevice(getPhysicalDevice(), &createInfo, nullptr, &device) != VK_SUCCESS) {
-        cleanup();
+        destroy();
         EXCEPTION("failed to create logical device!");
     }
 
@@ -71,16 +68,7 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
         descriptorPool = createDescriptorPool();
     }
 
-    VmaAllocatorCreateInfo allocatorCreateInfo = {};
-    allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
-    allocatorCreateInfo.physicalDevice = getPhysicalDevice();
-    allocatorCreateInfo.device = device;
-    allocatorCreateInfo.instance = getInstance();
-
-    if (vmaCreateAllocator(&allocatorCreateInfo, &allocator) != VK_SUCCESS) {
-        cleanup();
-        EXCEPTION("Failed to create VMA allocator!");
-    }
+    allocator = VgAllocator{config, *this};
 
     // Get required alignment flush size for selected physical device.
     VkPhysicalDeviceProperties physicalDeviceProperties = {};
@@ -101,14 +89,24 @@ VgDevice::VgDevice(const Config& config) : VgInstance{config}, config{config} {
     transferBuffer = createBuffer(transferBufferCreateInfo);
 
     Log::i(CMP, "Using buffer flush size: {} bytes", transferBuffer.getSize());
+
+    createRenderPass();
+    createSwapChainFramebuffers();
 }
 
 VgDevice::~VgDevice() {
-    cleanup();
+    destroy();
 }
 
-void VgDevice::cleanup() {
-    destroyDisposables();
+void VgDevice::destroy() {
+    renderPass.destroy();
+
+    for (auto& framebuffer : swapChainFramebuffers) {
+        framebuffer.destroy();
+    }
+    swapChainFramebuffers.clear();
+
+    destroyDisposablesAll();
 
     commandPool.destroy();
 
@@ -124,10 +122,7 @@ void VgDevice::cleanup() {
 
     transferBuffer.destroy();
 
-    if (allocator) {
-        vmaDestroyAllocator(allocator);
-        allocator = VK_NULL_HANDLE;
-    }
+    allocator.destroy();
 
     if (device) {
         vkDestroyDevice(device, nullptr);
@@ -137,7 +132,7 @@ void VgDevice::cleanup() {
 
 void VgDevice::getGpuMemoryStats() {
     VmaBudget info;
-    vmaGetBudget(allocator, &info);
+    vmaGetBudget(allocator.getHandle(), &info);
     Log::d(CMP, "Allocator budget: {} usage: {}", info.budget, info.usage);
 }
 
@@ -166,6 +161,29 @@ void VgDevice::onNextFrame() {
     }
 
     getCurrentSyncObject().reset();
+}
+
+void VgDevice::onFrameDraw(const Vector2i& viewport, float deltaTime) {
+    // auto& commandBuffer = getCommandBuffer();
+
+    // VkCommandBufferBeginInfo beginInfo{};
+    // beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    // commandBuffer.start(beginInfo);
+
+    render(viewport, deltaTime);
+
+    // commandBuffer.end();
+    // submitCommandBuffer(commandBuffer);
+
+    submitPresentQueue();
+
+    // Do we need to recreate the swap chain?
+    if (lastViewportSize != viewport) {
+        recreateSwapChain();
+    }
+
+    lastViewportSize = viewport;
 }
 
 void VgDevice::onExit() {
@@ -199,6 +217,10 @@ VgSyncObject VgDevice::createSyncObject() {
 
 VgCommandPool VgDevice::createCommandPool(const VgCommandPool::CreateInfo& createInfo) {
     return VgCommandPool{config, *this, createInfo};
+}
+
+VgCommandBuffer VgDevice::createCommandBuffer() {
+    return VgCommandBuffer{config, *this, commandPool};
 }
 
 VgBuffer VgDevice::createBuffer(const VgBuffer::CreateInfo& createInfo) {
@@ -300,7 +322,7 @@ void VgDevice::recreateSwapChain() {
     swapChain.destroy();
     swapChain = VgSwapChain(device, getSwapChainInfo());
 
-    onSwapChainChanged();
+    createSwapChainFramebuffers();
 }
 
 void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
@@ -329,7 +351,7 @@ void VgDevice::uploadBufferData(const void* data, size_t size, VgBuffer& dst) {
 
         // Flush the memory write.
         VmaAllocationInfo allocInfo = {};
-        vmaGetAllocationInfo(allocator, transferBuffer.getAllocation(), &allocInfo);
+        vmaGetAllocationInfo(allocator.getHandle(), transferBuffer.getAllocation(), &allocInfo);
 
         VkMappedMemoryRange memoryRange = {};
         memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -479,17 +501,76 @@ void VgDevice::copyBufferToImage(const VgBuffer& buffer, VgTexture& texture, con
     transferCommandBuffer.free();
 }
 
+void VgDevice::createRenderPass() {
+    VgRenderPass::CreateInfo renderPassInfo{};
+
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = getSwapChain().getFormat();
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    renderPassInfo.attachments = {colorAttachment};
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    renderPassInfo.subPasses = {subpass};
+
+    renderPass = VgDevice::createRenderPass(renderPassInfo);
+}
+
+void VgDevice::createSwapChainFramebuffers() {
+    const auto& swapChainImageViews = getSwapChain().getImageViews();
+
+    swapChainFramebuffers.resize(swapChainImageViews.size());
+
+    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+        VkImageView attachments[] = {swapChainImageViews[i]};
+
+        VgFramebuffer::CreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass.getHandle();
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = getSwapChain().getExtent().width;
+        framebufferInfo.height = getSwapChain().getExtent().height;
+        framebufferInfo.layers = 1;
+
+        swapChainFramebuffers[i] = createFramebuffer(framebufferInfo);
+    }
+}
+
 void VgDevice::dispose(std::shared_ptr<VgDisposable> disposable) {
     if (exitTriggered) {
         disposable->destroy();
         return;
     }
-    disposables.push_back(std::move(disposable));
+    disposables.at(getCurrentFrameNum()).push_back(std::move(disposable));
 }
 
 void VgDevice::destroyDisposables() {
-    for (auto& disposable : disposables) {
+    for (auto& disposable : disposables.at(getCurrentFrameNum())) {
         disposable->destroy();
     }
-    disposables.clear();
+    disposables.at(getCurrentFrameNum()).clear();
+}
+
+void VgDevice::destroyDisposablesAll() {
+    for (auto& currentFrameDisposables : disposables) {
+        for (auto& disposable : currentFrameDisposables) {
+            disposable->destroy();
+        }
+        currentFrameDisposables.clear();
+    }
 }

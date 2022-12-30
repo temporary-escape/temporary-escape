@@ -1,7 +1,6 @@
 #pragma once
 
 #include "vg_buffer.hpp"
-#include "vg_pipeline.hpp"
 #include "vg_texture.hpp"
 #include "vg_types.hpp"
 
@@ -14,6 +13,18 @@ struct VgVertexBufferBindRef {
 class VgDevice;
 class VgCommandPool;
 class VgDescriptorSet;
+class VgFramebuffer;
+class VgPipeline;
+class VgDescriptorSetLayout;
+class VgRenderPass;
+
+struct VgRenderPassBeginInfo {
+    VgRenderPass* renderPass{nullptr};
+    VgFramebuffer* framebuffer{nullptr};
+    std::vector<VkClearValue> clearValues;
+    Vector2i offset;
+    Vector2i size;
+};
 
 class VgCommandBuffer {
 public:
@@ -41,7 +52,7 @@ public:
     void start(const VkCommandBufferBeginInfo& beginInfo);
     void end();
 
-    void beginRenderPass(const VkRenderPassBeginInfo& renderPassInfo);
+    void beginRenderPass(const VgRenderPassBeginInfo& renderPassInfo);
     void endRenderPass();
 
     void setViewport(const Vector2i& pos, const Vector2i& size, float minDepth = 0.0f, float maxDepth = 1.0f);
@@ -57,6 +68,8 @@ public:
     void bindDescriptorSet(const VgDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                          VkImageMemoryBarrier& barrier);
+    void bindDescriptors(VgPipeline& pipeline, VgDescriptorSetLayout& layout,
+                         const std::vector<VgBufferBinding>& uniforms, const std::vector<VgTextureBinding>& textures);
     void destroy();
     void free();
 
