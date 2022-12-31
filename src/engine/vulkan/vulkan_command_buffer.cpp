@@ -172,3 +172,9 @@ void VulkanCommandBuffer::pushConstants(VulkanPipeline& pipeline, const VkShader
                                         const size_t offset, const size_t size, const void* data) {
     vkCmdPushConstants(commandBuffer, pipeline.getLayout(), shaderStage, offset, size, data);
 }
+
+void VulkanCommandBuffer::blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst,
+                                    VkImageLayout dstLayout, const std::vector<VkImageBlit>& regions, VkFilter filter) {
+    vkCmdBlitImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(),
+                   regions.data(), filter);
+}

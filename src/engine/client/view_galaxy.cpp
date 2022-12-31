@@ -52,7 +52,8 @@ void ViewGalaxy::render(const Vector2i& viewport, Renderer& renderer) {
 void ViewGalaxy::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
     if (input.hover != nullptr) {
         auto pos = camera->worldToScreen(Vector3{input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
-        canvas.rectOutline(pos - systemStarSelectable / 2.0f, systemStarSelectable, Theme::primary);
+        canvas.color(Theme::primary);
+        canvas.rectOutline(pos - systemStarSelectable / 2.0f, systemStarSelectable, 1.0f);
     }
 }
 

@@ -75,6 +75,8 @@ public:
                          const std::vector<VulkanTextureBinding>& textures);
     void pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
+    void blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
+                   const std::vector<VkImageBlit>& regions, VkFilter filter);
     void destroy() override;
 
 private:

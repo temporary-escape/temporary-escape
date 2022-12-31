@@ -93,7 +93,8 @@ void ViewSystem::render(const Vector2i& viewport, Renderer& renderer) {
 void ViewSystem::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
     if (input.hover != nullptr) {
         auto pos = camera->worldToScreen(Vector3{input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
-        canvas.rectOutline(pos - systemBodySelectable / 2.0f, systemBodySelectable, Theme::primary);
+        canvas.color(Theme::primary);
+        canvas.rectOutline(pos - systemBodySelectable / 2.0f, systemBodySelectable, 1.0f);
     }
 }
 

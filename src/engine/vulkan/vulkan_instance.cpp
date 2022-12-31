@@ -315,6 +315,12 @@ void VulkanInstance::destroy() {
     }
 }
 
+VkFormatProperties VulkanInstance::getPhysicalDeviceFormatProperties(VkFormat format) {
+    VkFormatProperties formatProperties;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+    return formatProperties;
+}
+
 VulkanQueueFamilyIndices VulkanInstance::getQueueFamilies() {
     return findQueueFamilies(physicalDevice, surface);
 }

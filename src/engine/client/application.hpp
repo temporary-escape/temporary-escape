@@ -2,6 +2,8 @@
 
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
+#include "../gui/gui_main_menu.hpp"
+#include "../utils/async_loader.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "game.hpp"
 #include <queue>
@@ -26,7 +28,7 @@ public:
     void eventWindowFocus() override;
 
 private:
-    // void renderStatus(const Vector2i& viewport);
+    void renderStatus(const Vector2i& viewport);
 
     const Config& config;
     // Renderer::Pipelines rendererPipelines;
@@ -36,7 +38,13 @@ private:
     SkyboxGenerator skyboxGenerator;
     Canvas canvas;
     FontFamily font;
+    Nuklear nuklear;
     Status status;
+    AsyncLoader asyncLoader;
+
+    struct {
+        GuiMainMenu mainMenu;
+    } gui;
 
     std::unique_ptr<Registry> registry;
     std::unique_ptr<Game> game;

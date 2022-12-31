@@ -16,7 +16,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device) : device{device
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = /*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) **/ 64;
+    poolInfo.maxSets = /*static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) **/ 256;
     // poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {

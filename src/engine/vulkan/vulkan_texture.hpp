@@ -95,6 +95,14 @@ public:
 
     VkDeviceSize getDataSize() const;
 
+    const VkExtent3D& getExtent() const {
+        return extent;
+    }
+
+    uint32_t getMipMaps() const {
+        return mipMaps;
+    }
+
     operator bool() const {
         return image != VK_NULL_HANDLE;
     }
@@ -109,11 +117,16 @@ private:
     VkImageView view{VK_NULL_HANDLE};
     VkSampler sampler{VK_NULL_HANDLE};
     VkFormat format{VK_FORMAT_UNDEFINED};
-    VkExtent3D extent{0, 0};
+    VkExtent3D extent{0, 0, 0};
+    uint32_t mipMaps{0};
 };
 
 struct ENGINE_API VulkanTextureBinding {
     uint32_t binding{0};
     const VulkanTexture* texture{nullptr};
 };
+
+inline uint32_t getMipMapLevels(const Vector2i& size) {
+    return static_cast<uint32_t>(std::floor(std::log2(std::max(size.x, size.y)))) + 1;
+}
 } // namespace Engine

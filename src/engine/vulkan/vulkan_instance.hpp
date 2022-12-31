@@ -23,6 +23,8 @@ public:
         return physicalDeviceProperties;
     }
 
+    VkFormatProperties getPhysicalDeviceFormatProperties(VkFormat format);
+
 private:
     void destroy();
 

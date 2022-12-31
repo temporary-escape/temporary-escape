@@ -111,11 +111,12 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) :
     textureInfo.image.format = VK_FORMAT_R8_UNORM;
     textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
     textureInfo.image.extent = {static_cast<uint32_t>(finalWidth), static_cast<uint32_t>(finalHeight), 1};
-    textureInfo.image.mipLevels = 1;
+    textureInfo.image.mipLevels = getMipMapLevels({finalWidth, finalHeight});
     textureInfo.image.arrayLayers = 1;
     textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
     textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
     textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -141,6 +142,8 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) :
     textureInfo.sampler.compareEnable = VK_FALSE;
     textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
     textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.minLod = 0.0f;
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
 
     texture = vulkan.createTexture(textureInfo);
 
@@ -148,8 +151,10 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) :
 
     vulkan.copyDataToImage(texture, 0, {0, 0}, 0, {finalWidth, finalHeight}, pixels.get());
 
-    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    // vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    //                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vulkan.generateMipMaps(texture);
 
     Log::i(CMP, "Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth, finalHeight});
 }

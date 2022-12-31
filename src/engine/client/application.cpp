@@ -1,4 +1,5 @@
 #include "application.hpp"
+#include "../graphics/theme.hpp"
 
 #define CMP "Application"
 
@@ -10,7 +11,8 @@ Application::Application(const Config& config) :
     renderer{config, *this},
     skyboxGenerator{config, *this},
     canvas{*this},
-    font{*this, config.fontsPath, "iosevka-aile", 42.0f} {
+    font{*this, config.fontsPath, "iosevka-aile", 42.0f},
+    nuklear{canvas, font.regular, 21.0f} {
 
     /*shaderQueue.emplace([this]() {
         rendererPipelines.brdf = createPipeline({
@@ -150,19 +152,29 @@ Application::Application(const Config& config) :
 
     status.message = "Loading shaders...";
     status.value = 0.1f;
+
+    gui.mainMenu.setItems({
+        {"Singleplayer", []() {}},
+        {"Multiplayer", []() {}},
+        {"Settings", []() {}},
+        {"Mods", []() {}},
+        {"Exit", []() {}},
+    });
 }
 
 Application::~Application() {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
+    asyncLoader.pool();
+
     VulkanRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.framebuffer = &getSwapChainFramebuffer();
     renderPassInfo.renderPass = &getRenderPass();
     renderPassInfo.offset = {0, 0};
     renderPassInfo.size = viewport;
 
-    VkClearValue clearColor = {{{0.3f, 0.3f, 0.3f, 1.0f}}};
+    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValues = {clearColor};
 
     auto vkb = createCommandBuffer();
@@ -174,13 +186,12 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.beginRenderPass(renderPassInfo);
 
     canvas.begin(viewport);
+    // renderStatus(viewport);
+    nuklear.begin(viewport);
 
-    static const Vector2 size{400.0f, 60.0f};
-    const auto pos = Vector2{viewport} / 2.0f - size / 2.0f;
+    nuklear.draw(gui.mainMenu);
 
-    canvas.text(pos + Vector2{0.0f, 0.0f}, status.message, font.regular, 21.0f, Color4{1.0f});
-    canvas.rect(pos + Vector2{0.0f, 30.0f}, {size.x * status.value, 25.0f}, Color4{1.0f});
-
+    nuklear.end();
     canvas.end(vkb);
 
     /*cmd.bindPipeline(pipeline);
@@ -292,49 +303,56 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }*/
 }
 
-/*void Application::renderStatus(const Vector2i& viewport) {
-    canvas.begin(viewport);
+void Application::renderStatus(const Vector2i& viewport) {
+    canvas.color(Theme::text);
+    canvas.text(Vector2{50.0f, static_cast<float>(viewport.y) - 90.0f}, status.message, font.regular, 21.0f);
 
-    static const Vector2 size{400.0f, 60.0f};
-    const auto pos = Vector2{viewport} / 2.0f - size / 2.0f;
+    canvas.color(Theme::backgroundTransparent);
+    canvas.rect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                {static_cast<float>(viewport.x) - 100.0f, 25.0f});
 
-    canvas.text(pos + Vector2{0.0f, 0.0f}, status.message, font.regular, 21.0f, Color4{1.0f});
-    canvas.rect(pos + Vector2{0.0f, 30.0f}, {size.x * status.value, 25.0f}, Color4{1.0f});
-
-    canvas.end();
-}*/
+    canvas.color(Theme::primary);
+    canvas.rect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f});
+}
 
 void Application::eventMouseMoved(const Vector2i& pos) {
+    nuklear.eventMouseMoved(pos);
     if (game) {
         game->eventMouseMoved(pos);
     }
 }
 
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
+    nuklear.eventMousePressed(pos, button);
     if (game) {
         game->eventMousePressed(pos, button);
     }
 }
 
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    nuklear.eventMouseReleased(pos, button);
     if (game) {
         game->eventMouseReleased(pos, button);
     }
 }
 
-void Application::eventMouseScroll(int xscroll, int yscroll) {
+void Application::eventMouseScroll(const int xscroll, const int yscroll) {
+    nuklear.eventMouseScroll(xscroll, yscroll);
     if (game) {
         game->eventMouseScroll(xscroll, yscroll);
     }
 }
 
-void Application::eventKeyPressed(Key key, Modifiers modifiers) {
+void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    nuklear.eventKeyPressed(key, modifiers);
     if (game) {
         game->eventKeyPressed(key, modifiers);
     }
 }
 
-void Application::eventKeyReleased(Key key, Modifiers modifiers) {
+void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    nuklear.eventKeyReleased(key, modifiers);
     if (game) {
         game->eventKeyReleased(key, modifiers);
     }
@@ -343,7 +361,8 @@ void Application::eventKeyReleased(Key key, Modifiers modifiers) {
 void Application::eventWindowResized(const Vector2i& size) {
 }
 
-void Application::eventCharTyped(uint32_t code) {
+void Application::eventCharTyped(const uint32_t code) {
+    nuklear.eventCharTyped(code);
     if (game) {
         game->eventCharTyped(code);
     }

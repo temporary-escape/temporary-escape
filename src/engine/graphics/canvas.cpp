@@ -284,7 +284,7 @@ void Canvas::begin(const Vector2i& viewport) {
 }
 
 void Canvas::end(VulkanCommandBuffer& vkb) {
-    if (commands.empty()) {
+    if (commandCount == 0) {
         return;
     }
 
@@ -306,7 +306,7 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
     vkb.bindBuffers({{vbo.getCurrentBuffer(), 0}});
     vkb.bindIndexBuffer(ibo.getCurrentBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-    for (size_t i = 0; i < commandCount; i++) {
+    /*for (size_t i = 0; i < commandCount; i++) {
         const auto& cmd = commands.at(i);
 
         // Simple draw command
@@ -326,21 +326,67 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
         else if (cmd.type == Command::Type::Scissor) {
             vkb.setScissor(cmd.scissor.pos, cmd.scissor.size);
         }
+    }*/
+
+    const auto flush = [&](Command& cmd) {
+        // Simple draw command
+        if (cmd.type == Command::Type::Draw) {
+            vkb.pushConstants(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int32_t), &cmd.draw.mode);
+
+            if (cmd.draw.texture) {
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
+                                    {{1, cmd.draw.texture}});
+            } else {
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
+                                    {{1, &defaultTexture}});
+            }
+            vkb.drawIndexed(cmd.draw.length, 1, cmd.draw.start, 0, 0);
+        }
+        // Scissor command
+        else if (cmd.type == Command::Type::Scissor) {
+            vkb.setScissor(cmd.scissor.pos, cmd.scissor.size);
+        }
+    };
+
+    Command* previous = &commands.at(0);
+
+    for (size_t i = 1; i < commandCount; i++) {
+        auto& next = commands.at(i);
+        if (previous->canMerge(next)) {
+            previous->merge(next);
+        } else {
+            flush(*previous);
+            previous = &next;
+        }
+    }
+
+    if (previous) {
+        flush(*previous);
     }
 
     vkb.setScissor({0, 0}, lastViewport);
 }
 
-Canvas::CommandDraw& Canvas::addDrawCommand() {
+Canvas::Command& Canvas::addCommand() {
     if (commandCount + 1 >= commands.size()) {
         commands.resize(commands.size() + 1024);
     }
 
     auto& cmd = commands.at(commandCount++);
 
-    cmd.type = Command::Type::Draw;
+    return cmd;
+}
 
+Canvas::CommandDraw& Canvas::addDrawCommand() {
+    auto& cmd = addCommand();
+    cmd.type = Command::Type::Draw;
     return cmd.draw;
+}
+
+Canvas::CommandScissor& Canvas::addScissorCommand() {
+    auto& cmd = addCommand();
+    cmd.type = Command::Type::Scissor;
+    return cmd.scissor;
 }
 
 Canvas::Vertex* Canvas::allocate() {
@@ -368,13 +414,12 @@ Canvas::Vertex* Canvas::allocate() {
 }
 
 void Canvas::scissor(const Vector2& pos, const Vector2& size) {
-    /*auto& cmd = commands.emplace_back();
-    cmd.type = Command::Type::Scissor;
-    cmd.scissor.pos = pos;
-    cmd.scissor.size = size;*/
+    auto& cmd = addScissorCommand();
+    cmd.pos = pos;
+    cmd.size = size;
 }
 
-void Canvas::rect(const Vector2& pos, const Vector2& size, const Color4& color) {
+void Canvas::rect(const Vector2& pos, const Vector2& size) {
     auto& cmd = addDrawCommand();
     cmd.start = indexOffset;
     cmd.length = 6;
@@ -386,13 +431,18 @@ void Canvas::rect(const Vector2& pos, const Vector2& size, const Color4& color) 
     dst[2].pos = pos + Vector2{size.x, size.y};
     dst[3].pos = pos + Vector2{0.0f, size.y};
 
-    dst[0].color = color;
-    dst[1].color = color;
-    dst[2].color = color;
-    dst[3].color = color;
+    dst[0].color = nextColor;
+    dst[1].color = nextColor;
+    dst[2].color = nextColor;
+    dst[3].color = nextColor;
 }
 
-void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const Color4& color) {
+void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const float thickness) {
+    rect(Vector2{pos.x, pos.y}, Vector2{size.x, thickness});
+    rect(Vector2{pos.x, pos.y + thickness}, Vector2{thickness, size.y - thickness * 2.0f});
+    rect(Vector2{pos.x + size.x - thickness, pos.y + thickness}, Vector2{thickness, size.y - thickness * 2.0f});
+    rect(Vector2{pos.x, pos.y + size.y - thickness}, Vector2{size.x, thickness});
+
     /*const auto start = vertices.size();
 
     auto& v0 = vertices.emplace_back();
@@ -425,8 +475,7 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const Color4& 
     cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;*/
 }
 
-void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const float height,
-                  const Color4& color) {
+void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const float height) {
 
     size_t start = indexOffset;
 
@@ -448,19 +497,19 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
         auto* dst = allocate();
 
         dst[0].pos = p + Vector2{0.0f, -glyph.size.y * scale};
-        dst[0].color = color;
+        dst[0].color = nextColor;
         dst[0].uv = Vector2{glyph.uv.x, glyph.uv.y};
 
         dst[1].pos = p + Vector2{glyph.size.x * scale, -glyph.size.y * scale};
-        dst[1].color = color;
+        dst[1].color = nextColor;
         dst[1].uv = Vector2{glyph.uv.x + glyph.st.x, glyph.uv.y};
 
         dst[2].pos = p + Vector2{glyph.size.x * scale, 0.0f};
-        dst[2].color = color;
+        dst[2].color = nextColor;
         dst[2].uv = Vector2{glyph.uv.x + glyph.st.x, glyph.uv.y + glyph.st.y};
 
         dst[3].pos = p;
-        dst[3].color = color;
+        dst[3].color = nextColor;
         dst[3].uv = Vector2{glyph.uv.x, glyph.uv.y + glyph.st.y};
 
         pen += Vector2{glyph.advance * scale, 0.0f};
@@ -473,7 +522,7 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
     cmd.texture = &font.getTexture();
 }
 
-void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color) {
+void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture) {
     /*const auto start = vertices.size();
 
     auto& v0 = vertices.emplace_back();

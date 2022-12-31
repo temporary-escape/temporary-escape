@@ -61,8 +61,12 @@ void Nuklear::render() {
         case NK_COMMAND_SCISSOR: {
             const auto c = reinterpret_cast<const struct nk_command_scissor*>(cmd);
             // glScissor(c->x, viewport.y() - c->y + c->h, c->w, c->h);
-            canvas.scissor({static_cast<float>(c->x), static_cast<float>(c->y)},
-                           {static_cast<float>(c->w), static_cast<float>(c->h)});
+            if (c->x >= 0 && c->y >= 0) {
+                canvas.scissor({static_cast<float>(c->x), static_cast<float>(c->y)},
+                               {static_cast<float>(c->w), static_cast<float>(c->h)});
+            } else {
+                canvas.scissor({0, 0}, lastViewportValue);
+            }
 
             break;
         }
@@ -84,20 +88,23 @@ void Nuklear::render() {
         case NK_COMMAND_TEXT: {
             const auto c = reinterpret_cast<const struct nk_command_text*>(cmd);
             auto& font = *static_cast<const FontFace*>(c->font->userdata.ptr);
+            canvas.color(asColor(c->foreground));
             canvas.text(Vector2(c->x, static_cast<float>(c->y) + c->height / 1.25f), &c->string[0], font,
-                        c->font->height, asColor(c->foreground));
+                        c->font->height);
             break;
         }
         case NK_COMMAND_RECT: {
             const auto c = reinterpret_cast<const struct nk_command_rect*>(cmd);
-            const auto p = Vector2{c->x, c->y} + Vector2{c->line_thickness / 2.0f};
-            const auto s = Vector2{c->w, c->h} - Vector2{static_cast<float>(c->line_thickness)};
-            canvas.rectOutline(p, s, asColor(c->color));
+            const auto p = Vector2{c->x, c->y};
+            const auto s = Vector2{c->w, c->h};
+            canvas.color(asColor(c->color));
+            canvas.rectOutline(p, s, static_cast<float>(c->line_thickness));
             break;
         }
         case NK_COMMAND_RECT_FILLED: {
             const auto c = reinterpret_cast<const struct nk_command_rect_filled*>(cmd);
-            canvas.rect(Vector2(c->x, c->y), Vector2(c->w, c->h), asColor(c->color));
+            canvas.color(asColor(c->color));
+            canvas.rect(Vector2(c->x, c->y), Vector2(c->w, c->h));
             break;
         }
         case NK_COMMAND_TRIANGLE: {

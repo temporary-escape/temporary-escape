@@ -52,6 +52,7 @@ public:
                            const VkOffset3D& offset, const VkExtent3D& extent);
     // void getGpuMemoryStats();
     void transitionImageLayout(VulkanTexture& texture, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void generateMipMaps(VulkanTexture& texture);
 
     template <typename T> void dispose(T&& resource) {
         disposables.at(getCurrentFrameNum()).push_back(std::make_shared<T>(std::forward<T>(resource)));
