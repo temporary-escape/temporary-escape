@@ -1,9 +1,10 @@
 #pragma once
 
+#include "../database/database.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
 #include "../gui/gui_main_menu.hpp"
-#include "../utils/async_loader.hpp"
+#include "../server/server.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "game.hpp"
 #include <queue>
@@ -29,6 +30,15 @@ public:
 
 private:
     void renderStatus(const Vector2i& viewport);
+    void createRegistry();
+    void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
+    void compileShaders();
+    void compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next);
+    void startDatabase();
+    void startServer();
+    void startClient();
+    void loadServer();
+    void startSinglePlayer();
 
     const Config& config;
     // Renderer::Pipelines rendererPipelines;
@@ -40,7 +50,8 @@ private:
     FontFamily font;
     Nuklear nuklear;
     Status status;
-    AsyncLoader asyncLoader;
+    Renderer::Shaders shaders;
+    Renderer::ShaderLoadQueue shaderLoadQueue;
 
     struct {
         GuiMainMenu mainMenu;
@@ -48,12 +59,12 @@ private:
 
     std::unique_ptr<Registry> registry;
     std::unique_ptr<Game> game;
+    std::unique_ptr<TransactionalDatabase> db;
+    std::unique_ptr<Server::Certs> serverCerts;
+    std::unique_ptr<Server> server;
 
-    std::queue<std::function<void()>> shaderQueue;
-    bool loadShaders{false};
-    Future<void> futureRegistry;
-    bool loadRegistry{false};
-    bool loadAssets{false};
-    bool loadGame{false};
+    std::future<std::function<void()>> future;
+    std::promise<std::function<void()>> promise;
+    std::atomic<bool> shouldStop{false};
 };
 } // namespace Engine

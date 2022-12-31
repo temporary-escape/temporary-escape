@@ -13,6 +13,8 @@
 namespace Engine {
 class Registry {
 public:
+    using LoadQueue = std::list<std::function<void(VulkanRenderer&)>>;
+
     struct DefaultTextures {
         TexturePtr baseColor;
         TexturePtr normal;
@@ -96,8 +98,8 @@ public:
         return addAsset(textures, path);
     }
 
-    void init();
-    void load(VulkanRenderer& vulkan);
+    void findAssets();
+    void init(VulkanRenderer& vulkan);
     bool isReady();
 
     const VoxelShapeCache& getVoxelShapeCache() const {
@@ -112,6 +114,10 @@ public:
             EXCEPTION("Default textures were not initialized");
         }
         return *defaultTextures;
+    }
+
+    const LoadQueue& getLoadQueue() const {
+        return loadQueue;
     }
 
 private:
@@ -134,7 +140,6 @@ private:
         Log::i("Registry", "Adding asset: '{}'", path);
         auto asset = std::make_shared<T>(path.stem().string(), path);
         assets.insert(asset->getName(), asset);
-        std::lock_guard<std::mutex> lock{loadMutex};
         loadQueue.emplace_back([=](VulkanRenderer& vulkan) {
             Log::i("Registry", "Loading asset: '{}'", path);
             asset->load(*this, vulkan);
@@ -151,7 +156,6 @@ private:
     Category<Image> images;
     Category<Model> models;
     std::vector<ModManifest> manifests;
-    std::mutex loadMutex;
-    std::list<std::function<void(VulkanRenderer&)>> loadQueue;
+    LoadQueue loadQueue;
 };
 } // namespace Engine

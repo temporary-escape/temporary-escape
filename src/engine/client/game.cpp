@@ -1,20 +1,20 @@
 #include "game.hpp"
+#include "../graphics/theme.hpp"
 #include "../utils/random.hpp"
 
 #define CMP "Game"
 
 using namespace Engine;
 
-Game::Game(const Config& config, VulkanRenderer& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
-           SkyboxGenerator& skyboxGenerator, Status& status) :
+Game::Game(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, FontFamily& font, Nuklear& nuklear,
+           SkyboxGenerator& skyboxGenerator) :
     config{config},
     vulkan{vulkan},
-    registry{registry},
     canvas{canvas},
     font{font},
+    nuklear{nuklear},
     skyboxGenerator{skyboxGenerator},
-    status{status},
-    nuklear{canvas, font.regular, 19.0f},
+    registry{config},
     serverCerts{} {
 }
 
@@ -36,7 +36,7 @@ void Game::update(float deltaTime) {
         view = viewBuild.get();
     }*/
 
-    if (client && viewSpace && client->getScene() != nullptr && view == nullptr) {
+    /*if (client && viewSpace && client->getScene() != nullptr && view == nullptr) {
         view = viewSpace.get();
     }
 
@@ -73,7 +73,7 @@ void Game::update(float deltaTime) {
         // Client event: sector data retrieved
         client->onSectorUpdated([this](SystemData& system) {
             // When we change sector we must recreate the skybox!
-            skyboxGenerator.updateSeed(/*system.seed*/ 987654321ULL);
+            skyboxGenerator.updateSeed(//system.seed 987654321ULL);
         });
 
         clientLoad = client->connect("localhost", config.serverPort);
@@ -118,17 +118,45 @@ void Game::update(float deltaTime) {
 
     if (view) {
         view->update(deltaTime);
-    }
+    }*/
 }
 
-void Game::render(const Vector2i& viewport, Renderer& renderer) {
-    if (view) {
-        view->render(viewport, renderer);
-    }
-}
+void Game::render(const Vector2i& viewport) {
+    auto vkb = vulkan.createCommandBuffer();
 
-void Game::renderCanvas(const Vector2i& viewport) {
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &vulkan.getSwapChainFramebuffer();
+    renderPassInfo.renderPass = &vulkan.getRenderPass();
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+
+    VkClearValue clearColor = {{{0.1f, 0.1f, 0.1f, 1.0f}}};
+    renderPassInfo.clearValues = {clearColor};
+
+    vkb.beginRenderPass(renderPassInfo);
+
     /*canvas.begin(viewport);
+    renderStatus(viewport);
+    canvas.end(vkb);*/
+
+    vkb.endRenderPass();
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb);
+    vulkan.dispose(std::move(vkb));
+
+    /*if (view) {
+        view->render(viewport, renderer);
+    }*/
+}
+
+/*void Game::renderCanvas(const Vector2i& viewport) {
+    canvas.begin(viewport);
 
     if (view) {
         view->renderCanvas(viewport, canvas);
@@ -138,39 +166,34 @@ void Game::renderCanvas(const Vector2i& viewport) {
         nuklear.end();
     }
 
-    canvas.end();*/
-}
+    canvas.end();
+}*/
 
 void Game::eventMouseMoved(const Vector2i& pos) {
-    nuklear.eventMouseMoved(pos);
     if (view) {
         view->eventMouseMoved(pos);
     }
 }
 
 void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    nuklear.eventMousePressed(pos, button);
     if (view) {
         view->eventMousePressed(pos, button);
     }
 }
 
 void Game::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    nuklear.eventMouseReleased(pos, button);
     if (view) {
         view->eventMouseReleased(pos, button);
     }
 }
 
 void Game::eventMouseScroll(const int xscroll, const int yscroll) {
-    nuklear.eventMouseScroll(xscroll, yscroll);
     if (view) {
         view->eventMouseScroll(xscroll, yscroll);
     }
 }
 
 void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    nuklear.eventKeyPressed(key, modifiers);
     if (view) {
         view->eventKeyPressed(key, modifiers);
     }
@@ -197,14 +220,12 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
 }
 
 void Game::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    nuklear.eventKeyReleased(key, modifiers);
     if (view) {
         view->eventKeyReleased(key, modifiers);
     }
 }
 
 void Game::eventCharTyped(const uint32_t code) {
-    nuklear.eventCharTyped(code);
     if (view) {
         view->eventCharTyped(code);
     }

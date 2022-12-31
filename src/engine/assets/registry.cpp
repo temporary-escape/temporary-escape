@@ -9,10 +9,10 @@ Registry* Registry::instance{nullptr};
 Registry::Registry(const Config& config) : config{config} {
     instance = this;
     voxelShapeCache = std::make_unique<VoxelShapeCache>(this->config);
-    init();
+    findAssets();
 }
 
-void Registry::load(VulkanRenderer& vulkan) {
+void Registry::init(VulkanRenderer& vulkan) {
     try {
         if (!atlas) {
             atlas = std::make_unique<ImageAtlas>(config, vulkan);
@@ -29,33 +29,16 @@ void Registry::load(VulkanRenderer& vulkan) {
                 createTextureOfColor(vulkan, Color4{0.0f, 0.5f, 0.5f, 1.0f}, "default_metallicRoughness");
             defaultTextures->normal = createTextureOfColor(vulkan, Color4{0.5f, 0.5f, 1.0f, 1.0f}, "default_normal");
         }
-
-        loadMutex.lock();
-        const auto t0 = std::chrono::system_clock::now();
-        while (!loadQueue.empty()) {
-            decltype(loadQueue)::value_type fn;
-            std::swap(fn, loadQueue.front());
-            loadQueue.pop_front();
-            loadMutex.unlock();
-            fn(vulkan);
-            loadMutex.lock();
-            const auto now = std::chrono::system_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - t0).count() > 10) {
-                break;
-            }
-        }
-        loadMutex.unlock();
     } catch (...) {
-        EXCEPTION_NESTED("Failed to load registry");
+        EXCEPTION_NESTED("Failed to init registry");
     }
 }
 
 bool Registry::isReady() {
-    std::lock_guard<std::mutex> lock{loadMutex};
     return loadQueue.empty();
 }
 
-void Registry::init() {
+void Registry::findAssets() {
     try {
         const std::vector<Path> paths = {config.assetsPath / "base"};
 

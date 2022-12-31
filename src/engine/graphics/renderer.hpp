@@ -3,11 +3,19 @@
 #include "../config.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
+#include "shader_brdf.hpp"
 #include "skybox.hpp"
 
 namespace Engine {
 class ENGINE_API Renderer {
 public:
+    using ShaderLoadQueue = std::list<std::function<void(const Config&, VulkanRenderer&)>>;
+
+    struct Shaders {
+        ShaderBrdf brdf;
+
+        ShaderLoadQueue createLoadQueue();
+    } shaders;
     /*struct Pipelines {
         VulkanPipeline brdf;
         VulkanPipeline pbr;

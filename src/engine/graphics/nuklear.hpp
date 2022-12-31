@@ -45,7 +45,7 @@ public:
         RightBottom = 0x04 | 0x20,
     };
 
-    explicit Nuklear(Canvas& canvas, const FontFace& fontFace, float fontSize);
+    explicit Nuklear(Canvas& canvas, const FontFamily& defaultFontFamily, int defaultFontSize);
     ~Nuklear();
 
     void begin(const Vector2i& viewport);
@@ -55,6 +55,8 @@ public:
     bool beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
     void endWindow();
 
+    void fontSize(int size);
+    void resetFont();
     void layoutDynamic(float height, int count);
     bool button(const std::string& text, TextAlign align = TextAlign::Center);
     void label(const std::string& text);
@@ -76,15 +78,22 @@ private:
     void applyTheme();
     void input();
     void render();
+    nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
     static inline const auto padding = 4.0f;
 
+    using FontSizeMap = std::unordered_map<int, nk_user_font>;
+    using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
+
     Canvas& canvas;
+    const FontFamily& defaultFontFamily;
+    int defaultFontSize;
     Vector2i lastViewportValue;
     std::unique_ptr<nk_context> ctx;
-    std::unique_ptr<nk_user_font> ctxFont;
+    FontFamilyMap fonts;
     std::vector<std::tuple<Vector2, Vector2>> windowsBounds;
     std::list<std::function<void()>> inputEvents;
+    nk_user_font* defaultFont;
 };
 
 inline Nuklear::Flags operator|(const Nuklear::WindowFlags a, const Nuklear::WindowFlags b) {

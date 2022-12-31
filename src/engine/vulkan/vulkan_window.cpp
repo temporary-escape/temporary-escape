@@ -255,6 +255,10 @@ void VulkanWindow::waitUntilValidFramebufferSize() {
     }
 }
 
+void VulkanWindow::closeWindow() {
+    glfwSetWindowShouldClose(window.get(), GL_TRUE);
+}
+
 void VulkanWindow::mouseMovedCallback(GLFWwindow* window, double x, double y) {
     auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
     self.mousePos = {static_cast<int>(x), static_cast<int>(y)};

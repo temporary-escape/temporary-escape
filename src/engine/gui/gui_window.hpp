@@ -23,6 +23,7 @@ public:
     void setWithBackground();
     void setNoScrollbar();
     void setDynamic();
+    void setFontSize(int size);
 
     bool isEnabled() const {
         return enabled;
@@ -37,5 +38,6 @@ protected:
     Vector2 size{100.0f, 100.0f};
     Vector2 pos{0.0f, 0.0f};
     Nuklear::Flags flags{0};
+    int fontSize{0};
 };
 } // namespace Engine

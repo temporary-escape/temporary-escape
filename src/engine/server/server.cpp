@@ -25,7 +25,7 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
     world{config, registry, db, *this, *this},
     generator{std::make_unique<GeneratorDefault>(config, world)},
     tickFlag{true},
-    //python{std::make_unique<Python>()},
+    // python{std::make_unique<Python>()},
     worker{4},
     commands{worker.strand()} {
 
@@ -35,23 +35,21 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
     HANDLE_REQUEST_VOID(MessagePingResponse);
 }
 
-Future<void> Server::load() {
-    return std::async([this]() {
-        try {
-            generator->generate(123456789ULL);
-            tickThread = std::thread(&Server::tick, this);
-            Log::i(CMP, "Universe has been generated and is ready");
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to generate the universe");
-        }
+void Server::load() {
+    try {
+        generator->generate(123456789ULL);
+        tickThread = std::thread(&Server::tick, this);
+        Log::i(CMP, "Universe has been generated and is ready");
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to generate the universe");
+    }
 
-        try {
-            Network::Server::start();
-            Log::i(CMP, "TCP server started");
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to start the server");
-        }
-    });
+    try {
+        Network::Server::start();
+        Log::i(CMP, "TCP server started");
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to start the server");
+    }
 }
 
 void Server::stop() {

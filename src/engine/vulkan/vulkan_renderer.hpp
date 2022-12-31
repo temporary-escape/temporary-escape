@@ -55,6 +55,9 @@ public:
     void generateMipMaps(VulkanTexture& texture);
 
     template <typename T> void dispose(T&& resource) {
+        if (!resource) {
+            return;
+        }
         disposables.at(getCurrentFrameNum()).push_back(std::make_shared<T>(std::forward<T>(resource)));
     }
 

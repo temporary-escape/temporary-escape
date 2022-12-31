@@ -30,7 +30,7 @@ public:
     explicit Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db);
     virtual ~Server();
 
-    Future<void> load();
+    void load();
     void stop();
     void tick();
 

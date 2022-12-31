@@ -14,6 +14,7 @@ public:
     void run();
     Vector2i getFramebufferSize();
     void waitUntilValidFramebufferSize();
+    void closeWindow();
 
 protected:
     virtual void onNextFrame() = 0;

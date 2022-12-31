@@ -27,13 +27,12 @@ struct ENGINE_API Status {
 
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, VulkanRenderer& vulkan, Registry& registry, Canvas& canvas, FontFamily& font,
-                  SkyboxGenerator& skyboxGenerator, Status& status);
+    explicit Game(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, FontFamily& font, Nuklear& nuklear,
+                  SkyboxGenerator& skyboxGenerator);
     virtual ~Game();
 
     void update(float deltaTime);
-    void render(const Vector2i& viewport, Renderer& renderer);
-    void renderCanvas(const Vector2i& viewport);
+    void render(const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
@@ -48,22 +47,18 @@ public:
     }
 
 private:
-    // void eventInitDone();
-
     const Config& config;
     VulkanRenderer& vulkan;
-    Registry& registry;
     Canvas& canvas;
     FontFamily& font;
+    Nuklear& nuklear;
     // Scene::Pipelines& scenePipelines;
     SkyboxGenerator& skyboxGenerator;
-    Status& status;
+    Registry registry;
     Stats stats;
     // bool shouldLoadShaders{false};
-    Nuklear nuklear;
     Server::Certs serverCerts;
 
-    std::unique_ptr<TransactionalDatabase> db;
     std::unique_ptr<Server> server;
     Future<void> serverLoad;
     std::unique_ptr<Client> client;

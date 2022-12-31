@@ -16,12 +16,14 @@ static float getTextWidth(const nk_handle handle, const float height, const char
     return font.getBounds({str, static_cast<size_t>(len)}, height).x;
 }
 
-Nuklear::Nuklear(Canvas& canvas, const FontFace& fontFace, float fontSize) :
-    canvas{canvas}, ctx{std::make_unique<nk_context>()}, ctxFont{std::make_unique<nk_user_font>()} {
-    ctxFont->height = fontSize;
-    ctxFont->width = &getTextWidth;
-    ctxFont->userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&fontFace));
-    nk_init_default(ctx.get(), ctxFont.get());
+Nuklear::Nuklear(Canvas& canvas, const FontFamily& defaultFontFamily, const int defaultFontSize) :
+    canvas{canvas},
+    defaultFontFamily{defaultFontFamily},
+    defaultFontSize{defaultFontSize},
+    ctx{std::make_unique<nk_context>()} {
+
+    defaultFont = &addFontFamily(defaultFontFamily, defaultFontSize);
+    nk_init_default(ctx.get(), defaultFont);
 
     applyTheme();
 }
@@ -30,9 +32,33 @@ Nuklear::~Nuklear() {
     nk_free(ctx.get());
 }
 
+void Nuklear::fontSize(const int size) {
+    nk_style_set_font(ctx.get(), &addFontFamily(defaultFontFamily, size));
+}
+
+void Nuklear::resetFont() {
+    nk_style_set_font(ctx.get(), defaultFont);
+}
+
+nk_user_font& Nuklear::addFontFamily(const FontFamily& fontFamily, int size) {
+    auto& fontSizes = fonts[&fontFamily];
+    auto it = fontSizes.find(size);
+
+    if (it == fontSizes.end()) {
+        it = fontSizes.insert(std::make_pair(size, nk_user_font{})).first;
+
+        it->second.height = static_cast<float>(size);
+        it->second.width = &getTextWidth;
+        it->second.userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&fontFamily));
+    }
+
+    return it->second;
+}
+
 void Nuklear::begin(const Vector2i& viewport) {
     lastViewportValue = viewport;
     windowsBounds.clear();
+    resetFont();
     input();
 }
 
@@ -87,10 +113,10 @@ void Nuklear::render() {
         }
         case NK_COMMAND_TEXT: {
             const auto c = reinterpret_cast<const struct nk_command_text*>(cmd);
-            auto& font = *static_cast<const FontFace*>(c->font->userdata.ptr);
+            auto& font = *static_cast<const FontFamily*>(c->font->userdata.ptr);
             canvas.color(asColor(c->foreground));
-            canvas.text(Vector2(c->x, static_cast<float>(c->y) + c->height / 1.25f), &c->string[0], font,
-                        c->font->height);
+            canvas.font(font.regular, c->font->height);
+            canvas.text(Vector2(c->x, static_cast<float>(c->y) + c->height / 1.25f), &c->string[0]);
             break;
         }
         case NK_COMMAND_RECT: {

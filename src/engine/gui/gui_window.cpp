@@ -10,10 +10,18 @@ void GuiWindow::draw(Nuklear& nuklear, const Vector2& viewport) {
         return;
     }
 
+    if (fontSize) {
+        nuklear.fontSize(fontSize);
+    }
+
     beforeDraw(viewport);
     if (nuklear.beginWindow(title, pos, size, flags)) {
         drawLayout(nuklear);
         nuklear.endWindow();
+    }
+
+    if (fontSize) {
+        nuklear.resetFont();
     }
 }
 
@@ -72,4 +80,8 @@ void GuiWindow::setNoScrollbar() {
 
 void GuiWindow::setDynamic() {
     flags = flags | Nuklear::WindowFlags::Dynamic;
+}
+
+void GuiWindow::setFontSize(const int size) {
+    fontSize = size;
 }

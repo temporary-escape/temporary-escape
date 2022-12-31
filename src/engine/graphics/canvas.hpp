@@ -15,9 +15,13 @@ public:
     void color(const Color4& value) {
         nextColor = value;
     }
+    void font(const FontFace& font, const int height) {
+        currentFontFace = &font;
+        currentFontHeight = height;
+    }
     void rect(const Vector2& pos, const Vector2& size);
     void rectOutline(const Vector2& pos, const Vector2& size, float thickness);
-    void text(const Vector2& pos, const std::string& text, const FontFace& font, float height);
+    void text(const Vector2& pos, const std::string& text);
     void image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture);
 
 private:
@@ -118,6 +122,8 @@ private:
     Vertex* allocate();
 
     VulkanRenderer& vulkan;
+    const FontFace* currentFontFace{nullptr};
+    int currentFontHeight{18};
     Vector2i lastViewport;
     VulkanPipeline pipeline;
     VulkanDescriptorSetLayout descriptorSetLayout;

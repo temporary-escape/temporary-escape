@@ -306,28 +306,6 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
     vkb.bindBuffers({{vbo.getCurrentBuffer(), 0}});
     vkb.bindIndexBuffer(ibo.getCurrentBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-    /*for (size_t i = 0; i < commandCount; i++) {
-        const auto& cmd = commands.at(i);
-
-        // Simple draw command
-        if (cmd.type == Command::Type::Draw) {
-            vkb.pushConstants(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int32_t), &cmd.draw.mode);
-
-            if (cmd.draw.texture) {
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
-                                    {{1, cmd.draw.texture}});
-            } else {
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
-                                    {{1, &defaultTexture}});
-            }
-            vkb.drawIndexed(cmd.draw.length, 1, cmd.draw.start, 0, 0);
-        }
-        // Scissor command
-        else if (cmd.type == Command::Type::Scissor) {
-            vkb.setScissor(cmd.scissor.pos, cmd.scissor.size);
-        }
-    }*/
-
     const auto flush = [&](Command& cmd) {
         // Simple draw command
         if (cmd.type == Command::Type::Draw) {
@@ -423,6 +401,7 @@ void Canvas::rect(const Vector2& pos, const Vector2& size) {
     auto& cmd = addDrawCommand();
     cmd.start = indexOffset;
     cmd.length = 6;
+    cmd.texture = nullptr;
 
     const auto dst = allocate();
 
@@ -475,7 +454,10 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const float th
     cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;*/
 }
 
-void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& font, const float height) {
+void Canvas::text(const Vector2& pos, const std::string& text) {
+    if (!currentFontFace || currentFontHeight == 0) {
+        return;
+    }
 
     size_t start = indexOffset;
 
@@ -485,11 +467,11 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
     size_t total = 0;
     auto pen = pos;
 
-    const auto scale = height / font.getSize();
+    const auto scale = static_cast<float>(currentFontHeight) / static_cast<float>(currentFontFace->getSize());
 
     while (it < end) {
         const auto code = utf8::next(it, end);
-        const auto& glyph = font.getGlyph(code);
+        const auto& glyph = currentFontFace->getGlyph(code);
         total++;
 
         const auto p = pen + Vector2{0.0f, glyph.ascend * scale};
@@ -519,7 +501,7 @@ void Canvas::text(const Vector2& pos, const std::string& text, const FontFace& f
     cmd.mode = 1;
     cmd.start = start;
     cmd.length = total * 6;
-    cmd.texture = &font.getTexture();
+    cmd.texture = &currentFontFace->getTexture();
 }
 
 void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture) {

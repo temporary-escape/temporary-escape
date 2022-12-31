@@ -5,6 +5,14 @@
 
 using namespace Engine;
 
+Renderer::ShaderLoadQueue Renderer::Shaders::createLoadQueue() {
+    return {
+        [this](const Config& config, VulkanRenderer& renderer) {
+            brdf = ShaderBrdf{config, renderer};
+        },
+    };
+}
+
 Renderer::Renderer(const Config& config, VulkanDevice& vulkan) : config{config}, vulkan{vulkan} {
     createGaussianKernel(15, 6.5);
     createSsaoNoise();
