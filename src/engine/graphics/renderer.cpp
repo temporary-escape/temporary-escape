@@ -10,11 +10,14 @@ Renderer::ShaderLoadQueue Renderer::Shaders::createLoadQueue() {
         [this](const Config& config, VulkanRenderer& renderer) {
             brdf = ShaderBrdf{config, renderer};
         },
+        [this](const Config& config, VulkanRenderer& renderer) {
+            componentGrid = ShaderComponentGrid{config, renderer};
+        },
     };
 }
 
 Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders) :
-    config{config}, vulkan{vulkan}, shaders{shaders} {
+    config{config}, vulkan{vulkan}, shaders{shaders}, lastViewportSize{config.windowWidth, config.windowHeight} {
     // createGaussianKernel(15, 6.5);
     // createSsaoNoise();
     // createSsaoSamples();
@@ -82,6 +85,36 @@ void Renderer::createRenderPasses() {
     if (!renderPasses.brdf.renderPass) {
         createRenderPassBrdf();
     }
+    createDepthTexture();
+    createRenderPassPbr();
+}
+
+VkFormat Renderer::findDepthFormat() {
+    return vulkan.findSupportedFormat(
+        {
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+        },
+        VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+void Renderer::createDepthTexture() {
+    renderPasses.depthFormat = findDepthFormat();
+
+    createAttachment(
+        // Render pass
+        renderPasses.depth,
+        // Size
+        lastViewportSize,
+        // Format
+        renderPasses.depthFormat,
+        // Usage
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    vulkan.transitionImageLayout(renderPasses.depth, VK_IMAGE_LAYOUT_UNDEFINED,
+                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void Renderer::createRenderPassBrdf() {
@@ -96,9 +129,7 @@ void Renderer::createRenderPassBrdf() {
         // Usage
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         // Aspect mask
-        VK_IMAGE_ASPECT_COLOR_BIT,
-        // Layout
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = VK_FORMAT_R16G16_SFLOAT;
@@ -151,9 +182,178 @@ void Renderer::createRenderPassBrdf() {
     renderPasses.brdf.fbo = vulkan.createFramebuffer(framebufferInfo);
 }
 
+void Renderer::createRenderPassPbr() {
+    // Albedo
+    renderPasses.pbr.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.pbr.textures.back(),
+        // Size
+        lastViewportSize,
+        // Format
+        VK_FORMAT_R8G8B8A8_UNORM,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT);
+
+    // Emissive
+    renderPasses.pbr.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.pbr.textures.back(),
+        // Size
+        lastViewportSize,
+        // Format
+        VK_FORMAT_R8G8B8A8_UNORM,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT);
+
+    // Metallic + Roughness + AO
+    renderPasses.pbr.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.pbr.textures.back(),
+        // Size
+        lastViewportSize,
+        // Format
+        VK_FORMAT_R8G8B8A8_UNORM,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT);
+
+    // Normal
+    renderPasses.pbr.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.pbr.textures.back(),
+        // Size
+        lastViewportSize,
+        // Format
+        VK_FORMAT_R8G8B8A8_UNORM,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT);
+
+    std::vector<VkAttachmentDescription> attachments{5};
+    attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    attachments[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    attachments[2].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    attachments[3].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    attachments[4].format = renderPasses.depthFormat;
+    attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[4].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VulkanRenderPass::CreateInfo renderPassInfo{};
+    renderPassInfo.attachments = attachments;
+
+    std::array<VkAttachmentReference, 4> colorAttachmentRefs{};
+    VkAttachmentReference depthAttachmentRef{};
+
+    colorAttachmentRefs[0].attachment = 0;
+    colorAttachmentRefs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    colorAttachmentRefs[1].attachment = 1;
+    colorAttachmentRefs[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    colorAttachmentRefs[2].attachment = 2;
+    colorAttachmentRefs[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    colorAttachmentRefs[3].attachment = 3;
+    colorAttachmentRefs[3].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    depthAttachmentRef.attachment = 4;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // Use subpass dependencies for attachment layout transitions
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments = colorAttachmentRefs.data();
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    renderPassInfo.subPasses = {subpass};
+    renderPassInfo.dependencies = {dependency};
+
+    renderPasses.pbr.renderPass = vulkan.createRenderPass(renderPassInfo);
+
+    std::array<VkImageView, 5> attachmentViews = {
+        renderPasses.pbr.textures.at(0).getImageView(),
+        renderPasses.pbr.textures.at(1).getImageView(),
+        renderPasses.pbr.textures.at(2).getImageView(),
+        renderPasses.pbr.textures.at(3).getImageView(),
+        renderPasses.depth.getImageView(),
+    };
+
+    VulkanFramebuffer::CreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPasses.pbr.renderPass.getHandle();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.size());
+    framebufferInfo.pAttachments = attachmentViews.data();
+    framebufferInfo.width = lastViewportSize.x;
+    framebufferInfo.height = lastViewportSize.y;
+    framebufferInfo.layers = 1;
+
+    renderPasses.pbr.fbo = vulkan.createFramebuffer(framebufferInfo);
+
+    VulkanSemaphore::CreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    renderPasses.pbr.semaphore = vulkan.createSemaphore(semaphoreInfo);
+}
+
 void Renderer::createAttachment(VulkanTexture& texture, const Vector2i& size, const VkFormat format,
-                                const VkImageUsageFlags usage, const VkImageAspectFlagBits aspectMask,
-                                const VkImageLayout layout) {
+                                const VkImageUsageFlags usage, const VkImageAspectFlags aspectMask) {
 
     VulkanTexture::CreateInfo textureInfo{};
     textureInfo.image.format = format;
@@ -426,17 +626,15 @@ void Renderer::renderBrdf() {
     }
 }*/
 
-/*void Renderer::begin() {
-    vulkan.setViewport({0, 0}, gBuffer.size);
-    vulkan.setScissor({0, 0}, gBuffer.size);
-    vulkan.setViewportState();
-}*/
-
-/*void Renderer::end() {
-    // vulkan.endRenderPass();
-}*/
-
 void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+    if (viewport != lastViewportSize) {
+        lastViewportSize = viewport;
+        vulkan.waitDeviceIdle();
+        createRenderPasses();
+    }
+
+    renderPassPbr(viewport, scene, options);
+
     auto vkb = vulkan.createCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -462,7 +660,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     vkb.endRenderPass();
     vkb.end();
 
-    vulkan.submitPresentCommandBuffer(vkb);
+    vulkan.submitPresentCommandBuffer(vkb, &renderPasses.pbr.semaphore);
     vulkan.dispose(std::move(vkb));
 
     /*// ======================================== PBR scene ========================================
@@ -646,6 +844,33 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     } catch (...) {
         EXCEPTION_NESTED("Something went wrong during renderFwd()");
     }*/
+}
+
+void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Renderer::Options& options) {
+    /*auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &vulkan.getSwapChainFramebuffer();
+    renderPassInfo.renderPass = &vulkan.getRenderPass();
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+
+    VkClearValue clearColor = {{{0.1f, 0.1f, 0.1f, 1.0f}}};
+    renderPassInfo.clearValues = {clearColor};
+
+    vkb.beginRenderPass(renderPassInfo);
+
+    vkb.endRenderPass();
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb, vulkan.getCurrentSyncObject().getImageAvailableSemaphore(),
+                               renderPasses.pbr.semaphore);
+    vulkan.dispose(std::move(vkb));*/
 }
 
 /*void Renderer::renderPassFront(bool clear) {

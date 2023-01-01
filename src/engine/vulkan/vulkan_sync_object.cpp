@@ -8,13 +8,14 @@ VulkanSyncObject::VulkanSyncObject(VulkanDevice& device) : device{device.getDevi
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
+    imageAvailableSemaphore = VulkanSemaphore{device, semaphoreInfo};
+    renderFinishedSemaphore = VulkanSemaphore{device, semaphoreInfo};
+
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+    if (vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
 
         destroy();
         EXCEPTION("Failed to create synchronization objects for a frame!");
@@ -45,13 +46,11 @@ void VulkanSyncObject::swap(VulkanSyncObject& other) noexcept {
 
 void VulkanSyncObject::destroy() {
     if (imageAvailableSemaphore) {
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        imageAvailableSemaphore = VK_NULL_HANDLE;
+        imageAvailableSemaphore.destroy();
     }
 
     if (renderFinishedSemaphore) {
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        renderFinishedSemaphore = VK_NULL_HANDLE;
+        renderFinishedSemaphore.destroy();
     }
 
     if (inFlightFence) {

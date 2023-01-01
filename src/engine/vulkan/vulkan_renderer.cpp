@@ -96,8 +96,8 @@ void VulkanRenderer::onNextFrame() {
 
     // Grab the next swap image index
     const auto result = vkAcquireNextImageKHR(getDevice(), swapChain.getHandle(), UINT64_MAX,
-                                              getCurrentSyncObject().getImageAvailableSemaphore(), VK_NULL_HANDLE,
-                                              &swapChainFramebufferIndex);
+                                              getCurrentSyncObject().getImageAvailableSemaphore().getHandle(),
+                                              VK_NULL_HANDLE, &swapChainFramebufferIndex);
 
     // Do we need to recreate the swap chain?
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -170,6 +170,10 @@ VulkanSyncObject VulkanRenderer::createSyncObject() {
     return VulkanSyncObject{*this};
 }
 
+VulkanSemaphore VulkanRenderer::createSemaphore(const VulkanSemaphore::CreateInfo& createInfo) {
+    return VulkanSemaphore{*this, createInfo};
+}
+
 VulkanCommandPool VulkanRenderer::createCommandPool(const VulkanCommandPool::CreateInfo& createInfo) {
     return VulkanCommandPool{*this, createInfo};
 }
@@ -212,11 +216,32 @@ void VulkanRenderer::waitDeviceIdle() {
     vkDeviceWaitIdle(getDevice());
 }
 
-void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
+void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer,
+                                         const VkPipelineStageFlags waitStages, VulkanSemaphore& wait,
+                                         VulkanSemaphore& signal) {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
+
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &wait.getHandle();
+    submitInfo.pWaitDstStageMask = &waitStages;
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &signal.getHandle();
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to submit command buffer");
+    }
+}
+
+void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {getCurrentSyncObject().getImageAvailableSemaphore()};
+    VkSemaphore waitSemaphores[] = {wait ? wait->getHandle()
+                                         : getCurrentSyncObject().getImageAvailableSemaphore().getHandle()};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -224,7 +249,7 @@ void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& comma
 
     const auto commandBufferHandle = commandBuffer.getHandle();
 
-    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore()};
+    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore().getHandle()};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -240,7 +265,7 @@ void VulkanRenderer::submitPresentQueue() {
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore()};
+    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore().getHandle()};
 
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
@@ -387,6 +412,15 @@ void VulkanRenderer::transitionImageLayout(VulkanTexture& texture, const VkImage
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+               newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask =
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     } else {
         EXCEPTION("Unsupported layout transition during image layout transition!");
     }

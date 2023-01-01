@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils/path.hpp"
-#include "vulkan_types.hpp"
+#include "vulkan_semaphore.hpp"
 
 namespace Engine {
 class ENGINE_API VulkanDevice;
@@ -20,11 +20,11 @@ public:
     void reset();
     void wait();
 
-    VkSemaphore getImageAvailableSemaphore() const {
+    const VulkanSemaphore& getImageAvailableSemaphore() const {
         return imageAvailableSemaphore;
     }
 
-    VkSemaphore getRenderFinishedSemaphore() const {
+    const VulkanSemaphore& getRenderFinishedSemaphore() const {
         return renderFinishedSemaphore;
     }
 
@@ -44,8 +44,8 @@ public:
 
 private:
     VkDevice device{VK_NULL_HANDLE};
-    VkSemaphore imageAvailableSemaphore{VK_NULL_HANDLE};
-    VkSemaphore renderFinishedSemaphore{VK_NULL_HANDLE};
+    VulkanSemaphore imageAvailableSemaphore;
+    VulkanSemaphore renderFinishedSemaphore;
     VkFence inFlightFence{VK_NULL_HANDLE};
 };
 } // namespace Engine

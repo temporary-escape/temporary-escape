@@ -4,6 +4,7 @@
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "shader_brdf.hpp"
+#include "shader_component_grid.hpp"
 #include "skybox.hpp"
 
 namespace Engine {
@@ -13,6 +14,7 @@ public:
 
     struct Shaders {
         ShaderBrdf brdf;
+        ShaderComponentGrid componentGrid;
 
         ShaderLoadQueue createLoadQueue();
     };
@@ -36,7 +38,6 @@ public:
     explicit Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders);
     ~Renderer();
 
-    void update(const Vector2i& viewport);
     void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
 
     VulkanRenderer& getVulkan() {
@@ -55,17 +56,22 @@ private:
         std::vector<VulkanTexture> textures;
         VulkanFramebuffer fbo;
         VulkanRenderPass renderPass;
+        VulkanSemaphore semaphore;
     };
 
     void createMeshes();
     void createFullScreenQuad();
     void createRenderPasses();
     void createRenderPassBrdf();
+    void createRenderPassPbr();
     void finalizeShaders();
+    void createDepthTexture();
     void createAttachment(VulkanTexture& texture, const Vector2i& size, VkFormat format, VkImageUsageFlags usage,
-                          VkImageAspectFlagBits aspectMask, VkImageLayout layout);
+                          VkImageAspectFlags aspectMask);
     void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
     void renderBrdf();
+    void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
+    VkFormat findDepthFormat();
 
     // static constexpr size_t maxDirectionalLights = 4;
 
@@ -96,9 +102,13 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     Shaders& shaders;
+    Vector2i lastViewportSize;
 
     struct {
+        VulkanTexture depth;
+        VkFormat depthFormat;
         RenderPass brdf;
+        RenderPass pbr;
     } renderPasses;
 
     struct {

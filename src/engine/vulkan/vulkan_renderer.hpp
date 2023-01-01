@@ -12,6 +12,7 @@
 #include "vulkan_framebuffer.hpp"
 #include "vulkan_pipeline.hpp"
 #include "vulkan_render_pass.hpp"
+#include "vulkan_semaphore.hpp"
 #include "vulkan_shader_module.hpp"
 #include "vulkan_swap_chain.hpp"
 #include "vulkan_sync_object.hpp"
@@ -32,6 +33,7 @@ public:
     VulkanRenderPass createRenderPass(const VulkanRenderPass::CreateInfo& createInfo);
     VulkanFramebuffer createFramebuffer(const VulkanFramebuffer::CreateInfo& createInfo);
     VulkanSyncObject createSyncObject();
+    VulkanSemaphore createSemaphore(const VulkanSemaphore::CreateInfo& createInfo);
     VulkanCommandPool createCommandPool(const VulkanCommandPool::CreateInfo& createInfo);
     VulkanCommandBuffer createCommandBuffer();
     VulkanBuffer createBuffer(const VulkanBuffer::CreateInfo& createInfo);
@@ -44,7 +46,9 @@ public:
     void waitDeviceIdle();
     void waitQueueIdle();
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer);
-    void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer);
+    void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer, VkPipelineStageFlags waitStages,
+                             VulkanSemaphore& wait, VulkanSemaphore& signal);
+    void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait = nullptr);
     void submitPresentQueue();
     void recreateSwapChain();
     void copyDataToBuffer(VulkanBuffer& buffer, const void* data, size_t size);

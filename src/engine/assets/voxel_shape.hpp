@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../graphics/shader_component_grid.hpp"
 #include "../library.hpp"
 #include "../math/vector.hpp"
 #include "../utils/yaml.hpp"
@@ -13,12 +14,7 @@ struct ENGINE_API VoxelShape {
         Vector3 normal;
     };
 
-    struct VertexFinal {
-        Vector3 position;
-        Vector3 normal;
-        Vector2 texCoords;
-        Vector4 tangent;
-    };
+    using VertexFinal = ShaderComponentGrid::Vertex;
 
     static_assert(sizeof(VertexCached) == sizeof(float) * 6, "struct Vertex must be tightly packed");
     static_assert(sizeof(VertexFinal) == sizeof(float) * 12, "struct VertexFinal must be tightly packed");

@@ -24,6 +24,8 @@ public:
     }
 
     VkFormatProperties getPhysicalDeviceFormatProperties(VkFormat format);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+                                 VkFormatFeatureFlags features);
 
 private:
     void destroy();
