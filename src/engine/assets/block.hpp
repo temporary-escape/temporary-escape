@@ -9,9 +9,6 @@ namespace Engine {
 class ENGINE_API Block : public Asset {
 public:
     struct Definition {
-        std::string title;
-        int level;
-        std::string category;
         std::vector<VoxelShape::Type> shapes;
 
         struct TextureDefinition {
@@ -35,19 +32,11 @@ public:
 
         std::vector<MaterialDefinition> materials;
 
-        YAML_DEFINE(title, level, category, shapes, materials);
+        YAML_DEFINE(shapes, materials);
     };
 
     explicit Block(std::string name, Path path);
     void load(Registry& registry, VulkanRenderer& vulkan) override;
-
-    [[nodiscard]] const std::string& getTitle() const {
-        return definition.title;
-    }
-
-    [[nodiscard]] const std::string& getCategory() const {
-        return definition.category;
-    }
 
     [[nodiscard]] const Material& getMaterialForSide(const VoxelShape::Face side) const {
         const auto* ptr = shapeSideToMaterial.at(side);

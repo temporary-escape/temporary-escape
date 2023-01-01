@@ -42,7 +42,9 @@ public:
     VulkanTexture createTexture(const VulkanTexture::CreateInfo& createInfo);
 
     void waitDeviceIdle();
+    void waitQueueIdle();
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer);
+    void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer);
     void submitPresentQueue();
     void recreateSwapChain();
     void copyDataToBuffer(VulkanBuffer& buffer, const void* data, size_t size);

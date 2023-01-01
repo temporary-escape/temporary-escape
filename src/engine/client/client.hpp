@@ -23,10 +23,10 @@ struct PlayerLocalProfile {
 
 class ENGINE_API Client : public Network::Client {
 public:
-    explicit Client(const Config& config, Registry& registry, Stats& stats, const Path& profilePath);
+    explicit Client(const Config& config, Registry& registry, const PlayerLocalProfile& localProfile);
     virtual ~Client();
 
-    Future<void> connect(const std::string& address, int port);
+    void connect(const std::string& address, int port);
     void update();
     void stop();
 
@@ -63,8 +63,7 @@ private:
 
 private:
     Registry& registry;
-    Stats& stats;
-    PlayerLocalProfile localProfile;
+    const PlayerLocalProfile& localProfile;
     std::string playerId;
     PlayerLocationData playerLocation;
 

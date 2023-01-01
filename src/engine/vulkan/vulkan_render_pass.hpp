@@ -11,6 +11,7 @@ public:
     struct CreateInfo {
         std::vector<VkAttachmentDescription> attachments;
         std::vector<VkSubpassDescription> subPasses;
+        std::vector<VkSubpassDependency> dependencies;
     };
 
     VulkanRenderPass() = default;

@@ -10,7 +10,12 @@
 #include <queue>
 
 namespace Engine {
-class Application : public VulkanRenderer {
+struct ENGINE_API Status {
+    std::string message{""};
+    float value{0.0f};
+};
+
+class ENGINE_API Application : public VulkanRenderer {
 public:
     explicit Application(const Config& config);
     virtual ~Application();
@@ -30,7 +35,10 @@ public:
 
 private:
     void renderStatus(const Vector2i& viewport);
+    void checkForClientScene();
+    void loadAssets();
     void createRegistry();
+    void createRenderer();
     void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
     void compileShaders();
     void compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next);
@@ -44,14 +52,13 @@ private:
     // Renderer::Pipelines rendererPipelines;
     // SkyboxGenerator::Pipelines skyboxGeneratorPipelines;
     // Scene::Pipelines scenePipelines;
-    Renderer renderer;
+    Renderer::Shaders shaders;
+    Renderer::ShaderLoadQueue shaderLoadQueue;
     SkyboxGenerator skyboxGenerator;
     Canvas canvas;
     FontFamily font;
     Nuklear nuklear;
     Status status;
-    Renderer::Shaders shaders;
-    Renderer::ShaderLoadQueue shaderLoadQueue;
 
     struct {
         GuiMainMenu mainMenu;
@@ -62,6 +69,9 @@ private:
     std::unique_ptr<TransactionalDatabase> db;
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
+    std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<Client> client;
+    PlayerLocalProfile playerLocalProfile;
 
     std::future<std::function<void()>> future;
     std::promise<std::function<void()>> promise;

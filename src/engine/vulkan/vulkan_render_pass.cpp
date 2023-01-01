@@ -11,6 +11,8 @@ VulkanRenderPass::VulkanRenderPass(VulkanDevice& device, const CreateInfo& creat
     renderPassInfo.pAttachments = createInfo.attachments.data();
     renderPassInfo.subpassCount = static_cast<uint32_t>(createInfo.subPasses.size());
     renderPassInfo.pSubpasses = createInfo.subPasses.data();
+    renderPassInfo.dependencyCount = static_cast<uint32_t>(createInfo.dependencies.size());
+    renderPassInfo.pDependencies = createInfo.dependencies.data();
 
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         EXCEPTION("Failed to create render pass!");

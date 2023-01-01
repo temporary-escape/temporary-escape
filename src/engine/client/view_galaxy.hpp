@@ -16,13 +16,13 @@ class Client;
 
 class ViewGalaxy : public View {
 public:
-    explicit ViewGalaxy(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client);
+    explicit ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client);
     ~ViewGalaxy() = default;
 
     void update(float deltaTime) override;
-    void render(const Vector2i& viewport, Renderer& renderer) override;
-    void renderCanvas(const Vector2i& viewport, Canvas& canvas) override;
-    void renderGui(const Vector2i& viewport, Nuklear& nuklear) override;
+    void render(const Vector2i& viewport) override;
+    void renderCanvas(const Vector2i& viewport) override;
+    void renderGui(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -49,6 +49,7 @@ private:
     const SystemData* rayCast(const Vector2& mousePos);
 
     const Config& config;
+    Renderer& renderer;
     Registry& registry;
     Client& client;
     Skybox skybox;

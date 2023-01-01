@@ -12,9 +12,9 @@ public:
     virtual ~View() = default;
 
     virtual void update(float deltaTime) = 0;
-    virtual void render(const Vector2i& viewport, Renderer& renderer) = 0;
-    virtual void renderCanvas(const Vector2i& viewport, Canvas& canvas) = 0;
-    virtual void renderGui(const Vector2i& viewport, Nuklear& nuklear) = 0;
+    virtual void render(const Vector2i& viewport) = 0;
+    virtual void renderCanvas(const Vector2i& viewport) = 0;
+    virtual void renderGui(const Vector2i& viewport) = 0;
     virtual void onEnter() = 0;
     virtual void onExit() = 0;
 };

@@ -10,11 +10,12 @@ using namespace Engine;
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{24.0f, 24.0f};
 
-ViewGalaxy::ViewGalaxy(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client) :
+ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client) :
     config{config},
+    renderer{renderer},
     registry{registry},
     client{client},
-    skybox{vulkan, Color4{0.1f, 0.1f, 0.1f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
     scene{&registry.getVoxelShapeCache()} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
@@ -42,27 +43,27 @@ void ViewGalaxy::update(const float deltaTime) {
     scene.update(deltaTime);
 }
 
-void ViewGalaxy::render(const Vector2i& viewport, Renderer& renderer) {
-    Renderer::Options options{};
+void ViewGalaxy::render(const Vector2i& viewport) {
+    /*Renderer::Options options{};
     options.blurStrength = 0.0f;
     options.exposure = 1.0f;
-    renderer.render(viewport, scene, skybox, options);
+    renderer.render(viewport, scene, skybox, options);*/
 }
 
-void ViewGalaxy::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
-    if (input.hover != nullptr) {
+void ViewGalaxy::renderCanvas(const Vector2i& viewport) {
+    /*if (input.hover != nullptr) {
         auto pos = camera->worldToScreen(Vector3{input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
         canvas.color(Theme::primary);
         canvas.rectOutline(pos - systemStarSelectable / 2.0f, systemStarSelectable, 1.0f);
-    }
+    }*/
 }
 
-void ViewGalaxy::renderGui(const Vector2i& viewport, Nuklear& nuklear) {
-    gui.modalLoading.setEnabled(loading);
+void ViewGalaxy::renderGui(const Vector2i& viewport) {
+    /*gui.modalLoading.setEnabled(loading);
     gui.modalLoading.setProgress(loadingValue);
 
     nuklear.draw(gui.modalLoading);
-    nuklear.draw(gui.contextMenu);
+    nuklear.draw(gui.contextMenu);*/
 }
 
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {

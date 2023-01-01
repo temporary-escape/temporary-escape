@@ -121,10 +121,14 @@ void VulkanRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
 
     // commandBuffer.start(beginInfo);
 
-    render(viewport, deltaTime);
-
+    try {
+        render(viewport, deltaTime);
+    } catch (...) {
+        waitDeviceIdle();
+        EXCEPTION_NESTED("Exception thrown during render");
+    }
     // commandBuffer.end();
-    // submitCommandBuffer(commandBuffer);
+    // submitPresentCommandBuffer(commandBuffer);
 
     submitPresentQueue();
 
@@ -208,7 +212,7 @@ void VulkanRenderer::waitDeviceIdle() {
     vkDeviceWaitIdle(getDevice());
 }
 
-void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
+void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -397,11 +401,28 @@ void VulkanRenderer::transitionImageLayout(VulkanTexture& texture, const VkImage
     submitInfo.pCommandBuffers = &transferCommandBuffer.getHandle();
 
     if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-        EXCEPTION("Failed to upload buffer data, submit error");
+        EXCEPTION("Failed to transition image layout, submit error");
     }
 
     if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
+        EXCEPTION("Failed to transition image layout, wait queue error");
+    }
+}
+
+void VulkanRenderer::waitQueueIdle() {
+    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
         EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
+}
+
+void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to submit command buffer");
     }
 }
 

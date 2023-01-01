@@ -9,10 +9,8 @@ using namespace Engine;
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
 
-Client::Client(const Config& config, Registry& registry, Stats& stats, const Path& profilePath) :
-    registry{registry}, stats{stats} {
-
-    localProfile.fromYaml(profilePath);
+Client::Client(const Config& config, Registry& registry, const PlayerLocalProfile& localProfile) :
+    registry{registry}, localProfile{localProfile} {
 
     Network::Client::start();
 
@@ -28,23 +26,21 @@ void Client::stop() {
     Network::Client::stop();
 }
 
-Future<void> Client::connect(const std::string& address, const int port) {
-    return std::async([this, address, port]() {
-        Log::i(CMP, "Connecting to: {} port: {}", address, port);
-        Network::Client::connect(address, port);
+void Client::connect(const std::string& address, const int port) {
+    Log::i(CMP, "Connecting to: {} port: {}", address, port);
+    Network::Client::connect(address, port);
 
-        Log::i(CMP, "Connected!");
+    Log::i(CMP, "Connected!");
 
-        auto promise = std::make_shared<Promise<void>>();
-        fetchModInfo(promise);
-        auto future = promise->future();
+    auto promise = std::make_shared<Promise<void>>();
+    fetchModInfo(promise);
+    auto future = promise->future();
 
-        if (future.waitFor(std::chrono::milliseconds(3000)) != std::future_status::ready) {
-            EXCEPTION("Login timeout");
-        }
+    if (future.waitFor(std::chrono::milliseconds(3000)) != std::future_status::ready) {
+        EXCEPTION("Login timeout");
+    }
 
-        future.get();
-    });
+    future.get();
 }
 
 void Client::fetchModInfo(std::shared_ptr<Promise<void>> promise) {

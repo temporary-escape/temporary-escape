@@ -6,14 +6,14 @@
 
 using namespace Engine;
 
-ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, Registry& registry, Skybox& skybox, Client& client) :
-    config{config}, registry{registry}, skyboxSystem{skybox}, client{client} {
+ViewSpace::ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client) :
+    config{config}, renderer{renderer}, registry{registry}, skyboxSystem{skybox}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {
 }
 
-void ViewSpace::render(const Vector2i& viewport, Renderer& renderer) {
+void ViewSpace::render(const Vector2i& viewport) {
     auto scene = client.getScene();
     if (scene) {
         Renderer::Options options{};
@@ -22,10 +22,10 @@ void ViewSpace::render(const Vector2i& viewport, Renderer& renderer) {
     }
 }
 
-void ViewSpace::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
+void ViewSpace::renderCanvas(const Vector2i& viewport) {
 }
 
-void ViewSpace::renderGui(const Vector2i& viewport, Nuklear& nuklear) {
+void ViewSpace::renderGui(const Vector2i& viewport) {
 }
 
 void ViewSpace::onEnter() {

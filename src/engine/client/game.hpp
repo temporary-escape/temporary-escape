@@ -8,6 +8,7 @@
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
+#include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
 #include "../server/server.hpp"
 #include "client.hpp"
@@ -20,15 +21,10 @@
 namespace Engine {
 class ENGINE_API TransactionalDatabase;
 
-struct ENGINE_API Status {
-    std::string message{"Default message"};
-    float value{1.0f};
-};
-
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, FontFamily& font, Nuklear& nuklear,
-                  SkyboxGenerator& skyboxGenerator);
+    explicit Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear,
+                  SkyboxGenerator& skyboxGenerator, Registry& registry, Client& client);
     virtual ~Game();
 
     void update(float deltaTime);
@@ -42,38 +38,21 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventCharTyped(uint32_t code) override;
 
-    bool hasView() const {
-        return view != nullptr;
-    }
-
 private:
     const Config& config;
-    VulkanRenderer& vulkan;
+    Renderer& renderer;
     Canvas& canvas;
-    FontFamily& font;
     Nuklear& nuklear;
-    // Scene::Pipelines& scenePipelines;
     SkyboxGenerator& skyboxGenerator;
-    Registry registry;
+    Registry& registry;
+    Client& client;
     Stats stats;
-    // bool shouldLoadShaders{false};
-    Server::Certs serverCerts;
+    Skybox skybox;
 
-    std::unique_ptr<Server> server;
-    Future<void> serverLoad;
-    std::unique_ptr<Client> client;
-    Future<void> clientLoad;
-    // std::unique_ptr<Registry> registry;
-    // std::unique_ptr<AsyncTask> registryInit;
-    // bool registryInitFinished{false};
-    // bool registryLoadFinished{false};
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;
     std::unique_ptr<ViewGalaxy> viewGalaxy;
     std::unique_ptr<ViewSystem> viewSystem;
     View* view{nullptr};
-    // std::string statusText;
-    // float statusValue{0.0f};
-    // bool viewReady{false};
 };
 } // namespace Engine

@@ -5,10 +5,11 @@
 
 using namespace Engine;
 
-ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, Registry& registry) :
+ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry) :
     config{config},
+    renderer{renderer},
     registry{registry},
-    skybox{vulkan, Color4{0.03f, 0.03f, 0.03f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}},
     scene{&registry.getVoxelShapeCache()} {
 
     // auto skybox = std::make_shared<Entity>();
@@ -65,7 +66,7 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, Registry& reg
 }
 
 void ViewBuild::update(const float deltaTime) {
-    auto grid = entityShip->getComponent<ComponentGrid>();
+    /*auto grid = entityShip->getComponent<ComponentGrid>();
 
     const auto [eyes, worldPos] = scene.screenToWorld(raycastScreenPos, 10.0f);
     raycastResult = grid->rayCast(eyes, worldPos);
@@ -77,16 +78,16 @@ void ViewBuild::update(const float deltaTime) {
         entityHelperAdd->setVisible(false);
     }
 
-    scene.update(deltaTime);
+    scene.update(deltaTime);*/
 }
 
-void ViewBuild::render(const Vector2i& viewport, Renderer& renderer) {
-    Renderer::Options options{};
+void ViewBuild::render(const Vector2i& viewport) {
+    /*Renderer::Options options{};
     options.blurStrength = 0.2f;
-    renderer.render(viewport, scene, skybox, options);
+    renderer.render(viewport, scene, skybox, options);*/
 }
 
-void ViewBuild::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
+void ViewBuild::renderCanvas(const Vector2i& viewport) {
     // canvas.rect({0.0f, 0.0f}, {32.0f, 32.0f}, Color4{1.0f, 0.0f, 0.0f, 1.0f});
     // canvas.text({50.0f, 50.0f}, "Hello World! qgWQ_Ap.", font.regular, 10.5f, Color4{1.0f});
 
@@ -95,7 +96,7 @@ void ViewBuild::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
     nuklear.end();*/
 }
 
-void ViewBuild::renderGui(const Vector2i& viewport, Nuklear& nuklear) {
+void ViewBuild::renderGui(const Vector2i& viewport) {
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {

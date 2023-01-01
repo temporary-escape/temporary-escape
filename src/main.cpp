@@ -243,7 +243,7 @@ public:
 
         cmd.end();
 
-        submitCommandBuffer(cmd);
+        submitPresentCommandBuffer(cmd);
     }
 
     void eventMouseMoved(const Vector2i& pos) override {
@@ -288,10 +288,13 @@ int main(int argc, char** argv) {
     const auto defaultRoot = std::filesystem::absolute(getExecutablePath() / ".." / "..");
     const auto defaultUserData = getAppDataPath();
 
+    Config config{};
     CLI::App parser{"Temporary Escape"};
 
     Path rootPath;
     parser.add_option("--root", rootPath, "Root directory")->check(CLI::ExistingDirectory)->default_val(defaultRoot);
+    parser.add_option("--width", config.windowWidth, "Window width");
+    parser.add_option("--height", config.windowHeight, "Window height");
 
     CLI11_PARSE(parser, argc, argv);
 
@@ -335,7 +338,6 @@ int main(int argc, char** argv) {
         Log::i("main", "Log file location: '{}'", logPath.string());
 
         rootPath = std::filesystem::absolute(rootPath);
-        Config config{};
         config.assetsPath = rootPath / "assets";
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";

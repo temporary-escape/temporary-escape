@@ -50,11 +50,12 @@ static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, 
     return lines;
 }
 
-ViewSystem::ViewSystem(const Config& config, VulkanRenderer& vulkan, Registry& registry, Client& client) :
+ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client) :
     config{config},
+    renderer{renderer},
     registry{registry},
     client{client},
-    skybox{vulkan, Color4{0.1f, 0.1f, 0.1f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
     scene{&registry.getVoxelShapeCache()} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
@@ -83,27 +84,27 @@ void ViewSystem::update(const float deltaTime) {
     scene.update(deltaTime);
 }
 
-void ViewSystem::render(const Vector2i& viewport, Renderer& renderer) {
-    Renderer::Options options{};
+void ViewSystem::render(const Vector2i& viewport) {
+    /*Renderer::Options options{};
     options.blurStrength = 0.0f;
     options.exposure = 1.0f;
-    renderer.render(viewport, scene, skybox, options);
+    renderer.render(viewport, scene, skybox, options);*/
 }
 
-void ViewSystem::renderCanvas(const Vector2i& viewport, Canvas& canvas) {
-    if (input.hover != nullptr) {
+void ViewSystem::renderCanvas(const Vector2i& viewport) {
+    /*if (input.hover != nullptr) {
         auto pos = camera->worldToScreen(Vector3{input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
         canvas.color(Theme::primary);
         canvas.rectOutline(pos - systemBodySelectable / 2.0f, systemBodySelectable, 1.0f);
-    }
+    }*/
 }
 
-void ViewSystem::renderGui(const Vector2i& viewport, Nuklear& nuklear) {
-    gui.modalLoading.setEnabled(loading);
+void ViewSystem::renderGui(const Vector2i& viewport) {
+    /*gui.modalLoading.setEnabled(loading);
     gui.modalLoading.setProgress(loadingValue);
 
     nuklear.draw(gui.modalLoading);
-    nuklear.draw(gui.contextMenu);
+    nuklear.draw(gui.contextMenu);*/
 }
 
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {

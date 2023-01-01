@@ -6,29 +6,24 @@
 
 using namespace Engine;
 
-Game::Game(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, FontFamily& font, Nuklear& nuklear,
-           SkyboxGenerator& skyboxGenerator) :
+Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, SkyboxGenerator& skyboxGenerator,
+           Registry& registry, Client& client) :
     config{config},
-    vulkan{vulkan},
+    renderer{renderer},
     canvas{canvas},
-    font{font},
     nuklear{nuklear},
     skyboxGenerator{skyboxGenerator},
-    registry{config},
-    serverCerts{} {
+    registry{registry},
+    client{client},
+    skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}} {
+
+    viewSpace = std::make_unique<ViewSpace>(config, renderer, registry, skybox, client);
+    viewGalaxy = std::make_unique<ViewGalaxy>(config, renderer, registry, client);
+    viewSystem = std::make_unique<ViewSystem>(config, renderer, registry, client);
+    view = viewSpace.get();
 }
 
-Game::~Game() {
-    Log::i(CMP, "Game destruct");
-    if (client) {
-        client->stop();
-    }
-    client.reset();
-    if (server) {
-        server->stop();
-    }
-    server.reset();
-}
+Game::~Game() = default;
 
 void Game::update(float deltaTime) {
     /*if (!viewBuild) {
@@ -122,6 +117,8 @@ void Game::update(float deltaTime) {
 }
 
 void Game::render(const Vector2i& viewport) {
+    auto& vulkan = renderer.getVulkan();
+
     auto vkb = vulkan.createCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -147,12 +144,8 @@ void Game::render(const Vector2i& viewport) {
     vkb.endRenderPass();
     vkb.end();
 
-    vulkan.submitCommandBuffer(vkb);
+    vulkan.submitPresentCommandBuffer(vkb);
     vulkan.dispose(std::move(vkb));
-
-    /*if (view) {
-        view->render(viewport, renderer);
-    }*/
 }
 
 /*void Game::renderCanvas(const Vector2i& viewport) {
@@ -198,7 +191,7 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
         view->eventKeyPressed(key, modifiers);
     }
 
-    if (config.input.galaxyMapToggle(key, modifiers)) {
+    /*if (config.input.galaxyMapToggle(key, modifiers)) {
         if (view != viewGalaxy.get()) {
             Log::i(CMP, "Switching to galaxy map scene...");
             view = viewGalaxy.get();
@@ -216,7 +209,7 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
             Log::i(CMP, "Switching to system scene...");
             view = viewSpace.get();
         }
-    }
+    }*/
 }
 
 void Game::eventKeyReleased(const Key key, const Modifiers modifiers) {

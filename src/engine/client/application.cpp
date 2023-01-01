@@ -8,7 +8,6 @@ using namespace Engine;
 Application::Application(const Config& config) :
     VulkanRenderer{config},
     config{config},
-    renderer{config, *this},
     skyboxGenerator{config, *this},
     canvas{*this},
     font{*this, config.fontsPath, "iosevka-aile", 42.0f},
@@ -23,7 +22,7 @@ Application::Application(const Config& config) :
     });
     gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);
 
-    status.value = 1.0f;
+    startSinglePlayer();
 }
 
 Application::~Application() {
@@ -36,6 +35,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (future.valid() && future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
         auto fn = future.get();
         fn();
+    }
+
+    if (client) {
+        client->update();
     }
 
     if (game) {
@@ -63,7 +66,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.beginRenderPass(renderPassInfo);
 
     canvas.begin(viewport);
-    if (status.value < 1.0f) {
+    if (!status.message.empty()) {
         renderStatus(viewport);
     }
     nuklear.begin(viewport);
@@ -84,7 +87,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.endRenderPass();
     vkb.end();
 
-    submitCommandBuffer(vkb);
+    submitPresentCommandBuffer(vkb);
 
     dispose(std::move(vkb));
 }
@@ -109,12 +112,39 @@ void Application::renderStatus(const Vector2i& viewport) {
     promise.set_value([=]() { (expr); });                                                                              \
     future = promise.get_future();
 
+void Application::checkForClientScene() {
+    status.message = "Entering...";
+    status.value = 1.0f;
+
+    if (client->getScene()) {
+        Log::i(CMP, "Client has a scene, creating Game instance");
+
+        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, skyboxGenerator, *registry, *client);
+    } else {
+        NEXT(createRegistry());
+    }
+}
+
 void Application::startClient() {
+    Log::i(CMP, "Starting client");
+
     status.message = "Connecting...";
     status.value = 0.9f;
+
+    client = std::make_unique<Client>(config, *registry, playerLocalProfile);
+
+    Log::i(CMP, "Connecting to the server");
+
+    future = std::async([this]() -> std::function<void()> {
+        client->connect("localhost", config.serverPort);
+
+        return [this]() { checkForClientScene(); };
+    });
 }
 
 void Application::loadServer() {
+    Log::i(CMP, "Loading server");
+
     status.message = "Loading universe...";
     status.value = 0.8f;
 
@@ -132,6 +162,8 @@ void Application::loadServer() {
 }
 
 void Application::startServer() {
+    Log::i(CMP, "Starting server");
+
     status.message = "Starting server...";
     status.value = 0.75f;
 
@@ -149,6 +181,8 @@ void Application::startServer() {
 }
 
 void Application::startDatabase() {
+    Log::i(CMP, "Starting database");
+
     status.message = "Starting world database...";
     status.value = 0.7f;
 
@@ -183,8 +217,10 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
     if (next == registry->getLoadQueue().cend()) {
         NEXT(startDatabase());
     } else {
-        const auto count = std::distance(registry->getLoadQueue().cbegin(), next);
+        const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
         const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
+
+        Log::i(CMP, "Loading asset {} out of {}", count, registry->getLoadQueue().size());
 
         try {
             (*next)(*this);
@@ -200,24 +236,43 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
     }
 }
 
+void Application::loadAssets() {
+    Log::i(CMP, "Loading assets");
+
+    this->registry->init(*this);
+
+    status.message = "Loading assets...";
+    status.value = 0.4f;
+
+    loadNextAssetInQueue(registry->getLoadQueue().cbegin());
+}
+
 void Application::createRegistry() {
+    Log::i(CMP, "Setting up registry");
+
     status.message = "Loading mod packs...";
     status.value = 0.3f;
 
     future = std::async([this]() -> std::function<void()> {
         this->registry = std::make_unique<Registry>(config);
-        return [this]() {
-            this->registry->init(*this);
-
-            status.message = "Loading assets...";
-            status.value = 0.4f;
-
-            loadNextAssetInQueue(registry->getLoadQueue().cbegin());
-        };
+        return [this]() { loadAssets(); };
     });
 }
 
+void Application::createRenderer() {
+    Log::i(CMP, "Creating renderer");
+
+    status.message = "Creating renderer...";
+    status.value = 0.3f;
+
+    renderer = std::make_unique<Renderer>(config, *this, shaders);
+
+    // NEXT(createRegistry());
+}
+
 void Application::compileShaders() {
+    Log::i(CMP, "Compiling shaders");
+
     status.message = "Loading shaders...";
     status.value = 0.1f;
 
@@ -227,12 +282,14 @@ void Application::compileShaders() {
 
 void Application::compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next) {
     if (next == shaderLoadQueue.end()) {
-        NEXT(createRegistry());
+        NEXT(createRenderer());
     }
     // Not yet done, we have more shaders to compile
     else {
-        const auto count = std::distance(shaderLoadQueue.begin(), next);
+        const auto count = std::distance(shaderLoadQueue.begin(), next) + 1;
         const auto progress = static_cast<float>(count) / static_cast<float>(shaderLoadQueue.size());
+
+        Log::i(CMP, "Compiling shader {} out of {}", count, shaderLoadQueue.size());
 
         try {
             (*next)(config, *this);
@@ -249,6 +306,8 @@ void Application::compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator n
 }
 
 void Application::startSinglePlayer() {
+    Log::i(CMP, "Starting single player mode");
+
     status.message = "Loading...";
     status.value = 0.0f;
 

@@ -13,19 +13,232 @@ Renderer::ShaderLoadQueue Renderer::Shaders::createLoadQueue() {
     };
 }
 
-Renderer::Renderer(const Config& config, VulkanDevice& vulkan) : config{config}, vulkan{vulkan} {
-    createGaussianKernel(15, 6.5);
-    createSsaoNoise();
-    createSsaoSamples();
+Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders) :
+    config{config}, vulkan{vulkan}, shaders{shaders} {
+    // createGaussianKernel(15, 6.5);
+    // createSsaoNoise();
+    // createSsaoSamples();
+    // createFullScreenQuad();
+    // createSkyboxMesh();
+
+    // createRenderPass(renderPasses.brdf, {config.brdfSize, config.brdfSize});
+
+    createMeshes();
+    createRenderPasses();
+    finalizeShaders();
+
+    renderBrdf();
+}
+
+Renderer::~Renderer() = default;
+
+void Renderer::createMeshes() {
     createFullScreenQuad();
-    createSkyboxMesh();
 }
 
-Renderer::~Renderer() {
+void Renderer::createFullScreenQuad() {
+    static const std::vector<ShaderBrdf::Vertex> vertices = {
+        {{-1.0f, -1.0f}},
+        {{1.0f, -1.0f}},
+        {{1.0f, 1.0f}},
+        {{-1.0f, 1.0f}},
+    };
+
+    static const std::vector<uint16_t> indices = {
+        0, 1, 2, 2, 3, 0,
+    };
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ShaderBrdf::Vertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    meshes.fullScreenQuad.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(meshes.fullScreenQuad.vbo, vertices.data(), sizeof(ShaderBrdf::Vertex) * vertices.size());
+
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(uint16_t) * indices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    meshes.fullScreenQuad.ibo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(meshes.fullScreenQuad.ibo, indices.data(), sizeof(uint16_t) * indices.size());
+
+    meshes.fullScreenQuad.indexType = VK_INDEX_TYPE_UINT16;
+    meshes.fullScreenQuad.count = indices.size();
 }
 
-void Renderer::update(const Vector2i& viewport) {
-    /*if (gBuffer.size != viewport && viewport.x != 0 && viewport.y != 0) {
+void Renderer::finalizeShaders() {
+    shaders.brdf.finalize(renderPasses.brdf.renderPass);
+}
+
+void Renderer::createRenderPasses() {
+    // vulkan.waitDeviceIdle();
+    if (!renderPasses.brdf.renderPass) {
+        createRenderPassBrdf();
+    }
+}
+
+void Renderer::createRenderPassBrdf() {
+    renderPasses.brdf.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.brdf.textures.back(),
+        // Size
+        {config.brdfSize, config.brdfSize},
+        // Format
+        VK_FORMAT_R16G16_SFLOAT,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        // Layout
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = VK_FORMAT_R16G16_SFLOAT;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VulkanRenderPass::CreateInfo renderPassInfo{};
+    renderPassInfo.attachments = {colorAttachment};
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Use subpass dependencies for attachment layout transitions
+    VkSubpassDependency dependency;
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    renderPassInfo.subPasses = {subpass};
+    renderPassInfo.dependencies = {dependency};
+
+    renderPasses.brdf.renderPass = vulkan.createRenderPass(renderPassInfo);
+
+    VkImageView attachments[] = {renderPasses.brdf.textures.at(0).getImageView()};
+
+    VulkanFramebuffer::CreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPasses.brdf.renderPass.getHandle();
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = config.brdfSize;
+    framebufferInfo.height = config.brdfSize;
+    framebufferInfo.layers = 1;
+
+    renderPasses.brdf.fbo = vulkan.createFramebuffer(framebufferInfo);
+}
+
+void Renderer::createAttachment(VulkanTexture& texture, const Vector2i& size, const VkFormat format,
+                                const VkImageUsageFlags usage, const VkImageAspectFlagBits aspectMask,
+                                const VkImageLayout layout) {
+
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = format;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.x), 1};
+    textureInfo.image.mipLevels = 1;
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage =
+        usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = format;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = aspectMask; // VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
+
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.anisotropyEnable = VK_FALSE;
+    textureInfo.sampler.maxAnisotropy = 1.0f;
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.minLod = 0.0f;
+    textureInfo.sampler.maxLod = 0.0f;
+
+    texture = vulkan.createTexture(textureInfo);
+
+    // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    // vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, layout);
+}
+
+void Renderer::renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh) {
+    vkb.bindBuffers({{mesh.vbo, 0}});
+    vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
+    vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+}
+
+void Renderer::renderBrdf() {
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &renderPasses.brdf.fbo;
+    renderPassInfo.renderPass = &renderPasses.brdf.renderPass;
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = {config.brdfSize, config.brdfSize};
+
+    VkClearValue clearColor = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
+    renderPassInfo.clearValues = {clearColor};
+
+    vkb.beginRenderPass(renderPassInfo);
+
+    vkb.bindPipeline(shaders.brdf.getPipeline());
+    vkb.setViewport({0, 0}, renderPassInfo.size);
+    vkb.setScissor({0, 0}, renderPassInfo.size);
+    renderMesh(vkb, meshes.fullScreenQuad);
+
+    vkb.endRenderPass();
+
+    vkb.end();
+    vulkan.submitCommandBuffer(vkb);
+    vulkan.dispose(std::move(vkb));
+    vulkan.waitQueueIdle();
+}
+
+/*void Renderer::update(const Vector2i& viewport) {
+    if (gBuffer.size != viewport && viewport.x != 0 && viewport.y != 0) {
         gBuffer.size = viewport;
 
         const auto swapchainFormat = vulkan.getSwapchainFormat();
@@ -210,20 +423,48 @@ void Renderer::update(const Vector2i& viewport) {
         vulkan.deviceWaitIdle();
 
         Log::d(CMP, "BRDF texture created of size: {}", brdf.size);
-    }*/
-}
+    }
+}*/
 
-void Renderer::begin() {
-    /*vulkan.setViewport({0, 0}, gBuffer.size);
+/*void Renderer::begin() {
+    vulkan.setViewport({0, 0}, gBuffer.size);
     vulkan.setScissor({0, 0}, gBuffer.size);
-    vulkan.setViewportState();*/
-}
+    vulkan.setViewportState();
+}*/
 
-void Renderer::end() {
+/*void Renderer::end() {
     // vulkan.endRenderPass();
-}
+}*/
 
 void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &vulkan.getSwapChainFramebuffer();
+    renderPassInfo.renderPass = &vulkan.getRenderPass();
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+
+    VkClearValue clearColor = {{{0.1f, 0.1f, 0.1f, 1.0f}}};
+    renderPassInfo.clearValues = {clearColor};
+
+    vkb.beginRenderPass(renderPassInfo);
+
+    /*canvas.begin(viewport);
+    renderStatus(viewport);
+    canvas.end(vkb);*/
+
+    vkb.endRenderPass();
+    vkb.end();
+
+    vulkan.submitPresentCommandBuffer(vkb);
+    vulkan.dispose(std::move(vkb));
+
     /*// ======================================== PBR scene ========================================
     VulkanFramebufferAttachmentReference pbrColorAttachment{};
     pbrColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -407,8 +648,8 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     }*/
 }
 
-void Renderer::renderPassFront(bool clear) {
-    /*VulkanFramebufferAttachmentReference frontColorAttachment{};
+/*void Renderer::renderPassFront(bool clear) {
+    VulkanFramebufferAttachmentReference frontColorAttachment{};
     frontColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
     if (clear) {
         frontColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -416,15 +657,15 @@ void Renderer::renderPassFront(bool clear) {
         frontColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
     }
 
-    vulkan.beginRenderPass(gBuffer.frontFbo, {frontColorAttachment});*/
-}
+    vulkan.beginRenderPass(gBuffer.frontFbo, {frontColorAttachment});
+}*/
 
-void Renderer::present() {
+/*void Renderer::present() {
     // vulkan.submitPresentQueue(gBuffer.frontColor);
-}
+}*/
 
-void Renderer::createGaussianKernel(const size_t size, double sigma) {
-    /*const auto weights = gaussianKernel((size - 1) * 2 + 1, sigma);
+/*void Renderer::createGaussianKernel(const size_t size, double sigma) {
+    const auto weights = gaussianKernel((size - 1) * 2 + 1, sigma);
     GaussianWeightsUniform data;
 
     for (size_t i = 0; i < size; i++) {
@@ -435,11 +676,11 @@ void Renderer::createGaussianKernel(const size_t size, double sigma) {
 
     gaussianWeights.ubo =
         vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Static, sizeof(GaussianWeightsUniform));
-    gaussianWeights.ubo.subData(&data, 0, sizeof(GaussianWeightsUniform));*/
-}
+    gaussianWeights.ubo.subData(&data, 0, sizeof(GaussianWeightsUniform));
+}*/
 
-void Renderer::createSsaoNoise() {
-    /*std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+/*void Renderer::createSsaoNoise() {
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
     std::random_device rd;
     std::default_random_engine generator{rd()};
 
@@ -458,11 +699,11 @@ void Renderer::createSsaoNoise() {
     desc.usage =
         VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT | VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ssaoSamples.noise = vulkan.createTexture(desc);
-    ssaoSamples.noise.subData(0, {0, 0}, desc.size, ssaoNoise.data());*/
-}
+    ssaoSamples.noise.subData(0, {0, 0}, desc.size, ssaoNoise.data());
+}*/
 
-void Renderer::createFullScreenQuad() {
-    /*static const std::vector<Vector2> vertices = {
+/*void Renderer::createFullScreenQuad() {
+    static const std::vector<Vector2> vertices = {
         {-1.0f, -1.0f},
         {1.0f, -1.0f},
         {1.0f, 1.0f},
@@ -488,11 +729,11 @@ void Renderer::createFullScreenQuad() {
                 {0, 0, VulkanVertexInputFormat::Format::Vec2},
             },
         },
-    });*/
-}
+    });
+}*/
 
-void Renderer::renderFullScreenQuad() {
-    /*vulkan.setDepthStencilState(false, false);
+/*void Renderer::renderFullScreenQuad() {
+    vulkan.setDepthStencilState(false, false);
     VulkanBlendState blendState{};
     blendState.blendEnable = false;
     blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
@@ -508,11 +749,11 @@ void Renderer::renderFullScreenQuad() {
     vulkan.bindVertexInputFormat(fullScreenQuad.vboFormat);
     vulkan.bindIndexBuffer(fullScreenQuad.ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.drawIndexed(6, 1, 0, 0, 0);*/
-}
+    vulkan.drawIndexed(6, 1, 0, 0, 0);
+}*/
 
-void Renderer::createSkyboxMesh() {
-    /*static const std::vector<uint32_t> indices = {
+/*void Renderer::createSkyboxMesh() {
+    static const std::vector<uint32_t> indices = {
         0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
         12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 21, 23,
     };
@@ -564,11 +805,11 @@ void Renderer::createSkyboxMesh() {
                 {0, 0, VulkanVertexInputFormat::Format::Vec3},
             },
         },
-    });*/
-}
+    });
+}*/
 
-void Renderer::renderSkyboxMesh() {
-    /*vulkan.setDepthStencilState(false, true);
+/*void Renderer::renderSkyboxMesh() {
+    vulkan.setDepthStencilState(false, true);
     VulkanBlendState blendState{};
     blendState.blendEnable = false;
     blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
@@ -586,11 +827,11 @@ void Renderer::renderSkyboxMesh() {
     vulkan.bindVertexInputFormat(skyboxMesh.vboFormat);
     vulkan.bindIndexBuffer(skyboxMesh.ibo, 0, VK_INDEX_TYPE_UINT32);
     vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.drawIndexed(6 * 6, 1, 0, 0, 0);*/
-}
+    vulkan.drawIndexed(6 * 6, 1, 0, 0, 0);
+}*/
 
-void Renderer::updateDirectionalLightsUniform(Scene& scene) {
-    /*DirectionalLightsUniform uniform{};
+/*void Renderer::updateDirectionalLightsUniform(Scene& scene) {
+    DirectionalLightsUniform uniform{};
 
     auto& system = scene.getComponentSystem<ComponentDirectionalLight>();
     for (const auto& component : system) {
@@ -611,11 +852,11 @@ void Renderer::updateDirectionalLightsUniform(Scene& scene) {
         auto dst = directionalLights.ubo.mapPtr(sizeof(DirectionalLightsUniform));
         std::memcpy(dst, &uniform, sizeof(DirectionalLightsUniform));
         directionalLights.ubo.unmap();
-    }*/
-}
+    }
+}*/
 
-void Renderer::createSsaoSamples() {
-    /*std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+/*void Renderer::createSsaoSamples() {
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
     std::random_device rd;
     std::default_random_engine generator{rd()};
 
@@ -636,5 +877,5 @@ void Renderer::createSsaoSamples() {
 
     ssaoSamples.ubo =
         vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(SsaoSamplesUniform));
-    ssaoSamples.ubo.subData(&uniform, 0, sizeof(SsaoSamplesUniform));*/
-}
+    ssaoSamples.ubo.subData(&uniform, 0, sizeof(SsaoSamplesUniform));
+}*/

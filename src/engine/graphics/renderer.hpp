@@ -15,7 +15,7 @@ public:
         ShaderBrdf brdf;
 
         ShaderLoadQueue createLoadQueue();
-    } shaders;
+    };
     /*struct Pipelines {
         VulkanPipeline brdf;
         VulkanPipeline pbr;
@@ -33,20 +33,43 @@ public:
         float exposure{1.8f};
     };
 
-    explicit Renderer(const Config& config, VulkanDevice& vulkan);
+    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders);
     ~Renderer();
 
     void update(const Vector2i& viewport);
-    void begin();
-    void end();
     void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
-    void renderPassFront(bool clear);
-    void present();
+
+    VulkanRenderer& getVulkan() {
+        return vulkan;
+    }
 
 private:
-    static constexpr size_t maxDirectionalLights = 4;
+    struct RenderPassMesh {
+        VulkanBuffer vbo;
+        VulkanBuffer ibo;
+        VkIndexType indexType{VK_INDEX_TYPE_UINT16};
+        uint32_t count{0};
+    };
 
-    struct DirectionalLightsUniform {
+    struct RenderPass {
+        std::vector<VulkanTexture> textures;
+        VulkanFramebuffer fbo;
+        VulkanRenderPass renderPass;
+    };
+
+    void createMeshes();
+    void createFullScreenQuad();
+    void createRenderPasses();
+    void createRenderPassBrdf();
+    void finalizeShaders();
+    void createAttachment(VulkanTexture& texture, const Vector2i& size, VkFormat format, VkImageUsageFlags usage,
+                          VkImageAspectFlagBits aspectMask, VkImageLayout layout);
+    void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
+    void renderBrdf();
+
+    // static constexpr size_t maxDirectionalLights = 4;
+
+    /*struct DirectionalLightsUniform {
         Vector4 colors[maxDirectionalLights];
         Vector4 directions[maxDirectionalLights];
         int count{0};
@@ -59,22 +82,32 @@ private:
 
     struct SsaoSamplesUniform {
         Vector4 weights[64];
-    };
+    };*/
 
-    void createGaussianKernel(size_t size, double sigma);
+    /*void createGaussianKernel(size_t size, double sigma);
     void createSsaoNoise();
     void createFullScreenQuad();
     void renderFullScreenQuad();
     void createSkyboxMesh();
     void renderSkyboxMesh();
     void createSsaoSamples();
-    void updateDirectionalLightsUniform(Scene& scene);
+    void updateDirectionalLightsUniform(Scene& scene);*/
 
     const Config& config;
-    VulkanDevice& vulkan;
-    // Pipelines& pipelines;
+    VulkanRenderer& vulkan;
+    Shaders& shaders;
 
     struct {
+        RenderPass brdf;
+    } renderPasses;
+
+    struct {
+        RenderPassMesh fullScreenQuad;
+    } meshes;
+
+    // Pipelines& pipelines;
+
+    /*struct {
         VulkanBuffer vbo;
         VulkanBuffer ibo;
         /// VulkanVertexInputFormat vboFormat;
@@ -131,6 +164,6 @@ private:
 
         VulkanTexture frontColor;
         VulkanFramebuffer frontFbo;
-    } gBuffer;
+    } gBuffer;*/
 };
 } // namespace Engine
