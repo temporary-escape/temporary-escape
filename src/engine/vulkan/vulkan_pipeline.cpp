@@ -41,6 +41,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
     pipelineInfo.pMultisampleState = &createInfo.multisampling;
     pipelineInfo.pColorBlendState = &createInfo.colorBlending;
     pipelineInfo.pDynamicState = &createInfo.dynamicState;
+    pipelineInfo.pDepthStencilState = &createInfo.depthStencilState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = renderPass.getHandle();
     pipelineInfo.subpass = 0;

@@ -100,17 +100,9 @@ public:
 
     void findAssets();
     void init(VulkanRenderer& vulkan);
-    bool isReady();
-
-    const VoxelShapeCache& getVoxelShapeCache() const {
-        if (!voxelShapeCache) {
-            EXCEPTION("Voxel shape cache was not initialized");
-        }
-        return *voxelShapeCache;
-    }
 
     const DefaultTextures& getDefaultTextures() const {
-        if (!voxelShapeCache) {
+        if (!defaultTextures) {
             EXCEPTION("Default textures were not initialized");
         }
         return *defaultTextures;
@@ -148,7 +140,6 @@ private:
     }
 
     const Config& config;
-    std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<ImageAtlas> atlas;
     std::unique_ptr<DefaultTextures> defaultTextures;
     Category<Texture> textures;

@@ -21,7 +21,7 @@ public:
     VulkanDescriptorSet& operator=(VulkanDescriptorSet&& other) noexcept;
     void swap(VulkanDescriptorSet& other) noexcept;
 
-    void bind(const std::vector<VulkanBufferBinding>& uniforms, const std::vector<VulkanTextureBinding>& textures);
+    void bind(const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures);
 
     VkDescriptorSet& getHandle() {
         return descriptorSet;

@@ -29,7 +29,6 @@ public:
     }
 
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
-    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
     void update();
 
     [[nodiscard]] const std::vector<Primitive>& getPrimitives() const {

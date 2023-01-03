@@ -22,7 +22,7 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
 }
 
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
-    /*if (!isDirty()) {
+    if (!isDirty()) {
         return;
     }
 
@@ -52,34 +52,29 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
 
         primitive.material = material;
 
-        const auto vboSize = data.vertices.size() * sizeof(VoxelShape::VertexFinal);
-        primitive.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic, vboSize);
-        primitive.vbo.subData(data.vertices.data(), 0, vboSize);
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = data.vertices.size() * sizeof(VoxelShape::VertexFinal);
+        bufferInfo.usage =
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        primitive.vbo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(primitive.vbo, data.vertices.data(), bufferInfo.size);
 
-        const auto iboSize = data.indices.size() * sizeof(uint32_t);
-        primitive.ibo = vulkan.createBuffer(VulkanBuffer::Type::Index, VulkanBuffer::Usage::Dynamic, iboSize);
-        primitive.ibo.subData(data.indices.data(), 0, iboSize);
-
-        primitive.vboFormat = vulkan.createVertexInputFormat({
-            {
-                0,
-                {
-                    {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                    {1, 0, VulkanVertexInputFormat::Format::Vec3},
-                    {2, 0, VulkanVertexInputFormat::Format::Vec2},
-                    {3, 0, VulkanVertexInputFormat::Format::Vec4},
-                },
-            },
-        });
+        bufferInfo.size = data.indices.size() * sizeof(uint32_t);
+        bufferInfo.usage =
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        primitive.ibo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(primitive.ibo, data.indices.data(), bufferInfo.size);
 
         primitive.count = data.indices.size();
-        primitive.indexType = VkFormat::VK_FORMAT_R32_UINT;
-        primitive.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    }*/
+        primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
+    }
 }
 
-void ComponentGrid::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    /*if (primitives.empty()) {
+/*void ComponentGrid::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    if (primitives.empty()) {
         return;
     }
 
@@ -100,5 +95,5 @@ void ComponentGrid::render(VulkanRenderer& vulkan, const Vector2i& viewport, Vul
         vulkan.bindTexture(primitive.material->metallicRoughnessTexture->getVulkanTexture(), 6);
         vulkan.setInputAssembly(primitive.topology);
         vulkan.drawIndexed(primitive.count, 1, 0, 0, 0);
-    }*/
-}
+    }
+}*/

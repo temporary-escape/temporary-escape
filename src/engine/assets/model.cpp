@@ -213,23 +213,23 @@ void Model::load(Registry& registry, VulkanRenderer& vulkan) {
 
             switch (part.indices.value().componentType) {
             case GltfComponentType::R8: {
-                primitive.indexType = VkFormat::VK_FORMAT_R8_SNORM;
+                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
                 break;
             }
             case GltfComponentType::R8u: {
-                primitive.indexType = VkFormat::VK_FORMAT_R8_UNORM;
+                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
                 break;
             }
             case GltfComponentType::R16: {
-                primitive.indexType = VkFormat::VK_FORMAT_R16_SNORM;
+                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
                 break;
             }
             case GltfComponentType::R16u: {
-                primitive.indexType = VkFormat::VK_FORMAT_R16_UNORM;
+                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
                 break;
             }
             case GltfComponentType::R32u: {
-                primitive.indexType = VkFormat::VK_FORMAT_R32_UINT;
+                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
                 break;
             }
             default: {

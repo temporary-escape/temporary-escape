@@ -117,7 +117,8 @@ void Game::update(float deltaTime) {
 }
 
 void Game::render(const Vector2i& viewport) {
-    auto& vulkan = renderer.getVulkan();
+    view->render(viewport);
+    /*auto& vulkan = renderer.getVulkan();
 
     auto vkb = vulkan.createCommandBuffer();
 
@@ -137,15 +138,15 @@ void Game::render(const Vector2i& viewport) {
 
     vkb.beginRenderPass(renderPassInfo);
 
-    /*canvas.begin(viewport);
-    renderStatus(viewport);
-    canvas.end(vkb);*/
+    //canvas.begin(viewport);
+    //renderStatus(viewport);
+    //canvas.end(vkb);
 
     vkb.endRenderPass();
     vkb.end();
 
     vulkan.submitPresentCommandBuffer(vkb);
-    vulkan.dispose(std::move(vkb));
+    vulkan.dispose(std::move(vkb));*/
 }
 
 /*void Game::renderCanvas(const Vector2i& viewport) {

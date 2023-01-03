@@ -4,6 +4,7 @@
 #include "../library.hpp"
 #include "../math/vector.hpp"
 #include "../utils/image_importer.hpp"
+#include "../utils/span.hpp"
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.h>

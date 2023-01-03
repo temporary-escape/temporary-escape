@@ -15,11 +15,13 @@ void ViewSpace::update(const float deltaTime) {
 
 void ViewSpace::render(const Vector2i& viewport) {
     auto scene = client.getScene();
-    if (scene) {
-        Renderer::Options options{};
-        options.blurStrength = 0.2f;
-        renderer.render(viewport, *scene, skyboxSystem, options);
+    if (!scene) {
+        EXCEPTION("No scene present!");
     }
+
+    Renderer::Options options{};
+    options.blurStrength = 0.2f;
+    renderer.render(viewport, *scene, skyboxSystem, options);
 }
 
 void ViewSpace::renderCanvas(const Vector2i& viewport) {

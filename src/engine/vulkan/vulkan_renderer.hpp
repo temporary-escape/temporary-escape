@@ -9,13 +9,13 @@
 #include "vulkan_descriptor_set_layout.hpp"
 #include "vulkan_device.hpp"
 #include "vulkan_double_buffer.hpp"
+#include "vulkan_fence.hpp"
 #include "vulkan_framebuffer.hpp"
 #include "vulkan_pipeline.hpp"
 #include "vulkan_render_pass.hpp"
 #include "vulkan_semaphore.hpp"
 #include "vulkan_shader_module.hpp"
 #include "vulkan_swap_chain.hpp"
-#include "vulkan_sync_object.hpp"
 #include "vulkan_texture.hpp"
 
 namespace Engine {
@@ -32,7 +32,7 @@ public:
     }
     VulkanRenderPass createRenderPass(const VulkanRenderPass::CreateInfo& createInfo);
     VulkanFramebuffer createFramebuffer(const VulkanFramebuffer::CreateInfo& createInfo);
-    VulkanSyncObject createSyncObject();
+    VulkanFence createFence();
     VulkanSemaphore createSemaphore(const VulkanSemaphore::CreateInfo& createInfo);
     VulkanCommandPool createCommandPool(const VulkanCommandPool::CreateInfo& createInfo);
     VulkanCommandBuffer createCommandBuffer();
@@ -47,7 +47,7 @@ public:
     void waitQueueIdle();
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer);
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer, VkPipelineStageFlags waitStages,
-                             VulkanSemaphore& wait, VulkanSemaphore& signal);
+                             const VulkanSemaphore& wait, const VulkanSemaphore& signal, const VulkanFence* fence);
     void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait = nullptr);
     void submitPresentQueue();
     void recreateSwapChain();
@@ -91,12 +91,28 @@ public:
         return currentFrameNum;
     }
 
-    VulkanSyncObject& getCurrentSyncObject() {
-        return syncObjects.at(currentFrameNum);
+    VulkanFence& getCurrentInFlightFence() {
+        return inFlightFence.at(currentFrameNum);
     }
 
-    const VulkanSyncObject& getCurrentSyncObject() const {
-        return syncObjects.at(currentFrameNum);
+    const VulkanFence& getCurrentInFlightFence() const {
+        return inFlightFence.at(currentFrameNum);
+    }
+
+    VulkanSemaphore& getCurrentRenderFinishedSemaphore() {
+        return renderFinishedSemaphore.at(currentFrameNum);
+    }
+
+    const VulkanSemaphore& getCurrentRenderFinishedSemaphore() const {
+        return renderFinishedSemaphore.at(currentFrameNum);
+    }
+
+    VulkanSemaphore& getCurrentImageAvailableSemaphore() {
+        return imageAvailableSemaphore.at(currentFrameNum);
+    }
+
+    const VulkanSemaphore& getCurrentImageAvailableSemaphore() const {
+        return imageAvailableSemaphore.at(currentFrameNum);
     }
 
     VulkanDescriptorPool& getCurrentDescriptorPool() {
@@ -123,6 +139,8 @@ public:
         return renderPass;
     }
 
+    bool canBeMipMapped(const VkFormat format) const;
+
 private:
     void onNextFrame() override;
     void onExit() override;
@@ -136,7 +154,9 @@ private:
     const Config& config;
     VulkanCommandPool commandPool;
     VulkanSwapChain swapChain;
-    std::array<VulkanSyncObject, MAX_FRAMES_IN_FLIGHT> syncObjects;
+    std::array<VulkanSemaphore, MAX_FRAMES_IN_FLIGHT> imageAvailableSemaphore;
+    std::array<VulkanSemaphore, MAX_FRAMES_IN_FLIGHT> renderFinishedSemaphore;
+    std::array<VulkanFence, MAX_FRAMES_IN_FLIGHT> inFlightFence;
     std::array<VulkanDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
     VulkanBuffer transferBuffer;
     uint32_t swapChainFramebufferIndex{0};

@@ -120,14 +120,14 @@ void ShaderComponentGrid::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     pipelineInfo.rasterizer.lineWidth = 1.0f;
     pipelineInfo.rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    pipelineInfo.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    pipelineInfo.rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     pipelineInfo.rasterizer.depthBiasEnable = VK_FALSE;
 
     pipelineInfo.multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     pipelineInfo.multisampling.sampleShadingEnable = VK_FALSE;
     pipelineInfo.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    std::array<VkPipelineColorBlendAttachmentState, 4> colorBlendAttachments{};
+    std::array<VkPipelineColorBlendAttachmentState, 3> colorBlendAttachments{};
     for (auto& colorBlendAttachment : colorBlendAttachments) {
         colorBlendAttachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -167,6 +167,13 @@ void ShaderComponentGrid::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
     pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+    pipelineInfo.depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    pipelineInfo.depthStencilState.depthTestEnable = VK_TRUE;
+    pipelineInfo.depthStencilState.depthWriteEnable = VK_TRUE;
+    pipelineInfo.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+    pipelineInfo.depthStencilState.depthBoundsTestEnable = VK_FALSE;
+    pipelineInfo.depthStencilState.stencilTestEnable = VK_FALSE;
 
     pipeline = vulkan->createPipeline(renderPass, pipelineInfo);
 }

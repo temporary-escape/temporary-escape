@@ -57,10 +57,15 @@ void Block::load(Registry& registry, VulkanRenderer& vulkan) {
     }
 
     for (auto& material : materials) {
-        // material.ubo =
-        //     vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic,
-        //     sizeof(Material::Uniform));
-        // material.ubo.subData(&material.uniform, 0, sizeof(Material::Uniform));
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(Material::Uniform);
+        bufferInfo.usage =
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        material.ubo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
     }
 }
 

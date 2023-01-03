@@ -36,8 +36,7 @@ public:
 
     static inline EventListener defaultEventListener;
 
-    explicit Scene(const VoxelShapeCache* voxelShapeCache = nullptr,
-                   EventListener& eventListener = defaultEventListener);
+    explicit Scene(EventListener& eventListener = defaultEventListener);
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
@@ -92,8 +91,6 @@ private:
         size_t next{0};
     };
 
-    const VoxelShapeCache* voxelShapeCache{nullptr};
-    //Pipelines* pipelines{nullptr};
     EventListener& eventListener;
 
     uint64_t nextId;

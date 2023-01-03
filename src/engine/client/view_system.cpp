@@ -56,7 +56,7 @@ ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& regis
     registry{registry},
     client{client},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
-    scene{&registry.getVoxelShapeCache()} {
+    scene{} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
     images.systemMoon = registry.getImages().find("icon_world");

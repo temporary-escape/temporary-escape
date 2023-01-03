@@ -6,7 +6,7 @@
 
 namespace Engine {
 struct ENGINE_API VulkanVertexBufferBindRef {
-    std::reference_wrapper<VulkanBuffer> buffer;
+    const VulkanBuffer* buffer;
     VkDeviceSize offset;
 };
 
@@ -60,7 +60,7 @@ public:
     void setViewport(const Vector2i& pos, const Vector2i& size, float minDepth = 0.0f, float maxDepth = 1.0f);
     void setScissor(const Vector2i& pos, const Vector2i& size);
     void bindPipeline(const VulkanPipeline& pipeline);
-    void bindBuffers(const std::vector<VulkanVertexBufferBindRef>& buffers);
+    void bindBuffers(const Span<VulkanVertexBufferBindRef>& buffers);
     void bindIndexBuffer(const VulkanBuffer& buffer, VkDeviceSize offset, VkIndexType indexType);
     void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
@@ -71,12 +71,11 @@ public:
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                          VkImageMemoryBarrier& barrier);
     void bindDescriptors(VulkanPipeline& pipeline, VulkanDescriptorSetLayout& layout,
-                         const std::vector<VulkanBufferBinding>& uniforms,
-                         const std::vector<VulkanTextureBinding>& textures);
+                         const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures);
     void pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
     void blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
-                   const std::vector<VkImageBlit>& regions, VkFilter filter);
+                   const Span<VkImageBlit>& regions, VkFilter filter);
     void destroy() override;
 
 private:

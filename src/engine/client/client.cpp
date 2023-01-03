@@ -140,7 +140,7 @@ void Client::handle(MessagePlayerLocationChanged res) {
 
     camera.reset();
     scene.reset();
-    scene = std::make_unique<Scene>(&registry.getVoxelShapeCache());
+    scene = std::make_unique<Scene>();
 
     auto sun = std::make_shared<Entity>();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});

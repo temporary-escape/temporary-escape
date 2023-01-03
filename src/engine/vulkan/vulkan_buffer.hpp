@@ -65,6 +65,6 @@ private:
 
 struct ENGINE_API VulkanBufferBinding {
     uint32_t binding{0};
-    VulkanBuffer* uniform{nullptr};
+    const VulkanBuffer* uniform{nullptr};
 };
 } // namespace Engine

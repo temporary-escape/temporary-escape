@@ -19,8 +19,22 @@ VulkanRenderer::VulkanRenderer(const Config& config) :
 
     commandPool = createCommandPool(poolInfo);
 
-    for (auto& syncObject : syncObjects) {
-        syncObject = createSyncObject();
+    for (auto& fence : inFlightFence) {
+        fence = createFence();
+    }
+
+    for (auto& semaphore : imageAvailableSemaphore) {
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        semaphore = createSemaphore(semaphoreInfo);
+    }
+
+    for (auto& semaphore : renderFinishedSemaphore) {
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        semaphore = createSemaphore(semaphoreInfo);
     }
 
     for (auto& descriptorPool : descriptorPools) {
@@ -69,8 +83,16 @@ void VulkanRenderer::destroy() {
 
     swapChain.destroy();
 
-    for (auto& syncObject : syncObjects) {
-        syncObject.destroy();
+    for (auto& fence : inFlightFence) {
+        fence.destroy();
+    }
+
+    for (auto& semaphore : imageAvailableSemaphore) {
+        semaphore.destroy();
+    }
+
+    for (auto& semaphore : renderFinishedSemaphore) {
+        semaphore.destroy();
     }
 
     for (auto& descriptorPool : descriptorPools) {
@@ -87,7 +109,7 @@ void VulkanRenderer::destroy() {
 }*/
 
 void VulkanRenderer::onNextFrame() {
-    getCurrentSyncObject().wait();
+    getCurrentInFlightFence().wait();
 
     getCurrentDescriptorPool().reset();
 
@@ -96,8 +118,8 @@ void VulkanRenderer::onNextFrame() {
 
     // Grab the next swap image index
     const auto result = vkAcquireNextImageKHR(getDevice(), swapChain.getHandle(), UINT64_MAX,
-                                              getCurrentSyncObject().getImageAvailableSemaphore().getHandle(),
-                                              VK_NULL_HANDLE, &swapChainFramebufferIndex);
+                                              getCurrentImageAvailableSemaphore().getHandle(), VK_NULL_HANDLE,
+                                              &swapChainFramebufferIndex);
 
     // Do we need to recreate the swap chain?
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -110,7 +132,7 @@ void VulkanRenderer::onNextFrame() {
         EXCEPTION("Failed to acquire swap chain image!");
     }
 
-    getCurrentSyncObject().reset();
+    getCurrentInFlightFence().reset();
 }
 
 void VulkanRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
@@ -166,8 +188,8 @@ VulkanFramebuffer VulkanRenderer::createFramebuffer(const VulkanFramebuffer::Cre
     return VulkanFramebuffer{*this, createInfo};
 }
 
-VulkanSyncObject VulkanRenderer::createSyncObject() {
-    return VulkanSyncObject{*this};
+VulkanFence VulkanRenderer::createFence() {
+    return VulkanFence{*this};
 }
 
 VulkanSemaphore VulkanRenderer::createSemaphore(const VulkanSemaphore::CreateInfo& createInfo) {
@@ -216,9 +238,26 @@ void VulkanRenderer::waitDeviceIdle() {
     vkDeviceWaitIdle(getDevice());
 }
 
+void VulkanRenderer::waitQueueIdle() {
+    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
+}
+
+void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to submit command buffer");
+    }
+}
+
 void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer,
-                                         const VkPipelineStageFlags waitStages, VulkanSemaphore& wait,
-                                         VulkanSemaphore& signal) {
+                                         const VkPipelineStageFlags waitStages, const VulkanSemaphore& wait,
+                                         const VulkanSemaphore& signal, const VulkanFence* fence) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
@@ -231,7 +270,7 @@ void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffe
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &signal.getHandle();
 
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, fence ? fence->getHandle() : VK_NULL_HANDLE) != VK_SUCCESS) {
         EXCEPTION("Failed to submit command buffer");
     }
 }
@@ -240,8 +279,7 @@ void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& comma
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {wait ? wait->getHandle()
-                                         : getCurrentSyncObject().getImageAvailableSemaphore().getHandle()};
+    VkSemaphore waitSemaphores[] = {wait ? wait->getHandle() : getCurrentImageAvailableSemaphore().getHandle()};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -249,14 +287,14 @@ void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& comma
 
     const auto commandBufferHandle = commandBuffer.getHandle();
 
-    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore().getHandle()};
+    VkSemaphore signalSemaphores[] = {getCurrentRenderFinishedSemaphore().getHandle()};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBufferHandle;
 
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, getCurrentSyncObject().getHandle()) != VK_SUCCESS) {
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, getCurrentInFlightFence().getHandle()) != VK_SUCCESS) {
         EXCEPTION("Failed to submit draw command buffer!");
     }
 }
@@ -265,7 +303,7 @@ void VulkanRenderer::submitPresentQueue() {
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    VkSemaphore signalSemaphores[] = {getCurrentSyncObject().getRenderFinishedSemaphore().getHandle()};
+    VkSemaphore signalSemaphores[] = {getCurrentRenderFinishedSemaphore().getHandle()};
 
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
@@ -443,23 +481,6 @@ void VulkanRenderer::transitionImageLayout(VulkanTexture& texture, const VkImage
     }
 }
 
-void VulkanRenderer::waitQueueIdle() {
-    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
-        EXCEPTION("Failed to upload buffer data, wait queue error");
-    }
-}
-
-void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
-
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-        EXCEPTION("Failed to submit command buffer");
-    }
-}
-
 void VulkanRenderer::copyDataToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer,
                                      const Vector2i& size, const void* data) {
 
@@ -520,6 +541,12 @@ void VulkanRenderer::copyBufferToImage(const VulkanBuffer& buffer, VulkanTexture
     }
 }
 
+bool VulkanRenderer::canBeMipMapped(const VkFormat format) const {
+    const auto formatProperties = getPhysicalDeviceFormatProperties(format);
+
+    return (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
+}
+
 void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
     const auto formatProperties = getPhysicalDeviceFormatProperties(texture.getFormat());
 
@@ -570,8 +597,10 @@ void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = 1;
 
+        std::array<VkImageBlit, 1> imageBlit{};
+        imageBlit[0] = blit;
         commandBuffer.blitImage(texture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texture,
-                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, {blit}, VK_FILTER_LINEAR);
+                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageBlit, VK_FILTER_LINEAR);
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

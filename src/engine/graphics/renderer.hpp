@@ -8,6 +8,8 @@
 #include "skybox.hpp"
 
 namespace Engine {
+class ENGINE_API VoxelShapeCache;
+
 class ENGINE_API Renderer {
 public:
     using ShaderLoadQueue = std::list<std::function<void(const Config&, VulkanRenderer&)>>;
@@ -35,7 +37,7 @@ public:
         float exposure{1.8f};
     };
 
-    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders);
+    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders, VoxelShapeCache& voxelShapeCache);
     ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
@@ -59,6 +61,10 @@ private:
         VulkanSemaphore semaphore;
     };
 
+    VulkanBuffer createUniformBuffer(size_t size);
+    VulkanBuffer createVertexBuffer(size_t size);
+    VulkanBuffer createIndexBuffer(size_t size);
+
     void createMeshes();
     void createFullScreenQuad();
     void createRenderPasses();
@@ -71,6 +77,7 @@ private:
     void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
     void renderBrdf();
     void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
+    void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     VkFormat findDepthFormat();
 
     // static constexpr size_t maxDirectionalLights = 4;
@@ -102,6 +109,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     Shaders& shaders;
+    VoxelShapeCache& voxelShapeCache;
     Vector2i lastViewportSize;
 
     struct {

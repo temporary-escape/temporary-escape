@@ -16,7 +16,7 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
     registry{registry},
     client{client},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
-    scene{&registry.getVoxelShapeCache()} {
+    scene{} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
 

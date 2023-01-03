@@ -23,9 +23,9 @@ public:
         return physicalDeviceProperties;
     }
 
-    VkFormatProperties getPhysicalDeviceFormatProperties(VkFormat format);
+    VkFormatProperties getPhysicalDeviceFormatProperties(VkFormat format) const;
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-                                 VkFormatFeatureFlags features);
+                                 VkFormatFeatureFlags features) const;
 
 private:
     void destroy();

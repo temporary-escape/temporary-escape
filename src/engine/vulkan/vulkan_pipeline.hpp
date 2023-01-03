@@ -17,6 +17,7 @@ public:
         VkPipelineRasterizationStateCreateInfo rasterizer{};
         VkPipelineMultisampleStateCreateInfo multisampling{};
         VkPipelineColorBlendStateCreateInfo colorBlending{};
+        VkPipelineDepthStencilStateCreateInfo depthStencilState{};
         VkPipelineDynamicStateCreateInfo dynamicState{};
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     };

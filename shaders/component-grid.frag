@@ -22,10 +22,9 @@ layout(location = 0) in VS_OUT {
     mat3 TBN;
 } vs_out;
 
-layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outEmissive;
-layout(location = 2) out vec4 outMetallicRoughnessAmbient;
-layout(location = 3) out vec4 outNormal;
+layout(location = 0) out vec4 outColorAmbient;
+layout(location = 1) out vec4 outEmissiveRoughness;
+layout(location = 2) out vec4 outNormalMetallic;
 
 void main() {
     vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
@@ -37,8 +36,7 @@ void main() {
     vec3 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rgb * material.metallicRoughnessFactor.rgb;
     float ambient = texture(ambientOcclusionTexture, vs_out.texCoords).r * material.ambientOcclusionFactor.r;
 
-    outColor = vec4(baseColor.rgb, 1.0);
-    outEmissive = vec4(emissive, 1.0);
-    outMetallicRoughnessAmbient = vec4(metallicRoughness.g, metallicRoughness.b, ambient, 1.0);
-    outNormal = vec4(normal * 0.5 + 0.5, 1.0);
+    outColorAmbient = vec4(baseColor.rgb, ambient);
+    outEmissiveRoughness = vec4(emissive, metallicRoughness.g);
+    outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
 }

@@ -10,7 +10,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     renderer{renderer},
     registry{registry},
     skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}},
-    scene{&registry.getVoxelShapeCache()} {
+    scene{} {
 
     // auto skybox = std::make_shared<Entity>();
     // skybox->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));

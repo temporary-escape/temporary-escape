@@ -315,7 +315,7 @@ void VulkanInstance::destroy() {
     }
 }
 
-VkFormatProperties VulkanInstance::getPhysicalDeviceFormatProperties(VkFormat format) {
+VkFormatProperties VulkanInstance::getPhysicalDeviceFormatProperties(VkFormat format) const {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
     return formatProperties;
@@ -329,7 +329,7 @@ VkSwapchainCreateInfoKHR VulkanInstance::getSwapChainInfo() {
     const auto swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, /*config.vulkan.vsync*/ false);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, config.vulkan.vsync);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, getFramebufferSize());
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -383,7 +383,7 @@ uint32_t VulkanInstance::findMemoryType(const uint32_t typeFilter, const VkMemor
 }
 
 VkFormat VulkanInstance::findSupportedFormat(const std::vector<VkFormat>& candidates, const VkImageTiling tiling,
-                                             const VkFormatFeatureFlags features) {
+                                             const VkFormatFeatureFlags features) const {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);

@@ -5,11 +5,8 @@
 
 using namespace Engine;
 
-Scene::Scene(const VoxelShapeCache* voxelShapeCache, EventListener& eventListener) :
-    voxelShapeCache{voxelShapeCache},
-    eventListener{eventListener},
-    nextId{0},
-    systems{EntityComponentHelper::generateComponentSystemsMap()} {
+Scene::Scene(EventListener& eventListener) :
+    eventListener{eventListener}, nextId{0}, systems{EntityComponentHelper::generateComponentSystemsMap()} {
 }
 
 Scene::~Scene() = default;

@@ -26,27 +26,52 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
     try {
         PngImporter image(path);
 
-        /*VulkanTexture::Descriptor desc{};
-        desc.size = image.getSize();
-        desc.addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        desc.addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        desc.addressModeW = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        VkExtent3D extent{static_cast<uint32_t>(image.getSize().x), static_cast<uint32_t>(image.getSize().y), 1};
+
+        VulkanTexture::CreateInfo textureInfo{};
+        textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+        textureInfo.image.extent = extent;
+        textureInfo.image.mipLevels = 1;
+        textureInfo.image.arrayLayers = 1;
+        textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+        textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+        textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        textureInfo.view.subresourceRange.baseMipLevel = 0;
+        textureInfo.view.subresourceRange.levelCount = 1;
+        textureInfo.view.subresourceRange.baseArrayLayer = 0;
+        textureInfo.view.subresourceRange.layerCount = 1;
+
+        textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+        textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+        textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        textureInfo.sampler.anisotropyEnable = VK_FALSE;
+        textureInfo.sampler.maxAnisotropy = 1.0f;
+        textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+        textureInfo.sampler.compareEnable = VK_FALSE;
+        textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+        textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        auto hasAlpha = false;
 
         switch (image.getPixelType()) {
-        case ImageImporter::PixelType::Rgb8u: {
-            desc.format = VulkanTexture::Format::VK_FORMAT_R8G8B8_UNORM;
-            break;
-        }
         case ImageImporter::PixelType::Rgba8u: {
-            desc.format = VulkanTexture::Format::VK_FORMAT_R8G8B8A8_UNORM;
-            break;
-        }
-        case ImageImporter::PixelType::Rgb16u: {
-            desc.format = VulkanTexture::Format::VK_FORMAT_R16G16B16_UNORM;
+            textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+            hasAlpha = true;
             break;
         }
         case ImageImporter::PixelType::Rgba16u: {
-            desc.format = VulkanTexture::Format::VK_FORMAT_R16G16B16A16_UNORM;
+            textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
+            hasAlpha = true;
             break;
         }
         default: {
@@ -54,13 +79,26 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
         }
         }
 
-        desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
-        desc.levels = 1;
+        textureInfo.view.format = textureInfo.image.format;
 
-        texture = vulkan.createTexture(desc);
-        texture.subData(0, {0, 0}, image.getSize(), image.getData());*/
+        if (vulkan.canBeMipMapped(textureInfo.view.format) && hasAlpha) {
+            textureInfo.image.mipLevels = getMipMapLevels(image.getSize());
+            textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+            textureInfo.image.usage =
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
 
-        // TODO: Filtering and wrapping
+        texture = vulkan.createTexture(textureInfo);
+
+        vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        vulkan.copyDataToImage(texture, 0, {0, 0}, 0, image.getSize(), image.getData());
+
+        if (textureInfo.image.mipLevels > 1) {
+            vulkan.generateMipMaps(texture);
+        } else {
+            vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        }
 
     } catch (...) {
         EXCEPTION_NESTED("Failed to load texture: '{}'", getName());

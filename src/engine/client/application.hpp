@@ -38,6 +38,7 @@ private:
     void checkForClientScene();
     void loadAssets();
     void createRegistry();
+    void createVoxelShapeCache();
     void createRenderer();
     void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
     void compileShaders();
@@ -70,6 +71,7 @@ private:
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;
     PlayerLocalProfile playerLocalProfile;
 

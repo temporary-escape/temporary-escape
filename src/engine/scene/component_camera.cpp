@@ -33,8 +33,7 @@ void ComponentCamera::update(const float delta) {
     }
 }
 
-/*void ComponentCamera::render(VulkanDevice& vulkan, const Vector2i& viewport) {
-
+void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewport) {
     const auto makeUniform = [this, viewport](const bool zero) {
         auto viewMatrix = getViewMatrix();
         if (zero) {
@@ -59,25 +58,33 @@ void ComponentCamera::update(const float delta) {
     auto uniform = makeUniform(false);
 
     if (!ubo) {
-        ubo = vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(Uniform));
-        ubo.subData(&uniform, 0, sizeof(Uniform));
-    } else {
-        auto dst = ubo.mapPtr(sizeof(Uniform));
-        std::memcpy(dst, &uniform, sizeof(Uniform));
-        ubo.unmap();
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(Uniform);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        ubo = vulkan.createDoubleBuffer(bufferInfo);
     }
+
+    ubo.subDataLocal(&uniform, 0, sizeof(Uniform));
 
     uniform = makeUniform(true);
 
     if (!uboZeroPos) {
-        uboZeroPos = vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic, sizeof(Uniform));
-        uboZeroPos.subData(&uniform, 0, sizeof(Uniform));
-    } else {
-        auto dst = uboZeroPos.mapPtr(sizeof(Uniform));
-        std::memcpy(dst, &uniform, sizeof(Uniform));
-        uboZeroPos.unmap();
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(Uniform);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        uboZeroPos = vulkan.createDoubleBuffer(bufferInfo);
     }
-}*/
+
+    uboZeroPos.subDataLocal(&uniform, 0, sizeof(Uniform));
+}
 
 void ComponentCamera::moveToOrtographic(const Vector3& position) {
     lookAt(position, position - Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f});

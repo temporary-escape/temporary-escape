@@ -9,6 +9,6 @@ struct Primitive {
     VulkanBuffer ibo;
     const Material* material{nullptr};
     uint32_t count{0};
-    VkFormat indexType{VkFormat::VK_FORMAT_R8_UNORM};
+    VkIndexType indexType{VkIndexType::VK_INDEX_TYPE_UINT32};
 };
 } // namespace Engine

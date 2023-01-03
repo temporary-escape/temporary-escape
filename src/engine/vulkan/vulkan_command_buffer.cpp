@@ -111,12 +111,12 @@ void VulkanCommandBuffer::bindPipeline(const VulkanPipeline& pipeline) {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
 }
 
-void VulkanCommandBuffer::bindBuffers(const std::vector<VulkanVertexBufferBindRef>& buffers) {
+void VulkanCommandBuffer::bindBuffers(const Span<VulkanVertexBufferBindRef>& buffers) {
     std::vector<VkBuffer> handles{buffers.size()};
     std::vector<VkDeviceSize> offsets{buffers.size()};
     for (size_t i = 0; i < buffers.size(); i++) {
-        handles.at(i) = buffers.at(i).buffer.get().getHandle();
-        offsets.at(i) = buffers.at(i).offset;
+        handles[i] = buffers[i].buffer->getHandle();
+        offsets[i] = buffers[i].offset;
     }
 
     vkCmdBindVertexBuffers(commandBuffer, 0, buffers.size(), handles.data(), offsets.data());
@@ -159,8 +159,8 @@ void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, co
 }
 
 void VulkanCommandBuffer::bindDescriptors(VulkanPipeline& pipeline, VulkanDescriptorSetLayout& layout,
-                                          const std::vector<VulkanBufferBinding>& uniforms,
-                                          const std::vector<VulkanTextureBinding>& textures) {
+                                          const Span<VulkanBufferBinding>& uniforms,
+                                          const Span<VulkanTextureBinding>& textures) {
 
     auto descriptorSet = descriptorPool->createDescriptorSet(layout);
     descriptorSet.bind(uniforms, textures);
@@ -174,7 +174,7 @@ void VulkanCommandBuffer::pushConstants(VulkanPipeline& pipeline, const VkShader
 }
 
 void VulkanCommandBuffer::blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst,
-                                    VkImageLayout dstLayout, const std::vector<VkImageBlit>& regions, VkFilter filter) {
+                                    VkImageLayout dstLayout, const Span<VkImageBlit>& regions, VkFilter filter) {
     vkCmdBlitImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(),
                    regions.data(), filter);
 }

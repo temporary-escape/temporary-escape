@@ -37,7 +37,7 @@ public:
     }
 
     operator bool() const {
-        return !buffers.empty();
+        return device != nullptr;
     }
 
 private:

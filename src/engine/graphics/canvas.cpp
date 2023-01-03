@@ -303,8 +303,16 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
     vkb.bindPipeline(pipeline);
     vkb.setViewport({0, 0}, lastViewport);
     vkb.setScissor({0, 0}, lastViewport);
-    vkb.bindBuffers({{vbo.getCurrentBuffer(), 0}});
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
+    vboBinings[0] = {&vbo.getCurrentBuffer(), 0};
+    vkb.bindBuffers(vboBinings);
     vkb.bindIndexBuffer(ibo.getCurrentBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+    std::array<VulkanBufferBinding, 1> uboBindings{};
+    uboBindings[0] = {0, &ubo.getCurrentBuffer()};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
 
     const auto flush = [&](Command& cmd) {
         // Simple draw command
@@ -312,11 +320,11 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
             vkb.pushConstants(pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int32_t), &cmd.draw.mode);
 
             if (cmd.draw.texture) {
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
-                                    {{1, cmd.draw.texture}});
+                textureBindings[0] = {1, cmd.draw.texture};
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings);
             } else {
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}},
-                                    {{1, &defaultTexture}});
+                textureBindings[0] = {1, &defaultTexture};
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings);
             }
             vkb.drawIndexed(cmd.draw.length, 1, cmd.draw.start, 0, 0);
         }
@@ -421,37 +429,6 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const float th
     rect(Vector2{pos.x, pos.y + thickness}, Vector2{thickness, size.y - thickness * 2.0f});
     rect(Vector2{pos.x + size.x - thickness, pos.y + thickness}, Vector2{thickness, size.y - thickness * 2.0f});
     rect(Vector2{pos.x, pos.y + size.y - thickness}, Vector2{size.x, thickness});
-
-    /*const auto start = vertices.size();
-
-    auto& v0 = vertices.emplace_back();
-    auto& v1 = vertices.emplace_back();
-    auto& v2 = vertices.emplace_back();
-    auto& v3 = vertices.emplace_back();
-    auto& v4 = vertices.emplace_back();
-
-    v0.pos = pos;
-    v1.pos = pos + Vector2{0.0f, size.y};
-    v2.pos = pos + size;
-    v3.pos = pos + Vector2{size.x, 0.0f};
-
-    v0.color = color;
-    v1.color = color;
-    v2.color = color;
-    v3.color = color;
-
-    v0.alpha = 0.0f;
-    v1.alpha = 0.0f;
-    v2.alpha = 0.0f;
-    v3.alpha = 0.0f;
-
-    v4 = v0;
-
-    auto& cmd = commands.emplace_back();
-    cmd.type = Command::Type::Draw;
-    cmd.draw.start = start;
-    cmd.draw.length = 5;
-    cmd.draw.primitive = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;*/
 }
 
 void Canvas::text(const Vector2& pos, const std::string& text) {

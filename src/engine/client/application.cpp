@@ -265,9 +265,20 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, shaders);
+    renderer = std::make_unique<Renderer>(config, *this, shaders, *voxelShapeCache);
 
-    // NEXT(createRegistry());
+    NEXT(createRegistry());
+}
+
+void Application::createVoxelShapeCache() {
+    Log::i(CMP, "Creating voxel shape cache");
+
+    status.message = "Creating voxel shape cache...";
+    status.value = 0.3f;
+
+    voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
+
+    NEXT(createRenderer());
 }
 
 void Application::compileShaders() {
@@ -282,7 +293,7 @@ void Application::compileShaders() {
 
 void Application::compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next) {
     if (next == shaderLoadQueue.end()) {
-        NEXT(createRenderer());
+        NEXT(createVoxelShapeCache());
     }
     // Not yet done, we have more shaders to compile
     else {
