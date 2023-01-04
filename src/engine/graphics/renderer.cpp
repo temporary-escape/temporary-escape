@@ -7,11 +7,17 @@ using namespace Engine;
 
 Renderer::ShaderLoadQueue Renderer::Shaders::createLoadQueue() {
     return {
-        [this](const Config& config, VulkanRenderer& renderer) {
-            brdf = ShaderBrdf{config, renderer};
+        [this](const Config& c, VulkanRenderer& r) {
+            brdf = ShaderBrdf{c, r};
         },
-        [this](const Config& config, VulkanRenderer& renderer) {
-            componentGrid = ShaderComponentGrid{config, renderer};
+        [this](const Config& c, VulkanRenderer& r) {
+            componentGrid = ShaderComponentGrid{c, r};
+        },
+        [this](const Config& c, VulkanRenderer& r) {
+            passSsao = ShaderPassSSAO{c, r};
+        },
+        [this](const Config& c, VulkanRenderer& r) {
+            passDebug = ShaderPassDebug{c, r};
         },
     };
 }
@@ -31,7 +37,10 @@ Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shader
 
     // createRenderPass(renderPasses.brdf, {config.brdfSize, config.brdfSize});
 
-    createMeshes();
+    createGaussianKernel(15, 6.5);
+    createFullScreenQuad();
+    createSsaoNoise();
+    createSsaoSamples();
     createRenderPasses();
     finalizeShaders();
 
@@ -40,41 +49,117 @@ Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shader
 
 Renderer::~Renderer() = default;
 
-VulkanBuffer Renderer::createUniformBuffer(const size_t size) {
+void Renderer::createSsaoNoise() {
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::random_device rd;
+    std::default_random_engine generator{rd()};
+
+    std::vector<Vector4> ssaoNoise;
+    for (unsigned int i = 0; i < 16; i++) {
+        Vector4 noise{
+            // rotate around z-axis (in tangent space)
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            0.0f,
+            0.0f,
+        };
+        ssaoNoise.push_back(noise);
+    }
+
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = {4, 4, 1};
+    textureInfo.image.mipLevels = 1;
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
+
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.anisotropyEnable = VK_FALSE;
+    textureInfo.sampler.maxAnisotropy = 1.0f;
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    ssaoSamples.noise = vulkan.createTexture(textureInfo);
+    vulkan.transitionImageLayout(ssaoSamples.noise, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vulkan.copyDataToImage(ssaoSamples.noise, 0, {0, 0}, 0, {4, 4}, ssaoNoise.data());
+    vulkan.transitionImageLayout(ssaoSamples.noise, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void Renderer::createSsaoSamples() {
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::random_device rd;
+    std::default_random_engine generator{rd()};
+
+    ShaderPassSSAO::SamplesUniform uniform{};
+
+    for (unsigned int i = 0; i < sizeof(ShaderPassSSAO::SamplesUniform::weights) / sizeof(Vector4); ++i) {
+        Vector3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0,
+                       randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        // scale samples s.t. they're more aligned to center of kernel
+        scale = ::lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        uniform.weights[i] = Vector4{sample, 1.0f};
+    }
+
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
+    bufferInfo.size = sizeof(ShaderPassSSAO::SamplesUniform);
     bufferInfo.usage =
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    return vulkan.createBuffer(bufferInfo);
+
+    ssaoSamples.ubo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(ssaoSamples.ubo, &uniform, bufferInfo.size);
 }
 
-VulkanBuffer Renderer::createVertexBuffer(const size_t size) {
+void Renderer::createGaussianKernel(const size_t size, double sigma) {
+    const auto weights = gaussianKernel((size - 1) * 2 + 1, sigma);
+    GaussianWeightsUniform data;
+
+    for (size_t i = 0; i < size; i++) {
+        const auto w = static_cast<float>(weights[size - i - 1]);
+        data.weight[i] = Vector4{w, w, w, 1.0f};
+    }
+    data.count = static_cast<int>(size);
+
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
+    bufferInfo.size = sizeof(GaussianWeightsUniform);
     bufferInfo.usage =
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    return vulkan.createBuffer(bufferInfo);
-}
 
-VulkanBuffer Renderer::createIndexBuffer(const size_t size) {
-    VulkanBuffer::CreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage =
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    return vulkan.createBuffer(bufferInfo);
-}
-
-void Renderer::createMeshes() {
-    createFullScreenQuad();
+    ssaoSamples.ubo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(ssaoSamples.ubo, &data, bufferInfo.size);
 }
 
 void Renderer::createFullScreenQuad() {
@@ -117,6 +202,8 @@ void Renderer::createFullScreenQuad() {
 void Renderer::finalizeShaders() {
     shaders.brdf.finalize(renderPasses.brdf.renderPass);
     shaders.componentGrid.finalize(renderPasses.pbr.renderPass);
+    shaders.passSsao.finalize(renderPasses.ssao.renderPass);
+    shaders.passDebug.finalize(vulkan.getRenderPass());
 }
 
 void Renderer::createRenderPasses() {
@@ -126,6 +213,7 @@ void Renderer::createRenderPasses() {
     }
     createDepthTexture();
     createRenderPassPbr();
+    createRenderPassSsao();
 }
 
 VkFormat Renderer::findDepthFormat() {
@@ -150,10 +238,11 @@ void Renderer::createDepthTexture() {
         // Usage
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         // Aspect mask
-        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    vulkan.transitionImageLayout(renderPasses.depth, VK_IMAGE_LAYOUT_UNDEFINED,
-                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    // vulkan.transitionImageLayout(
+    //     renderPasses.depth, VK_IMAGE_LAYOUT_UNDEFINED,
+    //     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL /*VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL*/);
 }
 
 void Renderer::createRenderPassBrdf() {
@@ -298,8 +387,8 @@ void Renderer::createRenderPassPbr() {
     attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments[3].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VulkanRenderPass::CreateInfo renderPassInfo{};
     renderPassInfo.attachments = attachments;
@@ -364,6 +453,79 @@ void Renderer::createRenderPassPbr() {
     renderPasses.pbr.semaphore = vulkan.createSemaphore(semaphoreInfo);
 }
 
+void Renderer::createRenderPassSsao() {
+    renderPasses.ssao.textures.emplace_back();
+    createAttachment(
+        // Render pass
+        renderPasses.ssao.textures.back(),
+        // Size
+        lastViewportSize,
+        // Format
+        VK_FORMAT_R8G8B8A8_UNORM,
+        // Usage
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        // Aspect mask
+        VK_IMAGE_ASPECT_COLOR_BIT);
+
+    std::vector<VkAttachmentDescription> attachments{1};
+    attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VulkanRenderPass::CreateInfo renderPassInfo{};
+    renderPassInfo.attachments = attachments;
+
+    std::array<VkAttachmentReference, 1> colorAttachmentRefs{};
+
+    colorAttachmentRefs[0].attachment = 0;
+    colorAttachmentRefs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Use subpass dependencies for attachment layout transitions
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments = colorAttachmentRefs.data();
+
+    renderPassInfo.subPasses = {subpass};
+    renderPassInfo.dependencies = {dependency};
+
+    renderPasses.ssao.renderPass = vulkan.createRenderPass(renderPassInfo);
+
+    std::array<VkImageView, 1> attachmentViews = {
+        renderPasses.ssao.textures.at(0).getImageView(),
+    };
+
+    VulkanFramebuffer::CreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPasses.ssao.renderPass.getHandle();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.size());
+    framebufferInfo.pAttachments = attachmentViews.data();
+    framebufferInfo.width = lastViewportSize.x;
+    framebufferInfo.height = lastViewportSize.y;
+    framebufferInfo.layers = 1;
+
+    renderPasses.ssao.fbo = vulkan.createFramebuffer(framebufferInfo);
+
+    VulkanSemaphore::CreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    renderPasses.ssao.semaphore = vulkan.createSemaphore(semaphoreInfo);
+}
+
 void Renderer::createAttachment(VulkanTexture& texture, const Vector2i& size, const VkFormat format,
                                 const VkImageUsageFlags usage, const VkImageAspectFlags aspectMask) {
 
@@ -375,8 +537,7 @@ void Renderer::createAttachment(VulkanTexture& texture, const Vector2i& size, co
     textureInfo.image.arrayLayers = 1;
     textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
     textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    textureInfo.image.usage =
-        usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
     textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
     textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -653,7 +814,9 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     }
     camera->recalculate(vulkan, viewport);
 
+    transitionDepthForWrite();
     renderPassPbr(viewport, scene, options);
+    renderPassSSAO(viewport, scene, options);
 
     auto vkb = vulkan.createCommandBuffer();
 
@@ -673,15 +836,22 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
 
     vkb.beginRenderPass(renderPassInfo);
 
-    /*canvas.begin(viewport);
-    renderStatus(viewport);
-    canvas.end(vkb);*/
+    /*vkb.bindPipeline(shaders.passDebug.getPipeline());
+    vkb.setViewport({0, 0}, viewport);
+    vkb.setScissor({0, 0}, viewport);
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {0, &renderPasses.ssao.textures[0]};
+
+    vkb.bindDescriptors(shaders.passDebug.getPipeline(), shaders.passDebug.getDescriptorSetLayout(), {},
+                        textureBindings);
+    renderMesh(vkb, meshes.fullScreenQuad);*/
 
     vkb.endRenderPass();
     vkb.end();
 
     // vulkan.submitPresentCommandBuffer(vkb);
-    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.pbr.semaphore,
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.ssao.semaphore,
                                vulkan.getCurrentRenderFinishedSemaphore(), &vulkan.getCurrentInFlightFence());
     vulkan.dispose(std::move(vkb));
 
@@ -867,6 +1037,77 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
         EXCEPTION_NESTED("Something went wrong during renderFwd()");
     }*/
 }
+void Renderer::transitionDepthForWrite() {
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = renderPasses.depth.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = renderPasses.depth.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
+
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb);
+    vulkan.dispose(std::move(vkb));
+}
+
+void Renderer::transitionDepthForRead() {
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = renderPasses.depth.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = renderPasses.depth.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
+
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb);
+    vulkan.dispose(std::move(vkb));
+}
 
 void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Renderer::Options& options) {
     auto vkb = vulkan.createCommandBuffer();
@@ -904,6 +1145,59 @@ void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Rende
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                vulkan.getCurrentImageAvailableSemaphore(), renderPasses.pbr.semaphore, nullptr);
+    vulkan.dispose(std::move(vkb));
+}
+
+void Renderer::renderPassSSAO(const Vector2i& viewport, Scene& scene, const Options& options) {
+    auto camera = scene.getPrimaryCamera();
+
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &renderPasses.ssao.fbo;
+    renderPassInfo.renderPass = &renderPasses.ssao.renderPass;
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+
+    renderPassInfo.clearValues.resize(1);
+    renderPassInfo.clearValues[0].color = {{1.0f, 0.0f, 0.0f, 0.0f}};
+
+    vkb.beginRenderPass(renderPassInfo);
+    vkb.setViewport({0, 0}, viewport);
+    vkb.setScissor({0, 0}, viewport);
+
+    vkb.bindPipeline(shaders.passSsao.getPipeline());
+
+    std::array<VulkanBufferBinding, 2> bufferBindings{};
+    bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
+    bufferBindings[1] = {1, &ssaoSamples.ubo};
+
+    std::array<VulkanTextureBinding, 3> textureBindings{};
+    textureBindings[0] = {2, &renderPasses.depth};
+    textureBindings[1] = {3, &renderPasses.pbr.textures[2]};
+    textureBindings[2] = {4, &ssaoSamples.noise};
+
+    vkb.bindDescriptors(shaders.passSsao.getPipeline(), shaders.passSsao.getDescriptorSetLayout(), bufferBindings,
+                        textureBindings);
+
+    ShaderPassSSAO::Uniforms constants{};
+    constants.scale = Vector2{viewport} / 4.0f;
+    vkb.pushConstants(shaders.passSsao.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderPassSSAO::Uniforms), &constants);
+
+    renderMesh(vkb, meshes.fullScreenQuad);
+
+    vkb.endRenderPass();
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.pbr.semaphore,
+                               renderPasses.ssao.semaphore, nullptr);
     vulkan.dispose(std::move(vkb));
 }
 

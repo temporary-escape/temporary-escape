@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../math/matrix.hpp"
-#include "shader.hpp"
+#include "../../math/matrix.hpp"
+#include "../shader.hpp"
 
 namespace Engine {
 class ShaderComponentGrid : public Shader {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../graphics/shader_component_grid.hpp"
+#include "../graphics/shaders/shader_component_grid.hpp"
 #include "../library.hpp"
 #include "../math/vector.hpp"
 #include "../utils/yaml.hpp"

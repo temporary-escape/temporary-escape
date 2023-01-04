@@ -3,8 +3,10 @@
 #include "../config.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
-#include "shader_brdf.hpp"
-#include "shader_component_grid.hpp"
+#include "shaders/shader_brdf.hpp"
+#include "shaders/shader_component_grid.hpp"
+#include "shaders/shader_pass_debug.hpp"
+#include "shaders/shader_pass_ssao.hpp"
 #include "skybox.hpp"
 
 namespace Engine {
@@ -17,6 +19,8 @@ public:
     struct Shaders {
         ShaderBrdf brdf;
         ShaderComponentGrid componentGrid;
+        ShaderPassSSAO passSsao;
+        ShaderPassDebug passDebug;
 
         ShaderLoadQueue createLoadQueue();
     };
@@ -61,24 +65,31 @@ private:
         VulkanSemaphore semaphore;
     };
 
-    VulkanBuffer createUniformBuffer(size_t size);
-    VulkanBuffer createVertexBuffer(size_t size);
-    VulkanBuffer createIndexBuffer(size_t size);
-
-    void createMeshes();
     void createFullScreenQuad();
     void createRenderPasses();
     void createRenderPassBrdf();
     void createRenderPassPbr();
+    void createRenderPassSsao();
     void finalizeShaders();
     void createDepthTexture();
+    void createSsaoNoise();
+    void createSsaoSamples();
+    void createGaussianKernel(size_t size, double sigma);
     void createAttachment(VulkanTexture& texture, const Vector2i& size, VkFormat format, VkImageUsageFlags usage,
                           VkImageAspectFlags aspectMask);
     void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
     void renderBrdf();
     void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
+    void renderPassSSAO(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void transitionDepthForWrite();
+    void transitionDepthForRead();
     VkFormat findDepthFormat();
+
+    struct GaussianWeightsUniform {
+        Vector4 weight[32];
+        int count{0};
+    };
 
     // static constexpr size_t maxDirectionalLights = 4;
 
@@ -117,11 +128,17 @@ private:
         VkFormat depthFormat;
         RenderPass brdf;
         RenderPass pbr;
+        RenderPass ssao;
     } renderPasses;
 
     struct {
         RenderPassMesh fullScreenQuad;
     } meshes;
+
+    struct {
+        VulkanBuffer ubo;
+        VulkanTexture noise;
+    } ssaoSamples;
 
     // Pipelines& pipelines;
 
