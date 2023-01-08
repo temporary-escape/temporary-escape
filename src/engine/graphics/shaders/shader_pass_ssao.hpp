@@ -19,16 +19,11 @@ public:
     };
 
     ShaderPassSSAO() = default;
-    explicit ShaderPassSSAO(const Config& config, VulkanRenderer& vulkan);
+    explicit ShaderPassSSAO(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                            VulkanRenderPass& renderPass);
     ShaderPassSSAO(const ShaderPassSSAO& other) = delete;
     ShaderPassSSAO(ShaderPassSSAO&& other) = default;
     ShaderPassSSAO& operator=(const ShaderPassSSAO& other) = delete;
     ShaderPassSSAO& operator=(ShaderPassSSAO&& other) = default;
-    void finalize(VulkanRenderPass& renderPass) override;
-
-private:
-    VulkanRenderer* vulkan{nullptr};
-    VulkanShaderModule vert;
-    VulkanShaderModule frag;
 };
 } // namespace Engine

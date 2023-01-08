@@ -2,14 +2,14 @@
 
 using namespace Engine;
 
-ShaderBrdf::ShaderBrdf(const Config& config, VulkanRenderer& vulkan) : vulkan{&vulkan} {
+ShaderBrdf::ShaderBrdf(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                       VulkanRenderPass& renderPass) {
+
     descriptorSetLayout = vulkan.createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>{});
 
-    vert = vulkan.createShaderModule(config.shadersPath / "brdf.vert", VK_SHADER_STAGE_VERTEX_BIT);
-    frag = vulkan.createShaderModule(config.shadersPath / "brdf.frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-}
+    auto& vert = modules.findByName("brdf.vert");
+    auto& frag = modules.findByName("brdf.frag");
 
-void ShaderBrdf::finalize(VulkanRenderPass& renderPass) {
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&vert, &frag};
 
@@ -90,5 +90,5 @@ void ShaderBrdf::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    pipeline = vulkan->createPipeline(renderPass, pipelineInfo);
+    pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }

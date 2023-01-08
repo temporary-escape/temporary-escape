@@ -15,7 +15,7 @@ Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nu
     skyboxGenerator{skyboxGenerator},
     registry{registry},
     client{client},
-    skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}} {
+    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
     viewSpace = std::make_unique<ViewSpace>(config, renderer, registry, skybox, client);
     viewGalaxy = std::make_unique<ViewGalaxy>(config, renderer, registry, client);
@@ -117,6 +117,12 @@ void Game::update(float deltaTime) {
 }
 
 void Game::render(const Vector2i& viewport) {
+    if (client.getSystemSeed() != 0 && client.getSystemSeed() != skyboxSeed) {
+        skyboxSeed = client.getSystemSeed();
+        renderer.getVulkan().waitQueueIdle();
+        skybox = skyboxGenerator.generate(skyboxSeed);
+    }
+
     view->render(viewport);
     /*auto& vulkan = renderer.getVulkan();
 

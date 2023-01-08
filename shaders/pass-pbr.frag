@@ -5,7 +5,7 @@ layout(location = 0) in VS_OUT {
     vec2 texCoords;
 } vs_out;
 
-layout (std140, binding = 0) uniform CameraMatrices {
+layout (std140, binding = 0) uniform CameraUniform {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
     mat4 viewMatrix;
@@ -20,15 +20,14 @@ layout (std140, binding = 1) uniform DirectionalLights {
     int count;
 } directionalLights;
 
-layout(binding = 2) uniform sampler2D texBaseColor;
-layout(binding = 3) uniform sampler2D texEmissive;
-layout(binding = 4) uniform sampler2D texMetallicRoughnessAmbient;
-layout(binding = 5) uniform sampler2D texNormal;
-layout(binding = 6) uniform samplerCube texIrradiance;
-layout(binding = 7) uniform samplerCube texPrefilter;
-layout(binding = 8) uniform sampler2D texBrdf;
-layout(binding = 9) uniform sampler2D texDepth;
-layout(binding = 10) uniform sampler2D texSsao;
+layout(binding = 2) uniform sampler2D texBaseColorAmbient;
+layout(binding = 3) uniform sampler2D texEmissiveRoughness;
+layout(binding = 4) uniform sampler2D texNormalMetallic;
+layout(binding = 5) uniform samplerCube texIrradiance;
+layout(binding = 6) uniform samplerCube texPrefilter;
+layout(binding = 7) uniform sampler2D texBrdf;
+layout(binding = 8) uniform sampler2D texDepth;
+layout(binding = 9) uniform sampler2D texSsao;
 
 layout(location = 0) out vec4 outColor;
 
@@ -118,19 +117,17 @@ void main() {
         discard;
     }
 
-    vec4 baseColorRaw = texture(texBaseColor, vs_out.texCoords);
-    vec4 emissiveRaw = texture(texEmissive, vs_out.texCoords);
-    vec4 metallicRoughnessAmbientRaw = texture(texMetallicRoughnessAmbient, vs_out.texCoords);
-    vec4 normalRaw = texture(texNormal, vs_out.texCoords);
+    vec4 baseColorAmbientRaw = texture(texBaseColorAmbient, vs_out.texCoords);
+    vec4 emissiveRoughnessRaw = texture(texEmissiveRoughness, vs_out.texCoords);
+    vec4 normalMetallicRaw = texture(texNormalMetallic, vs_out.texCoords);
     float ssao = texture(texSsao, vs_out.texCoords).r;
 
-    float alpha = baseColorRaw.a;
-    vec3 albedo = pow(baseColorRaw.rgb, vec3(gamma));
-    vec3 emissive = pow(emissiveRaw.rgb, vec3(gamma));
-    float metallic = metallicRoughnessAmbientRaw.r;
-    float roughness = metallicRoughnessAmbientRaw.g;
-    float ambientOcclusion = metallicRoughnessAmbientRaw.b;
-    vec3 N = normalize(normalRaw.rgb * 2.0 - 1.0);
+    vec3 albedo = pow(baseColorAmbientRaw.rgb, vec3(gamma));
+    vec3 emissive = pow(emissiveRoughnessRaw.rgb, vec3(gamma));
+    float metallic = normalMetallicRaw.a;
+    float roughness = emissiveRoughnessRaw.a;
+    float ambientOcclusion = baseColorAmbientRaw.b;
+    vec3 N = normalize(normalMetallicRaw.rgb * 2.0 - 1.0);
 
     // Get world pos from UV and camera projection matrix
     vec3 worldpos = getWorldPos(depth, vs_out.texCoords);

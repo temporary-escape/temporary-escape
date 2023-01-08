@@ -240,7 +240,7 @@ void VulkanRenderer::waitDeviceIdle() {
 
 void VulkanRenderer::waitQueueIdle() {
     if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
-        EXCEPTION("Failed to upload buffer data, wait queue error");
+        EXCEPTION("Failed to wait queue error");
     }
 }
 
@@ -432,7 +432,7 @@ void VulkanRenderer::transitionImageLayout(VulkanTexture& texture, const VkImage
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = texture.getMipMaps();
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = texture.getLayerCount();
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -568,7 +568,7 @@ void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = texture.getLayerCount();
     barrier.subresourceRange.levelCount = 1;
 
     int32_t mipWidth = texture.getExtent().width;
@@ -589,13 +589,13 @@ void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
         blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.srcSubresource.mipLevel = i - 1;
         blit.srcSubresource.baseArrayLayer = 0;
-        blit.srcSubresource.layerCount = 1;
+        blit.srcSubresource.layerCount = texture.getLayerCount();
         blit.dstOffsets[0] = {0, 0, 0};
         blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
         blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.dstSubresource.mipLevel = i;
         blit.dstSubresource.baseArrayLayer = 0;
-        blit.dstSubresource.layerCount = 1;
+        blit.dstSubresource.layerCount = texture.getLayerCount();
 
         std::array<VkImageBlit, 1> imageBlit{};
         imageBlit[0] = blit;

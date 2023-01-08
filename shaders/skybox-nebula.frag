@@ -9,13 +9,13 @@ layout(location = 0) in VS_OUT {
     vec3 position;
 } vs_out;
 
-layout (std140, binding = 0) uniform NebulaUniform {
+layout(push_constant) uniform Uniforms {
     vec4 uColor;
     vec4 uOffset;
     float uScale;
     float uIntensity;
     float uFalloff;
-} params;
+} uniforms;
 
 layout(location = 0) out vec4 outColor;
 
@@ -342,8 +342,8 @@ float nebula(vec3 p) {
 }
 
 void main() {
-    vec3 posn = normalize(vs_out.position) * params.uScale;
-    float c = min(1.0, nebula(posn + params.uOffset.xyz) * params.uIntensity);
-    c = pow(c, params.uFalloff);
-    outColor = vec4(params.uColor.xyz, c);
+    vec3 posn = normalize(vs_out.position) * uniforms.uScale;
+    float c = min(1.0, nebula(posn + uniforms.uOffset.xyz) * uniforms.uIntensity);
+    c = pow(c, uniforms.uFalloff);
+    outColor = vec4(uniforms.uColor.xyz, c);
 }

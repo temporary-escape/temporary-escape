@@ -2,7 +2,9 @@
 
 using namespace Engine;
 
-ShaderPassSSAO::ShaderPassSSAO(const Config& config, VulkanRenderer& vulkan) : vulkan{&vulkan} {
+ShaderPassSSAO::ShaderPassSSAO(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                               VulkanRenderPass& renderPass) {
+
     VkDescriptorSetLayoutBinding uboCameraLayoutBinding{};
     uboCameraLayoutBinding.binding = 0;
     uboCameraLayoutBinding.descriptorCount = 1;
@@ -46,11 +48,9 @@ ShaderPassSSAO::ShaderPassSSAO(const Config& config, VulkanRenderer& vulkan) : v
         noiseTextureLayoutBinding,
     });
 
-    vert = vulkan.createShaderModule(config.shadersPath / "pass-ssao.vert", VK_SHADER_STAGE_VERTEX_BIT);
-    frag = vulkan.createShaderModule(config.shadersPath / "pass-ssao.frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-}
+    auto& vert = modules.findByName("pass-ssao.vert");
+    auto& frag = modules.findByName("pass-ssao.frag");
 
-void ShaderPassSSAO::finalize(VulkanRenderPass& renderPass) {
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&vert, &frag};
 
@@ -132,5 +132,5 @@ void ShaderPassSSAO::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    pipeline = vulkan->createPipeline(renderPass, pipelineInfo);
+    pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }

@@ -42,14 +42,14 @@ public:
         return playerLocation;
     }
 
+    uint64_t getSystemSeed() const {
+        return systemSeed;
+    }
+
     void handle(MessagePlayerLocationChanged res);
     void handle(MessageSceneEntitiesChanged res);
     void handle(MessageSceneDeltasChanged res);
     void handle(MessagePingRequest req);
-
-    template <typename Fn> void onSectorUpdated(Fn&& fn) {
-        callbackSystemUpdated = fn;
-    }
 
 private:
     void fetchModInfo(std::shared_ptr<Promise<void>> promise);
@@ -66,6 +66,7 @@ private:
     const PlayerLocalProfile& localProfile;
     std::string playerId;
     PlayerLocationData playerLocation;
+    uint64_t systemSeed{0};
 
     // Promise<void> loggedIn;
 
@@ -76,7 +77,5 @@ private:
     std::shared_ptr<Entity> camera;
 
     std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
-
-    std::function<void(SystemData&)> callbackSystemUpdated;
 };
 } // namespace Engine

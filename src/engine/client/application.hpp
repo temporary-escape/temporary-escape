@@ -42,7 +42,7 @@ private:
     void createRenderer();
     void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
     void compileShaders();
-    void compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next);
+    void compileNextShaderInQueue(ShaderModules::LoadQueue::iterator next);
     void startDatabase();
     void startServer();
     void startClient();
@@ -50,12 +50,7 @@ private:
     void startSinglePlayer();
 
     const Config& config;
-    // Renderer::Pipelines rendererPipelines;
-    // SkyboxGenerator::Pipelines skyboxGeneratorPipelines;
-    // Scene::Pipelines scenePipelines;
-    Renderer::Shaders shaders;
-    Renderer::ShaderLoadQueue shaderLoadQueue;
-    SkyboxGenerator skyboxGenerator;
+
     Canvas canvas;
     FontFamily font;
     Nuklear nuklear;
@@ -70,6 +65,8 @@ private:
     std::unique_ptr<TransactionalDatabase> db;
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
+    std::unique_ptr<ShaderModules> shaderModules;
+    std::unique_ptr<SkyboxGenerator> skyboxGenerator;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;

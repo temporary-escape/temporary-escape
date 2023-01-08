@@ -5,11 +5,10 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in float in_Brightness;
 layout(location = 2) in vec4 in_Color;
 
-layout(push_constant) uniform Uniforms {
+layout (std140, binding = 0) uniform CameraUniform {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec2 particleSize;
-} uniforms;
+} camera;
 
 layout(location = 0) out VS_OUT {
     float brightness;
@@ -23,5 +22,5 @@ out gl_PerVertex {
 void main() {
     vs_out.brightness = in_Brightness;
     vs_out.color = in_Color;
-    gl_Position = uniforms.viewMatrix * vec4(in_Position, 1.0);
+    gl_Position = camera.viewMatrix * vec4(in_Position, 1.0);
 }

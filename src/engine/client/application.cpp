@@ -8,7 +8,6 @@ using namespace Engine;
 Application::Application(const Config& config) :
     VulkanRenderer{config},
     config{config},
-    skyboxGenerator{config, *this},
     canvas{*this},
     font{*this, config.fontsPath, "iosevka-aile", 42.0f},
     nuklear{canvas, font, config.guiFontSize} {
@@ -76,14 +75,6 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     nuklear.end();
     canvas.end(vkb);
 
-    /*cmd.bindPipeline(pipeline);
-    cmd.setViewport({0, 0}, viewport);
-    cmd.setScissor({0, 0}, viewport);
-    cmd.bindBuffers({{vbo, 0}});
-    cmd.bindIndexBuffer(ibo, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
-    cmd.bindDescriptors(pipeline, descriptorSetLayout, {{0, &ubo.getCurrentBuffer()}}, {{1, &texture}});
-    cmd.drawIndexed(indices.size(), 1, 0, 0, 0);*/
-
     vkb.endRenderPass();
     vkb.end();
 
@@ -119,7 +110,7 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         Log::i(CMP, "Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, skyboxGenerator, *registry, *client);
+        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, *client);
     } else {
         NEXT(createRegistry());
     }
@@ -220,8 +211,6 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
         const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
         const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
 
-        Log::i(CMP, "Loading asset {} out of {}", count, registry->getLoadQueue().size());
-
         try {
             (*next)(*this);
             ++next;
@@ -265,7 +254,8 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, shaders, *voxelShapeCache);
+    renderer = std::make_unique<Renderer>(config, *this, *shaderModules, *voxelShapeCache);
+    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createRegistry());
 }
@@ -287,29 +277,27 @@ void Application::compileShaders() {
     status.message = "Loading shaders...";
     status.value = 0.1f;
 
-    shaderLoadQueue = shaders.createLoadQueue();
-    NEXT(compileNextShaderInQueue(shaderLoadQueue.begin()));
+    shaderModules = std::make_unique<ShaderModules>(config, *this);
+    NEXT(compileNextShaderInQueue(shaderModules->getLoadQueue().begin()));
 }
 
-void Application::compileNextShaderInQueue(Renderer::ShaderLoadQueue::iterator next) {
-    if (next == shaderLoadQueue.end()) {
+void Application::compileNextShaderInQueue(ShaderModules::LoadQueue::iterator next) {
+    if (next == shaderModules->getLoadQueue().end()) {
         NEXT(createVoxelShapeCache());
     }
     // Not yet done, we have more shaders to compile
     else {
-        const auto count = std::distance(shaderLoadQueue.begin(), next) + 1;
-        const auto progress = static_cast<float>(count) / static_cast<float>(shaderLoadQueue.size());
-
-        Log::i(CMP, "Compiling shader {} out of {}", count, shaderLoadQueue.size());
+        const auto count = std::distance(shaderModules->getLoadQueue().begin(), next) + 1;
+        const auto progress = static_cast<float>(count) / static_cast<float>(shaderModules->getLoadQueue().size());
 
         try {
-            (*next)(config, *this);
+            (*next)();
             ++next;
         } catch (...) {
             EXCEPTION_NESTED("Failed to compile shader");
         }
 
-        status.message = fmt::format("Loading shaders ({}/{})...", count, shaderLoadQueue.size());
+        status.message = fmt::format("Loading shaders ({}/{})...", count, shaderModules->getLoadQueue().size());
         status.value = 0.1f + progress * 0.2f;
 
         NEXT(compileNextShaderInQueue(next));

@@ -2,8 +2,6 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(push_constant) uniform Uniforms {
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
     float roughness;
 } uniforms;
 
@@ -11,7 +9,7 @@ layout(location = 0) in VS_OUT {
     vec3 texcoords;
 } vs_out;
 
-layout(binding = 0) uniform samplerCube texSkybox;
+layout(binding = 1) uniform samplerCube texSkybox;
 
 layout(location = 0) out vec4 outColor;
 

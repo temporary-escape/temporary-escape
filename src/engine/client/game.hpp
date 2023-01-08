@@ -48,6 +48,7 @@ private:
     Client& client;
     Stats stats;
     Skybox skybox;
+    uint64_t skyboxSeed{0};
 
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;

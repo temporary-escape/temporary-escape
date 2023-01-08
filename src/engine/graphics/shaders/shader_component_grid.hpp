@@ -19,17 +19,11 @@ public:
     };
 
     ShaderComponentGrid() = default;
-    explicit ShaderComponentGrid(const Config& config, VulkanRenderer& vulkan);
+    explicit ShaderComponentGrid(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                                 VulkanRenderPass& renderPass);
     ShaderComponentGrid(const ShaderComponentGrid& other) = delete;
     ShaderComponentGrid(ShaderComponentGrid&& other) = default;
     ShaderComponentGrid& operator=(const ShaderComponentGrid& other) = delete;
     ShaderComponentGrid& operator=(ShaderComponentGrid&& other) = default;
-    void finalize(VulkanRenderPass& renderPass) override;
-
-private:
-    VulkanRenderer* vulkan{nullptr};
-    VulkanShaderModule vert;
-    VulkanShaderModule frag;
-    VulkanShaderModule geom;
 };
 } // namespace Engine

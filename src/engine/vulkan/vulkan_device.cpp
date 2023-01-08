@@ -20,6 +20,7 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.geometryShader = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

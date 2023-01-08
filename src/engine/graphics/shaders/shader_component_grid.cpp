@@ -2,7 +2,8 @@
 
 using namespace Engine;
 
-ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& vulkan) : vulkan{&vulkan} {
+ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                                         VulkanRenderPass& renderPass) {
     VkDescriptorSetLayoutBinding uboCameraLayoutBinding{};
     uboCameraLayoutBinding.binding = 0;
     uboCameraLayoutBinding.descriptorCount = 1;
@@ -64,12 +65,10 @@ ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& v
         metallicLayoutBinding,
     });
 
-    vert = vulkan.createShaderModule(config.shadersPath / "component-grid.vert", VK_SHADER_STAGE_VERTEX_BIT);
-    frag = vulkan.createShaderModule(config.shadersPath / "component-grid.frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-    geom = vulkan.createShaderModule(config.shadersPath / "component-grid.geom", VK_SHADER_STAGE_GEOMETRY_BIT);
-}
+    auto& vert = modules.findByName("component-grid.vert");
+    auto& frag = modules.findByName("component-grid.frag");
+    auto& geom = modules.findByName("component-grid.geom");
 
-void ShaderComponentGrid::finalize(VulkanRenderPass& renderPass) {
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&vert, &frag};
 
@@ -175,5 +174,5 @@ void ShaderComponentGrid::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.depthStencilState.depthBoundsTestEnable = VK_FALSE;
     pipelineInfo.depthStencilState.stencilTestEnable = VK_FALSE;
 
-    pipeline = vulkan->createPipeline(renderPass, pipelineInfo);
+    pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }

@@ -2,7 +2,9 @@
 
 using namespace Engine;
 
-ShaderPassDebug::ShaderPassDebug(const Config& config, VulkanRenderer& vulkan) : vulkan{&vulkan} {
+ShaderPassDebug::ShaderPassDebug(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                                 VulkanRenderPass& renderPass) {
+
     VkDescriptorSetLayoutBinding textureLayoutBinding{};
     textureLayoutBinding.binding = 0;
     textureLayoutBinding.descriptorCount = 1;
@@ -14,11 +16,9 @@ ShaderPassDebug::ShaderPassDebug(const Config& config, VulkanRenderer& vulkan) :
         textureLayoutBinding,
     });
 
-    vert = vulkan.createShaderModule(config.shadersPath / "pass-debug.vert", VK_SHADER_STAGE_VERTEX_BIT);
-    frag = vulkan.createShaderModule(config.shadersPath / "pass-debug.frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-}
+    auto& vert = modules.findByName("pass-debug.vert");
+    auto& frag = modules.findByName("pass-debug.frag");
 
-void ShaderPassDebug::finalize(VulkanRenderPass& renderPass) {
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&vert, &frag};
 
@@ -92,5 +92,5 @@ void ShaderPassDebug::finalize(VulkanRenderPass& renderPass) {
     pipelineInfo.pipelineLayoutInfo.setLayoutCount = 1;
     pipelineInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
 
-    pipeline = vulkan->createPipeline(renderPass, pipelineInfo);
+    pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }

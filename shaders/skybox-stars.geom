@@ -4,9 +4,12 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
-layout(push_constant) uniform Uniforms {
+layout (std140, binding = 0) uniform CameraUniform {
     mat4 viewMatrix;
     mat4 projectionMatrix;
+} camera;
+
+layout(push_constant) uniform Uniforms {
     vec2 particleSize;
 } uniforms;
 
@@ -29,25 +32,25 @@ void main() {
 
     // a: left-bottom
     vec2 va = P.xy + vec2(-1.0, -1.0) * uniforms.particleSize;
-    gl_Position = uniforms.projectionMatrix * vec4(va, P.zw);
+    gl_Position = camera.projectionMatrix * vec4(va, P.zw);
     gs_out.coords = vec2(-1.0, -1.0);
     EmitVertex();
 
     // b: left-top
     vec2 vb = P.xy + vec2(-1.0, 1.0) * uniforms.particleSize;
-    gl_Position = uniforms.projectionMatrix * vec4(vb, P.zw);
+    gl_Position = camera.projectionMatrix * vec4(vb, P.zw);
     gs_out.coords = vec2(-1.0, 1.0);
     EmitVertex();
 
     // d: right-bottom
     vec2 vd = P.xy + vec2(1.0, -1.0) * uniforms.particleSize;
-    gl_Position = uniforms.projectionMatrix * vec4(vd, P.zw);
+    gl_Position = camera.projectionMatrix * vec4(vd, P.zw);
     gs_out.coords = vec2(1.0, -1.0);
     EmitVertex();
 
     // c: right-top
     vec2 vc = P.xy + vec2(1.0, 1.0) * uniforms.particleSize;
-    gl_Position = uniforms.projectionMatrix * vec4(vc, P.zw);
+    gl_Position = camera.projectionMatrix * vec4(vc, P.zw);
     gs_out.coords = vec2(1.0, 1.0);
     EmitVertex();
 

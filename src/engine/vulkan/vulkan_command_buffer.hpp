@@ -76,6 +76,7 @@ public:
                        const void* data);
     void blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);
+    void generateMipMaps(VulkanTexture& texture);
     void destroy() override;
 
 private:

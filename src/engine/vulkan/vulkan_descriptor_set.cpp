@@ -18,8 +18,8 @@ VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, VulkanDescriptorPool& 
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layoutPtr;
 
-    if (vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
-        EXCEPTION("Failed to allocate descriptor sets!");
+    if (const auto err = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet); err != VK_SUCCESS) {
+        EXCEPTION("Failed to allocate descriptor sets! Error: {}", err);
     }
 }
 

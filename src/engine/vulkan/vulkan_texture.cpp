@@ -32,6 +32,7 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo)
     format = createInfo.image.format;
     extent = createInfo.image.extent;
     mipMaps = createInfo.image.mipLevels;
+    layerCount = createInfo.image.arrayLayers;
 }
 
 VulkanTexture::~VulkanTexture() {
@@ -59,6 +60,7 @@ void VulkanTexture::swap(VulkanTexture& other) noexcept {
     std::swap(format, other.format);
     std::swap(extent, other.extent);
     std::swap(mipMaps, other.mipMaps);
+    std::swap(layerCount, other.layerCount);
 }
 
 void VulkanTexture::destroy() {

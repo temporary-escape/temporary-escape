@@ -34,11 +34,11 @@ public:
         return ptr;
     }
 
-    const T* begin() noexcept {
+    const T* begin() const noexcept {
         return ptr;
     }
 
-    const T* end() noexcept {
+    const T* end() const noexcept {
         return ptr + len;
     }
 

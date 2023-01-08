@@ -114,9 +114,7 @@ void Client::fetchSystemInfo() {
     send(req, [=](MessageFetchSystemResponse res) {
         Log::i(CMP, "Got system info for player location");
 
-        if (callbackSystemUpdated) {
-            callbackSystemUpdated(res.system);
-        }
+        systemSeed = res.system.seed;
     });
 }
 

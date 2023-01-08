@@ -2,8 +2,6 @@
 
 using namespace Engine;
 
-static const auto skyboxDefaultColor = Color4{0.03f, 0.03f, 0.03f, 1.0f};
-
 static const std::array<Matrix4, 6> captureViewMatrices = {
     glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
     glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
@@ -43,189 +41,510 @@ static const glm::mat4 captureProjectionMatrix = glm::perspective(PI / 2.0, 1.0,
 
 // For some reason the first side (prefilter) texture is always bad no matter what I do.
 // Temporary workaround, render the first side one more time. This seems to work.
-// TODO: Find why the first side never renders properly.
-static const std::array<int, 7> sidesToRender = {0, 1, 2, 3, 4, 5, 0};
+static const std::array<int, 6> sidesToRender = {0, 1, 2, 3, 4, 5};
 
 #define CMP "SkyboxGenerator"
 
-struct StarVertex {
-    Vector3 position;
-    float brightness;
-    Color4 color;
-};
+SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, ShaderModules& shaderModules) :
+    config{config}, vulkan{vulkan} {
 
-SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan) :
-    config{config}, vulkan{vulkan}, skybox{vulkan, skyboxDefaultColor} {
+    createSkyboxMesh();
 
-    prepareFbo();
-    prepareNebulaMesh();
+    createRenderPass(renderPasses.color, Vector2i{config.skyboxSize}, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_CLEAR);
+    createRenderPass(renderPasses.irradiance, Vector2i{config.skyboxIrradianceSize}, VK_FORMAT_R16G16B16A16_UNORM,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    createRenderPass(renderPasses.prefilter, Vector2i{config.skyboxPrefilterSize}, VK_FORMAT_R16G16B16A16_UNORM,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+
+    shaders.stars = ShaderSkyboxStars{config, vulkan, shaderModules, renderPasses.color.renderPass};
+    shaders.nebula = ShaderSkyboxNebula{config, vulkan, shaderModules, renderPasses.color.renderPass};
+    shaders.prefilter = ShaderSkyboxPrefilter{config, vulkan, shaderModules, renderPasses.prefilter.renderPass};
+    shaders.irradiance = ShaderSkyboxIrradiance{config, vulkan, shaderModules, renderPasses.irradiance.renderPass};
 }
 
-void SkyboxGenerator::updateSeed(const uint64_t seed) {
-    Log::i(CMP, "Updating skybox generator seed: {}", seed);
+void SkyboxGenerator::createSkyboxMesh() {
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(float) * skyboxVertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    auto doWork = false;
-    if ((this->seed && *this->seed != seed) || !this->seed) {
-        Log::i(CMP, "Skybox generator seed is different, triggering work!");
-        doWork = true;
-    }
-
-    if (doWork) {
-        generate(seed);
-    }
+    skybox.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(skybox.vbo, skyboxVertices.data(), sizeof(float) * skyboxVertices.size());
 }
 
-void SkyboxGenerator::generate(const uint64_t seed) {
-    // We don't want to halt the rendering while the skybox is generating.
-    // Therefore, we generate the skybox step by step.
-    // TODO: Maybe put this on a separate graphics queue without splitting this into multiple steps.
+void SkyboxGenerator::createAttachment(RenderPass& renderPass, const Vector2i& size, const VkFormat format) {
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = format;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
+    textureInfo.image.mipLevels = 1;
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    this->seed = seed;
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = format;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
 
-    rng = std::mt19937_64{seed};
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.anisotropyEnable = VK_FALSE;
+    textureInfo.sampler.maxAnisotropy = 1.0f;
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.minLod = 0.0f;
+    textureInfo.sampler.maxLod = 0.0f;
 
-    prepareStars(starsSmall, 50000);
-    prepareStars(starsLarge, 1000);
-    prepareNebulaUbo();
+    renderPass.texture = vulkan.createTexture(textureInfo);
+}
 
-    // Prepare texture
-    jobs.emplace_back([this]() { prepareCubemap(); });
+void SkyboxGenerator::createFramebuffer(RenderPass& renderPass, const Vector2i& size) {
+    std::array<VkImageView, 1> attachmentViews = {
+        renderPass.texture.getImageView(),
+    };
+
+    VulkanFramebuffer::CreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass.renderPass.getHandle();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.size());
+    framebufferInfo.pAttachments = attachmentViews.data();
+    framebufferInfo.width = size.x;
+    framebufferInfo.height = size.y;
+    framebufferInfo.layers = 1;
+
+    renderPass.fbo = vulkan.createFramebuffer(framebufferInfo);
+}
+
+void SkyboxGenerator::createRenderPass(RenderPass& renderPass, const Vector2i& size, const VkFormat format,
+                                       const VkImageLayout finalLayout, const VkAttachmentLoadOp loadOp) {
+    createAttachment(renderPass, size, format);
+
+    std::vector<VkAttachmentDescription> attachments{1};
+    attachments[0].format = format;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = loadOp; // VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = finalLayout; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+    VulkanRenderPass::CreateInfo renderPassInfo{};
+    renderPassInfo.attachments = attachments;
+
+    std::array<VkAttachmentReference, 1> colorAttachmentRefs{};
+
+    colorAttachmentRefs[0].attachment = 0;
+    colorAttachmentRefs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Use subpass dependencies for attachment layout transitions
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments = colorAttachmentRefs.data();
+
+    renderPassInfo.subPasses = {subpass};
+    renderPassInfo.dependencies = {dependency};
+
+    renderPass.renderPass = vulkan.createRenderPass(renderPassInfo);
+
+    createFramebuffer(renderPass, size);
+}
+
+void SkyboxGenerator::transitionTexture(VulkanCommandBuffer& vkb, VulkanTexture& texture, const VkImageLayout oldLayout,
+                                        const VkImageLayout newLayout, const VkPipelineStageFlags srcStageMask,
+                                        const VkPipelineStageFlags dstStageMask) {
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = texture.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = srcStageMask;
+    barrier.dstAccessMask = dstStageMask;
+
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
+}
+
+void SkyboxGenerator::copyTexture(VulkanCommandBuffer& vkb, VulkanTexture& source, VulkanTexture& target, int side) {
+    VkOffset3D offset = {
+        static_cast<int32_t>(source.getExtent().width),
+        static_cast<int32_t>(source.getExtent().height),
+        1,
+    };
+
+    std::array<VkImageBlit, 1> blit{};
+    blit[0].srcOffsets[0] = {0, 0, 0};
+    blit[0].srcOffsets[1] = offset;
+    blit[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit[0].srcSubresource.mipLevel = 0;
+    blit[0].srcSubresource.baseArrayLayer = 0;
+    blit[0].srcSubresource.layerCount = 1;
+    blit[0].dstOffsets[0] = {0, 0, 0};
+    blit[0].dstOffsets[1] = offset;
+    blit[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit[0].dstSubresource.mipLevel = 0;
+    blit[0].dstSubresource.baseArrayLayer = side;
+    blit[0].dstSubresource.layerCount = 1;
+
+    vkb.blitImage(source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blit,
+                  VK_FILTER_NEAREST);
+}
+
+Skybox SkyboxGenerator::generate(uint64_t seed) {
+    Log::i(CMP, "Generating skybox with seed: {}", seed);
+
+    Rng rng{seed};
+
+    Skybox skybox{};
+
+    Stars starsSmall{};
+    Stars starsLarge{};
+    prepareStars(rng, starsSmall, 50000);
+    prepareStars(rng, starsLarge, 1000);
+
+    std::vector<ShaderSkyboxNebula::Uniforms> nebulaParams{};
+    prepareNebulaUbo(rng, nebulaParams);
+
+    prepareCubemap(skybox);
 
     // Render all sides
     for (auto side : sidesToRender) {
-        // Render small stars
-        jobs.emplace_back([this, side]() { renderStars(starsSmall, side, 0.10f, true); });
-        jobs.emplace_back([this, side]() { renderStars(starsLarge, side, 0.20f, false); });
+        prepareCameraUbo(side);
 
-        // Render nebulas
-        for (auto& ubo : nebula.ubos) {
-            jobs.emplace_back([this, side, &ubo]() { renderNebula(ubo, side); });
+        auto vkb = vulkan.createCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkb.start(beginInfo);
+
+        // Transition the FBO texture so we can copy from it
+        transitionTexture(vkb, renderPasses.color.texture, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0, VK_ACCESS_SHADER_WRITE_BIT);
+
+        // Render pass for creating the skybox
+        VulkanRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.framebuffer = &renderPasses.color.fbo;
+        renderPassInfo.renderPass = &renderPasses.color.renderPass;
+        renderPassInfo.offset = {0, 0};
+        renderPassInfo.size = {config.skyboxSize, config.skyboxSize};
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        renderPassInfo.clearValues = {clearColor};
+        vkb.beginRenderPass(renderPassInfo);
+        vkb.setScissor({0, 0}, renderPassInfo.size);
+        vkb.setViewport({0, 0}, renderPassInfo.size);
+
+        renderStars(vkb, starsSmall, side, 0.10f);
+        renderStars(vkb, starsLarge, side, 0.20f);
+
+        for (const auto& p : nebulaParams) {
+            renderNebula(vkb, p);
         }
 
-        // Copy to the target cubemap texture
-        jobs.emplace_back([this, side]() { blit(main.texture, skybox.getTexture(), side, config.skyboxSize); });
+        vkb.endRenderPass();
 
-        // Irradiance texture for the PBR
-        jobs.emplace_back([this, side]() { renderIrradiance(side); });
+        // Copy the color texture to the destination
+        copyTexture(vkb, renderPasses.color.texture, skybox.getTexture(), side);
 
-        // Copy to the target irradiance texture
-        jobs.emplace_back(
-            [this, side]() { blit(irradiance.texture, skybox.getIrradiance(), side, config.skyboxIrradianceSize); });
-
-        // Prefilter texture for the PBR
-        for (auto level = 0; level < static_cast<int>(std::log2(config.skyboxPrefilterSize)); level++) {
-            jobs.emplace_back([this, side, level]() { renderPrefilter(side, level); });
-
-            // Copy to the target cubemap texture
-            jobs.emplace_back([this, side, level]() {
-                blitLevel(prefilter.texture, skybox.getPrefilter(), side, config.skyboxPrefilterSize, level);
-            });
-        }
+        // Wait for the commands to finish
+        vkb.end();
+        vulkan.submitCommandBuffer(vkb);
+        vulkan.waitQueueIdle();
+        vulkan.dispose(std::move(vkb));
     }
-}
 
-void SkyboxGenerator::render() {
-    if (!jobs.empty()) {
-        jobs.front()();
-        jobs.pop_front();
+    vulkan.generateMipMaps(skybox.getTexture());
 
-        if (jobs.empty()) {
-            Log::i(CMP, "Skybox generator finished!");
-        }
+    // Render all sides
+    for (auto side : sidesToRender) {
+        prepareCameraUbo(side);
+
+        auto vkb = vulkan.createCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkb.start(beginInfo);
+
+        // Render pass for creating an irradiance texture
+        VulkanRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.framebuffer = &renderPasses.irradiance.fbo;
+        renderPassInfo.renderPass = &renderPasses.irradiance.renderPass;
+        renderPassInfo.offset = {0, 0};
+        renderPassInfo.size = {config.skyboxIrradianceSize, config.skyboxIrradianceSize};
+        renderPassInfo.clearValues = {VkClearValue{}};
+        vkb.beginRenderPass(renderPassInfo);
+        vkb.setScissor({0, 0}, renderPassInfo.size);
+        vkb.setViewport({0, 0}, renderPassInfo.size);
+
+        renderIrradiance(vkb, skybox.getTexture());
+
+        vkb.endRenderPass();
+
+        // Render pass for creating an prefilter texture
+        renderPassInfo = VulkanRenderPassBeginInfo{};
+        renderPassInfo.framebuffer = &renderPasses.prefilter.fbo;
+        renderPassInfo.renderPass = &renderPasses.prefilter.renderPass;
+        renderPassInfo.offset = {0, 0};
+        renderPassInfo.size = {config.skyboxPrefilterSize, config.skyboxPrefilterSize};
+        renderPassInfo.clearValues = {VkClearValue{}};
+        vkb.beginRenderPass(renderPassInfo);
+        vkb.setScissor({0, 0}, renderPassInfo.size);
+        vkb.setViewport({0, 0}, renderPassInfo.size);
+
+        renderPrefilter(vkb, skybox.getTexture(), renderPassInfo.size, 0);
+
+        vkb.endRenderPass();
+
+        // Copy the irradiance and prefilter textures to the destinations
+        copyTexture(vkb, renderPasses.irradiance.texture, skybox.getIrradiance(), side);
+        copyTexture(vkb, renderPasses.prefilter.texture, skybox.getPrefilter(), side);
+
+        // Wait for the commands to finish
+        vkb.end();
+        vulkan.submitCommandBuffer(vkb);
+        vulkan.waitQueueIdle();
+        vulkan.dispose(std::move(vkb));
     }
+
+    vulkan.generateMipMaps(skybox.getIrradiance());
+    vulkan.generateMipMaps(skybox.getPrefilter());
+
+    return skybox;
 }
 
-void SkyboxGenerator::prepareFbo() {
-    /*auto desc = VulkanTexture::Descriptor{};
-    desc.size = Vector2i{config.skyboxSize, config.skyboxSize};
-    desc.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
-    desc.levels = 1;
-    desc.layers = 1;
-    desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
-    desc.viewType = VulkanTexture::ViewType::VK_IMAGE_VIEW_TYPE_2D;
-    desc.usage = VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    main.texture = vulkan.createTexture(desc);
+void SkyboxGenerator::prepareCameraUbo(int side) {
+    ShaderSkyboxStars::CameraUniform uniform{};
+    uniform.viewMatrix = captureViewMatrices[side];
+    uniform.projectionMatrix = captureProjectionMatrix;
 
-    std::vector<VulkanFramebufferAttachment> attachments = {{main.texture}};
-    main.fbo = vulkan.createFramebuffer(desc.size, attachments);
+    if (!renderPasses.cameraUbo) {
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(ShaderSkyboxStars::CameraUniform);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    desc.size = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
-    desc.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-    prefilter.texture = vulkan.createTexture(desc);
+        renderPasses.cameraUbo = vulkan.createBuffer(bufferInfo);
+    }
 
-    attachments = {{prefilter.texture}};
-    prefilter.fbo = vulkan.createFramebuffer(desc.size, attachments);
-
-    desc.size = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
-    desc.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-    irradiance.texture = vulkan.createTexture(desc);
-
-    attachments = {{irradiance.texture}};
-    irradiance.fbo = vulkan.createFramebuffer(desc.size, attachments);*/
+    renderPasses.cameraUbo.subDataLocal(&uniform, 0, sizeof(ShaderSkyboxStars::CameraUniform));
 }
 
-void SkyboxGenerator::prepareNebulaMesh() {
-    /*nebula.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic,
-                                     sizeof(float) * skyboxVertices.size());
-    nebula.vbo.subData(skyboxVertices.data(), 0, sizeof(float) * skyboxVertices.size());
+void SkyboxGenerator::renderStars(VulkanCommandBuffer& vkb, SkyboxGenerator::Stars& stars, const int side,
+                                  const float particleSize) {
+    vkb.bindPipeline(shaders.stars.getPipeline());
 
-    nebula.vboFormat = vulkan.createVertexInputFormat({
-        {
-            0,
-            {
-                {0, 0, VulkanVertexInputFormat::Format::Vec3},
-            },
-        },
-    });
+    std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
+    vboBinings[0] = {&stars.vbo, 0};
+    vkb.bindBuffers(vboBinings);
 
-    nebula.count = skyboxVertices.size();*/
+    ShaderSkyboxStars::Uniforms constants{};
+    constants.particleSize = {particleSize, particleSize};
+    vkb.pushConstants(shaders.stars.getPipeline(),
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                      sizeof(ShaderSkyboxStars::Uniforms), &constants);
+
+    std::array<VulkanBufferBinding, 1> uboBindings{};
+    uboBindings[0] = {0, &renderPasses.cameraUbo};
+
+    vkb.bindDescriptors(shaders.stars.getPipeline(), shaders.stars.getDescriptorSetLayout(), uboBindings, {});
+
+    vkb.draw(stars.count, 1, 0, 0);
 }
 
-void SkyboxGenerator::prepareCubemap() {
-    /*const auto size = Vector2i{config.skyboxSize, config.skyboxSize};
+void SkyboxGenerator::renderNebula(VulkanCommandBuffer& vkb, const ShaderSkyboxNebula::Uniforms& params) {
+    vkb.bindPipeline(shaders.nebula.getPipeline());
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
+    vboBinings[0] = {&skybox.vbo, 0};
+    vkb.bindBuffers(vboBinings);
+
+    vkb.pushConstants(shaders.nebula.getPipeline(),
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                      sizeof(ShaderSkyboxNebula::Uniforms), &params);
+
+    std::array<VulkanBufferBinding, 1> uboBindings{};
+    uboBindings[0] = {0, &renderPasses.cameraUbo};
+
+    vkb.bindDescriptors(shaders.nebula.getPipeline(), shaders.nebula.getDescriptorSetLayout(), uboBindings, {});
+
+    vkb.draw(skyboxVertices.size(), 1, 0, 0);
+}
+
+void SkyboxGenerator::renderIrradiance(VulkanCommandBuffer& vkb, VulkanTexture& color) {
+    vkb.bindPipeline(shaders.irradiance.getPipeline());
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
+    vboBinings[0] = {&skybox.vbo, 0};
+    vkb.bindBuffers(vboBinings);
+
+    std::array<VulkanBufferBinding, 1> uboBindings{};
+    uboBindings[0] = {0, &renderPasses.cameraUbo};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {1, &color};
+
+    vkb.bindDescriptors(shaders.irradiance.getPipeline(), shaders.irradiance.getDescriptorSetLayout(), uboBindings,
+                        textureBindings);
+
+    vkb.draw(skyboxVertices.size(), 1, 0, 0);
+}
+
+void SkyboxGenerator::renderPrefilter(VulkanCommandBuffer& vkb, VulkanTexture& color, const Vector2i& viewport,
+                                      int level) {
+    vkb.bindPipeline(shaders.prefilter.getPipeline());
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
+    vboBinings[0] = {&skybox.vbo, 0};
+    vkb.bindBuffers(vboBinings);
+
+    const auto mipmaps = static_cast<int>(std::log2(viewport.x));
+    const auto roughness = static_cast<float>(level) / static_cast<float>(mipmaps - 1);
+
+    ShaderSkyboxPrefilter::Uniforms uniforms{};
+    uniforms.roughness = roughness;
+
+    vkb.pushConstants(shaders.prefilter.getPipeline(),
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                      sizeof(ShaderSkyboxPrefilter::Uniforms), &uniforms);
+
+    std::array<VulkanBufferBinding, 1> uboBindings{};
+    uboBindings[0] = {0, &renderPasses.cameraUbo};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {1, &color};
+
+    vkb.bindDescriptors(shaders.prefilter.getPipeline(), shaders.prefilter.getDescriptorSetLayout(), uboBindings,
+                        textureBindings);
+
+    vkb.draw(skyboxVertices.size(), 1, 0, 0);
+}
+
+void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
+    auto size = Vector2i{config.skyboxSize, config.skyboxSize};
 
     Log::d(CMP, "Preparing skybox cubemap of size: {}", size);
 
-    auto desc = VulkanTexture::Descriptor{};
-    desc.size = size;
-    desc.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
-    desc.levels = static_cast<uint32_t>(std::log2(config.skyboxSize));
-    desc.layers = 6;
-    desc.type = VulkanTexture::Type::VK_IMAGE_TYPE_2D;
-    desc.viewType = VulkanTexture::ViewType::VK_IMAGE_VIEW_TYPE_CUBE;
-    desc.usage = VulkanTexture::Usage::VK_IMAGE_USAGE_SAMPLED_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VulkanTexture::Usage::VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    desc.addressModeU = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    desc.addressModeV = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    desc.addressModeW = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
+    textureInfo.image.mipLevels = getMipMapLevels(size);
+    textureInfo.image.arrayLayers = 6;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    textureInfo.image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-    skybox.getTexture() = vulkan.createTexture(desc);
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 6;
 
-    desc.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-    desc.size = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
-    desc.levels = static_cast<uint32_t>(std::log2(config.skyboxPrefilterSize));
-    skybox.getPrefilter() = vulkan.createTexture(desc);
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.anisotropyEnable = VK_FALSE;
+    textureInfo.sampler.maxAnisotropy = 1.0f;
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.minLod = 0.0f;
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
 
-    desc.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-    desc.size = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
-    desc.levels = static_cast<uint32_t>(std::log2(config.skyboxIrradianceSize));
-    skybox.getIrradiance() = vulkan.createTexture(desc);*/
+    skybox.getTexture() = vulkan.createTexture(textureInfo);
+
+    size = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
+
+    textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
+    textureInfo.view.format = VK_FORMAT_R16G16B16A16_UNORM;
+    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
+    textureInfo.image.mipLevels = getMipMapLevels(size);
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+
+    skybox.getPrefilter() = vulkan.createTexture(textureInfo);
+
+    size = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
+
+    textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
+    textureInfo.view.format = VK_FORMAT_R16G16B16A16_UNORM;
+    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
+    textureInfo.image.mipLevels = getMipMapLevels(size);
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+
+    skybox.getIrradiance() = vulkan.createTexture(textureInfo);
+
+    vulkan.transitionImageLayout(skybox.getTexture(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vulkan.transitionImageLayout(skybox.getIrradiance(), VK_IMAGE_LAYOUT_UNDEFINED,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vulkan.transitionImageLayout(skybox.getPrefilter(), VK_IMAGE_LAYOUT_UNDEFINED,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 }
 
-void SkyboxGenerator::prepareStars(Stars& stars, const size_t count) {
-    /*Log::d(CMP, "Preparing skybox vertex buffer for: {} stars", count);
+void SkyboxGenerator::prepareStars(Rng& rng, Stars& stars, const size_t count) {
+    Log::d(CMP, "Preparing skybox vertex buffer for: {} stars", count);
 
     std::uniform_real_distribution<float> distPosition(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.9f, 1.0f);
     std::uniform_real_distribution<float> distBrightness(0.5f, 1.0f);
 
-    std::vector<StarVertex> vertices;
-    vertices.resize(count);
+    std::vector<ShaderSkyboxStars::Vertex> vertices{count};
 
     for (size_t i = 0; i < vertices.size(); i++) {
         auto& star = vertices[i];
@@ -236,79 +555,20 @@ void SkyboxGenerator::prepareStars(Stars& stars, const size_t count) {
 
     stars.count = count;
 
-    stars.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic,
-                                    sizeof(StarVertex) * vertices.size());
-    stars.vbo.subData(vertices.data(), 0, sizeof(StarVertex) * vertices.size());
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ShaderSkyboxStars::Vertex) * count;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    stars.vboFormat = vulkan.createVertexInputFormat({
-        {
-            0,
-            {
-                {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                {1, 0, VulkanVertexInputFormat::Format::Float},
-                {2, 0, VulkanVertexInputFormat::Format::Vec4},
-            },
-        },
-    });*/
+    stars.vbo = vulkan.createBuffer(bufferInfo);
+    stars.vbo.subDataLocal(vertices.data(), 0, bufferInfo.size);
 }
 
-void SkyboxGenerator::renderStars(Stars& stars, const int side, const float particleSize, const bool clear) {
-    /*Log::d(CMP, "Rendering skybox stars cube side index: {}", side);
-
-    const auto viewport = Vector2i{config.skyboxSize, config.skyboxSize};
-
-    VulkanFramebufferAttachmentReference colorAttachment{};
-    if (clear) {
-        colorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
-    } else {
-        colorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-    }
-    colorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
-
-    vulkan.beginRenderPass(main.fbo, {colorAttachment});
-
-    vulkan.setViewport({0, 0}, viewport);
-    vulkan.setScissor({0, 0}, viewport);
-    vulkan.setViewportState();
-
-    vulkan.bindPipeline(pipelines.stars);
-
-    vulkan.pushConstant(0, captureViewMatrices[side]);
-    vulkan.pushConstant(sizeof(Matrix4), captureProjectionMatrix);
-    vulkan.pushConstant(sizeof(Matrix4) * 2, Vector2{particleSize, particleSize});
-
-    vulkan.setDepthStencilState(false, false);
-    VulkanBlendState blendState{};
-    blendState.blendEnable = true;
-    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-    vulkan.setBlendState({blendState});
-
-    vulkan.bindVertexBuffer(stars.vbo, 0);
-    vulkan.bindVertexInputFormat(stars.vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vulkan.draw(stars.count, 1, 0, 0);
-
-    vulkan.endRenderPass();*/
-}
-
-void SkyboxGenerator::prepareNebulaUbo() {
-    /*struct NebulaUniform {
-        Color4 uColor;
-        Vector4 uOffset;
-        float uScale;
-        float uIntensity;
-        float uFalloff;
-    };
-
+void SkyboxGenerator::prepareNebulaUbo(Rng& rng, std::vector<ShaderSkyboxNebula::Uniforms>& params) {
     std::uniform_real_distribution<float> dist{0.0f, 1.0f};
-
-    nebula.ubos.clear();
 
     while (true) {
         const auto scale = dist(rng) * 0.5f + 0.25f;
@@ -318,221 +578,17 @@ void SkyboxGenerator::prepareNebulaUbo() {
         const auto offset =
             Vector3{dist(rng) * 2000.0f - 1000.0f, dist(rng) * 2000.0f - 1000.0f, dist(rng) * 2000.0f - 1000.0f};
 
-        NebulaUniform uniform{};
-        uniform.uColor = color;
-        uniform.uOffset = Vector4{offset, 1.0f};
-        uniform.uScale = scale;
-        uniform.uIntensity = intensity;
-        uniform.uFalloff = falloff;
+        ShaderSkyboxNebula::Uniforms uniforms{};
+        uniforms.uColor = color;
+        uniforms.uOffset = Vector4{offset, 1.0f};
+        uniforms.uScale = scale;
+        uniforms.uIntensity = intensity;
+        uniforms.uFalloff = falloff;
 
-        auto ubo = vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Static, sizeof(NebulaUniform));
-        ubo.subData(&uniform, 0, sizeof(NebulaUniform));
-
-        nebula.ubos.push_back(std::move(ubo));
+        params.push_back(uniforms);
 
         if (dist(rng) < 0.5f) {
             break;
         }
-    }*/
-}
-
-void SkyboxGenerator::renderNebula(VulkanBuffer& ubo, const int side) {
-    /*Log::d(CMP, "Rendering skybox nebula for side index: {}", side);
-
-    const auto viewport = Vector2i{config.skyboxSize, config.skyboxSize};
-
-    VulkanFramebufferAttachmentReference colorAttachment{};
-    colorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-
-    vulkan.beginRenderPass(main.fbo, {colorAttachment});
-
-    vulkan.setViewport({0, 0}, viewport);
-    vulkan.setScissor({0, 0}, viewport);
-    vulkan.setViewportState();
-
-    vulkan.bindPipeline(pipelines.nebula);
-
-    vulkan.pushConstant(0, captureViewMatrices[side]);
-    vulkan.pushConstant(sizeof(Matrix4), captureProjectionMatrix);
-    vulkan.bindUniformBuffer(ubo, 0);
-
-    vulkan.setDepthStencilState(false, false);
-    VulkanBlendState blendState{};
-    blendState.blendEnable = true;
-    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-    vulkan.setBlendState({blendState});
-
-    vulkan.bindVertexBuffer(nebula.vbo, 0);
-    vulkan.bindVertexInputFormat(nebula.vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.draw(nebula.count, 1, 0, 0);
-
-    vulkan.endRenderPass();*/
-}
-
-void SkyboxGenerator::renderIrradiance(const int side) {
-    /*Log::d(CMP, "Rendering skybox irradiance texture for side index: {}", side);
-
-    const auto viewport = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
-
-    VulkanFramebufferAttachmentReference colorAttachment{};
-    colorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(irradiance.fbo, {colorAttachment});
-
-    vulkan.setViewport({0, 0}, viewport);
-    vulkan.setScissor({0, 0}, viewport);
-    vulkan.setViewportState();
-
-    vulkan.bindPipeline(pipelines.irradiance);
-
-    vulkan.pushConstant(0, captureViewMatrices[side]);
-    vulkan.pushConstant(sizeof(Matrix4), captureProjectionMatrix);
-    vulkan.bindTexture(skybox.getTexture(), 0);
-
-    vulkan.setDepthStencilState(false, false);
-    VulkanBlendState blendState{};
-    blendState.blendEnable = true;
-    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-    vulkan.setBlendState({blendState});
-
-    vulkan.bindVertexBuffer(nebula.vbo, 0);
-    vulkan.bindVertexInputFormat(nebula.vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.draw(nebula.count, 1, 0, 0);
-
-    vulkan.endRenderPass();*/
-}
-
-void SkyboxGenerator::renderPrefilter(const int side, const int level) {
-    /*Log::d(CMP, "Rendering skybox prefilter texture for side index: {} level: {}", side, level);
-
-    const auto viewport = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
-
-    VulkanFramebufferAttachmentReference colorAttachment{};
-    colorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(prefilter.fbo, {colorAttachment});
-
-    vulkan.setViewport({0, 0}, viewport);
-    vulkan.setScissor({0, 0}, viewport);
-    vulkan.setViewportState();
-
-    vulkan.bindPipeline(pipelines.prefilter);
-
-    const auto mipmaps = static_cast<int>(std::log2(viewport.x));
-    const auto roughness = static_cast<float>(level) / static_cast<float>(mipmaps - 1);
-
-    vulkan.pushConstant(0, captureViewMatrices[side]);
-    vulkan.pushConstant(sizeof(Matrix4), captureProjectionMatrix);
-    vulkan.pushConstant(sizeof(Matrix4) * 2, 0.0f);
-    vulkan.bindTexture(skybox.getTexture(), 0);
-
-    vulkan.setDepthStencilState(false, false);
-    VulkanBlendState blendState{};
-    blendState.blendEnable = true;
-    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-    vulkan.setBlendState({blendState});
-
-    vulkan.bindVertexBuffer(nebula.vbo, 0);
-    vulkan.bindVertexInputFormat(nebula.vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vulkan.draw(nebula.count, 1, 0, 0);
-
-    vulkan.endRenderPass();*/
-}
-
-void SkyboxGenerator::blit(VulkanTexture& source, VulkanTexture& target, const int side, const int width) {
-    /*Log::d(CMP, "Copying skybox cubemap for side index: {}", side);
-
-    const auto size = Vector2i{width, width};
-
-    BlitImageInfo blitInfo{};
-    blitInfo.src.mipLevel = 0;
-    blitInfo.src.layerCount = 1;
-    blitInfo.src.baseArrayLayer = 0;
-    blitInfo.src.size = Vector3i{size.x, size.y, 1};
-
-    blitInfo.dst.mipLevel = 0;
-    blitInfo.dst.layerCount = 1;
-    blitInfo.dst.baseArrayLayer = side;
-    blitInfo.dst.size = Vector3i{size.x, size.y, 1};
-
-    vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);
-
-    for (auto level = 1; level < static_cast<uint32_t>(std::log2(width)); level++) {
-        blitInfo.src.mipLevel = 0;
-        blitInfo.src.layerCount = 1;
-        blitInfo.src.baseArrayLayer = 0;
-        blitInfo.src.size = Vector3i{size.x, size.y, 1};
-
-        blitInfo.dst.mipLevel = level;
-        blitInfo.dst.layerCount = 1;
-        blitInfo.dst.baseArrayLayer = side;
-        blitInfo.dst.size = Vector3i{size.x >> level, size.y >> level, 1};
-
-        vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);
-    }*/
-}
-
-/*void SkyboxGenerator::generateMipMaps(VulkanTexture& source, int side, int width) {
-    const auto size = Vector2i{width, width};
-
-    for (auto level = 1; level < static_cast<uint32_t>(std::log2(width)); level++) {
-        BlitImageInfo blitInfo{};
-
-        blitInfo.src.mipLevel = level - 1;
-        blitInfo.src.layerCount = 1;
-        blitInfo.src.baseArrayLayer = 0;
-        blitInfo.src.size = Vector3i{size.x >> (level - 1), size.y >> (level - 1), 1};
-
-        blitInfo.dst.mipLevel = level;
-        blitInfo.dst.layerCount = 1;
-        blitInfo.dst.baseArrayLayer = side;
-        blitInfo.dst.size = Vector3i{size.x >> level, size.y >> level, 1};
-
-        vulkan.blitImage(source, source, blitInfo, VkFilter::VK_FILTER_LINEAR);
     }
-}*/
-
-void SkyboxGenerator::blitLevel(VulkanTexture& source, VulkanTexture& target, const int side, const int width,
-                                const int level) {
-    /*Log::d(CMP, "Copying skybox cubemap for side index: {} level: {}", side, level);
-
-    const auto size = Vector2i{width, width};
-
-    BlitImageInfo blitInfo{};
-    blitInfo.src.mipLevel = 0;
-    blitInfo.src.layerCount = 1;
-    blitInfo.src.baseArrayLayer = 0;
-    blitInfo.src.size = Vector3i{size.x, size.y, 1};
-
-    blitInfo.dst.mipLevel = level;
-    blitInfo.dst.layerCount = 1;
-    blitInfo.dst.baseArrayLayer = side;
-    blitInfo.dst.size = Vector3i{size.x >> level, size.y >> level, 1};
-
-    vulkan.blitImage(source, target, blitInfo, VkFilter::VK_FILTER_LINEAR);*/
-}
-
-bool SkyboxGenerator::isReady() const {
-    return jobs.empty();
 }

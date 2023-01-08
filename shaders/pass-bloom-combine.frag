@@ -9,24 +9,23 @@ layout(binding = 0) uniform sampler2D texForwardColor;
 layout(binding = 1) uniform sampler2D texBloomColor;
 
 layout(push_constant) uniform Uniforms {
-    float strength;
+    float bloomStrength;
     float exposure;
+    float gamma;
 } uniforms;
 
 layout(location = 0) out vec4 outColor;
-
-const float gamma = 2.2;
 
 void main() {
     vec4 forwardColor = texture(texForwardColor, vs_out.texCoords);
     vec4 bloomColor = texture(texBloomColor, vs_out.texCoords);
 
-    vec3 color = forwardColor.rgb + bloomColor.rgb * uniforms.strength;
+    vec3 color = forwardColor.rgb + bloomColor.rgb * uniforms.bloomStrength;
 
     // tone mapping
     vec3 result = vec3(1.0) - exp(-color * uniforms.exposure);
     // also gamma correct while we're at it
-    result = pow(result, vec3(1.0 / gamma));
+    result = pow(result, vec3(1.0 / uniforms.gamma));
 
     outColor = vec4(result, 1.0);
 }

@@ -103,6 +103,10 @@ public:
         return mipMaps;
     }
 
+    uint32_t getLayerCount() const {
+        return layerCount;
+    }
+
     operator bool() const {
         return image != VK_NULL_HANDLE;
     }
@@ -119,6 +123,7 @@ private:
     VkFormat format{VK_FORMAT_UNDEFINED};
     VkExtent3D extent{0, 0, 0};
     uint32_t mipMaps{0};
+    uint32_t layerCount{0};
 };
 
 struct ENGINE_API VulkanTextureBinding {

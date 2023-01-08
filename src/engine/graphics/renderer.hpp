@@ -3,9 +3,16 @@
 #include "../config.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
+#include "shader.hpp"
 #include "shaders/shader_brdf.hpp"
 #include "shaders/shader_component_grid.hpp"
+#include "shaders/shader_pass_bloom_blur.hpp"
+#include "shaders/shader_pass_bloom_combine.hpp"
+#include "shaders/shader_pass_bloom_extract.hpp"
 #include "shaders/shader_pass_debug.hpp"
+#include "shaders/shader_pass_fxaa.hpp"
+#include "shaders/shader_pass_pbr.hpp"
+#include "shaders/shader_pass_skybox.hpp"
 #include "shaders/shader_pass_ssao.hpp"
 #include "skybox.hpp"
 
@@ -14,34 +21,13 @@ class ENGINE_API VoxelShapeCache;
 
 class ENGINE_API Renderer {
 public:
-    using ShaderLoadQueue = std::list<std::function<void(const Config&, VulkanRenderer&)>>;
-
-    struct Shaders {
-        ShaderBrdf brdf;
-        ShaderComponentGrid componentGrid;
-        ShaderPassSSAO passSsao;
-        ShaderPassDebug passDebug;
-
-        ShaderLoadQueue createLoadQueue();
-    };
-    /*struct Pipelines {
-        VulkanPipeline brdf;
-        VulkanPipeline pbr;
-        VulkanPipeline skybox;
-        VulkanPipeline fxaa;
-        VulkanPipeline bloomExtract;
-        VulkanPipeline bloomBlur;
-        VulkanPipeline bloomCombine;
-        VulkanPipeline ssao;
-        VulkanPipeline copy;
-    };*/
-
     struct Options {
         float blurStrength{0.2f};
         float exposure{1.8f};
     };
 
-    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Shaders& shaders, VoxelShapeCache& voxelShapeCache);
+    explicit Renderer(const Config& config, VulkanRenderer& vulkan, ShaderModules& shaderModules,
+                      VoxelShapeCache& voxelShapeCache);
     ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
@@ -59,18 +45,22 @@ private:
     };
 
     struct RenderPass {
-        std::vector<VulkanTexture> textures;
         VulkanFramebuffer fbo;
         VulkanRenderPass renderPass;
         VulkanSemaphore semaphore;
     };
 
     void createFullScreenQuad();
+    void createSkyboxMesh();
     void createRenderPasses();
     void createRenderPassBrdf();
     void createRenderPassPbr();
     void createRenderPassSsao();
-    void finalizeShaders();
+    void createRenderPassForward();
+    void createRenderPassFxaa();
+    void createRenderPassBloomExtract();
+    void createRenderPassBloomBlur();
+    void createShaders(ShaderModules& shaderModules);
     void createDepthTexture();
     void createSsaoNoise();
     void createSsaoSamples();
@@ -80,16 +70,20 @@ private:
     void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
     void renderBrdf();
     void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
-    void renderPassSSAO(const Vector2i& viewport, Scene& scene, const Options& options);
+    void renderPassSsao(const Vector2i& viewport, Scene& scene, const Options& options);
+    void renderPassForward(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
+    void renderPassFxaa(const Vector2i& viewport);
+    void renderPassBloomExtract();
+    void renderPassBloomBlur();
+    void renderPassBloomBlur(VulkanCommandBuffer& vkb, size_t idx, bool vertical);
+    void renderPassBloomCombine(VulkanCommandBuffer& vkb);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
+    void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
     void transitionDepthForWrite();
-    void transitionDepthForRead();
+    void transitionForWrite(VulkanCommandBuffer& vkb, const size_t idx);
     VkFormat findDepthFormat();
-
-    struct GaussianWeightsUniform {
-        Vector4 weight[32];
-        int count{0};
-    };
+    void updateDirectionalLights(Scene& scene);
 
     // static constexpr size_t maxDirectionalLights = 4;
 
@@ -119,26 +113,63 @@ private:
 
     const Config& config;
     VulkanRenderer& vulkan;
-    Shaders& shaders;
     VoxelShapeCache& voxelShapeCache;
     Vector2i lastViewportSize;
+    Vector2i bloomViewportSize;
 
     struct {
-        VulkanTexture depth;
+        ShaderBrdf brdf;
+        ShaderComponentGrid componentGrid;
+        ShaderPassSSAO passSsao;
+        ShaderPassDebug passDebug;
+        ShaderPassSkybox passSkybox;
+        ShaderPassPbr passPbr;
+        ShaderPassFXAA passFxaa;
+        ShaderPassBloomExtract passBloomExtract;
+        ShaderPassBloomBlur passBloomBlur[2];
+        ShaderPassBloomCombine passBloomCombine;
+    } shaders;
+
+    struct {
         VkFormat depthFormat;
+        VulkanTexture brdf;
+        VulkanTexture depth;
+        VulkanTexture pbrAlbedoAmbient;
+        VulkanTexture pbrEmissiveRoughness;
+        VulkanTexture pbrNormalMetallic;
+        VulkanTexture ssao;
+        VulkanTexture forward;
+        VulkanTexture aux;
+        VulkanTexture blurred[2];
+    } textures;
+
+    struct {
         RenderPass brdf;
         RenderPass pbr;
         RenderPass ssao;
+        RenderPass forward;
+        RenderPass fxaa;
+        RenderPass bloomExtract;
+        RenderPass bloomBlur[2];
     } renderPasses;
 
     struct {
         RenderPassMesh fullScreenQuad;
+        RenderPassMesh skybox;
     } meshes;
 
     struct {
         VulkanBuffer ubo;
         VulkanTexture noise;
     } ssaoSamples;
+
+    struct {
+        VulkanBuffer ubo;
+    } blurWeights;
+
+    struct {
+        VulkanDoubleBuffer ubo;
+    } directionalLights;
 
     // Pipelines& pipelines;
 

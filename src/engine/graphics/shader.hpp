@@ -2,9 +2,28 @@
 
 #include "../math/matrix.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
+#include <functional>
+#include <list>
 
 namespace Engine {
-class Shader {
+class ENGINE_API ShaderModules {
+public:
+    using LoadQueue = std::list<std::function<void()>>;
+
+    explicit ShaderModules(const Config& config, VulkanRenderer& vulkan);
+
+    VulkanShaderModule& findByName(const std::string& name);
+
+    LoadQueue& getLoadQueue() {
+        return loadQueue;
+    }
+
+private:
+    std::unordered_map<std::string, VulkanShaderModule> modules;
+    LoadQueue loadQueue;
+};
+
+class ENGINE_API Shader {
 public:
     struct CameraUniform {
         Matrix4 transformationProjectionMatrix;
@@ -23,8 +42,6 @@ public:
     Shader(Shader&& other) = default;
     Shader& operator=(const Shader& other) = delete;
     Shader& operator=(Shader&& other) = default;
-
-    virtual void finalize(VulkanRenderPass& renderPass) = 0;
 
     operator bool() const {
         return !!pipeline && !!descriptorSetLayout;

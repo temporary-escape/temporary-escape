@@ -11,16 +11,11 @@ public:
     };
 
     ShaderPassDebug() = default;
-    explicit ShaderPassDebug(const Config& config, VulkanRenderer& vulkan);
+    explicit ShaderPassDebug(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
+                             VulkanRenderPass& renderPass);
     ShaderPassDebug(const ShaderPassDebug& other) = delete;
     ShaderPassDebug(ShaderPassDebug&& other) = default;
     ShaderPassDebug& operator=(const ShaderPassDebug& other) = delete;
     ShaderPassDebug& operator=(ShaderPassDebug&& other) = default;
-    void finalize(VulkanRenderPass& renderPass) override;
-
-private:
-    VulkanRenderer* vulkan{nullptr};
-    VulkanShaderModule vert;
-    VulkanShaderModule frag;
 };
 } // namespace Engine
