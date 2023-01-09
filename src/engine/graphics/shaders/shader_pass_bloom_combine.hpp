@@ -11,9 +11,11 @@ public:
     };
 
     struct Uniforms {
-        float strength;
+        float bloomStrength;
+        float bloomPower;
         float exposure;
         float gamma;
+        float contrast;
     } __attribute__((aligned(16)));
 
     ShaderPassBloomCombine() = default;

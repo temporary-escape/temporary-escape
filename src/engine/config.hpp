@@ -35,6 +35,11 @@ struct Config {
         bool enableValidationLayers = true;
         bool vsync = true;
         size_t maxFramesInFlight = 2;
+        float bloomStrength = 0.3f;
+        float bloomPower = 1.1f;
+        float exposure = 0.8f;
+        float gamma = 1.5f;
+        float contrast = 1.0f;
     } vulkan;
 
     // Paths of interests

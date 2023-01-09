@@ -202,7 +202,7 @@ void main() {
 
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
-    vec3 color = (ambient + Lo) * vec3(pow(ssao, 1.5)) + emissive;
+    vec3 color = (ambient + Lo) * vec3(ssao) + emissive;
 
     outColor = vec4(color, 1.0);
 }

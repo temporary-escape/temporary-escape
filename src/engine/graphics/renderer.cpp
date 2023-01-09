@@ -17,7 +17,7 @@ Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, ShaderModules& 
     lastViewportSize{config.windowWidth, config.windowHeight},
     bloomViewportSize{lastViewportSize / 2} {
 
-    createGaussianKernel(7, 6.5);
+    createGaussianKernel(15, 4.5);
     createFullScreenQuad();
     createSkyboxMesh();
     createSsaoNoise();
@@ -1681,9 +1681,12 @@ void Renderer::renderPassBloomCombine(VulkanCommandBuffer& vkb) {
                         textureBindings);
 
     ShaderPassBloomCombine::Uniforms constants{};
-    constants.exposure = 0.8f;
-    constants.gamma = 1.5f;
-    constants.strength = 0.3f;
+    constants.exposure = config.vulkan.exposure;
+    constants.gamma = config.vulkan.gamma;
+    constants.bloomStrength = config.vulkan.bloomStrength;
+    constants.bloomPower = config.vulkan.bloomPower;
+    constants.contrast = config.vulkan.contrast;
+
     vkb.pushConstants(shaders.passBloomCombine.getPipeline(),
                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                       sizeof(ShaderPassBloomCombine::Uniforms), &constants);
