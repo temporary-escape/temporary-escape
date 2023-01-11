@@ -41,11 +41,8 @@ public:
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
     void update(float delta);
-    void renderPbr(VulkanDevice& vulkan, const Vector2i& viewport);
-    void renderFwd(VulkanDevice& vulkan, const Vector2i& viewport);
     void removeEntity(const EntityPtr& entity);
-    void addEntity(EntityPtr entity);
-    void updateEntity(const Entity::Delta& delta);
+    EntityPtr createEntity();
     void addBullet(const Vector3& pos, const Vector3& dir);
     EntityPtr getEntityById(uint64_t id);
     const std::vector<Bullet>& getBulletsData() const {
@@ -58,12 +55,12 @@ public:
         return component;
     }*/
 
-    template <typename T> ComponentSystem<T>& getComponentSystem() const {
-        const auto ptr = dynamic_cast<ComponentSystem<T>*>(systems.at(EntityComponentHelper::getIndexOf<T>()).get());
-        if (!ptr) {
-            EXCEPTION("The component system for {} does not exist", typeid(T).name());
-        }
-        return *ptr;
+    template <typename T> entt::view<T> getComponentSystem() {
+        return reg.view<T>();
+    }
+
+    template <typename... Ts> auto getView() {
+        return reg.view<Ts...>();
     }
 
     const std::vector<EntityPtr>& getEntities() const {
@@ -82,8 +79,7 @@ public:
         primaryCamera = entity;
     }
 
-    std::shared_ptr<ComponentCamera> getPrimaryCamera() const;
-    EntityPtr getSkybox();
+    ComponentCamera* getPrimaryCamera();
 
 private:
     struct BulletSystem {
@@ -92,9 +88,9 @@ private:
     };
 
     EventListener& eventListener;
+    entt::registry reg;
 
     uint64_t nextId;
-    ComponentSystemsMap systems;
     std::vector<EntityPtr> entities;
     std::unordered_map<uint64_t, EntityPtr> entityMap;
 

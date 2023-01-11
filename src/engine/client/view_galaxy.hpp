@@ -54,7 +54,6 @@ private:
     Client& client;
     Skybox skybox;
     Scene scene;
-    std::shared_ptr<ComponentCamera> camera;
 
     struct {
         std::string galaxyId;
@@ -71,6 +70,7 @@ private:
     std::unordered_map<std::string, FactionData> factions;
 
     struct {
+        std::shared_ptr<Entity> camera;
         std::unordered_map<std::string, EntityPtr> regions;
     } entities;
 

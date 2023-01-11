@@ -6,70 +6,31 @@
 namespace Engine {
 class ENGINE_API ComponentUserInput : public Component, UserInput {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentUserInput() = default;
-    explicit ComponentUserInput(Object& object, UserInput& handler) : Component{object}, handler{&handler} {
+    explicit ComponentUserInput(UserInput& handler) : handler{&handler} {
     }
-    virtual ~ComponentUserInput() = default;
+    virtual ~ComponentUserInput() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentUserInput);
 
-    Delta getDelta() {
-        return {};
-    }
+    void eventMouseMoved(const Vector2i& pos) override;
 
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
+    void eventMousePressed(const Vector2i& pos, MouseButton button) override;
 
-    void eventMouseMoved(const Vector2i& pos) override {
-        if (handler && !disable) {
-            handler->eventMouseMoved(pos);
-        }
-    }
+    void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
 
-    void eventMousePressed(const Vector2i& pos, const MouseButton button) override {
-        if (handler && !disable) {
-            handler->eventMousePressed(pos, button);
-        }
-    }
+    void eventMouseScroll(int xscroll, int yscroll) override;
 
-    void eventMouseReleased(const Vector2i& pos, const MouseButton button) override {
-        if (handler && !disable) {
-            handler->eventMouseReleased(pos, button);
-        }
-    }
+    void eventKeyPressed(Key key, Modifiers modifiers) override;
 
-    void eventMouseScroll(const int xscroll, const int yscroll) override {
-        if (handler && !disable) {
-            handler->eventMouseScroll(xscroll, yscroll);
-        }
-    }
+    void eventKeyReleased(Key key, Modifiers modifiers) override;
 
-    void eventKeyPressed(const Key key, const Modifiers modifiers) override {
-        if (handler && !disable) {
-            handler->eventKeyPressed(key, modifiers);
-        }
-    }
-
-    void eventKeyReleased(const Key key, const Modifiers modifiers) override {
-        if (handler && !disable) {
-            handler->eventKeyReleased(key, modifiers);
-        }
-    }
-
-    void eventCharTyped(const uint32_t code) override {
-        if (handler && !disable) {
-            handler->eventCharTyped(code);
-        }
-    }
+    void eventCharTyped(uint32_t code) override;
 
     void setDisabled(const bool value) {
         disable = value;
     }
 
-    bool getDisabled() const {
+    [[nodiscard]] bool getDisabled() const {
         return disable;
     }
 

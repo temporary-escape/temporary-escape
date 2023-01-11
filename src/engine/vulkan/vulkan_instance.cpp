@@ -24,11 +24,16 @@ static void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
     }
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                    void* pUserData) {
-    Log::w(CMP, pCallbackData->pMessage);
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                             VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                             void* pUserData) {
+    std::string msg{pCallbackData->pMessage};
+    auto& self = *reinterpret_cast<VulkanInstance*>(pUserData);
+    // if (msg.find("VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
+    if (self.debugMessengerEnabled) {
+        Log::w(CMP, msg);
+    }
 
     return VK_FALSE;
 }
@@ -119,7 +124,7 @@ static bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
     return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+void VulkanInstance::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -237,12 +242,14 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     appCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     appCreateInfo.ppEnabledExtensionNames = extensions.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (config.vulkan.enableValidationLayers) {
         appCreateInfo.enabledLayerCount = static_cast<uint32_t>(vulkanValidationLayers.size());
         appCreateInfo.ppEnabledLayerNames = vulkanValidationLayers.data();
 
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         populateDebugMessengerCreateInfo(debugCreateInfo);
+        debugCreateInfo.pUserData = this;
+
         appCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
     } else {
         appCreateInfo.enabledLayerCount = 0;
@@ -258,10 +265,11 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     surface = createSurface(instance);
 
     if (config.vulkan.enableValidationLayers) {
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo);
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+        populateDebugMessengerCreateInfo(debugCreateInfo);
+        debugCreateInfo.pUserData = this;
 
-        if (createDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        if (createDebugUtilsMessengerEXT(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             destroy();
             EXCEPTION("Failed to set up debug messenger!");
         }

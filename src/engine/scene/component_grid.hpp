@@ -10,23 +10,11 @@ class ENGINE_API Entity;
 
 class ENGINE_API ComponentGrid : public Component, public Grid {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
-    ComponentGrid() {
+    ComponentGrid() = default;
+    explicit ComponentGrid(ComponentDebug& debug) : debug{&debug} {
     }
-    explicit ComponentGrid(Object& object, ComponentDebug* debug = nullptr) : Component{object}, debug{debug} {
-    }
-    virtual ~ComponentGrid() = default;
-
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
+    virtual ~ComponentGrid() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentGrid);
 
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
     void update();
@@ -40,8 +28,5 @@ private:
 
     ComponentDebug* debug{nullptr};
     std::vector<Primitive> primitives;
-
-public:
-    MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

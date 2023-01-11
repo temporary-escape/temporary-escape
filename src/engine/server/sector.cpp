@@ -40,15 +40,15 @@ void Sector::load() {
 
         // std::mt19937_64 rng{sector.seed};
 
-        auto skybox = std::make_shared<Entity>();
+        /*auto skybox = std::make_shared<Entity>();
         skybox->addComponent<ComponentSkybox>(sector.seed);
         skybox->scale(Vector3{1000.0f});
-        scene.addEntity(skybox);
+        scene.addEntity(skybox);*/
 
-        auto sun = std::make_shared<Entity>();
+        /*auto sun = std::make_shared<Entity>();
         sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f} * 3.0f);
         sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
-        scene.addEntity(sun);
+        scene.addEntity(sun);*/
 
         /*auto particles = assetManager.find<AssetParticles>("particles_engine_exhaust_01");
         auto dummy = std::make_shared<Entity>();

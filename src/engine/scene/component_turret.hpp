@@ -5,30 +5,11 @@
 namespace Engine {
 class ENGINE_API ComponentTurret : public Component {
 public:
-    struct Delta {
-        Vector3 target;
-        bool firing{false};
-
-        MSGPACK_DEFINE_ARRAY(target, firing);
-    };
-
     ComponentTurret() = default;
-    explicit ComponentTurret(Object& object) : Component(object) {
-    }
-    virtual ~ComponentTurret() = default;
+    virtual ~ComponentTurret() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentTurret);
 
-    Delta getDelta() {
-        Delta delta{};
-        delta.target = target;
-        delta.firing = firing;
-        return delta;
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    const Vector3& getTarget() const {
+    [[nodiscard]] const Vector3& getTarget() const {
         return target;
     }
 
@@ -37,19 +18,19 @@ public:
         target = value;
     }
 
-    const Vector3& getRotation() const {
+    [[nodiscard]] const Vector3& getRotation() const {
         return rotation;
     }
 
-    const Vector3& getNozzlePos() const {
+    [[nodiscard]] const Vector3& getNozzlePos() const {
         return nozzlePos;
     }
 
-    const Vector3& getNozzleDir() const {
+    [[nodiscard]] const Vector3& getNozzleDir() const {
         return nozzleDir;
     }
 
-    bool shouldFire() const {
+    [[nodiscard]] bool shouldFire() const {
         if (!firing) {
             return false;
         }
@@ -65,11 +46,11 @@ public:
         firing = value;
     }
 
-    bool getFiring() const {
+    [[nodiscard]] bool getFiring() const {
         return firing;
     }
 
-    void update(const float delta);
+    void update(float delta);
 
 private:
     Vector3 target;
@@ -78,8 +59,5 @@ private:
     Vector3 nozzleDir;
     Vector3 nozzlePos;
     float counter{0.0f};
-
-public:
-    MSGPACK_DEFINE_ARRAY(target, firing);
 };
 } // namespace Engine

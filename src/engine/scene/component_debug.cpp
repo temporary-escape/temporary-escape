@@ -1,58 +1,52 @@
 #include "component_debug.hpp"
+#include "component_camera.hpp"
+#include "component_transform.hpp"
 
 using namespace Engine;
 
-void ComponentDebug::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    /*if (vertices.empty()) {
+void ComponentDebug::recalculate(VulkanRenderer& vulkan) {
+    if (vertices.empty() || !isDirty()) {
         return;
     }
 
-    if (isDirty()) {
-        setDirty(false);
+    setDirty(false);
 
-        if (!vboFormat) {
-            vboFormat = vulkan.createVertexInputFormat({
-                {
-                    0,
-                    {
-                        {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                        {1, 0, VulkanVertexInputFormat::Format::Vec4},
-                    },
-                },
-            });
-        }
+    const auto vboSize = vertices.capacity() * sizeof(Vertex);
 
-        const auto vboSize = vertices.capacity() * sizeof(Vertex);
-        if (!vbo || vbo.getSize() != vboSize) {
-            vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic, vboSize);
-            vbo.subData(vertices.data(), 0, vboSize);
-        } else {
-            auto dst = vbo.mapPtr(vboSize);
-            std::memcpy(dst, vertices.data(), vboSize);
-            vbo.unmap();
-        }
+    if (!mesh.vbo || mesh.vbo.getSize() != vboSize) {
+        vulkan.dispose(std::move(mesh.vbo));
 
-        const auto iboSize = indices.capacity() * sizeof(uint32_t);
-        if (!ibo || ibo.getSize() != iboSize) {
-            ibo = vulkan.createBuffer(VulkanBuffer::Type::Index, VulkanBuffer::Usage::Dynamic, iboSize);
-            ibo.subData(indices.data(), 0, iboSize);
-        } else {
-            auto dst = ibo.mapPtr(vboSize);
-            std::memcpy(dst, indices.data(), iboSize);
-            ibo.unmap();
-        }
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = vboSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        mesh.vbo = vulkan.createBuffer(bufferInfo);
     }
 
-    if (!vbo || !ibo || !vboFormat) {
-        return;
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), vboSize);
+
+    const auto iboSize = indices.capacity() * sizeof(uint32_t);
+
+    if (!mesh.ibo || mesh.ibo.getSize() != iboSize) {
+        vulkan.dispose(std::move(mesh.ibo));
+
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = vboSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        mesh.ibo = vulkan.createBuffer(bufferInfo);
     }
 
-    vulkan.bindVertexBuffer(vbo, 0);
-    vulkan.bindVertexInputFormat(vboFormat);
-    vulkan.bindIndexBuffer(ibo, 0, VK_INDEX_TYPE_UINT32);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vulkan.pushConstant(0, getObject().getAbsoluteTransform());
-    vulkan.drawIndexed(indices.size(), 1, 0, 0, 0);*/
+    vulkan.copyDataToBuffer(mesh.ibo, indices.data(), vboSize);
+
+    mesh.count = indices.size();
+    mesh.indexType = VK_INDEX_TYPE_UINT32;
 }
 
 void ComponentDebug::clear() {

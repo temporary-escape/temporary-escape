@@ -50,11 +50,11 @@ SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, S
 
     createSkyboxMesh();
 
-    createRenderPass(renderPasses.color, Vector2i{config.skyboxSize}, VK_FORMAT_R8G8B8A8_UNORM,
+    createRenderPass(renderPasses.color, Vector2i{config.skyboxSize}, VK_FORMAT_R8G8B8A8_SRGB,
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_CLEAR);
-    createRenderPass(renderPasses.irradiance, Vector2i{config.skyboxIrradianceSize}, VK_FORMAT_R16G16B16A16_UNORM,
+    createRenderPass(renderPasses.irradiance, Vector2i{config.skyboxIrradianceSize}, VK_FORMAT_R16G16B16A16_SFLOAT,
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-    createRenderPass(renderPasses.prefilter, Vector2i{config.skyboxPrefilterSize}, VK_FORMAT_R16G16B16A16_UNORM,
+    createRenderPass(renderPasses.prefilter, Vector2i{config.skyboxPrefilterSize}, VK_FORMAT_R16G16B16A16_SFLOAT,
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     shaders.stars = ShaderSkyboxStars{config, vulkan, shaderModules, renderPasses.color.renderPass};

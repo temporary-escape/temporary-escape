@@ -6,33 +6,14 @@
 namespace Engine {
 class ENGINE_API ComponentText : public Component {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentText() = default;
-    explicit ComponentText(Object& object, std::string text, const Color4& color, const float size) :
-        Component(object), text{std::move(text)}, color{color}, size{size} {
+    explicit ComponentText(std::string text, const Color4& color, const float size) :
+        text{std::move(text)}, color{color}, size{size} {
     }
-    virtual ~ComponentText() = default;
+    virtual ~ComponentText() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentText);
 
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    /*const AssetFontFacePtr& getFontFace() const {
-        return fontFace;
-    }
-
-    void setFontFace(AssetFontFacePtr value) {
-        fontFace = std::move(value);
-    }*/
-
-    const std::string& getText() const {
+    [[nodiscard]] const std::string& getText() const {
         return text;
     }
 
@@ -40,7 +21,7 @@ public:
         text = std::move(value);
     }
 
-    const Color4& getColor() const {
+    [[nodiscard]] const Color4& getColor() const {
         return color;
     }
 
@@ -48,7 +29,7 @@ public:
         color = value;
     }
 
-    bool getVisible() const {
+    [[nodiscard]] bool getVisible() const {
         return visible;
     }
 
@@ -56,7 +37,7 @@ public:
         visible = value;
     }
 
-    float getSize() const {
+    [[nodiscard]] float getSize() const {
         return size;
     }
 
@@ -64,7 +45,7 @@ public:
         size = value;
     }
 
-    bool getCentered() const {
+    [[nodiscard]] bool getCentered() const {
         return centered;
     }
 
@@ -72,15 +53,15 @@ public:
         centered = value;
     }
 
-    const Vector2& getOffset() const {
+    [[nodiscard]] const Vector2& getOffset() const {
         return offset;
     }
-    void setOffset(const Vector2& offset) {
-        ComponentText::offset = offset;
+
+    void setOffset(const Vector2& value) {
+        offset = value;
     }
 
 private:
-    // AssetFontFacePtr fontFace;
     std::string text;
     Color4 color;
     float size{18.0f};

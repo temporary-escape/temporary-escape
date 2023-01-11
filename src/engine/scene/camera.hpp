@@ -10,7 +10,7 @@ class Renderer;
 class ENGINE_API Camera {
 public:
     Camera() = default;
-    explicit Camera(Object& object) : object(&object) {
+    explicit Camera(Matrix4& transform) : transform(&transform) {
     }
 
     void setViewport(const Vector2i& viewport) {
@@ -37,7 +37,7 @@ public:
     }
 
     void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, -1.0f, 0.0f}) {
-        object->updateTransform(glm::inverse(glm::lookAt(eye, target, up)));
+        *transform = glm::inverse(glm::lookAt(eye, target, up));
     }
 
     Vector3 getForward() const {
@@ -49,7 +49,7 @@ public:
     }
 
     Matrix4 getViewMatrix() const {
-        return glm::inverse(object->getTransform());
+        return glm::inverse(*transform);
     }
 
     const Matrix4& getProjectionMatrix() const {
@@ -57,19 +57,19 @@ public:
     }
 
     Vector3 screenToWorld(const Vector2& pos) const {
-        return Engine::screenToWorld(object->getTransform(), projectionMatrix, viewport, pos);
+        return Engine::screenToWorld(*transform, projectionMatrix, viewport, pos);
     }
 
     Vector2 worldToScreen(const Vector3& pos, bool invert = false) const {
-        return Engine::worldToScreen(object->getTransform(), projectionMatrix, viewport, pos, invert);
+        return Engine::worldToScreen(*transform, projectionMatrix, viewport, pos, invert);
     }
 
     std::vector<Vector2> worldToScreen(const std::vector<Vector3>& pos) const {
-        return Engine::worldToScreen(object->getTransform(), projectionMatrix, viewport, pos);
+        return Engine::worldToScreen(*transform, projectionMatrix, viewport, pos);
     }
 
     Vector3 getEyesPos() const {
-        return object->getPosition();
+        return {(*transform)[3]};
     }
 
     const Vector2i& getViewport() const {
@@ -95,8 +95,16 @@ public:
         return fovOrZoom;
     }
 
+    Matrix4& getTransform() {
+        return *transform;
+    }
+
+    const Matrix4& getTransform() const {
+        return *transform;
+    }
+
 private:
-    Object* object{nullptr};
+    Matrix4* transform{nullptr};
     Matrix4 projectionMatrix{1.0f};
     Vector2i viewport;
     float fovOrZoom{1.0f};

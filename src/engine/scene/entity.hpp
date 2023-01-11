@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../library.hpp"
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
 #include "component_camera.hpp"
@@ -17,19 +18,81 @@
 #include "component_poly_shape.hpp"
 #include "component_script.hpp"
 #include "component_ship_control.hpp"
-#include "component_skybox.hpp"
 #include "component_text.hpp"
 #include "component_turret.hpp"
 #include "component_user_input.hpp"
-#include "component_wireframe.hpp"
-#include "object.hpp"
+#include <entt/core/ident.hpp>
+#include <entt/entity/view.hpp>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 
 namespace Engine {
-class Scene;
+class ENGINE_API Scene;
 
+using EntityComponentIds =
+    entt::identifier<ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel, ComponentDirectionalLight,
+                     ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud, ComponentLines, ComponentDebug>;
+
+class ENGINE_API Entity {
+public:
+    explicit Entity(entt::registry& reg) : reg{&reg}, handle{reg.create()} {
+    }
+    ~Entity() = default;
+
+    void destroy();
+
+    void setVisible(bool value) {
+        visible = value;
+    }
+
+    [[nodiscard]] bool isVisible() const {
+        return visible;
+    }
+
+    template <typename T> bool hasComponent() {
+        const auto index = EntityComponentIds::type<T>;
+        return (mask & (1 << index)) != 0;
+    }
+
+    template <typename T> T& getComponent() {
+        if (!reg) {
+            EXCEPTION("Invalid entity");
+        }
+
+        if (!hasComponent<T>()) {
+            EXCEPTION("Entity does not contain component of this type");
+        }
+
+        return reg->get<T>(handle);
+    }
+
+    template <typename T, typename... Args> T& addComponent(Args&&... args) {
+        if (!reg) {
+            EXCEPTION("Invalid entity");
+        }
+
+        if (hasComponent<T>()) {
+            EXCEPTION("Entity already contains component of this type");
+        }
+
+        auto& cmp = reg->template emplace<T>(handle, std::forward<Args>(args)...);
+        const auto index = EntityComponentIds::type<T>;
+        mask |= 1 << index;
+        return cmp;
+    }
+
+private:
+    entt::registry* reg{nullptr};
+    entt::entity handle;
+    bool visible{true};
+    uint64_t mask{0};
+};
+
+using EntityPtr = std::shared_ptr<Entity>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
+
+/*
 // clang-format off
 using EntityComponentHelper = Component::TraitsMapper<
     // DO NOT CHANGE THE ORDER! ADD NEW COMPONENTS AT THE BOTTOM!
@@ -309,5 +372,5 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         }
     };
     } // namespace adaptor
-}
-} // namespace msgpack
+}*/
+} // namespace Engine

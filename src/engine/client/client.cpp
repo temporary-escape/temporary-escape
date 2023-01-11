@@ -140,33 +140,32 @@ void Client::handle(MessagePlayerLocationChanged res) {
     scene.reset();
     scene = std::make_unique<Scene>();
 
-    auto sun = std::make_shared<Entity>();
+    auto sun = scene->createEntity();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
-    sun->translate(Vector3{3.0f, 1.0f, 3.0f});
-    scene->addEntity(sun);
+    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
 
-    camera = std::make_shared<Entity>();
-    auto cmp = camera->addComponent<ComponentCamera>();
-    camera->addComponent<ComponentUserInput>(*cmp);
-    cmp->setProjection(80.0f);
-    cmp->lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
-    scene->addEntity(camera);
+    camera = scene->createEntity();
+    auto& cameraTransform = camera->addComponent<ComponentTransform>();
+    auto& cameraCamera = camera->addComponent<ComponentCamera>(cameraTransform);
+    camera->addComponent<ComponentUserInput>(cameraCamera);
+    cameraCamera.setProjection(80.0f);
+    cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+    Log::i(CMP, "Setting scene primary camera");
     scene->setPrimaryCamera(camera);
 
-    auto entity = std::make_shared<Entity>();
-    auto debug = entity->addComponent<ComponentDebug>();
-    auto grid = entity->addComponent<ComponentGrid>(debug.get());
-    grid->setDirty(true);
+    auto entity = scene->createEntity();
+    auto& entityTransform = entity->addComponent<ComponentTransform>();
+    auto& debug = entity->addComponent<ComponentDebug>();
+    auto& grid = entity->addComponent<ComponentGrid>(debug);
+    grid.setDirty(true);
 
     auto block = registry.getBlocks().find("block_crew_quarters_t1");
     for (auto a = 0; a < 4; a++) {
         for (auto b = 0; b < 4; b++) {
-            grid->insert(Vector3i{a, 0, b}, block, a * b, 0, VoxelShape::Type::Cube);
+            grid.insert(Vector3i{a, 0, b}, block, a * b, 0, VoxelShape::Type::Cube);
         }
     }
-    grid->insert(Vector3i{2, 1, 2}, block, 0, 0, VoxelShape::Type::Cube);
-
-    scene->addEntity(entity);
+    grid.insert(Vector3i{2, 1, 2}, block, 0, 0, VoxelShape::Type::Cube);
 
     playerLocation = res.location;
 }
@@ -176,7 +175,7 @@ void Client::handle(MessageSceneEntitiesChanged res) {
         if (!scene) {
             EXCEPTION("Client scene is not initialized");
         }
-        for (auto& proxy : res.entities) {
+        /*for (auto& proxy : res.entities) {
             const auto entity = std::dynamic_pointer_cast<Entity>(proxy);
             if (!entity) {
                 EXCEPTION("Failed to cast EntityProxy to Entity");
@@ -184,10 +183,10 @@ void Client::handle(MessageSceneEntitiesChanged res) {
             scene->addEntity(entity);
 
             // TODO:
-            /*if (auto cmp = entity->findComponent<ComponentPlayer>(); cmp != nullptr && cmp->getPlayerId() == playerId)
-            { camera->getComponent<ComponentCameraTurntable>()->follow(entity);
-            }*/
-        }
+            //if (auto cmp = entity->findComponent<ComponentPlayer>(); cmp != nullptr && cmp->getPlayerId() == playerId)
+            //{ camera->getComponent<ComponentCameraTurntable>()->follow(entity);
+            //}
+        }*/
     } catch (...) {
         EXCEPTION_NESTED("Failed to process scene entities");
     }
@@ -198,9 +197,9 @@ void Client::handle(MessageSceneDeltasChanged res) {
         if (!scene) {
             EXCEPTION("Client scene is not initialized");
         }
-        for (auto& delta : res.deltas) {
+        /*for (auto& delta : res.deltas) {
             scene->updateEntity(delta);
-        }
+        }*/
     } catch (...) {
         EXCEPTION_NESTED("Failed to process scene entities");
     }

@@ -1,4 +1,5 @@
 #include "component_camera.hpp"
+#include "component_transform.hpp"
 
 using namespace Engine;
 
@@ -7,7 +8,7 @@ static const Config config{};
 
 void ComponentCamera::update(const float delta) {
     if (!isOrthographic()) {
-        auto pos = getObject().getPosition();
+        auto pos = Vector3{getTransform()[3]};
         const auto moveFactor = delta * speed * (fast ? 10.0f : 1.0f);
 
         if (move[0]) {
@@ -29,7 +30,7 @@ void ComponentCamera::update(const float delta) {
             pos += Vector3{0.0f, -moveFactor, 0.0f};
         }
 
-        getObject().move(pos);
+        getTransform()[3] = Vector4{pos, 1.0f};
     }
 }
 
@@ -123,7 +124,7 @@ void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
             const auto to = screenToWorld(pos);
 
             const auto diff = Vector3{from.x - to.x, 0.0f, from.z - to.z};
-            moveToOrtographic(getObject().getPosition() + diff * Vector3{1.0f, 1.0f, -1.0f});
+            moveToOrtographic(Vector3{getTransform()[3]} + diff * Vector3{1.0f, 1.0f, -1.0f});
 
             mousePosOld = pos;
         }

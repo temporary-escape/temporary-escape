@@ -1,45 +1,33 @@
 #pragma once
 
+#include "../graphics/mesh.hpp"
+#include "../graphics/shaders/shader_component_debug.hpp"
 #include "component.hpp"
 
 namespace Engine {
+class ENGINE_API ComponentTransform;
+class ENGINE_API ComponentCamera;
+
 class ENGINE_API ComponentDebug : public Component {
 public:
-    struct Vertex {
-        Vector3 position;
-        Color4 color;
-    };
-
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
+    using Vertex = ShaderComponentDebug::Vertex;
+    using Uniforms = ShaderComponentDebug::Uniforms;
 
     ComponentDebug() = default;
-    explicit ComponentDebug(Object& object) : Component(object) {
-    }
+    virtual ~ComponentDebug() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentDebug);
 
-    virtual ~ComponentDebug() = default;
-
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
-
+    void recalculate(VulkanRenderer& vulkan);
     void clear();
     void addBox(const Matrix4& transform, float width, const Color4& color);
+
+    [[nodiscard]] const Mesh& getMesh() const {
+        return mesh;
+    }
 
 private:
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    VulkanBuffer vbo;
-    VulkanBuffer ibo;
-
-public:
-    MSGPACK_DEFINE_ARRAY();
+    Mesh mesh;
 };
 } // namespace Engine

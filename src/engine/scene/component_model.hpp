@@ -1,36 +1,27 @@
 #pragma once
 
+#include "../assets/model.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentModel : public Component {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentModel() = default;
-    explicit ComponentModel(Object& object) : Component(object) {
+    explicit ComponentModel(ModelPtr model) : model{std::move(model)} {
     }
 
-    virtual ~ComponentModel() = default;
+    virtual ~ComponentModel() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentModel);
 
-    Delta getDelta() {
-        return {};
+    void setModel(ModelPtr value) {
+        model = std::move(value);
     }
 
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    /*const AssetModelPtr& getModel() const {
+    [[nodiscard]] const ModelPtr& getModel() const {
         return model;
-    }*/
+    }
 
 private:
-    // AssetModelPtr model{nullptr};
-
-public:
-    MSGPACK_DEFINE_ARRAY();
+    ModelPtr model{nullptr};
 };
 } // namespace Engine

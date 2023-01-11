@@ -1,15 +1,42 @@
 #pragma once
 
+#include "../math/matrix.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
+#include "../utils/moveable_copyable.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
-#include "object.hpp"
+#include <entt/entity/registry.hpp>
 #include <memory>
+#include <msgpack.hpp>
 #include <unordered_set>
 #include <variant>
 
+#define COMPONENT_DEFAULTS(ClassName)                                                                                  \
+    NON_COPYABLE(ClassName)                                                                                            \
+    MOVEABLE(ClassName)                                                                                                \
+    static constexpr auto in_place_delete = true;
+
 namespace Engine {
-class ENGINE_API Component;
+class ENGINE_API Entity;
+
+class ENGINE_API Component {
+public:
+    Component() = default;
+    virtual ~Component() = default;
+
+    [[nodiscard]] bool isDirty() const {
+        return dirty;
+    }
+
+    void setDirty(const bool value) {
+        dirty = value;
+    }
+
+private:
+    bool dirty{false};
+};
+
+/*class ENGINE_API Component;
 
 class ENGINE_API AbstractComponentSystem {
 public:
@@ -273,5 +300,5 @@ template <typename C, typename... Others> struct Component::TraitsMapper<C, Othe
         map.insert(std::make_pair(index, std::make_shared<ComponentSystem<typename C::type>>()));
         TraitsMapper<Others...>::generateComponentSystemsMap(map, index + 1);
     }
-};
+};*/
 } // namespace Engine

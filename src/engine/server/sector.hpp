@@ -55,7 +55,6 @@ private:
     // std::unique_ptr<wrenbind17::VM> vm;
 
     std::list<PlayerView> players;
-    std::vector<Entity::Delta> entityDeltas;
 
     asio::io_service sync;
 };

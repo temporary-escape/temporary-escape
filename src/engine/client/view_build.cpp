@@ -17,7 +17,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     // skybox->scale(Vector3{1000.0f});
     // scene.addEntity(skybox);
 
-    auto sun = std::make_shared<Entity>();
+    /*auto sun = std::make_shared<Entity>();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
     sun->translate(Vector3{3.0f, 1.0f, 3.0f});
     scene.addEntity(sun);
@@ -34,7 +34,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     entityShip = std::make_shared<Entity>();
     auto debug = entityShip->addComponent<ComponentDebug>();
     auto grid = entityShip->addComponent<ComponentGrid>(debug.get());
-    grid->setDirty(true);
+    grid->setDirty(true);*/
 
     /*auto block = registry.getBlocks().find("block_hull_t1");
     grid->insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
@@ -46,7 +46,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     grid->insert(Vector3i{0, 0, 2}, block, 0, 0, VoxelShape::Type::Cube);
     grid->insert(Vector3i{0, 0, 3}, block, 0, 0, VoxelShape::Type::Cube);*/
 
-    auto block = registry.getBlocks().find("block_crew_quarters_t1");
+    /*auto block = registry.getBlocks().find("block_crew_quarters_t1");
     for (auto a = 0; a < 4; a++) {
         for (auto b = 0; b < 4; b++) {
             grid->insert(Vector3i{a, 0, b}, block, a * b, 0, VoxelShape::Type::Cube);
@@ -62,7 +62,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
 
     scene.addEntity(entityShip);
     scene.addEntity(entityHelperAdd);
-    entityHelperAdd->setVisible(false);
+    entityHelperAdd->setVisible(false);*/
 }
 
 void ViewBuild::update(const float deltaTime) {

@@ -13,22 +13,9 @@ public:
 
     static_assert(sizeof(Point) == (3 + 4) * sizeof(float), "size of Point must be tightly packed");
 
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentPolyShape() = default;
-    explicit ComponentPolyShape(Object& object) : Component(object) {
-    }
-    virtual ~ComponentPolyShape() = default;
-
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
+    virtual ~ComponentPolyShape() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentPolyShape);
 
     /*const Mesh& getMesh() const {
         return mesh;
@@ -42,27 +29,6 @@ public:
     void clear() {
         setDirty(true);
         points.clear();
-    }
-
-    void recalculate() {
-        if (!isDirty()) {
-            return;
-        }
-
-        /*if (!vbo) {
-            vbo = VertexBuffer(VertexBufferType::Array);
-        }
-
-        vbo.bufferData(points.data(), points.size() * sizeof(Point), VertexBufferUsage::DynamicDraw);
-
-        if (!mesh) {
-            mesh = Mesh{};
-            mesh.addVertexBuffer(vbo, ShaderPolyShape::Position{}, ShaderPolyShape::Color{});
-            mesh.setPrimitive(PrimitiveType::Triangles);
-        }
-
-        mesh.setCount(points.size());*/
-        setDirty(false);
     }
 
 private:

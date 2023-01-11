@@ -13,29 +13,12 @@ public:
         Color4 colorB;
     };
 
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentLines() = default;
-    explicit ComponentLines(Object& object) : Component(object) {
-    }
-    explicit ComponentLines(Object& object, std::vector<Line> lines) : Component(object), lines(std::move(lines)) {
+    explicit ComponentLines(std::vector<Line> lines) : lines(std::move(lines)) {
         setDirty(true);
     }
-    virtual ~ComponentLines() = default;
-
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    /*const Mesh& getMesh() const {
-        return mesh;
-    }*/
+    virtual ~ComponentLines() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentLines);
 
     void set(std::vector<Line> values) {
         setDirty(true);
@@ -60,14 +43,10 @@ public:
     }
 
     void recalculate(VulkanRenderer& vulkan);
-    void render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline);
 
 private:
     std::vector<Line> lines;
     VulkanBuffer vbo;
     size_t count{0};
-
-public:
-    MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

@@ -50,7 +50,7 @@ private:
     Client& client;
     Skybox skybox;
     Scene scene;
-    std::shared_ptr<ComponentCamera> camera;
+    ComponentCamera* camera{nullptr};
 
     struct {
         std::string galaxyId;

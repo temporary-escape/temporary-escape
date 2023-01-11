@@ -5,6 +5,11 @@
 
 using namespace Engine;
 
+void ComponentIconPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color, const ImagePtr& image) {
+    setDirty(true);
+    imagePoints[image].push_back({pos, size, color, image->getAllocation().uv, image->getAllocation().st});
+}
+
 void ComponentIconPointCloud::recalculate(VulkanRenderer& vulkan) {
     /*if (!isDirty()) {
         return;
@@ -38,8 +43,8 @@ void ComponentIconPointCloud::recalculate(VulkanRenderer& vulkan) {
     setDirty(false);*/
 }
 
-void ComponentIconPointCloud::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    /*recalculate(vulkan);
+/*void ComponentIconPointCloud::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
+    recalculate(vulkan);
 
     if (vbos.empty()) {
         return;
@@ -55,5 +60,5 @@ void ComponentIconPointCloud::render(VulkanRenderer& vulkan, const Vector2i& vie
         vulkan.bindVertexBuffer(vbo, 0);
         vulkan.bindTexture(*image->getAllocation().texture, 1);
         vulkan.draw(vbo.getSize() / sizeof(Point), 1, 0, 0);
-    }*/
-}
+    }
+}*/

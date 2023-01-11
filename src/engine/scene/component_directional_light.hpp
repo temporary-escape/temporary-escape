@@ -5,31 +5,21 @@
 namespace Engine {
 class ENGINE_API ComponentDirectionalLight : public Component {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentDirectionalLight() = default;
-    explicit ComponentDirectionalLight(Object& object, const Color4& color) : Component(object), color(color) {
+    explicit ComponentDirectionalLight(const Color4& color) : color{color} {
     }
-    virtual ~ComponentDirectionalLight() = default;
+    virtual ~ComponentDirectionalLight() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentDirectionalLight);
 
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    Color4 getColor() const {
+    [[nodiscard]] const Color4& getColor() const {
         return color;
     }
 
-private:
-    Color4 color;
+    void setColor(const Color4& value) {
+        color = value;
+    }
 
-public:
-    MSGPACK_DEFINE_ARRAY(color);
+private:
+    Color4 color{1.0f};
 };
 } // namespace Engine

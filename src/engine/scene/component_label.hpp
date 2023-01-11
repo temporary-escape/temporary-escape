@@ -5,30 +5,14 @@
 namespace Engine {
 class ENGINE_API ComponentLabel : public Component {
 public:
-    struct Delta {
-        std::string label;
-
-        MSGPACK_DEFINE_ARRAY(label);
-    };
-
     ComponentLabel() = default;
-    explicit ComponentLabel(Object& object, std::string label) : Component(object), label{std::move(label)} {
+    explicit ComponentLabel(std::string label) : label{std::move(label)} {
     }
 
-    virtual ~ComponentLabel() = default;
+    virtual ~ComponentLabel() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentLabel);
 
-    Delta getDelta() {
-        Delta delta{};
-        delta.label = label;
-        // delta.image = image;
-        return delta;
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    const std::string& getLabel() const {
+    [[nodiscard]] const std::string& getLabel() const {
         return label;
     }
 
@@ -37,21 +21,8 @@ public:
         setDirty(true);
     }
 
-    /*const AssetImagePtr& getImage() const {
-        return image;
-    }
-
-    void setImage(AssetImagePtr value) {
-        image = std::move(value);
-        setDirty(true);
-    }*/
-
 private:
     std::string label;
-    // AssetImagePtr image;
     Color4 color;
-
-public:
-    MSGPACK_DEFINE_ARRAY(label);
 };
 } // namespace Engine

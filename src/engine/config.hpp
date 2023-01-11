@@ -35,10 +35,10 @@ struct Config {
         bool enableValidationLayers = true;
         bool vsync = true;
         size_t maxFramesInFlight = 2;
-        float bloomStrength = 0.3f;
-        float bloomPower = 1.1f;
-        float exposure = 0.8f;
-        float gamma = 1.5f;
+        float bloomStrength = 0.15f;
+        float bloomPower = 1.0f;
+        float exposure = 1.0f;
+        float gamma = 2.2f;
         float contrast = 1.0f;
     } vulkan;
 
@@ -55,7 +55,7 @@ struct Config {
     std::optional<std::string> saveFolderName;
     bool saveFolderClean = false;
     bool voxelTest = false;
-    std::string serverPassword;
+    std::string serverPassword = "";
     int serverPort = 22443;
     int skyboxIrradianceSize = 32;
     int skyboxPrefilterSize = 128;
@@ -64,8 +64,6 @@ struct Config {
     int brdfSize = 512;
     float cameraFov = 75.0f;
     int thumbnailSize = 128;
-    std::string guiFontFaceRegular = "iosevka-aile-regular";
-    std::string guiFontFaceBold = "iosevka-aile-bold";
     int guiFontSize = 18;
 
     struct {

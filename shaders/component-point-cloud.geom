@@ -16,6 +16,8 @@ layout (std140, binding = 0) uniform CameraMatrices {
 layout(location = 0) in VS_OUT {
     vec2 size;
     vec4 color;
+    vec2 uv;
+    vec2 st;
 } vs_out[];
 
 layout(location = 0) out GS_OUT {
@@ -25,6 +27,8 @@ layout(location = 0) out GS_OUT {
 
 void main (void) {
     vec4 P = gl_in[0].gl_Position;
+    vec2 uv = vs_out[0].uv;
+    vec2 st = vs_out[0].st;
 
     gs_out.color = vs_out[0].color;
     // vec2 particleSize = vs_out[0].size;
@@ -33,25 +37,25 @@ void main (void) {
     // a: left-bottom
     vec2 va = P.xy + vec2(-1.0, -1.0) * particleSize;
     gl_Position = vec4(va, P.zw);
-    gs_out.texCoords = vec2(0.0, 0.0);
+    gs_out.texCoords = uv;
     EmitVertex();
 
     // b: left-top
     vec2 vb = P.xy + vec2(-1.0, 1.0) * particleSize;
     gl_Position = vec4(vb, P.zw);
-    gs_out.texCoords = vec2(0.0, 1.0);
+    gs_out.texCoords = vec2(uv.x, uv.y + st.y);
     EmitVertex();
 
     // d: right-bottom
     vec2 vd = P.xy + vec2(1.0, -1.0) * particleSize;
     gl_Position = vec4(vd, P.zw);
-    gs_out.texCoords = vec2(1.0, 0.0);
+    gs_out.texCoords = vec2(uv.x + st.x, uv.y);
     EmitVertex();
 
     // c: right-top
     vec2 vc = P.xy + vec2(1.0, 1.0) * particleSize;
     gl_Position = vec4(vc, P.zw);
-    gs_out.texCoords = vec2(1.0, 1.0);
+    gs_out.texCoords = vec2(uv.x + st.x, uv.y + st.y);
     EmitVertex();
 
     EndPrimitive();

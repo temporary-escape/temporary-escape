@@ -20,7 +20,6 @@ void ViewSpace::render(const Vector2i& viewport) {
     }
 
     Renderer::Options options{};
-    options.blurStrength = 0.2f;
     renderer.render(viewport, *scene, skyboxSystem, options);
 }
 

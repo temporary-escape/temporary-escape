@@ -66,15 +66,15 @@ struct MessagePlayerLocationChanged {
 };
 
 struct MessageSceneEntitiesChanged {
-    std::vector<EntityProxyPtr> entities;
+    // std::vector<EntityProxyPtr> entities;
 
-    MESSAGE_DEFINE(MessageSceneEntitiesChanged, entities);
+    MESSAGE_DEFINE(MessageSceneEntitiesChanged);
 };
 
 struct MessageSceneDeltasChanged {
-    std::vector<Entity::Delta> deltas;
+    // std::vector<Entity::Delta> deltas;
 
-    MESSAGE_DEFINE(MessageSceneDeltasChanged, deltas);
+    MESSAGE_DEFINE(MessageSceneDeltasChanged);
 };
 
 struct MessageShipMovementRequest {

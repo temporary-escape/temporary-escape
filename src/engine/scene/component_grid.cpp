@@ -72,28 +72,3 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
     }
 }
-
-/*void ComponentGrid::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    if (primitives.empty()) {
-        return;
-    }
-
-    const Matrix4 transform = getObject().getAbsoluteTransform();
-    const Matrix3 transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-    vulkan.pushConstant(0, transform);
-    vulkan.pushConstant(sizeof(Matrix4), transformInverted);
-
-    for (const auto& primitive : primitives) {
-        vulkan.bindVertexBuffer(primitive.vbo, 0);
-        vulkan.bindVertexInputFormat(primitive.vboFormat);
-        vulkan.bindIndexBuffer(primitive.ibo, 0, VK_INDEX_TYPE_UINT32);
-        vulkan.bindUniformBuffer(primitive.material->ubo, 1);
-        vulkan.bindTexture(primitive.material->baseColorTexture->getVulkanTexture(), 2);
-        vulkan.bindTexture(primitive.material->emissiveTexture->getVulkanTexture(), 3);
-        vulkan.bindTexture(primitive.material->normalTexture->getVulkanTexture(), 4);
-        vulkan.bindTexture(primitive.material->ambientOcclusionTexture->getVulkanTexture(), 5);
-        vulkan.bindTexture(primitive.material->metallicRoughnessTexture->getVulkanTexture(), 6);
-        vulkan.setInputAssembly(primitive.topology);
-        vulkan.drawIndexed(primitive.count, 1, 0, 0, 0);
-    }
-}*/

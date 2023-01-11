@@ -62,19 +62,18 @@ ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& regis
     images.systemMoon = registry.getImages().find("icon_world");
 
     // To keep the renderer away from complaining
-    auto sun = std::make_shared<Entity>();
+    auto sun = scene.createEntity();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
-    sun->translate(Vector3{0.0f, 1.0f, 0.0f});
-    scene.addEntity(sun);
+    sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 1.0f, 0.0f});
 
     // Our primary camera
-    auto cameraEntity = std::make_shared<Entity>();
-    camera = cameraEntity->addComponent<ComponentCamera>();
+    auto cameraEntity = scene.createEntity();
+    auto& cameraTransform = cameraEntity->addComponent<ComponentTransform>();
+    camera = &cameraEntity->addComponent<ComponentCamera>(cameraTransform);
     cameraEntity->addComponent<ComponentUserInput>(*camera);
     camera->setOrthographic(25.0f);
     camera->lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
     camera->setZoomRange(3.0f, 250.0f);
-    scene.addEntity(cameraEntity);
     scene.setPrimaryCamera(cameraEntity);
 
     gui.contextMenu.setEnabled(false);
@@ -263,7 +262,7 @@ void ViewSystem::clearEntities() {
 }
 
 void ViewSystem::createEntitiesPlanets() {
-    entities.iconPointCloud = std::make_shared<Entity>();
+    /*entities.iconPointCloud = std::make_shared<Entity>();
     entities.orbitalRings = std::make_shared<Entity>();
 
     auto pointCloud = entities.iconPointCloud->addComponent<ComponentIconPointCloud>();
@@ -284,7 +283,7 @@ void ViewSystem::createEntitiesPlanets() {
     }
 
     scene.addEntity(entities.iconPointCloud);
-    scene.addEntity(entities.orbitalRings);
+    scene.addEntity(entities.orbitalRings);*/
 }
 
 const SystemData* ViewSystem::rayCast(const Vector2& mousePos) {

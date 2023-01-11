@@ -43,17 +43,18 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
             fmt::fmt
             Cgltf
             msgpackc msgpackc-cxx
-            RocksDB::rocksdb
             glad::glad
             asio
             asio::asio
             Vulkan::Vulkan
-            utf8cpp)
+            utf8cpp
+            EnTT::EnTT)
 
     # Engine private dependencies
     target_link_libraries(${LIBRARY_NAME} PRIVATE
             nuklear
             glfw
+            RocksDB::rocksdb
             unofficial::vulkan-memory-allocator::vulkan-memory-allocator
             HLSL SPIRV glslang OGLCompiler spirv-cross-glsl
             Png

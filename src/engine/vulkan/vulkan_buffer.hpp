@@ -7,7 +7,7 @@ namespace Engine {
 class ENGINE_API VulkanDevice;
 class ENGINE_API VulkanAllocator;
 
-class ENGINE_API VulkanBuffer {
+class ENGINE_API VulkanBuffer : public VulkanDisposable {
 public:
     struct CreateInfo : VkBufferCreateInfo {
         VmaMemoryUsage memoryUsage{VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY};
@@ -52,7 +52,7 @@ public:
         return buffer != VK_NULL_HANDLE;
     }
 
-    void destroy();
+    void destroy() override;
 
 private:
     VkDevice device{nullptr};

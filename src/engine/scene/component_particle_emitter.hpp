@@ -5,23 +5,9 @@
 namespace Engine {
 class ComponentParticleEmitter : public Component {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentParticleEmitter() = default;
-    explicit ComponentParticleEmitter(Object& object) : Component(object) {
-    }
-
-    virtual ~ComponentParticleEmitter() = default;
-
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
+    virtual ~ComponentParticleEmitter() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentParticleEmitter);
 
     /*void setOffset(const Vector3& value) {
         uniform.offset = value;
@@ -159,8 +145,5 @@ private:
     AssetParticlesPtr asset{nullptr};
     VertexBuffer ubo{NO_CREATE};
     bool shouldRebuild{true};*/
-
-public:
-    MSGPACK_DEFINE_ARRAY();
 };
 } // namespace Engine

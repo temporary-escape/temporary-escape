@@ -266,7 +266,7 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        renderPasses.forward.renderPass,
+        renderPasses.lighting.renderPass,
     };
     shaders.passDebug = ShaderPassDebug{
         config,
@@ -278,13 +278,13 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        renderPasses.forward.renderPass,
+        renderPasses.lighting.renderPass,
     };
     shaders.passFxaa = ShaderPassFXAA{
         config,
         vulkan,
         shaderModules,
-        renderPasses.forward.renderPass,
+        renderPasses.fxaa.renderPass,
     };
     shaders.passBloomExtract = ShaderPassBloomExtract{
         config,
@@ -310,6 +310,18 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         shaderModules,
         vulkan.getRenderPass(),
     };
+    shaders.componentPointCloud = ShaderComponentPointCloud{
+        config,
+        vulkan,
+        shaderModules,
+        vulkan.getRenderPass(),
+    };
+    shaders.componentDebug = ShaderComponentDebug{
+        config,
+        vulkan,
+        shaderModules,
+        renderPasses.forward.renderPass,
+    };
 }
 
 void Renderer::createRenderPasses() {
@@ -320,6 +332,7 @@ void Renderer::createRenderPasses() {
     createDepthTexture();
     createRenderPassPbr();
     createRenderPassSsao();
+    createRenderPassLighting();
     createRenderPassForward();
     createRenderPassFxaa();
     createRenderPassBloomExtract();
@@ -349,10 +362,6 @@ void Renderer::createDepthTexture() {
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         // Aspect mask
         VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    // vulkan.transitionImageLayout(
-    //     renderPasses.depth, VK_IMAGE_LAYOUT_UNDEFINED,
-    //     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL /*VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL*/);
 }
 
 void Renderer::createRenderPassBrdf() {
@@ -493,7 +502,7 @@ void Renderer::createRenderPassPbr() {
     attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[3].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachments[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VulkanRenderPass::CreateInfo renderPassInfo{};
@@ -631,7 +640,7 @@ void Renderer::createRenderPassSsao() {
     renderPasses.ssao.semaphore = vulkan.createSemaphore(semaphoreInfo);
 }
 
-void Renderer::createRenderPassForward() {
+void Renderer::createRenderPassLighting() {
     createAttachment(
         // Render pass
         textures.forward,
@@ -652,7 +661,7 @@ void Renderer::createRenderPassForward() {
     attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VulkanRenderPass::CreateInfo renderPassInfo{};
     renderPassInfo.attachments = attachments;
@@ -681,10 +690,85 @@ void Renderer::createRenderPassForward() {
     renderPassInfo.subPasses = {subpass};
     renderPassInfo.dependencies = {dependency};
 
-    renderPasses.forward.renderPass = vulkan.createRenderPass(renderPassInfo);
+    renderPasses.lighting.renderPass = vulkan.createRenderPass(renderPassInfo);
 
     std::array<VkImageView, 1> attachmentViews = {
         textures.forward.getImageView(),
+    };
+
+    VulkanFramebuffer::CreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPasses.lighting.renderPass.getHandle();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.size());
+    framebufferInfo.pAttachments = attachmentViews.data();
+    framebufferInfo.width = lastViewportSize.x;
+    framebufferInfo.height = lastViewportSize.y;
+    framebufferInfo.layers = 1;
+
+    renderPasses.lighting.fbo = vulkan.createFramebuffer(framebufferInfo);
+
+    VulkanSemaphore::CreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    renderPasses.lighting.semaphore = vulkan.createSemaphore(semaphoreInfo);
+}
+
+void Renderer::createRenderPassForward() {
+    std::vector<VkAttachmentDescription> attachments{2};
+    attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    attachments[1].format = textures.depthFormat;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VulkanRenderPass::CreateInfo renderPassInfo{};
+    renderPassInfo.attachments = attachments;
+
+    std::array<VkAttachmentReference, 1> colorAttachmentRefs{};
+    VkAttachmentReference depthAttachmentRef{};
+
+    colorAttachmentRefs[0].attachment = 0;
+    colorAttachmentRefs[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // Use subpass dependencies for attachment layout transitions
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+    subpass.pColorAttachments = colorAttachmentRefs.data();
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    renderPassInfo.subPasses = {subpass};
+    renderPassInfo.dependencies = {dependency};
+
+    renderPasses.forward.renderPass = vulkan.createRenderPass(renderPassInfo);
+
+    std::array<VkImageView, 2> attachmentViews = {
+        textures.forward.getImageView(),
+        textures.depth.getImageView(),
     };
 
     VulkanFramebuffer::CreateInfo framebufferInfo{};
@@ -1015,15 +1099,21 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
         createRenderPasses();
     }
 
+    if (scene.getEntities().empty()) {
+        EXCEPTION("Scene has no entities");
+    }
+
     auto camera = scene.getPrimaryCamera();
     if (!camera) {
         EXCEPTION("Scene has no camera");
     }
     camera->recalculate(vulkan, viewport);
 
-    transitionDepthForWrite();
+    // transitionDepthForWrite();
     renderPassPbr(viewport, scene, options);
     renderPassSsao(viewport, scene, options);
+    renderPassLighting(viewport, scene, skybox, options);
+    transitionDepthForReadOnlyOptimal();
     renderPassForward(viewport, scene, skybox, options);
     renderPassFxaa(viewport);
     renderPassBloomExtract();
@@ -1049,211 +1139,19 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    renderPassBloomCombine(vkb);
-
-    /*vkb.bindPipeline(shaders.passDebug.getPipeline());
-    vkb.setViewport({0, 0}, viewport);
-    vkb.setScissor({0, 0}, viewport);
-
-    std::array<VulkanTextureBinding, 1> textureBindings{};
-    textureBindings[0] = {0, &renderPasses.ssao.textures[0]};
-
-    vkb.bindDescriptors(shaders.passDebug.getPipeline(), shaders.passDebug.getDescriptorSetLayout(), {},
-                        textureBindings);
-    renderMesh(vkb, meshes.fullScreenQuad);*/
+    renderPassBloomCombine(vkb, options);
 
     vkb.endRenderPass();
     vkb.end();
 
-    // vulkan.submitPresentCommandBuffer(vkb);
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.bloomBlur[0].semaphore,
                                vulkan.getCurrentRenderFinishedSemaphore(), &vulkan.getCurrentInFlightFence());
     vulkan.dispose(std::move(vkb));
-
-    /*// ======================================== PBR scene ========================================
-    VulkanFramebufferAttachmentReference pbrColorAttachment{};
-    pbrColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    VulkanFramebufferAttachmentReference pbrEmissiveAttachment{};
-    pbrEmissiveAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    VulkanFramebufferAttachmentReference pbrMetallicRoughnessAmbientAttachment{};
-    pbrMetallicRoughnessAmbientAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    VulkanFramebufferAttachmentReference pbrNormalAttachment{};
-    pbrNormalAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    VulkanFramebufferAttachmentReference depthStencilAttachment{};
-    depthStencilAttachment.clearValue.depthStencil.depth = 1.0f;
-    depthStencilAttachment.clearValue.depthStencil.stencil = 0;
-
-    vulkan.beginRenderPass(gBuffer.pbrFbo, {
-                                               pbrColorAttachment,
-                                               pbrEmissiveAttachment,
-                                               pbrMetallicRoughnessAmbientAttachment,
-                                               pbrNormalAttachment,
-                                               depthStencilAttachment,
-                                           });
-
-    updateDirectionalLightsUniform(scene);
-
-    vulkan.setRasterization(VkPolygonMode::VK_POLYGON_MODE_FILL, VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT,
-                            VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-    try {
-        scene.renderPbr(vulkan, viewport);
-    } catch (...) {
-        EXCEPTION_NESTED("Something went wrong during renderPbr()");
-    }
-
-    vulkan.endRenderPass();
-
-    vulkan.setRasterization(VkPolygonMode::VK_POLYGON_MODE_FILL, VkCullModeFlagBits::VK_CULL_MODE_NONE,
-                            VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-    const auto camera = scene.getPrimaryCamera();
-
-    // ======================================== Skybox ========================================
-
-    VulkanFramebufferAttachmentReference forwardColorAttachment{};
-    forwardColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-    forwardColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-
-    VulkanFramebufferAttachmentReference forwardDepthStencilAttachment{};
-    forwardDepthStencilAttachment.clearValue.depthStencil.depth = 1.0f;
-    forwardDepthStencilAttachment.clearValue.depthStencil.stencil = 0;
-    forwardDepthStencilAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-
-    vulkan.beginRenderPass(gBuffer.forwardFbo, {forwardColorAttachment, forwardDepthStencilAttachment});
-
-    vulkan.bindPipeline(pipelines.skybox);
-    vulkan.bindUniformBuffer(camera->getUboZeroPos(), 0);
-    vulkan.bindTexture(skybox.getTexture(), 1);
-    renderSkyboxMesh();
-
-    vulkan.endRenderPass();
-
-    // ======================================== SSAO ========================================
-
-    VulkanFramebufferAttachmentReference ssaoAttachment{};
-    ssaoAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(gBuffer.ssaoFbo, {ssaoAttachment});
-
-    vulkan.bindPipeline(pipelines.ssao);
-    vulkan.bindUniformBuffer(camera->getUbo(), 0);
-    vulkan.bindUniformBuffer(ssaoSamples.ubo, 1);
-    vulkan.bindTexture(gBuffer.depth, 2);
-    vulkan.bindTexture(gBuffer.pbrNormal, 3);
-    vulkan.bindTexture(ssaoSamples.noise, 4);
-    vulkan.pushConstant(0, Vector2{viewport} / 4.0f);
-    renderFullScreenQuad();
-
-    vulkan.endRenderPass();
-
-    // ======================================== Deferred ========================================
-
-    VulkanFramebufferAttachmentReference deferredResultAttachment{};
-    deferredResultAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-    deferredResultAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-    vulkan.beginRenderPass(gBuffer.deferredFbo, {deferredResultAttachment});
-
-    vulkan.bindPipeline(pipelines.pbr);
-    vulkan.bindUniformBuffer(camera->getUbo(), 0);
-    vulkan.bindUniformBuffer(directionalLights.ubo, 1);
-    vulkan.bindTexture(gBuffer.pbrColor, 2);
-    vulkan.bindTexture(gBuffer.pbrEmissive, 3);
-    vulkan.bindTexture(gBuffer.pbrMetallicRoughnessAmbient, 4);
-    vulkan.bindTexture(gBuffer.pbrNormal, 5);
-    vulkan.bindTexture(skybox.getIrradiance(), 6);
-    vulkan.bindTexture(skybox.getPrefilter(), 7);
-    vulkan.bindTexture(brdf.texture, 8);
-    vulkan.bindTexture(gBuffer.depth, 9);
-    vulkan.bindTexture(gBuffer.ssaoColor, 10);
-    renderFullScreenQuad();
-
-    vulkan.endRenderPass();
-
-    // ======================================== Forward ========================================
-    deferredResultAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
-
-    vulkan.beginRenderPass(gBuffer.forwardFbo, {deferredResultAttachment, forwardDepthStencilAttachment});
-
-    try {
-        scene.renderFwd(vulkan, viewport);
-    } catch (...) {
-        EXCEPTION_NESTED("Something went wrong during renderFwd()");
-    }
-
-    vulkan.endRenderPass();
-
-    // ======================================== Bloom extract ========================================
-    auto tempColorAttachment = VulkanFramebufferAttachmentReference{};
-    tempColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-    tempColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(gBuffer.bloomFbos[0], {tempColorAttachment});
-
-    vulkan.bindPipeline(pipelines.bloomExtract);
-    vulkan.bindTexture(gBuffer.forwardColor, 0);
-    renderFullScreenQuad();
-
-    vulkan.endRenderPass();
-
-    // ======================================== Bloom blur ========================================
-    for (auto i = 0; i < 6; i++) {
-        tempColorAttachment = VulkanFramebufferAttachmentReference{};
-        tempColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-        tempColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-        vulkan.beginRenderPass(gBuffer.bloomFbos[(i + 1) % 2], {tempColorAttachment});
-
-        vulkan.bindPipeline(pipelines.bloomBlur);
-        vulkan.bindUniformBuffer(gaussianWeights.ubo, 0);
-        vulkan.pushConstant(0, i < 3);
-        vulkan.bindTexture(gBuffer.bloomColors[i % 2], 1);
-        renderFullScreenQuad();
-
-        vulkan.endRenderPass();
-    }
-
-    // ======================================== Bloom combine ========================================
-    tempColorAttachment = VulkanFramebufferAttachmentReference{};
-    tempColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-    tempColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(gBuffer.bloomFbos[0], {tempColorAttachment});
-
-    vulkan.bindPipeline(pipelines.bloomCombine);
-    vulkan.pushConstant(0, options.blurStrength);
-    vulkan.pushConstant(sizeof(float), options.exposure);
-    vulkan.bindTexture(gBuffer.forwardColor, 0);
-    vulkan.bindTexture(gBuffer.bloomColors[1], 1);
-    renderFullScreenQuad();
-
-    vulkan.endRenderPass();
-
-    // ======================================== FXAA ========================================
-    VulkanFramebufferAttachmentReference frontColorAttachment{};
-    frontColorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-    tempColorAttachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-
-    vulkan.beginRenderPass(gBuffer.frontFbo, {tempColorAttachment});
-
-    vulkan.bindPipeline(pipelines.fxaa);
-    vulkan.pushConstant(0, Vector2{viewport});
-    vulkan.bindTexture(gBuffer.bloomColors[0], 0);
-    renderFullScreenQuad();*/
-
-    /*try {
-        scene.renderFwd(vulkan, viewport);
-    } catch (...) {
-        EXCEPTION_NESTED("Something went wrong during renderFwd()");
-    }*/
 }
 
-void Renderer::transitionDepthForWrite() {
+void Renderer::transitionDepthForReadOnlyOptimal() {
+    vulkan.setDebugMessengerEnabled(false);
+
     auto vkb = vulkan.createCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -1263,20 +1161,18 @@ void Renderer::transitionDepthForWrite() {
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = textures.depth.getHandle();
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = textures.depth.getMipMaps();
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
-
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -1287,6 +1183,8 @@ void Renderer::transitionDepthForWrite() {
 
     vulkan.submitCommandBuffer(vkb);
     vulkan.dispose(std::move(vkb));
+
+    vulkan.setDebugMessengerEnabled(true);
 }
 
 void Renderer::transitionForWrite(VulkanCommandBuffer& vkb, const size_t idx) {
@@ -1405,6 +1303,39 @@ void Renderer::renderPassSsao(const Vector2i& viewport, Scene& scene, const Opti
     vulkan.dispose(std::move(vkb));
 }
 
+void Renderer::renderPassLighting(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+    auto camera = scene.getPrimaryCamera();
+
+    auto vkb = vulkan.createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    VulkanRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.framebuffer = &renderPasses.lighting.fbo;
+    renderPassInfo.renderPass = &renderPasses.lighting.renderPass;
+    renderPassInfo.offset = {0, 0};
+    renderPassInfo.size = viewport;
+    renderPassInfo.clearValues.resize(2);
+
+    vkb.beginRenderPass(renderPassInfo);
+    vkb.setViewport({0, 0}, viewport);
+    vkb.setScissor({0, 0}, viewport);
+
+    renderSceneSkybox(vkb, viewport, scene, skybox);
+    renderLightingPbr(vkb, viewport, scene, skybox);
+
+    vkb.endRenderPass();
+
+    vkb.end();
+
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.ssao.semaphore,
+                               renderPasses.lighting.semaphore, nullptr);
+    vulkan.dispose(std::move(vkb));
+}
+
 void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
     auto camera = scene.getPrimaryCamera();
 
@@ -1420,7 +1351,6 @@ void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, Skybox&
     renderPassInfo.renderPass = &renderPasses.forward.renderPass;
     renderPassInfo.offset = {0, 0};
     renderPassInfo.size = viewport;
-
     renderPassInfo.clearValues.resize(1);
     renderPassInfo.clearValues[0].color = {{0.0f, 0.0f, 0.0f, 0.0f}};
 
@@ -1428,14 +1358,13 @@ void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, Skybox&
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    renderSceneSkybox(vkb, viewport, scene, skybox);
-    renderLightingPbr(vkb, viewport, scene, skybox);
+    renderSceneForwards(vkb, viewport, scene);
 
     vkb.endRenderPass();
 
     vkb.end();
 
-    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.ssao.semaphore,
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.lighting.semaphore,
                                renderPasses.forward.semaphore, nullptr);
     vulkan.dispose(std::move(vkb));
 }
@@ -1670,7 +1599,7 @@ void Renderer::renderPassBloomBlur(VulkanCommandBuffer& vkb, const size_t idx, c
     vkb.endRenderPass();
 }
 
-void Renderer::renderPassBloomCombine(VulkanCommandBuffer& vkb) {
+void Renderer::renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& options) {
     vkb.bindPipeline(shaders.passBloomCombine.getPipeline());
 
     std::array<VulkanTextureBinding, 2> textureBindings{};
@@ -1686,6 +1615,10 @@ void Renderer::renderPassBloomCombine(VulkanCommandBuffer& vkb) {
     constants.bloomStrength = config.vulkan.bloomStrength;
     constants.bloomPower = config.vulkan.bloomPower;
     constants.contrast = config.vulkan.contrast;
+
+    if (!options.bloomEnabled) {
+        constants.bloomStrength = 0.0f;
+    }
 
     vkb.pushConstants(shaders.passBloomCombine.getPipeline(),
                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
@@ -1721,7 +1654,7 @@ static void validateMaterial(const Material& material) {
 }
 
 void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
-    auto& systemGrids = scene.getComponentSystem<ComponentGrid>();
+    auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>();
     auto camera = scene.getPrimaryCamera();
 
     std::array<VulkanBufferBinding, 2> bufferBindings{};
@@ -1732,22 +1665,18 @@ void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewpo
 
     vkb.bindPipeline(shaders.componentGrid.getPipeline());
 
-    for (auto* component : systemGrids) {
-        component->recalculate(vulkan, voxelShapeCache);
+    for (auto&& [entity, transform, grid] : systemGrids.each()) {
+        grid.recalculate(vulkan, voxelShapeCache);
 
-        const Matrix4 transform = component->getObject().getAbsoluteTransform();
-        const Matrix3 transformInverted = glm::transpose(glm::inverse(glm::mat3x3(transform)));
-
-        const auto& primitives = component->getPrimitives();
         ShaderComponentGrid::Uniforms uniforms{};
-        uniforms.modelMatrix = transform;
-        uniforms.normalMatrix = transformInverted;
+        uniforms.modelMatrix = transform.getAbsoluteTransform();
+        uniforms.normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(uniforms.modelMatrix)));
 
         vkb.pushConstants(shaders.componentGrid.getPipeline(),
                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                           sizeof(ShaderComponentGrid::Uniforms), &uniforms);
 
-        for (auto& primitive : primitives) {
+        for (auto& primitive : grid.getPrimitives()) {
             if (!primitive.material) {
                 EXCEPTION("Primitive has no material");
             }
@@ -1798,6 +1727,49 @@ void Renderer::renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewp
     renderMesh(vkb, meshes.skybox);
 }
 
+void Renderer::renderSceneForwards(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
+    renderSceneForwardDebug(vkb, viewport, scene);
+}
+
+void Renderer::renderSceneForwardDebug(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
+    auto camera = scene.getPrimaryCamera();
+    auto view = scene.getView<ComponentTransform, ComponentDebug>().each();
+
+    if (view.begin() == view.end()) {
+        return;
+    }
+
+    vkb.bindPipeline(shaders.componentDebug.getPipeline());
+
+    for (auto&& [entity, transform, debug] : view) {
+        debug.recalculate(vulkan);
+
+        std::array<VulkanBufferBinding, 1> bufferBindings{};
+        bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
+
+        vkb.bindDescriptors(shaders.componentDebug.getPipeline(), shaders.componentDebug.getDescriptorSetLayout(),
+                            bufferBindings, {});
+
+        ShaderComponentDebug::Uniforms constants{};
+        constants.modelMatrix = transform.getAbsoluteTransform();
+        vkb.pushConstants(shaders.componentDebug.getPipeline(),
+                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                          sizeof(ShaderComponentDebug::Uniforms), &constants);
+
+        renderMesh(vkb, debug.getMesh());
+    }
+}
+
+void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+    vboBindings[0] = {&mesh.vbo, 0};
+
+    vkb.bindBuffers(vboBindings);
+    vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
+
+    vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+}
+
 void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox) {
     updateDirectionalLights(scene);
 
@@ -1828,10 +1800,10 @@ void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewp
 void Renderer::updateDirectionalLights(Scene& scene) {
     ShaderPassPbr::DirectionalLightsUniform uniform{};
 
-    auto& system = scene.getComponentSystem<ComponentDirectionalLight>();
-    for (const auto& component : system) {
-        uniform.colors[uniform.count] = component->getColor();
-        uniform.directions[uniform.count] = Vector4{component->getObject().getPosition(), 0.0f};
+    auto system = scene.getView<ComponentTransform, ComponentDirectionalLight>();
+    for (auto&& [entity, transform, light] : system.each()) {
+        uniform.colors[uniform.count] = light.getColor();
+        uniform.directions[uniform.count] = Vector4{transform.getPosition(), 0.0f};
 
         uniform.count++;
         if (uniform.count >= ShaderPassPbr::maxDirectionalLights) {

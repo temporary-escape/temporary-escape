@@ -5,63 +5,13 @@
 
 using namespace Engine;
 
-Scene::Scene(EventListener& eventListener) :
-    eventListener{eventListener}, nextId{0}, systems{EntityComponentHelper::generateComponentSystemsMap()} {
+Scene::Scene(EventListener& eventListener) : eventListener{eventListener}, nextId{0} {
 }
 
 Scene::~Scene() = default;
 
-void Scene::renderPbr(VulkanDevice& vulkan, const Vector2i& viewport) {
-    /*if (!pipelines) {
-        EXCEPTION("Scene shaders not initialized");
-    }*/
-    /*if (!voxelShapeCache) {
-        EXCEPTION("Scene voxel shape cache not initialized");
-    }*/
-
-    /*const auto camera = getPrimaryCamera();
-    camera->render(vulkan, viewport);
-
-    {
-        auto& system = getComponentSystem<ComponentGrid>();
-
-        for (auto& component : system) {
-            component->recalculate(vulkan, *voxelShapeCache);
-        }
-    }*/
-
-    /*{
-        if (!pipelines->grid) {
-            EXCEPTION("Scene shader grid not initialized");
-        }
-
-        auto& system = getComponentSystem<ComponentGrid>();
-
-        vulkan.bindPipeline(pipelines->grid);
-        vulkan.bindUniformBuffer(camera->getUbo(), 0);
-        vulkan.setDepthStencilState(true, true);
-        VulkanBlendState blendState{};
-        blendState.blendEnable = false;
-        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-        vulkan.setBlendState({blendState, blendState, blendState, blendState});
-
-        for (auto& component : system) {
-            if (!component->getObject().isVisible()) {
-                continue;
-            }
-            component->render(vulkan, viewport, pipelines->grid);
-        }
-    }*/
-}
-
-void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
-    /*using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*, ComponentLines*,
+/*void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
+    using VariantComponent = std::variant<ComponentDebug*, ComponentWireframe*, ComponentPointCloud*, ComponentLines*,
                                           ComponentIconPointCloud*>;
 
     struct Renderable {
@@ -245,67 +195,71 @@ void Scene::renderFwd(VulkanDevice& vulkan, const Vector2i& viewport) {
         }
     }*/
 
-    /*{
-        if (!pipelines->debug) {
-            EXCEPTION("Scene shader debug not initialized");
-        }
-
-        auto& system = getComponentSystem<ComponentDebug>();
-
-        vulkan.bindPipeline(pipelines->debug);
-        vulkan.bindUniformBuffer(camera->getUbo(), 0);
-        vulkan.setDepthStencilState(true, true);
-        VulkanBlendState blendState{};
-        blendState.blendEnable = true;
-        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-        vulkan.setBlendState({blendState});
-
-        for (auto& component : system) {
-            if (!component->getObject().isVisible()) {
-                continue;
-            }
-            component->render(vulkan, viewport, pipelines->debug);
-        }
+/*{
+    if (!pipelines->debug) {
+        EXCEPTION("Scene shader debug not initialized");
     }
 
-    {
-        if (!pipelines->wireframe) {
-            EXCEPTION("Scene shader wireframe not initialized");
+    auto& system = getComponentSystem<ComponentDebug>();
+
+    vulkan.bindPipeline(pipelines->debug);
+    vulkan.bindUniformBuffer(camera->getUbo(), 0);
+    vulkan.setDepthStencilState(true, true);
+    VulkanBlendState blendState{};
+    blendState.blendEnable = true;
+    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+    vulkan.setBlendState({blendState});
+
+    for (auto& component : system) {
+        if (!component->getObject().isVisible()) {
+            continue;
         }
-
-        auto& system = getComponentSystem<ComponentWireframe>();
-
-        vulkan.bindPipeline(pipelines->wireframe);
-        vulkan.bindUniformBuffer(camera->getUbo(), 0);
-        vulkan.setDepthStencilState(true, true);
-        VulkanBlendState blendState{};
-        blendState.blendEnable = true;
-        blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-        blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-        blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
-        blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
-        vulkan.setBlendState({blendState});
-
-        for (auto& component : system) {
-            if (!component->getObject().isVisible()) {
-                continue;
-            }
-            component->render(vulkan, viewport, pipelines->wireframe);
-        }
-    }*/
+        component->render(vulkan, viewport, pipelines->debug);
+    }
 }
 
-void Scene::addEntity(EntityPtr entity) {
-    if (entity->getId() == 0) {
+{
+    if (!pipelines->wireframe) {
+        EXCEPTION("Scene shader wireframe not initialized");
+    }
+
+    auto& system = getComponentSystem<ComponentWireframe>();
+
+    vulkan.bindPipeline(pipelines->wireframe);
+    vulkan.bindUniformBuffer(camera->getUbo(), 0);
+    vulkan.setDepthStencilState(true, true);
+    VulkanBlendState blendState{};
+    blendState.blendEnable = true;
+    blendState.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+    blendState.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+    blendState.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+    blendState.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+    blendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+    blendState.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+    blendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM;
+    vulkan.setBlendState({blendState});
+
+    for (auto& component : system) {
+        if (!component->getObject().isVisible()) {
+            continue;
+        }
+        component->render(vulkan, viewport, pipelines->wireframe);
+    }
+}
+}*/
+
+EntityPtr Scene::createEntity() {
+    auto entity = std::make_shared<Entity>(reg);
+    entities.push_back(entity);
+    return entity;
+
+    /*if (entity->getId() == 0) {
         entity->setId(++nextId);
     } else {
         nextId = std::max(entity->getId(), nextId);
@@ -332,14 +286,7 @@ void Scene::addEntity(EntityPtr entity) {
 
     for (const auto& child : entities.back()->getChildren()) {
         addEntity(child);
-    }
-}
-
-void Scene::updateEntity(const Entity::Delta& delta) {
-    auto it = entityMap.find(delta.id);
-    if (it != entityMap.end()) {
-        it->second->applyDelta(delta);
-    }
+    }*/
 }
 
 void Scene::removeEntity(const EntityPtr& entity) {
@@ -347,7 +294,10 @@ void Scene::removeEntity(const EntityPtr& entity) {
         return;
     }
 
-    for (const auto& child : entity->getChildren()) {
+    entity->destroy();
+    entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
+
+    /*for (const auto& child : entity->getChildren()) {
         child->setParent(nullptr);
         removeEntity(child);
     }
@@ -362,7 +312,7 @@ void Scene::removeEntity(const EntityPtr& entity) {
     for (const auto& ref : entity->getComponents()) {
         auto& system = systems.at(ref.type);
         system->remove(*ref.ptr);
-    }
+    }*/
 }
 
 EntityPtr Scene::getEntityById(uint64_t id) {
@@ -374,7 +324,7 @@ EntityPtr Scene::getEntityById(uint64_t id) {
 }
 
 void Scene::addBullet(const Vector3& pos, const Vector3& dir) {
-    const auto add = [&](Bullet& bullet) {
+    /*const auto add = [&](Bullet& bullet) {
         bullet.pos = pos;
         bullet.dir = dir;
         bullet.time = 1.0f;
@@ -392,11 +342,15 @@ void Scene::addBullet(const Vector3& pos, const Vector3& dir) {
     const auto endIdx = bullets.data.size();
     Log::d(CMP, "Resizing bullets buffer to {}", bullets.data.size() + 128);
     bullets.data.resize(bullets.data.size() + 128);
-    add(bullets.data.at(endIdx));
+    add(bullets.data.at(endIdx));*/
 }
 
 void Scene::update(const float delta) {
-    auto& systemCamera = getComponentSystem<ComponentCamera>();
+    for (auto&& [entity, camera] : getView<ComponentCamera>().each()) {
+        camera.update(delta);
+    }
+
+    /*auto& systemCamera = getComponentSystem<ComponentCamera>();
     for (auto& component : systemCamera) {
         component->update(delta);
     }
@@ -426,75 +380,67 @@ void Scene::update(const float delta) {
         if (bullet.time > 10.0f) {
             bullet.speed = 0.0f;
         }
-    }
+    }*/
 }
 
-std::shared_ptr<ComponentCamera> Scene::getPrimaryCamera() const {
+ComponentCamera* Scene::getPrimaryCamera() {
     if (auto ptr = primaryCamera.lock(); ptr != nullptr) {
-        const auto camera = ptr->findComponent<ComponentCamera>();
-        if (camera) {
-            return camera;
+        if (!ptr->hasComponent<ComponentCamera>()) {
+            return nullptr;
         }
+
+        return &ptr->getComponent<ComponentCamera>();
     }
 
-    return nullptr;
-}
-
-EntityPtr Scene::getSkybox() {
-    auto& skyboxSystem = getComponentSystem<ComponentSkybox>();
-    if (skyboxSystem.begin() != skyboxSystem.end()) {
-        auto& component = **skyboxSystem.begin();
-        return component.getObject().asEntity();
-    }
     return nullptr;
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMouseMoved(pos);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventMouseMoved(pos);
     }
 }
 
 void Scene::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMousePressed(pos, button);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventMousePressed(pos, button);
     }
 }
 
 void Scene::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMouseReleased(pos, button);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventMouseReleased(pos, button);
     }
 }
 
 void Scene::eventMouseScroll(const int xscroll, const int yscroll) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventMouseScroll(xscroll, yscroll);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventMouseScroll(xscroll, yscroll);
     }
 }
 
 void Scene::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventKeyPressed(key, modifiers);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventKeyPressed(key, modifiers);
     }
 }
 
 void Scene::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventKeyReleased(key, modifiers);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventKeyReleased(key, modifiers);
     }
 }
 
 void Scene::eventCharTyped(const uint32_t code) {
-    auto& componentSystemUserInput = getComponentSystem<ComponentUserInput>();
-    for (auto& component : componentSystemUserInput) {
-        component->eventCharTyped(code);
+    auto componentSystemUserInput = getView<ComponentUserInput>();
+    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+        input.eventCharTyped(code);
     }
 }
 

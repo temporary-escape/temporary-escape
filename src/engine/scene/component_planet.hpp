@@ -5,31 +5,17 @@
 namespace Engine {
 class ENGINE_API ComponentPlanet : public Component {
 public:
-    struct Delta {
-        MSGPACK_DEFINE_ARRAY();
-    };
-
     ComponentPlanet() = default;
-    explicit ComponentPlanet(Object& object, uint64_t seed) : Component(object), seed(seed) {
+    explicit ComponentPlanet(uint64_t seed) : seed{seed} {
     }
-    virtual ~ComponentPlanet() = default;
+    virtual ~ComponentPlanet() = default; // NOLINT(modernize-use-override)
+    COMPONENT_DEFAULTS(ComponentPlanet);
 
-    Delta getDelta() {
-        return {};
-    }
-
-    void applyDelta(Delta& delta) {
-        (void)delta;
-    }
-
-    uint64_t getSeed() const {
+    [[nodiscard]] uint64_t getSeed() const {
         return seed;
     }
 
 private:
     uint64_t seed;
-
-public:
-    MSGPACK_DEFINE_ARRAY(seed);
 };
 } // namespace Engine

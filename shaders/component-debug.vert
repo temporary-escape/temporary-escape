@@ -30,3 +30,4 @@ void main() {
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
     gl_Position = camera.transformationProjectionMatrix * worldPos;
 }
+

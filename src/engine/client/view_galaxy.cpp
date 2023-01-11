@@ -21,20 +21,25 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
     textures.systemStar = registry.getTextures().find("star_flare");
 
     // To keep the renderer away from complaining
-    auto sun = std::make_shared<Entity>();
-    sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
-    sun->translate(Vector3{0.0f, 1.0f, 0.0f});
-    scene.addEntity(sun);
+    {
+        auto entity = scene.createEntity();
+        entity->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
+        entity->addComponent<ComponentTransform>().translate(Vector3{0.0f, 1.0f, 0.0f});
+    }
 
     // Our primary camera
-    auto cameraEntity = std::make_shared<Entity>();
-    camera = cameraEntity->addComponent<ComponentCamera>();
-    cameraEntity->addComponent<ComponentUserInput>(*camera);
-    camera->setOrthographic(25.0f);
-    camera->lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
-    camera->setZoomRange(3.0f, 250.0f);
-    scene.addEntity(cameraEntity);
-    scene.setPrimaryCamera(cameraEntity);
+    {
+        auto entity = scene.createEntity();
+        auto& transform = entity->addComponent<ComponentTransform>();
+        auto& camera = entity->addComponent<ComponentCamera>(transform);
+        entity->addComponent<ComponentUserInput>(camera);
+        camera.setOrthographic(25.0f);
+        camera.lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+        camera.setZoomRange(3.0f, 250.0f);
+        scene.setPrimaryCamera(entity);
+
+        entities.camera = entity;
+    }
 
     gui.contextMenu.setEnabled(false);
 }
@@ -44,10 +49,9 @@ void ViewGalaxy::update(const float deltaTime) {
 }
 
 void ViewGalaxy::render(const Vector2i& viewport) {
-    /*Renderer::Options options{};
-    options.blurStrength = 0.0f;
-    options.exposure = 1.0f;
-    renderer.render(viewport, scene, skybox, options);*/
+    Renderer::Options options{};
+    options.bloomEnabled = false;
+    renderer.render(viewport, scene, skybox, options);
 }
 
 void ViewGalaxy::renderCanvas(const Vector2i& viewport) {
@@ -70,7 +74,8 @@ void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 
     if (!gui.contextMenu.isEnabled()) {
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera->getViewport().y) - pos.y});
+        auto& camera = entities.camera->getComponent<ComponentCamera>();
+        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
     }
 }
 
@@ -80,7 +85,8 @@ void ViewGalaxy::eventMousePressed(const Vector2i& pos, const MouseButton button
 
     if (button == MouseButton::Right && gui.contextMenu.isEnabled()) {
         gui.contextMenu.setEnabled(false);
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera->getViewport().y) - pos.y});
+        auto& camera = entities.camera->getComponent<ComponentCamera>();
+        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
     }
 }
 
@@ -88,7 +94,8 @@ void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton butto
     scene.eventMouseReleased(pos, button);
 
     if (button == MouseButton::Right && input.hover && !gui.contextMenu.isEnabled() && gui.oldMousePos == pos) {
-        gui.contextMenu.setPos(camera->worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true));
+        auto& camera = entities.camera->getComponent<ComponentCamera>();
+        gui.contextMenu.setPos(camera.worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true));
         gui.contextMenu.setEnabled(true);
         gui.contextMenu.setItems({
             {"Travel to", [this]() { gui.contextMenu.setEnabled(false); }},
@@ -273,18 +280,14 @@ void ViewGalaxy::createEntitiesRegions() {
     std::unordered_map<std::string, ComponentLines*> linesMap;
 
     for (const auto& [regionId, _] : galaxy.regions) {
-        auto entity = std::make_shared<Entity>();
-        auto pointCloud = entity->addComponent<ComponentPointCloud>(textures.systemStar).get();
-        auto lines = entity->addComponent<ComponentLines>().get();
+        auto entity = scene.createEntity();
+        auto& pointCloud = entity->addComponent<ComponentPointCloud>(textures.systemStar);
+        auto& lines = entity->addComponent<ComponentLines>();
 
-        pointCloud->setRenderOrder(0);
-        lines->setRenderOrder(1);
-
-        pointCloudMap[regionId] = pointCloud;
-        linesMap[regionId] = lines;
+        pointCloudMap[regionId] = &pointCloud;
+        linesMap[regionId] = &lines;
 
         entities.regions[regionId] = entity;
-        scene.addEntity(entity);
     }
 
     for (const auto& [systemId, system] : galaxy.systems) {
@@ -340,7 +343,8 @@ void ViewGalaxy::clearInputIndices() {
 const SystemData* ViewGalaxy::rayCast(const Vector2& mousePos) {
     std::vector<std::tuple<float, const SystemData*>> found;
 
-    const auto positions = camera->worldToScreen(input.positions);
+    auto& camera = entities.camera->getComponent<ComponentCamera>();
+    const auto positions = camera.worldToScreen(input.positions);
 
     for (size_t i = 0; i < positions.size(); i++) {
         const auto& pos = positions.at(i);
