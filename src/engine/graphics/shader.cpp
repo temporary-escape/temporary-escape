@@ -9,6 +9,7 @@ static const std::unordered_map<std::string, VkShaderStageFlagBits> extensionSta
     {".vert", VK_SHADER_STAGE_VERTEX_BIT},
     {".frag", VK_SHADER_STAGE_FRAGMENT_BIT},
     {".geom", VK_SHADER_STAGE_GEOMETRY_BIT},
+    {".comp", VK_SHADER_STAGE_COMPUTE_BIT},
 };
 
 ShaderModules::ShaderModules(const Config& config, VulkanRenderer& vulkan) {

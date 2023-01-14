@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../assets/texture.hpp"
+#include "../graphics/mesh.hpp"
 #include "../graphics/shaders/shader_component_point_cloud.hpp"
 #include "component.hpp"
 
@@ -21,10 +22,17 @@ public:
 
     void recalculate(VulkanRenderer& vulkan);
 
+    [[nodiscard]] const TexturePtr& getTexture() const {
+        return texture;
+    }
+
+    [[nodiscard]] const Mesh& getMesh() const {
+        return mesh;
+    }
+
 private:
     TexturePtr texture;
     std::vector<Point> points;
-    VulkanBuffer vbo;
-    size_t count{0};
+    Mesh mesh;
 };
 } // namespace Engine

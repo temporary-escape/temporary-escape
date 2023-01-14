@@ -9,6 +9,11 @@ class ENGINE_API VulkanDevice;
 
 class ENGINE_API VulkanPipeline : public VulkanDisposable {
 public:
+    struct CreateComputeInfo {
+        VulkanShaderModule* shaderModule{nullptr};
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    };
+
     struct CreateInfo {
         std::vector<VulkanShaderModule*> shaderModules;
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -23,6 +28,7 @@ public:
     };
 
     VulkanPipeline() = default;
+    explicit VulkanPipeline(VulkanDevice& device, const CreateComputeInfo& computeInfo);
     explicit VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& renderPass, const CreateInfo& createInfo);
     ~VulkanPipeline();
     VulkanPipeline(const VulkanPipeline& other) = delete;
@@ -47,6 +53,10 @@ public:
         return pipeline;
     }
 
+    bool isCompute() const {
+        return compute;
+    }
+
     operator bool() const {
         return pipeline != VK_NULL_HANDLE;
     }
@@ -57,5 +67,6 @@ private:
     VkDevice device{VK_NULL_HANDLE};
     VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
     VkPipeline pipeline{VK_NULL_HANDLE};
+    bool compute{false};
 };
 } // namespace Engine

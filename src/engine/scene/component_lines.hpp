@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../graphics/mesh.hpp"
+#include "../graphics/shaders/shader_component_lines.hpp"
 #include "../library.hpp"
 #include "component.hpp"
 
@@ -7,10 +9,8 @@ namespace Engine {
 class ENGINE_API ComponentLines : public Component {
 public:
     struct Line {
-        Vector3 posA;
-        Color4 colorA;
-        Vector3 posB;
-        Color4 colorB;
+        ShaderComponentLines::Vertex a;
+        ShaderComponentLines::Vertex b;
     };
 
     ComponentLines() = default;
@@ -44,9 +44,12 @@ public:
 
     void recalculate(VulkanRenderer& vulkan);
 
+    [[nodiscard]] const Mesh& getMesh() const {
+        return mesh;
+    }
+
 private:
     std::vector<Line> lines;
-    VulkanBuffer vbo;
-    size_t count{0};
+    Mesh mesh;
 };
 } // namespace Engine

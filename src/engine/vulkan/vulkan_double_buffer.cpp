@@ -49,15 +49,17 @@ void VulkanDoubleBuffer::unmapMemory() {
 }
 
 const VulkanBuffer& VulkanDoubleBuffer::getCurrentBuffer() const {
-    if (buffers.size() == 1) {
-        return buffers.back();
-    }
-    return buffers.at(device->getCurrentFrameNum());
+    return buffers.at(device->getCurrentFrameNum() % MAX_FRAMES_IN_FLIGHT);
 }
 
 VulkanBuffer& VulkanDoubleBuffer::getCurrentBuffer() {
-    if (buffers.size() == 1) {
-        return buffers.back();
-    }
-    return buffers.at(device->getCurrentFrameNum());
+    return buffers.at(device->getCurrentFrameNum() % MAX_FRAMES_IN_FLIGHT);
+}
+
+const VulkanBuffer& VulkanDoubleBuffer::getPreviousBuffer() const {
+    return buffers.at((device->getCurrentFrameNum() + 1) % MAX_FRAMES_IN_FLIGHT);
+}
+
+VulkanBuffer& VulkanDoubleBuffer::getPreviousBuffer() {
+    return buffers.at((device->getCurrentFrameNum() + 1) % MAX_FRAMES_IN_FLIGHT);
 }

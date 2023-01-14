@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../assets/image.hpp"
+#include "../graphics/mesh.hpp"
 #include "../graphics/shaders/shader_component_point_cloud.hpp"
 #include "component.hpp"
 
@@ -17,8 +18,12 @@ public:
 
     void recalculate(VulkanRenderer& vulkan);
 
+    const std::unordered_map<ImagePtr, Mesh>& getMesges() const {
+        return meshes;
+    }
+
 private:
     std::unordered_map<ImagePtr, std::vector<Point>> imagePoints;
-    std::unordered_map<ImagePtr, VulkanBuffer> vbos;
+    std::unordered_map<ImagePtr, Mesh> meshes;
 };
 } // namespace Engine

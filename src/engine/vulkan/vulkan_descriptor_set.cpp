@@ -61,11 +61,15 @@ void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const 
     std::vector<VkWriteDescriptorSet> writes{uniforms.size() + textures.size()};
 
     for (size_t i = 0; i < uniforms.size(); i++) {
+        if (uniforms[i].uniform->getDescriptorType() == VK_DESCRIPTOR_TYPE_MAX_ENUM) {
+            EXCEPTION("Unable to use this buffer for descriptor set");
+        }
+
         writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet = descriptorSet;
         writes[i].dstBinding = uniforms[i].binding;
         writes[i].dstArrayElement = 0;
-        writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writes[i].descriptorType = uniforms[i].uniform->getDescriptorType();
         writes[i].descriptorCount = 1;
         writes[i].pBufferInfo = &bufferInfos.at(i);
     }

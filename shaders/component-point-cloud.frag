@@ -11,5 +11,6 @@ layout(binding = 1) uniform sampler2D colorTexture;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(colorTexture, gs_out.texCoords) * gs_out.color;
+    vec4 color = texture(colorTexture, gs_out.texCoords) * gs_out.color;
+    outColor = pow(color, vec4(2.2));
 }

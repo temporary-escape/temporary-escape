@@ -16,46 +16,24 @@ void ComponentPointCloud::clear() {
 }
 
 void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
-    /*if (!isDirty()) {
+    if (!isDirty()) {
         return;
     }
 
-    Log::d(CMP, "Recreating with {} points", points.size());
+    setDirty(false);
 
-    vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Static, sizeof(Point) * points.size());
-    vbo.subData(points.data(), 0, sizeof(Point) * points.size());
+    Log::d(CMP, "Recreating {} points with image: {}", points.size(), texture->getName());
 
-    vboFormat = vulkan.createVertexInputFormat({
-        {
-            0,
-            {
-                {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                {1, 0, VulkanVertexInputFormat::Format::Vec2},
-                {2, 0, VulkanVertexInputFormat::Format::Vec4},
-            },
-        },
-    });
+    vulkan.dispose(std::move(mesh.vbo));
 
-    count = points.size();
-    points.clear();
-    points.shrink_to_fit();
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(Point) * points.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    setDirty(false);*/
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, points.data(), sizeof(Point) * points.size());
+    mesh.count = points.size();
 }
-
-/*void ComponentPointCloud::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    recalculate(vulkan);
-
-    if (!count) {
-        return;
-    }
-
-    const Matrix4 transform = getObject().getAbsoluteTransform();
-    vulkan.pushConstant(0, transform);
-
-    vulkan.bindVertexBuffer(vbo, 0);
-    vulkan.bindVertexInputFormat(vboFormat);
-    vulkan.bindTexture(texture->getVulkanTexture(), 1);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vulkan.draw(count, 1, 0, 0);
-}*/

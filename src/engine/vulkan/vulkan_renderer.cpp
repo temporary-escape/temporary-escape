@@ -19,6 +19,13 @@ VulkanRenderer::VulkanRenderer(const Config& config) :
 
     commandPool = createCommandPool(poolInfo);
 
+    poolInfo = VkCommandPoolCreateInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = indices.computeFamily.value();
+
+    commandComputePool = createCommandPool(poolInfo);
+
     for (auto& fence : inFlightFence) {
         fence = createFence();
     }
@@ -80,6 +87,7 @@ void VulkanRenderer::destroy() {
     destroyDisposablesAll();
 
     commandPool.destroy();
+    commandComputePool.destroy();
 
     swapChain.destroy();
 
@@ -180,6 +188,10 @@ VulkanPipeline VulkanRenderer::createPipeline(const VulkanRenderPass& renderPass
     return VulkanPipeline{*this, renderPass, createInfo};
 }
 
+VulkanPipeline VulkanRenderer::createPipeline(const VulkanPipeline::CreateComputeInfo& createInfo) {
+    return VulkanPipeline{*this, createInfo};
+}
+
 VulkanRenderPass VulkanRenderer::createRenderPass(const VulkanRenderPass::CreateInfo& createInfo) {
     return VulkanRenderPass{*this, createInfo};
 }
@@ -202,6 +214,10 @@ VulkanCommandPool VulkanRenderer::createCommandPool(const VulkanCommandPool::Cre
 
 VulkanCommandBuffer VulkanRenderer::createCommandBuffer() {
     return VulkanCommandBuffer{*this, commandPool, getCurrentDescriptorPool()};
+}
+
+VulkanCommandBuffer VulkanRenderer::createComputeCommandBuffer() {
+    return VulkanCommandBuffer{*this, commandComputePool, getCurrentDescriptorPool()};
 }
 
 VulkanBuffer VulkanRenderer::createBuffer(const VulkanBuffer::CreateInfo& createInfo) {

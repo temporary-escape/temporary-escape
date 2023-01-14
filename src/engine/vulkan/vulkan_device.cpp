@@ -1,13 +1,23 @@
 #include "vulkan_device.hpp"
 #include "../utils/exceptions.hpp"
 
+#define CMP "VulkanDevice"
+
 using namespace Engine;
 
 VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, config{config} {
     const auto indices = getQueueFamilies();
 
+    Log::i(CMP, "Queue family graphics: {}", indices.graphicsFamily ? indices.graphicsFamily.value() : -1);
+    Log::i(CMP, "Queue family present: {}", indices.presentFamily ? indices.presentFamily.value() : -1);
+    Log::i(CMP, "Queue family compute: {}", indices.computeFamily ? indices.computeFamily.value() : -1);
+
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = {
+        indices.graphicsFamily.value(),
+        indices.presentFamily.value(),
+        indices.computeFamily.value(),
+    };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -47,6 +57,7 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);
 
     allocator = VulkanAllocator{*this};
 }

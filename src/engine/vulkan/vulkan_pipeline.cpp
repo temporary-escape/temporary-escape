@@ -4,8 +4,35 @@
 
 using namespace Engine;
 
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, const CreateComputeInfo& computeInfo) :
+    device{device.getDevice()}, compute{true} {
+
+    if (vkCreatePipelineLayout(device.getDevice(), &computeInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) !=
+        VK_SUCCESS) {
+        destroy();
+        EXCEPTION("Failed to create pipeline layout!");
+    }
+
+    VkPipelineShaderStageCreateInfo shaderStage{};
+    shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStage.stage = computeInfo.shaderModule->getStage();
+    shaderStage.module = computeInfo.shaderModule->getHandle();
+    shaderStage.pName = "main";
+
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage = shaderStage;
+    pipelineInfo.layout = pipelineLayout;
+
+    if (vkCreateComputePipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
+        VK_SUCCESS) {
+        destroy();
+        EXCEPTION("Failed to create compute pipeline!");
+    }
+}
+
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& renderPass, const CreateInfo& createInfo) :
-    device{device.getDevice()} {
+    device{device.getDevice()}, compute{false} {
 
     if (vkCreatePipelineLayout(device.getDevice(), &createInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) !=
         VK_SUCCESS) {
@@ -50,7 +77,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
     if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
         VK_SUCCESS) {
         destroy();
-        EXCEPTION("failed to create graphics pipeline!");
+        EXCEPTION("Failed to create graphics pipeline!");
     }
 }
 
@@ -73,6 +100,7 @@ void VulkanPipeline::swap(VulkanPipeline& other) noexcept {
     std::swap(device, other.device);
     std::swap(pipelineLayout, other.pipelineLayout);
     std::swap(pipeline, other.pipeline);
+    std::swap(compute, other.compute);
 }
 
 void VulkanPipeline::destroy() {

@@ -54,7 +54,6 @@ void main() {
     vec3 color = forwardColor.rgb + bloomColor.rgb * uniforms.bloomStrength;
 
     // tone mapping
-    // vec3 result = vec3(1.0) - exp(-color * uniforms.exposure);
     vec3 result = lottes(color);
 
     // also gamma correct while we're at it

@@ -15,7 +15,7 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
     renderer{renderer},
     registry{registry},
     client{client},
-    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}},
     scene{} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
@@ -273,14 +273,23 @@ void ViewGalaxy::clearEntities() {
         }
         entities.regions.clear();
     }
+    if (entities.positions) {
+        scene.removeEntity(entities.positions);
+        entities.positions.reset();
+    }
 }
 
 void ViewGalaxy::createEntitiesRegions() {
     std::unordered_map<std::string, ComponentPointCloud*> pointCloudMap;
     std::unordered_map<std::string, ComponentLines*> linesMap;
 
+    entities.positions = scene.createEntity();
+    entities.positions->addComponent<ComponentTransform>();
+    auto& positions = entities.positions->addComponent<ComponentPositionFeedback>();
+
     for (const auto& [regionId, _] : galaxy.regions) {
         auto entity = scene.createEntity();
+        entity->addComponent<ComponentTransform>();
         auto& pointCloud = entity->addComponent<ComponentPointCloud>(textures.systemStar);
         auto& lines = entity->addComponent<ComponentLines>();
 
@@ -292,7 +301,9 @@ void ViewGalaxy::createEntitiesRegions() {
 
     for (const auto& [systemId, system] : galaxy.systems) {
         auto starColor = Color4{0.8f, 0.8f, 0.8f, 1.0f};
-        auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.1f};
+        auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.2f};
+
+        positions.add(Vector3{system.pos.x, 0.0f, system.pos.y});
 
         const auto region = galaxy.regions.find(system.regionId);
         if (region == galaxy.regions.end()) {

@@ -17,6 +17,7 @@ namespace Engine {
 struct ENGINE_API VulkanQueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> computeFamily;
 
     [[nodiscard]] bool isComplete() const {
         return graphicsFamily && presentFamily;

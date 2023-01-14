@@ -16,6 +16,7 @@
 #include "component_player.hpp"
 #include "component_point_cloud.hpp"
 #include "component_poly_shape.hpp"
+#include "component_position_feedback.hpp"
 #include "component_script.hpp"
 #include "component_ship_control.hpp"
 #include "component_text.hpp"
@@ -32,7 +33,8 @@ class ENGINE_API Scene;
 
 using EntityComponentIds =
     entt::identifier<ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel, ComponentDirectionalLight,
-                     ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud, ComponentLines, ComponentDebug>;
+                     ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud, ComponentLines, ComponentDebug,
+                     ComponentPositionFeedback>;
 
 class ENGINE_API Entity {
 public:

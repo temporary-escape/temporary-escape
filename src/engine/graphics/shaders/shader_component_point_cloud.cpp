@@ -70,7 +70,7 @@ ShaderComponentPointCloud::ShaderComponentPointCloud(const Config& config, Vulka
     pipelineInfo.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     pipelineInfo.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    pipelineInfo.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipelineInfo.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipelineInfo.inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     pipelineInfo.viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -131,7 +131,7 @@ ShaderComponentPointCloud::ShaderComponentPointCloud(const Config& config, Vulka
 
     pipelineInfo.depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     pipelineInfo.depthStencilState.depthTestEnable = VK_TRUE;
-    pipelineInfo.depthStencilState.depthWriteEnable = VK_TRUE;
+    pipelineInfo.depthStencilState.depthWriteEnable = VK_FALSE;
     pipelineInfo.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
     pipelineInfo.depthStencilState.depthBoundsTestEnable = VK_FALSE;
     pipelineInfo.depthStencilState.stencilTestEnable = VK_FALSE;

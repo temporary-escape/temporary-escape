@@ -7,6 +7,14 @@ using namespace Engine;
 VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
     device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
 
+    if (createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) {
+        descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    } else if (createInfo.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+        descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    } else {
+        descriptorType = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+    }
+
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = createInfo.memoryUsage;
     allocInfo.flags = createInfo.memoryFlags;
@@ -42,6 +50,7 @@ void VulkanBuffer::swap(VulkanBuffer& other) noexcept {
     std::swap(buffer, other.buffer);
     std::swap(bufferSize, other.bufferSize);
     std::swap(mappedPtr, other.mappedPtr);
+    std::swap(descriptorType, other.descriptorType);
 }
 
 void VulkanBuffer::destroy() {

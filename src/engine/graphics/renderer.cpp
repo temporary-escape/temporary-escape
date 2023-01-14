@@ -244,6 +244,15 @@ void Renderer::createSkyboxMesh() {
 }
 
 void Renderer::createShaders(ShaderModules& shaderModules) {
+    VulkanSemaphore::CreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    compute.semaphore = vulkan.createSemaphore(semaphoreInfo);
+
+    shaders.positionFeedback = ShaderPositionFeedback{
+        config,
+        vulkan,
+        shaderModules,
+    };
     shaders.brdf = ShaderBrdf{
         config,
         vulkan,
@@ -314,9 +323,15 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        vulkan.getRenderPass(),
+        renderPasses.forward.renderPass,
     };
     shaders.componentDebug = ShaderComponentDebug{
+        config,
+        vulkan,
+        shaderModules,
+        renderPasses.forward.renderPass,
+    };
+    shaders.componentLines = ShaderComponentLines{
         config,
         vulkan,
         shaderModules,
@@ -1110,6 +1125,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     camera->recalculate(vulkan, viewport);
 
     // transitionDepthForWrite();
+    renderPassCompute(viewport, scene, options);
     renderPassPbr(viewport, scene, options);
     renderPassSsao(viewport, scene, options);
     renderPassLighting(viewport, scene, skybox, options);
@@ -1211,6 +1227,49 @@ void Renderer::transitionForWrite(VulkanCommandBuffer& vkb, const size_t idx) {
     vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
 }
 
+void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const Renderer::Options& options) {
+    auto camera = scene.getPrimaryCamera();
+
+    auto vkb = vulkan.createComputeCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkb.start(beginInfo);
+
+    vkb.bindPipeline(shaders.positionFeedback.getPipeline());
+    std::array<VulkanBufferBinding, 3> bufferBindings{};
+
+    for (auto&& [entity, transform, component] :
+         scene.getView<ComponentTransform, ComponentPositionFeedback>().each()) {
+
+        component.recalculate(vulkan);
+
+        ShaderPositionFeedback::Uniforms constants{};
+        constants.modelmatrix = transform.getAbsoluteTransform();
+        constants.viewport = Vector2{viewport};
+        constants.count = component.getCount();
+
+        vkb.pushConstants(shaders.positionFeedback.getPipeline(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                          sizeof(ShaderPositionFeedback::Uniforms), &constants);
+
+        bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
+        bufferBindings[1] = {1, &component.getBufferInput()};
+        bufferBindings[2] = {2, &component.getBufferOutput()};
+
+        vkb.bindDescriptors(shaders.positionFeedback.getPipeline(), shaders.positionFeedback.getDescriptorSetLayout(),
+                            bufferBindings, {});
+
+        const uint32_t workCount = (component.getCount() / 512) + 1;
+        vkb.dispatch(workCount, 1, 1);
+    }
+
+    vkb.end();
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               vulkan.getCurrentImageAvailableSemaphore(), compute.semaphore, nullptr);
+    vulkan.dispose(std::move(vkb));
+}
+
 void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Renderer::Options& options) {
     auto vkb = vulkan.createCommandBuffer();
 
@@ -1245,8 +1304,8 @@ void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Rende
     vkb.endRenderPass();
     vkb.end();
 
-    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               vulkan.getCurrentImageAvailableSemaphore(), renderPasses.pbr.semaphore, nullptr);
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, compute.semaphore,
+                               renderPasses.pbr.semaphore, nullptr);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1358,7 +1417,7 @@ void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, Skybox&
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    renderSceneForwards(vkb, viewport, scene);
+    renderSceneForward(vkb, viewport, scene);
 
     vkb.endRenderPass();
 
@@ -1719,7 +1778,7 @@ void Renderer::renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewp
                         textureBindings);
 
     ShaderPassSkybox::Uniforms constants{};
-    constants.modelMatrix = glm::scale(Matrix4{1.0f}, Vector3{100.0f});
+    constants.modelMatrix = glm::scale(Matrix4{1.0f}, Vector3{1000.0f});
     vkb.pushConstants(shaders.passSkybox.getPipeline(),
                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                       sizeof(ShaderPassSkybox::Uniforms), &constants);
@@ -1727,37 +1786,145 @@ void Renderer::renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewp
     renderMesh(vkb, meshes.skybox);
 }
 
-void Renderer::renderSceneForwards(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
-    renderSceneForwardDebug(vkb, viewport, scene);
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
+    auto& camera = *scene.getPrimaryCamera();
+    currentForwardShader = nullptr;
+
+    std::vector<ForwardRenderJob> jobs;
+    collectForRender<ComponentDebug>(vkb, viewport, scene, jobs);
+    collectForRender<ComponentIconPointCloud>(vkb, viewport, scene, jobs);
+    collectForRender<ComponentPointCloud>(vkb, viewport, scene, jobs);
+    collectForRender<ComponentLines>(vkb, viewport, scene, jobs);
+
+    std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order < b.order; });
+
+    for (auto& job : jobs) {
+        job.fn();
+    }
 }
 
-void Renderer::renderSceneForwardDebug(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
-    auto camera = scene.getPrimaryCamera();
-    auto view = scene.getView<ComponentTransform, ComponentDebug>().each();
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentDebug& component) {
+    component.recalculate(vulkan);
 
-    if (view.begin() == view.end()) {
+    const auto& mesh = component.getMesh();
+
+    if (mesh.count == 0) {
         return;
     }
 
-    vkb.bindPipeline(shaders.componentDebug.getPipeline());
+    if (currentForwardShader != &shaders.componentDebug) {
+        currentForwardShader = &shaders.componentDebug;
+        vkb.bindPipeline(shaders.componentDebug.getPipeline());
+    }
 
-    for (auto&& [entity, transform, debug] : view) {
-        debug.recalculate(vulkan);
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    vkb.bindDescriptors(shaders.componentDebug.getPipeline(), shaders.componentDebug.getDescriptorSetLayout(),
+                        bufferBindings, {});
+
+    ShaderComponentDebug::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    vkb.pushConstants(shaders.componentDebug.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentDebug::Uniforms), &constants);
+
+    renderMesh(vkb, mesh);
+}
+
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentIconPointCloud& component) {
+    component.recalculate(vulkan);
+
+    if (currentForwardShader != &shaders.componentPointCloud) {
+        currentForwardShader = &shaders.componentPointCloud;
+        vkb.bindPipeline(shaders.componentPointCloud.getPipeline());
+    }
+
+    for (const auto& [image, mesh] : component.getMesges()) {
+        if (mesh.count == 0) {
+            continue;
+        }
 
         std::array<VulkanBufferBinding, 1> bufferBindings{};
-        bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
+        bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
 
-        vkb.bindDescriptors(shaders.componentDebug.getPipeline(), shaders.componentDebug.getDescriptorSetLayout(),
-                            bufferBindings, {});
+        std::array<VulkanTextureBinding, 1> textureBindings{};
+        textureBindings[0] = {1, image->getAllocation().texture};
+
+        vkb.bindDescriptors(shaders.componentPointCloud.getPipeline(),
+                            shaders.componentPointCloud.getDescriptorSetLayout(), bufferBindings, textureBindings);
 
         ShaderComponentDebug::Uniforms constants{};
         constants.modelMatrix = transform.getAbsoluteTransform();
-        vkb.pushConstants(shaders.componentDebug.getPipeline(),
+        vkb.pushConstants(shaders.componentPointCloud.getPipeline(),
                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                           sizeof(ShaderComponentDebug::Uniforms), &constants);
 
-        renderMesh(vkb, debug.getMesh());
+        renderMesh(vkb, mesh);
     }
+}
+
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentPointCloud& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentForwardShader != &shaders.componentPointCloud) {
+        currentForwardShader = &shaders.componentPointCloud;
+        vkb.bindPipeline(shaders.componentPointCloud.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {1, &component.getTexture()->getVulkanTexture()};
+
+    vkb.bindDescriptors(shaders.componentPointCloud.getPipeline(), shaders.componentPointCloud.getDescriptorSetLayout(),
+                        bufferBindings, textureBindings);
+
+    ShaderComponentDebug::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    vkb.pushConstants(shaders.componentPointCloud.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentDebug::Uniforms), &constants);
+
+    renderMesh(vkb, mesh);
+}
+
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentLines& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentForwardShader != &shaders.componentLines) {
+        currentForwardShader = &shaders.componentLines;
+        vkb.bindPipeline(shaders.componentLines.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    vkb.bindDescriptors(shaders.componentLines.getPipeline(), shaders.componentLines.getDescriptorSetLayout(),
+                        bufferBindings, {});
+
+    ShaderComponentDebug::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    vkb.pushConstants(shaders.componentLines.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentDebug::Uniforms), &constants);
+
+    renderMesh(vkb, mesh);
 }
 
 void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
@@ -1765,9 +1932,14 @@ void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
     vboBindings[0] = {&mesh.vbo, 0};
 
     vkb.bindBuffers(vboBindings);
-    vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
 
-    vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+    if (mesh.ibo) {
+        vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
+
+        vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+    } else {
+        vkb.draw(mesh.count, 1, 0, 0);
+    }
 }
 
 void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox) {

@@ -11,54 +11,32 @@ void ComponentIconPointCloud::add(const Vector3& pos, const Vector2& size, const
 }
 
 void ComponentIconPointCloud::recalculate(VulkanRenderer& vulkan) {
-    /*if (!isDirty()) {
+    if (!isDirty()) {
         return;
     }
+
+    setDirty(false);
 
     Log::d(CMP, "Recreating with {} images", imagePoints.size());
 
     for (const auto& [image, points] : imagePoints) {
         Log::d(CMP, "Recreating {} points with image: {}", points.size(), image->getName());
 
-        vbos[image] =
-            vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Static, sizeof(Point) * points.size());
-        vbos[image].subData(points.data(), 0, sizeof(Point) * points.size());
+        vulkan.dispose(std::move(meshes[image].vbo));
+
+        if (points.empty()) {
+            continue;
+        }
+
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(Point) * points.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        meshes[image].vbo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(meshes[image].vbo, points.data(), sizeof(Point) * points.size());
+        meshes[image].count = points.size();
     }
-
-    vboFormat = vulkan.createVertexInputFormat({
-        {
-            0,
-            {
-                {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                {1, 0, VulkanVertexInputFormat::Format::Vec2},
-                {2, 0, VulkanVertexInputFormat::Format::Vec4},
-                {3, 0, VulkanVertexInputFormat::Format::Vec2},
-                {4, 0, VulkanVertexInputFormat::Format::Vec2},
-            },
-        },
-    });
-
-    imagePoints.clear();
-
-    setDirty(false);*/
 }
-
-/*void ComponentIconPointCloud::render(VulkanRenderer& vulkan, const Vector2i& viewport, VulkanPipeline& pipeline) {
-    recalculate(vulkan);
-
-    if (vbos.empty()) {
-        return;
-    }
-
-    const Matrix4 transform = getObject().getAbsoluteTransform();
-    vulkan.pushConstant(0, transform);
-
-    vulkan.bindVertexInputFormat(vboFormat);
-    vulkan.setInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-
-    for (const auto& [image, vbo] : vbos) {
-        vulkan.bindVertexBuffer(vbo, 0);
-        vulkan.bindTexture(*image->getAllocation().texture, 1);
-        vulkan.draw(vbo.getSize() / sizeof(Point), 1, 0, 0);
-    }
-}*/

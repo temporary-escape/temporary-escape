@@ -25,6 +25,10 @@ public:
         return presentQueue;
     }
 
+    VkQueue getComputeQueue() const {
+        return computeQueue;
+    }
+
     VulkanAllocator& getAllocator() {
         return allocator;
     }
@@ -40,6 +44,7 @@ private:
     VkDevice device{VK_NULL_HANDLE};
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
+    VkQueue computeQueue{VK_NULL_HANDLE};
     VulkanAllocator allocator;
 };
 } // namespace Engine

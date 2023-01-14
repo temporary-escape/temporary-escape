@@ -19,17 +19,17 @@ static std::vector<ComponentLines::Line> createRingLines() {
     const auto step = glm::radians(360.0 / static_cast<double>(rings.size()));
     for (size_t i = 1; i < rings.size(); i++) {
         const auto ii = static_cast<double>(i);
-        rings[i].posA = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * (ii - 1)));
-        rings[i].posB = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * ii));
+        rings[i].a.position = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * (ii - 1)));
+        rings[i].b.position = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * ii));
 
-        rings[i].colorA = color;
-        rings[i].colorB = color;
+        rings[i].a.color = color;
+        rings[i].b.color = color;
     }
 
-    rings[0].colorA = color;
-    rings[0].colorB = color;
-    rings[0].posA = rings.back().posB;
-    rings[0].posB = rings.at(1).posA;
+    rings[0].a.color = color;
+    rings[0].b.color = color;
+    rings[0].a.position = rings.back().b.position;
+    rings[0].b.position = rings.at(1).a.position;
 
     return rings;
 }
@@ -41,10 +41,10 @@ static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, 
     lines.resize(ring.size());
 
     for (size_t i = 0; i < ring.size(); i++) {
-        lines[i].posA = (ring[i].posA * width) + origin;
-        lines[i].posB = (ring[i].posB * width) + origin;
-        lines[i].colorA = ring[i].colorA;
-        lines[i].colorB = ring[i].colorB;
+        lines[i].a.position = (ring[i].a.position * width) + origin;
+        lines[i].b.position = (ring[i].b.position * width) + origin;
+        lines[i].a.color = ring[i].a.color;
+        lines[i].b.color = ring[i].b.color;
     }
 
     return lines;

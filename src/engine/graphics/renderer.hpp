@@ -16,6 +16,7 @@
 #include "shaders/shader_pass_pbr.hpp"
 #include "shaders/shader_pass_skybox.hpp"
 #include "shaders/shader_pass_ssao.hpp"
+#include "shaders/shader_position_feedback.hpp"
 #include "skybox.hpp"
 
 namespace Engine {
@@ -46,6 +47,11 @@ private:
         VulkanSemaphore semaphore;
     };
 
+    struct ForwardRenderJob {
+        float order{0.0f};
+        std::function<void()> fn;
+    };
+
     void createFullScreenQuad();
     void createSkyboxMesh();
     void createRenderPasses();
@@ -66,6 +72,7 @@ private:
                           VkImageAspectFlags aspectMask);
     void renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh);
     void renderBrdf();
+    void renderPassCompute(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderPassSsao(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderPassLighting(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
@@ -76,12 +83,33 @@ private:
     void renderPassBloomBlur(VulkanCommandBuffer& vkb, size_t idx, bool vertical);
     void renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& options);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
-    void renderSceneForwards(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
-    void renderSceneForwardDebug(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+
+    template <typename T>
+    void collectForRender(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
+                          std::vector<ForwardRenderJob>& jobs) {
+        auto& camera = *scene.getPrimaryCamera();
+
+        for (auto&& [entity, transform, component] : scene.getView<ComponentTransform, T>().each()) {
+            jobs.emplace_back(ForwardRenderJob{
+                glm::distance(transform.getAbsolutePosition(), camera.getEyesPos()),
+                [&, t = &transform, c = &component] { renderSceneForward(vkb, camera, *t, *c); },
+            });
+        }
+    }
+
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentDebug& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentIconPointCloud& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentPointCloud& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentLines& component);
     void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
     void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
     void transitionDepthForReadOnlyOptimal();
-    void transitionForWrite(VulkanCommandBuffer& vkb, const size_t idx);
+    void transitionForWrite(VulkanCommandBuffer& vkb, size_t idx);
     VkFormat findDepthFormat();
     void updateDirectionalLights(Scene& scene);
     void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh);
@@ -91,6 +119,10 @@ private:
     VoxelShapeCache& voxelShapeCache;
     Vector2i lastViewportSize;
     Vector2i bloomViewportSize;
+
+    struct {
+        VulkanSemaphore semaphore;
+    } compute;
 
     struct {
         ShaderBrdf brdf;
@@ -105,6 +137,8 @@ private:
         ShaderPassBloomCombine passBloomCombine;
         ShaderComponentPointCloud componentPointCloud;
         ShaderComponentDebug componentDebug;
+        ShaderComponentLines componentLines;
+        ShaderPositionFeedback positionFeedback;
     } shaders;
 
     struct {
@@ -148,5 +182,7 @@ private:
     struct {
         VulkanDoubleBuffer ubo;
     } directionalLights;
+
+    Shader* currentForwardShader{nullptr};
 };
 } // namespace Engine

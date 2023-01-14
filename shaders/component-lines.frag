@@ -8,5 +8,5 @@ layout(location = 0) in VS_OUT {
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vs_out.color;
+    outColor = pow(vs_out.color.rgba, vec4(2.2));
 }

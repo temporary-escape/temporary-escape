@@ -27,6 +27,7 @@ public:
     VulkanShaderModule createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage);
     VulkanShaderModule createShaderModule(const Path& path, VkShaderStageFlagBits stage);
     VulkanPipeline createPipeline(const VulkanRenderPass& renderPass, const VulkanPipeline::CreateInfo& createInfo);
+    VulkanPipeline createPipeline(const VulkanPipeline::CreateComputeInfo& createInfo);
     VulkanPipeline createPipeline(const VulkanPipeline::CreateInfo& createInfo) {
         return createPipeline(renderPass, createInfo);
     }
@@ -36,6 +37,7 @@ public:
     VulkanSemaphore createSemaphore(const VulkanSemaphore::CreateInfo& createInfo);
     VulkanCommandPool createCommandPool(const VulkanCommandPool::CreateInfo& createInfo);
     VulkanCommandBuffer createCommandBuffer();
+    VulkanCommandBuffer createComputeCommandBuffer();
     VulkanBuffer createBuffer(const VulkanBuffer::CreateInfo& createInfo);
     VulkanDescriptorSetLayout createDescriptorSetLayout(const VulkanDescriptorSetLayout::CreateInfo& createInfo);
     VulkanDescriptorPool createDescriptorPool();
@@ -153,6 +155,7 @@ private:
 
     const Config& config;
     VulkanCommandPool commandPool;
+    VulkanCommandPool commandComputePool;
     VulkanSwapChain swapChain;
     std::array<VulkanSemaphore, MAX_FRAMES_IN_FLIGHT> imageAvailableSemaphore;
     std::array<VulkanSemaphore, MAX_FRAMES_IN_FLIGHT> renderFinishedSemaphore;

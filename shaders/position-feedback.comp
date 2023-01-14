@@ -1,0 +1,38 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+layout (std140, binding = 0) uniform CameraMatrices {
+    mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
+} camera;
+
+layout(push_constant) uniform Uniforms {
+    mat4 modelMatrix;
+    vec2 viewport;
+    int count;
+} uniforms;
+
+layout(set = 0, binding = 1) readonly buffer InputBuffer{
+    vec3 position[];
+} comp_in;
+
+layout(set = 0, binding = 2) buffer OutputBuffer{
+    vec2 position[];
+} comp_out;
+
+void main() {
+    uint gID = gl_GlobalInvocationID.x;
+
+    if (gID < uniforms.count) {
+        vec4 worldPos = uniforms.modelMatrix * vec4(comp_in.position[gID], 1.0);
+        vec4 clipSpace = camera.transformationProjectionMatrix * worldPos;
+        vec3 ndcSpace = clipSpace.xyz / clipSpace.w;
+        ndcSpace = vec3(ndcSpace.x, -ndcSpace.y, ndcSpace.z);
+        comp_out.position[gID] = ((ndcSpace.xy + 1.0) / 2.0) * uniforms.viewport;
+    }
+}

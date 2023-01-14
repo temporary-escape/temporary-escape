@@ -53,6 +53,10 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
             indices.graphicsFamily = i;
         }
 
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            indices.computeFamily = i;
+        }
+
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
@@ -61,6 +65,21 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
         }
 
         if (indices.isComplete()) {
+            break;
+        }
+
+        i++;
+    }
+
+    if (indices.isComplete() && indices.computeFamily) {
+        return indices;
+    }
+
+    // Find the next available compute queue family
+    i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            indices.computeFamily = i;
             break;
         }
 

@@ -48,6 +48,10 @@ public:
         return bufferSize;
     }
 
+    VkDescriptorType getDescriptorType() const {
+        return descriptorType;
+    }
+
     operator bool() const {
         return buffer != VK_NULL_HANDLE;
     }
@@ -61,6 +65,7 @@ private:
     VmaAllocation allocation{VK_NULL_HANDLE};
     VkDeviceSize bufferSize{0};
     void* mappedPtr{nullptr};
+    VkDescriptorType descriptorType{};
 };
 
 struct ENGINE_API VulkanBufferBinding {

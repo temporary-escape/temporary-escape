@@ -23,6 +23,8 @@ public:
     void unmapMemory();
     VulkanBuffer& getCurrentBuffer();
     const VulkanBuffer& getCurrentBuffer() const;
+    VulkanBuffer& getPreviousBuffer();
+    const VulkanBuffer& getPreviousBuffer() const;
 
     VkBuffer& getHandle() {
         return getCurrentBuffer().getHandle();

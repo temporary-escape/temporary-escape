@@ -72,6 +72,7 @@ private:
     struct {
         std::shared_ptr<Entity> camera;
         std::unordered_map<std::string, EntityPtr> regions;
+        EntityPtr positions;
     } entities;
 
     struct {

@@ -108,7 +108,11 @@ void VulkanCommandBuffer::setScissor(const Vector2i& pos, const Vector2i& size) 
 }
 
 void VulkanCommandBuffer::bindPipeline(const VulkanPipeline& pipeline) {
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
+    if (pipeline.isCompute()) {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.getHandle());
+    } else {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
+    }
 }
 
 void VulkanCommandBuffer::bindBuffers(const Span<VulkanVertexBufferBindRef>& buffers) {
@@ -133,6 +137,10 @@ void VulkanCommandBuffer::drawIndexed(const uint32_t indexCount, const uint32_t 
     vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
+void VulkanCommandBuffer::dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) {
+    vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
 void VulkanCommandBuffer::copyBuffer(const VulkanBuffer& src, const VulkanBuffer& dst, const VkBufferCopy& region) {
     vkCmdCopyBuffer(commandBuffer, src.getHandle(), dst.getHandle(), 1, &region);
 }
@@ -148,9 +156,11 @@ void VulkanCommandBuffer::copyBufferToImage(const VulkanBuffer& src, const Vulka
                            &region);
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout) {
+void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
+                                            const bool isCompute) {
     auto set = descriptorSet.getHandle();
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &set, 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, isCompute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout, 0, 1, &set, 0, nullptr);
 }
 
 void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
@@ -165,7 +175,7 @@ void VulkanCommandBuffer::bindDescriptors(VulkanPipeline& pipeline, VulkanDescri
     auto descriptorSet = descriptorPool->createDescriptorSet(layout);
     descriptorSet.bind(uniforms, textures);
 
-    bindDescriptorSet(descriptorSet, pipeline.getLayout());
+    bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
 }
 
 void VulkanCommandBuffer::pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage,
