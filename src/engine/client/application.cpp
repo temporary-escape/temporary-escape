@@ -206,6 +206,7 @@ void Application::startDatabase() {
 
 void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next) {
     if (next == registry->getLoadQueue().cend()) {
+        registry->finalize();
         NEXT(startDatabase());
     } else {
         const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
@@ -254,7 +255,7 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, *shaderModules, *voxelShapeCache);
+    renderer = std::make_unique<Renderer>(config, *this, canvas, *shaderModules, *voxelShapeCache);
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createRegistry());

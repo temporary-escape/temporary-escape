@@ -36,6 +36,12 @@ private:
     bool dirty{false};
 };
 
+class ENGINE_API TagDisabled : public Component {
+public:
+    TagDisabled() = default;
+    COMPONENT_DEFAULTS(TagDisabled);
+};
+
 /*class ENGINE_API Component;
 
 class ENGINE_API AbstractComponentSystem {

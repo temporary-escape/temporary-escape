@@ -3,6 +3,7 @@
 #include "../config.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
+#include "canvas.hpp"
 #include "shader.hpp"
 #include "shaders/shader_brdf.hpp"
 #include "shaders/shader_component_debug.hpp"
@@ -28,7 +29,7 @@ public:
         bool bloomEnabled{true};
     };
 
-    explicit Renderer(const Config& config, VulkanRenderer& vulkan, ShaderModules& shaderModules,
+    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
                       VoxelShapeCache& voxelShapeCache);
     ~Renderer();
 
@@ -84,6 +85,7 @@ private:
     void renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& options);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     void renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
 
     template <typename T>
     void collectForRender(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
@@ -116,6 +118,7 @@ private:
 
     const Config& config;
     VulkanRenderer& vulkan;
+    Canvas& canvas;
     VoxelShapeCache& voxelShapeCache;
     Vector2i lastViewportSize;
     Vector2i bloomViewportSize;

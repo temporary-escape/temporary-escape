@@ -396,50 +396,43 @@ ComponentCamera* Scene::getPrimaryCamera() {
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventMouseMoved(pos);
     }
 }
 
 void Scene::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventMousePressed(pos, button);
     }
 }
 
 void Scene::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventMouseReleased(pos, button);
     }
 }
 
 void Scene::eventMouseScroll(const int xscroll, const int yscroll) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventMouseScroll(xscroll, yscroll);
     }
 }
 
 void Scene::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventKeyPressed(key, modifiers);
     }
 }
 
 void Scene::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventKeyReleased(key, modifiers);
     }
 }
 
 void Scene::eventCharTyped(const uint32_t code) {
-    auto componentSystemUserInput = getView<ComponentUserInput>();
-    for (auto&& [entity, input] : componentSystemUserInput.each()) {
+    for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventCharTyped(code);
     }
 }

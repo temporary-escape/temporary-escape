@@ -15,11 +15,9 @@ void Image::load(Registry& registry, VulkanRenderer& vulkan) {
     try {
         PngImporter image{path};
 
-        /*VulkanTexture::Descriptor desc{};
-        desc.size = image.getSize();
         if (image.getPixelType() != ImageImporter::PixelType::Rgba8u) {
             EXCEPTION("Image must be of format RGBA 8bit");
-        }*/
+        }
 
         allocation = registry.getImageAtlas().add(image.getSize(), image.getData());
 

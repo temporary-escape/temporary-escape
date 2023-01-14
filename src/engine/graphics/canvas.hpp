@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../assets/image.hpp"
 #include "../font/font_face.hpp"
 #include "../math/matrix.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
@@ -22,7 +23,7 @@ public:
     void rect(const Vector2& pos, const Vector2& size);
     void rectOutline(const Vector2& pos, const Vector2& size, float thickness);
     void text(const Vector2& pos, const std::string& text);
-    void image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture);
+    void image(const Vector2& pos, const Vector2& size, const ImagePtr& image);
 
 private:
     struct Vertex {

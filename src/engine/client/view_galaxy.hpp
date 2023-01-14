@@ -44,9 +44,6 @@ private:
     void updateGalaxy();
     void clearEntities();
     void createEntitiesRegions();
-    void createInputIndices();
-    void clearInputIndices();
-    const SystemData* rayCast(const Vector2& mousePos);
 
     const Config& config;
     Renderer& renderer;
@@ -73,6 +70,7 @@ private:
         std::shared_ptr<Entity> camera;
         std::unordered_map<std::string, EntityPtr> regions;
         EntityPtr positions;
+        EntityPtr cursor;
     } entities;
 
     struct {
@@ -80,10 +78,11 @@ private:
     } textures;
 
     struct {
-        std::vector<const SystemData*> indices;
-        std::vector<Vector3> positions;
-        const SystemData* hover{nullptr};
-        const SystemData* selected{nullptr};
+        ImagePtr iconSelect;
+    } images;
+
+    struct {
+        std::vector<const SystemData*> systemsOrdered;
     } input;
 
     struct {

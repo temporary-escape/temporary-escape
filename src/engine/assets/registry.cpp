@@ -33,6 +33,10 @@ void Registry::init(VulkanRenderer& vulkan) {
     }
 }
 
+void Registry::finalize() {
+    atlas->finalize();
+}
+
 void Registry::findAssets() {
     try {
         const std::vector<Path> paths = {config.assetsPath / "base"};

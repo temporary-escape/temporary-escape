@@ -19,6 +19,7 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
     scene{} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
+    images.iconSelect = registry.getImages().find("icon_target");
 
     // To keep the renderer away from complaining
     {
@@ -75,7 +76,7 @@ void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
 
     if (!gui.contextMenu.isEnabled()) {
         auto& camera = entities.camera->getComponent<ComponentCamera>();
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
+        // input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
     }
 }
 
@@ -86,24 +87,12 @@ void ViewGalaxy::eventMousePressed(const Vector2i& pos, const MouseButton button
     if (button == MouseButton::Right && gui.contextMenu.isEnabled()) {
         gui.contextMenu.setEnabled(false);
         auto& camera = entities.camera->getComponent<ComponentCamera>();
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
+        // input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
     }
 }
 
 void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     scene.eventMouseReleased(pos, button);
-
-    if (button == MouseButton::Right && input.hover && !gui.contextMenu.isEnabled() && gui.oldMousePos == pos) {
-        auto& camera = entities.camera->getComponent<ComponentCamera>();
-        gui.contextMenu.setPos(camera.worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true));
-        gui.contextMenu.setEnabled(true);
-        gui.contextMenu.setItems({
-            {"Travel to", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"View", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"Info", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"Add notes", [this]() { gui.contextMenu.setEnabled(false); }},
-        });
-    }
 }
 
 void ViewGalaxy::eventMouseScroll(const int xscroll, const int yscroll) {
@@ -125,11 +114,8 @@ void ViewGalaxy::eventCharTyped(const uint32_t code) {
 void ViewGalaxy::load() {
     loading = true;
     loadingValue = 0.1f;
-    input.hover = nullptr;
-    input.selected = nullptr;
 
     // Reset entities
-    clearInputIndices();
     clearEntities();
 
     // Reset gui
@@ -263,7 +249,6 @@ void ViewGalaxy::updateGalaxy() {
 
     clearEntities();
     createEntitiesRegions();
-    createInputIndices();
 }
 
 void ViewGalaxy::clearEntities() {
@@ -277,6 +262,10 @@ void ViewGalaxy::clearEntities() {
         scene.removeEntity(entities.positions);
         entities.positions.reset();
     }
+    if (entities.cursor) {
+        scene.removeEntity(entities.cursor);
+        entities.cursor.reset();
+    }
 }
 
 void ViewGalaxy::createEntitiesRegions() {
@@ -285,7 +274,25 @@ void ViewGalaxy::createEntitiesRegions() {
 
     entities.positions = scene.createEntity();
     entities.positions->addComponent<ComponentTransform>();
-    auto& positions = entities.positions->addComponent<ComponentPositionFeedback>();
+    auto& clickable = entities.positions->addComponent<ComponentClickablePoints>();
+    entities.positions->addComponent<ComponentUserInput>(clickable);
+
+    clickable.setOnHoverCallback([this](size_t i) {
+        const auto& system = input.systemsOrdered[i];
+        const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
+        entities.cursor->getComponent<ComponentTransform>().move(systemPos);
+        entities.cursor->setDisabled(false);
+    });
+
+    clickable.setOnBlurCallback([this]() {
+        entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.0f, 0.0f});
+        entities.cursor->setDisabled(true);
+    });
+
+    entities.cursor = scene.createEntity();
+    entities.cursor->setDisabled(true);
+    entities.cursor->addComponent<ComponentTransform>();
+    entities.cursor->addComponent<ComponentIcon>(images.iconSelect, Vector2{32.0f, 32.0f}, Theme::primary);
 
     for (const auto& [regionId, _] : galaxy.regions) {
         auto entity = scene.createEntity();
@@ -299,11 +306,15 @@ void ViewGalaxy::createEntitiesRegions() {
         entities.regions[regionId] = entity;
     }
 
+    input.systemsOrdered.clear();
+    input.systemsOrdered.reserve(galaxy.systems.size());
+
     for (const auto& [systemId, system] : galaxy.systems) {
         auto starColor = Color4{0.8f, 0.8f, 0.8f, 1.0f};
         auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.2f};
 
-        positions.add(Vector3{system.pos.x, 0.0f, system.pos.y});
+        clickable.add(Vector3{system.pos.x, 0.0f, system.pos.y});
+        input.systemsOrdered.push_back(&system);
 
         const auto region = galaxy.regions.find(system.regionId);
         if (region == galaxy.regions.end()) {
@@ -332,50 +343,6 @@ void ViewGalaxy::createEntitiesRegions() {
             lines->add(system.pos, other->second.pos, connectionColor);
         }
     }
-}
-
-void ViewGalaxy::createInputIndices() {
-    clearInputIndices();
-
-    input.indices.reserve(galaxy.systems.size());
-    input.positions.reserve(galaxy.systems.size());
-
-    for (const auto& [_, system] : galaxy.systems) {
-        input.indices.push_back(&system);
-        input.positions.emplace_back(system.pos.x, 0.0f, system.pos.y);
-    }
-}
-
-void ViewGalaxy::clearInputIndices() {
-    input.indices.clear();
-    input.positions.clear();
-}
-
-const SystemData* ViewGalaxy::rayCast(const Vector2& mousePos) {
-    std::vector<std::tuple<float, const SystemData*>> found;
-
-    auto& camera = entities.camera->getComponent<ComponentCamera>();
-    const auto positions = camera.worldToScreen(input.positions);
-
-    for (size_t i = 0; i < positions.size(); i++) {
-        const auto& pos = positions.at(i);
-
-        if (pos.x - systemStarSelectable.x <= mousePos.x && pos.x + systemStarSelectable.x >= mousePos.x &&
-            pos.y - systemStarSelectable.y <= mousePos.y && pos.y + systemStarSelectable.y >= mousePos.y) {
-
-            const auto& system = input.indices.at(i);
-            found.emplace_back(glm::distance(pos, mousePos), system);
-        }
-    }
-
-    if (found.empty()) {
-        return nullptr;
-    }
-
-    std::sort(found.begin(), found.end(),
-              [](const auto& a, const auto& b) -> bool { return std::get<0>(a) < std::get<0>(b); });
-
-    return std::get<1>(found.front());
 }
 
 void ViewGalaxy::onEnter() {

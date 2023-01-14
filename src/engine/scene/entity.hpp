@@ -4,9 +4,11 @@
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
 #include "component_camera.hpp"
+#include "component_clickable_points.hpp"
 #include "component_debug.hpp"
 #include "component_directional_light.hpp"
 #include "component_grid.hpp"
+#include "component_icon.hpp"
 #include "component_icon_point_cloud.hpp"
 #include "component_label.hpp"
 #include "component_lines.hpp"
@@ -16,7 +18,6 @@
 #include "component_player.hpp"
 #include "component_point_cloud.hpp"
 #include "component_poly_shape.hpp"
-#include "component_position_feedback.hpp"
 #include "component_script.hpp"
 #include "component_ship_control.hpp"
 #include "component_text.hpp"
@@ -32,9 +33,9 @@ namespace Engine {
 class ENGINE_API Scene;
 
 using EntityComponentIds =
-    entt::identifier<ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel, ComponentDirectionalLight,
-                     ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud, ComponentLines, ComponentDebug,
-                     ComponentPositionFeedback>;
+    entt::identifier<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
+                     ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
+                     ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon>;
 
 class ENGINE_API Entity {
 public:
@@ -44,12 +45,10 @@ public:
 
     void destroy();
 
-    void setVisible(bool value) {
-        visible = value;
-    }
+    void setDisabled(bool value);
 
-    [[nodiscard]] bool isVisible() const {
-        return visible;
+    [[nodiscard]] bool isDisabled() const {
+        return disabled;
     }
 
     template <typename T> bool hasComponent() {
@@ -87,7 +86,7 @@ public:
 private:
     entt::registry* reg{nullptr};
     entt::entity handle;
-    bool visible{true};
+    bool disabled{false};
     uint64_t mask{0};
 };
 

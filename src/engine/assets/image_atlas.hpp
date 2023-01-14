@@ -19,6 +19,7 @@ public:
     explicit ImageAtlas(const Config& config, VulkanRenderer& vulkan);
 
     Allocation add(const Vector2i& size, const void* pixels);
+    void finalize();
 
 private:
     class Layer {
@@ -26,12 +27,14 @@ private:
         explicit Layer(const Config& config, VulkanRenderer& vulkan);
 
         std::optional<Vector2i> add(const Vector2i& size, const void* pixels);
+        void finalize();
 
         [[nodiscard]] const VulkanTexture& getTexture() const {
             return texture;
         }
 
     private:
+        VulkanRenderer& vulkan;
         Packer packer;
         VulkanTexture texture;
     };

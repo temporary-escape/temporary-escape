@@ -100,6 +100,7 @@ public:
 
     void findAssets();
     void init(VulkanRenderer& vulkan);
+    void finalize();
 
     const DefaultTextures& getDefaultTextures() const {
         if (!defaultTextures) {

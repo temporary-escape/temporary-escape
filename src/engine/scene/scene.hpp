@@ -63,6 +63,10 @@ public:
         return reg.view<Ts...>();
     }
 
+    template <typename... Ts, typename Exclude> auto getView(Exclude&& exclude) {
+        return reg.view<Ts...>(exclude);
+    }
+
     const std::vector<EntityPtr>& getEntities() const {
         return entities;
     }

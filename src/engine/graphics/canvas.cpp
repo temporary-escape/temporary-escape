@@ -481,41 +481,30 @@ void Canvas::text(const Vector2& pos, const std::string& text) {
     cmd.texture = &currentFontFace->getTexture();
 }
 
-void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture) {
-    /*const auto start = vertices.size();
+void Canvas::image(const Vector2& pos, const Vector2& size, const ImagePtr& image) {
+    auto& cmd = addDrawCommand();
+    cmd.start = indexOffset;
+    cmd.length = 6;
+    cmd.mode = 1;
 
-    auto& v0 = vertices.emplace_back();
-    auto& v1 = vertices.emplace_back();
-    auto& v2 = vertices.emplace_back();
+    const auto dst = allocate();
 
-    auto& v3 = vertices.emplace_back();
-    auto& v4 = vertices.emplace_back();
-    auto& v5 = vertices.emplace_back();
+    dst[0].pos = pos;
+    dst[1].pos = pos + Vector2{size.x, 0.0f};
+    dst[2].pos = pos + Vector2{size.x, size.y};
+    dst[3].pos = pos + Vector2{0.0f, size.y};
 
-    v0.pos = pos;
-    v0.uv = {0.0f, 1.0f};
-    v0.alpha = 1.0f;
-    v1.pos = pos + Vector2{0.0f, size.y};
-    v1.uv = {0.0f, 0.0f};
-    v1.alpha = 1.0f;
-    v2.pos = pos + Vector2{size.x, 0.0f};
-    v2.uv = {1.0f, 1.0f};
-    v2.alpha = 1.0f;
+    dst[0].color = nextColor;
+    dst[1].color = nextColor;
+    dst[2].color = nextColor;
+    dst[3].color = nextColor;
 
-    v0.color = color;
-    v1.color = color;
-    v2.color = color;
+    const auto& alc = image->getAllocation();
 
-    v3 = v2;
-    v4 = v1;
-    v5.pos = pos + size;
-    v5.color = color;
-    v5.uv = {1.0f, 0.0f};
-    v5.alpha = 1.0f;
+    dst[0].uv = alc.uv;
+    dst[1].uv = alc.uv + Vector2{alc.st.x, 0.0f};
+    dst[2].uv = alc.uv + alc.st;
+    dst[3].uv = alc.uv + Vector2{0.0f, alc.st.y};
 
-    auto& cmd = commands.emplace_back();
-    cmd.type = Command::Type::Draw;
-    cmd.draw.start = start;
-    cmd.draw.length = 6;
-    cmd.draw.texture = &texture;*/
+    cmd.texture = alc.texture;
 }

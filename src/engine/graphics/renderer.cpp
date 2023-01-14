@@ -9,10 +9,11 @@ struct FullScreenVertex {
     Vector2 pos;
 };
 
-Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, ShaderModules& shaderModules,
+Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
                    VoxelShapeCache& voxelShapeCache) :
     config{config},
     vulkan{vulkan},
+    canvas{canvas},
     voxelShapeCache{voxelShapeCache},
     lastViewportSize{config.windowWidth, config.windowHeight},
     bloomViewportSize{lastViewportSize / 2} {
@@ -1156,6 +1157,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     vkb.setScissor({0, 0}, viewport);
 
     renderPassBloomCombine(vkb, options);
+    renderSceneCanvas(vkb, viewport, scene);
 
     vkb.endRenderPass();
     vkb.end();
@@ -1240,8 +1242,7 @@ void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const R
     vkb.bindPipeline(shaders.positionFeedback.getPipeline());
     std::array<VulkanBufferBinding, 3> bufferBindings{};
 
-    for (auto&& [entity, transform, component] :
-         scene.getView<ComponentTransform, ComponentPositionFeedback>().each()) {
+    for (auto&& [entity, transform, component] : scene.getView<ComponentTransform, ComponentClickablePoints>().each()) {
 
         component.recalculate(vulkan);
 
@@ -1260,7 +1261,7 @@ void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const R
         vkb.bindDescriptors(shaders.positionFeedback.getPipeline(), shaders.positionFeedback.getDescriptorSetLayout(),
                             bufferBindings, {});
 
-        const uint32_t workCount = (component.getCount() / 512) + 1;
+        const uint32_t workCount = (component.getCount() / 256) + 1;
         vkb.dispatch(workCount, 1, 1);
     }
 
@@ -1925,6 +1926,21 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
                       sizeof(ShaderComponentDebug::Uniforms), &constants);
 
     renderMesh(vkb, mesh);
+}
+
+void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
+    auto camera = scene.getPrimaryCamera();
+
+    canvas.begin(viewport);
+
+    auto icons = scene.getView<ComponentTransform, ComponentIcon>(entt::exclude<TagDisabled>);
+    for (auto&& [entity, transform, component] : icons.each()) {
+        const auto pos = camera->worldToScreen(transform.getAbsolutePosition(), true);
+        canvas.color(component.getColor());
+        canvas.image(pos - component.getSize() / 2.0f, component.getSize(), component.getImage());
+    }
+
+    canvas.end(vkb);
 }
 
 void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
