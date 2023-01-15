@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../config.hpp"
+#include "../font/font_family.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "canvas.hpp"
@@ -9,6 +10,7 @@
 #include "shaders/shader_component_debug.hpp"
 #include "shaders/shader_component_grid.hpp"
 #include "shaders/shader_component_point_cloud.hpp"
+#include "shaders/shader_component_poly_shape.hpp"
 #include "shaders/shader_pass_bloom_blur.hpp"
 #include "shaders/shader_pass_bloom_combine.hpp"
 #include "shaders/shader_pass_bloom_extract.hpp"
@@ -30,7 +32,7 @@ public:
     };
 
     explicit Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
-                      VoxelShapeCache& voxelShapeCache);
+                      VoxelShapeCache& voxelShapeCache, FontFamily& font);
     ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
@@ -108,6 +110,8 @@ private:
                             ComponentPointCloud& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentLines& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentPolyShape& component);
     void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
     void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
     void transitionDepthForReadOnlyOptimal();
@@ -120,6 +124,7 @@ private:
     VulkanRenderer& vulkan;
     Canvas& canvas;
     VoxelShapeCache& voxelShapeCache;
+    FontFamily& font;
     Vector2i lastViewportSize;
     Vector2i bloomViewportSize;
 
@@ -142,6 +147,7 @@ private:
         ShaderComponentDebug componentDebug;
         ShaderComponentLines componentLines;
         ShaderPositionFeedback positionFeedback;
+        ShaderComponentPolyShape componentPolyShape;
     } shaders;
 
     struct {

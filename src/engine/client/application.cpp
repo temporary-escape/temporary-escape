@@ -255,7 +255,7 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, canvas, *shaderModules, *voxelShapeCache);
+    renderer = std::make_unique<Renderer>(config, *this, canvas, *shaderModules, *voxelShapeCache, font);
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createRegistry());

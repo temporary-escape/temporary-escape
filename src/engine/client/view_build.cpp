@@ -87,18 +87,6 @@ void ViewBuild::render(const Vector2i& viewport) {
     renderer.render(viewport, scene, skybox, options);*/
 }
 
-void ViewBuild::renderCanvas(const Vector2i& viewport) {
-    // canvas.rect({0.0f, 0.0f}, {32.0f, 32.0f}, Color4{1.0f, 0.0f, 0.0f, 1.0f});
-    // canvas.text({50.0f, 50.0f}, "Hello World! qgWQ_Ap.", font.regular, 10.5f, Color4{1.0f});
-
-    /*nuklear.begin(viewport);
-    guiBlockSelector.draw(viewport);
-    nuklear.end();*/
-}
-
-void ViewBuild::renderGui(const Vector2i& viewport) {
-}
-
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 

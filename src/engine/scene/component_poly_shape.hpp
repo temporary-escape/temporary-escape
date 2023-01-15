@@ -1,25 +1,25 @@
 #pragma once
 
+#include "../assets/texture.hpp"
+#include "../graphics/mesh.hpp"
+#include "../graphics/shaders/shader_component_poly_shape.hpp"
 #include "../library.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentPolyShape : public Component {
 public:
-    struct Point {
-        Vector3 pos{0.0f};
-        Color4 color{1.0f};
-    };
-
-    static_assert(sizeof(Point) == (3 + 4) * sizeof(float), "size of Point must be tightly packed");
+    using Point = ShaderComponentPolyShape::Vertex;
 
     ComponentPolyShape() = default;
     virtual ~ComponentPolyShape() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentPolyShape);
 
-    /*const Mesh& getMesh() const {
+    void recalculate(VulkanRenderer& vulkan);
+
+    [[nodiscard]] const Mesh& getMesh() const {
         return mesh;
-    }*/
+    }
 
     void add(const Vector3& pos, const Color4& color) {
         setDirty(true);
@@ -33,10 +33,6 @@ public:
 
 private:
     std::vector<Point> points;
-    // Mesh mesh{NO_CREATE};
-    // VertexBuffer vbo{NO_CREATE};
-
-public:
-    MSGPACK_DEFINE_ARRAY();
+    Mesh mesh;
 };
 } // namespace Engine

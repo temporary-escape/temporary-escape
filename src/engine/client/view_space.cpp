@@ -23,12 +23,6 @@ void ViewSpace::render(const Vector2i& viewport) {
     renderer.render(viewport, *scene, skyboxSystem, options);
 }
 
-void ViewSpace::renderCanvas(const Vector2i& viewport) {
-}
-
-void ViewSpace::renderGui(const Vector2i& viewport) {
-}
-
 void ViewSpace::onEnter() {
 }
 

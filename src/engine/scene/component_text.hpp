@@ -29,14 +29,6 @@ public:
         color = value;
     }
 
-    [[nodiscard]] bool getVisible() const {
-        return visible;
-    }
-
-    void setVisible(const bool value) {
-        visible = value;
-    }
-
     [[nodiscard]] float getSize() const {
         return size;
     }
@@ -65,7 +57,6 @@ private:
     std::string text;
     Color4 color;
     float size{18.0f};
-    bool visible{true};
     bool centered{false};
     Vector2 offset{0.0f};
 

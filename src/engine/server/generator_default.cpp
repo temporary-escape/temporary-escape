@@ -154,7 +154,7 @@ void GeneratorDefault::generateGalaxyRegions(const std::string& galaxyId) {
     const auto galaxy = world.galaxies.get(galaxyId);
     std::mt19937_64 rng{galaxy.seed + 10};
 
-    const auto maxRange = config.generator.galaxyWidth * 0.9f - config.generator.regionDistance / 2.0f;
+    const auto maxRange = config.generator.galaxyWidth * 0.4f - config.generator.regionDistance / 2.0f;
 
     std::vector<Vector2> positions =
         randomCirclePositions(rng, maxRange, config.generator.regionMaxCount, config.generator.regionDistance);

@@ -20,7 +20,8 @@ ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     textureInfo.image.arrayLayers = 1;
     textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
     textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
     textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -62,7 +63,7 @@ std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const void*
         return std::nullopt;
     }
 
-    const auto pos = *res - Vector2i{4, 4};
+    const auto pos = *res + Vector2i{4, 4};
 
     vulkan.copyDataToImage(texture, 0, pos, 0, size, pixels);
     return pos;

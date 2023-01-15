@@ -35,7 +35,8 @@ class ENGINE_API Scene;
 using EntityComponentIds =
     entt::identifier<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                      ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
-                     ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon>;
+                     ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
+                     ComponentText>;
 
 class ENGINE_API Entity {
 public:

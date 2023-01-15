@@ -13,11 +13,10 @@ static jcv_point vecToPoint(const Vector2& vec) {
     return {vec.x, vec.y};
 }
 
-std::vector<VoronoiCell> Engine::computeVoronoiDiagram(const std::vector<Vector2>& points,
-                                                       const std::vector<Vector2>& clip) {
-    std::vector<VoronoiCell> cells{};
+VoronoiResult Engine::computeVoronoiDiagram(const std::vector<Vector2>& points, const std::vector<Vector2>& clip) {
+    VoronoiResult result{};
 
-    cells.resize(points.size());
+    result.cells.resize(points.size());
 
     jcv_diagram diagram;
     memset(&diagram, 0, sizeof(jcv_diagram));
@@ -80,7 +79,7 @@ std::vector<VoronoiCell> Engine::computeVoronoiDiagram(const std::vector<Vector2
         const jcv_site* site = &sites[i];
 
         const auto idx = static_cast<size_t>(site->index);
-        auto& dst = cells[idx];
+        auto& dst = result.cells[idx];
 
         const jcv_graphedge* e = site->edges;
         while (e) {
@@ -93,5 +92,5 @@ std::vector<VoronoiCell> Engine::computeVoronoiDiagram(const std::vector<Vector2
         }
     }
 
-    return cells;
+    return result;
 }

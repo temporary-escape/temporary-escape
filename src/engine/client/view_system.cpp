@@ -90,22 +90,6 @@ void ViewSystem::render(const Vector2i& viewport) {
     renderer.render(viewport, scene, skybox, options);*/
 }
 
-void ViewSystem::renderCanvas(const Vector2i& viewport) {
-    /*if (input.hover != nullptr) {
-        auto pos = camera->worldToScreen(Vector3{input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
-        canvas.color(Theme::primary);
-        canvas.rectOutline(pos - systemBodySelectable / 2.0f, systemBodySelectable, 1.0f);
-    }*/
-}
-
-void ViewSystem::renderGui(const Vector2i& viewport) {
-    /*gui.modalLoading.setEnabled(loading);
-    gui.modalLoading.setProgress(loadingValue);
-
-    nuklear.draw(gui.modalLoading);
-    nuklear.draw(gui.contextMenu);*/
-}
-
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 

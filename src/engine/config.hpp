@@ -69,7 +69,7 @@ struct Config {
     struct {
         int totalSystems{2000};
         float galaxyWidth{300.0f};
-        float regionDistance{50.0f};
+        float regionDistance{35.0f};
         int regionMaxCount{20};
         float factionDistance{20.0f};
         int factionMaxCount{30};

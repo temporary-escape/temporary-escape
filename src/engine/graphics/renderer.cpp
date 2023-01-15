@@ -10,11 +10,12 @@ struct FullScreenVertex {
 };
 
 Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
-                   VoxelShapeCache& voxelShapeCache) :
+                   VoxelShapeCache& voxelShapeCache, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
     voxelShapeCache{voxelShapeCache},
+    font{font},
     lastViewportSize{config.windowWidth, config.windowHeight},
     bloomViewportSize{lastViewportSize / 2} {
 
@@ -333,6 +334,12 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         renderPasses.forward.renderPass,
     };
     shaders.componentLines = ShaderComponentLines{
+        config,
+        vulkan,
+        shaderModules,
+        renderPasses.forward.renderPass,
+    };
+    shaders.componentPolyShape = ShaderComponentPolyShape{
         config,
         vulkan,
         shaderModules,
@@ -1796,6 +1803,7 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& view
     collectForRender<ComponentIconPointCloud>(vkb, viewport, scene, jobs);
     collectForRender<ComponentPointCloud>(vkb, viewport, scene, jobs);
     collectForRender<ComponentLines>(vkb, viewport, scene, jobs);
+    collectForRender<ComponentPolyShape>(vkb, viewport, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order < b.order; });
 
@@ -1928,6 +1936,35 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
     renderMesh(vkb, mesh);
 }
 
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentPolyShape& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentForwardShader != &shaders.componentPolyShape) {
+        currentForwardShader = &shaders.componentPolyShape;
+        vkb.bindPipeline(shaders.componentPolyShape.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    vkb.bindDescriptors(shaders.componentPolyShape.getPipeline(), shaders.componentPolyShape.getDescriptorSetLayout(),
+                        bufferBindings, {});
+
+    ShaderComponentPolyShape::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    vkb.pushConstants(shaders.componentPolyShape.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentPolyShape::Uniforms), &constants);
+
+    renderMesh(vkb, mesh);
+}
+
 void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
     auto camera = scene.getPrimaryCamera();
 
@@ -1938,6 +1975,18 @@ void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewp
         const auto pos = camera->worldToScreen(transform.getAbsolutePosition(), true);
         canvas.color(component.getColor());
         canvas.image(pos - component.getSize() / 2.0f, component.getSize(), component.getImage());
+    }
+
+    auto texts = scene.getView<ComponentTransform, ComponentText>(entt::exclude<TagDisabled>);
+    for (auto&& [entity, transform, component] : texts.each()) {
+        auto pos = camera->worldToScreen(transform.getAbsolutePosition(), true);
+        canvas.color(component.getColor());
+        canvas.font(font.regular, static_cast<int>(component.getSize()));
+
+        if (component.getCentered()) {
+            pos -= font.regular.getBounds(component.getText(), component.getSize()) / 2.0f;
+        }
+        canvas.text(pos + component.getOffset(), component.getText());
     }
 
     canvas.end(vkb);

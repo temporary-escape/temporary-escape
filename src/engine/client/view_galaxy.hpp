@@ -1,11 +1,13 @@
 #pragma once
 
 #include "../assets/registry.hpp"
+#include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
 #include "../gui/gui_context_menu.hpp"
 #include "../gui/gui_modal_loading.hpp"
+#include "../math/voronoi_diagram.hpp"
 #include "../scene/scene.hpp"
 #include "../server/world.hpp"
 #include "../utils/stop_token.hpp"
@@ -21,8 +23,6 @@ public:
 
     void update(float deltaTime) override;
     void render(const Vector2i& viewport) override;
-    void renderCanvas(const Vector2i& viewport) override;
-    void renderGui(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -44,6 +44,8 @@ private:
     void updateGalaxy();
     void clearEntities();
     void createEntitiesRegions();
+    void calculateBackground();
+    void createBackground(const VoronoiResult& voronoi);
 
     const Config& config;
     Renderer& renderer;
@@ -62,6 +64,7 @@ private:
         std::string name;
         std::unordered_map<std::string, SystemData> systems;
         std::unordered_map<std::string, RegionData> regions;
+        std::vector<const SystemData*> systemsOrdered;
     } galaxy;
 
     std::unordered_map<std::string, FactionData> factions;
@@ -69,8 +72,11 @@ private:
     struct {
         std::shared_ptr<Entity> camera;
         std::unordered_map<std::string, EntityPtr> regions;
+        std::unordered_map<std::string, EntityPtr> labels;
+        std::unordered_map<std::string, EntityPtr> factions;
         EntityPtr positions;
         EntityPtr cursor;
+        EntityPtr voronoi;
     } entities;
 
     struct {
@@ -82,10 +88,6 @@ private:
     } images;
 
     struct {
-        std::vector<const SystemData*> systemsOrdered;
-    } input;
-
-    struct {
         GuiModalLoading modalLoading{"Galaxy Map"};
         GuiContextMenu contextMenu;
 
@@ -95,5 +97,6 @@ private:
     bool loading{false};
     float loadingValue{0.0f};
     StopToken stopToken;
+    Future<VoronoiResult> futureVoronoi;
 };
 } // namespace Engine
