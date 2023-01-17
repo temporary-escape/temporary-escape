@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../assets/block.hpp"
 #include "gui_window.hpp"
 
 namespace Engine {

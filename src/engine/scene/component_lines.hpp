@@ -48,8 +48,17 @@ public:
         return mesh;
     }
 
+    void setColor(const Color4& value) {
+        color = value;
+    }
+
+    [[nodiscard]] const Color4& getColor() const {
+        return color;
+    }
+
 private:
     std::vector<Line> lines;
+    Color4 color{1.0f};
     Mesh mesh;
 };
 } // namespace Engine

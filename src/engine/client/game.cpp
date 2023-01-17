@@ -7,19 +7,21 @@
 using namespace Engine;
 
 Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, SkyboxGenerator& skyboxGenerator,
-           Registry& registry, Client& client) :
+           Registry& registry, FontFamily& font, Client& client) :
     config{config},
     renderer{renderer},
     canvas{canvas},
     nuklear{nuklear},
     skyboxGenerator{skyboxGenerator},
     registry{registry},
+    font{font},
     client{client},
+    gui{config},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
-    viewSpace = std::make_unique<ViewSpace>(config, renderer, registry, skybox, client);
-    viewGalaxy = std::make_unique<ViewGalaxy>(config, renderer, registry, client);
-    viewSystem = std::make_unique<ViewSystem>(config, renderer, registry, client);
+    viewSpace = std::make_unique<ViewSpace>(config, renderer, registry, skybox, client, gui);
+    viewGalaxy = std::make_unique<ViewGalaxy>(config, renderer, registry, client, gui, font);
+    viewSystem = std::make_unique<ViewSystem>(config, renderer, registry, client, gui);
     view = viewSpace.get();
 }
 
@@ -36,7 +38,8 @@ void Game::render(const Vector2i& viewport) {
         skybox = skyboxGenerator.generate(skyboxSeed);
     }
 
-    view->render(viewport);
+    // view->render(viewport);
+    renderer.render(viewport, view->getRenderScene(), view->getRenderSkybox(), view->getRenderOptions(), gui);
 }
 
 /*void Game::renderCanvas(const Vector2i& viewport) {
@@ -60,6 +63,10 @@ void Game::eventMouseMoved(const Vector2i& pos) {
 }
 
 void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
+        gui.contextMenu.setEnabled(false);
+    }
+
     if (view) {
         view->eventMousePressed(pos, button);
     }

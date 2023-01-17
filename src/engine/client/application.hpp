@@ -3,10 +3,10 @@
 #include "../database/database.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
-#include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "game.hpp"
+#include "gui/gui_main_menu.hpp"
 #include <queue>
 
 namespace Engine {
@@ -75,5 +75,6 @@ private:
     std::future<std::function<void()>> future;
     std::promise<std::function<void()>> promise;
     std::atomic<bool> shouldStop{false};
+    Vector2i mousePos;
 };
 } // namespace Engine

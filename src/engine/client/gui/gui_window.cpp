@@ -85,3 +85,7 @@ void GuiWindow::setDynamic() {
 void GuiWindow::setFontSize(const int size) {
     fontSize = size;
 }
+
+bool GuiWindow::isCursorInside(const Vector2i& mousePos) {
+    return mousePos.x > pos.x && mousePos.x < pos.x + size.x && mousePos.y > pos.y && mousePos.y < pos.y + size.y;
+}

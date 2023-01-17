@@ -9,11 +9,12 @@ struct FullScreenVertex {
     Vector2 pos;
 };
 
-Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
-                   VoxelShapeCache& voxelShapeCache, FontFamily& font) :
+Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, Nuklear& nuklear,
+                   ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
+    nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
     font{font},
     lastViewportSize{config.windowWidth, config.windowHeight},
@@ -344,6 +345,12 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         vulkan,
         shaderModules,
         renderPasses.forward.renderPass,
+    };
+    shaders.componentWorldText = ShaderComponentWorldText{
+        config,
+        vulkan,
+        shaderModules,
+        vulkan.getRenderPass(),
     };
 }
 
@@ -1114,7 +1121,9 @@ void Renderer::renderBrdf() {
     vulkan.waitQueueIdle();
 }
 
-void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+void Renderer::render(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options,
+                      NuklearWindow& nuklearWindow) {
+
     if (viewport != lastViewportSize) {
         lastViewportSize = viewport;
         bloomViewportSize = lastViewportSize / 2;
@@ -1164,7 +1173,9 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, Skybox& skybox, co
     vkb.setScissor({0, 0}, viewport);
 
     renderPassBloomCombine(vkb, options);
+    renderSceneForwardNonHDR(vkb, viewport, scene);
     renderSceneCanvas(vkb, viewport, scene);
+    renderNuklear(vkb, viewport, nuklearWindow);
 
     vkb.endRenderPass();
     vkb.end();
@@ -1370,7 +1381,8 @@ void Renderer::renderPassSsao(const Vector2i& viewport, Scene& scene, const Opti
     vulkan.dispose(std::move(vkb));
 }
 
-void Renderer::renderPassLighting(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+void Renderer::renderPassLighting(const Vector2i& viewport, Scene& scene, const Skybox& skybox,
+                                  const Options& options) {
     auto camera = scene.getPrimaryCamera();
 
     auto vkb = vulkan.createCommandBuffer();
@@ -1403,7 +1415,7 @@ void Renderer::renderPassLighting(const Vector2i& viewport, Scene& scene, Skybox
     vulkan.dispose(std::move(vkb));
 }
 
-void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options) {
+void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options) {
     auto camera = scene.getPrimaryCamera();
 
     auto vkb = vulkan.createCommandBuffer();
@@ -1771,7 +1783,8 @@ void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewpo
     }
 }
 
-void Renderer::renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox) {
+void Renderer::renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
+                                 const Skybox& skybox) {
     auto camera = scene.getPrimaryCamera();
 
     vkb.bindPipeline(shaders.passSkybox.getPipeline());
@@ -1805,7 +1818,21 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& view
     collectForRender<ComponentLines>(vkb, viewport, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, viewport, scene, jobs);
 
-    std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order < b.order; });
+    std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
+
+    for (auto& job : jobs) {
+        job.fn();
+    }
+}
+
+void Renderer::renderSceneForwardNonHDR(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
+    auto& camera = *scene.getPrimaryCamera();
+    currentForwardShader = nullptr;
+
+    std::vector<ForwardRenderJob> jobs;
+    collectForRender<ComponentWorldText>(vkb, viewport, scene, jobs);
+
+    std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
     for (auto& job : jobs) {
         job.fn();
@@ -1927,11 +1954,12 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
     vkb.bindDescriptors(shaders.componentLines.getPipeline(), shaders.componentLines.getDescriptorSetLayout(),
                         bufferBindings, {});
 
-    ShaderComponentDebug::Uniforms constants{};
+    ShaderComponentLines::Uniforms constants{};
     constants.modelMatrix = transform.getAbsoluteTransform();
+    constants.color = component.getColor();
     vkb.pushConstants(shaders.componentLines.getPipeline(),
                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
-                      sizeof(ShaderComponentDebug::Uniforms), &constants);
+                      sizeof(ShaderComponentLines::Uniforms), &constants);
 
     renderMesh(vkb, mesh);
 }
@@ -1965,6 +1993,39 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
     renderMesh(vkb, mesh);
 }
 
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentWorldText& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentForwardShader != &shaders.componentWorldText) {
+        currentForwardShader = &shaders.componentWorldText;
+        vkb.bindPipeline(shaders.componentWorldText.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {1, &component.getFontFace().getTexture()};
+
+    vkb.bindDescriptors(shaders.componentWorldText.getPipeline(), shaders.componentWorldText.getDescriptorSetLayout(),
+                        bufferBindings, textureBindings);
+
+    ShaderComponentWorldText::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    constants.color = component.getColor();
+    vkb.pushConstants(shaders.componentWorldText.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentWorldText::Uniforms), &constants);
+
+    renderMesh(vkb, mesh);
+}
+
 void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
     auto camera = scene.getPrimaryCamera();
 
@@ -1979,6 +2040,8 @@ void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewp
 
     auto texts = scene.getView<ComponentTransform, ComponentText>(entt::exclude<TagDisabled>);
     for (auto&& [entity, transform, component] : texts.each()) {
+        component.recalculate(font.regular);
+
         auto pos = camera->worldToScreen(transform.getAbsolutePosition(), true);
         canvas.color(component.getColor());
         canvas.font(font.regular, static_cast<int>(component.getSize()));
@@ -1989,6 +2052,16 @@ void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewp
         canvas.text(pos + component.getOffset(), component.getText());
     }
 
+    canvas.end(vkb);
+}
+
+void Renderer::renderNuklear(VulkanCommandBuffer& vkb, const Vector2i& viewport, NuklearWindow& nuklearWindow) {
+    canvas.begin(viewport);
+    nuklear.begin(viewport);
+
+    nuklearWindow.draw(nuklear, viewport);
+
+    nuklear.end();
     canvas.end(vkb);
 }
 
@@ -2007,7 +2080,8 @@ void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
     }
 }
 
-void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox) {
+void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
+                                 const Skybox& skybox) {
     updateDirectionalLights(scene);
 
     auto camera = scene.getPrimaryCamera();

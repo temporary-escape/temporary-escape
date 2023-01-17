@@ -43,6 +43,10 @@ public:
         zoomMax = max;
     }
 
+    bool isPanning() const {
+        return panning;
+    }
+
 private:
     void updateRotationFreeLook(const Vector2& diff);
     void moveToOrtographic(const Vector3& position);
@@ -56,6 +60,7 @@ private:
     Vector2 rotationInputValue{};
     bool rotationStarted{false};
     bool panFlag{false};
+    bool panning{false};
     Vector2i mousePosOld{};
     float zoomMin{0.1f};
     float zoomMax{100.0f};

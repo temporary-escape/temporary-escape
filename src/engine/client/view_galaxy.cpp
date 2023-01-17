@@ -1,5 +1,4 @@
 #include "view_galaxy.hpp"
-#include "../graphics/renderer.hpp"
 #include "../graphics/theme.hpp"
 #include "../math/convex_hull.hpp"
 #include "client.hpp"
@@ -9,13 +8,15 @@
 using namespace Engine;
 
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
-static const Vector2 systemStarSize{24.0f, 24.0f};
+static const Vector2 systemStarSize{32.0f, 32.0f};
 
-ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client) :
+ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui,
+                       FontFamily& font) :
     config{config},
-    renderer{renderer},
     registry{registry},
     client{client},
+    gui{gui},
+    font{font},
     skybox{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}},
     scene{} {
 
@@ -42,8 +43,6 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
 
         entities.camera = entity;
     }
-
-    gui.contextMenu.setEnabled(false);
 }
 
 void ViewGalaxy::update(const float deltaTime) {
@@ -52,32 +51,38 @@ void ViewGalaxy::update(const float deltaTime) {
     if (futureVoronoi.valid() && futureVoronoi.ready()) {
         createBackground(futureVoronoi.get());
     }
-}
 
-void ViewGalaxy::render(const Vector2i& viewport) {
-    Renderer::Options options{};
-    options.bloomEnabled = false;
-    renderer.render(viewport, scene, skybox, options);
+    const auto* camera = scene.getPrimaryCamera();
+
+    // Update connections alpha color
+    if (!entities.regions.empty()) {
+        const auto f = 1.0f - glm::clamp(map(camera->getOrthoScale(), 10.0f, 70.0f, 0.0f, 0.8f), 0.0f, 0.8f);
+        for (auto& [_, entity] : entities.regions) {
+            entity->getComponent<ComponentLines>().setColor(alpha(f));
+        }
+    }
+
+    // Update region labels alpha color
+    if (!entities.labels.empty()) {
+        const auto f = glm::clamp(map(camera->getOrthoScale(), 10.0f, 70.0f, 0.1f, 0.5f), 0.1f, 0.5f);
+        for (auto& [regionId, entity] : entities.labels) {
+            entity->getComponent<ComponentText>().setColor(Theme::text * alpha(f));
+        }
+    }
+
+    // Update system names
+    if (entities.names) {
+        const auto f = 1.0f - glm::clamp(map(camera->getOrthoScale(), 5.0f, 30.0f, 0.5f, 1.0f), 0.5f, 1.0f);
+        entities.names->getComponent<ComponentWorldText>().setColor(Theme::text * alpha(f));
+    }
 }
 
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
-
-    if (!gui.contextMenu.isEnabled()) {
-        auto& camera = entities.camera->getComponent<ComponentCamera>();
-        // input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
-    }
 }
 
 void ViewGalaxy::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     scene.eventMousePressed(pos, button);
-    gui.oldMousePos = pos;
-
-    if (button == MouseButton::Right && gui.contextMenu.isEnabled()) {
-        gui.contextMenu.setEnabled(false);
-        auto& camera = entities.camera->getComponent<ComponentCamera>();
-        // input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera.getViewport().y) - pos.y});
-    }
 }
 
 void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
@@ -100,15 +105,26 @@ void ViewGalaxy::eventCharTyped(const uint32_t code) {
     scene.eventCharTyped(code);
 }
 
+const Renderer::Options& ViewGalaxy::getRenderOptions() {
+    static Renderer::Options options{};
+    options.bloomEnabled = false;
+    return options;
+}
+
+Scene& ViewGalaxy::getRenderScene() {
+    return scene;
+}
+
+const Skybox& ViewGalaxy::getRenderSkybox() {
+    return skybox;
+}
+
 void ViewGalaxy::load() {
     loading = true;
     loadingValue = 0.1f;
 
     // Reset entities
     clearEntities();
-
-    // Reset gui
-    gui.contextMenu.setEnabled(false);
 
     // Cancel previous load sequence
     stopToken.stop();
@@ -244,7 +260,7 @@ void ViewGalaxy::clearEntities() {
     for (const auto& [_, entity] : entities.regions) {
         scene.removeEntity(entity);
     }
-    entities.labels.clear();
+    entities.regions.clear();
     for (const auto& [_, entity] : entities.labels) {
         scene.removeEntity(entity);
     }
@@ -265,6 +281,10 @@ void ViewGalaxy::clearEntities() {
         scene.removeEntity(entities.voronoi);
         entities.voronoi.reset();
     }
+    if (entities.names) {
+        scene.removeEntity(entities.names);
+        entities.names.reset();
+    }
 }
 
 void ViewGalaxy::createEntitiesRegions() {
@@ -276,22 +296,52 @@ void ViewGalaxy::createEntitiesRegions() {
     auto& clickable = entities.positions->addComponent<ComponentClickablePoints>();
     entities.positions->addComponent<ComponentUserInput>(clickable);
 
-    clickable.setOnHoverCallback([this](size_t i) {
+    clickable.setOnHoverCallback([this](const size_t i) {
         const auto& system = galaxy.systemsOrdered[i];
-        const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
+        const auto systemPos = Vector3{system->pos.x, 0.1f, system->pos.y};
         entities.cursor->getComponent<ComponentTransform>().move(systemPos);
+        auto& text = entities.cursor->getComponent<ComponentText>();
+        text.setText(system->name);
         entities.cursor->setDisabled(false);
     });
 
+    clickable.setOnClickCallback([this](const size_t i, const bool pressed, const MouseButton button) {
+        if (pressed || scene.getPrimaryCamera()->isPanning() || button != MouseButton::Right) {
+            return;
+        }
+
+        const auto& system = galaxy.systemsOrdered[i];
+        const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
+        const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
+
+        gui.contextMenu.setEnabled(true);
+        gui.contextMenu.setPos(viewPos);
+        gui.contextMenu.setItems({
+            {"View", [this]() {}},
+            {"Info", [this]() {}},
+            {"Note", [this]() {}},
+            {"Set Destination", [this]() {}},
+        });
+    });
+
     clickable.setOnBlurCallback([this]() {
-        entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.0f, 0.0f});
+        entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.1f, 0.0f});
         entities.cursor->setDisabled(true);
     });
 
     entities.cursor = scene.createEntity();
     entities.cursor->setDisabled(true);
-    entities.cursor->addComponent<ComponentTransform>();
-    entities.cursor->addComponent<ComponentIcon>(images.iconSelect, Vector2{32.0f, 32.0f}, Theme::primary);
+    entities.cursor->addComponent<ComponentTransform>().move(Vector3{0.0f, 0.1f, 0.0f});
+    entities.cursor->addComponent<ComponentIcon>(images.iconSelect, systemStarSelectable, Theme::primary);
+    auto& cursorText = entities.cursor->addComponent<ComponentText>("", Theme::primary, config.guiFontSize);
+    cursorText.setCentered(true);
+    cursorText.setOffset(Vector2{0, -(systemStarSelectable.y / 2.0f)});
+
+    entities.names = scene.createEntity();
+    entities.names->addComponent<ComponentTransform>().move(Vector3{0.0f, 0.1f, 0.0f});
+    auto& names =
+        entities.names->addComponent<ComponentWorldText>(font.regular, Theme::text * alpha(0.5f), config.guiFontSize);
+    names.setOffset(Vector2{0.0f, -systemStarSize.y});
 
     for (const auto& [regionId, region] : galaxy.regions) {
         auto entity = scene.createEntity();
@@ -312,7 +362,7 @@ void ViewGalaxy::createEntitiesRegions() {
         entities.labels[regionId] = entity;
     }
 
-    for (const auto& [factionId, faction] : factions) {
+    /*for (const auto& [factionId, faction] : factions) {
         const auto& system = galaxy.systems[faction.homeSectorId];
         const auto color = hsvToRgb(Color4{faction.color, 0.6f, 1.0f, 0.1f});
 
@@ -322,14 +372,14 @@ void ViewGalaxy::createEntitiesRegions() {
         text.setCentered(true);
 
         entities.labels[factionId] = entity;
-    }
+    }*/
 
     galaxy.systemsOrdered.clear();
     galaxy.systemsOrdered.reserve(galaxy.systems.size());
 
     for (const auto& [systemId, system] : galaxy.systems) {
         auto starColor = Color4{0.8f, 0.8f, 0.8f, 1.0f};
-        auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.2f};
+        auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.3f};
 
         clickable.add(Vector3{system.pos.x, 0.0f, system.pos.y});
         galaxy.systemsOrdered.push_back(&system);
@@ -360,6 +410,8 @@ void ViewGalaxy::createEntitiesRegions() {
             auto* lines = linesMap.at(region->second.id);
             lines->add(system.pos, other->second.pos, connectionColor);
         }
+
+        names.add(Vector3{system.pos.x, 0.0f, system.pos.y}, system.name);
     }
 
     calculateBackground();
@@ -398,13 +450,13 @@ void ViewGalaxy::createBackground(const VoronoiResult& voronoi) {
 
     for (size_t i = 0; i < galaxy.systemsOrdered.size(); i++) {
         const auto& cell = voronoi.cells[i];
-        const auto& system = galaxy.systemsOrdered[i];
+        const auto* system = galaxy.systemsOrdered[i];
 
-        Color4 cellColor = hsvToRgb(Vector4{0.0f, 0.0f, 0.2f, 0.1f});
+        Color4 cellColor = hsvToRgb(Vector4{0.0f, 0.0f, 0.2f, 0.2f});
 
         if (system->factionId) {
             const auto& faction = factions[system->factionId.value()];
-            cellColor = hsvToRgb(Vector4{faction.color, 0.6f, 0.2f, 0.1f});
+            cellColor = hsvToRgb(Vector4{faction.color, 0.6f, 0.2f, 0.2f});
         }
 
         for (const auto& triangle : cell) {

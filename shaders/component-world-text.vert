@@ -16,10 +16,16 @@ layout(push_constant) uniform Uniforms {
 } uniforms;
 
 layout(location = 0) in vec3 in_Position;
-layout(location = 1) in vec4 in_Color;
+layout(location = 1) in vec2 in_Offset;
+layout(location = 2) in vec2 in_Size;
+layout(location = 3) in vec2 in_Uv;
+layout(location = 4) in vec2 in_St;
 
 layout(location = 0) out VS_OUT {
-    vec4 color;
+    vec2 size;
+    vec2 offset;
+    vec2 uv;
+    vec2 st;
 } vs_out;
 
 out gl_PerVertex {
@@ -27,7 +33,10 @@ out gl_PerVertex {
 };
 
 void main() {
-    vs_out.color = in_Color * uniforms.color;
+    vs_out.size = in_Size;
+    vs_out.offset = in_Offset;
+    vs_out.uv = in_Uv;
+    vs_out.st = in_St;
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
     gl_Position = camera.transformationProjectionMatrix * worldPos;
 }

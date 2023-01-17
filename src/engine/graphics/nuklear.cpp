@@ -296,6 +296,15 @@ void Nuklear::eventCharTyped(uint32_t code) {
     inputEvents.emplace_back([=]() { nk_input_unicode(ctx.get(), code); });
 }
 
+bool Nuklear::isCursorInsideWindow(const Vector2i& mousePos) const {
+    for (const auto& [pos, size] : windowsBounds) {
+        if (mousePos.x > pos.x && mousePos.x < pos.x + size.x && mousePos.y > pos.y && mousePos.y < pos.y + size.y) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static nk_color HEX(const uint32_t v) {
     return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
 }

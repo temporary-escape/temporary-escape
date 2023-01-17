@@ -35,7 +35,7 @@ public:
     void setOnBlurCallback(std::function<void()> fn) {
         onBlurCallback = std::move(fn);
     }
-    void setOnClickCallback(std::function<void(size_t, MouseButton)> fn) {
+    void setOnClickCallback(std::function<void(size_t, bool, MouseButton)> fn) {
         onClickCallback = std::move(fn);
     }
 
@@ -63,7 +63,7 @@ private:
 
     std::function<void(size_t)> onHoverCallback;
     std::function<void()> onBlurCallback;
-    std::function<void(size_t, MouseButton)> onClickCallback;
+    std::function<void(size_t, bool, MouseButton)> onClickCallback;
     bool blur{false};
 };
 } // namespace Engine

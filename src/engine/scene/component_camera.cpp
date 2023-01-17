@@ -120,6 +120,8 @@ void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
 void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
     if (isOrthographic()) {
         if (panFlag) {
+            panning = true;
+
             const auto from = screenToWorld(mousePosOld);
             const auto to = screenToWorld(pos);
 
@@ -155,6 +157,7 @@ void ComponentCamera::eventMouseReleased(const Vector2i& pos, const MouseButton 
     if (isOrthographic()) {
         if (button == MouseButton::Right) {
             panFlag = false;
+            panning = false;
         }
     } else {
         if (button == MouseButton::Right) {

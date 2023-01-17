@@ -101,12 +101,18 @@ void ComponentClickablePoints::eventMousePressed(const Vector2i& pos, MouseButto
     const auto point = findNearestPoint(pos);
     if (point) {
         if (onClickCallback) {
-            onClickCallback(*point, button);
+            onClickCallback(*point, true, button);
         }
     }
 }
 
 void ComponentClickablePoints::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    const auto point = findNearestPoint(pos);
+    if (point) {
+        if (onClickCallback) {
+            onClickCallback(*point, false, button);
+        }
+    }
 }
 
 void ComponentClickablePoints::eventMouseScroll(int xscroll, int yscroll) {

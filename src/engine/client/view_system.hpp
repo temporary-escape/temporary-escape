@@ -4,8 +4,6 @@
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
-#include "../gui/gui_context_menu.hpp"
-#include "../gui/gui_modal_loading.hpp"
 #include "../scene/scene.hpp"
 #include "../server/world.hpp"
 #include "../utils/stop_token.hpp"
@@ -16,11 +14,10 @@ class Client;
 
 class ViewSystem : public View {
 public:
-    explicit ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client);
+    explicit ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
-    void render(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -30,6 +27,9 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
+    const Renderer::Options& getRenderOptions() override;
+    Scene& getRenderScene() override;
+    const Skybox& getRenderSkybox() override;
 
     void load();
 
@@ -43,9 +43,9 @@ private:
     const SystemData* rayCast(const Vector2& mousePos);
 
     const Config& config;
-    Renderer& renderer;
     Registry& registry;
     Client& client;
+    Gui& gui;
     Skybox skybox;
     Scene scene;
     ComponentCamera* camera{nullptr};
@@ -76,13 +76,6 @@ private:
         const SystemData* hover{nullptr};
         const SystemData* selected{nullptr};
     } input;
-
-    struct {
-        GuiModalLoading modalLoading{"System Map"};
-        GuiContextMenu contextMenu;
-
-        Vector2i oldMousePos;
-    } gui;
 
     bool loading{false};
     float loadingValue{0.0f};

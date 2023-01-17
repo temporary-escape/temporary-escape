@@ -12,11 +12,11 @@ class Client;
 
 class ViewSpace : public View {
 public:
-    explicit ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client);
+    explicit ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client,
+                       Gui& gui);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
-    void render(const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -26,12 +26,15 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
+    const Renderer::Options& getRenderOptions() override;
+    Scene& getRenderScene() override;
+    const Skybox& getRenderSkybox() override;
 
 private:
     const Config& config;
-    Renderer& renderer;
     Registry& registry;
     Skybox& skyboxSystem;
     Client& client;
+    Gui& gui;
 };
 } // namespace Engine

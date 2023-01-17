@@ -9,7 +9,7 @@ Application::Application(const Config& config) :
     VulkanRenderer{config},
     config{config},
     canvas{*this},
-    font{*this, config.fontsPath, "iosevka-aile", 42.0f},
+    font{*this, config.fontsPath, "iosevka-aile", config.guiFontSize * 2.0f},
     nuklear{canvas, font, config.guiFontSize} {
 
     gui.mainMenu.setItems({
@@ -110,7 +110,7 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         Log::i(CMP, "Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, *client);
+        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
     } else {
         NEXT(createRegistry());
     }
@@ -255,7 +255,7 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, canvas, *shaderModules, *voxelShapeCache, font);
+    renderer = std::make_unique<Renderer>(config, *this, canvas, nuklear, *shaderModules, *voxelShapeCache, font);
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createRegistry());
@@ -322,29 +322,32 @@ void Application::startSinglePlayer() {
 }
 
 void Application::eventMouseMoved(const Vector2i& pos) {
+    mousePos = pos;
     nuklear.eventMouseMoved(pos);
-    if (game) {
+    if (game && !nuklear.isCursorInsideWindow(pos)) {
         game->eventMouseMoved(pos);
     }
 }
 
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
+    mousePos = pos;
     nuklear.eventMousePressed(pos, button);
-    if (game) {
+    if (game && !nuklear.isCursorInsideWindow(pos)) {
         game->eventMousePressed(pos, button);
     }
 }
 
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+    mousePos = pos;
     nuklear.eventMouseReleased(pos, button);
-    if (game) {
+    if (game && !nuklear.isCursorInsideWindow(pos)) {
         game->eventMouseReleased(pos, button);
     }
 }
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
     nuklear.eventMouseScroll(xscroll, yscroll);
-    if (game) {
+    if (game && !nuklear.isCursorInsideWindow(mousePos)) {
         game->eventMouseScroll(xscroll, yscroll);
     }
 }

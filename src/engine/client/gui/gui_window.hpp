@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../graphics/nuklear.hpp"
+#include "../../graphics/nuklear.hpp"
 
 namespace Engine {
 class ENGINE_API GuiWindow : public NuklearWindow {
@@ -24,6 +24,7 @@ public:
     void setNoScrollbar();
     void setDynamic();
     void setFontSize(int size);
+    bool isCursorInside(const Vector2i& mousePos);
 
     bool isEnabled() const {
         return enabled;

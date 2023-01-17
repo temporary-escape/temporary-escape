@@ -1,26 +1,33 @@
 #include "view_space.hpp"
-#include "../graphics/renderer.hpp"
 #include "client.hpp"
 
 #define CMP "ViewSpace"
 
 using namespace Engine;
 
-ViewSpace::ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client) :
-    config{config}, renderer{renderer}, registry{registry}, skyboxSystem{skybox}, client{client} {
+ViewSpace::ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client,
+                     Gui& gui) :
+    config{config}, registry{registry}, skyboxSystem{skybox}, client{client}, gui{gui} {
 }
 
 void ViewSpace::update(const float deltaTime) {
 }
 
-void ViewSpace::render(const Vector2i& viewport) {
+const Renderer::Options& ViewSpace::getRenderOptions() {
+    static Renderer::Options options{};
+    return options;
+}
+
+Scene& ViewSpace::getRenderScene() {
     auto scene = client.getScene();
     if (!scene) {
         EXCEPTION("No scene present!");
     }
+    return *scene;
+}
 
-    Renderer::Options options{};
-    renderer.render(viewport, *scene, skyboxSystem, options);
+const Skybox& ViewSpace::getRenderSkybox() {
+    return skyboxSystem;
 }
 
 void ViewSpace::onEnter() {

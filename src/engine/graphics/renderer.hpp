@@ -5,12 +5,14 @@
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "canvas.hpp"
+#include "nuklear.hpp"
 #include "shader.hpp"
 #include "shaders/shader_brdf.hpp"
 #include "shaders/shader_component_debug.hpp"
 #include "shaders/shader_component_grid.hpp"
 #include "shaders/shader_component_point_cloud.hpp"
 #include "shaders/shader_component_poly_shape.hpp"
+#include "shaders/shader_component_world_text.hpp"
 #include "shaders/shader_pass_bloom_blur.hpp"
 #include "shaders/shader_pass_bloom_combine.hpp"
 #include "shaders/shader_pass_bloom_extract.hpp"
@@ -31,11 +33,12 @@ public:
         bool bloomEnabled{true};
     };
 
-    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, ShaderModules& shaderModules,
-                      VoxelShapeCache& voxelShapeCache, FontFamily& font);
+    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, Nuklear& nuklear,
+                      ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font);
     ~Renderer();
 
-    void render(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
+    void render(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options,
+                NuklearWindow& nuklearWindow);
 
     VulkanRenderer& getVulkan() {
         return vulkan;
@@ -78,8 +81,8 @@ private:
     void renderPassCompute(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderPassPbr(const Vector2i& viewport, Scene& scene, const Options& options);
     void renderPassSsao(const Vector2i& viewport, Scene& scene, const Options& options);
-    void renderPassLighting(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
-    void renderPassForward(const Vector2i& viewport, Scene& scene, Skybox& skybox, const Options& options);
+    void renderPassLighting(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options);
+    void renderPassForward(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options);
     void renderPassFxaa(const Vector2i& viewport);
     void renderPassBloomExtract();
     void renderPassBloomBlur();
@@ -87,7 +90,9 @@ private:
     void renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& options);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     void renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void renderSceneForwardNonHDR(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     void renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void renderNuklear(VulkanCommandBuffer& vkb, const Vector2i& viewport, NuklearWindow& nuklearWindow);
 
     template <typename T>
     void collectForRender(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
@@ -112,8 +117,10 @@ private:
                             ComponentLines& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentPolyShape& component);
-    void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
-    void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, Skybox& skybox);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentWorldText& component);
+    void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
+    void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
     void transitionDepthForReadOnlyOptimal();
     void transitionForWrite(VulkanCommandBuffer& vkb, size_t idx);
     VkFormat findDepthFormat();
@@ -123,6 +130,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     Canvas& canvas;
+    Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
     FontFamily& font;
     Vector2i lastViewportSize;
@@ -148,6 +156,7 @@ private:
         ShaderComponentLines componentLines;
         ShaderPositionFeedback positionFeedback;
         ShaderComponentPolyShape componentPolyShape;
+        ShaderComponentWorldText componentWorldText;
     } shaders;
 
     struct {

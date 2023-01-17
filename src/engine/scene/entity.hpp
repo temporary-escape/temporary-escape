@@ -23,6 +23,7 @@
 #include "component_text.hpp"
 #include "component_turret.hpp"
 #include "component_user_input.hpp"
+#include "component_world_text.hpp"
 #include <entt/core/ident.hpp>
 #include <entt/entity/view.hpp>
 #include <iostream>
@@ -36,7 +37,7 @@ using EntityComponentIds =
     entt::identifier<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                      ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
                      ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
-                     ComponentText>;
+                     ComponentText, ComponentWorldText>;
 
 class ENGINE_API Entity {
 public:

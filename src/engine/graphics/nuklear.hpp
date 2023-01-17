@@ -74,6 +74,8 @@ public:
         return lastViewportValue;
     }
 
+    bool isCursorInsideWindow(const Vector2i& mousePos) const;
+
 private:
     void applyTheme();
     void input();

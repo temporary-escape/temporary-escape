@@ -1,14 +1,13 @@
 #include "view_build.hpp"
-#include "../graphics/renderer.hpp"
 
 #define CMP "ViewBuild"
 
 using namespace Engine;
 
-ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry) :
+ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui) :
     config{config},
-    renderer{renderer},
     registry{registry},
+    gui{gui},
     skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}},
     scene{} {
 
@@ -81,12 +80,6 @@ void ViewBuild::update(const float deltaTime) {
     scene.update(deltaTime);*/
 }
 
-void ViewBuild::render(const Vector2i& viewport) {
-    /*Renderer::Options options{};
-    options.blurStrength = 0.2f;
-    renderer.render(viewport, scene, skybox, options);*/
-}
-
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 
@@ -128,4 +121,17 @@ void ViewBuild::onEnter() {
 }
 
 void ViewBuild::onExit() {
+}
+
+const Renderer::Options& ViewBuild::getRenderOptions() {
+    static Renderer::Options options{};
+    return options;
+}
+
+Scene& ViewBuild::getRenderScene() {
+    return scene;
+}
+
+const Skybox& ViewBuild::getRenderSkybox() {
+    return skybox;
 }

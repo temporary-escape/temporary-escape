@@ -24,7 +24,7 @@ class ENGINE_API TransactionalDatabase;
 class ENGINE_API Game : public UserInput {
 public:
     explicit Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear,
-                  SkyboxGenerator& skyboxGenerator, Registry& registry, Client& client);
+                  SkyboxGenerator& skyboxGenerator, Registry& registry, FontFamily& font, Client& client);
     virtual ~Game();
 
     void update(float deltaTime);
@@ -45,7 +45,9 @@ private:
     Nuklear& nuklear;
     SkyboxGenerator& skyboxGenerator;
     Registry& registry;
+    FontFamily& font;
     Client& client;
+    Gui gui;
     Stats stats;
     Skybox skybox;
     uint64_t skyboxSeed{0};

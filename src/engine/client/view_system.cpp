@@ -1,5 +1,4 @@
 #include "view_system.hpp"
-#include "../graphics/renderer.hpp"
 #include "../graphics/theme.hpp"
 #include "client.hpp"
 
@@ -50,11 +49,11 @@ static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, 
     return lines;
 }
 
-ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client) :
+ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui) :
     config{config},
-    renderer{renderer},
     registry{registry},
     client{client},
+    gui{gui},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
     scene{} {
 
@@ -75,43 +74,24 @@ ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& regis
     camera->lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
     camera->setZoomRange(3.0f, 250.0f);
     scene.setPrimaryCamera(cameraEntity);
-
-    gui.contextMenu.setEnabled(false);
 }
 
 void ViewSystem::update(const float deltaTime) {
     scene.update(deltaTime);
 }
 
-void ViewSystem::render(const Vector2i& viewport) {
-    /*Renderer::Options options{};
-    options.blurStrength = 0.0f;
-    options.exposure = 1.0f;
-    renderer.render(viewport, scene, skybox, options);*/
-}
-
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
-
-    if (!gui.contextMenu.isEnabled()) {
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera->getViewport().y) - pos.y});
-    }
 }
 
 void ViewSystem::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     scene.eventMousePressed(pos, button);
-    gui.oldMousePos = pos;
-
-    if (button == MouseButton::Right && gui.contextMenu.isEnabled()) {
-        gui.contextMenu.setEnabled(false);
-        input.hover = rayCast(Vector2{pos.x, static_cast<float>(camera->getViewport().y) - pos.y});
-    }
 }
 
 void ViewSystem::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     scene.eventMouseReleased(pos, button);
 
-    if (button == MouseButton::Right && input.hover && !gui.contextMenu.isEnabled() && gui.oldMousePos == pos) {
+    /*if (button == MouseButton::Right && input.hover && !gui.contextMenu.isEnabled() && gui.oldMousePos == pos) {
         gui.contextMenu.setPos(camera->worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true));
         gui.contextMenu.setEnabled(true);
         gui.contextMenu.setItems({
@@ -120,7 +100,7 @@ void ViewSystem::eventMouseReleased(const Vector2i& pos, const MouseButton butto
             {"Info", [this]() { gui.contextMenu.setEnabled(false); }},
             {"Add notes", [this]() { gui.contextMenu.setEnabled(false); }},
         });
-    }
+    }*/
 }
 
 void ViewSystem::eventMouseScroll(const int xscroll, const int yscroll) {
@@ -139,6 +119,20 @@ void ViewSystem::eventCharTyped(const uint32_t code) {
     scene.eventCharTyped(code);
 }
 
+const Renderer::Options& ViewSystem::getRenderOptions() {
+    static Renderer::Options options{};
+    options.bloomEnabled = false;
+    return options;
+}
+
+Scene& ViewSystem::getRenderScene() {
+    return scene;
+}
+
+const Skybox& ViewSystem::getRenderSkybox() {
+    return skybox;
+}
+
 void ViewSystem::load() {
     loading = true;
     loadingValue = 0.1f;
@@ -147,9 +141,6 @@ void ViewSystem::load() {
 
     // Reset entities
     clearEntities();
-
-    // Reset gui
-    gui.contextMenu.setEnabled(false);
 
     // Cancel previous load sequence
     stopToken.stop();

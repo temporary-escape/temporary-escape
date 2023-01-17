@@ -13,6 +13,7 @@ public:
 
     struct Uniforms {
         Matrix4 modelMatrix;
+        Color4 color;
     } __attribute__((aligned(16)));
 
     ShaderComponentLines() = default;
