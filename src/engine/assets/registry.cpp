@@ -60,6 +60,10 @@ void Registry::findAssets() {
         for (const auto& path : paths) {
             init(blocks, config.assetsPath / "base" / "blocks", {".yml", ".yaml"});
         }
+
+        for (const auto& path : paths) {
+            init(planetTypes, config.assetsPath / "base" / "planets", {".yml", ".yaml"});
+        }
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize registry");
     }

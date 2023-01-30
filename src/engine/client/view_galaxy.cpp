@@ -2,6 +2,7 @@
 #include "../graphics/theme.hpp"
 #include "../math/convex_hull.hpp"
 #include "client.hpp"
+#include "game.hpp"
 
 #define CMP "ViewGalaxy"
 
@@ -10,8 +11,9 @@ using namespace Engine;
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
-ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui,
-                       FontFamily& font) :
+ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
+                       Gui& gui, FontFamily& font) :
+    parent{parent},
     config{config},
     registry{registry},
     client{client},
@@ -37,7 +39,7 @@ ViewGalaxy::ViewGalaxy(const Config& config, Renderer& renderer, Registry& regis
         auto& camera = entity->addComponent<ComponentCamera>(transform);
         entity->addComponent<ComponentUserInput>(camera);
         camera.setOrthographic(25.0f);
-        camera.lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+        camera.lookAt({0.0f, 10.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
         camera.setZoomRange(3.0f, 250.0f);
         scene.setPrimaryCamera(entity);
 
@@ -317,7 +319,7 @@ void ViewGalaxy::createEntitiesRegions() {
         gui.contextMenu.setEnabled(true);
         gui.contextMenu.setPos(viewPos);
         gui.contextMenu.setItems({
-            {"View", [this]() {}},
+            {"View", [this, system]() { parent.switchToSystemMap(system->galaxyId, system->id); }},
             {"Info", [this]() {}},
             {"Note", [this]() {}},
             {"Set Destination", [this]() {}},

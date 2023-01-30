@@ -19,9 +19,9 @@ Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nu
     gui{config},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
-    viewSpace = std::make_unique<ViewSpace>(config, renderer, registry, skybox, client, gui);
-    viewGalaxy = std::make_unique<ViewGalaxy>(config, renderer, registry, client, gui, font);
-    viewSystem = std::make_unique<ViewSystem>(config, renderer, registry, client, gui);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client, gui);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, registry, client, gui, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, gui);
     view = viewSpace.get();
 }
 
@@ -62,6 +62,39 @@ void Game::eventMouseMoved(const Vector2i& pos) {
     }
 }
 
+void Game::switchToGalaxyMap() {
+    if (view != viewGalaxy.get()) {
+        Log::i(CMP, "Switching to galaxy map scene...");
+        view = viewGalaxy.get();
+        viewGalaxy->load();
+    } else {
+        Log::i(CMP, "Switching to space scene...");
+        view = viewSpace.get();
+    }
+}
+
+void Game::switchToSystemMap() {
+    if (view != viewSystem.get()) {
+        Log::i(CMP, "Switching to system map scene...");
+        view = viewSystem.get();
+        viewSystem->load();
+    } else {
+        Log::i(CMP, "Switching to system scene...");
+        view = viewSpace.get();
+    }
+}
+
+void Game::switchToSystemMap(const std::string& galaxyId, const std::string& systemId) {
+    if (view != viewSystem.get()) {
+        Log::i(CMP, "Switching to system map scene...");
+        view = viewSystem.get();
+        viewSystem->load(galaxyId, systemId);
+    } else {
+        Log::i(CMP, "Switching to system scene...");
+        view = viewSpace.get();
+    }
+}
+
 void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
         gui.contextMenu.setEnabled(false);
@@ -90,23 +123,9 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
     }
 
     if (config.input.galaxyMapToggle(key, modifiers)) {
-        if (view != viewGalaxy.get()) {
-            Log::i(CMP, "Switching to galaxy map scene...");
-            view = viewGalaxy.get();
-            viewGalaxy->load();
-        } else {
-            Log::i(CMP, "Switching to space scene...");
-            view = viewSpace.get();
-        }
+        switchToGalaxyMap();
     } else if (config.input.systemMapToggle(key, modifiers)) {
-        if (view != viewSystem.get()) {
-            Log::i(CMP, "Switching to system map scene...");
-            view = viewSystem.get();
-            viewSystem->load();
-        } else {
-            Log::i(CMP, "Switching to system scene...");
-            view = viewSpace.get();
-        }
+        switchToSystemMap();
     }
 }
 

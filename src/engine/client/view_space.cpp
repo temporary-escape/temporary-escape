@@ -5,9 +5,9 @@
 
 using namespace Engine;
 
-ViewSpace::ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client,
-                     Gui& gui) :
-    config{config}, registry{registry}, skyboxSystem{skybox}, client{client}, gui{gui} {
+ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
+                     Client& client, Gui& gui) :
+    parent{parent}, config{config}, registry{registry}, skyboxSystem{skybox}, client{client}, gui{gui} {
 }
 
 void ViewSpace::update(const float deltaTime) {

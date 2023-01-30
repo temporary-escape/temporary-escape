@@ -6,11 +6,6 @@
 namespace Engine {
 class Gui : public NuklearWindow {
 public:
-    struct ButtonItem {
-        std::string label;
-        std::function<void()> callback;
-    };
-
     explicit Gui(const Config& config);
 
     void draw(Nuklear& nuklear, const Vector2& viewport) override;

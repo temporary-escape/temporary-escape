@@ -10,6 +10,7 @@
 #include "shaders/shader_brdf.hpp"
 #include "shaders/shader_component_debug.hpp"
 #include "shaders/shader_component_grid.hpp"
+#include "shaders/shader_component_planet_surface.hpp"
 #include "shaders/shader_component_point_cloud.hpp"
 #include "shaders/shader_component_poly_shape.hpp"
 #include "shaders/shader_component_world_text.hpp"
@@ -60,6 +61,7 @@ private:
 
     void createFullScreenQuad();
     void createSkyboxMesh();
+    void createPlanetMesh();
     void createRenderPasses();
     void createRenderPassBrdf();
     void createRenderPassPbr();
@@ -119,6 +121,8 @@ private:
                             ComponentPolyShape& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentWorldText& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentPlanet& component);
     void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
     void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
     void transitionDepthForReadOnlyOptimal();
@@ -157,6 +161,7 @@ private:
         ShaderPositionFeedback positionFeedback;
         ShaderComponentPolyShape componentPolyShape;
         ShaderComponentWorldText componentWorldText;
+        ShaderComponentPlanetSurface componentPlanetSurface;
     } shaders;
 
     struct {
@@ -186,6 +191,7 @@ private:
     struct {
         RenderPassMesh fullScreenQuad;
         RenderPassMesh skybox;
+        RenderPassMesh planet;
     } meshes;
 
     struct {

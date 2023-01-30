@@ -6,6 +6,36 @@
 
 using namespace Engine;
 
+void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) {
+    if (filtering) {
+        if (filtering->minification == Filtering::Linear) {
+            textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+        } else if (filtering->minification == Filtering::Nearest) {
+            textureInfo.sampler.minFilter = VK_FILTER_NEAREST;
+        }
+
+        if (filtering->magnification == Filtering::Linear) {
+            textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+        } else if (filtering->magnification == Filtering::Nearest) {
+            textureInfo.sampler.magFilter = VK_FILTER_NEAREST;
+        }
+    }
+
+    if (wrapping) {
+        if (wrapping->vertical == Wrapping::Repeat) {
+            textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        } else if (wrapping->horizontal == Wrapping::ClampToEdge) {
+            textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        }
+
+        if (wrapping->horizontal == Wrapping::Repeat) {
+            textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        } else if (wrapping->horizontal == Wrapping::ClampToEdge) {
+            textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        }
+    }
+}
+
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
@@ -50,6 +80,7 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
         textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
         textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+
         textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -60,6 +91,8 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
         textureInfo.sampler.compareEnable = VK_FALSE;
         textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
         textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        options.apply(textureInfo);
 
         auto hasAlpha = false;
 

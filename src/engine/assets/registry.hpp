@@ -6,6 +6,7 @@
 #include "image_atlas.hpp"
 #include "mod_manifest.hpp"
 #include "model.hpp"
+#include "planet_type.hpp"
 #include "texture.hpp"
 #include "voxel_shape_cache.hpp"
 #include <mutex>
@@ -83,6 +84,10 @@ public:
         return models;
     }
 
+    const Category<PlanetType>& getPlanetTypes() const {
+        return planetTypes;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -147,6 +152,7 @@ private:
     Category<Block> blocks;
     Category<Image> images;
     Category<Model> models;
+    Category<PlanetType> planetTypes;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

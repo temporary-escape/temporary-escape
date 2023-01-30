@@ -16,10 +16,6 @@ public:
     enum class Filtering {
         Linear,
         Nearest,
-        LinearMipMapLinear,
-        LinearMipMapNearest,
-        NearestMipMapLinear,
-        NearestMipMapNearest,
     };
 
     struct Options {
@@ -42,6 +38,8 @@ public:
         std::optional<OptionsWrapping> wrapping;
 
         YAML_DEFINE(isArray, filtering, wrapping);
+
+        void apply(VulkanTexture::CreateInfo& textureInfo);
     };
 
     explicit Texture(std::string name, Path path);
@@ -75,8 +73,7 @@ template <> struct Yaml::Adaptor<TexturePtr> {
 
 YAML_DEFINE_ENUM(Texture::Wrapping, ClampToEdge, Repeat);
 
-YAML_DEFINE_ENUM(Texture::Filtering, Linear, Nearest, LinearMipMapLinear, LinearMipMapNearest, NearestMipMapLinear,
-                 NearestMipMapNearest);
+YAML_DEFINE_ENUM(Texture::Filtering, Linear, Nearest);
 } // namespace Engine
 
 namespace msgpack {

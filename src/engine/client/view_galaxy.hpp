@@ -12,12 +12,13 @@
 #include "view.hpp"
 
 namespace Engine {
-class Client;
+class ENGINE_API Client;
+class ENGINE_API Game;
 
-class ViewGalaxy : public View {
+class ENGINE_API ViewGalaxy : public View {
 public:
-    explicit ViewGalaxy(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui,
-                        FontFamily& font);
+    explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
+                        Gui& gui, FontFamily& font);
     ~ViewGalaxy() = default;
 
     void update(float deltaTime) override;
@@ -48,6 +49,7 @@ private:
     void calculateBackground();
     void createBackground(const VoronoiResult& voronoi);
 
+    Game& parent;
     const Config& config;
     Registry& registry;
     Client& client;

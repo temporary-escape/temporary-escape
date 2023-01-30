@@ -10,11 +10,13 @@
 #include "view.hpp"
 
 namespace Engine {
-class Client;
+class ENGINE_API Client;
+class ENGINE_API Game;
 
-class ViewSystem : public View {
+class ENGINE_API ViewSystem : public View {
 public:
-    explicit ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui);
+    explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
+                        Gui& gui);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -32,8 +34,10 @@ public:
     const Skybox& getRenderSkybox() override;
 
     void load();
+    void load(const std::string& galaxyId, const std::string& systemId);
 
 private:
+    void clear();
     void fetchCurrentLocation(const StopToken& stop);
     void fetchSectors(const StopToken& stop, const std::string& token);
     void fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token);
@@ -42,6 +46,7 @@ private:
     void createEntitiesPlanets();
     const SystemData* rayCast(const Vector2& mousePos);
 
+    Game& parent;
     const Config& config;
     Registry& registry;
     Client& client;
@@ -63,8 +68,8 @@ private:
     } system;
 
     struct {
-        EntityPtr iconPointCloud;
-        EntityPtr orbitalRings;
+        std::vector<EntityPtr> planets;
+        EntityPtr labels;
     } entities;
 
     struct {

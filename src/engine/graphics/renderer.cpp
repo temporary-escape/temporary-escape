@@ -22,6 +22,7 @@ Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas,
 
     createGaussianKernel(15, 4.5);
     createFullScreenQuad();
+    createPlanetMesh();
     createSkyboxMesh();
     createSsaoNoise();
     createSsaoSamples();
@@ -246,6 +247,76 @@ void Renderer::createSkyboxMesh() {
     meshes.skybox.count = indices.size();
 }
 
+void Renderer::createPlanetMesh() {
+    static const auto pi = 3.14159265358979323846f;
+    static const auto pi2 = 1.57079632679489661923f;
+
+    using Vertex = ShaderComponentPlanetSurface::Vertex;
+
+    static_assert(sizeof(Vertex) == 6 * sizeof(float), "Size of Vertex struct must be 6 floats");
+
+    // Source: https://stackoverflow.com/a/5989676
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
+
+    static const auto radius = 0.5f;
+    static const auto rings = 32;
+    static const auto sectors = 64;
+
+    const auto R = 1.0f / static_cast<float>(rings - 1);
+    const auto S = 1.0f / static_cast<float>(sectors - 1);
+
+    vertices.resize(rings * sectors);
+    indices.resize(rings * sectors * 6);
+
+    auto v = vertices.begin();
+    for (auto r = 0; r < rings; r++)
+        for (auto s = 0; s < sectors; s++) {
+            float const y = std::sin(-pi2 + pi * r * R);
+            float const x = std::cos(2 * pi * s * S) * std::sin(pi * r * R);
+            float const z = std::sin(2 * pi * s * S) * std::sin(pi * r * R);
+
+            *v++ = Vertex{Vector3{x, y, z} * radius, Vector3{x, y, z}};
+        }
+
+    auto i = indices.begin();
+    for (auto r = 0; r < rings; r++) {
+        for (auto s = 0; s < sectors; s++) {
+            *i++ = r * sectors + s;
+            *i++ = r * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + (s + 1);
+
+            *i++ = r * sectors + s;
+            *i++ = (r + 1) * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + s;
+        }
+    }
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(Vertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    meshes.planet.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(meshes.planet.vbo, vertices.data(), bufferInfo.size);
+
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(uint16_t) * indices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    meshes.planet.ibo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(meshes.planet.ibo, indices.data(), bufferInfo.size);
+
+    meshes.planet.indexType = VK_INDEX_TYPE_UINT16;
+    meshes.planet.count = indices.size();
+}
+
 void Renderer::createShaders(ShaderModules& shaderModules) {
     VulkanSemaphore::CreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -351,6 +422,12 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         vulkan,
         shaderModules,
         vulkan.getRenderPass(),
+    };
+    shaders.componentPlanetSurface = ShaderComponentPlanetSurface{
+        config,
+        vulkan,
+        shaderModules,
+        renderPasses.forward.renderPass,
     };
 }
 
@@ -1817,6 +1894,7 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& view
     collectForRender<ComponentPointCloud>(vkb, viewport, scene, jobs);
     collectForRender<ComponentLines>(vkb, viewport, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, viewport, scene, jobs);
+    collectForRender<ComponentPlanet>(vkb, viewport, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -2024,6 +2102,33 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
                       sizeof(ShaderComponentWorldText::Uniforms), &constants);
 
     renderMesh(vkb, mesh);
+}
+
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, ComponentPlanet& component) {
+    if (currentForwardShader != &shaders.componentPlanetSurface) {
+        currentForwardShader = &shaders.componentPlanetSurface;
+        vkb.bindPipeline(shaders.componentPlanetSurface.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 2> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+    bufferBindings[1] = {1, &directionalLights.ubo.getCurrentBuffer()};
+
+    std::array<VulkanTextureBinding, 1> textureBindings{};
+    textureBindings[0] = {2, &component.getPlanetType()->getTexture()->getVulkanTexture()};
+
+    vkb.bindDescriptors(shaders.componentPlanetSurface.getPipeline(),
+                        shaders.componentPlanetSurface.getDescriptorSetLayout(), bufferBindings, textureBindings);
+
+    ShaderComponentPlanetSurface::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    constants.normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(constants.modelMatrix)));
+    vkb.pushConstants(shaders.componentPlanetSurface.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponentPlanetSurface::Uniforms), &constants);
+
+    renderMesh(vkb, meshes.planet);
 }
 
 void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {

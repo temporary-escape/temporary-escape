@@ -49,12 +49,14 @@ static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, 
     return lines;
 }
 
-ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& registry, Client& client, Gui& gui) :
+ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
+                       Gui& gui) :
+    parent{parent},
     config{config},
     registry{registry},
     client{client},
     gui{gui},
-    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.01f, 0.01f, 0.01f, 1.0f}},
     scene{} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
@@ -63,7 +65,7 @@ ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& regis
     // To keep the renderer away from complaining
     auto sun = scene.createEntity();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 1.0f, 0.0f});
+    sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 0.0f, 1.0f});
 
     // Our primary camera
     auto cameraEntity = scene.createEntity();
@@ -71,7 +73,7 @@ ViewSystem::ViewSystem(const Config& config, Renderer& renderer, Registry& regis
     camera = &cameraEntity->addComponent<ComponentCamera>(cameraTransform);
     cameraEntity->addComponent<ComponentUserInput>(*camera);
     camera->setOrthographic(25.0f);
-    camera->lookAt({0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+    camera->lookAt({0.0f, 1000.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
     camera->setZoomRange(3.0f, 250.0f);
     scene.setPrimaryCamera(cameraEntity);
 }
@@ -133,7 +135,7 @@ const Skybox& ViewSystem::getRenderSkybox() {
     return skybox;
 }
 
-void ViewSystem::load() {
+void ViewSystem::clear() {
     loading = true;
     loadingValue = 0.1f;
     input.hover = nullptr;
@@ -144,9 +146,23 @@ void ViewSystem::load() {
 
     // Cancel previous load sequence
     stopToken.stop();
+}
+
+void ViewSystem::load() {
+    clear();
 
     stopToken = StopToken{};
     fetchCurrentLocation(stopToken);
+}
+
+void ViewSystem::load(const std::string& galaxyId, const std::string& systemId) {
+    clear();
+
+    location.galaxyId = galaxyId;
+    location.systemId = systemId;
+
+    stopToken = StopToken{};
+    fetchSectors(stopToken, "");
 }
 
 void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
@@ -220,7 +236,7 @@ void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::stri
 }
 
 void ViewSystem::updateSystem() {
-    Log::i(CMP, "Recreating system with {} objects", 0);
+    Log::i(CMP, "Recreating system with objects");
     loading = false;
     loadingValue = 1.0f;
 
@@ -229,14 +245,36 @@ void ViewSystem::updateSystem() {
 }
 
 void ViewSystem::clearEntities() {
-    scene.removeEntity(entities.iconPointCloud);
-    entities.iconPointCloud = nullptr;
+    for (auto& entity : entities.planets) {
+        scene.removeEntity(entity);
+    }
+    entities.planets.clear();
 
-    scene.removeEntity(entities.orbitalRings);
-    entities.orbitalRings = nullptr;
+    scene.removeEntity(entities.labels);
+    entities.labels.reset();
 }
 
 void ViewSystem::createEntitiesPlanets() {
+    static const Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
+
+    auto entity = scene.createEntity();
+    entity->addComponent<ComponentTransform>().move(Vector3{0.0f, 1.0f, 0.0f});
+    auto& icons = entity->addComponent<ComponentIconPointCloud>();
+
+    for (const auto& [bodyId, body] : system.bodies) {
+        entity = scene.createEntity();
+        entities.planets.push_back(entity);
+        entity->addComponent<ComponentTransform>().move(Vector3{body.pos.x, 0.0f, body.pos.y});
+        if (body.isMoon) {
+            icons.add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemMoon);
+        } else {
+            icons.add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemPlanet);
+            entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
+        }
+
+        entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
+    }
+
     /*entities.iconPointCloud = std::make_shared<Entity>();
     entities.orbitalRings = std::make_shared<Entity>();
 

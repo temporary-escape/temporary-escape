@@ -8,12 +8,13 @@
 #include "view.hpp"
 
 namespace Engine {
-class Client;
+class ENGINE_API Client;
+class ENGINE_API Game;
 
-class ViewSpace : public View {
+class ENGINE_API ViewSpace : public View {
 public:
-    explicit ViewSpace(const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox, Client& client,
-                       Gui& gui);
+    explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
+                       Client& client, Gui& gui);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -31,6 +32,7 @@ public:
     const Skybox& getRenderSkybox() override;
 
 private:
+    Game& parent;
     const Config& config;
     Registry& registry;
     Skybox& skyboxSystem;

@@ -38,6 +38,10 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventCharTyped(uint32_t code) override;
 
+    void switchToGalaxyMap();
+    void switchToSystemMap();
+    void switchToSystemMap(const std::string& galaxyId, const std::string& systemId);
+
 private:
     const Config& config;
     Renderer& renderer;
