@@ -35,10 +35,10 @@ namespace Engine {
 class ENGINE_API Scene;
 
 using EntityComponentIds =
-    entt::identifier<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
-                     ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
-                     ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
-                     ComponentText, ComponentWorldText, ComponentPlanet, Component2DShape>;
+    entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
+                ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
+                ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
+                ComponentText, ComponentWorldText, ComponentPlanet, Component2DShape>;
 
 class ENGINE_API Entity {
 public:
@@ -55,7 +55,7 @@ public:
     }
 
     template <typename T> bool hasComponent() {
-        const auto index = EntityComponentIds::type<T>;
+        const auto index = EntityComponentIds::value<T>;
         return (mask & (1 << index)) != 0;
     }
 
@@ -81,7 +81,7 @@ public:
         }
 
         auto& cmp = reg->template emplace<T>(handle, std::forward<Args>(args)...);
-        const auto index = EntityComponentIds::type<T>;
+        const auto index = EntityComponentIds::value<T>;
         mask |= 1 << index;
         return cmp;
     }

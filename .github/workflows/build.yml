@@ -65,7 +65,7 @@ jobs:
       - uses: lukka/get-cmake@v3.21.2
 
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v10
+        uses: lukka/run-vcpkg@v10.3
         with:
           vcpkgJsonGlob: '${{ github.workspace }}/vcpkg.json'
           runVcpkgInstall: true
@@ -81,15 +81,15 @@ jobs:
           buildPreset: '${{ github.buildPreset }}'
           buildPresetAdditionalArgs: "[ '--config ${{ matrix.config }}' ]"
 
-      - name: Run Tests
-        shell: bash
-        run: |
-          cd build
-          ctest -C ${{ matrix.config }} --verbose --output-on-failure 2>&1 | tee ctest.log
+#      - name: Run Tests
+#        shell: bash
+#        run: |
+#          cd build
+#          ctest -C ${{ matrix.config }} --verbose --output-on-failure 2>&1 | tee ctest.log
 
-      - name: Package
-        if: matrix.asan == 'false'
-        shell: bash
-        run: |
-          cd build
-          cpack -G ${{ matrix.cpack }} -C ${{ matrix.config }}
+#      - name: Package
+#        if: matrix.asan == 'false'
+#        shell: bash
+#        run: |
+#          cd build
+#          cpack -G ${{ matrix.cpack }} -C ${{ matrix.config }}

@@ -25,7 +25,7 @@
 #include <glslang/Include/ShHandle.h>
 #include <glslang/Public/ShaderLang.h>
 #include <string>
-//#include <glslang/OSDependent/osinclude.h>
+// #include <glslang/OSDependent/osinclude.h>
 #include "glsl_compiler.hpp"
 #include <glslang/SPIRV/GLSL.std.450.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
@@ -123,6 +123,15 @@ const TBuiltInResource defaultTBuiltInResource = {
     /* .MaxTaskWorkGroupSizeY_NV = */ 1,
     /* .MaxTaskWorkGroupSizeZ_NV = */ 1,
     /* .MaxMeshViewCountNV = */ 4,
+    /* .MaxMeshOutputVerticesEXT = */ 256,
+    /* .MaxMeshOutputPrimitivesEXT = */ 512,
+    /* .MaxMeshWorkGroupSizeX_EXT = */ 32,
+    /* .MaxMeshWorkGroupSizeY_EXT = */ 1,
+    /* .MaxMeshWorkGroupSizeZ_EXT = */ 1,
+    /* .MaxTaskWorkGroupSizeX_EXT = */ 32,
+    /* .MaxTaskWorkGroupSizeY_EXT = */ 1,
+    /* .MaxTaskWorkGroupSizeZ_EXT = */ 1,
+    /* .MaxMeshViewCountEXT = */ 4,
     /* .maxDualSourceDrawBuffersEXT = */ 1,
     /* .limits = */
     {
