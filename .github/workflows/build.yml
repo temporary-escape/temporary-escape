@@ -64,7 +64,6 @@ jobs:
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v10
-        id: runvcpkg
         with:
           vcpkgDirectory: '${{ runner.workspace }}/vcpkg'
           vcpkgJsonGlob: '${{ github.workspace }}/vcpkg.json'
@@ -73,13 +72,12 @@ jobs:
 
       - name: Configure and build
         uses: lukka/run-cmake@v10
-        id: runcmake
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           configurePreset: '${{ github.configurePreset }}'
-          configurePresetAdditionalArgs: [ '-DCMAKE_BUILD_TYPE=${{ matrix.config }}' ]
+          configurePresetAdditionalArgs: "[ '-DCMAKE_BUILD_TYPE=${{ matrix.config }}' ]"
           buildPreset: '${{ github.buildPreset }}'
-          buildPresetAdditionalArgs: [ '--config ${{ matrix.config }}' ]
+          buildPresetAdditionalArgs: "[ '--config ${{ matrix.config }}' ]"
 
       - name: Run Tests
         shell: bash
