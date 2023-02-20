@@ -23,14 +23,14 @@ jobs:
             cpack: 'ZIP'
             configurePreset: 'msbuild'
             buildPreset: 'msbuild - msbuild'
-            vcpkgCommitId: '1085a57da0725c19e19586025438e8c16f34c890'
+            vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
           - name: 'Build - Linux'
             os: ubuntu-latest
             config: 'Release'
             cpack: 'TGZ'
             configurePreset: 'ninja'
             buildPreset: 'ninja - ninja'
-            vcpkgCommitId: '1085a57da0725c19e19586025438e8c16f34c890'
+            vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
     #      - name: 'Build - Mac OSX'
     #        os: macos-latest
     #        config: 'Release'
