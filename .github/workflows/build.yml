@@ -75,14 +75,14 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          configurePreset: '${{ github.configurePreset }}'
+          configurePreset: '${{ matrix.configurePreset }}'
           configurePresetAdditionalArgs: "[ '-DCMAKE_BUILD_TYPE=${{ matrix.config }}' ]"
 
       - name: Build
         uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          buildPreset: '${{ github.buildPreset }}'
+          buildPreset: '${{ matrix.buildPreset }}'
           buildPresetAdditionalArgs: "[ '--config ${{ matrix.config }}' ]"
 
 #      - name: Run Tests
