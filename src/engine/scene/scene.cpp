@@ -254,10 +254,8 @@ Scene::~Scene() = default;
 }
 }*/
 
-EntityPtr Scene::createEntity() {
-    auto entity = std::make_shared<Entity>(reg);
-    entities.push_back(entity);
-    return entity;
+void Scene::addEntity(EntityPtr entity) {
+    entities.push_back(std::move(entity));
 
     /*if (entity->getId() == 0) {
         entity->setId(++nextId);

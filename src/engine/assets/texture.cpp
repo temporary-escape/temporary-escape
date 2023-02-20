@@ -34,6 +34,16 @@ void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) {
             textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         }
     }
+
+    if (type) {
+        if (type == Type::Texture1D) {
+            textureInfo.image.imageType = VK_IMAGE_TYPE_1D;
+            textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        } else if (type == Type::Texture2D) {
+            textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+            textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        }
+    }
 }
 
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {

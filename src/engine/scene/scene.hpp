@@ -42,7 +42,17 @@ public:
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
     void update(float delta);
     void removeEntity(const EntityPtr& entity);
-    EntityPtr createEntity();
+
+    EntityPtr createEntity() {
+        return createEntityOfType<Entity>();
+    }
+
+    template <typename T, typename... Args> std::shared_ptr<T> createEntityOfType(Args&&... args) {
+        auto entity = std::make_shared<T>(reg, std::forward<Args>(args)...);
+        addEntity(entity);
+        return entity;
+    }
+
     void addBullet(const Vector3& pos, const Vector3& dir);
     EntityPtr getEntityById(uint64_t id);
     const std::vector<Bullet>& getBulletsData() const {
@@ -86,6 +96,8 @@ public:
     ComponentCamera* getPrimaryCamera();
 
 private:
+    void addEntity(EntityPtr entity);
+
     struct BulletSystem {
         std::vector<Bullet> data;
         size_t next{0};

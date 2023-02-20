@@ -3,6 +3,7 @@
 #include "../library.hpp"
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
+#include "component_2d_shape.hpp"
 #include "component_camera.hpp"
 #include "component_clickable_points.hpp"
 #include "component_debug.hpp"
@@ -37,7 +38,7 @@ using EntityComponentIds =
     entt::identifier<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                      ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
                      ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
-                     ComponentText, ComponentWorldText, ComponentPlanet>;
+                     ComponentText, ComponentWorldText, ComponentPlanet, Component2DShape>;
 
 class ENGINE_API Entity {
 public:

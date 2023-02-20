@@ -1,0 +1,3 @@
+Credits: DubstepCoder
+Source: https://www.moddb.com/news/procedural-star-rendering
+Rescaled and modified by: Matus Novak

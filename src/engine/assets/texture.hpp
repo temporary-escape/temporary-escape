@@ -8,6 +8,11 @@
 namespace Engine {
 class ENGINE_API Texture : public Asset {
 public:
+    enum class Type {
+        Texture2D,
+        Texture1D,
+    };
+
     enum class Wrapping {
         ClampToEdge,
         Repeat,
@@ -34,10 +39,11 @@ public:
         };
 
         std::optional<bool> isArray;
+        std::optional<Type> type;
         std::optional<OptionsFiltering> filtering;
         std::optional<OptionsWrapping> wrapping;
 
-        YAML_DEFINE(isArray, filtering, wrapping);
+        YAML_DEFINE(isArray, type, filtering, wrapping);
 
         void apply(VulkanTexture::CreateInfo& textureInfo);
     };
@@ -74,6 +80,8 @@ template <> struct Yaml::Adaptor<TexturePtr> {
 YAML_DEFINE_ENUM(Texture::Wrapping, ClampToEdge, Repeat);
 
 YAML_DEFINE_ENUM(Texture::Filtering, Linear, Nearest);
+
+YAML_DEFINE_ENUM(Texture::Type, Texture1D, Texture2D);
 } // namespace Engine
 
 namespace msgpack {

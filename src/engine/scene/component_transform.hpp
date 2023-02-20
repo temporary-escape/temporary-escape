@@ -12,6 +12,7 @@ public:
     COMPONENT_DEFAULTS(ComponentTransform);
 
     void setParent(const std::shared_ptr<Entity>& entity);
+    void removeParent();
 
     [[nodiscard]] std::shared_ptr<Entity> getParent() const {
         return parent.lock();

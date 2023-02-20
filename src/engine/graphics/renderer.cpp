@@ -27,6 +27,7 @@ Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas,
     createSsaoNoise();
     createSsaoSamples();
     createRenderPasses();
+    createCircleMesh();
     createShaders(shaderModules);
 
     renderBrdf();
@@ -317,6 +318,31 @@ void Renderer::createPlanetMesh() {
     meshes.planet.count = indices.size();
 }
 
+void Renderer::createCircleMesh() {
+    std::vector<ShaderComponent2DShape::Vertex> vertices;
+    vertices.resize(1024 + 1);
+
+    const float step = 360.0f / static_cast<float>(vertices.size() - 1);
+
+    for (size_t i = 0; i < vertices.size(); i++) {
+        const float angle = static_cast<float>(i) * step;
+
+        vertices[i].position = glm::rotate(Vector3{1.0f, 0.0f, 0.0f}, glm::radians(angle), Vector3{0.0f, 1.0f, 0.0f});
+    }
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ShaderComponent2DShape::Vertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    meshes.circle.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(meshes.circle.vbo, vertices.data(), bufferInfo.size);
+    meshes.circle.count = vertices.size();
+}
+
 void Renderer::createShaders(ShaderModules& shaderModules) {
     VulkanSemaphore::CreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -424,6 +450,12 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         vulkan.getRenderPass(),
     };
     shaders.componentPlanetSurface = ShaderComponentPlanetSurface{
+        config,
+        vulkan,
+        shaderModules,
+        renderPasses.forward.renderPass,
+    };
+    shaders.component2DShape = ShaderComponent2DShape{
         config,
         vulkan,
         shaderModules,
@@ -1162,8 +1194,13 @@ void Renderer::renderMesh(VulkanCommandBuffer& vkb, RenderPassMesh& mesh) {
     std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
     vboBindings[0] = {&mesh.vbo, 0};
     vkb.bindBuffers(vboBindings);
-    vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
-    vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+
+    if (mesh.ibo) {
+        vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
+        vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+    } else {
+        vkb.draw(mesh.count, 1, 0, 0);
+    }
 }
 
 void Renderer::renderBrdf() {
@@ -1895,6 +1932,7 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& view
     collectForRender<ComponentLines>(vkb, viewport, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, viewport, scene, jobs);
     collectForRender<ComponentPlanet>(vkb, viewport, scene, jobs);
+    collectForRender<Component2DShape>(vkb, viewport, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -2129,6 +2167,38 @@ void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamer
                       sizeof(ShaderComponentPlanetSurface::Uniforms), &constants);
 
     renderMesh(vkb, meshes.planet);
+}
+
+void Renderer::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                  ComponentTransform& transform, Component2DShape& component) {
+    if (currentForwardShader != &shaders.component2DShape) {
+        currentForwardShader = &shaders.component2DShape;
+        vkb.bindPipeline(shaders.component2DShape.getPipeline());
+    }
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera.getUbo().getCurrentBuffer()};
+
+    vkb.bindDescriptors(shaders.component2DShape.getPipeline(), shaders.component2DShape.getDescriptorSetLayout(),
+                        bufferBindings, {});
+
+    ShaderComponent2DShape::Uniforms constants{};
+    constants.modelMatrix = transform.getAbsoluteTransform();
+    constants.color = component.getColor();
+
+    vkb.pushConstants(shaders.component2DShape.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderComponent2DShape::Uniforms), &constants);
+
+    switch (component.getType()) {
+    case Component2DShape::Type::Circle: {
+        renderMesh(vkb, meshes.circle);
+        break;
+    }
+    default: {
+        break;
+    }
+    }
 }
 
 void Renderer::renderSceneCanvas(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {

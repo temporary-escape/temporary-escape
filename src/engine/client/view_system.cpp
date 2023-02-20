@@ -1,5 +1,6 @@
 #include "view_system.hpp"
 #include "../graphics/theme.hpp"
+#include "../utils/overloaded.hpp"
 #include "client.hpp"
 
 #define CMP "ViewSystem"
@@ -7,60 +8,22 @@
 using namespace Engine;
 
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
-static const Vector2 systemBodySize{24.0f, 24.0f};
-
-static std::vector<ComponentLines::Line> createRingLines() {
-    Color4 color{0.7f, 0.7f, 0.7f, 0.2f};
-
-    std::vector<ComponentLines::Line> rings;
-    rings.resize(256);
-
-    const auto step = glm::radians(360.0 / static_cast<double>(rings.size()));
-    for (size_t i = 1; i < rings.size(); i++) {
-        const auto ii = static_cast<double>(i);
-        rings[i].a.position = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * (ii - 1)));
-        rings[i].b.position = glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, static_cast<float>(step * ii));
-
-        rings[i].a.color = color;
-        rings[i].b.color = color;
-    }
-
-    rings[0].a.color = color;
-    rings[0].b.color = color;
-    rings[0].a.position = rings.back().b.position;
-    rings[0].b.position = rings.at(1).a.position;
-
-    return rings;
-}
-
-static std::vector<ComponentLines::Line> createRingLines(const Vector3& origin, float width) {
-    static const auto ring = createRingLines();
-
-    std::vector<ComponentLines::Line> lines;
-    lines.resize(ring.size());
-
-    for (size_t i = 0; i < ring.size(); i++) {
-        lines[i].a.position = (ring[i].a.position * width) + origin;
-        lines[i].b.position = (ring[i].b.position * width) + origin;
-        lines[i].a.color = ring[i].a.color;
-        lines[i].b.color = ring[i].b.color;
-    }
-
-    return lines;
-}
+static const Vector2 systemBodySize{32.0f, 32.0f};
 
 ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                       Gui& gui) :
+                       Gui& gui, FontFamily& font) :
     parent{parent},
     config{config},
     registry{registry},
     client{client},
     gui{gui},
+    font{font},
     skybox{renderer.getVulkan(), Color4{0.01f, 0.01f, 0.01f, 1.0f}},
     scene{} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
     images.systemMoon = registry.getImages().find("icon_world");
+    images.iconSelect = registry.getImages().find("icon_target");
 
     // To keep the renderer away from complaining
     auto sun = scene.createEntity();
@@ -146,6 +109,10 @@ void ViewSystem::clear() {
 
     // Cancel previous load sequence
     stopToken.stop();
+
+    system.bodies.clear();
+    system.planets.clear();
+    system.sectors.clear();
 }
 
 void ViewSystem::load() {
@@ -198,6 +165,7 @@ void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
 
         for (const auto& sector : res.sectors) {
             system.sectors[sector.id] = sector;
+            system.bodies.emplace_back(&system.sectors[sector.id]);
         }
 
         if (res.hasNext) {
@@ -222,7 +190,8 @@ void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::stri
         }
 
         for (const auto& body : res.bodies) {
-            system.bodies[body.id] = body;
+            system.planets[body.id] = body;
+            system.bodies.emplace_back(&system.planets[body.id]);
         }
 
         if (res.hasNext) {
@@ -241,89 +210,160 @@ void ViewSystem::updateSystem() {
     loadingValue = 1.0f;
 
     clearEntities();
-    createEntitiesPlanets();
+    createEntityCursor();
+    createEntityPositions();
+    createEntitiesBodies();
 }
 
 void ViewSystem::clearEntities() {
-    for (auto& entity : entities.planets) {
+    for (auto& entity : entities.bodies) {
         scene.removeEntity(entity);
     }
-    entities.planets.clear();
+    entities.bodies.clear();
 
-    scene.removeEntity(entities.labels);
-    entities.labels.reset();
+    for (auto& entity : entities.orbits) {
+        scene.removeEntity(entity);
+    }
+    entities.orbits.clear();
+
+    scene.removeEntity(entities.names);
+    entities.names.reset();
+
+    scene.removeEntity(entities.positions);
+    entities.positions.reset();
+
+    scene.removeEntity(entities.icons);
+    entities.icons.reset();
+
+    scene.removeEntity(entities.cursor);
+    entities.cursor.reset();
 }
 
-void ViewSystem::createEntitiesPlanets() {
+void ViewSystem::createEntityPositions() {
+    entities.positions = scene.createEntity();
+    entities.positions->addComponent<ComponentTransform>();
+    auto& clickable = entities.positions->addComponent<ComponentClickablePoints>();
+    entities.positions->addComponent<ComponentUserInput>(clickable);
+
+    clickable.setOnHoverCallback([this](const size_t i) {
+        auto& body = system.bodies[i];
+
+        std::visit(overloaded{
+                       [&](PlanetaryBodyData* planet) {
+                           const auto pos = Vector3{planet->pos.x, 0.1f, planet->pos.y};
+                           entities.cursor->getComponent<ComponentTransform>().move(pos);
+                           auto& text = entities.cursor->getComponent<ComponentText>();
+                           text.setText(planet->name);
+                       },
+                       [&](SectorData* sector) {
+                           const auto pos = Vector3{sector->pos.x, 0.1f, sector->pos.y};
+                           entities.cursor->getComponent<ComponentTransform>().move(pos);
+                           auto& text = entities.cursor->getComponent<ComponentText>();
+                           text.setText(sector->name);
+                       },
+                   },
+                   body);
+
+        entities.cursor->setDisabled(false);
+    });
+
+    clickable.setOnClickCallback([this](const size_t i, const bool pressed, const MouseButton button) {
+        if (pressed || scene.getPrimaryCamera()->isPanning() || button != MouseButton::Right) {
+            return;
+        }
+
+        /*const auto& system = galaxy.systemsOrdered[i];
+        const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
+        const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
+
+        gui.contextMenu.setEnabled(true);
+        gui.contextMenu.setPos(viewPos);
+        gui.contextMenu.setItems({
+            {"View", [this]() {}},
+            {"Info", [this]() {}},
+            {"Note", [this]() {}},
+            {"Set Destination", [this]() {}},
+        });*/
+    });
+
+    clickable.setOnBlurCallback([this]() {
+        entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.1f, 0.0f});
+        entities.cursor->setDisabled(true);
+    });
+}
+
+void ViewSystem::createEntityCursor() {
+    entities.cursor = scene.createEntity();
+    entities.cursor->setDisabled(true);
+    entities.cursor->addComponent<ComponentTransform>().move(Vector3{0.0f, 0.1f, 0.0f});
+    entities.cursor->addComponent<ComponentIcon>(images.iconSelect, systemBodySelectable, Theme::primary);
+    auto& cursorText = entities.cursor->addComponent<ComponentText>("", Theme::primary, config.guiFontSize);
+    cursorText.setCentered(true);
+    cursorText.setOffset(Vector2{0, -(systemBodySelectable.y / 2.0f)});
+}
+
+void ViewSystem::createEntitiesBodies() {
     static const Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
 
-    auto entity = scene.createEntity();
-    entity->addComponent<ComponentTransform>().move(Vector3{0.0f, 1.0f, 0.0f});
-    auto& icons = entity->addComponent<ComponentIconPointCloud>();
+    auto& clickable = entities.positions->getComponent<ComponentClickablePoints>();
 
-    for (const auto& [bodyId, body] : system.bodies) {
-        entity = scene.createEntity();
-        entities.planets.push_back(entity);
-        entity->addComponent<ComponentTransform>().move(Vector3{body.pos.x, 0.0f, body.pos.y});
-        if (body.isMoon) {
-            icons.add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemMoon);
-        } else {
-            icons.add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemPlanet);
-            entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
-        }
+    entities.icons = scene.createEntity();
+    entities.icons->addComponent<ComponentTransform>().move(Vector3{0.0f, 1.0f, 0.0f});
+    auto& icons = entities.icons->addComponent<ComponentIconPointCloud>();
 
-        entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
+    entities.names = scene.createEntity();
+    entities.names->addComponent<ComponentTransform>().move(Vector3{0.0f, 2.0f, 0.0f});
+    auto& names =
+        entities.names->addComponent<ComponentWorldText>(font.regular, Theme::text * alpha(0.5f), config.guiFontSize);
+    names.setOffset(Vector2{0.0f, -systemBodySize.y});
+
+    for (const auto& body : system.bodies) {
+        std::visit(
+            overloaded{
+                [&](PlanetaryBodyData* planet) {
+                    auto entity = scene.createEntity();
+                    entities.bodies.push_back(entity);
+
+                    const auto pos = Vector3{planet->pos.x, 0.0f, planet->pos.y};
+                    entity->addComponent<ComponentTransform>().move(pos);
+                    if (planet->isMoon) {
+                        icons.add(pos, systemBodySize, color, images.systemMoon);
+                    } else {
+                        icons.add(pos, systemBodySize, color, images.systemPlanet);
+                        entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
+                    }
+
+                    entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
+
+                    clickable.add(pos);
+                    // names.add(pos, planet->name);
+
+                    auto orbit = scene.createEntity();
+                    entities.orbits.push_back(orbit);
+                    orbit->addComponent<ComponentTransform>();
+                    orbit->addComponent<Component2DShape>(Component2DShape::Type::Circle, Theme::text * alpha(0.1f));
+
+                    if (planet->parent) {
+                        if (const auto it = system.planets.find(planet->parent.value()); it != system.planets.end()) {
+                            orbit->getComponent<ComponentTransform>().move({it->second.pos.x, 0.0f, it->second.pos.y});
+
+                            const auto length = glm::length(glm::distance(it->second.pos, planet->pos));
+                            orbit->getComponent<ComponentTransform>().scale(Vector3{length});
+                        }
+                    } else {
+                        orbit->getComponent<ComponentTransform>().scale(Vector3{glm::length(pos)});
+                    }
+                },
+                [&](SectorData* sector) {
+                    const auto pos = Vector3{sector->pos.x, 0.0f, sector->pos.y};
+                    icons.add(pos, systemBodySize, color, images.systemMoon);
+
+                    clickable.add(pos);
+                    names.add(pos, sector->name);
+                },
+            },
+            body);
     }
-
-    /*entities.iconPointCloud = std::make_shared<Entity>();
-    entities.orbitalRings = std::make_shared<Entity>();
-
-    auto pointCloud = entities.iconPointCloud->addComponent<ComponentIconPointCloud>();
-    auto orbitalRings = entities.orbitalRings->addComponent<ComponentLines>();
-
-    for (const auto& [bodyId, body] : system.bodies) {
-        Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
-
-        if (body.isMoon) {
-            pointCloud->add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemMoon);
-            const auto& parent = system.bodies.at(*body.parent);
-            orbitalRings->append(
-                createRingLines(Vector3{parent.pos.x, 0.0f, parent.pos.y}, glm::length(parent.pos - body.pos)));
-        } else {
-            pointCloud->add(Vector3{body.pos.x, 0.0f, body.pos.y}, systemBodySize, color, images.systemPlanet);
-            orbitalRings->append(createRingLines({0.0f, 0.0f, 0.0f}, glm::length(body.pos)));
-        }
-    }
-
-    scene.addEntity(entities.iconPointCloud);
-    scene.addEntity(entities.orbitalRings);*/
-}
-
-const SystemData* ViewSystem::rayCast(const Vector2& mousePos) {
-    /*std::vector<std::tuple<float, const SystemData*>> found;
-
-    const auto positions = camera->worldToScreen(input.positions);
-
-    for (size_t i = 0; i < positions.size(); i++) {
-        const auto& pos = positions.at(i);
-
-        if (pos.x - systemStarSelectable.x <= mousePos.x && pos.x + systemStarSelectable.x >= mousePos.x &&
-            pos.y - systemStarSelectable.y <= mousePos.y && pos.y + systemStarSelectable.y >= mousePos.y) {
-
-            const auto& system = input.indices.at(i);
-            found.emplace_back(glm::distance(pos, mousePos), system);
-        }
-    }
-
-    if (found.empty()) {
-        return nullptr;
-    }
-
-    std::sort(found.begin(), found.end(),
-              [](const auto& a, const auto& b) -> bool { return std::get<0>(a) < std::get<0>(b); });
-
-    return std::get<1>(found.front());*/
-    return nullptr;
 }
 
 void ViewSystem::onEnter() {

@@ -24,18 +24,14 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
     set(LIBRARY_NAME "Engine${COMPONENT_NAME}")
     add_library(${LIBRARY_NAME} SHARED ${SOURCES} ${COMMON_HEADERS})
 
+    # Inherit the common options
+    target_link_libraries(${LIBRARY_NAME} PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
+
     # Common compile definitions
     target_compile_definitions(${LIBRARY_NAME}
-            PUBLIC
-            GAME_VERSION=${VERSION_STRING}
-            GLM_FORCE_LEFT_HANDED=1
-            MSGPACK_USE_DEFINE_MAP=1
-
             PRIVATE
             ENGINE_EXPORTS=1
-            "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine"
-            _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
-            _CRT_SECURE_NO_WARNINGS=1)
+            "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine")
 
     # Engine public dependencies
     target_link_libraries(${LIBRARY_NAME} PUBLIC
@@ -69,10 +65,7 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
             pybind11::lto pybind11::embed pybind11::module)
 
     # Platform specific dependencies
-    if (WIN32)
-        target_link_libraries(${LIBRARY_NAME} PRIVATE rpcrt4.lib)
-        target_compile_definitions(${LIBRARY_NAME} PUBLIC _WIN32_WINNT=0x0501)
-    elseif (UNIX AND NOT APPLE)
+    if (UNIX AND NOT APPLE)
         target_link_libraries(${LIBRARY_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid uring)
     elseif (APPLE)
         target_link_libraries(${LIBRARY_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid Iconv::Iconv)
@@ -82,38 +75,30 @@ foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
     get_filename_component(LIBRARY_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
     set_target_properties(${LIBRARY_NAME} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${LIBRARY_INCLUDE_DIRS})
 
-    # Set C++17
-    set_target_properties(${LIBRARY_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
-
     # Where the compiled output goes
     set_target_properties(${LIBRARY_NAME}
             PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-            )
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src")
 
     # Add this component into the common engine library
     target_link_libraries(${PROJECT_NAME}Engine INTERFACE ${LIBRARY_NAME})
+
+    # Make sure the shared library will get installed
+    install(TARGETS ${LIBRARY_NAME} LIBRARY DESTINATION ".")
 endforeach ()
 
-# Install extras
+# Install DLLs as well
 if (WIN32)
     install(DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape/${CMAKE_BUILD_TYPE}/"
             DESTINATION "."
-            FILES_MATCHING PATTERN "*.dll" PATTERN "CMakeFiles" EXCLUDE
-            )
+            FILES_MATCHING PATTERN "*.dll" PATTERN "CMakeFiles" EXCLUDE)
 endif ()
 
 # The main target
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "TemporaryEscape")
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
-
-if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    target_link_libraries(${PROJECT_NAME} PRIVATE asan)
-endif ()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC CLI11::CLI11 ${PROJECT_NAME}Engine)
 
@@ -121,5 +106,6 @@ set_target_properties(${PROJECT_NAME}
         PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        )
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src")
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ".")

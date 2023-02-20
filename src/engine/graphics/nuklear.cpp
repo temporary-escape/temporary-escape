@@ -309,16 +309,19 @@ static nk_color HEX(const uint32_t v) {
     return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
 }
 
-static const auto PRIMARY_COLOR = HEX(0xe7000dff);
-static const auto SECONDARY_COLOR = HEX(0xfbd90dff);
+static nk_color fromColor(const Color4& color) {
+    return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
+}
+
+static const auto PRIMARY_COLOR = fromColor(Theme::primary);
 static const auto WHITE = HEX(0xe5e5e3ff);
-static const auto TEXT_WHITE = HEX(0xd0d0d0ff);
+static const auto TEXT_WHITE = fromColor(Theme::text);
 static const auto TEXT_BLACK = HEX(0x030303ff);
 static const auto TEXT_GREY = HEX(0x393939ff);
-static const auto BACKGROUND_COLOR = HEX(0x0a0a0aff);
-static const auto BORDER_GREY = HEX(0x363636ff);
+static const auto BACKGROUND_COLOR = fromColor(Theme::backgroundTransparent); // HEX(0x0a0a0aff);
+static const auto BORDER_GREY = HEX(0x202020ff);
 static const auto TRANSPARENT_COLOR = HEX(0x00000000);
-static const auto ACTIVE_COLOR = SECONDARY_COLOR;
+static const auto ACTIVE_COLOR = PRIMARY_COLOR;
 
 void Nuklear::applyTheme() {
     auto& window = ctx->style.window;

@@ -1,0 +1,3 @@
+Credits: Andreas Ressl and Georg Hammershmid
+Source: https://www.moddb.com/news/procedural-star-rendering
+Modified by: Matus Novak

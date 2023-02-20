@@ -65,6 +65,7 @@ struct Config {
     float cameraFov = 75.0f;
     int thumbnailSize = 128;
     int guiFontSize = 18;
+    std::string guiFontName = "iosevka-aile";
 
     struct {
         int totalSystems{2000};

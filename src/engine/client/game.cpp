@@ -21,7 +21,7 @@ Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nu
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client, gui);
     viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, registry, client, gui, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, gui);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, gui, font);
     view = viewSpace.get();
 }
 

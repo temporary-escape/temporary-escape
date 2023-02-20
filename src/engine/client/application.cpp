@@ -9,7 +9,7 @@ Application::Application(const Config& config) :
     VulkanRenderer{config},
     config{config},
     canvas{*this},
-    font{*this, config.fontsPath, "iosevka-aile", config.guiFontSize * 2.0f},
+    font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
     nuklear{canvas, font, config.guiFontSize} {
 
     gui.mainMenu.setItems({
@@ -21,7 +21,7 @@ Application::Application(const Config& config) :
     });
     gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);
 
-    startSinglePlayer();
+    // startSinglePlayer();
 }
 
 Application::~Application() {

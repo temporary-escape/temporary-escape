@@ -7,6 +7,10 @@ void ComponentTransform::setParent(const std::shared_ptr<Entity>& entity) {
     parent = entity;
 }
 
+void ComponentTransform::removeParent() {
+    parent.reset();
+}
+
 void ComponentTransform::translate(const Vector3& pos) {
     updateTransform(glm::translate(transform, pos));
 }

@@ -16,7 +16,7 @@ class ENGINE_API Game;
 class ENGINE_API ViewSystem : public View {
 public:
     explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                        Gui& gui);
+                        Gui& gui, FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -43,14 +43,16 @@ private:
     void fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token);
     void updateSystem();
     void clearEntities();
-    void createEntitiesPlanets();
-    const SystemData* rayCast(const Vector2& mousePos);
+    void createEntityPositions();
+    void createEntityCursor();
+    void createEntitiesBodies();
 
     Game& parent;
     const Config& config;
     Registry& registry;
     Client& client;
     Gui& gui;
+    FontFamily& font;
     Skybox skybox;
     Scene scene;
     ComponentCamera* camera{nullptr};
@@ -63,18 +65,24 @@ private:
 
     struct {
         std::string name;
-        std::unordered_map<std::string, PlanetaryBodyData> bodies;
+        std::unordered_map<std::string, PlanetaryBodyData> planets;
         std::unordered_map<std::string, SectorData> sectors;
+        std::vector<std::variant<PlanetaryBodyData*, SectorData*>> bodies;
     } system;
 
     struct {
-        std::vector<EntityPtr> planets;
-        EntityPtr labels;
+        std::vector<EntityPtr> bodies;
+        std::vector<EntityPtr> orbits;
+        EntityPtr icons;
+        EntityPtr cursor;
+        EntityPtr positions;
+        EntityPtr names;
     } entities;
 
     struct {
         ImagePtr systemPlanet;
         ImagePtr systemMoon;
+        ImagePtr iconSelect;
     } images;
 
     struct {

@@ -19,164 +19,67 @@ jobs:
         include:
           - name: 'Build - Windows'
             os: windows-latest
-            vcpkg_dir: 'C:\vcpkg'
-            asan: 'false'
-            config: 'MinSizeRel'
+            config: 'Release'
+            cpack: 'ZIP'
+            configurePreset: 'msbuild'
+            buildPreset: 'msbuild - msbuild'
           - name: 'Build - Linux'
             os: ubuntu-latest
-            vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: 'false'
-            config: 'MinSizeRel'
-          - name: 'Build - Linux (ASAN)'
-            os: ubuntu-latest
-            vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: 'true'
-            config: 'Debug'
+            config: 'Release'
+            cpack: 'TGZ'
+            configurePreset: 'ninja'
+            buildPreset: 'ninja - ninja'
           - name: 'Build - Mac OSX'
             os: macos-latest
-            vcpkg_dir: '/usr/local/share/vcpkg'
-            asan: 'false'
-            config: 'MinSizeRel'
+            config: 'Release'
+            cpack: 'ZIP'
+            configurePreset: 'ninja'
+            buildPreset: 'ninja - ninja'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
         with:
           submodules: true
 
-      - name: Dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Dependencies
         shell: bash
         run: |
-          source /etc/lsb-release
-          sudo apt-get install -y \
-            ninja-build clang llvm libxinerama-dev libxcursor-dev xorg-dev \
-            libglu1-mesa-dev libc6-dev linux-libc-dev
-          
-          if [ "$DISTRIB_RELEASE" == "20.04" ]; then
-            wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing2_2.1-2_amd64.deb"
-            sudo dpkg -i liburing2_2.1-2_amd64.deb
-            wget "http://ftp.us.debian.org/debian/pool/main/libu/liburing/liburing-dev_2.1-2_amd64.deb"
-            sudo dpkg -i liburing-dev_2.1-2_amd64.deb
-          else
-            sudo apt-get install liburing-dev
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get install -y \
+              ninja-build clang llvm libxinerama-dev libxcursor-dev xorg-dev \
+              libglu1-mesa-dev libc6-dev linux-libc-dev
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install ninja llvm
           fi
 
-          which ninja
-
-      - name: Dependencies (Mac OSX)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          brew install ninja llvm
-          which ninja
-
-      - name: Dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          echo "skip"
-
-      - name: Configure Vcpkg
-        shell: bash
-        run: |
-          cd ${{ matrix.vcpkg_dir }}
-          git fetch origin
-          git reset --hard origin/master
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ./bootstrap-vcpkg.bat
-          else
-            ./bootstrap-vcpkg.sh
-          fi
-
-      - name: CMake version check
-        shell: bash
-        run: cmake --version
-
-      - name: Cache vcpkg directory
-        uses: actions/cache@v2
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          path: |
-            build/vcpkg_installed
-            ${{ matrix.vcpkg_dir }}/packages
-          key: ${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          vulkan-query-version: 1.3.216.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
-      - name: Configure (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          mkdir -p build
-          mkdir -p install
+      - uses: lukka/get-cmake@v3.21.2
 
-          export CC=$(which clang)
-          export CXX=$(which clang++)
-          
-          if [ "${{ matrix.asan }}" = "true" ]; then
-            export LLVM_SYMBOLIZER_PATH=$(which llvm-symbolizer)
-            echo "Found LLVM_SYMBOLIZER_PATH at ${LLVM_SYMBOLIZER_PATH}"
-          fi
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v10
+        id: runvcpkg
+        with:
+          vcpkgDirectory: '${{ runner.workspace }}/vcpkg'
+          vcpkgJsonGlob: '${{ github.workspace }}/vcpkg.json'
+          runVcpkgInstall: true
+          appendedCacheKey: vcpkginstall
 
-          cmake \
-            -B ./build \
-            -G "Ninja" \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            -DCMAKE_MAKE_PROGRAM=$(which ninja) \
-            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-            -DTEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH=$LLVM_SYMBOLIZER_PATH \
-            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-            .
-
-      - name: Configure (Mac OSX)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          mkdir -p build
-          mkdir -p install
-
-          export CC=$(which clang)
-          export CXX=$(which clang++)
-
-          cmake \
-            -B ./build \
-            -G "Ninja" \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            -DCMAKE_MAKE_PROGRAM=$(which ninja) \
-            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-            .
-
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          mkdir -p build
-          mkdir -p install
-
-          cmake \
-            -B ./build \
-            -G "Visual Studio 16 2019" -T ClangCL -A x64 \
-            '-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install' \
-            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON \
-            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-            .
-
-      - name: Compile Game
-        shell: bash
-        run: |
-          cmake --build ./build --target TemporaryEscapeMain --config ${{ matrix.config }}
-
-      - name: Compile Unit Tests
-        shell: bash
-        run: |
-          cmake --build ./build --target TemporaryEscapeUnitTests --config ${{ matrix.config }}
-
-      - name: Compile Functional Tests
-        shell: bash
-        run: |
-          cmake --build ./build --target TemporaryEscapeFunctionalTests --config ${{ matrix.config }}
+      - name: Configure and build
+        uses: lukka/run-cmake@v10
+        id: runcmake
+        with:
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          configurePreset: '${{ github.configurePreset }}'
+          configurePresetAdditionalArgs: [ '-DCMAKE_BUILD_TYPE=${{ matrix.config }}' ]
+          buildPreset: '${{ github.buildPreset }}'
+          buildPresetAdditionalArgs: [ '--config ${{ matrix.config }}' ]
 
       - name: Run Tests
         shell: bash
@@ -184,79 +87,9 @@ jobs:
           cd build
           ctest -C ${{ matrix.config }} --verbose --output-on-failure 2>&1 | tee ctest.log
 
-      - name: Install and check version
-        if: matrix.asan == 'false'
-        shell: bash
-        run: |
-          cmake --build ./build --target install --config ${{ matrix.config }}
-          
-          ls -la '${{ github.workspace }}/install'
-          
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            '${{ github.workspace }}/install/TemporaryEscape.exe' --version
-          else
-            ${{ github.workspace }}/install/TemporaryEscape --version
-          fi
-
       - name: Package
         if: matrix.asan == 'false'
         shell: bash
         run: |
           cd build
-          cpack -C ${{ matrix.config }}
-
-      - name: Archive package
-        uses: actions/upload-artifact@v2
-        if: matrix.asan == 'false'
-        with:
-          name: Releases
-          path: build/release/
-
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-        with:
-          submodules: true
-
-      - name: Download Hugo
-        shell: bash
-        run: |
-          wget https://github.com/gohugoio/hugo/releases/download/v0.92.1/hugo_extended_0.92.1_Linux-64bit.tar.gz
-          tar xvf hugo_extended_0.92.1_Linux-64bit.tar.gz
-          sudo mv ./hugo /usr/local/bin/hugo
-          sudo chmod +x /usr/local/bin/hugo
-          hugo version
-
-      - name: Run Hugo
-        shell: bash
-        run: |
-          cd docs
-          hugo
-
-      - name: Clone temporary-escape.github.io
-        if: startsWith(github.ref, 'refs/heads/master')
-        uses: actions/checkout@v2
-        with:
-          repository: temporary-escape/temporary-escape.github.io
-          token: ${{ secrets.TEMPORARY_ESCAPE_DOCS_TOKEN }}
-          path: docs-git
-
-      - name: Deploy
-        if: startsWith(github.ref, 'refs/heads/master')
-        shell: bash
-        run: |
-          cp ${{ github.workspace }}/docs-git/README.md /tmp/README.md
-          rm -rf ${{ github.workspace }}/docs-git/*
-          cp -rv ${{ github.workspace }}/docs/public/* ${{ github.workspace }}/docs-git/
-          cp /tmp/README.md ${{ github.workspace }}/docs-git/README.md
-          
-          cd docs-git
-
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add .
-          git commit -m "Update documentation" --allow-empty
-          git push origin main -f
+          cpack -G ${{ matrix.cpack }} -C ${{ matrix.config }}

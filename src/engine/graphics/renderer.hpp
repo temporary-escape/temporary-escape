@@ -8,6 +8,7 @@
 #include "nuklear.hpp"
 #include "shader.hpp"
 #include "shaders/shader_brdf.hpp"
+#include "shaders/shader_component_2d_shape.hpp"
 #include "shaders/shader_component_debug.hpp"
 #include "shaders/shader_component_grid.hpp"
 #include "shaders/shader_component_planet_surface.hpp"
@@ -62,6 +63,7 @@ private:
     void createFullScreenQuad();
     void createSkyboxMesh();
     void createPlanetMesh();
+    void createCircleMesh();
     void createRenderPasses();
     void createRenderPassBrdf();
     void createRenderPassPbr();
@@ -102,8 +104,12 @@ private:
         auto& camera = *scene.getPrimaryCamera();
 
         for (auto&& [entity, transform, component] : scene.getView<ComponentTransform, T>().each()) {
+            const auto dist = camera.isOrthographic()
+                                  ? -transform.getAbsolutePosition().y
+                                  : glm::distance(transform.getAbsolutePosition(), camera.getEyesPos());
+
             jobs.emplace_back(ForwardRenderJob{
-                glm::distance(transform.getAbsolutePosition(), camera.getEyesPos()),
+                dist,
                 [&, t = &transform, c = &component] { renderSceneForward(vkb, camera, *t, *c); },
             });
         }
@@ -123,6 +129,8 @@ private:
                             ComponentWorldText& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentPlanet& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            Component2DShape& component);
     void renderSceneSkybox(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
     void renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene, const Skybox& skybox);
     void transitionDepthForReadOnlyOptimal();
@@ -162,6 +170,7 @@ private:
         ShaderComponentPolyShape componentPolyShape;
         ShaderComponentWorldText componentWorldText;
         ShaderComponentPlanetSurface componentPlanetSurface;
+        ShaderComponent2DShape component2DShape;
     } shaders;
 
     struct {
@@ -192,6 +201,7 @@ private:
         RenderPassMesh fullScreenQuad;
         RenderPassMesh skybox;
         RenderPassMesh planet;
+        RenderPassMesh circle;
     } meshes;
 
     struct {
