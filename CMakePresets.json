@@ -12,11 +12,22 @@
       "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
       "generator": "Ninja",
+      "condition": {
+        "type": "inList",
+        "string": "${hostSystemName}",
+        "list": [
+          "Linux",
+          "Darwin"
+        ]
+      },
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
+        },
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install"
       }
     },
     {
@@ -25,6 +36,11 @@
       "description": "Configure with VS generators and with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
       "generator": "Visual Studio 17 2022",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "architecture": {
         "strategy": "set",
         "value": "x64"
@@ -33,6 +49,14 @@
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-clang-x64"
         }
       }
     }
@@ -53,12 +77,26 @@
   ],
   "testPresets": [
     {
+      "name": "test-common",
+      "description": "Test CMake settings that apply to all configurations",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
       "name": "ninja",
-      "configurePreset": "ninja"
+      "configurePreset": "ninja",
+      "inherits": "test-common"
     },
     {
       "name": "msbuild",
-      "configurePreset": "msbuild"
+      "configurePreset": "msbuild",
+      "inherits": "test-common"
     }
   ]
 }
