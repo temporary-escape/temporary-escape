@@ -104,6 +104,8 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             source /opt/vulkan-sdk/setup-env.sh
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            export VULKAN_SDK="C:/VulkanSDK"
           fi
           
           cmake -B ./build --preset "${{ matrix.configurePreset }}"
