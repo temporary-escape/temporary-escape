@@ -93,7 +93,18 @@ jobs:
           path: |
             build/vcpkg_installed
             ${{ matrix.vcpkgDir }}/packages
-          key: ${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+
+      - name: Configure
+        env:
+          VCPKG_ROOT: "{{ matrix.vcpkgDir }}"
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            source /opt/vulkan-sdk/setup-env.sh
+          fi
+          
+          cmake -B ./build --preset "${{ matrix.configurePreset }}"
 
 #      - name: Prepare Vulkan SDK
 #        uses: humbletim/setup-vulkan-sdk@v1.2.0
