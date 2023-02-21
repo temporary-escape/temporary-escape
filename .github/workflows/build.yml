@@ -79,6 +79,7 @@ jobs:
           $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/${{ matrix.vulkanSdkVer }}/windows/VulkanSDK-${{ matrix.vulkanSdkVer }}-Installer.exe" -OutFile VulkanSDK.exe
           .\VulkanSDK.exe --root C:\VulkanSDK  --accept-licenses --default-answer --confirm-command install
+          Remove-Item .\VulkanSDK.exe
 
       - name: Setup Vulkan - Linux
         if: runner.os == 'Linux'
@@ -86,6 +87,7 @@ jobs:
           wget -O vulkansdk.tar.gz -q https://sdk.lunarg.com/sdk/download/${{ matrix.vulkanSdkVer }}/linux/vulkansdk-linux-x86_64-${{ matrix.vulkanSdkVer }}.tar.gz
           tar -xzf vulkansdk.tar.gz
           sudo mv ./${{ matrix.vulkanSdkVer }}/ /opt/vulkan-sdk
+          rm vulkansdk.tar.gz
 
       - name: Cache vcpkg directory
         uses: actions/cache@v2
@@ -97,7 +99,7 @@ jobs:
 
       - name: Configure
         env:
-          VCPKG_ROOT: "{{ matrix.vcpkgDir }}"
+          VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
