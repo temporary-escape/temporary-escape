@@ -39,10 +39,13 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
         pythonPath += path.wstring();
     }
 
+#ifdef _WIN32
     std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
+#else
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+#endif
     Log::i(CMP, "Using Python home: '{}'", converter.to_bytes(pythonHome));
     Log::i(CMP, "Using Python path: '{}'", converter.to_bytes(pythonPath));
-
 
     try {
         // Initialize python

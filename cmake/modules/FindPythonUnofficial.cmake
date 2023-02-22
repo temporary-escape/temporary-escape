@@ -2,7 +2,7 @@ include(FindPackageHandleStandardArgs)
 
 
 find_library(PYTHON3_LIBRARY_RELEASE
-        NAMES python310)
+        NAMES python310 python3.10)
 if (MSVC)
     find_library(PYTHON3_LIBRARY_DEBUG
             NAMES python310_d)
@@ -51,11 +51,12 @@ if (PYTHONUNOFFICIAL_FOUND AND NOT TARGET PythonUnofficial)
         set_property(TARGET PythonUnofficial PROPERTY IMPORTED_IMPLIB_RELEASE ${PYTHON3_LIBRARY_RELEASE})
         set_property(TARGET PythonUnofficial PROPERTY IMPORTED_LOCATION_DEBUG ${PYTHON3_DLL_DEBUG})
         set_property(TARGET PythonUnofficial PROPERTY IMPORTED_IMPLIB_DEBUG ${PYTHON3_LIBRARY_DEBUG})
+
+        # Copy Python DLL
+        add_custom_target(PythonUnofficialPostBuild POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:PythonUnofficial> ${CMAKE_BINARY_DIR})
     else ()
         set_property(TARGET PythonUnofficial PROPERTY IMPORTED_LOCATION ${PYTHON3_LIBRARY_RELEASE})
     endif ()
-
-    add_custom_target(PythonUnofficialPostBuild POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:PythonUnofficial> ${CMAKE_BINARY_DIR})
 endif ()
