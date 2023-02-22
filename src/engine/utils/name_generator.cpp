@@ -107,7 +107,7 @@ std::string NameGenerator::operator()(std::mt19937_64& rng) {
     return {ss.data(), ss.size()};
 }
 
-NameGenerator NameGenerator::systemsNames(defaultNameGeneratorWords);
+NameGenerator NameGenerator::systemsNames(defaultWords);
 
 std::string Engine::randomName(std::mt19937_64& rng) {
     return NameGenerator::systemsNames(rng);
