@@ -497,7 +497,7 @@ std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& paren
                                                          const Vector3& from, const Vector3& to) const {
     std::optional<Grid::RayCastResult> result;
 
-    Index childIdx = parent.branch.child;
+    auto childIdx = Index{parent.branch.child};
     while (childIdx) {
         if (!childIdx || childIdx == badIndex) {
             break;
@@ -505,7 +505,7 @@ std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& paren
 
         auto& child = nodes.at(childIdx);
 
-        const auto index = depth - level == 0 ? child.voxel.index : child.branch.index;
+        const auto index = depth - level == 0 ? int{child.voxel.index} : int{child.branch.index};
 
         const auto half = static_cast<float>(getWidthForLevel(depth - level + 1)) / 2.0f;
         const auto childPos = idxToOffset<float>(index, half, origin);
@@ -534,7 +534,7 @@ std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& paren
             }
         }
 
-        childIdx = child.branch.next;
+        childIdx = Index{child.branch.next};
     }
 
     return result;

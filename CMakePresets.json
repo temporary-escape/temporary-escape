@@ -8,7 +8,7 @@
   "configurePresets": [
     {
       "name": "ninja",
-      "displayName": "Ninja Multi-Config Configure Settings",
+      "displayName": "Ninja Clang Configure Settings",
       "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
       "generator": "Ninja",
@@ -32,8 +32,8 @@
     },
     {
       "name": "msbuild",
-      "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
-      "description": "Configure with VS generators and with vcpkg toolchain",
+      "displayName": "MSBuild VS17 Configure Settings",
+      "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
       "generator": "Visual Studio 17 2022",
       "condition": {
@@ -52,6 +52,8 @@
         },
         "CMAKE_C_COMPILER": "clang-cl",
         "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_C_FLAGS": "/MP",
+        "CMAKE_CXX_FLAGS": "/MP",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install"
       },
       "vendor": {

@@ -24,6 +24,11 @@ public:
         return static_cast<T>((value & mask) >> offset);
     }
 
+    [[nodiscard]] inline uint64_t value() const {
+        auto& value = self();
+        return static_cast<uint64_t>((value & mask) >> offset);
+    }
+
 private:
     uint64_t& self() {
         return *reinterpret_cast<uint64_t*>(this);

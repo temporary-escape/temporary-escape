@@ -3,6 +3,7 @@
 #include "../library.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/macros.hpp"
+#include "../utils/msgpack_adaptors.hpp"
 #include "../utils/path.hpp"
 #include "../utils/span.hpp"
 #include <functional>
@@ -315,7 +316,9 @@ template <typename T> void Database::unpackSchema(const Span<char>& data, T& val
 #define SCHEMA_VERSION(N, U, S)                                                                                        \
     template <> struct Engine::Database::SchemaVersion<S> {                                                            \
         using Versioning = U;                                                                                          \
-        static size_t getVersion() { return U::getVersion<S>(); }                                                      \
+        static size_t getVersion() {                                                                                   \
+            return U::getVersion<S>();                                                                                 \
+        }                                                                                                              \
     };                                                                                                                 \
     template <> struct Engine::Database::SchemaUnpacker<S> {                                                           \
         static void unpack(const msgpack::object& obj, S& value, size_t version) {                                     \
@@ -341,7 +344,9 @@ template <typename T> void Database::unpackSchema(const Span<char>& data, T& val
 #define SCHEMA_VERSIONING(U, ...) SCHEMA_VERSIONING_(SCHEMA_FOR_EACH_NARG(__VA_ARGS__), U, __VA_ARGS__)
 
 #define SCHEMA_NAME(Name)                                                                                              \
-    static inline std::string_view getSchemaName() { return Name; }
+    static inline std::string_view getSchemaName() {                                                                   \
+        return Name;                                                                                                   \
+    }
 
 #define SCHEMA_DEFINE(...) MSGPACK_DEFINE_MAP(__VA_ARGS__)
 

@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-const std::vector<std::string> NameGenerator::defaultWords = {
+static const std::vector<std::string> defaultWords = {
     "Adara",     "Adena",     "Adrianne",  "Alarice",  "Alvita",  "Amara",   "Ambika",    "Antonia",   "Araceli",
     "Balandria", "Basha",     "Beryl",     "Bryn",     "Callia",  "Caryssa", "Cassandra", "Casondrah", "Chatha",
     "Ciara",     "Cynara",    "Cytheria",  "Dabria",   "Darcei",  "Deandra", "Deirdre",   "Delores",   "Desdomna",
@@ -107,7 +107,7 @@ std::string NameGenerator::operator()(std::mt19937_64& rng) {
     return {ss.data(), ss.size()};
 }
 
-NameGenerator NameGenerator::systemsNames(defaultWords);
+NameGenerator NameGenerator::systemsNames(defaultNameGeneratorWords);
 
 std::string Engine::randomName(std::mt19937_64& rng) {
     return NameGenerator::systemsNames(rng);
