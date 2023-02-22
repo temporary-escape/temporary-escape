@@ -22,7 +22,7 @@ jobs:
             config: 'Release'
             cpack: 'ZIP'
             configurePreset: 'msbuild'
-            buildPreset: 'msbuild - msbuild'
+            buildPreset: 'msbuild'
             vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
             vulkanSdkVer: '1.3.216.0'
             vcpkgDir: 'C:\vcpkg'
@@ -32,7 +32,7 @@ jobs:
             config: 'Release'
             cpack: 'TGZ'
             configurePreset: 'ninja'
-            buildPreset: 'ninja - ninja'
+            buildPreset: 'ninja'
             vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
             vulkanSdkVer: '1.3.216.0'
             vcpkgDir: '/usr/local/share/vcpkg'
@@ -108,47 +108,15 @@ jobs:
             export VULKAN_SDK="C:/VulkanSDK"
           fi
           
-          cmake -B ./build --preset "${{ matrix.configurePreset }}"
+          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release
 
-#      - name: Prepare Vulkan SDK
-#        uses: humbletim/setup-vulkan-sdk@v1.2.0
-#        with:
-#          vulkan-query-version: 1.3.216.0
-#          vulkan-components: Vulkan-Headers
-#          vulkan-use-cache: true
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build --preset "${{ matrix.buildPreset }}" --target all
 
-#      - uses: lukka/get-cmake@v3.21.2
-#
-#      - name: Setup vcpkg
-#        uses: lukka/run-vcpkg@v10.3
-#        with:
-#          vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
-#          vcpkgJsonGlob: '${{ github.workspace }}/vcpkg.json'
-#          vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
-
-#      - name: Configure
-#        uses: lukka/run-cmake@v10
-#        with:
-#          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-#          configurePreset: '${{ matrix.configurePreset }}'
-#          configurePresetAdditionalArgs: "[ '-DCMAKE_BUILD_TYPE=${{ matrix.config }}' ]"
-
-#      - name: Build
-#        uses: lukka/run-cmake@v10
-#        with:
-#          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-#          buildPreset: '${{ matrix.buildPreset }}'
-#          buildPresetAdditionalArgs: "[ '--config ${{ matrix.config }}' ]"
-
-#      - name: Run Tests
-#        shell: bash
-#        run: |
-#          cd build
-#          ctest -C ${{ matrix.config }} --verbose --output-on-failure 2>&1 | tee ctest.log
-
-#      - name: Package
-#        if: matrix.asan == 'false'
-#        shell: bash
-#        run: |
-#          cd build
-#          cpack -G ${{ matrix.cpack }} -C ${{ matrix.config }}
+      - name: Unit Test
+        shell: bash
+        run: |
+          cd ./build
+          ctest --config Release --verbose
