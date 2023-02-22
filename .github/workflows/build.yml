@@ -21,8 +21,8 @@ jobs:
             os: windows-latest
             config: 'Release'
             cpack: 'ZIP'
-            configurePreset: 'msbuild'
-            buildPreset: 'msbuild'
+            configurePreset: 'ninja-msvc'
+            buildPreset: 'ninja-msvc'
             vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
             vulkanSdkVer: '1.3.239.0'
             vcpkgDir: 'C:\vcpkg'
@@ -31,8 +31,8 @@ jobs:
             os: ubuntu-latest
             config: 'Release'
             cpack: 'TGZ'
-            configurePreset: 'ninja'
-            buildPreset: 'ninja'
+            configurePreset: 'ninja-linux'
+            buildPreset: 'ninja-linux'
             vcpkgCommitId: 'f14984af3738e69f197bf0e647a8dca12de92996'
             vulkanSdkVer: '1.3.239.0'
             vcpkgDir: '/usr/local/share/vcpkg'
@@ -98,6 +98,7 @@ jobs:
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
 
       - name: Configure - Windows
+        if: runner.os == 'Windows'
         env:
           VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
           VULKAN_SDK: "C:/VulkanSDK"
@@ -107,6 +108,7 @@ jobs:
           cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Configure - Linux
+        if: runner.os == 'Linux'
         env:
           VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
         shell: bash
