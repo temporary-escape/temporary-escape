@@ -97,23 +97,27 @@ jobs:
             ${{ matrix.vcpkgDir }}/packages
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
 
-      - name: Configure
+      - name: Configure - Windows
+        env:
+          VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
+          VULKAN_SDK: "C:/VulkanSDK"
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
+
+      - name: Configure - Linux
         env:
           VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            source /opt/vulkan-sdk/setup-env.sh
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            export VULKAN_SDK="C:/VulkanSDK"
-          fi
-          
-          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release
+          source /opt/vulkan-sdk/setup-env.sh
+          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Build
         shell: bash
         run: |
-          cmake --build --preset "${{ matrix.buildPreset }}" --parallel
+          cmake --build --preset "${{ matrix.buildPreset }}" --parallel --target all
 
       - name: Unit Test
         shell: bash

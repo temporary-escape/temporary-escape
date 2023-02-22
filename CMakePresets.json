@@ -7,7 +7,7 @@
   },
   "configurePresets": [
     {
-      "name": "ninja",
+      "name": "ninja-linux",
       "displayName": "Ninja Clang Configure Settings",
       "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
@@ -31,19 +31,15 @@
       }
     },
     {
-      "name": "msbuild",
-      "displayName": "MSBuild VS17 Configure Settings",
+      "name": "ninja-msvc",
+      "displayName": "Ninja MSVC Clang Configure Settings",
       "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/build",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Ninja",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
-      },
-      "architecture": {
-        "strategy": "set",
-        "value": "x64"
       },
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": {
@@ -52,8 +48,8 @@
         },
         "CMAKE_C_COMPILER": "clang-cl",
         "CMAKE_CXX_COMPILER": "clang-cl",
-        "CMAKE_C_FLAGS": "/MP",
-        "CMAKE_CXX_FLAGS": "/MP",
+        "CMAKE_C_FLAGS": "-m64",
+        "CMAKE_CXX_FLAGS": "-m64",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install"
       },
       "vendor": {
@@ -65,14 +61,14 @@
   ],
   "buildPresets": [
     {
-      "name": "ninja",
-      "configurePreset": "ninja",
+      "name": "ninja-linux",
+      "configurePreset": "ninja-linux",
       "displayName": "Build with Ninja",
       "description": "Build with Ninja"
     },
     {
-      "name": "msbuild",
-      "configurePreset": "msbuild",
+      "name": "ninja-msvc",
+      "configurePreset": "ninja-msvc",
       "displayName": "Build MSBuild",
       "description": "Build with MSBuild (VS)"
     }
@@ -91,13 +87,13 @@
       }
     },
     {
-      "name": "ninja",
-      "configurePreset": "ninja",
+      "name": "ninja-linux",
+      "configurePreset": "ninja-linux",
       "inherits": "test-common"
     },
     {
-      "name": "msbuild",
-      "configurePreset": "msbuild",
+      "name": "ninja-msvc",
+      "configurePreset": "ninja-msvc",
       "inherits": "test-common"
     }
   ]
