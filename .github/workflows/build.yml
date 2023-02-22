@@ -82,7 +82,6 @@ jobs:
           .\VulkanSDK.exe --root C:\VulkanSDK  --accept-licenses --default-answer --confirm-command install
           .\VulkanRT.exe /S
           Remove-Item .\VulkanSDK.exe
-          Remove-Item .\VulkanRT.exe
 
       - name: Setup Vulkan - Linux
         if: runner.os == 'Linux'
