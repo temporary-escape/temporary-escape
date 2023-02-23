@@ -30,11 +30,11 @@ struct ENGINE_API VulkanSwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-static ENGINE_API inline const std::vector<const char*> vulkanValidationLayers = {
+static inline const std::vector<const char*> vulkanValidationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-static ENGINE_API const std::vector<const char*> vulkanDeviceExtensions = {
+static const std::vector<const char*> vulkanDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 

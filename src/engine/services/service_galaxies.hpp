@@ -26,7 +26,7 @@ struct MessageFetchGalaxyResponse {
     MESSAGE_DEFINE(MessageFetchGalaxyResponse, name);
 };
 
-class ServiceGalaxies : public Service {
+class ENGINE_API ServiceGalaxies : public Service {
 public:
     explicit ServiceGalaxies(const Config& config, Registry& registry, TransactionalDatabase& db,
                              Network::Server& server, Service::SessionValidator& sessionValidator);

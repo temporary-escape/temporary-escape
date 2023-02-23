@@ -11,10 +11,10 @@ public:
         Color4 color;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         Matrix4 modelMatrix;
         Color4 color;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentLines() = default;
     explicit ShaderComponentLines(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

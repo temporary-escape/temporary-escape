@@ -2,6 +2,7 @@
 
 #include "../math/matrix.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
+#include "../utils/aligned.hpp"
 #include <functional>
 #include <list>
 
@@ -11,6 +12,10 @@ public:
     using LoadQueue = std::list<std::function<void()>>;
 
     explicit ShaderModules(const Config& config, VulkanRenderer& vulkan);
+    ShaderModules(const ShaderModules& other) = delete;
+    ShaderModules(ShaderModules&& other) = default;
+    ShaderModules& operator=(const ShaderModules& other) = delete;
+    ShaderModules& operator=(ShaderModules&& other) = default;
 
     VulkanShaderModule& findByName(const std::string& name);
 

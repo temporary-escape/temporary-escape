@@ -19,7 +19,7 @@ public:
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
     void update();
 
-    [[nodiscard]] const std::vector<Primitive>& getPrimitives() const {
+    [[nodiscard]] const std::list<Primitive>& getPrimitives() const {
         return primitives;
     }
 
@@ -27,6 +27,6 @@ private:
     void debugIterate(Grid::Iterator iterator);
 
     ComponentDebug* debug{nullptr};
-    std::vector<Primitive> primitives;
+    std::list<Primitive> primitives;
 };
 } // namespace Engine

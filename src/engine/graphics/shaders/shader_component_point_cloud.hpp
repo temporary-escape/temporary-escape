@@ -14,9 +14,9 @@ public:
         Vector2 st;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         Matrix4 modelMatrix;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentPointCloud() = default;
     explicit ShaderComponentPointCloud(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

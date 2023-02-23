@@ -48,7 +48,7 @@ struct MessagePlayerLocationResponse {
     MESSAGE_DEFINE(MessagePlayerLocationResponse, galaxyId, systemId, sectorId);
 };
 
-class ServicePlayers : public Service {
+class ENGINE_API ServicePlayers : public Service {
 public:
     explicit ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);

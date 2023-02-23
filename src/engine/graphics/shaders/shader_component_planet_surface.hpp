@@ -11,10 +11,10 @@ public:
         Vector3 normal;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         Matrix4 modelMatrix;
         Matrix3 normalMatrix;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentPlanetSurface() = default;
     explicit ShaderComponentPlanetSurface(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

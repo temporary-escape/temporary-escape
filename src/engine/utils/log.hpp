@@ -15,19 +15,19 @@ extern ENGINE_API void e(const std::string& cmp, const std::string& msg);
 extern ENGINE_API void d(const std::string& cmp, const std::string& msg);
 
 template <typename... Args> void i(const std::string& cmp, const std::string& msg, Args&&... args) {
-    i(cmp, fmt::format(msg, std::forward<Args>(args)...));
+    Log::i(cmp, fmt::format(msg, std::forward<Args>(args)...));
 }
 
 template <typename... Args> void w(const std::string& cmp, const std::string& msg, Args&&... args) {
-    w(cmp, fmt::format(msg, std::forward<Args>(args)...));
+    Log::w(cmp, fmt::format(msg, std::forward<Args>(args)...));
 }
 
 template <typename... Args> void e(const std::string& cmp, const std::string& msg, Args&&... args) {
-    e(cmp, fmt::format(msg, std::forward<Args>(args)...));
+    Log::e(cmp, fmt::format(msg, std::forward<Args>(args)...));
 }
 
 template <typename... Args> void d(const std::string& cmp, const std::string& msg, Args&&... args) {
-    d(cmp, fmt::format(msg, std::forward<Args>(args)...));
+    Log::d(cmp, fmt::format(msg, std::forward<Args>(args)...));
 }
 } // namespace Log
 } // namespace Engine

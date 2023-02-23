@@ -10,9 +10,9 @@ public:
         Vector2 position;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         float threshold{0.5f};
-    } __attribute__((aligned(16)));
+    };
 
     static_assert(sizeof(Uniforms) == 16);
 

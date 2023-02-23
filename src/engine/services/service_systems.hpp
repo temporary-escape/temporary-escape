@@ -76,7 +76,7 @@ struct MessageFetchPlanetaryBodiesResponse {
     MESSAGE_DEFINE(MessageFetchPlanetaryBodiesResponse, bodies, token, hasNext);
 };
 
-class ServiceSystems : public Service {
+class ENGINE_API ServiceSystems : public Service {
 public:
     explicit ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);

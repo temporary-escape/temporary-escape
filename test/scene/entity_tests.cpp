@@ -76,13 +76,13 @@ TEST_CASE("Adding entity with component to the scene", TEST_TAG) {
     entity->addComponent<ComponentTransform>();
 
     const auto& cameraSystem = scene.getView<ComponentTransform>();
-    REQUIRE(cameraSystem.size() == 1);
+    REQUIRE(cameraSystem.size_hint() == 1);
 
-    REQUIRE(cameraSystem.size() == 1);
+    REQUIRE(cameraSystem.size_hint() == 1);
 
     scene.removeEntity(entity);
     entity.reset();
 
-    REQUIRE(cameraSystem.empty() == true);
+    REQUIRE(cameraSystem.size_hint() == true);
     REQUIRE(counter == 0);
 }

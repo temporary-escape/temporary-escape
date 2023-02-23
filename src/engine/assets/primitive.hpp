@@ -5,6 +5,12 @@
 
 namespace Engine {
 struct Primitive {
+    Primitive() = default;
+    Primitive(const Primitive& other) = delete;
+    Primitive(Primitive&& other) = default;
+    Primitive& operator=(const Primitive& other) = delete;
+    Primitive& operator=(Primitive&& other) = default;
+
     VulkanBuffer vbo;
     VulkanBuffer ibo;
     const Material* material{nullptr};

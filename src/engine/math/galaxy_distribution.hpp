@@ -1,11 +1,12 @@
 #pragma once
 
 #include "vector.hpp"
+#include "../library.hpp"
 #include <random>
 #include <unordered_set>
 
 namespace Engine {
-class GalaxyDistribution {
+class ENGINE_API GalaxyDistribution {
 public:
     explicit GalaxyDistribution(const float maxWidth) :
         maxWidth{maxWidth * 3.9f},

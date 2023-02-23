@@ -14,10 +14,10 @@ public:
         Vector2 st;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         alignas(16) Matrix4 modelMatrix;
         alignas(16) Color4 color;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentWorldText() = default;
     explicit ShaderComponentWorldText(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

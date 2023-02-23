@@ -27,32 +27,32 @@ void Block::load(Registry& registry, VulkanRenderer& vulkan) {
     std::unordered_map<const Definition::MaterialDefinition*, size_t> map;
 
     for (const auto& def : definition.materials) {
-        materials.emplace_back();
+        materials.emplace_back(std::make_unique<Material>());
         auto& material = materials.back();
 
-        material.baseColorTexture = def.baseColor ? def.baseColor->texture : defaults.baseColor;
-        material.uniform.baseColorFactor = def.baseColor->factor.has_value() ? *def.baseColor->factor : Color4{1.0f};
+        material->baseColorTexture = def.baseColor ? def.baseColor->texture : defaults.baseColor;
+        material->uniform.baseColorFactor = def.baseColor->factor.has_value() ? *def.baseColor->factor : Color4{1.0f};
 
-        material.uniform.metallicRoughnessFactor =
+        material->uniform.metallicRoughnessFactor =
             def.metallicRoughness && def.metallicRoughness->factor ? *def.metallicRoughness->factor : Color4{1.0f};
-        material.metallicRoughnessTexture =
+        material->metallicRoughnessTexture =
             def.metallicRoughness ? def.metallicRoughness->texture : defaults.metallicRoughness;
 
-        material.emissiveTexture = def.emissive ? def.emissive->texture : defaults.emissive;
-        material.uniform.emissiveFactor = def.emissive && def.emissive->factor ? *def.emissive->factor : Color4{1.0f};
+        material->emissiveTexture = def.emissive ? def.emissive->texture : defaults.emissive;
+        material->uniform.emissiveFactor = def.emissive && def.emissive->factor ? *def.emissive->factor : Color4{1.0f};
 
-        material.normalTexture = def.normal ? def.normal->texture : defaults.normal;
-        material.uniform.normalFactor = Color4{1.0f};
+        material->normalTexture = def.normal ? def.normal->texture : defaults.normal;
+        material->uniform.normalFactor = Color4{1.0f};
 
-        material.ambientOcclusionTexture = def.ambientOcclusion ? def.ambientOcclusion->texture : defaults.ambient;
-        material.uniform.ambientOcclusionFactor = Color4{1.0f};
+        material->ambientOcclusionTexture = def.ambientOcclusion ? def.ambientOcclusion->texture : defaults.ambient;
+        material->uniform.ambientOcclusionFactor = Color4{1.0f};
 
         map.insert(std::make_pair(&def, materials.size() - 1));
     }
 
     for (const auto& def : definition.materials) {
         for (const auto& side : def.faces) {
-            shapeSideToMaterial[side] = &materials.at(map[&def]);
+            shapeSideToMaterial[side] = materials.at(map[&def]).get();
         }
     }
 
@@ -64,8 +64,8 @@ void Block::load(Registry& registry, VulkanRenderer& vulkan) {
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-        material.ubo = vulkan.createBuffer(bufferInfo);
-        vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+        material->ubo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(material->ubo, &material->uniform, sizeof(Material::Uniform));
     }
 }
 

@@ -292,7 +292,7 @@ int main(int argc, char** argv) {
     CLI::App parser{"Temporary Escape"};
 
     Path rootPath;
-    parser.add_option("--root", rootPath, "Root directory")->check(CLI::ExistingDirectory)->default_val(defaultRoot);
+    parser.add_option("--root", rootPath, "Root directory")->check(CLI::ExistingDirectory)->default_val(defaultRoot.string());
     parser.add_option("--width", config.windowWidth, "Window width");
     parser.add_option("--height", config.windowHeight, "Window height");
 

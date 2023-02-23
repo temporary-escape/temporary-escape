@@ -15,9 +15,9 @@ public:
         int count{0};
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         bool horizontal{false};
-    } __attribute__((aligned(16)));
+    };
 
     static_assert(sizeof(Uniforms) == 16);
 

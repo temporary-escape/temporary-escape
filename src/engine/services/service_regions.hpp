@@ -43,7 +43,7 @@ struct MessageFetchRegionsResponse {
     MESSAGE_DEFINE(MessageFetchRegionsResponse, regions, token, hasNext);
 };
 
-class ServiceRegions : public Service {
+class ENGINE_API ServiceRegions : public Service {
 public:
     explicit ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);

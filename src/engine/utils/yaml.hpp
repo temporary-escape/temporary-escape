@@ -68,7 +68,7 @@ public:
         return bool(yaml);
     }
 
-    friend void save(const Node& node, const Path& path);
+    friend ENGINE_API void save(const Node& node, const Path& path);
 
 private:
     std::unique_ptr<YAML::Node> yaml;

@@ -25,6 +25,7 @@ endif ()
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/src)
 
+# Unit tests
 if (TEMPORARY_ESCAPE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)

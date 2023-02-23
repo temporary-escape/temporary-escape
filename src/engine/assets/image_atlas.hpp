@@ -16,12 +16,6 @@ public:
         Vector2 st;
     };
 
-    explicit ImageAtlas(const Config& config, VulkanRenderer& vulkan);
-
-    Allocation add(const Vector2i& size, const void* pixels);
-    void finalize();
-
-private:
     class Layer {
     public:
         explicit Layer(const Config& config, VulkanRenderer& vulkan);
@@ -39,8 +33,18 @@ private:
         VulkanTexture texture;
     };
 
-    const Config& config;
-    VulkanRenderer& vulkan;
-    std::vector<std::unique_ptr<Layer>> layers;
+    explicit ImageAtlas(const Config& config, VulkanRenderer& vulkan);
+    ImageAtlas(const ImageAtlas& other) = delete;
+    ImageAtlas(ImageAtlas&& other) = default;
+    ImageAtlas& operator=(const ImageAtlas& other) = delete;
+    ImageAtlas& operator=(ImageAtlas&& other) = default;
+
+    Allocation add(const Vector2i& size, const void* pixels);
+    void finalize();
+
+private:
+    const Config* config;
+    VulkanRenderer* vulkan;
+    std::list<std::unique_ptr<Layer>> layers;
 };
 } // namespace Engine

@@ -42,7 +42,7 @@ struct MessageFetchFactionsResponse {
     MESSAGE_DEFINE(MessageFetchFactionsResponse, factions, token, hasNext);
 };
 
-class ServiceFactions : public Service {
+class ENGINE_API ServiceFactions : public Service {
 public:
     explicit ServiceFactions(const Config& config, Registry& registry, TransactionalDatabase& db,
                              Network::Server& server, Service::SessionValidator& sessionValidator);

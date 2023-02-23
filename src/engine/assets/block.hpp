@@ -36,6 +36,11 @@ public:
     };
 
     explicit Block(std::string name, Path path);
+    Block(const Block& other) = delete;
+    Block(Block&& other) = default;
+    Block& operator=(const Block& other) = delete;
+    Block& operator=(Block&& other) = default;
+
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const Material& getMaterialForSide(const VoxelShape::Face side) const {
@@ -55,7 +60,7 @@ public:
     }
 
     [[nodiscard]] const Material& getMaterial() const {
-        return materials.front();
+        return *materials.front();
     }
 
     static std::shared_ptr<Block> from(const std::string& name);
@@ -64,7 +69,7 @@ private:
     Path path;
     Definition definition;
     std::array<Material*, 7> shapeSideToMaterial;
-    std::vector<Material> materials;
+    std::vector<std::unique_ptr<Material>> materials;
 };
 
 using BlockPtr = std::shared_ptr<Block>;

@@ -22,36 +22,34 @@ namespace py = pybind11;
 using namespace py::literals;
 
 #ifdef _WIN32
-static const auto pathDelimiter = ';';
+static const wchar_t pathDelimiter = ';';
 #else
-static const auto pathDelimiter = ':';
+static const wchar_t pathDelimiter = ':';
 #endif
 
 Python::Python(const Path& home, const std::vector<Path>& paths) {
-    const auto pythonHome = fmt::format("{}{}", home.string(), pathDelimiter);
+    const auto pythonHome = home.wstring() + pathDelimiter;
 
-    std::string pythonPath;
+    std::wstring pythonPath;
     for (const auto& path : paths) {
         if (!pythonPath.empty()) {
             pythonPath += pathDelimiter;
         }
 
-        pythonPath += path.string();
+        pythonPath += path.wstring();
     }
 
-    Log::i(CMP, "Using Python home: '{}'", pythonHome);
-    Log::i(CMP, "Using Python path: '{}'", pythonPath);
+    std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
+    Log::i(CMP, "Using Python home: '{}'", converter.to_bytes(pythonHome));
+    Log::i(CMP, "Using Python path: '{}'", converter.to_bytes(pythonPath));
 
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring pythonHomeW = converter.from_bytes(pythonHome);
-    std::wstring pythonPathW = converter.from_bytes(pythonPath);
 
     try {
         // Initialize python
-        Py_OptimizeFlag = 1;
+        // Py_OptimizeFlag = 1;
         Py_SetProgramName(L"TemporaryEscape");
-        Py_SetPath(pythonPathW.c_str());
-        Py_SetPythonHome(pythonHomeW.c_str());
+        Py_SetPath(pythonPath.c_str());
+        Py_SetPythonHome(pythonHome.c_str());
     } catch (...) {
         EXCEPTION_NESTED("Failed to set Python options");
     }

@@ -10,13 +10,13 @@ public:
         Vector2 position;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         float bloomStrength;
         float bloomPower;
         float exposure;
         float gamma;
         float contrast;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderPassBloomCombine() = default;
     explicit ShaderPassBloomCombine(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

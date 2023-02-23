@@ -7,9 +7,14 @@ namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
     explicit Model(std::string name, Path path);
+    Model(const Model& other) = delete;
+    Model(Model&& other) = default;
+    Model& operator=(const Model& other) = delete;
+    Model& operator=(Model&& other) = default;
+
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 
-    const std::vector<Primitive>& getPrimitives() const {
+    const std::list<Primitive>& getPrimitives() const {
         return primitives;
     }
 
@@ -20,8 +25,8 @@ private:
     Vector3 bbMin;
     Vector3 bbMax;
     float bbRadius;
-    std::vector<Primitive> primitives;
-    std::vector<Material> materials;
+    std::list<Primitive> primitives;
+    std::list<Material> materials;
 };
 
 using ModelPtr = std::shared_ptr<Model>;

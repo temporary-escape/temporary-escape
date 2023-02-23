@@ -11,9 +11,9 @@ public:
         Vector4 color;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         Matrix4 modelMatrix;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentDebug() = default;
     explicit ShaderComponentDebug(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

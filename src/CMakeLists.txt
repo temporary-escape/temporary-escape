@@ -1,111 +1,155 @@
-add_library(${PROJECT_NAME}Engine INTERFACE)
+include(CMakeParseArguments)
 
-# Get all folders in this directory
-file(GLOB ENGINE_DIRECTORIES LIST_DIRECTORIES true "${CMAKE_CURRENT_LIST_DIR}/engine/*")
-foreach (ENGINE_DIRECTORY ${ENGINE_DIRECTORIES})
-    if (NOT IS_DIRECTORY ${ENGINE_DIRECTORY})
-        continue()
-    endif ()
+macro(add_engine_component)
+    set(_OPTIONS_ARGS)
+    set(_ONE_VALUE_ARGS DIR NAME)
+    set(_MULTI_VALUE_ARGS PUBLIC_LIBS PRIVATE_LIBS)
 
-    # Get the name of the folder
-    get_filename_component(COMPONENT_NAME ${ENGINE_DIRECTORY} NAME)
+    cmake_parse_arguments(_ADD_ENGINE_COMPONENT "${_OPTIONS_ARGS}" "${_ONE_VALUE_ARGS}" "${_MULTI_VALUE_ARGS}" ${ARGN})
 
-    # Capitalize first letter
-    # https://stackoverflow.com/questions/11845823/converting-part-of-a-string-to-upper-case-in-cmake
-    string(SUBSTRING ${COMPONENT_NAME} 0 1 COMPONENT_NAME_SUB)
-    string(TOUPPER ${COMPONENT_NAME_SUB} COMPONENT_NAME_SUB)
-    string(REGEX REPLACE "^.(.*)" "${COMPONENT_NAME_SUB}\\1" COMPONENT_NAME "${COMPONENT_NAME}")
+    file(GLOB_RECURSE SOURCES
+            ${CMAKE_CURRENT_LIST_DIR}/engine/${_ADD_ENGINE_COMPONENT_DIR}/*.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/engine/${_ADD_ENGINE_COMPONENT_DIR}/*.c
+            ${CMAKE_CURRENT_LIST_DIR}/engine/${_ADD_ENGINE_COMPONENT_DIR}/*.hpp
+            ${CMAKE_CURRENT_LIST_DIR}/engine/${_ADD_ENGINE_COMPONENT_DIR}/*.h)
+    file(GLOB COMMON_HEADERS
+            ${CMAKE_CURRENT_LIST_DIR}/engine/*.hpp
+            ${CMAKE_CURRENT_LIST_DIR}/engine/*.h)
 
-    # Find all source files in the folder
-    file(GLOB_RECURSE SOURCES ${ENGINE_DIRECTORY}/*.cpp ${ENGINE_DIRECTORY}/*.hpp ${ENGINE_DIRECTORY}/*.h)
-    file(GLOB COMMON_HEADERS ${CMAKE_CURRENT_LIST_DIR}/engine/*.hpp ${CMAKE_CURRENT_LIST_DIR}/engine/*.h)
-
-    # Create a library using the folder as its name
-    set(LIBRARY_NAME "Engine${COMPONENT_NAME}")
-    add_library(${LIBRARY_NAME} SHARED ${SOURCES} ${COMMON_HEADERS})
+    # Define the library
+    add_library(${_ADD_ENGINE_COMPONENT_NAME} SHARED ${SOURCES} ${COMMON_HEADERS})
+    set_target_properties(${_ADD_ENGINE_COMPONENT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 
     # Inherit the common options
-    target_link_libraries(${LIBRARY_NAME} PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
+    target_link_libraries(${_ADD_ENGINE_COMPONENT_NAME} PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
 
     # Common compile definitions
-    target_compile_definitions(${LIBRARY_NAME}
+    target_compile_definitions(${_ADD_ENGINE_COMPONENT_NAME}
             PRIVATE
             ENGINE_EXPORTS=1
             "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine")
 
-    # Engine public dependencies
-    target_link_libraries(${LIBRARY_NAME} PUBLIC
-            glm::glm
-            fmt::fmt
-            Cgltf
-            msgpackc msgpackc-cxx
-            glad::glad
-            asio
-            asio::asio
-            Vulkan::Vulkan
-            utf8cpp
-            EnTT::EnTT)
+    # Header lookup paths
+    set_target_properties(${_ADD_ENGINE_COMPONENT_NAME}
+            PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}")
 
-    # Engine private dependencies
-    target_link_libraries(${LIBRARY_NAME} PRIVATE
-            nuklear
-            glfw
-            RocksDB::rocksdb
-            unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-            HLSL SPIRV glslang OGLCompiler spirv-cross-glsl
-            Png
-            Stb
-            freetype
-            RocksDB::rocksdb
-            OpenSSL::SSL OpenSSL::Crypto
-            OpenAL::OpenAL
-            yaml-cpp
-            lz4::lz4
-            Python3::Python
-            pybind11::lto pybind11::embed pybind11::module)
+    # Where the compiled output goes
+    set_target_properties(${_ADD_ENGINE_COMPONENT_NAME}
+            PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
     # Platform specific dependencies
     if (UNIX AND NOT APPLE)
-        target_link_libraries(${LIBRARY_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid uring)
+        target_link_libraries(${_ADD_ENGINE_COMPONENT_NAME}
+                INTERFACE
+                ZLIB::ZLIB
+                LibLZMA::LibLZMA
+                unofficial::UUID::uuid
+                uring)
     elseif (APPLE)
-        target_link_libraries(${LIBRARY_NAME} PRIVATE ZLIB::ZLIB LibLZMA::LibLZMA unofficial::UUID::uuid Iconv::Iconv)
+        target_link_libraries(${_ADD_ENGINE_COMPONENT_NAME}
+                INTERFACE
+                ZLIB::ZLIB
+                LibLZMA::LibLZMA
+                unofficial::UUID::uuid
+                Iconv::Iconv)
     endif ()
 
-    # Header lookup paths
-    get_filename_component(LIBRARY_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
-    set_target_properties(${LIBRARY_NAME} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${LIBRARY_INCLUDE_DIRS})
+    # Component specific libraries
+    target_link_libraries(${_ADD_ENGINE_COMPONENT_NAME} PUBLIC ${_ADD_ENGINE_COMPONENT_PUBLIC_LIBS})
+    target_link_libraries(${_ADD_ENGINE_COMPONENT_NAME} PRIVATE ${_ADD_ENGINE_COMPONENT_PRIVATE_LIBS})
+endmacro()
 
-    # Where the compiled output goes
-    set_target_properties(${LIBRARY_NAME}
-            PROPERTIES
-            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src")
+add_engine_component(
+        NAME EngineUtils
+        DIR utils
+        PUBLIC_LIBS fmt::fmt asio asio::asio utf8cpp
+        PRIVATE_LIBS Png yaml-cpp OpenSSL::SSL OpenSSL::Crypto)
 
-    # Add this component into the common engine library
-    target_link_libraries(${PROJECT_NAME}Engine INTERFACE ${LIBRARY_NAME})
+add_engine_component(
+        NAME EngineMath
+        DIR math
+        PUBLIC_LIBS EngineUtils glm::glm)
 
-    # Make sure the shared library will get installed
-    install(TARGETS ${LIBRARY_NAME} LIBRARY DESTINATION ".")
-endforeach ()
+add_engine_component(
+        NAME EngineAudio
+        DIR audio
+        PUBLIC_LIBS EngineUtils
+        PRIVATE_LIBS OpenAL::OpenAL)
 
-# Install DLLs as well
-if (WIN32)
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/src/TemporaryEscape/${CMAKE_BUILD_TYPE}/"
-            DESTINATION "."
-            FILES_MATCHING PATTERN "*.dll" PATTERN "CMakeFiles" EXCLUDE)
-endif ()
+add_engine_component(
+        NAME EngineVulkan
+        DIR vulkan
+        PUBLIC_LIBS Vulkan::Vulkan EngineUtils
+        PRIVATE_LIBS
+        glfw
+        glslang::glslang
+        glslang::SPIRV
+        unofficial::vulkan-memory-allocator::vulkan-memory-allocator
+        spirv-cross-glsl)
+
+add_engine_component(
+        NAME EngineFont
+        DIR font
+        PUBLIC_LIBS EngineVulkan EngineUtils
+        PRIVATE_LIBS freetype)
+
+add_engine_component(
+        NAME EngineAssets
+        DIR assets
+        PUBLIC_LIBS EngineVulkan EngineMath EngineUtils)
+
+add_engine_component(
+        NAME EngineScene
+        DIR scene
+        PUBLIC_LIBS EnTT::EnTT EngineAssets EngineFont)
+
+add_engine_component(
+        NAME EngineGraphics
+        DIR graphics
+        PUBLIC_LIBS EngineScene
+        PRIVATE_LIBS nuklear)
+
+add_engine_component(
+        NAME EngineNetwork
+        DIR network
+        PUBLIC_LIBS EngineMath EngineUtils
+        PRIVATE_LIBS OpenSSL::SSL OpenSSL::Crypto lz4::lz4)
+
+add_engine_component(
+        NAME EngineDatabase
+        DIR database
+        PUBLIC_LIBS EngineMath EngineUtils
+        PRIVATE_LIBS RocksDB::rocksdb)
+
+add_engine_component(
+        NAME EngineServices
+        DIR services
+        PUBLIC_LIBS EngineAssets EngineDatabase EngineNetwork OpenSSL::SSL OpenSSL::Crypto)
+
+add_engine_component(
+        NAME EngineServer
+        DIR server
+        PUBLIC_LIBS EngineServices EngineScene EngineMath
+        PythonUnofficial::PythonUnofficial Pybind11Unofficial::Pybind11Unofficial)
+
+add_engine_component(
+        NAME EngineClient
+        DIR client
+        PUBLIC_LIBS EngineGraphics EngineServer EngineAudio)
 
 # The main target
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "TemporaryEscape")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC CLI11::CLI11 ${PROJECT_NAME}Engine)
+target_link_libraries(${PROJECT_NAME}
+        PUBLIC CLI11::CLI11 EngineClient EngineServer)
 
 set_target_properties(${PROJECT_NAME}
         PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src")
-
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ".")
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

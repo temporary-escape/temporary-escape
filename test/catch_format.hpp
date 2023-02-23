@@ -1,6 +1,7 @@
 #pragma once
 
-#include <catch2/catch.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch.hpp>
 #include <engine/math/matrix.hpp>
 #include <engine/math/quaternion.hpp>
 #include <engine/math/vector.hpp>

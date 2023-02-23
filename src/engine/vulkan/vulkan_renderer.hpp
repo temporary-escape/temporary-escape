@@ -90,7 +90,7 @@ public:
     }
 
     uint32_t getCurrentFrameNum() const {
-        return currentFrameNum;
+        return static_cast<uint32_t>(currentFrameNum);
     }
 
     VulkanFence& getCurrentInFlightFence() {

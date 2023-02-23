@@ -75,7 +75,7 @@ void ImageAtlas::Layer::finalize() {
     vulkan.generateMipMaps(texture);
 }
 
-ImageAtlas::ImageAtlas(const Config& config, VulkanRenderer& vulkan) : config{config}, vulkan{vulkan} {
+ImageAtlas::ImageAtlas(const Config& config, VulkanRenderer& vulkan) : config{&config}, vulkan{&vulkan} {
 }
 
 ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels) {
@@ -83,8 +83,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
     Allocation allocation{};
     allocation.size = size;
     allocation.st = {
-        static_cast<float>(size.x) / static_cast<float>(config.imageAtlasSize),
-        static_cast<float>(size.y) / static_cast<float>(config.imageAtlasSize),
+        static_cast<float>(size.x) / static_cast<float>(config->imageAtlasSize),
+        static_cast<float>(size.y) / static_cast<float>(config->imageAtlasSize),
     };
 
     for (auto& layer : layers) {
@@ -92,8 +92,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
         if (res) {
             allocation.pos = *res;
             allocation.uv = {
-                static_cast<float>(res->x) / static_cast<float>(config.imageAtlasSize),
-                static_cast<float>(res->y) / static_cast<float>(config.imageAtlasSize),
+                static_cast<float>(res->x) / static_cast<float>(config->imageAtlasSize),
+                static_cast<float>(res->y) / static_cast<float>(config->imageAtlasSize),
             };
 
             allocation.texture = &layer->getTexture();
@@ -102,7 +102,7 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
         }
     }
 
-    layers.push_back(std::make_unique<Layer>(config, vulkan));
+    layers.emplace_back(std::make_unique<Layer>(*config, *vulkan));
     auto& layer = layers.back();
 
     auto res = layer->add(size, pixels);
@@ -112,8 +112,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
 
     allocation.pos = *res;
     allocation.uv = {
-        static_cast<float>(res->x) / static_cast<float>(config.imageAtlasSize),
-        static_cast<float>(res->y) / static_cast<float>(config.imageAtlasSize),
+        static_cast<float>(res->x) / static_cast<float>(config->imageAtlasSize),
+        static_cast<float>(res->y) / static_cast<float>(config->imageAtlasSize),
     };
 
     allocation.texture = &layer->getTexture();

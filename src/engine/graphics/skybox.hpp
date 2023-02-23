@@ -3,7 +3,7 @@
 #include "../vulkan/vulkan_renderer.hpp"
 
 namespace Engine {
-class Skybox {
+class ENGINE_API Skybox {
 public:
     Skybox() = default;
     explicit Skybox(VulkanRenderer& vulkan, const Color4& color);

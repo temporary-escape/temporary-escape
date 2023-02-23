@@ -6,7 +6,8 @@ file(GLOB_RECURSE SOURCES
 add_executable(${PROJECT_NAME}UnitTests ${SOURCES})
 target_compile_definitions(${PROJECT_NAME}UnitTests PRIVATE ROOT_DIR= "${ROOT_DIR}" ENGINE_TESTS=1)
 
-target_link_libraries(${PROJECT_NAME}UnitTests PUBLIC Catch2::Catch2 Catch2::Catch2WithMain ${PROJECT_NAME}Engine)
+target_link_libraries(${PROJECT_NAME}UnitTests
+        PUBLIC Catch2::Catch2 Catch2::Catch2WithMain EngineClient EngineServer)
 
 set_target_properties(${PROJECT_NAME}UnitTests
         PROPERTIES

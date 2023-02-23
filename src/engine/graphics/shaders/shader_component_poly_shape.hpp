@@ -11,9 +11,9 @@ public:
         Vector4 color;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         alignas(16) Matrix4 modelMatrix;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponentPolyShape() = default;
     explicit ShaderComponentPolyShape(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,

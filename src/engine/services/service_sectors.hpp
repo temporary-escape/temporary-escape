@@ -33,7 +33,7 @@ struct MessageFetchSectorsResponse {
     MESSAGE_DEFINE(MessageFetchSectorsResponse, sectors, token, hasNext);
 };
 
-class ServiceSectors : public Service {
+class ENGINE_API ServiceSectors : public Service {
 public:
     explicit ServiceSectors(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
                             Service::SessionValidator& sessionValidator);

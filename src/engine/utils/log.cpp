@@ -29,18 +29,18 @@ static std::unique_ptr<spdlog::logger> createLogger(const std::optional<Path>& p
 
 static std::unique_ptr<spdlog::logger> logger = createLogger(getAppDataPath() / "TemporaryEscape.log");
 
-void Log::i(const std::string& cmp, const std::string& msg) {
+void Engine::Log::i(const std::string& cmp, const std::string& msg) {
     ::logger->info("[{}] {}", cmp, msg);
 }
 
-void Log::w(const std::string& cmp, const std::string& msg) {
+void Engine::Log::w(const std::string& cmp, const std::string& msg) {
     ::logger->warn("[{}] {}", cmp, msg);
 }
 
-void Log::e(const std::string& cmp, const std::string& msg) {
+void Engine::Log::e(const std::string& cmp, const std::string& msg) {
     ::logger->error("[{}] {}", cmp, msg);
 }
 
-void Log::d(const std::string& cmp, const std::string& msg) {
+void Engine::Log::d(const std::string& cmp, const std::string& msg) {
     ::logger->debug("[{}] {}", cmp, msg);
 }

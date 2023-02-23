@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace Engine {
-class Grid {
+class ENGINE_API Grid {
 public:
     template <typename T, size_t MaxSize, size_t BucketSize = 1024> class Pool {
     public:
@@ -214,9 +214,9 @@ public:
         Vector3 worldPos;
     };
 
-    class Octree;
+    class ENGINE_API Octree;
 
-    class Iterator {
+    class ENGINE_API Iterator {
     public:
         Iterator() = default;
         explicit Iterator(Octree& octree, size_t idx, size_t level, const Vector3i& origin);
@@ -252,7 +252,7 @@ public:
         Vector3i pos{0};
     };
 
-    class Octree {
+    class ENGINE_API Octree {
     public:
         Octree();
         void insert(const Vector3i& pos, const Voxel& voxel);

@@ -10,10 +10,10 @@ public:
         Vector3 position;
     };
 
-    struct Uniforms {
+    struct ALIGNED(16) Uniforms {
         Matrix4 modelMatrix;
         Color4 color;
-    } __attribute__((aligned(16)));
+    };
 
     ShaderComponent2DShape() = default;
     explicit ShaderComponent2DShape(const Config& config, VulkanRenderer& vulkan, ShaderModules& modules,
