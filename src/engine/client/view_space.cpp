@@ -1,9 +1,9 @@
 #include "view_space.hpp"
 #include "client.hpp"
 
-#define CMP "ViewSpace"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
                      Client& client, Gui& gui) :

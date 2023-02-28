@@ -1,9 +1,9 @@
 #include "shader.hpp"
 #include "../utils/exceptions.hpp"
 
-#define CMP "ShaderModules"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static const std::unordered_map<std::string, VkShaderStageFlagBits> extensionStageMap = {
     {".vert", VK_SHADER_STAGE_VERTEX_BIT},
@@ -27,7 +27,7 @@ ShaderModules::ShaderModules(const Config& config, VulkanRenderer& vulkan) {
         loadQueue.emplace_back([this, &vulkan, entry, stage]() {
             auto shader = vulkan.createShaderModule(entry.path(), stage->second);
             auto it = modules.insert(std::make_pair(entry.path().filename().string(), std::move(shader))).first;
-            Log::d(CMP, "Added shader with name: '{}' flags: {}", it->first, stage->second);
+            logger.debug("Added shader with name: '{}' flags: {}", it->first, stage->second);
         });
     }
 

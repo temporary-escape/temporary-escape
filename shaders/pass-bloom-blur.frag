@@ -11,7 +11,7 @@ layout (std140, binding = 0) uniform GaussianWeights {
 } gaussianWeights;
 
 layout(push_constant) uniform Uniforms {
-    bool horizontal;
+    int horizontal;
 } uniforms;
 
 layout(binding = 1) uniform sampler2D texSourceColor;
@@ -21,7 +21,7 @@ layout(location = 0) out vec4 outColor;
 void main() {
     vec2 tex_offset = (1.0 / textureSize(texSourceColor, 0)) * 1.0;// gets size of single texel
     vec3 result = texture(texSourceColor, vs_out.texCoords).rgb * gaussianWeights.weight[0];// current fragment's contribution
-    if (uniforms.horizontal)
+    if (uniforms.horizontal > 0)
     {
         for (int i = 1; i < gaussianWeights.count; ++i)
         {

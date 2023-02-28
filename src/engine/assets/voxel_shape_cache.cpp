@@ -2,9 +2,9 @@
 #include "../math/matrix.hpp"
 #include "../utils/gltf_importer.hpp"
 
-#define CMP "VoxelShapeCache"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static VoxelShape::Face sideFromString(const std::string& str) {
     if (str == "X+") {

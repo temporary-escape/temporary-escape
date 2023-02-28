@@ -2,9 +2,9 @@
 #include "../utils/log.hpp"
 #include <utf8cpp/utf8.h>
 
-#define CMP "VulkanCanvas"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static const std::string vertexShaderSource = R"(#version 450
 

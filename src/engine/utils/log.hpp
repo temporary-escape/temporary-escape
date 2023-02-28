@@ -8,26 +8,57 @@
 #include <utility>
 
 namespace Engine {
-namespace Log {
-extern ENGINE_API void i(const std::string& cmp, const std::string& msg);
-extern ENGINE_API void w(const std::string& cmp, const std::string& msg);
-extern ENGINE_API void e(const std::string& cmp, const std::string& msg);
-extern ENGINE_API void d(const std::string& cmp, const std::string& msg);
+using SpdLogger = std::shared_ptr<spdlog::logger>;
 
-template <typename... Args> void i(const std::string& cmp, const std::string& msg, Args&&... args) {
-    Log::i(cmp, fmt::format(msg, std::forward<Args>(args)...));
-}
+class Logger {
+public:
+    explicit Logger(std::string name, const SpdLogger& root) : name{std::move(name)}, root{root} {
+    }
 
-template <typename... Args> void w(const std::string& cmp, const std::string& msg, Args&&... args) {
-    Log::w(cmp, fmt::format(msg, std::forward<Args>(args)...));
-}
+    void debug(const std::string& msg) {
+        getLogger()->debug(msg);
+    }
 
-template <typename... Args> void e(const std::string& cmp, const std::string& msg, Args&&... args) {
-    Log::e(cmp, fmt::format(msg, std::forward<Args>(args)...));
-}
+    void info(const std::string& msg) {
+        getLogger()->info(msg);
+    }
 
-template <typename... Args> void d(const std::string& cmp, const std::string& msg, Args&&... args) {
-    Log::d(cmp, fmt::format(msg, std::forward<Args>(args)...));
-}
-} // namespace Log
+    void error(const std::string& msg) {
+        getLogger()->error(msg);
+    }
+
+    void warn(const std::string& msg) {
+        getLogger()->warn(msg);
+    }
+
+    template <typename... Args> void debug(const std::string& msg, Args&&... args) {
+        getLogger()->debug(msg, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args> void info(const std::string& msg, Args&&... args) {
+        getLogger()->info(msg, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args> void error(const std::string& msg, Args&&... args) {
+        getLogger()->error(msg, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args> void warn(const std::string& msg, Args&&... args) {
+        getLogger()->warn(msg, std::forward<Args>(args)...);
+    }
+
+    SpdLogger& getLogger() {
+        if (!log) {
+            log = root->clone(name);
+        }
+        return log;
+    }
+
+private:
+    std::string name;
+    const SpdLogger& root;
+    SpdLogger log;
+};
+
+extern ENGINE_API Logger createLogger(std::string name);
 } // namespace Engine

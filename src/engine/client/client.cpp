@@ -2,9 +2,9 @@
 #include "../utils/random.hpp"
 #include <fstream>
 
-#define CMP "Client"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
@@ -27,10 +27,10 @@ void Client::stop() {
 }
 
 void Client::connect(const std::string& address, const int port) {
-    Log::i(CMP, "Connecting to: {} port: {}", address, port);
+    logger.info("Connecting to: {} port: {}", address, port);
     Network::Client::connect(address, port);
 
-    Log::i(CMP, "Connected!");
+    logger.info("Connected!");
 
     auto promise = std::make_shared<Promise<void>>();
     fetchModInfo(promise);
@@ -44,13 +44,13 @@ void Client::connect(const std::string& address, const int port) {
 }
 
 void Client::fetchModInfo(std::shared_ptr<Promise<void>> promise) {
-    Log::i(CMP, "Fetching server mod info...");
+    logger.info("Fetching server mod info...");
     MessageModsInfoRequest reqModInfo{};
     send(reqModInfo, [=](MessageModsInfoResponse res) {
         const auto& ourManifests = registry.getManifests();
 
         for (const auto& manifest : res.manifests) {
-            Log::i(CMP, "Checking for server mod: '{}' @{}", manifest.name, manifest.version);
+            logger.info("Checking for server mod: '{}' @{}", manifest.name, manifest.version);
 
             const auto it = std::find_if(ourManifests.begin(), ourManifests.end(),
                                          [&](const auto& m) { return m.name == manifest.name; });
@@ -75,17 +75,17 @@ void Client::fetchModInfo(std::shared_ptr<Promise<void>> promise) {
 }
 
 void Client::fetchLogin(std::shared_ptr<Promise<void>> promise) {
-    Log::i(CMP, "Doing player login...");
+    logger.info("Doing player login...");
     MessageLoginRequest req{};
     req.secret = localProfile.secret;
     req.name = localProfile.name;
 
     send(req, [=](MessageLoginResponse res) {
         if (!res.error.empty()) {
-            Log::e(CMP, "Login error: {}", res.error);
+            logger.error("Login error: {}", res.error);
             promise->reject<std::runtime_error>(res.error);
         } else {
-            Log::i(CMP, "Login success");
+            logger.info("Login success");
             playerId = res.playerId;
             fetchSpawnRequest(promise);
         }
@@ -93,11 +93,11 @@ void Client::fetchLogin(std::shared_ptr<Promise<void>> promise) {
 }
 
 void Client::fetchSpawnRequest(std::shared_ptr<Promise<void>> promise) {
-    Log::i(CMP, "Sending spawn request...");
+    logger.info("Sending spawn request...");
     MessageSpawnRequest req{};
 
     send(req, [=](MessageSpawnResponse res) {
-        Log::i(CMP, "Got spawn location from the server");
+        logger.info("Got spawn location from the server");
         playerLocation = res.location;
         promise->resolve();
 
@@ -112,7 +112,7 @@ void Client::fetchSystemInfo() {
     req.galaxyId = playerLocation.galaxyId;
 
     send(req, [=](MessageFetchSystemResponse res) {
-        Log::i(CMP, "Got system info for player location");
+        logger.info("Got system info for player location");
 
         systemSeed = res.system.seed;
     });
@@ -134,7 +134,7 @@ void Client::update() {
 }
 
 void Client::handle(MessagePlayerLocationChanged res) {
-    Log::i(CMP, "Sector has changed, creating new scene");
+    logger.info("Sector has changed, creating new scene");
 
     camera.reset();
     scene.reset();
@@ -150,7 +150,7 @@ void Client::handle(MessagePlayerLocationChanged res) {
     camera->addComponent<ComponentUserInput>(cameraCamera);
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
-    Log::i(CMP, "Setting scene primary camera");
+    logger.info("Setting scene primary camera");
     scene->setPrimaryCamera(camera);
 
     auto entity = scene->createEntity();
@@ -212,11 +212,11 @@ void Client::handle(MessagePingRequest req) {
 }
 
 void Client::onError(std::error_code ec) {
-    Log::e(CMP, "Server network error: {} ({})", ec.message(), ec.category().name());
+    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
 }
 
 void Client::onError(const PeerPtr& peer, std::error_code ec) {
-    Log::e(CMP, "Server network error: {} ({})", ec.message(), ec.category().name());
+    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
     peer->close();
 }
 
@@ -224,7 +224,7 @@ void Client::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr)
     try {
         std::rethrow_exception(eptr);
     } catch (std::exception& e) {
-        BACKTRACE(CMP, e, "Server network error");
+        BACKTRACE(e, "Server network error");
     }
     peer->close();
 }

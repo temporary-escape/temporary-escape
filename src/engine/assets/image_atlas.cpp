@@ -1,9 +1,9 @@
 #include "image_atlas.hpp"
 #include "../utils/exceptions.hpp"
 
-#define CMP "ImageAtlas"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     vulkan{vulkan}, packer{2048, Vector2i{config.imageAtlasSize}} {

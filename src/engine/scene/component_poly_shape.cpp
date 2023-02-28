@@ -1,8 +1,8 @@
 #include "component_poly_shape.hpp"
 
-#define CMP "ComponentPolyShape"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentPolyShape::recalculate(VulkanRenderer& vulkan) {
     if (!isDirty()) {
@@ -11,7 +11,7 @@ void ComponentPolyShape::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating with {} vertices", points.size());
+    logger.debug("Recreating with {} vertices", points.size());
 
     vulkan.dispose(std::move(mesh.vbo));
 

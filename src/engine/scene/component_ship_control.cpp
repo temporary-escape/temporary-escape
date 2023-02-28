@@ -3,9 +3,9 @@
 #include "entity.hpp"
 #include <glm/gtx/euler_angles.hpp>
 
-#define CMP "ComponentShipControl"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 /*void ComponentShipControl::initParticles(const EntityPtr& entity, const ComponentGrid& grid) {
     // For all block types in the grid

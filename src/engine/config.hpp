@@ -51,6 +51,7 @@ struct Config {
     std::filesystem::path shaderCachePath;
     std::filesystem::path shadersPath;
     std::filesystem::path shapesPath;
+    std::filesystem::path pythonHome;
 
     std::optional<std::string> saveFolderName;
     bool saveFolderClean = false;

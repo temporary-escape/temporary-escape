@@ -5,12 +5,12 @@
 #include "glsl_compiler.hpp"
 #include "vulkan_device.hpp"
 
-#define CMP "VulkanShaderModule"
-
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 static std::string loadShaderFile(const Path& path) {
-    Log::i(CMP, "Loading shader: '{}'", path);
+    logger.info("Loading shader: '{}'", path);
     return readFileStr(path);
 }
 
@@ -34,7 +34,7 @@ VulkanShaderModule::VulkanShaderModule(const Config& config, VulkanDevice& devic
 
     // Is shader cached?
     if (Fs::exists(binaryPath) && Fs::is_regular_file(binaryPath)) {
-        Log::i(CMP, "Loading shader module binary: '{}'", binaryPath);
+        logger.info("Loading shader module binary: '{}'", binaryPath);
         binaryData = readFileBinary(binaryPath);
 
         createInfo.codeSize = binaryData.size();
@@ -45,7 +45,7 @@ VulkanShaderModule::VulkanShaderModule(const Config& config, VulkanDevice& devic
     else {
         std::string infoLog;
 
-        Log::d(CMP, "Compiling GLSL code of size: {}", glsl.size());
+        logger.debug("Compiling GLSL code of size: {}", glsl.size());
         if (!CompileGLSL2SPIRV(stage, glsl, "main", spirv, infoLog)) {
             EXCEPTION("Failed to compile shader error: {}", infoLog);
         }
@@ -53,7 +53,7 @@ VulkanShaderModule::VulkanShaderModule(const Config& config, VulkanDevice& devic
         createInfo.codeSize = spirv.size() * sizeof(uint32_t);
         createInfo.pCode = spirv.data();
 
-        Log::i(CMP, "Writing shader module binary: '{}'", binaryPath);
+        logger.info("Writing shader module binary: '{}'", binaryPath);
         writeFileBinary(binaryPath, spirv.data(), spirv.size() * sizeof(uint32_t));
     }
 

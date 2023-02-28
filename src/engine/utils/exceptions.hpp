@@ -8,15 +8,7 @@
 
 namespace Engine {
 
-inline void backtrace(const std::exception& e, const size_t level = 0) {
-    Log::e("", "{} {}", std::string(level * 2, ' '), e.what());
-    try {
-        std::rethrow_if_nested(e);
-    } catch (const std::exception& ex) {
-        backtrace(ex, level + 1);
-    } catch (...) {
-    }
-}
+ENGINE_API void backtrace(Logger& logger, const std::exception& e);
 } // namespace Engine
 
 constexpr const char* pathstem(const char* path) {
@@ -42,11 +34,11 @@ constexpr const char* pathstem(const char* path) {
         fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__)));
 
 #define EXCEPTION_NESTED(MSG, ...)                                                                                     \
-    std::throw_with_nested(std::runtime_error(                                                                         \
-        fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__))));
+    std::throw_with_nested(std::runtime_error(fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__,      \
+                                                          __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__))));
 
-#define BACKTRACE(CMP, EXP, MESSAGE, ...)                                                                                   \
-    Log::e(CMP, "Error at {} {}", WHERE, fmt::format(MESSAGE EXCEPTION_VA_ARGS(__VA_ARGS__)));                                                                     \
-    backtrace(EXP);
+#define BACKTRACE(EXP, MESSAGE, ...)                                                                                   \
+    logger.error("Error at {} {}", WHERE, fmt::format(MESSAGE EXCEPTION_VA_ARGS(__VA_ARGS__)));                        \
+    Engine::backtrace(logger, EXP);
 
 #define WHERE (__FILENAME__ + std::string(":") + std::to_string(__LINE__))

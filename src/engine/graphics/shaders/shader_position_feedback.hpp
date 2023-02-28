@@ -9,7 +9,7 @@ public:
     struct Uniforms {
         alignas(16) Matrix4 modelmatrix;
         alignas(16) Vector2 viewport;
-        alignas(16) int count{0};
+        alignas(8) int count{0};
     };
 
     ShaderPositionFeedback() = default;

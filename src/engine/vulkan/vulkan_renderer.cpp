@@ -1,9 +1,9 @@
 #include "vulkan_renderer.hpp"
 #include "../utils/exceptions.hpp"
 
-#define CMP "VulkanRenderer"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 VulkanRenderer::VulkanRenderer(const Config& config) :
     VulkanDevice{config}, config{config}, lastViewportSize{config.windowWidth, config.windowHeight} {
@@ -53,7 +53,7 @@ VulkanRenderer::VulkanRenderer(const Config& config) :
     vkGetPhysicalDeviceProperties(getPhysicalDevice(), &physicalDeviceProperties);
     alignedFlushSize = physicalDeviceProperties.limits.nonCoherentAtomSize;
 
-    Log::i(CMP, "Using aligned flush size: {} bytes", alignedFlushSize);
+    logger.info("Using aligned flush size: {} bytes", alignedFlushSize);
 
     // Pinned buffer to be used for memory transfer
     VulkanBuffer::CreateInfo transferBufferCreateInfo{};
@@ -66,7 +66,7 @@ VulkanRenderer::VulkanRenderer(const Config& config) :
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     transferBuffer = createBuffer(transferBufferCreateInfo);
 
-    Log::i(CMP, "Using buffer flush size: {} bytes", transferBuffer.getSize());
+    logger.info("Using buffer flush size: {} bytes", transferBuffer.getSize());
 
     createRenderPass();
     createSwapChainFramebuffers();
@@ -109,12 +109,6 @@ void VulkanRenderer::destroy() {
 
     transferBuffer.destroy();
 }
-
-/*void VulkanRenderer::getGpuMemoryStats() {
-    VmaBudget info;
-    vmaGetBudget(allocator.getHandle(), &info);
-    Log::d(CMP, "Allocator budget: {} usage: {}", info.budget, info.usage);
-}*/
 
 void VulkanRenderer::onNextFrame() {
     getCurrentInFlightFence().wait();

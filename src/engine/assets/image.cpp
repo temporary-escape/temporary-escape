@@ -2,9 +2,9 @@
 #include "../utils/png_importer.hpp"
 #include "registry.hpp"
 
-#define CMP "Texture"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Image::Image(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }

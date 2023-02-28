@@ -2,9 +2,9 @@
 #include "../utils/png_importer.hpp"
 #include "registry.hpp"
 
-#define CMP "Texture"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) {
     if (filtering) {

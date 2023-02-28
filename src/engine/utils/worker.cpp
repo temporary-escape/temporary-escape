@@ -1,8 +1,12 @@
 #include "worker.hpp"
 
-#define CMP "Worker"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
+
+void Worker::Strand::backtrace(std::exception& e) {
+    BACKTRACE(e, "Work failed");
+}
 
 PeriodicWorker::PeriodicWorker(const std::chrono::milliseconds& period) :
     period(period),
@@ -43,6 +47,10 @@ void PeriodicWorker::run() {
     }
 }
 
+void PeriodicWorker::backtrace(std::exception& e) {
+    BACKTRACE(e, "Work failed");
+}
+
 BackgroundWorker::BackgroundWorker(size_t numThreads) :
     service(std::make_unique<asio::io_service>()), work(std::make_unique<asio::io_service::work>(*service)) {
 
@@ -63,6 +71,10 @@ void BackgroundWorker::stop() {
         }
         threads.clear();
     }
+}
+
+void BackgroundWorker::backtrace(std::exception& e) {
+    BACKTRACE(e, "Work failed");
 }
 
 Worker::Worker(const size_t num) : Worker{std::make_shared<asio::io_service>(), num} {
@@ -159,4 +171,12 @@ void Worker::work() {
             cvStop.notify_one();
         }
     }
+}
+
+void Worker::backtrace(std::exception& e) {
+    BACKTRACE(e, "Work failed");
+}
+
+void SynchronizedWorker::backtrace(std::exception& e) {
+    BACKTRACE(e, "Work failed");
 }

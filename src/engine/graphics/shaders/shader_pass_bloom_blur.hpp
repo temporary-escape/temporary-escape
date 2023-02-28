@@ -16,7 +16,7 @@ public:
     };
 
     struct ALIGNED(16) Uniforms {
-        bool horizontal{false};
+        int horizontal{0};
     };
 
     static_assert(sizeof(Uniforms) == 16);

@@ -3,9 +3,9 @@
 #include "../utils/overloaded.hpp"
 #include "client.hpp"
 
-#define CMP "ViewSystem"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
 static const Vector2 systemBodySize{32.0f, 32.0f};
@@ -140,7 +140,7 @@ void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
             return;
         }
 
-        Log::d(CMP, "Received player location info");
+        logger.debug("Received player location info");
 
         location.galaxyId = res.galaxyId;
         location.systemId = res.systemId;
@@ -171,7 +171,7 @@ void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
         if (res.hasNext) {
             fetchPlanetaryBodiesPage(stop, res.token);
         } else {
-            Log::i(CMP, "Received system with {} sector", system.sectors.size());
+            logger.info("Received system with {} sector", system.sectors.size());
             loadingValue = 0.7f;
             fetchPlanetaryBodiesPage(stop, "");
         }
@@ -197,7 +197,7 @@ void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::stri
         if (res.hasNext) {
             fetchPlanetaryBodiesPage(stop, res.token);
         } else {
-            Log::i(CMP, "Received system with {} planetary bodies", system.bodies.size());
+            logger.info("Received system with {} planetary bodies", system.bodies.size());
             loadingValue = 0.7f;
             updateSystem();
         }
@@ -205,7 +205,7 @@ void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::stri
 }
 
 void ViewSystem::updateSystem() {
-    Log::i(CMP, "Recreating system with objects");
+    logger.info("Recreating system with objects");
     loading = false;
     loadingValue = 1.0f;
 

@@ -1,8 +1,8 @@
 #include "grid.hpp"
 
-#define CMP "Grid"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static inline size_t coordToIdx(const Vector3i& pos, size_t width) {
     // return x + Grid::cacheBuildWidth * (y + Grid::cacheBuildWidth * z);
@@ -11,7 +11,7 @@ static inline size_t coordToIdx(const Vector3i& pos, size_t width) {
 }
 
 template <typename V> static inline glm::vec<3, V> idxToOffsetVoxel(const int idx, const glm::vec<3, V>& origin) {
-    // Log::d(CMP, "idxToOffset({}, {}, {})", idx, s, origin);
+    // logger.debug("idxToOffset({}, {}, {})", idx, s, origin);
     using Vec = glm::vec<3, V>;
 
     switch (idx) {
@@ -46,7 +46,7 @@ template <typename V> static inline glm::vec<3, V> idxToOffsetVoxel(const int id
 }
 
 template <typename V> static inline glm::vec<3, V> idxToOffset(const int idx, const V s, const glm::vec<3, V>& origin) {
-    // Log::d(CMP, "idxToOffset({}, {}, {})", idx, s, origin);
+    // logger.debug("idxToOffset({}, {}, {})", idx, s, origin);
     using Vec = glm::vec<3, V>;
 
     switch (idx) {
@@ -338,7 +338,7 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                     continue;
                 }
 
-                // Log::d(CMP, "building voxel pos: [{}, {}, {}]", x, y, z);
+                // logger.debug("building voxel pos: [{}, {}, {}]", x, y, z);
 
                 const auto posf = Vector3{pos};
                 const auto& block = types.at(item.type).block;
@@ -386,19 +386,19 @@ Grid::Octree::Octree() {
     root.branch.index = 0;
     root.branch.next = badIndex;
     root.branch.child = badIndex;
-    // Log::d(CMP, "Octree() root: {}", root.branch.string());
+    // logger.debug("Octree() root: {}", root.branch.string());
     // dump();
 }
 
 void Grid::Octree::insert(const Vector3i& pos, const Voxel& voxel) {
     while (isOutside(pos)) {
-        // Log::d(CMP, "Expand by one");
+        // logger.debug("Expand by one");
         expand(0, 1);
-        // Log::d(CMP, "After expand");
+        // logger.debug("After expand");
         // dump();
     }
 
-    // Log::d(CMP, "Inserting pos: {}", pos);
+    // logger.debug("Inserting pos: {}", pos);
     insert(nodes.at(0), Vector3i{0}, pos, voxel, 1);
 }
 
@@ -409,7 +409,7 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
     const auto insertIdx = posToIndex(pos, origin);
     Index lastChildIdx = 0;
 
-    // Log::d(CMP, "Insert at origin: {} pos: {} level: {}", origin, pos, level);
+    // logger.debug("Insert at origin: {} pos: {} level: {}", origin, pos, level);
 
     while (childIdx) {
         if (!childIdx || childIdx == badIndex) {
@@ -434,7 +434,7 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
         } else {
             if (child.branch.index == insertIdx) {
                 const auto newOrigin = idxToOffset(insertIdx, getWidthForLevel(depth - level + 1) / 2, origin);
-                // Log::d(CMP, "insert branch newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
+                // logger.debug("insert branch newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
                 insert(child, newOrigin, pos, voxel, level + 1);
                 return;
             }
@@ -446,7 +446,7 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
     // Insert new node
     auto& child = nodes.insert();
     if (depth - level == 0) {
-        // Log::d(CMP, "Inserting new child voxel with index: {}", insertIdx);
+        // logger.debug("Inserting new child voxel with index: {}", insertIdx);
         child.voxel.index = insertIdx;
         child.voxel.next = badIndex;
         child.voxel.color = voxel.color;
@@ -454,7 +454,7 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
         child.voxel.type = voxel.type;
         child.voxel.shape = voxel.shape;
     } else {
-        // Log::d(CMP, "Inserting new child branch with index: {}", insertIdx);
+        // logger.debug("Inserting new child branch with index: {}", insertIdx);
         child.branch.child = badIndex;
         child.branch.index = insertIdx;
         child.branch.next = badIndex;
@@ -462,21 +462,21 @@ void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& 
     const auto newChildIdx = nodes.indexOf(child);
 
     if (!lastChildIdx) {
-        // Log::d(CMP, "parentIdx: {} newChildIdx: {}", parentIdx, newChildIdx);
+        // logger.debug("parentIdx: {} newChildIdx: {}", parentIdx, newChildIdx);
         nodes.at(parentIdx).branch.child = newChildIdx;
     } else {
         if (depth - level == 0) {
-            // Log::d(CMP, "lastChildIdx (voxel): {} newChildIdx: {}", parentIdx, newChildIdx);
+            // logger.debug("lastChildIdx (voxel): {} newChildIdx: {}", parentIdx, newChildIdx);
             nodes.at(lastChildIdx).voxel.next = newChildIdx;
         } else {
-            // Log::d(CMP, "lastChildIdx (branch): {} newChildIdx: {}", parentIdx, newChildIdx);
+            // logger.debug("lastChildIdx (branch): {} newChildIdx: {}", parentIdx, newChildIdx);
             nodes.at(lastChildIdx).branch.next = newChildIdx;
         }
     }
 
     if (depth - level != 0) {
         const auto newOrigin = idxToOffset(insertIdx, getWidthForLevel(depth - level + 1) / 2, origin);
-        // Log::d(CMP, "insert new newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
+        // logger.debug("insert new newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
         insert(child, newOrigin, pos, voxel, level + 1);
     }
 }
@@ -545,7 +545,7 @@ std::optional<Grid::Voxel> Grid::Octree::find(const Node& parent, const Vector3i
     Index childIdx = parent.branch.child;
     const auto findIdx = posToIndex(pos, origin);
 
-    // Log::d(CMP, "Got first child idx: {}", childIdx);
+    // logger.debug("Got first child idx: {}", childIdx);
 
     while (childIdx) {
         if (!childIdx || childIdx == badIndex) {
@@ -555,21 +555,21 @@ std::optional<Grid::Voxel> Grid::Octree::find(const Node& parent, const Vector3i
         auto& child = nodes.at(childIdx);
 
         if (depth - level == 0) {
-            // Log::d(CMP, "Checking if child index {} matches expected index {}", child.voxel.index, findIdx);
+            // logger.debug("Checking if child index {} matches expected index {}", child.voxel.index, findIdx);
             if (child.voxel.index == findIdx) {
                 return child.voxel;
             }
         } else {
-            // Log::d(CMP, "Checking if child index {} matches expected index {}", child.branch.index, findIdx);
+            // logger.debug("Checking if child index {} matches expected index {}", child.branch.index, findIdx);
             if (child.branch.index == findIdx) {
                 const auto newOrigin = idxToOffset(findIdx, getWidthForLevel(depth - level + 1) / 2, origin);
-                // Log::d(CMP, "find newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
+                // logger.debug("find newOrigin: [{}, {}, {}]", newOrigin.x, newOrigin.y, newOrigin.z);
                 return find(child, newOrigin, pos, level + 1);
             }
         }
 
         childIdx = child.branch.next;
-        // Log::d(CMP, "Got next child idx: {}", childIdx);
+        // logger.debug("Got next child idx: {}", childIdx);
     }
 
     return std::nullopt;
@@ -580,19 +580,19 @@ void Grid::Octree::expand(const Index idx, const size_t level) {
     // children.reserve(8);
 
     auto& parent = nodes.at(idx);
-    // Log::d(CMP, "Expanding parent: {}", parent.branch.string());
+    // logger.debug("Expanding parent: {}", parent.branch.string());
     Index childIdx = parent.branch.child;
 
     parent.branch.child = badIndex;
     Index lastNewChildIdx = badIndex;
 
     const auto addChildToParent = [&](const Index grandChildIdx, const int index) {
-        // Log::d(CMP, "addChildToParent() grandChildIdx: {}", grandChildIdx);
+        // logger.debug("addChildToParent() grandChildIdx: {}", grandChildIdx);
         auto& newChild = nodes.insert();
         newChild.branch.child = grandChildIdx;
         newChild.branch.next = badIndex;
         newChild.branch.index = index;
-        // Log::d(CMP, "new child: [{}] {}", nodes.indexOf(newChild), newChild.branch.string());
+        // logger.debug("new child: [{}] {}", nodes.indexOf(newChild), newChild.branch.string());
 
         if (nodes.at(idx).branch.child == badIndex) {
             lastNewChildIdx = nodes.indexOf(newChild);
@@ -638,7 +638,7 @@ void Grid::Octree::dump() const {
 void Grid::Octree::dump(const Grid::Node& node, size_t level) const {
     std::string indent(level * 2, ' ');
     if (depth - level == 0) {
-        Log::d(CMP, "{}Voxel: [{}] {}", indent, nodes.indexOf(node), node.voxel.string());
+        logger.debug("{}Voxel: [{}] {}", indent, nodes.indexOf(node), node.voxel.string());
 
         Index nextIdx = node.voxel.next;
         while (nextIdx && nextIdx != badIndex) {
@@ -647,7 +647,7 @@ void Grid::Octree::dump(const Grid::Node& node, size_t level) const {
             nextIdx = next.voxel.next;
         }
     } else {
-        Log::d(CMP, "{}Branch: [{}] {}", indent, nodes.indexOf(node), node.branch.string());
+        logger.debug("{}Branch: [{}] {}", indent, nodes.indexOf(node), node.branch.string());
 
         Index childIdx = node.branch.child;
         if (childIdx != badIndex) {
@@ -776,13 +776,13 @@ void Grid::generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelSha
     std::memset(cache.get(), 0x00, sizeof(Voxel) * cacheBuildWidth * cacheBuildWidth * cacheBuildWidth);
 
     const auto& origin = iterator.getPos();
-    // Log::d(CMP, "generateMeshBlock origin: {}", origin);
+    // logger.debug("generateMeshBlock origin: {}", origin);
     const auto min = origin - Vector3i{iterator.getBranchWidth() / 2};
 
     auto children = iterator.children();
     generateMeshCache(children, cache.get(), min);
 
-    // Log::d(CMP, "generateMeshBlock build min: {}", min);
+    // logger.debug("generateMeshBlock build min: {}", min);
     build(voxelShapeCache, cache.get(), types, map, min);
 }
 
@@ -792,14 +792,14 @@ void Grid::generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& o
     }
 
     while (iterator) {
-        // Log::d(CMP, "buildMesh iterator pos: {} offset: {}", iterator.getPos(), offset);
+        // logger.debug("buildMesh iterator pos: {} offset: {}", iterator.getPos(), offset);
         const auto pos = iterator.getPos() - offset;
 
         if (!iterator.isVoxel()) {
             auto children = iterator.children();
             generateMeshCache(children, cache, offset);
         } else {
-            // Log::d(CMP, "buildMesh: [{}] {} pos: [{}, {}, {}]", voxels.pool().indexOf(iterator.value()),
+            // logger.debug("buildMesh: [{}] {} pos: [{}, {}, {}]", voxels.pool().indexOf(iterator.value()),
             //        iterator.value().voxel.string(), pos.x, pos.y, pos.z);
 
             auto& dst = cache[coordToIdx(pos + Vector3i{1}, cacheBuildWidth)];

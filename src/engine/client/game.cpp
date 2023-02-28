@@ -2,9 +2,9 @@
 #include "../graphics/theme.hpp"
 #include "../utils/random.hpp"
 
-#define CMP "Game"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, SkyboxGenerator& skyboxGenerator,
            Registry& registry, FontFamily& font, Client& client) :
@@ -64,33 +64,33 @@ void Game::eventMouseMoved(const Vector2i& pos) {
 
 void Game::switchToGalaxyMap() {
     if (view != viewGalaxy.get()) {
-        Log::i(CMP, "Switching to galaxy map scene...");
+        logger.info("Switching to galaxy map scene...");
         view = viewGalaxy.get();
         viewGalaxy->load();
     } else {
-        Log::i(CMP, "Switching to space scene...");
+        logger.info("Switching to space scene...");
         view = viewSpace.get();
     }
 }
 
 void Game::switchToSystemMap() {
     if (view != viewSystem.get()) {
-        Log::i(CMP, "Switching to system map scene...");
+        logger.info("Switching to system map scene...");
         view = viewSystem.get();
         viewSystem->load();
     } else {
-        Log::i(CMP, "Switching to system scene...");
+        logger.info("Switching to system scene...");
         view = viewSpace.get();
     }
 }
 
 void Game::switchToSystemMap(const std::string& galaxyId, const std::string& systemId) {
     if (view != viewSystem.get()) {
-        Log::i(CMP, "Switching to system map scene...");
+        logger.info("Switching to system map scene...");
         view = viewSystem.get();
         viewSystem->load(galaxyId, systemId);
     } else {
-        Log::i(CMP, "Switching to system scene...");
+        logger.info("Switching to system scene...");
         view = viewSpace.get();
     }
 }

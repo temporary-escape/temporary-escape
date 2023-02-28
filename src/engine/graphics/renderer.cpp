@@ -1,9 +1,9 @@
 #include "renderer.hpp"
 #include "../utils/exceptions.hpp"
 
-#define CMP "Renderer"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 struct FullScreenVertex {
     Vector2 pos;
@@ -1381,7 +1381,8 @@ void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const R
         ShaderPositionFeedback::Uniforms constants{};
         constants.modelmatrix = transform.getAbsoluteTransform();
         constants.viewport = Vector2{viewport};
-        constants.count = component.getCount();
+        constants.count = static_cast<int>(component.getCount());
+        logger.warn("offset: {}", offsetof(ShaderPositionFeedback::Uniforms, count));
 
         vkb.pushConstants(shaders.positionFeedback.getPipeline(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
                           sizeof(ShaderPositionFeedback::Uniforms), &constants);
@@ -1782,7 +1783,7 @@ void Renderer::renderPassBloomBlur(VulkanCommandBuffer& vkb, const size_t idx, c
                         bufferBindings, textureBindings);
 
     ShaderPassBloomBlur::Uniforms constants{};
-    constants.horizontal = !vertical;
+    constants.horizontal = vertical ? 0 : 1;
     vkb.pushConstants(shaders.passBloomBlur[idx].getPipeline(),
                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                       sizeof(ShaderPassFXAA::Uniforms), &constants);

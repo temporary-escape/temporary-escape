@@ -99,9 +99,7 @@ public:
         return *atlas;
     }
 
-    TexturePtr addTexture(const Path& path) {
-        return addAsset(textures, path);
-    }
+    TexturePtr addTexture(const Path& path);
 
     void findAssets();
     void init(VulkanRenderer& vulkan);
@@ -122,28 +120,9 @@ private:
     void addManifest(const Path& path);
     TexturePtr createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name);
 
-    template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext) {
-        if (!Fs::exists(path)) {
-            return;
-        }
+    template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext);
 
-        if (!Fs::is_directory(path)) {
-            EXCEPTION("Assets path: \'{}\' is not a directory", path.string());
-        }
-
-        iterateDir(path, ext, [&](const Path& file) { addAsset(assets, file); });
-    }
-
-    template <typename T> std::shared_ptr<T> addAsset(Category<T>& assets, const Path& path) {
-        Log::i("Registry", "Adding asset: '{}'", path);
-        auto asset = std::make_shared<T>(path.stem().string(), path);
-        assets.insert(asset->getName(), asset);
-        loadQueue.emplace_back([=](VulkanRenderer& vulkan) {
-            Log::i("Registry", "Loading asset: '{}'", path);
-            asset->load(*this, vulkan);
-        });
-        return asset;
-    }
+    template <typename T> std::shared_ptr<T> addAsset(Category<T>& assets, const Path& path);
 
     const Config& config;
     std::unique_ptr<ImageAtlas> atlas;

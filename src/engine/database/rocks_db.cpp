@@ -7,36 +7,36 @@
 #include <rocksdb/utilities/transaction.h>
 #include <string_view>
 
-#define CMP "RocksDB"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 class DefaultLogger : public rocksdb::Logger {
 public:
     DefaultLogger() = default;
 
     void Logv(const rocksdb::InfoLogLevel logLevel, const char* format, va_list ap) override {
-        using LogFunc = void (*)(const std::string&, const std::string&);
-        auto func = static_cast<LogFunc>(&Log::d);
+        using LogFunc = void (Engine::Logger::*)(const std::string&);
+        auto func = static_cast<LogFunc>(&Engine::Logger::debug);
         switch (logLevel) {
         case rocksdb::InfoLogLevel::DEBUG_LEVEL: {
-            func = static_cast<LogFunc>(&Log::e);
+            func = static_cast<LogFunc>(&Engine::Logger::error);
             break;
         }
         case rocksdb::InfoLogLevel::HEADER_LEVEL: {
-            func = static_cast<LogFunc>(&Log::i);
+            func = static_cast<LogFunc>(&Engine::Logger::info);
             break;
         }
         case rocksdb::InfoLogLevel::INFO_LEVEL: {
-            func = static_cast<LogFunc>(&Log::i);
+            func = static_cast<LogFunc>(&Engine::Logger::info);
             break;
         }
         case rocksdb::InfoLogLevel::FATAL_LEVEL: {
-            func = static_cast<LogFunc>(&Log::e);
+            func = static_cast<LogFunc>(&Engine::Logger::error);
             break;
         }
         case rocksdb::InfoLogLevel::WARN_LEVEL: {
-            func = static_cast<LogFunc>(&Log::w);
+            func = static_cast<LogFunc>(&Engine::Logger::warn);
             break;
         }
         default: {
@@ -45,13 +45,13 @@ public:
         }
         char buf[2048];
         std::vsnprintf(buf, sizeof(buf), format, ap);
-        func(CMP, buf);
+        (logger.*func)(buf);
     }
 
     void Logv(const char* format, va_list ap) override {
         char buf[2048];
         std::vsnprintf(buf, sizeof(buf), format, ap);
-        Log::d(CMP, buf);
+        logger.debug(buf);
     }
 };
 
@@ -189,7 +189,7 @@ RocksDB::RocksDB(const Path& path) {
 
     options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(tableOptions));
 
-    Log::i(CMP, "Opening database: {}", path.string());
+    logger.info("Opening database: {}", path.string());
 
     rocksdb::OptimisticTransactionDB* txnPtr;
     const auto s = rocksdb::OptimisticTransactionDB::Open(options, path.string(), &txnPtr);

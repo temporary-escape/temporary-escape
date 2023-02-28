@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-#define CMP "ServiceSystems"
+static auto logger = createLogger(__FILENAME__);
 
 ServiceSystems::ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db,
                                Network::Server& server, Service::SessionValidator& sessionValidator) :

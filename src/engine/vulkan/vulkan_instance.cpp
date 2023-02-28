@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-#define CMP "VulkanInstance"
+static auto logger = createLogger(__FILENAME__);
 
 static VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator,
@@ -32,7 +32,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(VkDebugUtilsMessage
     auto& self = *reinterpret_cast<VulkanInstance*>(pUserData);
     // if (msg.find("VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
     if (self.debugMessengerEnabled) {
-        Log::w(CMP, msg);
+        logger.warn(msg);
     }
 
     return VK_FALSE;
@@ -261,12 +261,13 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     appCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     appCreateInfo.ppEnabledExtensionNames = extensions.data();
 
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    populateDebugMessengerCreateInfo(debugCreateInfo);
+
     if (config.vulkan.enableValidationLayers) {
         appCreateInfo.enabledLayerCount = static_cast<uint32_t>(vulkanValidationLayers.size());
         appCreateInfo.ppEnabledLayerNames = vulkanValidationLayers.data();
 
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-        populateDebugMessengerCreateInfo(debugCreateInfo);
         debugCreateInfo.pUserData = this;
 
         appCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
@@ -284,8 +285,6 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     surface = createSurface(instance);
 
     if (config.vulkan.enableValidationLayers) {
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-        populateDebugMessengerCreateInfo(debugCreateInfo);
         debugCreateInfo.pUserData = this;
 
         if (createDebugUtilsMessengerEXT(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
@@ -318,7 +317,7 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     }
 
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    Log::i(CMP, "Chosen GPU device name: {}", physicalDeviceProperties.deviceName);
+    logger.info("Chosen GPU device name: {}", physicalDeviceProperties.deviceName);
 }
 
 VulkanInstance::~VulkanInstance() {

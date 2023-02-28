@@ -1,6 +1,7 @@
 #include "python.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
+#include "bindings.hpp"
 #include <Python.h>
 
 #include <iostream>
@@ -15,8 +16,6 @@
 #pragma GCC diagnostic pop
 #endif
 
-#define CMP "Interpreter"
-
 using namespace Engine;
 namespace py = pybind11;
 using namespace py::literals;
@@ -27,10 +26,12 @@ static const wchar_t pathDelimiter = ';';
 static const wchar_t pathDelimiter = ':';
 #endif
 
+static auto logger = createLogger(__FILENAME__);
+
 Python::Python(const Path& home, const std::vector<Path>& paths) {
     const auto pythonHome = home.wstring() + pathDelimiter;
 
-    std::wstring pythonPath;
+    std::wstring pythonPath = home.wstring();
     for (const auto& path : paths) {
         if (!pythonPath.empty()) {
             pythonPath += pathDelimiter;
@@ -44,8 +45,8 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
 #else
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 #endif
-    Log::i(CMP, "Using Python home: '{}'", converter.to_bytes(pythonHome));
-    Log::i(CMP, "Using Python path: '{}'", converter.to_bytes(pythonPath));
+    logger.info("Using Python home: '{}'", converter.to_bytes(pythonHome));
+    logger.info("Using Python path: '{}'", converter.to_bytes(pythonPath));
 
     try {
         // Initialize python
@@ -57,15 +58,21 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
         EXCEPTION_NESTED("Failed to set Python options");
     }
 
-    try {
-        py::scoped_interpreter guard{};
+    py::scoped_interpreter guard{};
 
+    try {
         py::exec(R"(
             import sys
             sys.dont_write_bytecode = True
         )");
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to set Python options");
+
+        py::exec(R"(
+            from engine import createLogger
+            logger = createLogger("builtin")
+            logger.info("Hello World from Python!")
+        )");
+    } catch (std::exception& e) {
+        EXCEPTION("Failed to set Python options error: {}", e.what());
     }
 }
 

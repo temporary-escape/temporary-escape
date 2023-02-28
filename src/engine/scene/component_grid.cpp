@@ -1,8 +1,8 @@
 #include "component_grid.hpp"
 
-#define CMP "componentGrid"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentGrid::update() {
 }
@@ -11,7 +11,7 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
     while (iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
-            // Log::d(CMP, "Add box: {}", pos);
+            // logger.debug("Add box: {}", pos);
             debug->addBox(glm::translate(pos), 0.95f, Color4{1.0f, 0.0f, 0.0f, 1.0f});
         } else {
             debugIterate(iterator.children());
@@ -40,8 +40,8 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     primitives.clear();
 
     for (const auto& [material, data] : map) {
-        Log::d(CMP, "Building mesh for type: {} of size: {} indices", material->baseColorTexture->getName(),
-               data.indices.size());
+        logger.debug("Building mesh for type: {} of size: {} indices", material->baseColorTexture->getName(),
+                     data.indices.size());
 
         if (data.indices.empty()) {
             continue;

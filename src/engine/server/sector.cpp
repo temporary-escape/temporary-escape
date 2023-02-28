@@ -2,9 +2,9 @@
 #include "../utils/string_utils.hpp"
 #include "server.hpp"
 
-#define CMP "Sector"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Sector::Sector(const Config& config, World& world, Registry& registry, std::string galaxyId, std::string systemId,
                std::string sectorId) :
@@ -16,11 +16,11 @@ Sector::Sector(const Config& config, World& world, Registry& registry, std::stri
     sectorId{std::move(sectorId)},
     loaded{false} {
 
-    Log::i(CMP, "Started sector: '{}'", this->sectorId);
+    logger.info("Started sector: '{}'", this->sectorId);
 }
 
 Sector::~Sector() {
-    Log::i(CMP, "Stopped sector: '{}'", sectorId);
+    logger.info("Stopped sector: '{}'", sectorId);
 }
 
 void Sector::load() {
@@ -226,7 +226,7 @@ void Sector::update(const float delta) {
 
 void Sector::addPlayer(SessionPtr session) {
     /*sync.post([this, session = std::move(session)]() {
-        Log::i(CMP, "Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
+        logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
 
         players.emplace_back();
         players.back().session = session;

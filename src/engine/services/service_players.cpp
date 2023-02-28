@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-#define CMP "ServicePlayers"
+static auto logger = createLogger(__FILENAME__);
 
 ServicePlayers::ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db,
                                Network::Server& server, Service::SessionValidator& sessionValidator) :
@@ -37,7 +37,7 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
     // Update the player data or create a new player
     auto [_, result] = db.update<PlayerData>(playerId, [&](std::optional<PlayerData>& player) {
         if (!player) {
-            Log::i(CMP, "Registering new player: '{}'", name);
+            logger.info("Registering new player: '{}'", name);
             player = PlayerData{};
             player->id = playerId;
             player->secret = secret;
@@ -55,7 +55,7 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
 PlayerLocationData ServicePlayers::findStartingLocation(const std::string& playerId) {
     auto [_, result] = db.update<PlayerLocationData>(playerId, [&](std::optional<PlayerLocationData>& location) {
         if (!location) {
-            Log::i(CMP, "Choosing starting position for player: '{}'", playerId);
+            logger.info("Choosing starting position for player: '{}'", playerId);
 
             const auto choices = db.seekAll<SectorData>("", 1);
             if (choices.empty()) {

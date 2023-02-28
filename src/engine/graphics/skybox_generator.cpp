@@ -2,6 +2,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 static const std::array<Matrix4, 6> captureViewMatrices = {
     glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
     glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
@@ -42,8 +44,6 @@ static const glm::mat4 captureProjectionMatrix = glm::perspective(PI / 2.0, 1.0,
 // For some reason the first side (prefilter) texture is always bad no matter what I do.
 // Temporary workaround, render the first side one more time. This seems to work.
 static const std::array<int, 6> sidesToRender = {0, 1, 2, 3, 4, 5};
-
-#define CMP "SkyboxGenerator"
 
 SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, ShaderModules& shaderModules) :
     config{config}, vulkan{vulkan} {
@@ -232,7 +232,7 @@ void SkyboxGenerator::copyTexture(VulkanCommandBuffer& vkb, VulkanTexture& sourc
 }
 
 Skybox SkyboxGenerator::generate(uint64_t seed) {
-    Log::i(CMP, "Generating skybox with seed: {}", seed);
+    logger.info("Generating skybox with seed: {}", seed);
 
     Rng rng{seed};
 
@@ -467,7 +467,7 @@ void SkyboxGenerator::renderPrefilter(VulkanCommandBuffer& vkb, VulkanTexture& c
 void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
     auto size = Vector2i{config.skyboxSize, config.skyboxSize};
 
-    Log::d(CMP, "Preparing skybox cubemap of size: {}", size);
+    logger.debug("Preparing skybox cubemap of size: {}", size);
 
     VulkanTexture::CreateInfo textureInfo{};
     textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -538,7 +538,7 @@ void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
 }
 
 void SkyboxGenerator::prepareStars(Rng& rng, Stars& stars, const size_t count) {
-    Log::d(CMP, "Preparing skybox vertex buffer for: {} stars", count);
+    logger.debug("Preparing skybox vertex buffer for: {} stars", count);
 
     std::uniform_real_distribution<float> distPosition(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.9f, 1.0f);

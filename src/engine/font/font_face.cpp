@@ -4,9 +4,9 @@
 #include "font_loader.hpp"
 #include <utf8.h>
 
-#define CMP "FontFace"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) : size{size} {
     auto loader = FontLoader{path, size};
@@ -156,7 +156,7 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) :
 
     vulkan.generateMipMaps(texture);
 
-    Log::i(CMP, "Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth, finalHeight});
+    logger.info("Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth, finalHeight});
 }
 
 FontFace::~FontFace() = default;

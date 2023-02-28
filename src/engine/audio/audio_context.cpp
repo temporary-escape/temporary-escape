@@ -3,9 +3,9 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#define CMP "AudioContext"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 struct AudioContext::Data {
     std::shared_ptr<ALCdevice> device;
@@ -21,7 +21,7 @@ AudioContext::AudioContext() : data(std::make_unique<Data>()) {
             auto test = alcOpenDevice(device);
             if (test) {
                 alcCloseDevice(test);
-                Log::i(CMP, "Available audio device: '{}'", device);
+                logger.info("Available audio device: '{}'", device);
             }
 
             device += strlen(device) + 1;
@@ -30,28 +30,28 @@ AudioContext::AudioContext() : data(std::make_unique<Data>()) {
 
     auto device = alcOpenDevice(nullptr);
     if (!device) {
-        EXCEPTION(CMP, "Failed to open audio device");
+        EXCEPTION("Failed to open audio device");
     }
 
     data->device = std::shared_ptr<ALCdevice>(device, [](ALCdevice* ptr) { alcCloseDevice(ptr); });
 
     auto context = alcCreateContext(data->device.get(), nullptr);
     if (!context) {
-        EXCEPTION(CMP, "Failed to create audio context");
+        EXCEPTION("Failed to create audio context");
     }
 
     data->context = std::shared_ptr<ALCcontext>(context, [](ALCcontext* ptr) { alcDestroyContext(ptr); });
 
     if (!alcMakeContextCurrent(context)) {
-        EXCEPTION(CMP, "Failed to set audio context");
+        EXCEPTION("Failed to set audio context");
     }
 
     const auto specifier = alcGetString(device, ALC_DEVICE_SPECIFIER);
     if (!specifier) {
-        EXCEPTION(CMP, "Failed to get audio device specifier");
+        EXCEPTION("Failed to get audio device specifier");
     }
 
-    Log::i(CMP, "Using audio device: '{}'", specifier);
+    logger.info("Using audio device: '{}'", specifier);
 }
 
 AudioContext::~AudioContext() = default;

@@ -4,9 +4,9 @@
 #include "client.hpp"
 #include "game.hpp"
 
-#define CMP "ViewGalaxy"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
@@ -143,7 +143,7 @@ void ViewGalaxy::fetchCurrentLocation(const StopToken& stop) {
             return;
         }
 
-        Log::d(CMP, "Received player location info");
+        logger.debug("Received player location info");
 
         location.galaxyId = res.galaxyId;
         location.systemId = res.systemId;
@@ -164,7 +164,7 @@ void ViewGalaxy::fetchGalaxyInfo(const StopToken& stop) {
             return;
         }
 
-        Log::d(CMP, "Received galaxy info for: '{}'", location.galaxyId);
+        logger.debug("Received galaxy info for: '{}'", location.galaxyId);
 
         galaxy.name = res.name;
         galaxy.systems.clear();
@@ -194,7 +194,7 @@ void ViewGalaxy::fetchFactionsPage(const StopToken& stop, const std::string& tok
         if (res.hasNext) {
             fetchRegionsPage(stop, res.token);
         } else {
-            Log::i(CMP, "Received galaxy with {} factions", factions.size());
+            logger.info("Received galaxy with {} factions", factions.size());
             loadingValue = 0.5f;
             fetchRegionsPage(stop, "");
         }
@@ -218,7 +218,7 @@ void ViewGalaxy::fetchRegionsPage(const StopToken& stop, const std::string& toke
         if (res.hasNext) {
             fetchRegionsPage(stop, res.token);
         } else {
-            Log::i(CMP, "Received galaxy with {} regions", galaxy.regions.size());
+            logger.info("Received galaxy with {} regions", galaxy.regions.size());
             loadingValue = 0.5f;
             fetchSystemsPage(stop, "");
         }
@@ -242,7 +242,7 @@ void ViewGalaxy::fetchSystemsPage(const StopToken& stop, const std::string& toke
         if (res.hasNext) {
             fetchSystemsPage(stop, res.token);
         } else {
-            Log::i(CMP, "Received galaxy with {} systems", galaxy.systems.size());
+            logger.info("Received galaxy with {} systems", galaxy.systems.size());
             loadingValue = 0.7f;
             updateGalaxy();
         }
@@ -250,7 +250,7 @@ void ViewGalaxy::fetchSystemsPage(const StopToken& stop, const std::string& toke
 }
 
 void ViewGalaxy::updateGalaxy() {
-    Log::i(CMP, "Recreating galaxy objects with {} systems", galaxy.systems.size());
+    logger.info("Recreating galaxy objects with {} systems", galaxy.systems.size());
     loading = false;
     loadingValue = 1.0f;
 
@@ -420,7 +420,7 @@ void ViewGalaxy::createEntitiesRegions() {
 }
 
 void ViewGalaxy::calculateBackground() {
-    Log::i(CMP, "Calculating background");
+    logger.info("Calculating background");
 
     std::vector<Vector2> positions;
     positions.reserve(galaxy.systemsOrdered.size());
@@ -440,7 +440,7 @@ void ViewGalaxy::calculateBackground() {
 }
 
 void ViewGalaxy::createBackground(const VoronoiResult& voronoi) {
-    Log::i(CMP, "Creating background");
+    logger.info("Creating background");
 
     if (voronoi.cells.size() != galaxy.systemsOrdered.size()) {
         EXCEPTION("Voronoi incorrect number of cells");

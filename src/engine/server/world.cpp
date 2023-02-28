@@ -1,8 +1,8 @@
 #include "world.hpp"
 
-#define CMP "World"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 World::World(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
              Service::SessionValidator& sessionValidator) :

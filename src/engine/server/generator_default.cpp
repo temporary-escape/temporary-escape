@@ -7,9 +7,9 @@
 #include "../utils/name_generator.hpp"
 #include "../utils/random.hpp"
 
-#define CMP "GeneratorDefault"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 // Not optimized but the number of regions will be very low.
 // Should be around 18 regions.
@@ -112,7 +112,7 @@ void GeneratorDefault::generate(const uint64_t seed) {
 
     // Was the universe created?
     if (!index.galaxyId.empty()) {
-        Log::i(CMP, "Universe already generated");
+        logger.info("Universe already generated");
         return;
     }
 
@@ -126,11 +126,11 @@ void GeneratorDefault::generate(const uint64_t seed) {
     generateGalaxyFactions(index.galaxyId);
     generateGalaxySectors(index.galaxyId);
 
-    Log::i(CMP, "Universe generated");
+    logger.info("Universe generated");
 }
 
 std::string GeneratorDefault::generateGalaxy(Rng& rng, const uint64_t seed) {
-    Log::i(CMP, "Generating galaxy");
+    logger.info("Generating galaxy");
 
     GalaxyData galaxy;
     galaxy.id = uuid();
@@ -149,7 +149,7 @@ void GeneratorDefault::generateGalaxyRegions(const std::string& galaxyId) {
         "Domain", "Expanse",  "Realm",    "Sphere", "Vicinity",  "Enclave", "Area",
     };
 
-    Log::i(CMP, "Generating regions for galaxy: '{}' ...", galaxyId);
+    logger.info("Generating regions for galaxy: '{}' ...", galaxyId);
 
     const auto galaxy = world.galaxies.get(galaxyId);
     std::mt19937_64 rng{galaxy.seed + 10};
@@ -172,11 +172,11 @@ void GeneratorDefault::generateGalaxyRegions(const std::string& galaxyId) {
         world.regions.create(region);
     }
 
-    Log::i(CMP, "Generated {} regions for galaxy '{}'", positions.size(), galaxy.name);
+    logger.info("Generated {} regions for galaxy '{}'", positions.size(), galaxy.name);
 }
 
 void GeneratorDefault::generateGalaxySystems(const std::string& galaxyId) {
-    Log::i(CMP, "Generating systems for galaxy: '{}' ...", galaxyId);
+    logger.info("Generating systems for galaxy: '{}' ...", galaxyId);
 
     const auto galaxy = world.galaxies.get(galaxyId);
     const auto regions = world.regions.getForGalaxy(galaxyId);
@@ -201,7 +201,7 @@ void GeneratorDefault::generateGalaxySystems(const std::string& galaxyId) {
 }
 
 void GeneratorDefault::generateGalaxyFactions(const std::string& galaxyId) {
-    Log::i(CMP, "Generating factions for galaxy: '{}' ...", galaxyId);
+    logger.info("Generating factions for galaxy: '{}' ...", galaxyId);
 
     const auto galaxy = world.galaxies.get(galaxyId);
     auto systems = world.systems.getForGalaxy(galaxyId);
@@ -236,7 +236,7 @@ void GeneratorDefault::generateGalaxyFactions(const std::string& galaxyId) {
 }
 
 void GeneratorDefault::generateGalaxySectors(const std::string& galaxyId) {
-    Log::i(CMP, "Generating sectors for galaxy: '{}' ...", galaxyId);
+    logger.info("Generating sectors for galaxy: '{}' ...", galaxyId);
 
     const auto galaxy = world.galaxies.get(galaxyId);
     const auto systems = world.systems.getForGalaxy(galaxyId);
@@ -250,7 +250,7 @@ void GeneratorDefault::generateGalaxySectors(const std::string& galaxyId) {
 void GeneratorDefault::generateSystemDistribution(GeneratorDefault::Rng& rng, const std::string& galaxyId,
                                                   std::vector<SystemData>& systems,
                                                   const std::vector<RegionData>& regions) {
-    Log::i(CMP, "Calculating galaxy distribution for {} systems...", systems.size());
+    logger.info("Calculating galaxy distribution for {} systems...", systems.size());
 
     GalaxyDistribution distributor{config.generator.galaxyWidth};
 
@@ -285,11 +285,11 @@ void GeneratorDefault::generateSystemDistribution(GeneratorDefault::Rng& rng, co
         }
     }
 
-    Log::i(CMP, "Galaxy has radius of: {} configured: {}", radius, config.generator.galaxyWidth);
+    logger.info("Galaxy has radius of: {} configured: {}", radius, config.generator.galaxyWidth);
 }
 
 void GeneratorDefault::connectSystems(GeneratorDefault::Rng& rng, std::vector<SystemData>& systems) {
-    Log::i(CMP, "Creating connections for {} systems...", systems.size());
+    logger.info("Creating connections for {} systems...", systems.size());
 
     const auto positions = getSystemPositions(systems);
 
@@ -373,7 +373,7 @@ void GeneratorDefault::connectSystems(GeneratorDefault::Rng& rng, std::vector<Sy
 void GeneratorDefault::floodFillRegions(GeneratorDefault::Rng& rng, std::vector<SystemData>& systems,
                                         const std::vector<RegionData>& regions) {
 
-    Log::i(CMP, "Flood filling regions for {} systems with {} regions ...", systems.size(), regions.size());
+    logger.info("Flood filling regions for {} systems with {} regions ...", systems.size(), regions.size());
 
     const auto positions = getSystemPositions(systems);
     const auto indexes = getSystemIdToIndexMap(systems);
@@ -394,7 +394,7 @@ void GeneratorDefault::floodFillRegions(GeneratorDefault::Rng& rng, std::vector<
 void GeneratorDefault::floodFillFactions(GeneratorDefault::Rng& rng, std::vector<SystemData>& systems,
                                          const std::vector<FactionData>& factions) {
 
-    Log::i(CMP, "Flood filling factions for {} systems with {} factions ...", systems.size(), factions.size());
+    logger.info("Flood filling factions for {} systems with {} factions ...", systems.size(), factions.size());
 
     const auto positions = getSystemPositions(systems);
     const auto indexes = getSystemIdToIndexMap(systems);
@@ -513,7 +513,7 @@ void GeneratorDefault::populateSystemPlanets(Rng& rng, const GalaxyData& galaxy,
                                                          const std::vector<RegionData>& regions) {
     const auto& options = config.generator;
 
-    Log::i(CMP, "Generating systems for galaxy: '{}' ...", galaxy.id);
+    logger.info("Generating systems for galaxy: '{}' ...", galaxy.id);
 
     // Not optimized but the number of regions will be very low.
     // Should be around 18
@@ -721,7 +721,7 @@ void GeneratorDefault::populateSystemPlanets(Rng& rng, const GalaxyData& galaxy,
         world.systems.create(system);
     }
 
-    Log::i(CMP, "Generated {} systems for galaxy: '{}'", systems.size(), galaxy.name);
+    logger.info("Generated {} systems for galaxy: '{}'", systems.size(), galaxy.name);
 
     return systems;
 }*/

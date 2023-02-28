@@ -1,8 +1,8 @@
 #include "component_clickable_points.hpp"
 
-#define CMP "ComponentPositionFeedback"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentClickablePoints::add(const Vector3& pos) {
     setDirty(true);
@@ -22,7 +22,7 @@ void ComponentClickablePoints::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating {} points", points.size());
+    logger.debug("Recreating {} points", points.size());
     vulkan.dispose(std::move(sboInput));
     vulkan.dispose(std::move(sboOutput));
 
@@ -63,6 +63,7 @@ std::optional<size_t> ComponentClickablePoints::findNearestPoint(const Vector2i&
     std::vector<Found> found;
 
     auto values = reinterpret_cast<Vector2*>(sboOutput.getPreviousBuffer().getMappedPtr());
+    logger.warn("First value: {}", values[0]);
     for (size_t i = 0; i < points.size(); i++) {
         if (pos.x > values[i].x - size.x / 2.0f && pos.x < values[i].x + size.x / 2.0f &&
             pos.y > values[i].y - size.y / 2.0f && pos.y < values[i].y + size.y / 2.0f) {

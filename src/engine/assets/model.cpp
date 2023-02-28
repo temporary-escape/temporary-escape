@@ -2,9 +2,9 @@
 #include "../utils/gltf_importer.hpp"
 #include "registry.hpp"
 
-#define CMP "Texture"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static bool isCollision(const std::string& name) {
     if (name.find("_CCX") == name.size() - 4) {

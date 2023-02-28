@@ -3,9 +3,9 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#define CMP "FontLoader"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static FT_Library initFreeType() {
     FT_Library ft;

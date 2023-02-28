@@ -1,9 +1,9 @@
 #include "application.hpp"
 #include "../graphics/theme.hpp"
 
-#define CMP "Application"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Application::Application(const Config& config) :
     VulkanRenderer{config},
@@ -108,7 +108,7 @@ void Application::checkForClientScene() {
     status.value = 1.0f;
 
     if (client->getScene()) {
-        Log::i(CMP, "Client has a scene, creating Game instance");
+        logger.info("Client has a scene, creating Game instance");
 
         game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
     } else {
@@ -117,14 +117,14 @@ void Application::checkForClientScene() {
 }
 
 void Application::startClient() {
-    Log::i(CMP, "Starting client");
+    logger.info("Starting client");
 
     status.message = "Connecting...";
     status.value = 0.9f;
 
     client = std::make_unique<Client>(config, *registry, playerLocalProfile);
 
-    Log::i(CMP, "Connecting to the server");
+    logger.info("Connecting to the server");
 
     future = std::async([this]() -> std::function<void()> {
         client->connect("localhost", config.serverPort);
@@ -134,7 +134,7 @@ void Application::startClient() {
 }
 
 void Application::loadServer() {
-    Log::i(CMP, "Loading server");
+    logger.info("Loading server");
 
     status.message = "Loading universe...";
     status.value = 0.8f;
@@ -153,7 +153,7 @@ void Application::loadServer() {
 }
 
 void Application::startServer() {
-    Log::i(CMP, "Starting server");
+    logger.info("Starting server");
 
     status.message = "Starting server...";
     status.value = 0.75f;
@@ -172,7 +172,7 @@ void Application::startServer() {
 }
 
 void Application::startDatabase() {
-    Log::i(CMP, "Starting database");
+    logger.info("Starting database");
 
     status.message = "Starting world database...";
     status.value = 0.7f;
@@ -186,14 +186,14 @@ void Application::startDatabase() {
                 path /= "Universe 1";
             }
             if (config.saveFolderClean) {
-                Log::w(CMP, "Deleting save: '{}'", path);
+                logger.warn("Deleting save: '{}'", path);
                 Fs::remove_all(path);
             }
             if (!Fs::exists(path)) {
-                Log::i(CMP, "Creating save: '{}'", path);
+                logger.info("Creating save: '{}'", path);
                 Fs::create_directories(path);
             }
-            Log::i(CMP, "Starting database with save: '{}'", path);
+            logger.info("Starting database with save: '{}'", path);
 
             db = std::make_unique<RocksDB>(path);
         } catch (...) {
@@ -227,7 +227,7 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
 }
 
 void Application::loadAssets() {
-    Log::i(CMP, "Loading assets");
+    logger.info("Loading assets");
 
     this->registry->init(*this);
 
@@ -238,7 +238,7 @@ void Application::loadAssets() {
 }
 
 void Application::createRegistry() {
-    Log::i(CMP, "Setting up registry");
+    logger.info("Setting up registry");
 
     status.message = "Loading mod packs...";
     status.value = 0.3f;
@@ -250,7 +250,7 @@ void Application::createRegistry() {
 }
 
 void Application::createRenderer() {
-    Log::i(CMP, "Creating renderer");
+    logger.info("Creating renderer");
 
     status.message = "Creating renderer...";
     status.value = 0.3f;
@@ -262,7 +262,7 @@ void Application::createRenderer() {
 }
 
 void Application::createVoxelShapeCache() {
-    Log::i(CMP, "Creating voxel shape cache");
+    logger.info("Creating voxel shape cache");
 
     status.message = "Creating voxel shape cache...";
     status.value = 0.3f;
@@ -273,7 +273,7 @@ void Application::createVoxelShapeCache() {
 }
 
 void Application::compileShaders() {
-    Log::i(CMP, "Compiling shaders");
+    logger.info("Compiling shaders");
 
     status.message = "Loading shaders...";
     status.value = 0.1f;
@@ -306,7 +306,7 @@ void Application::compileNextShaderInQueue(ShaderModules::LoadQueue::iterator ne
 }
 
 void Application::startSinglePlayer() {
-    Log::i(CMP, "Starting single player mode");
+    logger.info("Starting single player mode");
 
     status.message = "Loading...";
     status.value = 0.0f;

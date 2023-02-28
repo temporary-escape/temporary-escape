@@ -1,8 +1,8 @@
 #include "component_point_cloud.hpp"
 
-#define CMP "ComponentPointCloud"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color) {
     setDirty(true);
@@ -22,7 +22,7 @@ void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating {} points with image: {}", points.size(), texture->getName());
+    logger.debug("Recreating {} points with image: {}", points.size(), texture->getName());
 
     vulkan.dispose(std::move(mesh.vbo));
 

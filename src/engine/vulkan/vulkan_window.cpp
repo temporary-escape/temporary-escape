@@ -4,9 +4,9 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#define CMP "VulkanWindow"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 static MouseButton toMouseButton(int button) {
     switch (button) {
@@ -139,7 +139,7 @@ static Key toKey(int key) {
 }
 
 static void errorCallback(const int error, const char* description) {
-    Log::e(CMP, "{}", description);
+    logger.error("{}", description);
 }
 
 static const char* name = "TemporaryEscape";
@@ -305,7 +305,7 @@ void VulkanWindow::windowSizeCallback(GLFWwindow* window, int width, int height)
 
     const Vector2i size = {width, height};
 
-    Log::d(CMP, "windowSizeCallback new size: {}", size);
+    logger.debug("windowSizeCallback new size: {}", size);
 }
 
 void VulkanWindow::charCallback(GLFWwindow* window, unsigned int codepoint) {

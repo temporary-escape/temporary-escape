@@ -1,16 +1,16 @@
 #include "vulkan_device.hpp"
 #include "../utils/exceptions.hpp"
 
-#define CMP "VulkanDevice"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, config{config} {
     const auto indices = getQueueFamilies();
 
-    Log::i(CMP, "Queue family graphics: {}", indices.graphicsFamily ? indices.graphicsFamily.value() : -1);
-    Log::i(CMP, "Queue family present: {}", indices.presentFamily ? indices.presentFamily.value() : -1);
-    Log::i(CMP, "Queue family compute: {}", indices.computeFamily ? indices.computeFamily.value() : -1);
+    logger.info("Queue family graphics: {}", indices.graphicsFamily ? indices.graphicsFamily.value() : -1);
+    logger.info("Queue family present: {}", indices.presentFamily ? indices.presentFamily.value() : -1);
+    logger.info("Queue family compute: {}", indices.computeFamily ? indices.computeFamily.value() : -1);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {

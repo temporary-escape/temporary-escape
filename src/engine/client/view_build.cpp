@@ -1,8 +1,8 @@
 #include "view_build.hpp"
 
-#define CMP "ViewBuild"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui) :
     config{config},

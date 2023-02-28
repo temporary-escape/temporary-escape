@@ -1,8 +1,8 @@
 #include "registry.hpp"
 
-#define CMP "Registry"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Registry* Registry::instance{nullptr};
 
@@ -143,4 +143,31 @@ TexturePtr Registry::createTextureOfColor(VulkanRenderer& vulkan, const Color4& 
                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     return asset;
+}
+
+template <typename T> void Registry::init(Category<T>& assets, const Path& path, const std::set<std::string>& ext) {
+    if (!Fs::exists(path)) {
+        return;
+    }
+
+    if (!Fs::is_directory(path)) {
+        EXCEPTION("Assets path: \'{}\' is not a directory", path.string());
+    }
+
+    iterateDir(path, ext, [&](const Path& file) { addAsset(assets, file); });
+}
+
+template <typename T> std::shared_ptr<T> Registry::addAsset(Category<T>& assets, const Path& path) {
+    logger.info("Adding asset: '{}'", path);
+    auto asset = std::make_shared<T>(path.stem().string(), path);
+    assets.insert(asset->getName(), asset);
+    loadQueue.emplace_back([=](VulkanRenderer& vulkan) {
+        logger.info("Loading asset: '{}'", path);
+        asset->load(*this, vulkan);
+    });
+    return asset;
+}
+
+TexturePtr Registry::addTexture(const Path& path) {
+    return addAsset(textures, path);
 }

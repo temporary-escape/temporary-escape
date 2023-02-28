@@ -1,9 +1,9 @@
 #include "scene.hpp"
 #include "../assets/registry.hpp"
 
-#define CMP "Scene"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Scene::Scene(EventListener& eventListener) : eventListener{eventListener}, nextId{0} {
 }
@@ -268,7 +268,7 @@ void Scene::addEntity(EntityPtr entity) {
         if (found != entityMap.end()) {
             entity->setParent(found->second);
         } else {
-            Log::w(CMP, "Entity parent id: {} not found", entity->getParentId());
+            logger.warn("Entity parent id: {} not found", entity->getParentId());
         }
     }
 
@@ -338,7 +338,7 @@ void Scene::addBullet(const Vector3& pos, const Vector3& dir) {
     }
 
     const auto endIdx = bullets.data.size();
-    Log::d(CMP, "Resizing bullets buffer to {}", bullets.data.size() + 128);
+    logger.debug("Resizing bullets buffer to {}", bullets.data.size() + 128);
     bullets.data.resize(bullets.data.size() + 128);
     add(bullets.data.at(endIdx));*/
 }

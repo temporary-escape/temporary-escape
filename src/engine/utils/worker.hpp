@@ -46,12 +46,14 @@ public:
                 try {
                     fn();
                 } catch (std::exception& e) {
-                    BACKTRACE("Worker", e, "Work failed");
+                    backtrace(e);
                 }
             });
         }
 
     private:
+        static void backtrace(std::exception& e);
+
         std::unique_ptr<asio::io_service::strand> strand;
     };
 
@@ -76,12 +78,14 @@ public:
             try {
                 fn();
             } catch (std::exception& e) {
-                BACKTRACE("Worker", e, "Work failed");
+                backtrace(e);
             }
         });
     }
 
 private:
+    static void backtrace(std::exception& e);
+
     void work();
 
     size_t start;
@@ -108,12 +112,14 @@ public:
             try {
                 fn();
             } catch (std::exception& e) {
-                BACKTRACE("Worker", e, "Work failed");
+                backtrace(e);
             }
         });
     }
 
 private:
+    static void backtrace(std::exception& e);
+
     void run();
 
     const std::chrono::milliseconds period;
@@ -143,7 +149,7 @@ public:
             try {
                 fn();
             } catch (std::exception& e) {
-                BACKTRACE("Worker", e, "Work failed");
+                backtrace(e);
             }
         });
     }
@@ -157,6 +163,8 @@ public:
     }
 
 private:
+    static void backtrace(std::exception& e);
+
     std::unique_ptr<asio::io_service> service;
     std::unique_ptr<asio::io_service::work> work;
     std::vector<std::thread> threads;
@@ -178,7 +186,7 @@ public:
             try {
                 fn();
             } catch (std::exception& e) {
-                BACKTRACE("Worker", e, "Work failed");
+                backtrace(e);
             }
         });
     }
@@ -188,6 +196,8 @@ public:
     }
 
 private:
+    static void backtrace(std::exception& e);
+
     asio::io_service service;
 };
 } // namespace Engine

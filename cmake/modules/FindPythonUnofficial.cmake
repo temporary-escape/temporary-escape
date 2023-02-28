@@ -60,3 +60,10 @@ if (PYTHONUNOFFICIAL_FOUND AND NOT TARGET PythonUnofficial)
         set_property(TARGET PythonUnofficial PROPERTY IMPORTED_LOCATION ${PYTHON3_LIBRARY_RELEASE})
     endif ()
 endif ()
+
+
+if (MSVC)
+    message(FATAL_ERROR "TODO")
+elseif (UNIX AND NOT APPLE)
+    set(CPYTHON_STDLIB_DIR "${VCPKG_INSTALLED_DIR}/x64-linux/lib/python3.10")
+endif ()

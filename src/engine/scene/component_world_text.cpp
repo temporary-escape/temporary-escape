@@ -1,9 +1,9 @@
 #include "component_world_text.hpp"
 #include <utf8cpp/utf8.h>
 
-#define CMP "ComponentWorldText"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
     if (!isDirty()) {
@@ -12,7 +12,7 @@ void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating with {} vertices", vertices.size());
+    logger.debug("Recreating with {} vertices", vertices.size());
 
     vulkan.dispose(std::move(mesh.vbo));
 

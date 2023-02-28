@@ -66,7 +66,7 @@ endmacro()
 add_engine_component(
         NAME EngineUtils
         DIR utils
-        PUBLIC_LIBS fmt::fmt asio asio::asio utf8cpp
+        PUBLIC_LIBS fmt::fmt asio asio::asio utf8cpp spdlog::spdlog
         PRIVATE_LIBS Png yaml-cpp OpenSSL::SSL OpenSSL::Crypto)
 
 add_engine_component(
@@ -146,10 +146,16 @@ add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "TemporaryEscape")
 
 target_link_libraries(${PROJECT_NAME}
-        PUBLIC CLI11::CLI11 EngineClient EngineServer)
+        PUBLIC CLI11::CLI11 EngineClient EngineServer PythonUnofficial::PythonUnofficial Pybind11Unofficial::Pybind11Unofficial)
 
 set_target_properties(${PROJECT_NAME}
         PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+        -E copy_directory ${CPYTHON_STDLIB_DIR} ${CMAKE_BINARY_DIR}/python)

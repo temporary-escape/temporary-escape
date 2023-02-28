@@ -1,9 +1,9 @@
 #include "block.hpp"
 #include "registry.hpp"
 
-#define CMP "Block"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
     try {

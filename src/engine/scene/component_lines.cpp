@@ -1,8 +1,8 @@
 #include "component_lines.hpp"
 
-#define CMP "ComponentLines"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentLines::recalculate(VulkanRenderer& vulkan) {
     if (!isDirty()) {
@@ -11,7 +11,7 @@ void ComponentLines::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating with {} lines", lines.size());
+    logger.debug("Recreating with {} lines", lines.size());
 
     vulkan.dispose(std::move(mesh.vbo));
 

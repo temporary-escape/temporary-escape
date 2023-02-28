@@ -1,9 +1,9 @@
 #include "component_icon_point_cloud.hpp"
 #include "../utils/log.hpp"
 
-#define CMP "ComponentIconPointCloud"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 void ComponentIconPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color, const ImagePtr& image) {
     setDirty(true);
@@ -17,10 +17,10 @@ void ComponentIconPointCloud::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    Log::d(CMP, "Recreating with {} images", imagePoints.size());
+    logger.debug("Recreating with {} images", imagePoints.size());
 
     for (const auto& [image, points] : imagePoints) {
-        Log::d(CMP, "Recreating {} points with image: {}", points.size(), image->getName());
+        logger.debug("Recreating {} points with image: {}", points.size(), image->getName());
 
         vulkan.dispose(std::move(meshes[image].vbo));
 

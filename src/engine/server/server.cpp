@@ -4,9 +4,9 @@
 #include "python.hpp"
 #include <memory>
 
-#define CMP "Server"
-
 using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req, Res)                                                                                       \
@@ -25,7 +25,7 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
     world{config, registry, db, *this, *this},
     generator{std::make_unique<GeneratorDefault>(config, world)},
     tickFlag{true},
-    // python{std::make_unique<Python>()},
+    python{std::make_unique<Python>(config.pythonHome, std::vector<Path>{config.assetsPath})},
     worker{4},
     commands{worker.strand()} {
 
@@ -39,21 +39,21 @@ void Server::load() {
     try {
         generator->generate(123456789ULL);
         tickThread = std::thread(&Server::tick, this);
-        Log::i(CMP, "Universe has been generated and is ready");
+        logger.info("Universe has been generated and is ready");
     } catch (...) {
         EXCEPTION_NESTED("Failed to generate the universe");
     }
 
     try {
         Network::Server::start();
-        Log::i(CMP, "TCP server started");
+        logger.info("TCP server started");
     } catch (...) {
         EXCEPTION_NESTED("Failed to start the server");
     }
 }
 
 void Server::stop() {
-    Log::i(CMP, "Stopping");
+    logger.info("Stopping");
 
     {
         std::unique_lock<std::shared_mutex> lock{players.mutex};
@@ -74,7 +74,7 @@ Server::~Server() {
 }
 
 void Server::tick() {
-    Log::i(CMP, "Starting tick");
+    logger.info("Starting tick");
 
     while (tickFlag.load()) {
         const auto start = std::chrono::steady_clock::now();
@@ -103,7 +103,7 @@ void Server::tick() {
         sectorWorker.run();
 
         if (failedId.has_value()) {
-            Log::e(CMP, "Sector: '{}' failed to update, stopping tick", failedId.value());
+            logger.error("Sector: '{}' failed to update, stopping tick", failedId.value());
             break;
         }*/
 
@@ -114,7 +114,7 @@ void Server::tick() {
         }
     }
 
-    Log::i(CMP, "Stopped tick");
+    logger.info("Stopped tick");
 }
 
 void Server::updateSessionsPing(const std::vector<SessionPtr>& sessions) {
@@ -133,7 +133,7 @@ void Server::updateSessionsPing(const std::vector<SessionPtr>& sessions) {
 }
 
 void Server::onAcceptSuccess(PeerPtr peer) {
-    Log::i(CMP, "New connection peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    logger.info("New connection peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
     addPeerToLobby(peer);
 }
 
@@ -158,7 +158,7 @@ bool Server::isPeerLoggedIn(const std::string& playerId) {
 }
 
 void Server::addPeerToLobby(const PeerPtr& peer) {
-    Log::i(CMP, "Adding to lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    logger.info("Adding to lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
     std::unique_lock<std::shared_mutex> lock{players.mutex};
     players.lobby.insert(peer.get());
 }
@@ -169,19 +169,19 @@ void Server::removePeerFromLobby(const PeerPtr& peer) {
 
     const auto it = players.lobby.find(peer.get());
     if (it != players.lobby.end()) {
-        Log::i(CMP, "Removing from lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+        logger.info("Removing from lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
         players.lobby.erase(it);
     }
 }
 
 void Server::disconnectPeer(const PeerPtr& peer) {
-    Log::i(CMP, "Disconnecting peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    logger.info("Disconnecting peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
     removePeerFromLobby(peer);
     peer->close();
 }
 
 SessionPtr Server::createSession(const PeerPtr& peer, const PlayerData& player) {
-    Log::i(CMP, "Creating session for peer id: {} player: {}", reinterpret_cast<uint64_t>(peer.get()), player.id);
+    logger.info("Creating session for peer id: {} player: {}", reinterpret_cast<uint64_t>(peer.get()), player.id);
     std::unique_lock<std::shared_mutex> lock{players.mutex};
     auto session = std::make_shared<Session>(player.id, peer);
     players.sessions.insert(std::make_pair(peer.get(), session));
@@ -189,7 +189,7 @@ SessionPtr Server::createSession(const PeerPtr& peer, const PlayerData& player) 
 }
 
 SectorPtr Server::startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId) {
-    Log::i(CMP, "Starting sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
+    logger.info("Starting sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
 
     auto sectorOpt = world.sectors.find(galaxyId, systemId, sectorId);
     if (!sectorOpt) {
@@ -201,12 +201,12 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 
     auto it = sectors.map.find(sector.id);
     if (it != sectors.map.end()) {
-        Log::i(CMP, "Starting sector: '{}/{}/{}' skipped, already started", galaxyId, systemId, sectorId);
+        logger.info("Starting sector: '{}/{}/{}' skipped, already started", galaxyId, systemId, sectorId);
         return it->second;
     }
 
     try {
-        Log::i(CMP, "Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
+        logger.info("Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
         auto instance = std::make_shared<Sector>(config, world, registry, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, instance));
 
@@ -217,7 +217,7 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 }
 
 void Server::addPlayerToSector(const SessionPtr& session, const std::string& sectorId) {
-    Log::i(CMP, "Adding player: {} to sector: {}", session->getPlayerId(), sectorId);
+    logger.info("Adding player: {} to sector: {}", session->getPlayerId(), sectorId);
 
     std::shared_lock<std::shared_mutex> lock{sectors.mutex};
     const auto it = sectors.map.find(sectorId);
@@ -283,7 +283,7 @@ std::vector<SessionPtr> Server::getAllSessions() {
 }
 
 void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res) {
-    Log::i(CMP, "New login peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    logger.info("New login peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
 
     // Check for server password
     if (!config.serverPassword.empty() && config.serverPassword != req.password) {
@@ -306,7 +306,7 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
     }
 
     // Login
-    Log::i(CMP, "Logging in player name: '{}'", req.name);
+    logger.info("Logging in player name: '{}'", req.name);
 
     PlayerData player;
     try {
@@ -317,14 +317,14 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
         EXCEPTION_NESTED("Failed to log in player: '{}'", req.name);
     }
 
-    Log::i(CMP, "Logged in player: {} name: '{}'", player.id, req.name);
+    logger.info("Logged in player: {} name: '{}'", player.id, req.name);
 
     createSession(peer, player);
 
     /*
 
     // Login
-    Log::i(CMP, "Logging in player: '{}'", req.name);
+    logger.info("Logging in player: '{}'", req.name);
 
     PlayerData player;
     SessionPtr session;
@@ -419,11 +419,11 @@ void Server::handle(const PeerPtr& peer, MessagePingResponse res) {
 }
 
 void Server::onError(std::error_code ec) {
-    Log::e(CMP, "Server network error: {} ({})", ec.message(), ec.category().name());
+    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
 }
 
 void Server::onError(const PeerPtr& peer, std::error_code ec) {
-    Log::e(CMP, "Server network error: {} ({})", ec.message(), ec.category().name());
+    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
     peer->close();
 }
 
@@ -431,7 +431,7 @@ void Server::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr)
     try {
         std::rethrow_exception(eptr);
     } catch (std::exception& e) {
-        BACKTRACE(CMP, e, "Server network error");
+        BACKTRACE(e, "Server network error");
     }
     peer->close();
 }
