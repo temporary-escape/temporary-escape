@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "../graphics/theme.hpp"
+#include "../utils/random.hpp"
 
 using namespace Engine;
 
@@ -116,12 +117,24 @@ void Application::checkForClientScene() {
     }
 }
 
+void Application::loadProfile() {
+    const auto path = config.userdataPath / "profile.yml";
+    if (Fs::exists(path)) {
+        playerLocalProfile.fromYaml(path);
+    } else {
+        playerLocalProfile.name = "Hello World";
+        playerLocalProfile.secret = randomId();
+        playerLocalProfile.toYaml(path);
+    }
+}
+
 void Application::startClient() {
     logger.info("Starting client");
 
     status.message = "Connecting...";
     status.value = 0.9f;
 
+    loadProfile();
     client = std::make_unique<Client>(config, *registry, playerLocalProfile);
 
     logger.info("Connecting to the server");
@@ -133,41 +146,27 @@ void Application::startClient() {
     });
 }
 
-void Application::loadServer() {
-    logger.info("Loading server");
+void Application::startServer() {
+    logger.info("Starting server");
 
-    status.message = "Loading universe...";
+    status.message = "Starting server...";
     status.value = 0.8f;
 
     future = std::async([this]() -> std::function<void()> {
         serverCerts = std::make_unique<Server::Certs>();
 
         try {
-            server->load();
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to load the server");
-        }
-
-        return [this]() { startClient(); };
-    });
-}
-
-void Application::startServer() {
-    logger.info("Starting server");
-
-    status.message = "Starting server...";
-    status.value = 0.75f;
-
-    future = std::async([this]() -> std::function<void()> {
-        serverCerts = std::make_unique<Server::Certs>();
-
-        try {
             server = std::make_unique<Server>(config, *serverCerts, *registry, *db);
+
+            while (!server->isLoaded()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
+
         } catch (...) {
             EXCEPTION_NESTED("Failed to start the server");
         }
 
-        return [this]() { loadServer(); };
+        return [this]() { startClient(); };
     });
 }
 

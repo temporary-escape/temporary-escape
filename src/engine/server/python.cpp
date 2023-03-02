@@ -28,6 +28,10 @@ static const wchar_t pathDelimiter = ':';
 
 static auto logger = createLogger(__FILENAME__);
 
+struct Python::Module {
+    py::module m;
+};
+
 Python::Python(const Path& home, const std::vector<Path>& paths) {
     const auto pythonHome = home.wstring() + pathDelimiter;
 
@@ -58,7 +62,7 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
         EXCEPTION_NESTED("Failed to set Python options");
     }
 
-    py::scoped_interpreter guard{};
+    interpreter = std::make_unique<py::scoped_interpreter>();
 
     try {
         py::exec(R"(
@@ -67,8 +71,8 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
         )");
 
         py::exec(R"(
-            from engine import createLogger
-            logger = createLogger("builtin")
+            from engine import create_logger
+            logger = create_logger("builtin")
             logger.info("Hello World from Python!")
         )");
     } catch (std::exception& e) {
@@ -76,4 +80,25 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
     }
 }
 
-Python::~Python() = default;
+Python::~Python() {
+    modules.clear();
+}
+
+void Engine::Python::importModule(const std::string& name) {
+    try {
+        modules.emplace_back(std::make_unique<Module>());
+        modules.back()->m = py::module_::import(name.c_str());
+    } catch (std::exception& e) {
+        EXCEPTION(e.what());
+    }
+}
+
+/*void Engine::Python::guard(const std::function<void()>& fn) {
+    try {
+        fn();
+    } catch (pybind11::cast_error& e) {
+        EXCEPTION(e.what());
+    } catch (pybind11::error_already_set& e) {
+        EXCEPTION(e.what());
+    }
+}*/

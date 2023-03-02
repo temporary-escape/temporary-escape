@@ -18,27 +18,57 @@ static auto logger = createLogger(__FILENAME__);
 #define HANDLE_REQUEST_VOID(Req)                                                                                       \
     Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); });
 
+Server* Server::instance;
+
 Server::Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db) :
     Network::Server{static_cast<unsigned int>(config.serverPort), certs.key, certs.dh, certs.cert},
     config{config},
     registry{registry},
-    world{config, registry, db, *this, *this},
-    generator{std::make_unique<GeneratorDefault>(config, world)},
+    db{db},
     tickFlag{true},
-    python{std::make_unique<Python>(config.pythonHome, std::vector<Path>{config.assetsPath})},
+    loaded{false},
     worker{4},
     commands{worker.strand()} {
+
+    instance = this;
 
     HANDLE_REQUEST(MessageLoginRequest, MessageLoginResponse);
     HANDLE_REQUEST(MessageModsInfoRequest, MessageModsInfoResponse);
     HANDLE_REQUEST(MessageSpawnRequest, MessageSpawnResponse);
     HANDLE_REQUEST_VOID(MessagePingResponse);
+
+    tickThread = std::thread([this]() {
+        try {
+            load();
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Server load thread error");
+        }
+
+        loaded.store(true);
+
+        try {
+            tick();
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Server tick thread error");
+        }
+        cleanup();
+    });
 }
 
 void Server::load() {
+    eventBus = std::make_unique<EventBus>();
+    world = std::make_unique<World>(config, registry, db, *this, *this, *eventBus);
+    generator = std::make_unique<GeneratorDefault>(config, *world);
+    python = std::make_unique<Python>(config.pythonHome, std::vector<Path>{config.assetsPath});
+
+    try {
+        python->importModule("base");
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to import base assets module");
+    }
+
     try {
         generator->generate(123456789ULL);
-        tickThread = std::thread(&Server::tick, this);
         logger.info("Universe has been generated and is ready");
     } catch (...) {
         EXCEPTION_NESTED("Failed to generate the universe");
@@ -52,25 +82,44 @@ void Server::load() {
     }
 }
 
-void Server::stop() {
-    logger.info("Stopping");
+void Server::cleanup() {
+    logger.info("Cleanup started");
 
+    logger.info("Clearing lobby and sessions");
     {
         std::unique_lock<std::shared_mutex> lock{players.mutex};
         players.lobby.clear();
         players.sessions.clear();
     }
 
+    logger.info("Waiting for network to stop");
+    Network::Server::stop();
+
+    logger.info("Waiting for workers to stop");
+    worker.stop();
+
+    logger.info("Clearing sectors");
+    {
+        std::unique_lock<std::shared_mutex> lock{sectors.mutex};
+        sectors.map.clear();
+    }
+
+    logger.info("Stopping event bus");
+    eventBus.reset();
+
+    logger.info("Stopping python");
+    python.reset();
+
+    logger.info("Stop done");
+}
+
+Server::~Server() {
+    logger.info("Stopping server thread");
+
     tickFlag.store(false);
     if (tickThread.joinable()) {
         tickThread.join();
     }
-    worker.stop();
-    Network::Server::stop();
-}
-
-Server::~Server() {
-    stop();
 }
 
 void Server::tick() {
@@ -81,6 +130,12 @@ void Server::tick() {
 
         const auto sessions = getAllSessions();
         updateSessionsPing(sessions);
+
+        try {
+            eventBus->poll();
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Error while polling event bus");
+        }
 
         /*// TICK
         std::optional<std::string> failedId;
@@ -191,7 +246,7 @@ SessionPtr Server::createSession(const PeerPtr& peer, const PlayerData& player) 
 SectorPtr Server::startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId) {
     logger.info("Starting sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
 
-    auto sectorOpt = world.sectors.find(galaxyId, systemId, sectorId);
+    auto sectorOpt = world->sectors.find(galaxyId, systemId, sectorId);
     if (!sectorOpt) {
         EXCEPTION_NESTED("Can not start sector: '{}/{}/{}' not found", galaxyId, systemId, sectorId);
     }
@@ -207,7 +262,7 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 
     try {
         logger.info("Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
-        auto instance = std::make_shared<Sector>(config, world, registry, sector.galaxyId, sector.systemId, sector.id);
+        auto instance = std::make_shared<Sector>(config, *world, registry, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, instance));
 
         return instance;
@@ -296,7 +351,7 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
     removePeerFromLobby(peer);
 
     // Check if the player is already logged in
-    const auto playerIdFound = world.players.secretToId(req.secret);
+    const auto playerIdFound = world->players.secretToId(req.secret);
     if (playerIdFound) {
         if (isPeerLoggedIn(*playerIdFound)) {
             res.error = "Already logged in";
@@ -310,7 +365,7 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
 
     PlayerData player;
     try {
-        player = world.players.login(req.secret, req.name);
+        player = world->players.login(req.secret, req.name);
     } catch (...) {
         res.error = "Failed logging in";
         disconnectPeer(peer);
@@ -389,7 +444,7 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
 void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res) {
     auto session = peerToSession(peer);
     try {
-        const auto location = world.players.findStartingLocation(session->getPlayerId());
+        const auto location = world->players.findStartingLocation(session->getPlayerId());
         res.location = location;
 
         startSector(location.galaxyId, location.systemId, location.sectorId);

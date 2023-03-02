@@ -35,3 +35,6 @@ docs/public/
 *.kra~
 *-autosave.kra
 *.png~
+
+# Python
+__pycache__

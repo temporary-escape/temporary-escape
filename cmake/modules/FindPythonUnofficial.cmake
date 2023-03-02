@@ -61,9 +61,9 @@ if (PYTHONUNOFFICIAL_FOUND AND NOT TARGET PythonUnofficial)
     endif ()
 endif ()
 
-
 if (MSVC)
-    message(FATAL_ERROR "TODO")
-elseif (UNIX AND NOT APPLE)
-    set(CPYTHON_STDLIB_DIR "${VCPKG_INSTALLED_DIR}/x64-linux/lib/python3.10")
+    set(CPYTHON_STDLIB_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/python3/Lib")
+    set(CPYTHON_DLLS_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/python3/DLLs")
+else ()
+    set(CPYTHON_STDLIB_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/python3.10")
 endif ()

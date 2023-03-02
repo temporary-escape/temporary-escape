@@ -3,8 +3,9 @@
 using namespace Engine;
 
 ServiceRegions::ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db,
-                               Network::Server& server, Service::SessionValidator& sessionValidator) :
-    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
+                               Network::Server& server, Service::SessionValidator& sessionValidator,
+                               EventBus& eventBus) :
+    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator}, eventBus{eventBus} {
 
     HANDLE_REQUEST(MessageFetchRegionRequest, MessageFetchRegionResponse)
     HANDLE_REQUEST(MessageFetchRegionsRequest, MessageFetchRegionsResponse)

@@ -35,8 +35,8 @@ struct MessageFetchSectorsResponse {
 
 class ENGINE_API ServiceSectors : public Service {
 public:
-    explicit ServiceSectors(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-                            Service::SessionValidator& sessionValidator);
+    explicit ServiceSectors(const Config& config, Registry& registry, TransactionalDatabase& db,
+                            Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     std::optional<SectorData> find(const std::string& galaxyId, const std::string& systemId,
                                    const std::string& sectorId);
@@ -49,5 +49,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine

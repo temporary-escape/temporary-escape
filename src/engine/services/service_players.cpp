@@ -7,8 +7,9 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 ServicePlayers::ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db,
-                               Network::Server& server, Service::SessionValidator& sessionValidator) :
-    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
+                               Network::Server& server, Service::SessionValidator& sessionValidator,
+                               EventBus& eventBus) :
+    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator}, eventBus{eventBus} {
 
     HANDLE_REQUEST(MessagePlayerLocationRequest, MessagePlayerLocationResponse);
 }
@@ -48,6 +49,10 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
 
         return true;
     });
+
+    EventPlayerLoggedIn event{};
+    event.playerId = playerId;
+    eventBus.enqueue("player_logged_in", event);
 
     return result.value();
 }

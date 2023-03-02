@@ -31,8 +31,8 @@ public:
     virtual ~Server();
 
     void load();
-    void stop();
     void tick();
+    void cleanup();
 
     void onAcceptSuccess(PeerPtr peer) override;
     void handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res);
@@ -42,6 +42,19 @@ public:
     void handle(const PeerPtr& peer, MessagePingResponse res);
 
     std::shared_ptr<Service::Session> find(const std::shared_ptr<Network::Peer>& peer) override;
+
+    EventBus& getEventBus() const {
+        if (!eventBus) {
+            EXCEPTION("Event bus not initialized");
+        }
+        return *eventBus;
+    }
+
+    bool isLoaded() const {
+        return loaded.load();
+    }
+
+    static Server* instance;
 
 private:
     void addPeerToLobby(const PeerPtr& peer);
@@ -55,8 +68,6 @@ private:
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
     std::vector<SessionPtr> getAllSessions();
     void updateSessionsPing(const std::vector<SessionPtr>& sessions);
-
-public:
     void onError(std::error_code ec) override;
     void onError(const PeerPtr& peer, std::error_code ec) override;
     void onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) override;
@@ -65,11 +76,14 @@ public:
 private:
     const Config& config;
     Registry& registry;
-    World world;
+    TransactionalDatabase& db;
+    std::unique_ptr<EventBus> eventBus;
+    std::unique_ptr<World> world;
     std::unique_ptr<Generator> generator;
 
     std::thread tickThread;
     std::atomic_bool tickFlag;
+    std::atomic_bool loaded;
 
     std::unique_ptr<Python> python;
     BackgroundWorker worker;

@@ -20,7 +20,7 @@ SCHEMA(IndexData) {
 class ENGINE_API World {
 public:
     explicit World(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-                   Service::SessionValidator& sessionValidator);
+                   Service::SessionValidator& sessionValidator, EventBus& eventBus);
     ~World() = default;
 
     IndexData getIndex();

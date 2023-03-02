@@ -7,6 +7,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 TEST_CASE("Ray box intersection", TAG) {
     Vector3 min{-0.5f};
     Vector3 max{0.5f};
@@ -79,8 +81,8 @@ TEST_CASE("Gift wrap", TAG) {
                 testOriented += glm::radians(360.0f);
             }
 
-            Log::d(TAG, "Pos: {} dir: {} test: {} oriented: {}", pos, dir, glm::degrees(test),
-                   glm::degrees(testOriented));
+            logger.debug("Pos: {} dir: {} test: {} oriented: {}", pos, dir, glm::degrees(test),
+                         glm::degrees(testOriented));
         }
 
         break;

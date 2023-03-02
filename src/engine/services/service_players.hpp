@@ -48,10 +48,14 @@ struct MessagePlayerLocationResponse {
     MESSAGE_DEFINE(MessagePlayerLocationResponse, galaxyId, systemId, sectorId);
 };
 
+struct EventPlayerLoggedIn {
+    std::string playerId;
+};
+
 class ENGINE_API ServicePlayers : public Service {
 public:
-    explicit ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-                            Service::SessionValidator& sessionValidator);
+    explicit ServicePlayers(const Config& config, Registry& registry, TransactionalDatabase& db,
+                            Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     std::optional<std::string> secretToId(uint64_t);
     PlayerData login(uint64_t secret, const std::string& name);
@@ -66,5 +70,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine

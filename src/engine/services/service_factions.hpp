@@ -45,7 +45,7 @@ struct MessageFetchFactionsResponse {
 class ENGINE_API ServiceFactions : public Service {
 public:
     explicit ServiceFactions(const Config& config, Registry& registry, TransactionalDatabase& db,
-                             Network::Server& server, Service::SessionValidator& sessionValidator);
+                             Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     std::vector<FactionData> get();
     void create(const FactionData& faction);
@@ -57,5 +57,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine

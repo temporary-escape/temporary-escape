@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.21)
 project(TemporaryEscape)
 
 set(CMAKE_MODULE_PATH

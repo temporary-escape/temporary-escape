@@ -46,7 +46,7 @@ private:
     void startDatabase();
     void startServer();
     void startClient();
-    void loadServer();
+    void loadProfile();
     void startSinglePlayer();
 
     const Config& config;
@@ -65,6 +65,7 @@ private:
     std::unique_ptr<TransactionalDatabase> db;
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
+    std::thread serverThread;
     std::unique_ptr<ShaderModules> shaderModules;
     std::unique_ptr<SkyboxGenerator> skyboxGenerator;
     std::unique_ptr<Renderer> renderer;

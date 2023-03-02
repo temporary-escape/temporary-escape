@@ -45,8 +45,8 @@ struct MessageFetchRegionsResponse {
 
 class ENGINE_API ServiceRegions : public Service {
 public:
-    explicit ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-                            Service::SessionValidator& sessionValidator);
+    explicit ServiceRegions(const Config& config, Registry& registry, TransactionalDatabase& db,
+                            Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     void create(const RegionData& region);
     std::vector<RegionData> getForGalaxy(const std::string& galaxyId);
@@ -58,5 +58,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine

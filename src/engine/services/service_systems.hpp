@@ -78,8 +78,8 @@ struct MessageFetchPlanetaryBodiesResponse {
 
 class ENGINE_API ServiceSystems : public Service {
 public:
-    explicit ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-                            Service::SessionValidator& sessionValidator);
+    explicit ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db,
+                            Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     void create(const SystemData& system);
     void update(const SystemData& system);
@@ -96,5 +96,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine

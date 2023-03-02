@@ -5,13 +5,13 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 World::World(const Config& config, Registry& registry, TransactionalDatabase& db, Network::Server& server,
-             Service::SessionValidator& sessionValidator) :
-    players{config, registry, db, server, sessionValidator},
-    galaxies{config, registry, db, server, sessionValidator},
-    regions{config, registry, db, server, sessionValidator},
-    factions{config, registry, db, server, sessionValidator},
-    systems{config, registry, db, server, sessionValidator},
-    sectors{config, registry, db, server, sessionValidator},
+             Service::SessionValidator& sessionValidator, EventBus& eventBus) :
+    players{config, registry, db, server, sessionValidator, eventBus},
+    galaxies{config, registry, db, server, sessionValidator, eventBus},
+    regions{config, registry, db, server, sessionValidator, eventBus},
+    factions{config, registry, db, server, sessionValidator, eventBus},
+    systems{config, registry, db, server, sessionValidator, eventBus},
+    sectors{config, registry, db, server, sessionValidator, eventBus},
     db{db} {
 }
 

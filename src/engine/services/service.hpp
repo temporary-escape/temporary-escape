@@ -4,6 +4,7 @@
 #include "../config.hpp"
 #include "../database/database.hpp"
 #include "../network/server.hpp"
+#include "../utils/event_bus.hpp"
 
 #define HANDLE_REQUEST(Req, Res)                                                                                       \
     server.addHandler([this](const PeerPtr& peer, Req req) -> Res {                                                    \

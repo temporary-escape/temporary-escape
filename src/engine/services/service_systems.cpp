@@ -5,8 +5,9 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 ServiceSystems::ServiceSystems(const Config& config, Registry& registry, TransactionalDatabase& db,
-                               Network::Server& server, Service::SessionValidator& sessionValidator) :
-    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator} {
+                               Network::Server& server, Service::SessionValidator& sessionValidator,
+                               EventBus& eventBus) :
+    config{config}, registry{registry}, db{db}, sessionValidator{sessionValidator}, eventBus{eventBus} {
 
     HANDLE_REQUEST(MessageFetchSystemRequest, MessageFetchSystemResponse);
     HANDLE_REQUEST(MessageFetchSystemsRequest, MessageFetchSystemsResponse);

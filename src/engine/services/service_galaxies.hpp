@@ -29,7 +29,7 @@ struct MessageFetchGalaxyResponse {
 class ENGINE_API ServiceGalaxies : public Service {
 public:
     explicit ServiceGalaxies(const Config& config, Registry& registry, TransactionalDatabase& db,
-                             Network::Server& server, Service::SessionValidator& sessionValidator);
+                             Network::Server& server, Service::SessionValidator& sessionValidator, EventBus& eventBus);
 
     GalaxyData get(const std::string& id);
     void create(const GalaxyData& galaxy);
@@ -40,5 +40,6 @@ private:
     Registry& registry;
     TransactionalDatabase& db;
     Service::SessionValidator& sessionValidator;
+    EventBus& eventBus;
 };
 } // namespace Engine
