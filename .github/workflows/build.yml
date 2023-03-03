@@ -157,6 +157,12 @@ jobs:
       AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v3
         with:
@@ -172,4 +178,5 @@ jobs:
       - name: Upload to S3
         shell: bash
         run: |
-          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/" --recursive --acl public-read
+          VERSION=$(git describe --always --tags)
+          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/${VERSION}/" --recursive --acl public-read
