@@ -1,4 +1,4 @@
-execute_process(COMMAND git describe --always
+execute_process(COMMAND git describe --always --tags
         OUTPUT_VARIABLE VERSION_STRING
         OUTPUT_STRIP_TRAILING_WHITESPACE
         RESULT_VARIABLE VERSION_STRING_RET
