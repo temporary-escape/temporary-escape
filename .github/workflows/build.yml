@@ -172,4 +172,4 @@ jobs:
       - name: Upload to S3
         shell: bash
         run: |
-          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/" --recursive
+          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/" --recursive --acl public-read
