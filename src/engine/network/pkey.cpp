@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include "pkey.hpp"
 #include <memory>
 #include <openssl/evp.h>
@@ -61,3 +64,5 @@ Pkey::Pkey() {
 }
 
 Pkey::~Pkey() = default;
+
+#pragma clang diagnostic pop

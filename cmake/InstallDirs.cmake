@@ -7,7 +7,8 @@ install(DIRECTORY
 
 install(DIRECTORY
         "${CPYTHON_STDLIB_DIR}/"
-        DESTINATION "python")
+        DESTINATION "python"
+        PATTERN "__pycache__" EXCLUDE)
 
 if (MSVC)
     install(DIRECTORY
@@ -27,3 +28,6 @@ if (MSVC)
             PATTERN "release" EXCLUDE
             PATTERN "_CPack_Packages" EXCLUDE)
 endif ()
+
+install(${CMAKE_CURRENT_SOURCE_DIR}/LICENSE DESTINATION ".")
+install(${CMAKE_CURRENT_SOURCE_DIR}/README.md DESTINATION ".")

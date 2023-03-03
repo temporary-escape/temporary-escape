@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include "md5.hpp"
 #include <openssl/md5.h>
 
@@ -17,3 +20,5 @@ std::string Engine::md5sum(const void* data, size_t size) {
     }
     return str;
 }
+
+#pragma clang diagnostic pop

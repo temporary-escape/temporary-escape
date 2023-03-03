@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include "dh.hpp"
 #include <memory>
 #include <openssl/dh.h>
@@ -26,3 +29,5 @@ Dh::Dh() {
 }
 
 Dh::~Dh() = default;
+
+#pragma clang diagnostic pop

@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include "message.hpp"
 #include <openssl/sha.h>
 
@@ -13,3 +16,5 @@ uint64_t Detail::getMessageHash(const std::string& name) {
     // Only convert the first part
     return *reinterpret_cast<const uint64_t*>(hash);
 }
+
+#pragma clang diagnostic pop

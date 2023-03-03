@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include "cert.hpp"
 #include <memory>
 #include <openssl/evp.h>
@@ -135,3 +138,5 @@ std::string Cert::getSubjectName() const {
 }
 
 Cert::~Cert() = default;
+
+#pragma clang diagnostic pop
