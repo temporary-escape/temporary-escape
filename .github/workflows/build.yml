@@ -48,6 +48,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Get tags
+        run: git fetch --tags origin
+
       - name: Dependencies
         shell: bash
         run: |
