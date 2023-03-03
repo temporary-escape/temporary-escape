@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - name: 'Build - Windows'
-            os: windows-latest
+            os: 'windows-2022'
             config: 'Release'
             cpack: 'ZIP'
             configurePreset: 'ninja-msvc'
@@ -27,7 +27,7 @@ jobs:
             vcpkgDir: 'C:\vcpkg'
 
           - name: 'Build - Linux'
-            os: ubuntu-latest
+            os: 'ubuntu-22.04'
             config: 'Release'
             cpack: 'TGZ'
             configurePreset: 'ninja-linux'
@@ -90,7 +90,7 @@ jobs:
           rm vulkansdk.tar.gz
 
       - name: Cache vcpkg directory
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             build/vcpkg_installed
@@ -129,10 +129,8 @@ jobs:
 
       - name: Package
         shell: bash
-        id: package
         run: |
-          cd ./build
-          cpack -G "${{ matrix.cpack }}"
+          cmake --build --preset "${{ matrix.buildPreset }}" --target package
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
@@ -141,3 +139,32 @@ jobs:
           path: ./build/release
           if-no-files-found: error
           retention-days: 2
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.AWS_DEFAULT_REGION }}"
+      AWS_ENDPOINT_URL: "${{ secrets.AWS_ENDPOINT_URL }}"
+      AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
+
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-windows-2022-archive
+          path: ./release
+
+      - name: Download Linux Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-ubuntu-22.04-archive
+          path: ./release
+
+      - name: Upload to S3
+        shell: bash
+        run: |
+          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/" --recursive
