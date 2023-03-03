@@ -35,14 +35,14 @@ set_target_properties(${PROJECT_NAME}Library
 # Platform specific dependencies
 if (UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME}Library
-            INTERFACE
+            PRIVATE
             ZLIB::ZLIB
             LibLZMA::LibLZMA
             unofficial::UUID::uuid
-            uring)
+            uring::uring)
 elseif (APPLE)
     target_link_libraries(${PROJECT_NAME}Library
-            INTERFACE
+            PRIVATE
             ZLIB::ZLIB
             LibLZMA::LibLZMA
             unofficial::UUID::uuid

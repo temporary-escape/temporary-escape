@@ -105,7 +105,10 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
+          cmake --preset "${{ matrix.configurePreset }}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DVCPKG_BUILD_TYPE=release \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Configure - Linux
         if: runner.os == 'Linux'
@@ -114,7 +117,10 @@ jobs:
         shell: bash
         run: |
           source /opt/vulkan-sdk/setup-env.sh
-          cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
+          cmake --preset "${{ matrix.configurePreset }}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DVCPKG_BUILD_TYPE=release \
+            -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Build
         shell: bash
