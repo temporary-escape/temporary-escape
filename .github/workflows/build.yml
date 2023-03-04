@@ -180,3 +180,60 @@ jobs:
         run: |
           VERSION=$(git describe --always --tags)
           aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/${VERSION}/" --recursive --acl public-read
+
+  pages:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
+
+    needs:
+      - publish
+
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.AWS_DEFAULT_REGION }}"
+      AWS_ENDPOINT_URL: "${{ secrets.AWS_ENDPOINT_URL }}"
+      AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - name: Download Hugo
+        run: |
+          wget https://github.com/gohugoio/hugo/releases/download/v0.92.1/hugo_extended_0.92.1_Linux-64bit.tar.gz
+          tar xvf hugo_extended_0.92.1_Linux-64bit.tar.gz
+          sudo mv ./hugo /usr/local/bin/hugo
+          sudo chmod +x /usr/local/bin/hugo
+          hugo version
+
+      - name: Generate
+        run: |
+          cd docs
+          make default
+
+      - name: Clone temporary-escape.github.io
+        if: startsWith(github.ref, 'refs/heads/master')
+        uses: actions/checkout@v3
+        with:
+          repository: temporary-escape/temporary-escape.github.io
+          ssh-key: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+          path: docs-git
+
+      - name: Push
+        if: startsWith(github.ref, 'refs/heads/master')
+        shell: bash
+        run: |
+          rm -rf ${{ github.workspace }}/docs-git/*
+          cp -rv ${{ github.workspace }}/docs/public/* ${{ github.workspace }}/docs-git/
+          
+          cd docs-git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Update documentation" --allow-empty
+          git push origin main -f

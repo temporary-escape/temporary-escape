@@ -1,5 +1,6 @@
 ---
-weight: 3 title: "Networking"
+weight: 3
+title: "Networking"
 ---
 
 # Networking
