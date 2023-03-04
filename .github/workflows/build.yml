@@ -182,7 +182,7 @@ jobs:
           aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/${VERSION}/" --recursive --acl public-read
 
   pages:
-    name: Publish
+    name: Documentation
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
 
@@ -203,13 +203,15 @@ jobs:
           submodules: false
           fetch-depth: 1
 
-      - name: Download Hugo
+      - name: Dependencies
         run: |
           wget https://github.com/gohugoio/hugo/releases/download/v0.92.1/hugo_extended_0.92.1_Linux-64bit.tar.gz
           tar xvf hugo_extended_0.92.1_Linux-64bit.tar.gz
           sudo mv ./hugo /usr/local/bin/hugo
           sudo chmod +x /usr/local/bin/hugo
           hugo version
+          
+          sudo python3 -m pip install boto3
 
       - name: Generate
         run: |
