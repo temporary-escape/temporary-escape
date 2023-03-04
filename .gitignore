@@ -27,6 +27,7 @@ temp/
 .hugo_build.lock
 docs/resources/_gen/
 docs/public/
+docs/themes/hugo-book/
 
 # Logs
 *.log
