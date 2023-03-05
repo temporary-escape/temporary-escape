@@ -100,6 +100,7 @@ public:
     }
 
     TexturePtr addTexture(const Path& path);
+    ImagePtr addImage(const std::string& name, const ImageAtlas::Allocation& allocation);
 
     void findAssets();
     void init(VulkanRenderer& vulkan);

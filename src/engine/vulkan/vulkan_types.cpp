@@ -46,6 +46,18 @@ VkDeviceSize Engine::getFormatDataSize(const VkFormat format, const VkExtent3D& 
     case VK_FORMAT_R16G16B16A16_UNORM: {
         return extent.width * extent.height * extent.depth * 8;
     }
+    case VK_FORMAT_R8_SRGB: {
+        return extent.width * extent.height * extent.depth;
+    }
+    case VK_FORMAT_R8G8_SRGB: {
+        return extent.width * extent.height * extent.depth * 2;
+    }
+    case VK_FORMAT_R8G8B8_SRGB: {
+        return extent.width * extent.height * extent.depth * 3;
+    }
+    case VK_FORMAT_R8G8B8A8_SRGB: {
+        return extent.width * extent.height * extent.depth * 4;
+    }
     case VK_FORMAT_R32_SFLOAT: {
         return extent.width * extent.height * extent.depth * 4;
     }

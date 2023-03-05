@@ -50,7 +50,7 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
         return true;
     });
 
-    EventPlayerLoggedIn event{};
+    EventPlayer event{};
     event.playerId = playerId;
     eventBus.enqueue("player_logged_in", event);
 

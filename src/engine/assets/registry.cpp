@@ -171,3 +171,9 @@ template <typename T> std::shared_ptr<T> Registry::addAsset(Category<T>& assets,
 TexturePtr Registry::addTexture(const Path& path) {
     return addAsset(textures, path);
 }
+
+ImagePtr Registry::addImage(const std::string& name, const ImageAtlas::Allocation& allocation) {
+    auto asset = std::make_shared<Image>(name, allocation);
+    images.insert(name, asset);
+    return asset;
+}

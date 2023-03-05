@@ -9,15 +9,15 @@ struct FullScreenVertex {
     Vector2 pos;
 };
 
-Renderer::Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, Nuklear& nuklear,
-                   ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font) :
+Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
+                   Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
     nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
     font{font},
-    lastViewportSize{config.windowWidth, config.windowHeight},
+    lastViewportSize{viewport},
     bloomViewportSize{lastViewportSize / 2} {
 
     createGaussianKernel(15, 4.5);
@@ -381,7 +381,7 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        vulkan.getRenderPass(),
+        getParentRenderPass(),
     };
     shaders.passPbr = ShaderPassPbr{
         config,
@@ -417,7 +417,7 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        vulkan.getRenderPass(),
+        getParentRenderPass(),
     };
     shaders.componentPointCloud = ShaderComponentPointCloud{
         config,
@@ -447,7 +447,7 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         config,
         vulkan,
         shaderModules,
-        vulkan.getRenderPass(),
+        getParentRenderPass(),
     };
     shaders.componentPlanetSurface = ShaderComponentPlanetSurface{
         config,
@@ -1274,8 +1274,8 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, const Skybox& skyb
     vkb.start(beginInfo);
 
     VulkanRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.framebuffer = &vulkan.getSwapChainFramebuffer();
-    renderPassInfo.renderPass = &vulkan.getRenderPass();
+    renderPassInfo.framebuffer = &getParentFramebuffer();
+    renderPassInfo.renderPass = &getParentRenderPass();
     renderPassInfo.offset = {0, 0};
     renderPassInfo.size = viewport;
 
@@ -1295,7 +1295,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, const Skybox& skyb
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.bloomBlur[0].semaphore,
-                               vulkan.getCurrentRenderFinishedSemaphore(), &vulkan.getCurrentInFlightFence());
+                               getParentRenderFinishedSemaphore(), getParentInFlightFence());
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1382,7 +1382,6 @@ void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const R
         constants.modelmatrix = transform.getAbsoluteTransform();
         constants.viewport = Vector2{viewport};
         constants.count = static_cast<int>(component.getCount());
-        logger.warn("offset: {}", offsetof(ShaderPositionFeedback::Uniforms, count));
 
         vkb.pushConstants(shaders.positionFeedback.getPipeline(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
                           sizeof(ShaderPositionFeedback::Uniforms), &constants);
@@ -1399,8 +1398,8 @@ void Renderer::renderPassCompute(const Vector2i& viewport, Scene& scene, const R
     }
 
     vkb.end();
-    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               vulkan.getCurrentImageAvailableSemaphore(), compute.semaphore, nullptr);
+    vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, getParentImageAvailableSemaphore(),
+                               compute.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1439,7 +1438,7 @@ void Renderer::renderPassPbr(const Vector2i& viewport, Scene& scene, const Rende
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, compute.semaphore,
-                               renderPasses.pbr.semaphore, nullptr);
+                               renderPasses.pbr.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1492,7 +1491,7 @@ void Renderer::renderPassSsao(const Vector2i& viewport, Scene& scene, const Opti
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.pbr.semaphore,
-                               renderPasses.ssao.semaphore, nullptr);
+                               renderPasses.ssao.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1526,7 +1525,7 @@ void Renderer::renderPassLighting(const Vector2i& viewport, Scene& scene, const 
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.ssao.semaphore,
-                               renderPasses.lighting.semaphore, nullptr);
+                               renderPasses.lighting.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1559,7 +1558,7 @@ void Renderer::renderPassForward(const Vector2i& viewport, Scene& scene, const S
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.lighting.semaphore,
-                               renderPasses.forward.semaphore, nullptr);
+                               renderPasses.forward.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1680,7 +1679,7 @@ void Renderer::renderPassFxaa(const Vector2i& viewport) {
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.forward.semaphore,
-                               renderPasses.fxaa.semaphore, nullptr);
+                               renderPasses.fxaa.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1724,7 +1723,7 @@ void Renderer::renderPassBloomExtract() {
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.fxaa.semaphore,
-                               renderPasses.bloomExtract.semaphore, nullptr);
+                               renderPasses.bloomExtract.semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 
@@ -1753,7 +1752,7 @@ void Renderer::renderPassBloomBlur() {
     vkb.end();
 
     vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderPasses.bloomExtract.semaphore,
-                               renderPasses.bloomBlur[0].semaphore, nullptr);
+                               renderPasses.bloomBlur[0].semaphore, std::nullopt);
     vulkan.dispose(std::move(vkb));
 }
 

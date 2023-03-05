@@ -11,16 +11,14 @@ class Server;
 
 class Sector : public Scene::EventListener {
 public:
-    explicit Sector(const Config& config, World& world, Registry& registry, std::string galaxyId, std::string systemId,
-                    std::string sectorId);
+    explicit Sector(const Config& config, World& world, Registry& registry, EventBus& eventBus, std::string galaxyId,
+                    std::string systemId, std::string sectorId);
     virtual ~Sector();
 
     void load();
     void update(float delta);
 
     void addPlayer(SessionPtr session);
-
-    void eventEntityAdded(const EntityPtr& entity) override;
 
     const std::string& getGalaxyId() const {
         return galaxyId;
@@ -37,9 +35,8 @@ public:
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
-    struct PlayerView {
+    struct PlayerData {
         SessionPtr session;
-        std::vector<EntityPtr> entitiesToSync;
     };
 
     void spawnPlayerShip(SessionPtr session);
@@ -47,6 +44,7 @@ private:
     const Config& config;
     World& world;
     Registry& registry;
+    EventBus& eventBus;
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
@@ -54,7 +52,7 @@ private:
     Scene scene;
     // std::unique_ptr<wrenbind17::VM> vm;
 
-    std::list<PlayerView> players;
+    std::list<PlayerData> players;
 
     asio::io_service sync;
 };

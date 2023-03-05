@@ -266,21 +266,34 @@ void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffe
 }
 
 void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer,
-                                         const VkPipelineStageFlags waitStages, const VulkanSemaphore& wait,
-                                         const VulkanSemaphore& signal, const VulkanFence* fence) {
+                                         const VkPipelineStageFlags waitStages, const VulkanSemaphoreOpt& wait,
+                                         const VulkanSemaphoreOpt& signal, const VulkanFenceOpt& fence) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer.getHandle();
 
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &wait.getHandle();
-    submitInfo.pWaitDstStageMask = &waitStages;
+    if (wait) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &wait.value().get().getHandle();
+        submitInfo.pWaitDstStageMask = &waitStages;
+    } else {
+        submitInfo.waitSemaphoreCount = 0;
+    }
 
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &signal.getHandle();
+    if (signal) {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &signal.value().get().getHandle();
+    } else {
+        submitInfo.signalSemaphoreCount = 0;
+    }
 
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, fence ? fence->getHandle() : VK_NULL_HANDLE) != VK_SUCCESS) {
+    VkFence f = VK_NULL_HANDLE;
+    if (fence) {
+        f = fence.value().get().getHandle();
+    }
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, f) != VK_SUCCESS) {
         EXCEPTION("Failed to submit command buffer");
     }
 }
@@ -510,6 +523,54 @@ void VulkanRenderer::copyDataToImage(VulkanTexture& texture, int level, const Ve
     stagingBuffer.unmapMemory();
 
     copyBufferToImage(stagingBuffer, texture, level, layer, {offset.x, offset.y, 0}, region);
+}
+
+void VulkanRenderer::copyImageToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer,
+                                      const Vector2i& size, const VulkanTexture& source) {
+    auto commandBuffer = createCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    commandBuffer.start(beginInfo);
+
+    logger.debug("copyImageToImage src: {:x} dst: {:x}", reinterpret_cast<uint64_t>(source.getHandle()),
+                 reinterpret_cast<uint64_t>(texture.getHandle()));
+
+    VkImageBlit blit{};
+    blit.srcOffsets[0] = {0, 0, 0};
+    blit.srcOffsets[1] = {size.x, size.y, 1};
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.mipLevel = level;
+    blit.srcSubresource.baseArrayLayer = layer;
+    blit.srcSubresource.layerCount = source.getLayerCount();
+    blit.dstOffsets[0] = {offset.x, offset.y, 0};
+    blit.dstOffsets[1] = {offset.x + size.x, offset.y + size.y, 1};
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.mipLevel = level;
+    blit.dstSubresource.baseArrayLayer = layer;
+    blit.dstSubresource.layerCount = texture.getLayerCount();
+
+    std::array<VkImageBlit, 1> imageBlit{};
+    imageBlit[0] = blit;
+
+    commandBuffer.blitImage(source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            imageBlit, VK_FILTER_NEAREST);
+
+    commandBuffer.end();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, submit error");
+    }
+
+    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
 }
 
 void VulkanRenderer::copyBufferToImage(const VulkanBuffer& buffer, VulkanTexture& texture, const int level,

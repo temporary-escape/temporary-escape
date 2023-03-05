@@ -1,1 +1,1 @@
-import base.events.player  # noqa
+import base.events  # noqa

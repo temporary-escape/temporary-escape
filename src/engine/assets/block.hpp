@@ -1,6 +1,7 @@
 #pragma once
 
 #include "asset.hpp"
+#include "image.hpp"
 #include "material.hpp"
 #include "texture.hpp"
 #include "voxel_shape.hpp"
@@ -10,6 +11,7 @@ class ENGINE_API Block : public Asset {
 public:
     struct Definition {
         std::vector<VoxelShape::Type> shapes;
+        std::string category;
 
         struct TextureDefinition {
             TexturePtr texture;
@@ -32,7 +34,7 @@ public:
 
         std::vector<MaterialDefinition> materials;
 
-        YAML_DEFINE(shapes, materials);
+        YAML_DEFINE(shapes, category, materials);
     };
 
     explicit Block(std::string name, Path path);
@@ -55,12 +57,24 @@ public:
         return definition.shapes;
     }
 
+    [[nodiscard]] const std::string& getCategory() const {
+        return definition.category;
+    }
+
     [[nodiscard]] bool isSingular() const {
         return materials.size() == 1;
     }
 
     [[nodiscard]] const Material& getMaterial() const {
         return *materials.front();
+    }
+
+    void setThumbnail(ImagePtr image) {
+        thumbnail = std::move(image);
+    }
+
+    [[nodiscard]] const ImagePtr& getThumbnail() const {
+        return thumbnail;
     }
 
     static std::shared_ptr<Block> from(const std::string& name);
@@ -70,6 +84,7 @@ private:
     Definition definition;
     std::array<Material*, 7> shapeSideToMaterial;
     std::vector<std::unique_ptr<Material>> materials;
+    ImagePtr thumbnail;
 };
 
 using BlockPtr = std::shared_ptr<Block>;

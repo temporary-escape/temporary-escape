@@ -5,6 +5,7 @@
 using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
+static const auto profileFilename = "profile.yaml";
 
 Application::Application(const Config& config) :
     VulkanRenderer{config},
@@ -17,15 +18,30 @@ Application::Application(const Config& config) :
         {"Singleplayer", [this]() { startSinglePlayer(); }},
         {"Multiplayer", []() {}},
         {"Settings", []() {}},
+        {"Editor", [this]() { startEditor(); }},
         {"Mods", []() {}},
         {"Exit", [this]() { closeWindow(); }},
     });
     gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);
 
-    // startSinglePlayer();
+    gui.createProfile.setOnSuccess([this](const GuiCreateProfile::Form& form) {
+        playerLocalProfile.name = form.name;
+        playerLocalProfile.secret = randomId();
+        playerLocalProfile.toYaml(this->config.userdataPath / profileFilename);
+
+        gui.mainMenu.setEnabled(true);
+    });
+
+    if (Fs::exists(config.userdataPath / profileFilename)) {
+        playerLocalProfile.fromYaml(config.userdataPath / profileFilename);
+        gui.createProfile.setEnabled(false);
+    } else {
+        gui.mainMenu.setEnabled(false);
+    }
 }
 
 Application::~Application() {
+    shouldStop.store(true);
     if (future.valid()) {
         future.get();
     }
@@ -44,6 +60,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (game) {
         game->update(deltaTime);
         game->render(viewport);
+        return;
+    } else if (editor) {
+        editor->update(deltaTime);
+        editor->render(viewport);
         return;
     }
 
@@ -69,9 +89,11 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (!status.message.empty()) {
         renderStatus(viewport);
     }
+    renderVersion(viewport);
     nuklear.begin(viewport);
 
     nuklear.draw(gui.mainMenu);
+    nuklear.draw(gui.createProfile);
 
     nuklear.end();
     canvas.end(vkb);
@@ -82,6 +104,12 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     submitPresentCommandBuffer(vkb);
 
     dispose(std::move(vkb));
+}
+
+void Application::renderVersion(const Vector2i& viewport) {
+    canvas.color(Theme::text * alpha(0.5f));
+    canvas.font(font.regular, config.guiFontSize);
+    canvas.text({5.0f, 5.0f + config.guiFontSize}, GAME_VERSION);
 }
 
 void Application::renderStatus(const Vector2i& viewport) {
@@ -104,6 +132,12 @@ void Application::renderStatus(const Vector2i& viewport) {
     promise.set_value([=]() { (expr); });                                                                              \
     future = promise.get_future();
 
+void Application::createEditor() {
+    status.message = "Entering...";
+    status.value = 1.0f;
+    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, font);
+}
+
 void Application::checkForClientScene() {
     status.message = "Entering...";
     status.value = 1.0f;
@@ -113,18 +147,7 @@ void Application::checkForClientScene() {
 
         game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
     } else {
-        NEXT(createRegistry());
-    }
-}
-
-void Application::loadProfile() {
-    const auto path = config.userdataPath / "profile.yml";
-    if (Fs::exists(path)) {
-        playerLocalProfile.fromYaml(path);
-    } else {
-        playerLocalProfile.name = "Hello World";
-        playerLocalProfile.secret = randomId();
-        playerLocalProfile.toYaml(path);
+        NEXT(checkForClientScene());
     }
 }
 
@@ -134,7 +157,6 @@ void Application::startClient() {
     status.message = "Connecting...";
     status.value = 0.9f;
 
-    loadProfile();
     client = std::make_unique<Client>(config, *registry, playerLocalProfile);
 
     logger.info("Connecting to the server");
@@ -149,7 +171,7 @@ void Application::startClient() {
 void Application::startServer() {
     logger.info("Starting server");
 
-    status.message = "Starting server...";
+    status.message = "Starting universe (this may take a while)...";
     status.value = 0.8f;
 
     future = std::async([this]() -> std::function<void()> {
@@ -158,7 +180,7 @@ void Application::startServer() {
         try {
             server = std::make_unique<Server>(config, *serverCerts, *registry, *db);
 
-            while (!server->isLoaded()) {
+            while (!server->isLoaded() && !shouldStop.load()) {
                 std::this_thread::sleep_for(std::chrono::microseconds(100));
             }
 
@@ -203,10 +225,28 @@ void Application::startDatabase() {
     });
 }
 
+void Application::createThumbnails() {
+    logger.info("Creating thumbnails");
+
+    for (const auto& block : registry->getBlocks().findAll()) {
+        thumbnailRenderer->render(block);
+        const auto alloc =
+            registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
+        block->setThumbnail(registry->addImage(block->getName() + "_image", alloc));
+    }
+
+    registry->finalize();
+
+    if (editorOnly) {
+        NEXT(createEditor());
+    } else {
+        NEXT(startDatabase());
+    }
+}
+
 void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next) {
     if (next == registry->getLoadQueue().cend()) {
-        registry->finalize();
-        NEXT(startDatabase());
+        NEXT(createThumbnails());
     } else {
         const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
         const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
@@ -248,16 +288,29 @@ void Application::createRegistry() {
     });
 }
 
+void Application::createThumbnailRenderer() {
+    logger.info("Creating thumbnail renderer");
+
+    const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
+    thumbnailRenderer = std::make_unique<OffscreenRenderer>(config, viewport, *this, canvas, nuklear, *shaderModules,
+                                                            *voxelShapeCache, font);
+
+    NEXT(createRegistry());
+}
+
 void Application::createRenderer() {
     logger.info("Creating renderer");
 
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    renderer = std::make_unique<Renderer>(config, *this, canvas, nuklear, *shaderModules, *voxelShapeCache, font);
+    const auto viewport = Vector2i{config.windowWidth, config.windowHeight};
+    renderer =
+        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *shaderModules, *voxelShapeCache, font);
+
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
-    NEXT(createRegistry());
+    NEXT(createThumbnailRenderer());
 }
 
 void Application::createVoxelShapeCache() {
@@ -320,34 +373,56 @@ void Application::startSinglePlayer() {
     });*/
 }
 
+void Application::startEditor() {
+    logger.info("Starting editor mode");
+    editorOnly = true;
+    startSinglePlayer();
+}
+
 void Application::eventMouseMoved(const Vector2i& pos) {
     mousePos = pos;
     nuklear.eventMouseMoved(pos);
-    if (game && !nuklear.isCursorInsideWindow(pos)) {
-        game->eventMouseMoved(pos);
+    if (!nuklear.isCursorInsideWindow(pos)) {
+        if (game) {
+            game->eventMouseMoved(pos);
+        } else if (editor) {
+            editor->eventMouseMoved(pos);
+        }
     }
 }
 
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     nuklear.eventMousePressed(pos, button);
-    if (game && !nuklear.isCursorInsideWindow(pos)) {
-        game->eventMousePressed(pos, button);
+    if (!nuklear.isCursorInsideWindow(pos)) {
+        if (game) {
+            game->eventMousePressed(pos, button);
+        } else if (editor) {
+            editor->eventMousePressed(pos, button);
+        }
     }
 }
 
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     nuklear.eventMouseReleased(pos, button);
-    if (game && !nuklear.isCursorInsideWindow(pos)) {
-        game->eventMouseReleased(pos, button);
+    if (!nuklear.isCursorInsideWindow(pos)) {
+        if (game) {
+            game->eventMouseReleased(pos, button);
+        } else if (editor) {
+            editor->eventMouseReleased(pos, button);
+        }
     }
 }
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
     nuklear.eventMouseScroll(xscroll, yscroll);
-    if (game && !nuklear.isCursorInsideWindow(mousePos)) {
-        game->eventMouseScroll(xscroll, yscroll);
+    if (!nuklear.isCursorInsideWindow(mousePos)) {
+        if (game) {
+            game->eventMouseScroll(xscroll, yscroll);
+        } else if (editor) {
+            editor->eventMouseScroll(xscroll, yscroll);
+        }
     }
 }
 
@@ -355,6 +430,8 @@ void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     nuklear.eventKeyPressed(key, modifiers);
     if (game) {
         game->eventKeyPressed(key, modifiers);
+    } else if (editor) {
+        editor->eventKeyPressed(key, modifiers);
     }
 }
 
@@ -362,6 +439,8 @@ void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
     nuklear.eventKeyReleased(key, modifiers);
     if (game) {
         game->eventKeyReleased(key, modifiers);
+    } else if (editor) {
+        editor->eventKeyReleased(key, modifiers);
     }
 }
 
@@ -372,6 +451,8 @@ void Application::eventCharTyped(const uint32_t code) {
     nuklear.eventCharTyped(code);
     if (game) {
         game->eventCharTyped(code);
+    } else if (editor) {
+        editor->eventCharTyped(code);
     }
 }
 

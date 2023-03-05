@@ -26,6 +26,9 @@ public:
     Scene& getRenderScene() override;
     const Skybox& getRenderSkybox() override;
 
+private:
+    void createScene();
+
     const Config& config;
     Registry& registry;
     Gui& gui;

@@ -104,6 +104,9 @@ void Server::cleanup() {
         sectors.map.clear();
     }
 
+    logger.info("Stopping generator");
+    generator.reset();
+
     logger.info("Stopping event bus");
     eventBus.reset();
 
@@ -137,30 +140,23 @@ void Server::tick() {
             BACKTRACE(e, "Error while polling event bus");
         }
 
-        /*// TICK
         std::optional<std::string> failedId;
+
         {
             std::shared_lock<std::shared_mutex> lock{sectors.mutex};
-            for (auto& pair : sectors.map) {
-                const auto& compoundId = pair.first;
-                auto& sector = pair.second;
-                sectorWorker.post([&failedId, sector, compoundId, this]() {
-                    try {
-                        sector->update(config.tickLengthUs.count() / 1000000.0f);
-                    } catch (std::exception& e) {
-                        BACKTRACE(CMP, e, "Failed to update sector");
-                        failedId = compoundId;
-                    }
-                });
+            for (auto& [compoundId, sector] : sectors.map) {
+                try {
+                    sector->update(config.tickLengthUs.count() / 1000000.0f);
+                } catch (std::exception& e) {
+                    BACKTRACE(e, "Failed to update sector: '{}'", compoundId);
+                }
             }
         }
-
-        sectorWorker.run();
 
         if (failedId.has_value()) {
             logger.error("Sector: '{}' failed to update, stopping tick", failedId.value());
             break;
-        }*/
+        }
 
         const auto now = std::chrono::steady_clock::now();
         const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
@@ -262,7 +258,8 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 
     try {
         logger.info("Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
-        auto instance = std::make_shared<Sector>(config, *world, registry, sector.galaxyId, sector.systemId, sector.id);
+        auto instance =
+            std::make_shared<Sector>(config, *world, registry, *eventBus, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, instance));
 
         return instance;
@@ -280,14 +277,7 @@ void Server::addPlayerToSector(const SessionPtr& session, const std::string& sec
         EXCEPTION("Can not add player to invalid sector id: {} player id: {}", sectorId, session->getPlayerId());
     }
 
-    auto& sector = *it->second;
-
-    MessagePlayerLocationChanged msg{};
-    msg.location.galaxyId = sector.getGalaxyId();
-    msg.location.systemId = sector.getSystemId();
-    msg.location.sectorId = sector.getSectorId();
-
-    session->send(msg);
+    it->second->addPlayer(session);
 }
 
 std::tuple<SessionPtr, SectorPtr> Server::peerToSessionSector(const PeerPtr& peer) {

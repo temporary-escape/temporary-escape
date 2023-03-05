@@ -19,6 +19,9 @@
 #include "vulkan_texture.hpp"
 
 namespace Engine {
+using VulkanSemaphoreOpt = std::optional<std::reference_wrapper<VulkanSemaphore>>;
+using VulkanFenceOpt = std::optional<std::reference_wrapper<VulkanFence>>;
+
 class ENGINE_API VulkanRenderer : public VulkanDevice {
 public:
     explicit VulkanRenderer(const Config& config);
@@ -49,13 +52,16 @@ public:
     void waitQueueIdle();
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer);
     void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer, VkPipelineStageFlags waitStages,
-                             const VulkanSemaphore& wait, const VulkanSemaphore& signal, const VulkanFence* fence);
+                             const VulkanSemaphoreOpt& wait, const VulkanSemaphoreOpt& signal,
+                             const VulkanFenceOpt& fence);
     void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait = nullptr);
     void submitPresentQueue();
     void recreateSwapChain();
     void copyDataToBuffer(VulkanBuffer& buffer, const void* data, size_t size);
     void copyDataToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer, const Vector2i& size,
                          const void* data);
+    void copyImageToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer, const Vector2i& size,
+                          const VulkanTexture& source);
     void copyBufferToImage(const VulkanBuffer& buffer, VulkanTexture& texture, int level, int layer,
                            const VkOffset3D& offset, const VkExtent3D& extent);
     // void getGpuMemoryStats();

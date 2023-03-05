@@ -63,7 +63,6 @@ std::optional<size_t> ComponentClickablePoints::findNearestPoint(const Vector2i&
     std::vector<Found> found;
 
     auto values = reinterpret_cast<Vector2*>(sboOutput.getPreviousBuffer().getMappedPtr());
-    logger.warn("First value: {}", values[0]);
     for (size_t i = 0; i < points.size(); i++) {
         if (pos.x > values[i].x - size.x / 2.0f && pos.x < values[i].x + size.x / 2.0f &&
             pos.y > values[i].y - size.y / 2.0f && pos.y < values[i].y + size.y / 2.0f) {

@@ -9,7 +9,7 @@ ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     vulkan{vulkan}, packer{2048, Vector2i{config.imageAtlasSize}} {
 
     VulkanTexture::CreateInfo textureInfo{};
-    textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.image.format = VK_FORMAT_R8G8B8A8_SRGB;
     textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
     textureInfo.image.extent = {
         static_cast<uint32_t>(config.imageAtlasSize),
@@ -26,7 +26,7 @@ ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    textureInfo.view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.view.format = VK_FORMAT_R8G8B8A8_SRGB;
     textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
     textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     textureInfo.view.subresourceRange.baseMipLevel = 0;
@@ -69,6 +69,19 @@ std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const void*
     return pos;
 }
 
+std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const VulkanTexture& source) {
+    const auto res = packer.add(size + Vector2i{8, 8});
+    if (!res) {
+        return std::nullopt;
+    }
+
+    const auto pos = *res + Vector2i{4, 4};
+
+    vulkan.copyImageToImage(texture, 0, pos, 0, size, source);
+
+    return pos;
+}
+
 void ImageAtlas::Layer::finalize() {
     // vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
     //                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -79,6 +92,14 @@ ImageAtlas::ImageAtlas(const Config& config, VulkanRenderer& vulkan) : config{&c
 }
 
 ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels) {
+    return add(size, [&](Layer& layer) { return layer.add(size, pixels); });
+}
+
+ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const VulkanTexture& source) {
+    return add(size, [&](Layer& layer) { return layer.add(size, source); });
+}
+
+ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const ImageAtlas::LayerAddFunc& provider) {
     Vector2i pos;
     Allocation allocation{};
     allocation.size = size;
@@ -88,7 +109,7 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
     };
 
     for (auto& layer : layers) {
-        auto res = layer->add(size, pixels);
+        auto res = provider(*layer);
         if (res) {
             allocation.pos = *res;
             allocation.uv = {
@@ -105,7 +126,7 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const void* pixels)
     layers.emplace_back(std::make_unique<Layer>(*config, *vulkan));
     auto& layer = layers.back();
 
-    auto res = layer->add(size, pixels);
+    auto res = provider(*layer);
     if (!res) {
         EXCEPTION("Unable to allocate image of size: {} in image atlas", size);
     }

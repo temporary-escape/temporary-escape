@@ -9,6 +9,7 @@ namespace Engine {
 class ENGINE_API Image : public Asset {
 public:
     explicit Image(std::string name, Path path);
+    explicit Image(std::string name, const ImageAtlas::Allocation& allocation);
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const ImageAtlas::Allocation& getAllocation() const {

@@ -33,17 +33,40 @@ class ENGINE_API Renderer {
 public:
     struct Options {
         bool bloomEnabled{true};
+        std::optional<float> exposureOverride;
     };
 
-    explicit Renderer(const Config& config, VulkanRenderer& vulkan, Canvas& canvas, Nuklear& nuklear,
-                      ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font);
-    ~Renderer();
+    explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
+                      Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
+                      FontFamily& font);
+    virtual ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options,
                 NuklearWindow& nuklearWindow);
 
     VulkanRenderer& getVulkan() {
         return vulkan;
+    }
+
+protected:
+    virtual VulkanFramebuffer& getParentFramebuffer() {
+        return vulkan.getSwapChainFramebuffer();
+    }
+
+    virtual VulkanRenderPass& getParentRenderPass() {
+        return vulkan.getRenderPass();
+    }
+
+    virtual VulkanFenceOpt getParentInFlightFence() {
+        return vulkan.getCurrentInFlightFence();
+    }
+
+    virtual VulkanSemaphoreOpt getParentImageAvailableSemaphore() {
+        return vulkan.getCurrentImageAvailableSemaphore();
+    }
+
+    virtual VulkanSemaphoreOpt getParentRenderFinishedSemaphore() {
+        return vulkan.getCurrentRenderFinishedSemaphore();
     }
 
 private:

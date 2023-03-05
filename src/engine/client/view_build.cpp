@@ -8,8 +8,10 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     config{config},
     registry{registry},
     gui{gui},
-    skybox{renderer.getVulkan(), Color4{0.03f, 0.03f, 0.03f, 1.0f}},
+    skybox{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}},
     scene{} {
+
+    createScene();
 
     // auto skybox = std::make_shared<Entity>();
     // skybox->addComponent<ComponentSkybox>(Skybox::createOfColor(Color4{0.15f, 0.15f, 0.15f, 1.0f}));
@@ -64,20 +66,32 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
     entityHelperAdd->setVisible(false);*/
 }
 
+void ViewBuild::createScene() {
+    auto sun = scene.createEntity();
+    sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
+    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
+
+    auto entityCamera = scene.createEntity();
+    auto& cameraTransform = entityCamera->addComponent<ComponentTransform>();
+    auto& cameraCamera = entityCamera->addComponent<ComponentCamera>(cameraTransform);
+    entityCamera->addComponent<ComponentUserInput>(cameraCamera);
+    cameraCamera.setProjection(80.0f);
+    cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+    logger.info("Setting scene primary camera");
+    scene.setPrimaryCamera(entityCamera);
+
+    entityShip = scene.createEntity();
+    auto& entityTransform = entityShip->addComponent<ComponentTransform>();
+    auto& debug = entityShip->addComponent<ComponentDebug>();
+    auto& grid = entityShip->addComponent<ComponentGrid>(debug);
+    grid.setDirty(true);
+
+    auto block = registry.getBlocks().find("block_crew_quarters_t1");
+    grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+}
+
 void ViewBuild::update(const float deltaTime) {
-    /*auto grid = entityShip->getComponent<ComponentGrid>();
-
-    const auto [eyes, worldPos] = scene.screenToWorld(raycastScreenPos, 10.0f);
-    raycastResult = grid->rayCast(eyes, worldPos);
-
-    if (raycastResult) {
-        entityHelperAdd->setVisible(true);
-        entityHelperAdd->move(raycastResult->worldPos + raycastResult->normal);
-    } else {
-        entityHelperAdd->setVisible(false);
-    }
-
-    scene.update(deltaTime);*/
+    scene.update(deltaTime);
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
@@ -88,13 +102,6 @@ void ViewBuild::eventMouseMoved(const Vector2i& pos) {
 
 void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     scene.eventMousePressed(pos, button);
-
-    /*contextMenu.pos = camera->worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true);
-        contextMenu.enabled = true;
-        contextMenu.items = {
-            {"View", [this]() { contextMenu.enabled = false; }},
-            {"Info", [this]() { contextMenu.enabled = false; }},
-        };*/
 }
 
 void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
@@ -118,9 +125,11 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 }
 
 void ViewBuild::onEnter() {
+    gui.blockSelector.setEnabled(true);
 }
 
 void ViewBuild::onExit() {
+    gui.blockSelector.setEnabled(false);
 }
 
 const Renderer::Options& ViewBuild::getRenderOptions() {

@@ -17,8 +17,10 @@ void GuiWindow::draw(Nuklear& nuklear, const Vector2& viewport) {
     beforeDraw(viewport);
     if (nuklear.beginWindow(title, pos, size, flags)) {
         drawLayout(nuklear);
-        nuklear.endWindow();
+    } else if (getFlags() & static_cast<Nuklear::Flags>(Nuklear::WindowFlags::Closeable)) {
+        setEnabled(false);
     }
+    nuklear.endWindow();
 
     if (fontSize) {
         nuklear.resetFont();

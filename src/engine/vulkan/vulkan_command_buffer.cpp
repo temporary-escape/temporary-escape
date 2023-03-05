@@ -183,7 +183,7 @@ void VulkanCommandBuffer::pushConstants(VulkanPipeline& pipeline, const VkShader
     vkCmdPushConstants(commandBuffer, pipeline.getLayout(), shaderStage, offset, size, data);
 }
 
-void VulkanCommandBuffer::blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst,
+void VulkanCommandBuffer::blitImage(const VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst,
                                     VkImageLayout dstLayout, const Span<VkImageBlit>& regions, VkFilter filter) {
     vkCmdBlitImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(),
                    regions.data(), filter);

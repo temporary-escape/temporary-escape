@@ -10,8 +10,23 @@ public:
 
     ~GuiBlockSelector() override = default;
 
+    void setBlocks(const Span<BlockPtr>& blocks);
+
 private:
+    struct Category {
+        std::string name;
+        std::vector<BlockPtr> blocks;
+    };
+
+    struct CategoryFilter {
+        std::string label;
+        bool enabled;
+    };
+
     void drawLayout(Nuklear& nuklear) override;
     void beforeDraw(const Vector2& viewport) override;
+
+    std::vector<Category> categories;
+    std::vector<CategoryFilter> filterChoices;
 };
 } // namespace Engine

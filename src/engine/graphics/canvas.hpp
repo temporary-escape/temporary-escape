@@ -22,8 +22,11 @@ public:
     }
     void rect(const Vector2& pos, const Vector2& size);
     void rectOutline(const Vector2& pos, const Vector2& size, float thickness);
-    void text(const Vector2& pos, const std::string& text);
-    void image(const Vector2& pos, const Vector2& size, const ImagePtr& image);
+    void text(const Vector2& pos, const std::string_view& text);
+    void image(const Vector2& pos, const Vector2& size, const ImagePtr& asset) {
+        image(pos, size, *asset);
+    }
+    void image(const Vector2& pos, const Vector2& size, const Image& asset);
 
 private:
     struct Vertex {

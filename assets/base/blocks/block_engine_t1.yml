@@ -1,9 +1,6 @@
-category: Hull
+category: Engine
 shapes:
   - Cube
-  - Wedge
-  - Corner
-  - Penta
 materials:
   - faces:
       - PositiveX

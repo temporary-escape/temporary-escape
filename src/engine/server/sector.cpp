@@ -6,11 +6,12 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
-Sector::Sector(const Config& config, World& world, Registry& registry, std::string galaxyId, std::string systemId,
-               std::string sectorId) :
-    config(config),
-    world(world),
+Sector::Sector(const Config& config, World& world, Registry& registry, EventBus& eventBus, std::string galaxyId,
+               std::string systemId, std::string sectorId) :
+    config{config},
+    world{world},
     registry{registry},
+    eventBus{eventBus},
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
     sectorId{std::move(sectorId)},
@@ -220,11 +221,30 @@ void Sector::update(const float delta) {
 
     entityDeltas.clear();*/
 
-    // sync.reset();
-    // sync.run();
+    sync.reset();
+    sync.run();
 }
 
 void Sector::addPlayer(SessionPtr session) {
+    sync.post([this, session = std::move(session)]() {
+        logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
+
+        players.emplace_back();
+        players.back().session = session;
+
+        // Send a message to the player that their location has changed
+        MessagePlayerLocationChanged msg{};
+        msg.location.galaxyId = getGalaxyId();
+        msg.location.systemId = getSystemId();
+        msg.location.sectorId = getSectorId();
+        session->send(msg);
+
+        // Send an event that a new player has entered the sector
+        EventPlayer event{};
+        event.playerId = session->getPlayerId();
+        eventBus.enqueue("sector_player_added", event);
+    });
+
     /*sync.post([this, session = std::move(session)]() {
         logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
 
@@ -247,13 +267,6 @@ void Sector::addPlayer(SessionPtr session) {
         msg.location = location;
         session->send(msg);
     });*/
-}
-
-void Sector::eventEntityAdded(const EntityPtr& entity) {
-    for (auto& player : players) {
-        player.entitiesToSync.emplace_back();
-        player.entitiesToSync.back() = entity;
-    }
 }
 
 /*void Sector::handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res) {

@@ -9,8 +9,14 @@ static auto logger = createLogger(__FILENAME__);
 Image::Image(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
+Image::Image(std::string name, const ImageAtlas::Allocation& allocation) :
+    Asset{std::move(name)}, allocation{allocation} {
+}
+
 void Image::load(Registry& registry, VulkanRenderer& vulkan) {
-    (void)registry;
+    if (path.empty()) {
+        return;
+    }
 
     try {
         PngImporter image{path};

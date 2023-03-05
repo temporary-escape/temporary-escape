@@ -48,7 +48,7 @@ struct MessagePlayerLocationResponse {
     MESSAGE_DEFINE(MessagePlayerLocationResponse, galaxyId, systemId, sectorId);
 };
 
-struct EventPlayerLoggedIn {
+struct EventPlayer {
     std::string playerId;
 };
 

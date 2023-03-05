@@ -76,7 +76,7 @@ public:
                          const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures);
     void pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
-    void blitImage(VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
+    void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);
     void generateMipMaps(VulkanTexture& texture);
     void destroy() override;

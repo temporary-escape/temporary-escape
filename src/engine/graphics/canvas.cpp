@@ -431,14 +431,14 @@ void Canvas::rectOutline(const Vector2& pos, const Vector2& size, const float th
     rect(Vector2{pos.x, pos.y + size.y - thickness}, Vector2{size.x, thickness});
 }
 
-void Canvas::text(const Vector2& pos, const std::string& text) {
+void Canvas::text(const Vector2& pos, const std::string_view& text) {
     if (!currentFontFace || currentFontHeight == 0) {
         return;
     }
 
     size_t start = indexOffset;
 
-    auto it = text.c_str();
+    auto it = text.data();
     const auto end = it + text.size();
 
     size_t total = 0;
@@ -481,7 +481,7 @@ void Canvas::text(const Vector2& pos, const std::string& text) {
     cmd.texture = &currentFontFace->getTexture();
 }
 
-void Canvas::image(const Vector2& pos, const Vector2& size, const ImagePtr& image) {
+void Canvas::image(const Vector2& pos, const Vector2& size, const Image& asset) {
     auto& cmd = addDrawCommand();
     cmd.start = indexOffset;
     cmd.length = 6;
@@ -499,7 +499,7 @@ void Canvas::image(const Vector2& pos, const Vector2& size, const ImagePtr& imag
     dst[2].color = nextColor;
     dst[3].color = nextColor;
 
-    const auto& alc = image->getAllocation();
+    const auto& alc = asset.getAllocation();
 
     dst[0].uv = alc.uv;
     dst[1].uv = alc.uv + Vector2{alc.st.x, 0.0f};

@@ -121,7 +121,7 @@ def create_markdown(s3, endpoint: str, bucket: str, versions: List[dict]):
 
 def process_versions(s3, endpoint: str, bucket: str, files: List[str]):
     # Sort by modified time
-    files = sorted(files, key=lambda f: f['LastModified'])
+    files = reversed(sorted(files, key=lambda f: f['LastModified']))
 
     versions = []
     current_version = None

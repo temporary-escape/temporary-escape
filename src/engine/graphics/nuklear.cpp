@@ -16,10 +16,15 @@ static float getTextWidth(const nk_handle handle, const float height, const char
     return font.getBounds({str, static_cast<size_t>(len)}, height).x;
 }
 
+struct Nuklear::CustomStyle {
+    nk_style_button image{};
+};
+
 Nuklear::Nuklear(Canvas& canvas, const FontFamily& defaultFontFamily, const int defaultFontSize) :
     canvas{canvas},
     defaultFontFamily{defaultFontFamily},
     defaultFontSize{defaultFontSize},
+    customStyle{std::make_unique<CustomStyle>()},
     ctx{std::make_unique<nk_context>()} {
 
     defaultFont = &addFontFamily(defaultFontFamily, defaultFontSize);
@@ -59,7 +64,7 @@ void Nuklear::begin(const Vector2i& viewport) {
     lastViewportValue = viewport;
     windowsBounds.clear();
     resetFont();
-    input();
+    inputPoll();
 }
 
 void Nuklear::end() {
@@ -71,7 +76,7 @@ void Nuklear::draw(NuklearWindow& window) {
     window.draw(*this, getViewport());
 }
 
-void Nuklear::input() {
+void Nuklear::inputPoll() {
     nk_input_begin(ctx.get());
     for (const auto& event : inputEvents) {
         event();
@@ -116,7 +121,8 @@ void Nuklear::render() {
             auto& font = *static_cast<const FontFamily*>(c->font->userdata.ptr);
             canvas.color(asColor(c->foreground));
             canvas.font(font.regular, c->font->height);
-            canvas.text(Vector2(c->x, static_cast<float>(c->y) + c->height / 1.25f), &c->string[0]);
+            std::string_view text{&c->string[0], std::strlen(&c->string[0])};
+            canvas.text(Vector2(c->x, static_cast<float>(c->y) + c->height / 1.25f), text);
             break;
         }
         case NK_COMMAND_RECT: {
@@ -166,13 +172,11 @@ void Nuklear::render() {
         }
         case NK_COMMAND_IMAGE: {
             const auto c = reinterpret_cast<const struct nk_command_image*>(cmd);
-            /*const auto& color = asColor(c->col);
-            const auto image = reinterpret_cast<Canvas2D::Image*>(c->img.handle.ptr);
-            canvas.beginPath();
-            canvas.rectImage({static_cast<float>(c->x), static_cast<float>(c->y)},
-                             {static_cast<float>(c->w), static_cast<float>(c->h)}, *image, color);
-            canvas.fill();
-            canvas.closePath();*/
+            const auto& color = asColor(c->col);
+            const auto image = reinterpret_cast<Image*>(c->img.handle.ptr);
+            canvas.color(color);
+            canvas.image({static_cast<float>(c->x), static_cast<float>(c->y)},
+                         {static_cast<float>(c->w), static_cast<float>(c->h)}, *image);
             break;
         }
         default: {
@@ -185,7 +189,9 @@ void Nuklear::render() {
 bool Nuklear::beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, const Flags flags) {
     if (nk_begin_titled(ctx.get(), title.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags)) {
         windowsBounds.emplace_back(pos, size);
-        nk_window_set_position(ctx.get(), title.c_str(), nk_vec2(pos.x, pos.y));
+        if (!(flags & static_cast<Flags>(Nuklear::WindowFlags::Moveable))) {
+            nk_window_set_position(ctx.get(), title.c_str(), nk_vec2(pos.x, pos.y));
+        }
         return true;
     }
 
@@ -200,6 +206,52 @@ void Nuklear::layoutDynamic(float height, int count) {
     nk_layout_row_dynamic(ctx.get(), height, count);
 }
 
+void Nuklear::layoutStatic(float height, float width, int count) {
+    nk_layout_row_static(ctx.get(), height, width, count);
+}
+
+void Nuklear::layoutSkip() {
+    struct nk_rect bounds {};
+    nk_widget(&bounds, ctx.get());
+}
+
+void Nuklear::layoutBeginDynamic(float height, int count) {
+    nk_layout_row_begin(ctx.get(), NK_DYNAMIC, height, count);
+}
+
+void Nuklear::layoutEnd() {
+    nk_layout_row_end(ctx.get());
+}
+
+void Nuklear::layoutPush(float value) {
+    nk_layout_row_push(ctx.get(), value);
+}
+
+bool Nuklear::groupBegin(const std::string& name, bool scrollbar) {
+    Flags flags = 0 | WindowFlags::Border;
+    if (!scrollbar) {
+        flags = flags | WindowFlags::NoScrollbar;
+    }
+
+    return nk_group_begin(ctx.get(), name.c_str(), flags) == nk_true;
+}
+
+void Nuklear::groupEnd() {
+    nk_group_end(ctx.get());
+}
+
+bool Engine::Nuklear::isHovered() {
+    return nk_widget_is_hovered(ctx.get()) == nk_true;
+}
+
+bool Engine::Nuklear::isClicked() {
+    return nk_widget_is_mouse_clicked(ctx.get(), NK_BUTTON_LEFT) == nk_true;
+}
+
+bool Engine::Nuklear::isMouseDown() {
+    return nk_widget_has_mouse_click_down(ctx.get(), NK_BUTTON_LEFT, nk_true) == nk_true;
+}
+
 bool Nuklear::button(const std::string& text, const TextAlign align) {
     nk_style_button& style = ctx->style.button;
     style.text_alignment = static_cast<nk_flags>(align);
@@ -207,8 +259,61 @@ bool Nuklear::button(const std::string& text, const TextAlign align) {
     return nk_button_label(ctx.get(), text.c_str()) == nk_true;
 }
 
+void Nuklear::select(const std::string& text, bool& value, Nuklear::TextAlign align) {
+    nk_bool v = value ? nk_true : nk_false;
+    nk_selectable_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align), &v);
+    value = v == nk_true;
+}
+
+bool Nuklear::buttonImage(const ImagePtr& img) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    nk_style_button& style = ctx->style.button;
+    style.text_alignment = NK_TEXT_ALIGN_LEFT;
+
+    return nk_button_image(ctx.get(), ni) == nk_true;
+}
+
+bool Nuklear::image(const ImagePtr& img) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    if (isHovered()) {
+        if (isMouseDown()) {
+            customStyle->image.border_color = ctx->style.button.active.data.color;
+        } else {
+            customStyle->image.border_color = ctx->style.button.hover.data.color;
+        }
+    } else {
+        customStyle->image.border_color = ctx->style.button.border_color;
+    }
+
+    return nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true;
+}
+
 void Nuklear::label(const std::string& text) {
     nk_label(ctx.get(), text.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
+}
+
+void Nuklear::text(const std::string& text) {
+    nk_label_wrap(ctx.get(), text.c_str());
+}
+
+void Nuklear::input(std::string& text, const size_t max) {
+    if (editBuffer.size() < max + 1) {
+        editBuffer.resize(max + 1);
+    }
+    std::memcpy(editBuffer.data(), text.data(), std::min(text.size(), max));
+    editBuffer[text.size()] = '\0';
+
+    auto len = static_cast<int>(std::min(text.size(), max));
+
+    nk_edit_string(ctx.get(), NK_EDIT_SIMPLE, editBuffer.data(), &len, max, nk_filter_default);
+    if (len != text.size()) {
+        text.resize(len);
+        std::memcpy(text.data(), editBuffer.data(), text.size());
+    }
 }
 
 void Nuklear::progress(float value) {
@@ -305,6 +410,11 @@ bool Nuklear::isCursorInsideWindow(const Vector2i& mousePos) const {
     return false;
 }
 
+Vector2 Nuklear::getContentRegion() {
+    const auto space = nk_window_get_content_region(ctx.get());
+    return Vector2{space.w, space.h} - Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
+}
+
 static nk_color HEX(const uint32_t v) {
     return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
 }
@@ -313,6 +423,7 @@ static nk_color fromColor(const Color4& color) {
     return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
 }
 
+static const auto BLACK = HEX(0x000000ff);
 static const auto PRIMARY_COLOR = fromColor(Theme::primary);
 static const auto WHITE = HEX(0xe5e5e3ff);
 static const auto TEXT_WHITE = fromColor(Theme::text);
@@ -455,4 +566,9 @@ void Nuklear::applyTheme() {
     progress.cursor_border_color = TRANSPARENT_COLOR;
     progress.padding.x = 0;
     progress.padding.y = 0;
+
+    customStyle->image = button;
+    customStyle->image.normal.data.color = BLACK;
+    customStyle->image.hover.data.color = BLACK;
+    customStyle->image.active.data.color = BLACK;
 }

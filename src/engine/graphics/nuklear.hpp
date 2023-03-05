@@ -58,8 +58,24 @@ public:
     void fontSize(int size);
     void resetFont();
     void layoutDynamic(float height, int count);
+    void layoutStatic(float height, float width, int count);
+    void layoutSkip();
+    void layoutBeginDynamic(float height, int count);
+    void layoutEnd();
+    void layoutPush(float value);
+    bool groupBegin(const std::string& name, bool scrollbar);
+    void groupEnd();
+    bool isHovered();
+    bool isClicked();
+    bool isMouseDown();
+
     bool button(const std::string& text, TextAlign align = TextAlign::Center);
+    bool buttonImage(const ImagePtr& img);
+    bool image(const ImagePtr& img);
+    void select(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
     void label(const std::string& text);
+    void text(const std::string& text);
+    void input(std::string& text, size_t max);
     void progress(float value);
 
     void eventMouseMoved(const Vector2i& pos);
@@ -75,10 +91,13 @@ public:
     }
 
     bool isCursorInsideWindow(const Vector2i& mousePos) const;
+    Vector2 getContentRegion();
 
 private:
+    struct CustomStyle;
+
     void applyTheme();
-    void input();
+    void inputPoll();
     void render();
     nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
@@ -89,6 +108,7 @@ private:
 
     Canvas& canvas;
     const FontFamily& defaultFontFamily;
+    std::unique_ptr<CustomStyle> customStyle;
     int defaultFontSize;
     Vector2i lastViewportValue;
     std::unique_ptr<nk_context> ctx;
@@ -96,6 +116,7 @@ private:
     std::vector<std::tuple<Vector2, Vector2>> windowsBounds;
     std::list<std::function<void()>> inputEvents;
     nk_user_font* defaultFont;
+    std::vector<char> editBuffer;
 };
 
 inline Nuklear::Flags operator|(const Nuklear::WindowFlags a, const Nuklear::WindowFlags b) {
@@ -111,5 +132,15 @@ public:
     virtual ~NuklearWindow() = default;
 
     virtual void draw(Nuklear& nuklear, const Vector2& viewport) = 0;
+};
+
+class ENGINE_API NuklearWindowNull : public NuklearWindow {
+public:
+    virtual ~NuklearWindowNull() = default;
+
+    void draw(Nuklear& nuklear, const Vector2& viewport) override {
+        (void)nuklear;
+        (void)viewport;
+    }
 };
 } // namespace Engine

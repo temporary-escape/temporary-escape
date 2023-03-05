@@ -176,9 +176,8 @@ Vector2 FontFace::getBounds(const std::string_view& text, const float height) co
         const auto& glyph = getGlyph(code);
 
         max.y = std::max(max.y, pos.y + height);
-        max.x = std::max(max.x, pos.x + glyph.box.x * scale);
-
         pos += Vector2{glyph.advance * scale, 0.0f};
+        max.x = std::max(max.x, pos.x);
     }
 
     return max;

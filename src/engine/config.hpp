@@ -23,6 +23,8 @@ struct KeyBinding {
     }
 };
 
+#define GAME_VERSION_STR(V) #V
+
 struct Config {
     std::chrono::microseconds tickLengthUs = 50000us;
 
@@ -64,7 +66,7 @@ struct Config {
     int imageAtlasSize = 4096;
     int brdfSize = 512;
     float cameraFov = 75.0f;
-    int thumbnailSize = 128;
+    int thumbnailSize = 256;
     int guiFontSize = 18;
     std::string guiFontName = "iosevka-aile";
 

@@ -88,8 +88,9 @@ private:
 };
 
 const std::unordered_map<std::string, EventBusHelper> EventBusWrapper::types = {
-    {"player_logged_in", EventBusHelper::type<EventPlayerLoggedIn>()},
-    {"player_test_event", EventBusHelper::type<EventPlayerLoggedIn>()},
+    {"player_logged_in", EventBusHelper::type<EventPlayer>()},
+    {"player_test_event", EventBusHelper::type<EventPlayer>()},
+    {"sector_player_added", EventBusHelper::type<EventPlayer>()},
 };
 
 static EventBusWrapper eventBus;
@@ -105,9 +106,9 @@ PYBIND11_EMBEDDED_MODULE(engine, m) {
 
     m.def("create_logger", &createLogger);
 
-    py::class_<EventPlayerLoggedIn>(m, "EventPlayerLoggedIn") //
+    py::class_<EventPlayer>(m, "EventPlayer") //
         .def(py::init<>())
-        .def_readwrite("player_id", &EventPlayerLoggedIn::playerId);
+        .def_readwrite("player_id", &EventPlayer::playerId);
 
     py::class_<EventBusWrapper>(m, "EventBus") //
         .def_static("listen", &EventBusWrapper::listen)
