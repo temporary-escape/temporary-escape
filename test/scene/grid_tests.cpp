@@ -513,3 +513,72 @@ TEST_CASE("Octree insert expand twice", TAG) {
     REQUIRE(it.value().voxel.index == 4);
     REQUIRE(it.getPos() == Vector3i{-1, 0, 1});
 }
+
+TEST_CASE("Grid ray cast negative x single block", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({-5.0f, 0.0f, 0.0f}, {5.0f, 0.0f, 0.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{0, 0, 0});
+}
+
+TEST_CASE("Grid ray cast positive x", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({1, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({5.0f, 0.0f, 0.0f}, {-5.0f, 0.0f, 0.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{1, 0, 0});
+}
+
+TEST_CASE("Grid ray cast negative x", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({-1, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({-5.0f, 0.0f, 0.0f}, {5.0f, 0.0f, 0.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{-1, 0, 0});
+}
+
+TEST_CASE("Grid ray cast positive y", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, 1, 0}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({0.0f, 5.0f, 0.0f}, {0.0f, -5.0f, 0.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{0, 1, 0});
+}
+
+TEST_CASE("Grid ray cast negative y", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, -1, 0}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({0.0f, -5.0f, 0.0f}, {0.0f, 5.0f, 0.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{0, -1, 0});
+}
+
+TEST_CASE("Grid ray cast positive z", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, 0, 1}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, -5.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{0, 0, 1});
+}
+
+TEST_CASE("Grid ray cast negative z", TAG) {
+    Grid grid{};
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, 0, -1}, 0, 0, 0, VoxelShape::Cube);
+
+    const auto res = grid.rayCast({0.0f, 0.0f, -5.0f}, {0.0f, 0.0f, 5.0f});
+    REQUIRE(res.has_value() == true);
+    REQUIRE(res->pos == Vector3i{0, 0, -1});
+}

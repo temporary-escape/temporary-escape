@@ -126,7 +126,8 @@ private:
                           std::vector<ForwardRenderJob>& jobs) {
         auto& camera = *scene.getPrimaryCamera();
 
-        for (auto&& [entity, transform, component] : scene.getView<ComponentTransform, T>().each()) {
+        const auto& entities = scene.getView<ComponentTransform, T>(entt::exclude<TagDisabled>).each();
+        for (auto&& [entity, transform, component] : entities) {
             const auto dist = camera.isOrthographic()
                                   ? -transform.getAbsolutePosition().y
                                   : glm::distance(transform.getAbsolutePosition(), camera.getEyesPos());

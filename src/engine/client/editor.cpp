@@ -14,7 +14,7 @@ Editor::Editor(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear
     nuklear{nuklear},
     registry{registry},
     font{font},
-    gui{config},
+    gui{config, registry},
     view{config, renderer, registry, gui} {
 
     gui.blockSelector.setBlocks(registry.getBlocks().findAll());

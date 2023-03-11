@@ -30,37 +30,67 @@ void GuiBlockSelector::setBlocks(const Span<BlockPtr>& blocks) {
     }
 }
 
+void GuiBlockSelector::drawSearchBar(Nuklear& nuklear) {
+    const auto contentRegion = nuklear.getContentRegion();
+    nuklear.layoutTemplateBegin(30.0f);
+    nuklear.layoutTemplateStatic(contentRegion.x * 0.2f);
+    nuklear.layoutTemplateDynamic();
+    nuklear.layoutTemplateStatic(80.0f);
+    nuklear.layoutTemplateEnd();
+
+    nuklear.label("Filter:");
+    nuklear.input(searchQuery, 128);
+    if (nuklear.button("Clear")) {
+        searchQuery.clear();
+    }
+}
+
+void GuiBlockSelector::drawCategories(Nuklear& nuklear) {
+    nuklear.layoutDynamic(0.0f, 1);
+    for (auto& choice : filterChoices) {
+        nuklear.select(choice.label, choice.enabled, Nuklear::TextAlign::Left);
+    }
+}
+
+void GuiBlockSelector::drawBlockSelection(Nuklear& nuklear) {
+    const auto width = nuklear.getContentRegion().x;
+    nuklear.layoutStatic(128.0f, 128.0f, static_cast<int>(std::floor(width / 128.0f)));
+
+    for (size_t i = 0; i < categories.size(); i++) {
+        if (!filterChoices[i].enabled) {
+            continue;
+        }
+        for (const auto& block : categories[i].blocks) {
+            if (!searchQuery.empty() && block->getLabel().find(searchQuery) == std::string::npos) {
+                continue;
+            }
+            nuklear.setDragAndDrop(block, block->getThumbnail());
+            nuklear.tooltip(block->getLabel());
+            nuklear.image(block->getThumbnail());
+        }
+    }
+}
+
 void GuiBlockSelector::drawLayout(Nuklear& nuklear) {
+    drawSearchBar(nuklear);
+
     const auto contentRegion = nuklear.getContentRegion();
     nuklear.layoutBeginDynamic(contentRegion.y, 2);
 
     nuklear.layoutPush(0.2f);
     if (nuklear.groupBegin("Categories", true)) {
-        nuklear.layoutDynamic(0.0f, 1);
-        for (auto& choice : filterChoices) {
-            nuklear.select(choice.label, choice.enabled, Nuklear::TextAlign::Left);
-        }
+        drawCategories(nuklear);
         nuklear.groupEnd();
     }
 
     nuklear.layoutPush(0.8f);
     if (nuklear.groupBegin("Blocks", true)) {
-        const auto width = nuklear.getContentRegion().x;
-        nuklear.layoutStatic(128.0f, 128.0f, static_cast<int>(std::floor(width / 128.0f)));
-
-        for (size_t i = 0; i < categories.size(); i++) {
-            if (!filterChoices[i].enabled) {
-                continue;
-            }
-            for (const auto& block : categories[i].blocks) {
-                nuklear.image(block->getThumbnail());
-            }
-        }
+        drawBlockSelection(nuklear);
         nuklear.groupEnd();
     }
 
     nuklear.layoutEnd();
 }
 
-void GuiBlockSelector::beforeDraw(const Vector2& viewport) {
+void GuiBlockSelector::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
 }

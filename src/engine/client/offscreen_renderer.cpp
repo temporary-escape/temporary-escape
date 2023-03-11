@@ -155,7 +155,7 @@ void OffscreenRenderer::createTexture(VulkanRenderer& vulkan, const Vector2i& vi
 }
 
 void OffscreenRenderer::render(const BlockPtr& block) {
-    logger.info("Rendering thumbnail for block: {}", block->getName());
+    logger.info("Rendering thumbnail for block: {}", block ? block->getName() : "nullptr");
 
     Scene scene{};
 
@@ -171,11 +171,13 @@ void OffscreenRenderer::render(const BlockPtr& block) {
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene.setPrimaryCamera(entityCamera);
 
-    auto entityBlock = scene.createEntity();
-    auto& entityTransform = entityBlock->addComponent<ComponentTransform>();
-    auto& grid = entityBlock->addComponent<ComponentGrid>();
-    grid.setDirty(true);
-    grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    if (block) {
+        auto entityBlock = scene.createEntity();
+        auto& entityTransform = entityBlock->addComponent<ComponentTransform>();
+        auto& grid = entityBlock->addComponent<ComponentGrid>();
+        grid.setDirty(true);
+        grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    }
 
     Renderer::Options options{};
     NuklearWindowNull gui{};

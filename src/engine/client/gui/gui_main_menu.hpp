@@ -19,7 +19,7 @@ public:
 
 private:
     void drawLayout(Nuklear& nuklear) override;
-    void beforeDraw(const Vector2& viewport) override;
+    void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
     std::vector<Item> items;
 };

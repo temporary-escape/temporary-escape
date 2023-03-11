@@ -20,7 +20,7 @@ public:
     const std::string& getTitle() const;
     void setTitle(const std::string& value);
     void setBordered();
-    void setWithBackground();
+    void setAlwaysBackground();
     void setNoScrollbar();
     void setDynamic();
     void setFontSize(int size);
@@ -31,7 +31,7 @@ public:
     }
 
 protected:
-    virtual void beforeDraw(const Vector2& viewport);
+    virtual void beforeDraw(Nuklear& nuklear, const Vector2& viewport);
     virtual void drawLayout(Nuklear& nuklear) = 0;
 
     bool enabled{true};

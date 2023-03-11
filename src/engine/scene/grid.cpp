@@ -4,6 +4,29 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
+static Vector3i normalToOrientation(const Vector3& normal) {
+    if (normal.x > 0.5f) {
+        return Vector3i{1, 0, 0};
+    } else if (normal.x < -0.5f) {
+        return Vector3i{-1, 0, 0};
+    } else if (normal.y > 0.5f) {
+        return Vector3i{0, 1, 0};
+    } else if (normal.y < -0.5f) {
+        return Vector3i{0, -1, 0};
+    } else if (normal.z > 0.5f) {
+        return Vector3i{0, 0, 1};
+    } else {
+        return Vector3i{0, 0, -1};
+    }
+}
+
+static Vector3i childPosFloor(const Vector3& pos) {
+    const auto x = pos.x < 0.0f ? -std::ceil(-pos.x) : std::floor(pos.x);
+    const auto y = pos.y < 0.0f ? -std::ceil(-pos.y) : std::floor(pos.y);
+    const auto z = pos.z < 0.0f ? -std::ceil(-pos.z) : std::floor(pos.z);
+    return {x, y, z};
+}
+
 static inline size_t coordToIdx(const Vector3i& pos, size_t width) {
     // return x + Grid::cacheBuildWidth * (y + Grid::cacheBuildWidth * z);
 
@@ -520,7 +543,10 @@ std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& paren
                 if (!result || glm::distance(result.value().hitPos, from) > glm::distance(pos.value(), from)) {
                     const auto worldChildPos = (max + min) / 2.0f;
                     const auto diff = pos.value() - worldChildPos;
-                    result = RayCastResult{child, vecToNormal(diff), pos.value(), childPos, worldChildPos};
+                    const auto normal = vecToNormal(diff);
+                    result = RayCastResult{
+                        child, normal, pos.value(), childPosFloor(childPos), worldChildPos, normalToOrientation(normal),
+                    };
                 }
             } else {
                 const auto newOrigin = idxToOffset(index, getWidthForLevel(depth - level + 1) / 2, origin);
@@ -716,7 +742,11 @@ Grid::Iterator Grid::Iterator::children() {
 
 void Grid::insert(const Vector3i& pos, const BlockPtr& block, const uint8_t rotation, const uint8_t color,
                   const uint8_t shape) {
-    const auto type = insertBlock(block);
+    insert(pos, insertBlock(block), rotation, color, shape);
+}
+
+void Grid::insert(const Vector3i& pos, const uint16_t type, const uint8_t rotation, const uint8_t color,
+                  const uint8_t shape) {
     Voxel voxel{};
     voxel.type = type;
     voxel.color = color;

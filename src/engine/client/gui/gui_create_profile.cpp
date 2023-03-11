@@ -24,7 +24,7 @@ void GuiCreateProfile::drawLayout(Nuklear& nuklear) {
     nuklear.layoutSkip();
 }
 
-void GuiCreateProfile::beforeDraw(const Vector2& viewport) {
+void GuiCreateProfile::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
     setPos({viewport.x / 2 - getSize().x / 2, viewport.y / 2 - getSize().y / 2});
 }
 

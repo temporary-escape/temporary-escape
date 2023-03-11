@@ -18,6 +18,6 @@ void GuiMainMenu::drawLayout(Nuklear& nuklear) {
     }
 }
 
-void GuiMainMenu::beforeDraw(const Vector2& viewport) {
+void GuiMainMenu::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
     setPos({viewport.x / 2 - getSize().x / 2, viewport.y / 2 - getSize().y / 2});
 }

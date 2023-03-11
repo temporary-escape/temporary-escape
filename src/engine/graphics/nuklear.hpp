@@ -3,6 +3,7 @@
 #include "../font/font_family.hpp"
 #include "../window.hpp"
 #include "canvas.hpp"
+#include <any>
 #include <functional>
 #include <list>
 
@@ -45,7 +46,7 @@ public:
         RightBottom = 0x04 | 0x20,
     };
 
-    explicit Nuklear(Canvas& canvas, const FontFamily& defaultFontFamily, int defaultFontSize);
+    explicit Nuklear(const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily, int defaultFontSize);
     ~Nuklear();
 
     void begin(const Vector2i& viewport);
@@ -63,20 +64,39 @@ public:
     void layoutBeginDynamic(float height, int count);
     void layoutEnd();
     void layoutPush(float value);
+    void layoutTemplateBegin(float height);
+    void layoutTemplateDynamic();
+    void layoutTemplateVariable(float value);
+    void layoutTemplateStatic(float value);
+    void layoutTemplateEnd();
     bool groupBegin(const std::string& name, bool scrollbar);
     void groupEnd();
     bool isHovered();
-    bool isClicked();
-    bool isMouseDown();
-
+    bool isClicked(MouseButton = MouseButton::Left);
+    bool isMouseDown(MouseButton = MouseButton::Left);
+    template <typename T> void setDragAndDrop(const T& value, const ImagePtr& image) {
+        if (isHovered() && isMouseDown()) {
+            dragAndDrop.value = value;
+            dragAndDrop.image = image;
+        }
+    }
+    template <typename T> std::optional<T> getDragAndDrop() {
+        if (dragAndDrop.value.has_value() && dragAndDrop.value.type() == typeid(T) && isHovered() &&
+            !inputHasMouseDown()) {
+            return std::any_cast<T>(dragAndDrop.value);
+        }
+        return std::nullopt;
+    }
     bool button(const std::string& text, TextAlign align = TextAlign::Center);
     bool buttonImage(const ImagePtr& img);
     bool image(const ImagePtr& img);
+    void imageToggle(const ImagePtr& img, bool& value);
     void select(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
     void label(const std::string& text);
     void text(const std::string& text);
     void input(std::string& text, size_t max);
     void progress(float value);
+    void tooltip(const std::string& text);
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -91,13 +111,22 @@ public:
     }
 
     bool isCursorInsideWindow(const Vector2i& mousePos) const;
-    Vector2 getContentRegion();
+    bool isInputActive() const {
+        return activeInput;
+    }
+    Vector2 getContentRegion() const;
+    Vector2 getWindowSizeForContentRegion(const Vector2& size) const;
+    Vector2 getSpacing() const;
+    Vector2 getMousePos() const;
+    Vector2 getWindowPos() const;
+    bool inputHasMouseDown(MouseButton button = MouseButton::Left);
 
 private:
     struct CustomStyle;
 
     void applyTheme();
     void inputPoll();
+    void drawDragAndDrop();
     void render();
     nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
@@ -106,6 +135,7 @@ private:
     using FontSizeMap = std::unordered_map<int, nk_user_font>;
     using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
 
+    const Config& config;
     Canvas& canvas;
     const FontFamily& defaultFontFamily;
     std::unique_ptr<CustomStyle> customStyle;
@@ -117,6 +147,12 @@ private:
     std::list<std::function<void()>> inputEvents;
     nk_user_font* defaultFont;
     std::vector<char> editBuffer;
+    bool activeInput;
+
+    struct {
+        std::any value;
+        ImagePtr image;
+    } dragAndDrop;
 };
 
 inline Nuklear::Flags operator|(const Nuklear::WindowFlags a, const Nuklear::WindowFlags b) {

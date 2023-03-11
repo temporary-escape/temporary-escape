@@ -12,6 +12,7 @@ public:
     struct Definition {
         std::vector<VoxelShape::Type> shapes;
         std::string category;
+        std::string label;
 
         struct TextureDefinition {
             TexturePtr texture;
@@ -34,7 +35,7 @@ public:
 
         std::vector<MaterialDefinition> materials;
 
-        YAML_DEFINE(shapes, category, materials);
+        YAML_DEFINE(shapes, category, label, materials);
     };
 
     explicit Block(std::string name, Path path);
@@ -55,6 +56,10 @@ public:
 
     [[nodiscard]] const std::vector<VoxelShape::Type>& getAllowedTypes() const {
         return definition.shapes;
+    }
+
+    [[nodiscard]] const std::string& getLabel() const {
+        return definition.label;
     }
 
     [[nodiscard]] const std::string& getCategory() const {
@@ -88,6 +93,15 @@ private:
 };
 
 using BlockPtr = std::shared_ptr<Block>;
+
+template <> struct Yaml::Adaptor<BlockPtr> {
+    static void convert(const Yaml::Node& node, BlockPtr& value) {
+        value = Block::from(node.asString());
+    }
+    static void pack(Yaml::Node& node, const BlockPtr& value) {
+        node.packString(value->getName());
+    }
+};
 } // namespace Engine
 
 namespace msgpack {

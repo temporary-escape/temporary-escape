@@ -16,6 +16,6 @@ void GuiModalLoading::drawLayout(Nuklear& nuklear) {
     nuklear.progress(progress);
 }
 
-void GuiModalLoading::beforeDraw(const Vector2& viewport) {
+void GuiModalLoading::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
     setPos({viewport.x / 2 - getSize().x / 2, viewport.y / 2 - 50});
 }

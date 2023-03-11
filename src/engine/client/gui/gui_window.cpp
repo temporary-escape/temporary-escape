@@ -14,8 +14,9 @@ void GuiWindow::draw(Nuklear& nuklear, const Vector2& viewport) {
         nuklear.fontSize(fontSize);
     }
 
-    beforeDraw(viewport);
+    beforeDraw(nuklear, viewport);
     if (nuklear.beginWindow(title, pos, size, flags)) {
+        pos = nuklear.getWindowPos();
         drawLayout(nuklear);
     } else if (getFlags() & static_cast<Nuklear::Flags>(Nuklear::WindowFlags::Closeable)) {
         setEnabled(false);
@@ -55,7 +56,8 @@ void GuiWindow::setEnabled(bool value) {
     enabled = value;
 }
 
-void GuiWindow::beforeDraw(const Vector2& viewport) {
+void GuiWindow::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
+    (void)nuklear;
     (void)viewport;
 }
 
@@ -72,7 +74,7 @@ void GuiWindow::setBordered() {
     flags = flags | Nuklear::WindowFlags::Border;
 }
 
-void GuiWindow::setWithBackground() {
+void GuiWindow::setAlwaysBackground() {
     flags = flags | Nuklear::WindowFlags::Background;
 }
 

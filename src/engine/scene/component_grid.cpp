@@ -37,6 +37,10 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     Grid::RawPrimitiveData map;
     generateMesh(voxelShapeCache, map);
 
+    for (auto& primitive : primitives) {
+        vulkan.dispose(std::move(primitive.ibo));
+        vulkan.dispose(std::move(primitive.vbo));
+    }
     primitives.clear();
 
     for (const auto& [material, data] : map) {

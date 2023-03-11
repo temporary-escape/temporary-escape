@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../math/vector.hpp"
 #include "../library.hpp"
+#include "../math/vector.hpp"
 #include "exceptions.hpp"
 #include "macros.hpp"
 #include "path.hpp"
@@ -298,6 +298,27 @@ template <typename T> struct Adaptor<std::vector<T>> {
     }
 };
 
+template <typename T, size_t N> struct Adaptor<std::array<T, N>> {
+    static void convert(const Yaml::Node& node, std::array<T, N>& value) {
+        if (!node || !node.isSequence())
+            throw std::bad_cast();
+
+        if (node.size() != value.size()) {
+            EXCEPTION("Too many items to unpack into array of size {}", N);
+        }
+
+        size_t i{0};
+        node.forEach([&](const Node& child) { Adaptor<T>::convert(child, value[i++]); });
+    }
+
+    static void pack(Yaml::Node& node, const std::array<T, N>& value) {
+        for (const auto& item : value) {
+            auto child = node.append();
+            Adaptor<T>::pack(child, item);
+        }
+    }
+};
+
 template <glm::length_t L, typename T> struct Adaptor<glm::vec<L, T, glm::defaultp>> {
     static void convert(const Yaml::Node& node, glm::vec<L, T, glm::defaultp>& value) {
         if (!node || !node.isSequence() || node.size() != L)
@@ -411,9 +432,13 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
 #define YAML_CALL_INSERT_FROM_STRING(f) map.insert(std::make_pair(#f, Type::f))
 
 #define YAML_DEFINE(...)                                                                                               \
-    void convert(const Yaml::Node& node) { YAML_FOR_EACH(YAML_CALL_CONVERT, __VA_ARGS__) }                             \
+    void convert(const Yaml::Node& node) {                                                                             \
+        YAML_FOR_EACH(YAML_CALL_CONVERT, __VA_ARGS__)                                                                  \
+    }                                                                                                                  \
                                                                                                                        \
-    void pack(Yaml::Node& node) const { YAML_FOR_EACH(YAML_CALL_PACK, __VA_ARGS__) }                                   \
+    void pack(Yaml::Node& node) const {                                                                                \
+        YAML_FOR_EACH(YAML_CALL_PACK, __VA_ARGS__)                                                                     \
+    }                                                                                                                  \
                                                                                                                        \
     void fromYaml(const Path& p) {                                                                                     \
         try {                                                                                                          \

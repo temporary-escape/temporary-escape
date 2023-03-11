@@ -16,7 +16,7 @@ Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nu
     registry{registry},
     font{font},
     client{client},
-    gui{config},
+    gui{config, registry},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client, gui);

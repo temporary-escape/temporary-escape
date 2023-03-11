@@ -12,7 +12,7 @@ Application::Application(const Config& config) :
     config{config},
     canvas{*this},
     font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
-    nuklear{canvas, font, config.guiFontSize} {
+    nuklear{config, canvas, font, config.guiFontSize} {
 
     gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},
@@ -235,6 +235,10 @@ void Application::createThumbnails() {
         block->setThumbnail(registry->addImage(block->getName() + "_image", alloc));
     }
 
+    thumbnailRenderer->render(nullptr);
+    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
+    registry->addImage("block_empty_image", alloc);
+
     registry->finalize();
 
     if (editorOnly) {
@@ -248,18 +252,28 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
     if (next == registry->getLoadQueue().cend()) {
         NEXT(createThumbnails());
     } else {
-        const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
-        const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
+        const auto start = std::chrono::steady_clock::now();
 
-        try {
-            (*next)(*this);
-            ++next;
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to load asset");
+        while (next != registry->getLoadQueue().cend()) {
+            const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
+            const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
+
+            try {
+                (*next)(*this);
+                ++next;
+            } catch (...) {
+                EXCEPTION_NESTED("Failed to load asset");
+            }
+
+            status.message = fmt::format("Loading assets ({}/{})...", count, registry->getLoadQueue().size());
+            status.value = 0.4f + progress * 0.3f;
+
+            const auto now = std::chrono::steady_clock::now();
+            const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
+            if (test > std::chrono::microseconds(10000)) {
+                break;
+            }
         }
-
-        status.message = fmt::format("Loading assets ({}/{})...", count, registry->getLoadQueue().size());
-        status.value = 0.4f + progress * 0.3f;
 
         NEXT(loadNextAssetInQueue(next));
     }
@@ -340,18 +354,28 @@ void Application::compileNextShaderInQueue(ShaderModules::LoadQueue::iterator ne
     }
     // Not yet done, we have more shaders to compile
     else {
-        const auto count = std::distance(shaderModules->getLoadQueue().begin(), next) + 1;
-        const auto progress = static_cast<float>(count) / static_cast<float>(shaderModules->getLoadQueue().size());
+        const auto start = std::chrono::steady_clock::now();
 
-        try {
-            (*next)();
-            ++next;
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to compile shader");
+        while (next != shaderModules->getLoadQueue().end()) {
+            const auto count = std::distance(shaderModules->getLoadQueue().begin(), next) + 1;
+            const auto progress = static_cast<float>(count) / static_cast<float>(shaderModules->getLoadQueue().size());
+
+            try {
+                (*next)();
+                ++next;
+            } catch (...) {
+                EXCEPTION_NESTED("Failed to compile shader");
+            }
+
+            status.message = fmt::format("Loading shaders ({}/{})...", count, shaderModules->getLoadQueue().size());
+            status.value = 0.1f + progress * 0.2f;
+
+            const auto now = std::chrono::steady_clock::now();
+            const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
+            if (test > std::chrono::microseconds(10000)) {
+                break;
+            }
         }
-
-        status.message = fmt::format("Loading shaders ({}/{})...", count, shaderModules->getLoadQueue().size());
-        status.value = 0.1f + progress * 0.2f;
 
         NEXT(compileNextShaderInQueue(next));
     }
@@ -394,7 +418,7 @@ void Application::eventMouseMoved(const Vector2i& pos) {
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     nuklear.eventMousePressed(pos, button);
-    if (!nuklear.isCursorInsideWindow(pos)) {
+    if (!nuklear.isCursorInsideWindow(pos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMousePressed(pos, button);
         } else if (editor) {
@@ -406,7 +430,7 @@ void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     nuklear.eventMouseReleased(pos, button);
-    if (!nuklear.isCursorInsideWindow(pos)) {
+    if (!nuklear.isInputActive()) {
         if (game) {
             game->eventMouseReleased(pos, button);
         } else if (editor) {
@@ -417,7 +441,7 @@ void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
     nuklear.eventMouseScroll(xscroll, yscroll);
-    if (!nuklear.isCursorInsideWindow(mousePos)) {
+    if (!nuklear.isCursorInsideWindow(mousePos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMouseScroll(xscroll, yscroll);
         } else if (editor) {
@@ -428,19 +452,23 @@ void Application::eventMouseScroll(const int xscroll, const int yscroll) {
 
 void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     nuklear.eventKeyPressed(key, modifiers);
-    if (game) {
-        game->eventKeyPressed(key, modifiers);
-    } else if (editor) {
-        editor->eventKeyPressed(key, modifiers);
+    if (!nuklear.isInputActive()) {
+        if (game) {
+            game->eventKeyPressed(key, modifiers);
+        } else if (editor) {
+            editor->eventKeyPressed(key, modifiers);
+        }
     }
 }
 
 void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
     nuklear.eventKeyReleased(key, modifiers);
-    if (game) {
-        game->eventKeyReleased(key, modifiers);
-    } else if (editor) {
-        editor->eventKeyReleased(key, modifiers);
+    if (!nuklear.isInputActive()) {
+        if (game) {
+            game->eventKeyReleased(key, modifiers);
+        } else if (editor) {
+            editor->eventKeyReleased(key, modifiers);
+        }
     }
 }
 
@@ -449,10 +477,12 @@ void Application::eventWindowResized(const Vector2i& size) {
 
 void Application::eventCharTyped(const uint32_t code) {
     nuklear.eventCharTyped(code);
-    if (game) {
-        game->eventCharTyped(code);
-    } else if (editor) {
-        editor->eventCharTyped(code);
+    if (!nuklear.isInputActive()) {
+        if (game) {
+            game->eventCharTyped(code);
+        } else if (editor) {
+            editor->eventCharTyped(code);
+        }
     }
 }
 

@@ -212,6 +212,7 @@ public:
         Vector3 hitPos;
         Vector3i pos;
         Vector3 worldPos;
+        Vector3i orientation;
     };
 
     class ENGINE_API Octree;
@@ -301,6 +302,7 @@ public:
     };
 
     void insert(const Vector3i& pos, const BlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
+    void insert(const Vector3i& pos, const uint16_t type, uint8_t rotation, uint8_t color, uint8_t shape);
 
     [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const {
         return voxels.find(pos);

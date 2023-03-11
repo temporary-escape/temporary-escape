@@ -20,12 +20,14 @@ struct Nuklear::CustomStyle {
     nk_style_button image{};
 };
 
-Nuklear::Nuklear(Canvas& canvas, const FontFamily& defaultFontFamily, const int defaultFontSize) :
+Nuklear::Nuklear(const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily, const int defaultFontSize) :
+    config{config},
     canvas{canvas},
     defaultFontFamily{defaultFontFamily},
     defaultFontSize{defaultFontSize},
     customStyle{std::make_unique<CustomStyle>()},
-    ctx{std::make_unique<nk_context>()} {
+    ctx{std::make_unique<nk_context>()},
+    activeInput{false} {
 
     defaultFont = &addFontFamily(defaultFontFamily, defaultFontSize);
     nk_init_default(ctx.get(), defaultFont);
@@ -63,17 +65,37 @@ nk_user_font& Nuklear::addFontFamily(const FontFamily& fontFamily, int size) {
 void Nuklear::begin(const Vector2i& viewport) {
     lastViewportValue = viewport;
     windowsBounds.clear();
+    activeInput = false;
     resetFont();
     inputPoll();
 }
 
 void Nuklear::end() {
+    if (dragAndDrop.value.has_value() && dragAndDrop.image) {
+        if (!inputHasMouseDown()) {
+            dragAndDrop.value.reset();
+        } else {
+            drawDragAndDrop();
+        }
+    }
+
     render();
     nk_clear(ctx.get());
 }
 
 void Nuklear::draw(NuklearWindow& window) {
     window.draw(*this, getViewport());
+}
+
+void Engine::Nuklear::drawDragAndDrop() {
+    const auto pad = Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
+    const auto size = Vector2{config.gui.dragAndDropSize} + pad;
+    const auto flags = WindowFlags::NoInput | WindowFlags::NoScrollbar | WindowFlags::Border;
+    if (beginWindow("Drag And Drop", getMousePos(), size, flags)) {
+        layoutDynamic(config.gui.dragAndDropSize, 1);
+        image(dragAndDrop.image);
+    }
+    endWindow();
 }
 
 void Nuklear::inputPoll() {
@@ -174,9 +196,11 @@ void Nuklear::render() {
             const auto c = reinterpret_cast<const struct nk_command_image*>(cmd);
             const auto& color = asColor(c->col);
             const auto image = reinterpret_cast<Image*>(c->img.handle.ptr);
-            canvas.color(color);
-            canvas.image({static_cast<float>(c->x), static_cast<float>(c->y)},
-                         {static_cast<float>(c->w), static_cast<float>(c->h)}, *image);
+            if (image) {
+                canvas.color(color);
+                canvas.image({static_cast<float>(c->x), static_cast<float>(c->y)},
+                             {static_cast<float>(c->w), static_cast<float>(c->h)}, *image);
+            }
             break;
         }
         default: {
@@ -215,6 +239,26 @@ void Nuklear::layoutSkip() {
     nk_widget(&bounds, ctx.get());
 }
 
+void Engine::Nuklear::layoutTemplateBegin(float height) {
+    nk_layout_row_template_begin(ctx.get(), height);
+}
+
+void Engine::Nuklear::layoutTemplateDynamic() {
+    nk_layout_row_template_push_dynamic(ctx.get());
+}
+
+void Engine::Nuklear::layoutTemplateVariable(float value) {
+    nk_layout_row_template_push_variable(ctx.get(), value);
+}
+
+void Engine::Nuklear::layoutTemplateStatic(float value) {
+    nk_layout_row_template_push_static(ctx.get(), value);
+}
+
+void Engine::Nuklear::layoutTemplateEnd() {
+    nk_layout_row_template_end(ctx.get());
+}
+
 void Nuklear::layoutBeginDynamic(float height, int count) {
     nk_layout_row_begin(ctx.get(), NK_DYNAMIC, height, count);
 }
@@ -228,7 +272,7 @@ void Nuklear::layoutPush(float value) {
 }
 
 bool Nuklear::groupBegin(const std::string& name, bool scrollbar) {
-    Flags flags = 0 | WindowFlags::Border;
+    Flags flags = 0;
     if (!scrollbar) {
         flags = flags | WindowFlags::NoScrollbar;
     }
@@ -241,15 +285,57 @@ void Nuklear::groupEnd() {
 }
 
 bool Engine::Nuklear::isHovered() {
-    return nk_widget_is_hovered(ctx.get()) == nk_true;
+    // return nk_widget_is_hovered(ctx.get()) == nk_true;
+    const auto bounds = nk_widget_bounds(ctx.get());
+    return nk_input_is_mouse_hovering_rect(&ctx->input, bounds) == nk_true;
 }
 
-bool Engine::Nuklear::isClicked() {
-    return nk_widget_is_mouse_clicked(ctx.get(), NK_BUTTON_LEFT) == nk_true;
+bool Engine::Nuklear::isClicked(MouseButton button) {
+    nk_buttons nb;
+    switch (button) {
+    case MouseButton::Left: {
+        nb = NK_BUTTON_LEFT;
+        break;
+    }
+    case MouseButton::Right: {
+        nb = NK_BUTTON_RIGHT;
+        break;
+    }
+    case MouseButton::Middle: {
+        nb = NK_BUTTON_MIDDLE;
+        break;
+    }
+    default: {
+        return false;
+    }
+    }
+
+    const auto bounds = nk_widget_bounds(ctx.get());
+    return nk_input_is_mouse_click_in_rect(&ctx->input, nb, bounds) == nk_true;
 }
 
-bool Engine::Nuklear::isMouseDown() {
-    return nk_widget_has_mouse_click_down(ctx.get(), NK_BUTTON_LEFT, nk_true) == nk_true;
+bool Engine::Nuklear::isMouseDown(MouseButton button) {
+    nk_buttons nb;
+    switch (button) {
+    case MouseButton::Left: {
+        nb = NK_BUTTON_LEFT;
+        break;
+    }
+    case MouseButton::Right: {
+        nb = NK_BUTTON_RIGHT;
+        break;
+    }
+    case MouseButton::Middle: {
+        nb = NK_BUTTON_MIDDLE;
+        break;
+    }
+    default: {
+        return false;
+    }
+    }
+
+    const auto bounds = nk_widget_bounds(ctx.get());
+    return nk_input_has_mouse_click_down_in_rect(&ctx->input, nb, bounds, nk_true) == nk_true;
 }
 
 bool Nuklear::button(const std::string& text, const TextAlign align) {
@@ -292,6 +378,29 @@ bool Nuklear::image(const ImagePtr& img) {
     return nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true;
 }
 
+void Nuklear::imageToggle(const ImagePtr& img, bool& value) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    if (value) {
+        if (isHovered()) {
+            customStyle->image.border_color = ctx->style.button.hover.data.color;
+        } else {
+            customStyle->image.border_color = ctx->style.button.active.data.color;
+        }
+    } else {
+        if (isHovered()) {
+            customStyle->image.border_color = ctx->style.button.hover.data.color;
+        } else {
+            customStyle->image.border_color = ctx->style.button.border_color;
+        }
+    }
+
+    if (nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true) {
+        value = true;
+    }
+}
+
 void Nuklear::label(const std::string& text) {
     nk_label(ctx.get(), text.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
 }
@@ -309,16 +418,24 @@ void Nuklear::input(std::string& text, const size_t max) {
 
     auto len = static_cast<int>(std::min(text.size(), max));
 
-    nk_edit_string(ctx.get(), NK_EDIT_SIMPLE, editBuffer.data(), &len, max, nk_filter_default);
+    const auto state = nk_edit_string(ctx.get(), NK_EDIT_SIMPLE, editBuffer.data(), &len, max, nk_filter_default);
     if (len != text.size()) {
         text.resize(len);
         std::memcpy(text.data(), editBuffer.data(), text.size());
     }
+
+    activeInput = !(state & NK_WIDGET_STATE_ACTIVE);
 }
 
 void Nuklear::progress(float value) {
     auto current = static_cast<nk_size>(value * 100.0f);
     nk_progress(ctx.get(), &current, 100, nk_false);
+}
+
+void Engine::Nuklear::tooltip(const std::string& text) {
+    if (isHovered()) {
+        nk_tooltip(ctx.get(), text.c_str());
+    }
 }
 
 void Nuklear::eventMouseMoved(const Vector2i& pos) {
@@ -410,9 +527,50 @@ bool Nuklear::isCursorInsideWindow(const Vector2i& mousePos) const {
     return false;
 }
 
-Vector2 Nuklear::getContentRegion() {
+Vector2 Nuklear::getContentRegion() const {
     const auto space = nk_window_get_content_region(ctx.get());
     return Vector2{space.w, space.h} - Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
+}
+
+Vector2 Engine::Nuklear::getMousePos() const {
+    return {ctx->input.mouse.pos.x, ctx->input.mouse.pos.y};
+}
+
+Vector2 Engine::Nuklear::getWindowSizeForContentRegion(const Vector2& size) const {
+    return size + Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
+}
+
+Vector2 Engine::Nuklear::getSpacing() const {
+    return Vector2{ctx->style.window.spacing.x, ctx->style.window.spacing.y};
+}
+
+Vector2 Engine::Nuklear::getWindowPos() const {
+    if (!ctx->active) {
+        EXCEPTION("No active gui window");
+    }
+    return {ctx->active->bounds.x, ctx->active->bounds.y};
+}
+
+bool Engine::Nuklear::inputHasMouseDown(MouseButton button) {
+    nk_buttons nb;
+    switch (button) {
+    case MouseButton::Left: {
+        nb = NK_BUTTON_LEFT;
+        break;
+    }
+    case MouseButton::Right: {
+        nb = NK_BUTTON_RIGHT;
+        break;
+    }
+    case MouseButton::Middle: {
+        nb = NK_BUTTON_MIDDLE;
+        break;
+    }
+    default: {
+        return false;
+    }
+    }
+    return ctx->input.mouse.buttons[nb].down == nk_true;
 }
 
 static nk_color HEX(const uint32_t v) {

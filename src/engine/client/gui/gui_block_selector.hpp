@@ -24,9 +24,13 @@ private:
     };
 
     void drawLayout(Nuklear& nuklear) override;
-    void beforeDraw(const Vector2& viewport) override;
+    void drawSearchBar(Nuklear& nuklear);
+    void drawCategories(Nuklear& nuklear);
+    void drawBlockSelection(Nuklear& nuklear);
+    void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
     std::vector<Category> categories;
     std::vector<CategoryFilter> filterChoices;
+    std::string searchQuery;
 };
 } // namespace Engine

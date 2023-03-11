@@ -71,6 +71,11 @@ struct Config {
     std::string guiFontName = "iosevka-aile";
 
     struct {
+        float dragAndDropSize{96.0f};
+        float actionBarSize{96.0f};
+    } gui;
+
+    struct {
         int totalSystems{2000};
         float galaxyWidth{300.0f};
         float regionDistance{35.0f};

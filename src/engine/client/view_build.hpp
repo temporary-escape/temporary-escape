@@ -28,6 +28,11 @@ public:
 
 private:
     void createScene();
+    void createGridLines();
+    void createEntityShip();
+    void createHelpers();
+    EntityPtr createHelperBox(const Color4& color, float width);
+    void addBlock();
 
     const Config& config;
     Registry& registry;
@@ -40,5 +45,6 @@ private:
     Scene scene;
     EntityPtr entityShip;
     EntityPtr entityHelperAdd;
+    EntityPtr entityHelperRemove;
 };
 } // namespace Engine
