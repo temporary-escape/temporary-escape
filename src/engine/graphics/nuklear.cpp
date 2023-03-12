@@ -16,6 +16,14 @@ static float getTextWidth(const nk_handle handle, const float height, const char
     return font.getBounds({str, static_cast<size_t>(len)}, height).x;
 }
 
+static nk_color HEX(const uint32_t v) {
+    return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
+}
+
+static nk_color fromColor(const Color4& color) {
+    return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
+}
+
 struct Nuklear::CustomStyle {
     nk_style_button image{};
 };
@@ -345,7 +353,7 @@ bool Nuklear::button(const std::string& text, const TextAlign align) {
     return nk_button_label(ctx.get(), text.c_str()) == nk_true;
 }
 
-void Nuklear::select(const std::string& text, bool& value, Nuklear::TextAlign align) {
+void Nuklear::buttonToggle(const std::string& text, bool& value, Nuklear::TextAlign align) {
     nk_bool v = value ? nk_true : nk_false;
     nk_selectable_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align), &v);
     value = v == nk_true;
@@ -359,6 +367,11 @@ bool Nuklear::buttonImage(const ImagePtr& img) {
     style.text_alignment = NK_TEXT_ALIGN_LEFT;
 
     return nk_button_image(ctx.get(), ni) == nk_true;
+}
+
+bool Engine::Nuklear::button(const Color4& color) {
+    const auto nc = fromColor(color);
+    return nk_button_color(ctx.get(), nc) == nk_true;
 }
 
 bool Nuklear::image(const ImagePtr& img) {
@@ -378,10 +391,7 @@ bool Nuklear::image(const ImagePtr& img) {
     return nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true;
 }
 
-void Nuklear::imageToggle(const ImagePtr& img, bool& value) {
-    struct nk_image ni {};
-    ni.handle.ptr = img.get();
-
+void Engine::Nuklear::setStyleImageToggle(const bool value) {
     if (value) {
         if (isHovered()) {
             customStyle->image.border_color = ctx->style.button.hover.data.color;
@@ -395,14 +405,33 @@ void Nuklear::imageToggle(const ImagePtr& img, bool& value) {
             customStyle->image.border_color = ctx->style.button.border_color;
         }
     }
+}
+
+void Nuklear::imageToggle(const ImagePtr& img, bool& value) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    setStyleImageToggle(value);
 
     if (nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true) {
         value = true;
     }
 }
 
-void Nuklear::label(const std::string& text) {
-    nk_label(ctx.get(), text.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
+void Nuklear::imageToggle(const ImagePtr& img, bool& value, const std::string& text, TextAlign align) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    setStyleImageToggle(value);
+
+    const auto flags = static_cast<nk_flags>(align);
+    if (nk_button_image_label_styled(ctx.get(), &customStyle->image, ni, text.c_str(), flags) == nk_true) {
+        value = true;
+    }
+}
+
+void Nuklear::label(const std::string& text, TextAlign align) {
+    nk_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align));
 }
 
 void Nuklear::text(const std::string& text) {
@@ -436,6 +465,42 @@ void Engine::Nuklear::tooltip(const std::string& text) {
     if (isHovered()) {
         nk_tooltip(ctx.get(), text.c_str());
     }
+}
+
+void Engine::Nuklear::checkbox(const std::string& text, bool& value) {
+    value = nk_check_label(ctx.get(), text.c_str(), value ? nk_true : nk_false) == nk_true;
+}
+
+bool Engine::Nuklear::comboBegin(const Color4& color, const Vector2& size) {
+    const auto nc = fromColor(color);
+    struct nk_vec2 s {
+        size.x, size.y,
+    };
+    return nk_combo_begin_color(ctx.get(), nc, s) == nk_true;
+}
+
+void Engine::Nuklear::comboEnd() {
+    nk_combo_end(ctx.get());
+}
+
+void Engine::Nuklear::comboClose() {
+    nk_combo_close(ctx.get());
+}
+
+bool Engine::Nuklear::popupBegin(const std::string& name, const Vector2& pos, const Vector2& size) {
+    struct nk_rect rect {
+        pos.x, pos.y, size.x, size.y
+    };
+    const auto flags = WindowFlags::Border | WindowFlags::NoScrollbar;
+    return nk_popup_begin(ctx.get(), NK_POPUP_STATIC, name.c_str(), NK_WINDOW_CLOSABLE, rect) == nk_true;
+}
+
+void Engine::Nuklear::popupEnd() {
+    nk_popup_end(ctx.get());
+}
+
+void Engine::Nuklear::popupClose() {
+    nk_popup_close(ctx.get());
 }
 
 void Nuklear::eventMouseMoved(const Vector2i& pos) {
@@ -532,6 +597,11 @@ Vector2 Nuklear::getContentRegion() const {
     return Vector2{space.w, space.h} - Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
 }
 
+Vector2 Nuklear::getContentPos() const {
+    const auto space = nk_window_get_content_region(ctx.get());
+    return Vector2{space.x, space.y};
+}
+
 Vector2 Engine::Nuklear::getMousePos() const {
     return {ctx->input.mouse.pos.x, ctx->input.mouse.pos.y};
 }
@@ -542,6 +612,10 @@ Vector2 Engine::Nuklear::getWindowSizeForContentRegion(const Vector2& size) cons
 
 Vector2 Engine::Nuklear::getSpacing() const {
     return Vector2{ctx->style.window.spacing.x, ctx->style.window.spacing.y};
+}
+
+Vector2 Engine::Nuklear::getPadding() const {
+    return Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y};
 }
 
 Vector2 Engine::Nuklear::getWindowPos() const {
@@ -571,14 +645,6 @@ bool Engine::Nuklear::inputHasMouseDown(MouseButton button) {
     }
     }
     return ctx->input.mouse.buttons[nb].down == nk_true;
-}
-
-static nk_color HEX(const uint32_t v) {
-    return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
-}
-
-static nk_color fromColor(const Color4& color) {
-    return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
 }
 
 static const auto BLACK = HEX(0x000000ff);
@@ -628,6 +694,7 @@ void Nuklear::applyTheme() {
     window.padding = nk_vec2(padding, padding);
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
+    window.min_row_height_padding = 0;
 
     combo.border = 1.0f;
     combo.border_color = BORDER_GREY;

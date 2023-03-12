@@ -38,7 +38,7 @@ public:
 
     explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
                       Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                      FontFamily& font);
+                      VoxelPalette& voxelPalette, FontFamily& font);
     virtual ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options,
@@ -168,6 +168,7 @@ private:
     Canvas& canvas;
     Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
+    VoxelPalette& voxelPalette;
     FontFamily& font;
     Vector2i lastViewportSize;
     Vector2i bloomViewportSize;

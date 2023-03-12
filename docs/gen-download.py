@@ -21,12 +21,13 @@ SYSTEM_REQUIREMENTS = """
 
 These are the minimum system requirements.
 You must have Vulkan 1.1 (or higher) compatible graphics card and a 64-bit operating system.
+The game may run on a lower hardware.
 
 {{< tabs "system-requirements" >}}
 {{< tab "Minimum" >}}
 * **OS:** Windows 10 64-bit, Ubuntu/Debian/Manjaro 64-bit, or MacOS
 * **Display:** 1680x1050
-* **Processor:** Intel Core i5 or AMD Ryzen 3
+* **Processor:** Intel Core i3 or AMD Ryzen 3
 * **Memory:** 4 GB RAM
 * **Graphics:** Intel HD Graphics 500, NVidia GTX 650 Ti, or AMD Radeon R7
 * **Vulkan:** 1.1 minimum
@@ -35,7 +36,7 @@ You must have Vulkan 1.1 (or higher) compatible graphics card and a 64-bit opera
 {{< tab "Recommended" >}}
 * **OS:** Windows 10 64-bit, Ubuntu/Debian/Manjaro 64-bit, or MacOS
 * **Display:** 1920x1080
-* **Processor:** Intel Core i7 or AMD Ryzen 5
+* **Processor:** Intel Core i5 or AMD Ryzen 5
 * **Memory:** 8 GB RAM
 * **Graphics:** NVidia GTX 1050 Ti or AMD Radeon RX 5600
 * **Vulkan:** 1.1 minimum
@@ -111,10 +112,9 @@ def create_markdown(s3, endpoint: str, bucket: str, versions: List[dict]):
     print(SYSTEM_REQUIREMENTS)
 
     print('## All Releases\n')
-    print('All releases list chronologically including development releases\n')
+    print('All releases listed chronologically including development releases\n')
     for version in versions:
-        print('{{{{< expand "{}" >}}}}\n'.format(version['version']))
-        print('_Version: {} ({:%B %d, %Y})_\n'.format(version['version'], version['created']))
+        print('{{{{< expand "{} ({})" >}}}}\n'.format(version['version'], version['created']))
         create_markdown_version(s3, endpoint, bucket, version)
         print('{{< /expand >}}')
 

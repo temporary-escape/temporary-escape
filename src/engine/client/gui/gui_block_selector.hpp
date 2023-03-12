@@ -13,9 +13,14 @@ public:
     void setBlocks(const Span<BlockPtr>& blocks);
 
 private:
+    struct Item {
+        BlockPtr block;
+        std::string name;
+    };
+
     struct Category {
         std::string name;
-        std::vector<BlockPtr> blocks;
+        std::vector<Item> items;
     };
 
     struct CategoryFilter {

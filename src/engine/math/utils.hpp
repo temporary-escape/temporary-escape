@@ -27,4 +27,7 @@ template <typename T> inline T map(T x, T inMin, T inMax, T outMin, T outMax) {
 template <typename T> inline T lerp(T a, T b, T f) {
     return a + f * (b - a);
 }
+
+extern ENGINE_API Color4 fromRgbBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+extern ENGINE_API Color4 hsvToRgb(const Vector4& in);
 } // namespace Engine

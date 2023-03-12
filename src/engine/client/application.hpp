@@ -44,6 +44,7 @@ private:
     void createEditor();
     void createThumbnails();
     void createRegistry();
+    void createVoxelPalette();
     void createVoxelShapeCache();
     void createRenderer();
     void createThumbnailRenderer();
@@ -55,6 +56,8 @@ private:
     void startClient();
     void startSinglePlayer();
     void startEditor();
+    void createBlockThumbnails();
+    void createEmptyThumbnail();
 
     const Config& config;
 
@@ -69,8 +72,6 @@ private:
     } gui;
 
     std::unique_ptr<Registry> registry;
-    std::unique_ptr<Game> game;
-    std::unique_ptr<Editor> editor;
     std::unique_ptr<TransactionalDatabase> db;
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
@@ -80,8 +81,11 @@ private:
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<OffscreenRenderer> thumbnailRenderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
+    std::unique_ptr<VoxelPalette> voxelPalette;
     std::unique_ptr<Client> client;
     PlayerLocalProfile playerLocalProfile;
+    std::unique_ptr<Game> game;
+    std::unique_ptr<Editor> editor;
 
     std::future<std::function<void()>> future;
     std::promise<std::function<void()>> promise;

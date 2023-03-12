@@ -14,7 +14,7 @@ public:
         YAML_DEFINE(blockActionBar);
     };
 
-    explicit Gui(const Config& config, Registry& registry);
+    explicit Gui(const Config& config, Registry& registry, VoxelPalette& voxelPalette);
     ~Gui() noexcept;
 
     void draw(Nuklear& nuklear, const Vector2& viewport) override;

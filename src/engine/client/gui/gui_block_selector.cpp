@@ -1,4 +1,6 @@
 #include "gui_block_selector.hpp"
+#include "../../utils/string_utils.hpp"
+#include "gui_block_action_bar.hpp"
 
 using namespace Engine;
 
@@ -16,6 +18,10 @@ void GuiBlockSelector::setBlocks(const Span<BlockPtr>& blocks) {
     std::unordered_map<std::string, size_t> categoryIndex;
 
     for (const auto& block : blocks) {
+        /*if (block->getCategory() == "Internal") {
+            continue;
+        }*/
+
         auto it = categoryIndex.find(block->getCategory());
         if (it == categoryIndex.end()) {
             it = categoryIndex.insert(std::make_pair(block->getCategory(), categories.size())).first;
@@ -26,7 +32,12 @@ void GuiBlockSelector::setBlocks(const Span<BlockPtr>& blocks) {
             filterChoices.back().enabled = true;
         }
 
-        categories.at(it->second).blocks.push_back(block);
+        auto& category = categories.at(it->second);
+        category.items.emplace_back();
+
+        auto& item = category.items.back();
+        item.block = block;
+        item.name = toLower(block->getLabel());
     }
 }
 
@@ -38,7 +49,7 @@ void GuiBlockSelector::drawSearchBar(Nuklear& nuklear) {
     nuklear.layoutTemplateStatic(80.0f);
     nuklear.layoutTemplateEnd();
 
-    nuklear.label("Filter:");
+    nuklear.label("Categories:");
     nuklear.input(searchQuery, 128);
     if (nuklear.button("Clear")) {
         searchQuery.clear();
@@ -48,7 +59,7 @@ void GuiBlockSelector::drawSearchBar(Nuklear& nuklear) {
 void GuiBlockSelector::drawCategories(Nuklear& nuklear) {
     nuklear.layoutDynamic(0.0f, 1);
     for (auto& choice : filterChoices) {
-        nuklear.select(choice.label, choice.enabled, Nuklear::TextAlign::Left);
+        nuklear.checkbox(choice.label, choice.enabled);
     }
 }
 
@@ -60,13 +71,19 @@ void GuiBlockSelector::drawBlockSelection(Nuklear& nuklear) {
         if (!filterChoices[i].enabled) {
             continue;
         }
-        for (const auto& block : categories[i].blocks) {
-            if (!searchQuery.empty() && block->getLabel().find(searchQuery) == std::string::npos) {
+        for (const auto& item : categories[i].items) {
+            if (!searchQuery.empty() && item.name.find(searchQuery) == std::string::npos) {
                 continue;
             }
-            nuklear.setDragAndDrop(block, block->getThumbnail());
-            nuklear.tooltip(block->getLabel());
-            nuklear.image(block->getThumbnail());
+
+            for (const auto shape : item.block->getShapes()) {
+                const auto tooltip =
+                    fmt::format("{} ({})", item.block->getLabel(), VoxelShape::typeFriendlyNames[shape]);
+
+                nuklear.setDragAndDrop(ActionBarBlock{item.block, shape}, item.block->getThumbnail(shape));
+                nuklear.tooltip(tooltip);
+                nuklear.image(item.block->getThumbnail(shape));
+            }
         }
     }
 }

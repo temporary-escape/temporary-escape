@@ -11,6 +11,8 @@ public:
         Vector3 normal;
         Vector2 texCoords;
         Vector4 tangent;
+        float color;
+        float padding[3];
     };
 
     struct Uniforms {

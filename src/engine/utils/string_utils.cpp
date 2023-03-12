@@ -40,3 +40,9 @@ std::string Engine::intToRomanNumeral(int value) {
 
     return ss.str();
 }
+
+std::string Engine::toLower(const std::string_view& str) {
+    std::string res{str};
+    std::transform(res.begin(), res.end(), res.begin(), [](char c) { return std::tolower(c); });
+    return res;
+}

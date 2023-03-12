@@ -135,7 +135,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, font);
+    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, *voxelPalette, font);
 }
 
 void Application::checkForClientScene() {
@@ -145,7 +145,8 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         logger.info("Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
+        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, *voxelPalette,
+                                      font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -225,19 +226,34 @@ void Application::startDatabase() {
     });
 }
 
+void Application::createEmptyThumbnail() {
+    logger.info("Creating empty thumbnail");
+
+    thumbnailRenderer->render(nullptr, VoxelShape::Cube);
+    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
+    registry->addImage("block_empty_image", alloc);
+}
+
+void Application::createBlockThumbnails() {
+    logger.info("Creating block thumbnails");
+
+    for (const auto& block : registry->getBlocks().findAll()) {
+        for (const auto shape : block->getShapes()) {
+            thumbnailRenderer->render(block, shape);
+            const auto alloc =
+                registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
+
+            const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
+            block->setThumbnail(shape, registry->addImage(name, alloc));
+        }
+    }
+}
+
 void Application::createThumbnails() {
     logger.info("Creating thumbnails");
 
-    for (const auto& block : registry->getBlocks().findAll()) {
-        thumbnailRenderer->render(block);
-        const auto alloc =
-            registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
-        block->setThumbnail(registry->addImage(block->getName() + "_image", alloc));
-    }
-
-    thumbnailRenderer->render(nullptr);
-    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
-    registry->addImage("block_empty_image", alloc);
+    createBlockThumbnails();
+    createEmptyThumbnail();
 
     registry->finalize();
 
@@ -307,7 +323,7 @@ void Application::createThumbnailRenderer() {
 
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
     thumbnailRenderer = std::make_unique<OffscreenRenderer>(config, viewport, *this, canvas, nuklear, *shaderModules,
-                                                            *voxelShapeCache, font);
+                                                            *voxelShapeCache, *voxelPalette, font);
 
     NEXT(createRegistry());
 }
@@ -319,12 +335,23 @@ void Application::createRenderer() {
     status.value = 0.3f;
 
     const auto viewport = Vector2i{config.windowWidth, config.windowHeight};
-    renderer =
-        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *shaderModules, *voxelShapeCache, font);
+    renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *shaderModules, *voxelShapeCache,
+                                          *voxelPalette, font);
 
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createThumbnailRenderer());
+}
+
+void Application::createVoxelPalette() {
+    logger.info("Creating voxel palette");
+
+    status.message = "Creating voxel palette...";
+    status.value = 0.3f;
+
+    voxelPalette = std::make_unique<VoxelPalette>(config, *this);
+
+    NEXT(createRenderer());
 }
 
 void Application::createVoxelShapeCache() {
@@ -335,7 +362,7 @@ void Application::createVoxelShapeCache() {
 
     voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
-    NEXT(createRenderer());
+    NEXT(createVoxelPalette());
 }
 
 void Application::compileShaders() {

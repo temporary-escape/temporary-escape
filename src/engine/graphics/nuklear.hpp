@@ -88,15 +88,24 @@ public:
         return std::nullopt;
     }
     bool button(const std::string& text, TextAlign align = TextAlign::Center);
+    bool button(const Color4& color);
+    void buttonToggle(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
     bool buttonImage(const ImagePtr& img);
     bool image(const ImagePtr& img);
     void imageToggle(const ImagePtr& img, bool& value);
-    void select(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
-    void label(const std::string& text);
+    void imageToggle(const ImagePtr& img, bool& value, const std::string& text, TextAlign align = TextAlign::Center);
+    void label(const std::string& text, TextAlign align = TextAlign::Left);
     void text(const std::string& text);
     void input(std::string& text, size_t max);
     void progress(float value);
     void tooltip(const std::string& text);
+    void checkbox(const std::string& text, bool& value);
+    bool comboBegin(const Color4& color, const Vector2& size);
+    void comboEnd();
+    void comboClose();
+    bool popupBegin(const std::string& name, const Vector2& pos, const Vector2& size);
+    void popupEnd();
+    void popupClose();
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -115,8 +124,10 @@ public:
         return activeInput;
     }
     Vector2 getContentRegion() const;
+    Vector2 getContentPos() const;
     Vector2 getWindowSizeForContentRegion(const Vector2& size) const;
     Vector2 getSpacing() const;
+    Vector2 getPadding() const;
     Vector2 getMousePos() const;
     Vector2 getWindowPos() const;
     bool inputHasMouseDown(MouseButton button = MouseButton::Left);
@@ -128,6 +139,7 @@ private:
     void inputPoll();
     void drawDragAndDrop();
     void render();
+    void setStyleImageToggle(bool value);
     nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
     static inline const auto padding = 4.0f;

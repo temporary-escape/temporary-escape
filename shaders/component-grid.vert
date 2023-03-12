@@ -19,12 +19,14 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec3 in_Normal;
 layout(location = 2) in vec2 in_TexCoords;
 layout(location = 3) in vec4 in_Tangent;
+layout(location = 4) in float in_Color;
 
 layout(location = 0) out VS_OUT {
     vec3 normal;
     vec2 texCoords;
     vec3 worldpos;
     mat3 TBN;
+    float color;
 } vs_out;
 
 out gl_PerVertex {
@@ -39,6 +41,7 @@ void main() {
     vs_out.normal = N;
     vs_out.worldpos = worldPos.xyz;
     vs_out.texCoords = in_TexCoords;
+    vs_out.color = in_Color;
 
     vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);

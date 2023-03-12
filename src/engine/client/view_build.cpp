@@ -71,7 +71,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
 
 void ViewBuild::createScene() {
     auto sun = scene.createEntity();
-    sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
+    sun->addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
     sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
 
     auto entity = scene.createEntity();
@@ -169,8 +169,9 @@ void ViewBuild::addBlock() {
         return;
     }
 
-    const auto block = gui.blockActionBar.getActiveBlock();
-    if (!block) {
+    const auto actionBarItem = gui.blockActionBar.getActiveBlock();
+    const auto actionBarColor = gui.blockActionBar.getActiveColor();
+    if (!actionBarItem.block) {
         return;
     }
 
@@ -178,7 +179,7 @@ void ViewBuild::addBlock() {
     const auto pos = raycastResult->pos + raycastResult->orientation;
     logger.info("Inserting pos: {} hit: {} orientation: {} insert pos: {}", raycastResult->pos, raycastResult->hitPos,
                 raycastResult->orientation, pos);
-    grid.insert(pos, block, 0, 0, VoxelShape::Type::Cube);
+    grid.insert(pos, actionBarItem.block, 0, actionBarColor, actionBarItem.shape);
     grid.setDirty(true);
 }
 

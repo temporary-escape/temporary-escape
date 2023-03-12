@@ -7,14 +7,14 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 Editor::Editor(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, Registry& registry,
-               FontFamily& font) :
+               VoxelPalette& voxelPalette, FontFamily& font) :
     config{config},
     renderer{renderer},
     canvas{canvas},
     nuklear{nuklear},
     registry{registry},
     font{font},
-    gui{config, registry},
+    gui{config, registry, voxelPalette},
     view{config, renderer, registry, gui} {
 
     gui.blockSelector.setBlocks(registry.getBlocks().findAll());

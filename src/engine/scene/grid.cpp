@@ -298,7 +298,8 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
 
     const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data,
-                                         const VoxelShapeCache::ShapePrebuilt& shape, const Vector3& pos) {
+                                         const VoxelShapeCache::ShapePrebuilt& shape, const Vector3& pos,
+                                         const uint8_t color) {
         auto vertexOffset = data.vertices.size();
         // std::cout << "vertexOffset: " << vertexOffset << " adding: " << shape.vertices.size() << std::endl;
         data.vertices.resize(vertexOffset + shape.vertices.size());
@@ -310,6 +311,7 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
             dst.position += pos + offset;
             dst.tangent = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
             dst.texCoords = boxProjection(dst.normal, dst.position);
+            dst.color = static_cast<float>(color) / 64.0f + (1.0f / 64.0f / 2.0f);
         }
 
         const auto indexOffset = data.indices.size();
@@ -383,7 +385,8 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                 if (block->isSingular()) {
                     const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(mask);
                     auto& data = map[&block->getMaterial()];
-                    appendShapeVertices(data, shape, posf);
+                    logger.info("Insert block color: {}", int(item.color));
+                    appendShapeVertices(data, shape, posf, item.color);
                 } else {
                     for (size_t n = 0; n < 6; n++) {
                         const auto shapeMask = mask & neighbourMasks[n];
@@ -395,7 +398,8 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                         const auto& material = block->getMaterialForSide(neighbourSides[n]);
 
                         auto& data = map[&material];
-                        appendShapeVertices(data, shape, posf);
+                        logger.info("Insert block color: {}", int(item.color));
+                        appendShapeVertices(data, shape, posf, item.color);
                     }
                 }
             }

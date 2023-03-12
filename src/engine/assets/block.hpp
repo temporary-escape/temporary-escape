@@ -4,6 +4,7 @@
 #include "image.hpp"
 #include "material.hpp"
 #include "texture.hpp"
+#include "voxel_palette.hpp"
 #include "voxel_shape.hpp"
 
 namespace Engine {
@@ -54,7 +55,7 @@ public:
         return *ptr;
     }
 
-    [[nodiscard]] const std::vector<VoxelShape::Type>& getAllowedTypes() const {
+    [[nodiscard]] const std::vector<VoxelShape::Type>& getShapes() const {
         return definition.shapes;
     }
 
@@ -74,12 +75,12 @@ public:
         return *materials.front();
     }
 
-    void setThumbnail(ImagePtr image) {
-        thumbnail = std::move(image);
+    void setThumbnail(const VoxelShape::Type shape, ImagePtr image) {
+        thumbnails[shape] = std::move(image);
     }
 
-    [[nodiscard]] const ImagePtr& getThumbnail() const {
-        return thumbnail;
+    [[nodiscard]] const ImagePtr& getThumbnail(const VoxelShape::Type shape) const {
+        return thumbnails[shape];
     }
 
     static std::shared_ptr<Block> from(const std::string& name);
@@ -89,17 +90,25 @@ private:
     Definition definition;
     std::array<Material*, 7> shapeSideToMaterial;
     std::vector<std::unique_ptr<Material>> materials;
-    ImagePtr thumbnail;
+    std::array<ImagePtr, VoxelShape::numOfShapes> thumbnails;
 };
 
 using BlockPtr = std::shared_ptr<Block>;
 
 template <> struct Yaml::Adaptor<BlockPtr> {
     static void convert(const Yaml::Node& node, BlockPtr& value) {
-        value = Block::from(node.asString());
+        if (node.isNull()) {
+            value = nullptr;
+        } else {
+            value = Block::from(node.asString());
+        }
     }
     static void pack(Yaml::Node& node, const BlockPtr& value) {
-        node.packString(value->getName());
+        if (value) {
+            node.packString(value->getName());
+        } else {
+            node.packNull();
+        }
     }
 };
 } // namespace Engine

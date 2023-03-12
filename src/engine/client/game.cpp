@@ -7,7 +7,7 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, SkyboxGenerator& skyboxGenerator,
-           Registry& registry, FontFamily& font, Client& client) :
+           Registry& registry, VoxelPalette& voxelPalette, FontFamily& font, Client& client) :
     config{config},
     renderer{renderer},
     canvas{canvas},
@@ -16,7 +16,7 @@ Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nu
     registry{registry},
     font{font},
     client{client},
-    gui{config, registry},
+    gui{config, registry, voxelPalette},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client, gui);

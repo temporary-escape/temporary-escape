@@ -9,8 +9,9 @@ class CustomRenderer : public Renderer {
 public:
     explicit CustomRenderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
                             Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                            FontFamily& font, VulkanFramebuffer& fbo, VulkanRenderPass& renderPass) :
-        Renderer{config, viewport, vulkan, canvas, nuklear, shaderModules, voxelShapeCache, font},
+                            VoxelPalette& voxelPalette, FontFamily& font, VulkanFramebuffer& fbo,
+                            VulkanRenderPass& renderPass) :
+        Renderer{config, viewport, vulkan, canvas, nuklear, shaderModules, voxelShapeCache, voxelPalette, font},
         fbo{fbo},
         renderPass{renderPass} {
     }
@@ -43,7 +44,7 @@ private:
 
 OffscreenRenderer::OffscreenRenderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
                                      Canvas& canvas, Nuklear& nuklear, ShaderModules& shaderModules,
-                                     VoxelShapeCache& voxelShapeCache, FontFamily& font) :
+                                     VoxelShapeCache& voxelShapeCache, VoxelPalette& voxelPalette, FontFamily& font) :
     viewport{viewport}, vulkan{vulkan}, skybox{vulkan, Color4{0.05f, 0.05f, 0.05f, 1.0f}} {
 
     createRenderPass(vulkan);
@@ -51,7 +52,7 @@ OffscreenRenderer::OffscreenRenderer(const Config& config, const Vector2i& viewp
     createFramebuffer(vulkan, viewport);
 
     renderer = std::make_shared<CustomRenderer>(config, viewport, vulkan, canvas, nuklear, shaderModules,
-                                                voxelShapeCache, font, fbo, renderPass);
+                                                voxelShapeCache, voxelPalette, font, fbo, renderPass);
 }
 
 void OffscreenRenderer::createRenderPass(VulkanRenderer& vulkan) {
@@ -154,7 +155,7 @@ void OffscreenRenderer::createTexture(VulkanRenderer& vulkan, const Vector2i& vi
     fboColor = vulkan.createTexture(textureInfo);
 }
 
-void OffscreenRenderer::render(const BlockPtr& block) {
+void OffscreenRenderer::render(const BlockPtr& block, VoxelShape::Type shape) {
     logger.info("Rendering thumbnail for block: {}", block ? block->getName() : "nullptr");
 
     Scene scene{};
@@ -176,7 +177,7 @@ void OffscreenRenderer::render(const BlockPtr& block) {
         auto& entityTransform = entityBlock->addComponent<ComponentTransform>();
         auto& grid = entityBlock->addComponent<ComponentGrid>();
         grid.setDirty(true);
-        grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+        grid.insert(Vector3i{0, 0, 0}, block, 0, 0, shape);
     }
 
     Renderer::Options options{};

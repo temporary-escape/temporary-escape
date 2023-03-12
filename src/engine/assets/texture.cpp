@@ -108,11 +108,16 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
 
         switch (image.getPixelType()) {
         case ImageImporter::PixelType::Rgba8u: {
-            textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+            if (options.srgb && *options.srgb) {
+                textureInfo.image.format = VK_FORMAT_R8G8B8A8_SRGB;
+            } else {
+                textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+            }
             hasAlpha = true;
             break;
         }
         case ImageImporter::PixelType::Rgba16u: {
+            textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
             textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
             hasAlpha = true;
             break;

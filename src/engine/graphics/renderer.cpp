@@ -10,12 +10,14 @@ struct FullScreenVertex {
 };
 
 Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                   Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, FontFamily& font) :
+                   Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
+                   VoxelPalette& voxelPalette, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
     nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
+    voxelPalette{voxelPalette},
     font{font},
     lastViewportSize{viewport},
     bloomViewportSize{lastViewportSize / 2} {
@@ -1851,7 +1853,7 @@ void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewpo
     auto camera = scene.getPrimaryCamera();
 
     std::array<VulkanBufferBinding, 2> bufferBindings{};
-    std::array<VulkanTextureBinding, 5> textureBindings{};
+    std::array<VulkanTextureBinding, 6> textureBindings{};
     std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
 
     bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
@@ -1886,6 +1888,7 @@ void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewpo
             textureBindings[2] = {4, &primitive.material->normalTexture->getVulkanTexture()};
             textureBindings[3] = {5, &primitive.material->ambientOcclusionTexture->getVulkanTexture()};
             textureBindings[4] = {6, &primitive.material->metallicRoughnessTexture->getVulkanTexture()};
+            textureBindings[5] = {7, &voxelPalette.getTexture()};
 
             bufferBindings[1] = {1, &primitive.material->ubo};
 

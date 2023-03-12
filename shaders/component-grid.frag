@@ -14,12 +14,14 @@ layout(binding = 3) uniform sampler2D emissiveTexture;
 layout(binding = 4) uniform sampler2D normalTexture;
 layout(binding = 5) uniform sampler2D ambientOcclusionTexture;
 layout(binding = 6) uniform sampler2D metallicRoughnessTexture;
+layout(binding = 7) uniform sampler1D paletteTexture;
 
 layout(location = 0) in VS_OUT {
     vec3 normal;
     vec2 texCoords;
     vec3 worldpos;
     mat3 TBN;
+    float color;
 } vs_out;
 
 layout(location = 0) out vec4 outColorAmbient;
@@ -31,12 +33,13 @@ void main() {
     vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
     normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;
     vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
+    vec3 paletteColor = texture(paletteTexture, vs_out.color).rgb;
 
     vec3 emissive = texture(emissiveTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb;
     vec3 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rgb * material.metallicRoughnessFactor.rgb;
     float ambient = texture(ambientOcclusionTexture, vs_out.texCoords).r * material.ambientOcclusionFactor.r;
 
-    outColorAmbient = vec4(baseColor.rgb, ambient);
+    outColorAmbient = vec4(baseColor.rgb * paletteColor, ambient);
     outEmissiveRoughness = vec4(emissive, metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
 }

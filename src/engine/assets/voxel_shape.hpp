@@ -14,10 +14,12 @@ struct ENGINE_API VoxelShape {
         Vector3 normal;
     };
 
+    static constexpr size_t numOfShapes = 4;
+
     using VertexFinal = ShaderComponentGrid::Vertex;
 
     static_assert(sizeof(VertexCached) == sizeof(float) * 6, "struct Vertex must be tightly packed");
-    static_assert(sizeof(VertexFinal) == sizeof(float) * 12, "struct VertexFinal must be tightly packed");
+    static_assert(sizeof(VertexFinal) == sizeof(float) * 16, "struct VertexFinal must be tightly packed");
 
     enum Face : size_t {
         Default = 0,
@@ -36,31 +38,10 @@ struct ENGINE_API VoxelShape {
         Penta,
     };
 
-    static inline const std::array<Type, 4> allTypes = {
-        Cube,
-        Wedge,
-        Corner,
-        Penta,
-    };
-
-    static inline const std::array<std::string, 4> typeNames = {
-        "shape_cube",
-        "shape_wedge",
-        "shape_corner",
-        "shape_penta",
-    };
-
-    static inline const std::array<std::string, 4> typeFriendlyNames = {
-        "Cube",
-        "Wedge",
-        "Corner",
-        "Penta",
-    };
-
-    static inline const std::array<Face, 7> allSides = {
-        Face::Default,   Face::PositiveX, Face::NegativeX, Face::PositiveY,
-        Face::NegativeY, Face::PositiveZ, Face::NegativeZ,
-    };
+    static const std::array<Type, numOfShapes> allTypes;
+    static const std::array<std::string, numOfShapes> typeNames;
+    static const std::array<std::string, numOfShapes> typeFriendlyNames;
+    static const std::array<Face, 7> allSides;
 
     struct Node {
         Face side = Face::Default;

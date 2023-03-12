@@ -55,6 +55,13 @@ ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& v
     metallicLayoutBinding.pImmutableSamplers = nullptr;
     metallicLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+    VkDescriptorSetLayoutBinding paletteBinding{};
+    paletteBinding.binding = 7;
+    paletteBinding.descriptorCount = 1;
+    paletteBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    paletteBinding.pImmutableSamplers = nullptr;
+    paletteBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
     descriptorSetLayout = vulkan.createDescriptorSetLayout({
         uboCameraLayoutBinding,
         uboMaterialLayoutBinding,
@@ -63,11 +70,11 @@ ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& v
         normalLayoutBinding,
         aoLayoutBinding,
         metallicLayoutBinding,
+        paletteBinding,
     });
 
     auto& vert = modules.findByName("component-grid.vert");
     auto& frag = modules.findByName("component-grid.frag");
-    auto& geom = modules.findByName("component-grid.geom");
 
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&vert, &frag};
@@ -77,7 +84,7 @@ ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& v
     bindingDescription.stride = sizeof(Vertex);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
 
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
@@ -98,6 +105,11 @@ ShaderComponentGrid::ShaderComponentGrid(const Config& config, VulkanRenderer& v
     attributeDescriptions[3].location = 3;
     attributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     attributeDescriptions[3].offset = offsetof(Vertex, tangent);
+
+    attributeDescriptions[4].binding = 0;
+    attributeDescriptions[4].location = 4;
+    attributeDescriptions[4].format = VK_FORMAT_R32_SFLOAT;
+    attributeDescriptions[4].offset = offsetof(Vertex, color);
 
     pipelineInfo.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     pipelineInfo.vertexInputInfo.vertexBindingDescriptionCount = 1;

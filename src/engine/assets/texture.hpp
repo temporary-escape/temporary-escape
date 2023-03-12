@@ -39,11 +39,12 @@ public:
         };
 
         std::optional<bool> isArray;
+        std::optional<bool> srgb;
         std::optional<Type> type;
         std::optional<OptionsFiltering> filtering;
         std::optional<OptionsWrapping> wrapping;
 
-        YAML_DEFINE(isArray, type, filtering, wrapping);
+        YAML_DEFINE(isArray, srgb, type, filtering, wrapping);
 
         void apply(VulkanTexture::CreateInfo& textureInfo);
     };
@@ -57,6 +58,10 @@ public:
 
     [[nodiscard]] const VulkanTexture& getVulkanTexture() const {
         return texture;
+    }
+
+    [[nodiscard]] const Path& getPath() const {
+        return path;
     }
 
     static std::shared_ptr<Texture> from(const std::string& name);
