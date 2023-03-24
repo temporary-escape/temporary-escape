@@ -4,7 +4,6 @@
 #include "image.hpp"
 #include "material.hpp"
 #include "texture.hpp"
-#include "voxel_palette.hpp"
 #include "voxel_shape.hpp"
 
 namespace Engine {

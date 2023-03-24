@@ -19,6 +19,7 @@
 #include "shaders/shader_pass_bloom_combine.hpp"
 #include "shaders/shader_pass_bloom_extract.hpp"
 #include "shaders/shader_pass_debug.hpp"
+#include "shaders/shader_pass_flare.hpp"
 #include "shaders/shader_pass_fxaa.hpp"
 #include "shaders/shader_pass_pbr.hpp"
 #include "shaders/shader_pass_skybox.hpp"
@@ -38,7 +39,7 @@ public:
 
     explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
                       Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                      VoxelPalette& voxelPalette, FontFamily& font);
+                      Registry& registry, FontFamily& font);
     virtual ~Renderer();
 
     void render(const Vector2i& viewport, Scene& scene, const Skybox& skybox, const Options& options,
@@ -115,6 +116,7 @@ private:
     void renderPassBloomBlur();
     void renderPassBloomBlur(VulkanCommandBuffer& vkb, size_t idx, bool vertical);
     void renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& options);
+    void renderPassFlares(VulkanCommandBuffer& vkb, Scene& scene, const Options& options);
     void renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     void renderSceneForward(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
     void renderSceneForwardNonHDR(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
@@ -161,6 +163,7 @@ private:
     void transitionForWrite(VulkanCommandBuffer& vkb, size_t idx);
     VkFormat findDepthFormat();
     void updateDirectionalLights(Scene& scene);
+    void updateFlares(Scene& scene);
     void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh);
 
     const Config& config;
@@ -168,10 +171,11 @@ private:
     Canvas& canvas;
     Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
-    VoxelPalette& voxelPalette;
+    Registry& registry;
     FontFamily& font;
     Vector2i lastViewportSize;
     Vector2i bloomViewportSize;
+    TexturePtr palette;
 
     struct {
         VulkanSemaphore semaphore;
@@ -188,6 +192,7 @@ private:
         ShaderPassBloomExtract passBloomExtract;
         ShaderPassBloomBlur passBloomBlur[2];
         ShaderPassBloomCombine passBloomCombine;
+        ShaderPassFlare passFlare;
         ShaderComponentPointCloud componentPointCloud;
         ShaderComponentDebug componentDebug;
         ShaderComponentLines componentLines;
@@ -241,6 +246,11 @@ private:
     struct {
         VulkanDoubleBuffer ubo;
     } directionalLights;
+
+    struct {
+        VulkanDoubleBuffer vbo;
+        size_t count{0};
+    } flares;
 
     Shader* currentForwardShader{nullptr};
 };

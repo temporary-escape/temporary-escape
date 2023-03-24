@@ -24,7 +24,7 @@ class ENGINE_API TransactionalDatabase;
 class ENGINE_API Editor : public UserInput {
 public:
     explicit Editor(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, Registry& registry,
-                    VoxelPalette& voxelPalette, FontFamily& font);
+                    FontFamily& font);
     virtual ~Editor();
 
     void update(float deltaTime);

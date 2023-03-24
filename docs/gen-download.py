@@ -114,7 +114,7 @@ def create_markdown(s3, endpoint: str, bucket: str, versions: List[dict]):
     print('## All Releases\n')
     print('All releases listed chronologically including development releases\n')
     for version in versions:
-        print('{{{{< expand "{} ({})" >}}}}\n'.format(version['version'], version['created']))
+        print('{{{{< expand "{} ({:%B %d, %Y})" >}}}}\n'.format(version['version'], version['created']))
         create_markdown_version(s3, endpoint, bucket, version)
         print('{{< /expand >}}')
 

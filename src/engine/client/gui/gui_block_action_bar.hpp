@@ -21,8 +21,7 @@ public:
         YAML_DEFINE(items, activeBar, activeColor);
     };
 
-    explicit GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry,
-                               VoxelPalette& voxelPalette);
+    explicit GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry);
     ~GuiBlockActionBar() override = default;
 
     [[nodiscard]] size_t getActiveIndex() const {
@@ -48,13 +47,14 @@ public:
 private:
     struct ActionBarItem : ActionBarBlock {};
 
+    void loadColors(const TexturePtr& asset);
     void drawLayout(Nuklear& nuklear) override;
     void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
     const Config& config;
     Preferences& preferences;
     Registry& registry;
-    VoxelPalette& voxelPalette;
+    std::array<Color4, 16 * 4> colors;
     std::array<std::array<ActionBarItem, 10>, 10> items;
     size_t activeItem{0};
     size_t activeBar{0};

@@ -70,6 +70,7 @@ void VulkanBuffer::subDataLocal(const void* data, size_t offset, size_t size) {
     if (!mappedPtr) {
         unmapMemory();
     }
+    vmaFlushAllocation(allocator, allocation, offset, size);
 }
 
 void* VulkanBuffer::mapMemory() {

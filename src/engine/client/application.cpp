@@ -135,7 +135,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, *voxelPalette, font);
+    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, font);
 }
 
 void Application::checkForClientScene() {
@@ -145,8 +145,7 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         logger.info("Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, *voxelPalette,
-                                      font, *client);
+        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -266,7 +265,7 @@ void Application::createThumbnails() {
 
 void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next) {
     if (next == registry->getLoadQueue().cend()) {
-        NEXT(createThumbnails());
+        NEXT(createRenderer());
     } else {
         const auto start = std::chrono::steady_clock::now();
 
@@ -323,9 +322,9 @@ void Application::createThumbnailRenderer() {
 
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
     thumbnailRenderer = std::make_unique<OffscreenRenderer>(config, viewport, *this, canvas, nuklear, *shaderModules,
-                                                            *voxelShapeCache, *voxelPalette, font);
+                                                            *voxelShapeCache, *registry, font);
 
-    NEXT(createRegistry());
+    NEXT(createThumbnails());
 }
 
 void Application::createRenderer() {
@@ -336,22 +335,11 @@ void Application::createRenderer() {
 
     const auto viewport = Vector2i{config.windowWidth, config.windowHeight};
     renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *shaderModules, *voxelShapeCache,
-                                          *voxelPalette, font);
+                                          *registry, font);
 
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
 
     NEXT(createThumbnailRenderer());
-}
-
-void Application::createVoxelPalette() {
-    logger.info("Creating voxel palette");
-
-    status.message = "Creating voxel palette...";
-    status.value = 0.3f;
-
-    voxelPalette = std::make_unique<VoxelPalette>(config, *this);
-
-    NEXT(createRenderer());
 }
 
 void Application::createVoxelShapeCache() {
@@ -362,7 +350,7 @@ void Application::createVoxelShapeCache() {
 
     voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
-    NEXT(createVoxelPalette());
+    NEXT(createRegistry());
 }
 
 void Application::compileShaders() {

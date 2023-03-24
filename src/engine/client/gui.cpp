@@ -16,10 +16,8 @@ static Gui::Preferences loadFromYaml(const Config& config) {
     return preferences;
 }
 
-Gui::Gui(const Config& config, Registry& registry, VoxelPalette& voxelPalette) :
-    config{config},
-    preferences{loadFromYaml(config)},
-    blockActionBar{config, preferences.blockActionBar, registry, voxelPalette} {
+Gui::Gui(const Config& config, Registry& registry) :
+    config{config}, preferences{loadFromYaml(config)}, blockActionBar{config, preferences.blockActionBar, registry} {
 
     contextMenu.setEnabled(false);
     blockSelector.setEnabled(false);

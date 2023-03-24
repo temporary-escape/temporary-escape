@@ -1,0 +1,21 @@
+#version 450
+#extension GL_ARB_separate_shader_objects: enable
+
+layout (location = 0) in vec3 in_Position;
+
+layout (std140, binding = 0) uniform CameraMatrices {
+    mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
+} camera;
+
+out gl_PerVertex {
+    vec4 gl_Position;
+};
+
+void main() {
+    gl_Position = camera.viewMatrix * vec4(in_Position, 1.0);
+}

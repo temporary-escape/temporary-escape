@@ -5,9 +5,8 @@
 
 using namespace Engine;
 
-GuiBlockActionBar::GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry,
-                                     VoxelPalette& voxelPalette) :
-    config{config}, preferences{preferences}, registry{registry}, voxelPalette{voxelPalette} {
+GuiBlockActionBar::GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry) :
+    config{config}, preferences{preferences}, registry{registry} {
 
     setFlags(Nuklear::WindowFlags::NoScrollbar | Nuklear::WindowFlags::Border);
     defaultImage = registry.getImages().find("block_empty_image");
@@ -20,7 +19,28 @@ GuiBlockActionBar::GuiBlockActionBar(const Config& config, Preferences& preferen
     }
 
     activeBar = preferences.activeBar % items.size();
-    activeColor = preferences.activeColor % voxelPalette.getSize();
+    activeColor = preferences.activeColor % colors.size();
+
+    loadColors(registry.getTextures().find("palette"));
+}
+
+void GuiBlockActionBar::loadColors(const TexturePtr& asset) {
+    PngImporter img{asset->getPath()};
+
+    if (img.getSize().x != colors.size() || img.getSize().y != 1) {
+        EXCEPTION("Palette has wrong size");
+    }
+
+    if (img.getPixelType() != ImageImporter::PixelType::Rgba8u) {
+        EXCEPTION("Palette has wrong pixel type, expected RGBA8");
+    }
+
+    const auto* data = img.getData();
+    for (size_t i = 0; i < colors.size(); i++) {
+        const auto* src = &reinterpret_cast<const uint8_t*>(data)[i * 4];
+        colors[i] = fromRgbBytes(src[0], src[1], src[2], 255);
+        colors[i] = glm::pow(colors[i], Vector4{2.2f});
+    }
 }
 
 void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
@@ -46,10 +66,10 @@ void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
     nuklear.layoutSkip();
     nuklear.label("Color: ", Nuklear::TextAlign::Right);
 
-    if (nuklear.comboBegin(voxelPalette.getColor(activeColor), {400.0f, 110.0f})) {
+    if (nuklear.comboBegin(colors[activeColor], {400.0f, 110.0f})) {
         nuklear.layoutDynamic(20.0f, 16);
-        for (size_t i = 0; i < voxelPalette.getSize(); i++) {
-            if (nuklear.button(voxelPalette.getColor(i))) {
+        for (size_t i = 0; i < colors.size(); i++) {
+            if (nuklear.button(colors[i])) {
                 nuklear.comboClose();
                 activeColor = i;
                 preferences.activeColor = i;

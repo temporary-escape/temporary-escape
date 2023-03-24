@@ -9,9 +9,9 @@ class CustomRenderer : public Renderer {
 public:
     explicit CustomRenderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
                             Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                            VoxelPalette& voxelPalette, FontFamily& font, VulkanFramebuffer& fbo,
+                            Registry& registry, FontFamily& font, VulkanFramebuffer& fbo,
                             VulkanRenderPass& renderPass) :
-        Renderer{config, viewport, vulkan, canvas, nuklear, shaderModules, voxelShapeCache, voxelPalette, font},
+        Renderer{config, viewport, vulkan, canvas, nuklear, shaderModules, voxelShapeCache, registry, font},
         fbo{fbo},
         renderPass{renderPass} {
     }
@@ -44,7 +44,7 @@ private:
 
 OffscreenRenderer::OffscreenRenderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
                                      Canvas& canvas, Nuklear& nuklear, ShaderModules& shaderModules,
-                                     VoxelShapeCache& voxelShapeCache, VoxelPalette& voxelPalette, FontFamily& font) :
+                                     VoxelShapeCache& voxelShapeCache, Registry& registry, FontFamily& font) :
     viewport{viewport}, vulkan{vulkan}, skybox{vulkan, Color4{0.05f, 0.05f, 0.05f, 1.0f}} {
 
     createRenderPass(vulkan);
@@ -52,7 +52,7 @@ OffscreenRenderer::OffscreenRenderer(const Config& config, const Vector2i& viewp
     createFramebuffer(vulkan, viewport);
 
     renderer = std::make_shared<CustomRenderer>(config, viewport, vulkan, canvas, nuklear, shaderModules,
-                                                voxelShapeCache, voxelPalette, font, fbo, renderPass);
+                                                voxelShapeCache, registry, font, fbo, renderPass);
 }
 
 void OffscreenRenderer::createRenderPass(VulkanRenderer& vulkan) {

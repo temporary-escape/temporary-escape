@@ -8,7 +8,7 @@ class ENGINE_API OffscreenRenderer {
 public:
     explicit OffscreenRenderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
                                Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                               VoxelPalette& voxelPalette, FontFamily& font);
+                               Registry& registry, FontFamily& font);
     ~OffscreenRenderer() = default;
 
     void render(const std::shared_ptr<Block>& block, VoxelShape::Type shape);

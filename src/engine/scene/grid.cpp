@@ -385,7 +385,6 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                 if (block->isSingular()) {
                     const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(mask);
                     auto& data = map[&block->getMaterial()];
-                    logger.info("Insert block color: {}", int(item.color));
                     appendShapeVertices(data, shape, posf, item.color);
                 } else {
                     for (size_t n = 0; n < 6; n++) {
@@ -398,7 +397,6 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                         const auto& material = block->getMaterialForSide(neighbourSides[n]);
 
                         auto& data = map[&material];
-                        logger.info("Insert block color: {}", int(item.color));
                         appendShapeVertices(data, shape, posf, item.color);
                     }
                 }

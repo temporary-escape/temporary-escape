@@ -1,0 +1,7 @@
+type: 'Texture1D'
+filtering:
+  minification: 'Nearest'
+  magnification: 'Nearest'
+wrapping:
+  vertical: 'ClampToEdge'
+  horizontal: 'ClampToEdge'

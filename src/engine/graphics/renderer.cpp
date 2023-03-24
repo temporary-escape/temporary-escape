@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "../assets/registry.hpp"
 #include "../utils/exceptions.hpp"
 
 using namespace Engine;
@@ -10,17 +11,19 @@ struct FullScreenVertex {
 };
 
 Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                   Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache,
-                   VoxelPalette& voxelPalette, FontFamily& font) :
+                   Nuklear& nuklear, ShaderModules& shaderModules, VoxelShapeCache& voxelShapeCache, Registry& registry,
+                   FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
     nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
-    voxelPalette{voxelPalette},
+    registry{registry},
     font{font},
     lastViewportSize{viewport},
     bloomViewportSize{lastViewportSize / 2} {
+
+    palette = registry.getTextures().find("palette");
 
     createGaussianKernel(15, 4.5);
     createFullScreenQuad();
@@ -416,6 +419,12 @@ void Renderer::createShaders(ShaderModules& shaderModules) {
         renderPasses.bloomBlur[1].renderPass,
     };
     shaders.passBloomCombine = ShaderPassBloomCombine{
+        config,
+        vulkan,
+        shaderModules,
+        getParentRenderPass(),
+    };
+    shaders.passFlare = ShaderPassFlare{
         config,
         vulkan,
         shaderModules,
@@ -1289,6 +1298,7 @@ void Renderer::render(const Vector2i& viewport, Scene& scene, const Skybox& skyb
     vkb.setScissor({0, 0}, viewport);
 
     renderPassBloomCombine(vkb, options);
+    renderPassFlares(vkb, scene, options);
     renderSceneForwardNonHDR(vkb, viewport, scene);
     renderSceneCanvas(vkb, viewport, scene);
     renderNuklear(vkb, viewport, nuklearWindow);
@@ -1822,6 +1832,32 @@ void Renderer::renderPassBloomCombine(VulkanCommandBuffer& vkb, const Options& o
     renderMesh(vkb, meshes.fullScreenQuad);
 }
 
+void Renderer::renderPassFlares(VulkanCommandBuffer& vkb, Scene& scene, const Options& options) {
+    vkb.bindPipeline(shaders.passFlare.getPipeline());
+
+    auto camera = scene.getPrimaryCamera();
+
+    std::array<VulkanBufferBinding, 1> bufferBindings{};
+    bufferBindings[0] = {0, &camera->getUbo().getCurrentBuffer()};
+
+    vkb.bindDescriptors(shaders.passFlare.getPipeline(), shaders.passFlare.getDescriptorSetLayout(), bufferBindings,
+                        {});
+
+    ShaderPassFlare::Uniforms constants{};
+    constants.temp = 0.0f;
+    constants.size = {0.2f, 0.2f};
+
+    vkb.pushConstants(shaders.passFlare.getPipeline(),
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                      sizeof(ShaderPassFlare::Uniforms), &constants);
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+    vboBindings[0] = {&flares.vbo.getCurrentBuffer(), 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(flares.count, 1, 0, 0);
+}
+
 static void validateMaterial(const Material& material) {
     if (!material.ubo) {
         EXCEPTION("Primitive has no material uniform buffer allocated");
@@ -1888,7 +1924,7 @@ void Renderer::renderSceneGrids(VulkanCommandBuffer& vkb, const Vector2i& viewpo
             textureBindings[2] = {4, &primitive.material->normalTexture->getVulkanTexture()};
             textureBindings[3] = {5, &primitive.material->ambientOcclusionTexture->getVulkanTexture()};
             textureBindings[4] = {6, &primitive.material->metallicRoughnessTexture->getVulkanTexture()};
-            textureBindings[5] = {7, &voxelPalette.getTexture()};
+            textureBindings[5] = {7, &palette->getVulkanTexture()};
 
             bufferBindings[1] = {1, &primitive.material->ubo};
 
@@ -2261,6 +2297,7 @@ void Renderer::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
 void Renderer::renderLightingPbr(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene,
                                  const Skybox& skybox) {
     updateDirectionalLights(scene);
+    updateFlares(scene);
 
     auto camera = scene.getPrimaryCamera();
 
@@ -2313,4 +2350,31 @@ void Renderer::updateDirectionalLights(Scene& scene) {
     }
 
     directionalLights.ubo.subDataLocal(&uniform, 0, sizeof(uniform));
+}
+
+void Renderer::updateFlares(Scene& scene) {
+    std::vector<Vector3> positions;
+
+    auto system = scene.getView<ComponentTransform, ComponentDirectionalLight>();
+    for (auto&& [entity, transform, light] : system.each()) {
+        positions.push_back(transform.getPosition() * 10.0f);
+    }
+
+    const auto totalSize = sizeof(Vector3) * positions.size();
+
+    if (!flares.vbo || flares.vbo.getSize() != totalSize) {
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = totalSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        vulkan.dispose(std::move(flares.vbo));
+        flares.vbo = vulkan.createDoubleBuffer(bufferInfo);
+    }
+
+    flares.vbo.subDataLocal(positions.data(), 0, totalSize);
+    flares.count = positions.size();
 }

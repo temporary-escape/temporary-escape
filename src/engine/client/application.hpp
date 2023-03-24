@@ -44,7 +44,6 @@ private:
     void createEditor();
     void createThumbnails();
     void createRegistry();
-    void createVoxelPalette();
     void createVoxelShapeCache();
     void createRenderer();
     void createThumbnailRenderer();
@@ -81,7 +80,6 @@ private:
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<OffscreenRenderer> thumbnailRenderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
-    std::unique_ptr<VoxelPalette> voxelPalette;
     std::unique_ptr<Client> client;
     PlayerLocalProfile playerLocalProfile;
     std::unique_ptr<Game> game;
