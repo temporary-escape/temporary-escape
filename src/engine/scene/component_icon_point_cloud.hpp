@@ -1,19 +1,12 @@
 #pragma once
 
 #include "../assets/image.hpp"
-#include "../graphics/mesh.hpp"
-#include "component.hpp"
+#include "component_point_cloud.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentIconPointCloud : public Component {
 public:
-    struct Point {
-        Vector3 position;
-        Vector2 size;
-        Vector4 color;
-        Vector2 uv;
-        Vector2 st;
-    };
+    using Point = ComponentPointCloud::Point;
 
     ComponentIconPointCloud() = default;
     virtual ~ComponentIconPointCloud() = default; // NOLINT(modernize-use-override)

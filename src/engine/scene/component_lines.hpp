@@ -10,6 +10,13 @@ public:
     struct Vertex {
         Vector3 position;
         Color4 color;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                {1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+            };
+        };
     };
 
     struct Line {

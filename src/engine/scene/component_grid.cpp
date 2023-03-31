@@ -12,7 +12,7 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
             // logger.debug("Add box: {}", pos);
-            debug->addBox(glm::translate(pos), 1.1f /*0.95f*/, Color4{1.0f, 0.0f, 0.0f, 1.0f});
+            debug->addBox(glm::translate(pos), 0.95f, Color4{1.0f, 0.0f, 0.0f, 1.0f});
         } else {
             debugIterate(iterator.children());
         }
@@ -44,7 +44,8 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     primitives.clear();
 
     for (const auto& [material, data] : map) {
-        logger.debug("Building mesh for type: {} of size: {} indices", material->baseColorTexture->getName(),
+        logger.debug("Building mesh for type: {} of size: {} indices",
+                     material->baseColorTexture->getName(),
                      data.indices.size());
 
         if (data.indices.empty()) {

@@ -11,7 +11,8 @@ class ENGINE_API SpirvReflection : public NonCopyable {
 public:
     explicit SpirvReflection(const std::vector<uint32_t>& spriv);
     virtual ~SpirvReflection();
-    MOVEABLE(SpirvReflection);
+    SpirvReflection(SpirvReflection&& other) noexcept;
+    SpirvReflection& operator=(SpirvReflection&& other) noexcept;
 
     const std::vector<VulkanStageInput>& getInputs() const {
         return inputs;

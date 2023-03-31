@@ -196,3 +196,7 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
 }
 
 SpirvReflection::~SpirvReflection() = default;
+
+SpirvReflection::SpirvReflection(SpirvReflection&& other) noexcept = default;
+
+SpirvReflection& SpirvReflection::operator=(SpirvReflection&& other) noexcept = default;

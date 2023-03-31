@@ -13,6 +13,16 @@ public:
         Vector4 color;
         Vector2 uv;
         Vector2 st;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Point, position)},
+                {1, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, size)},
+                {2, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Point, color)},
+                {3, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, uv)},
+                {4, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, st)},
+            };
+        };
     };
 
     ComponentPointCloud() = default;

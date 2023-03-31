@@ -4,7 +4,7 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
-layout (std140, binding = 0) uniform CameraMatrices {
+layout (std140, binding = 0) uniform Camera {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
     mat4 viewMatrix;

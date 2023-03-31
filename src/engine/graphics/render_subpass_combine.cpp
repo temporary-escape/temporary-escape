@@ -60,9 +60,12 @@ void RenderSubpassCombine::render(VulkanCommandBuffer& vkb, Scene& scene) {
     const auto gamma = config.vulkan.gamma;
     const auto contrast = config.vulkan.contrast;
 
-    pipelineCombine.pushConstants(vkb, PushConstant{"bloomStrength", bloomStrength},
-                                  PushConstant{"bloomPower", bloomPower}, PushConstant{"exposure", exposure},
-                                  PushConstant{"gamma", gamma}, PushConstant{"contrast", contrast});
+    pipelineCombine.pushConstants(vkb,
+                                  PushConstant{"bloomStrength", bloomStrength},
+                                  PushConstant{"bloomPower", bloomPower},
+                                  PushConstant{"exposure", exposure},
+                                  PushConstant{"gamma", gamma},
+                                  PushConstant{"contrast", contrast});
 
     pipelineCombine.renderMesh(vkb, fullScreenQuad);
 }

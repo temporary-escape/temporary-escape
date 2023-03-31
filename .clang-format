@@ -9,3 +9,4 @@ AllowShortFunctionsOnASingleLine: None
 BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: AfterColon
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
+BinPackArguments: false

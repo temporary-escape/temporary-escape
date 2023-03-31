@@ -333,7 +333,7 @@ void ViewSystem::createEntitiesBodies() {
                     auto orbit = scene.createEntity();
                     entities.orbits.push_back(orbit);
                     orbit->addComponent<ComponentTransform>();
-                    orbit->addComponent<Component2DShape>(Component2DShape::Type::Circle, Theme::text * alpha(0.1f));
+                    // orbit->addComponent<Component2DShape>(Component2DShape::Type::Circle, Theme::text * alpha(0.1f));
 
                     if (planet->parent) {
                         if (const auto it = system.planets.find(planet->parent.value()); it != system.planets.end()) {

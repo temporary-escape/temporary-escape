@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout (std140, binding = 0) uniform CameraMatrices {
+layout (std140, binding = 0) uniform Camera {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
     mat4 viewMatrix;

@@ -22,7 +22,50 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
             // Additional pipeline options
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             RenderPipeline::DepthMode::ReadWrite,
-            RenderPipeline::Blending::None,
+            RenderPipeline::Blending::Normal,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        },
+    },
+    pipelineLines{
+        vulkan,
+        {
+            // List of shader modules
+            registry.getShaders().find("component-lines.vert"),
+            registry.getShaders().find("component-lines.frag"),
+        },
+        {
+            // Vertex inputs
+            RenderPipeline::VertexInput::of<ComponentLines::Vertex>(0),
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+            RenderPipeline::DepthMode::ReadWrite,
+            RenderPipeline::Blending::Normal,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        },
+    },
+    pipelinePointCloud{
+        vulkan,
+        {
+            // List of shader modules
+            registry.getShaders().find("component-point-cloud.vert"),
+            registry.getShaders().find("component-point-cloud.geom"),
+            registry.getShaders().find("component-point-cloud.frag"),
+        },
+        {
+            // Vertex inputs
+            RenderPipeline::VertexInput::of<ComponentPointCloud::Point>(0),
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+            RenderPipeline::DepthMode::ReadWrite,
+            RenderPipeline::Blending::Normal,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
@@ -35,13 +78,22 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
     });
 
     addPipeline(pipelineDebug);
+    addPipeline(pipelineLines);
+    addPipeline(pipelinePointCloud);
 }
 
 void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineDebug.getDescriptorPool().reset();
+    pipelineLines.getDescriptorPool().reset();
+    pipelinePointCloud.getDescriptorPool().reset();
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);
+    collectForRender<ComponentLines>(vkb, scene, jobs);
+    collectForRender<ComponentIconPointCloud>(vkb, scene, jobs);
+    collectForRender<ComponentPointCloud>(vkb, scene, jobs);
+    // collectForRender<ComponentPolyShape>(vkb, scene, jobs);
+    // collectForRender<ComponentPlanet>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -63,7 +115,7 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
 
     if (currentPipeline != &pipelineDebug) {
         currentPipeline = &pipelineDebug;
-        currentPipeline->bind(vkb);
+        pipelineDebug.bind(vkb);
     }
 
     std::array<UniformBindingRef, 1> uniforms{};
@@ -75,4 +127,87 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     pipelineDebug.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
 
     pipelineDebug.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                              ComponentTransform& transform, ComponentLines& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelineLines) {
+        currentPipeline = &pipelineLines;
+        pipelineLines.bind(vkb);
+    }
+
+    std::array<UniformBindingRef, 1> uniforms{};
+    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+    pipelineLines.bindDescriptors(vkb, uniforms, {}, {});
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    const auto color = component.getColor();
+    pipelineLines.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"color", color});
+
+    pipelineLines.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                              ComponentTransform& transform, ComponentPointCloud& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelinePointCloud) {
+        currentPipeline = &pipelinePointCloud;
+        pipelinePointCloud.bind(vkb);
+    }
+
+    std::array<UniformBindingRef, 1> uniforms{};
+    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+    std::array<SamplerBindingRef, 1> textures{};
+    textures[0] = {"colorTexture", component.getTexture()->getVulkanTexture()};
+
+    pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
+
+    pipelinePointCloud.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                              ComponentTransform& transform, ComponentIconPointCloud& component) {
+    component.recalculate(vulkan);
+
+    if (currentPipeline != &pipelinePointCloud) {
+        currentPipeline = &pipelinePointCloud;
+        pipelinePointCloud.bind(vkb);
+    }
+
+    for (const auto& [image, mesh] : component.getMesges()) {
+        if (mesh.count == 0) {
+            continue;
+        }
+
+        std::array<UniformBindingRef, 1> uniforms{};
+        uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+        std::array<SamplerBindingRef, 1> textures{};
+        textures[0] = {"colorTexture", *image->getAllocation().texture};
+
+        pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
+
+        const auto modelMatrix = transform.getAbsoluteTransform();
+        pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
+
+        pipelinePointCloud.renderMesh(vkb, mesh);
+    }
 }
