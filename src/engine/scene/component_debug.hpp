@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../graphics/mesh.hpp"
-#include "../graphics/shaders/shader_component_debug.hpp"
 #include "component.hpp"
 
 namespace Engine {
@@ -10,8 +9,17 @@ class ENGINE_API ComponentCamera;
 
 class ENGINE_API ComponentDebug : public Component {
 public:
-    using Vertex = ShaderComponentDebug::Vertex;
-    using Uniforms = ShaderComponentDebug::Uniforms;
+    struct Vertex {
+        Vector3 position;
+        Vector4 color;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                {1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+            };
+        };
+    };
 
     ComponentDebug() = default;
     virtual ~ComponentDebug() = default; // NOLINT(modernize-use-override)

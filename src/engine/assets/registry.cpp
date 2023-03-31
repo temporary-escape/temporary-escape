@@ -46,23 +46,27 @@ void Registry::findAssets() {
         }
 
         for (const auto& path : paths) {
-            init(images, config.assetsPath / "base" / "images", {".png"});
+            init(shaders, path / "shaders", {".vert", ".frag", ".geom", ".comp"});
         }
 
         for (const auto& path : paths) {
-            init(textures, config.assetsPath / "base" / "textures", {".png"});
+            init(images, path / "images", {".png"});
         }
 
         for (const auto& path : paths) {
-            init(models, config.assetsPath / "base" / "models", {".gltf"});
+            init(textures, path / "textures", {".png"});
         }
 
         for (const auto& path : paths) {
-            init(blocks, config.assetsPath / "base" / "blocks", {".yml", ".yaml"});
+            init(models, path / "models", {".gltf"});
         }
 
         for (const auto& path : paths) {
-            init(planetTypes, config.assetsPath / "base" / "planets", {".yml", ".yaml"});
+            init(blocks, path / "blocks", {".yml", ".yaml"});
+        }
+
+        for (const auto& path : paths) {
+            init(planetTypes, path / "planets", {".yml", ".yaml"});
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize registry");

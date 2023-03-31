@@ -1,16 +1,20 @@
 #pragma once
 
 #include "../graphics/mesh.hpp"
-#include "../graphics/shaders/shader_component_lines.hpp"
 #include "../library.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentLines : public Component {
 public:
+    struct Vertex {
+        Vector3 position;
+        Color4 color;
+    };
+
     struct Line {
-        ShaderComponentLines::Vertex a;
-        ShaderComponentLines::Vertex b;
+        Vertex a;
+        Vertex b;
     };
 
     ComponentLines() = default;

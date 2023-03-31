@@ -31,6 +31,10 @@ public:
         return renderPass;
     }
 
+    const std::vector<VkAttachmentDescription>& getAttachments() const {
+        return attachments;
+    }
+
     operator bool() const {
         return renderPass != VK_NULL_HANDLE;
     }
@@ -40,5 +44,6 @@ public:
 private:
     VkDevice device{VK_NULL_HANDLE};
     VkRenderPass renderPass{VK_NULL_HANDLE};
+    std::vector<VkAttachmentDescription> attachments;
 };
 } // namespace Engine

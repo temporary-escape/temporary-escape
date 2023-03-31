@@ -14,7 +14,7 @@
 #include "vulkan_pipeline.hpp"
 #include "vulkan_render_pass.hpp"
 #include "vulkan_semaphore.hpp"
-#include "vulkan_shader_module.hpp"
+#include "vulkan_shader.hpp"
 #include "vulkan_swap_chain.hpp"
 #include "vulkan_texture.hpp"
 
@@ -27,8 +27,8 @@ public:
     explicit VulkanRenderer(const Config& config);
     virtual ~VulkanRenderer();
 
-    VulkanShaderModule createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage);
-    VulkanShaderModule createShaderModule(const Path& path, VkShaderStageFlagBits stage);
+    VulkanShader createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage);
+    VulkanShader createShaderModule(const Path& path, VkShaderStageFlagBits stage);
     VulkanPipeline createPipeline(const VulkanRenderPass& renderPass, const VulkanPipeline::CreateInfo& createInfo);
     VulkanPipeline createPipeline(const VulkanPipeline::CreateComputeInfo& createInfo);
     VulkanPipeline createPipeline(const VulkanPipeline::CreateInfo& createInfo) {
@@ -44,6 +44,7 @@ public:
     VulkanBuffer createBuffer(const VulkanBuffer::CreateInfo& createInfo);
     VulkanDescriptorSetLayout createDescriptorSetLayout(const VulkanDescriptorSetLayout::CreateInfo& createInfo);
     VulkanDescriptorPool createDescriptorPool();
+    VulkanDescriptorPool createDescriptorPool(const VulkanDescriptorPool::CreateInfo& createInfo);
     VulkanDescriptorSetLayout createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
     VulkanDoubleBuffer createDoubleBuffer(const VulkanBuffer::CreateInfo& createInfo);
     VulkanTexture createTexture(const VulkanTexture::CreateInfo& createInfo);

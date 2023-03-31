@@ -12,8 +12,8 @@ class ENGINE_API VulkanDescriptorSetLayout;
 class ENGINE_API VulkanDescriptorSet {
 public:
     VulkanDescriptorSet() = default;
-    explicit VulkanDescriptorSet(VkDevice device, VulkanDescriptorPool& descriptorPool,
-                                 VulkanDescriptorSetLayout& layout);
+    explicit VulkanDescriptorSet(VkDevice device, const VulkanDescriptorPool& descriptorPool,
+                                 const VulkanDescriptorSetLayout& layout);
     ~VulkanDescriptorSet();
     VulkanDescriptorSet(const VulkanDescriptorSet& other) = delete;
     VulkanDescriptorSet(VulkanDescriptorSet&& other) noexcept;
@@ -21,7 +21,9 @@ public:
     VulkanDescriptorSet& operator=(VulkanDescriptorSet&& other) noexcept;
     void swap(VulkanDescriptorSet& other) noexcept;
 
-    void bind(const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures);
+    void bind(const Span<VulkanBufferBinding>& uniforms = {}, const Span<VulkanTextureBinding>& textures = {},
+              const Span<VulkanTextureBinding>& inputAttachments = {});
+    void bind(const Span<VkWriteDescriptorSet>& writes);
 
     VkDescriptorSet& getHandle() {
         return descriptorSet;

@@ -50,6 +50,8 @@ public:
     };
 
     explicit Texture(std::string name, Path path);
+    MOVEABLE(Texture);
+
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 
     VulkanTexture& getVulkanTexture() {

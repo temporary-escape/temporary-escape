@@ -13,21 +13,12 @@ ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Reg
 void ViewSpace::update(const float deltaTime) {
 }
 
-const Renderer::Options& ViewSpace::getRenderOptions() {
-    static Renderer::Options options{};
-    return options;
-}
-
-Scene& ViewSpace::getRenderScene() {
+Scene& ViewSpace::getScene() {
     auto scene = client.getScene();
     if (!scene) {
         EXCEPTION("No scene present!");
     }
     return *scene;
-}
-
-const Skybox& ViewSpace::getRenderSkybox() {
-    return skyboxSystem;
 }
 
 void ViewSpace::onEnter() {

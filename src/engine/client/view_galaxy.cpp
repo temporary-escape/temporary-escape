@@ -45,6 +45,8 @@ ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, R
 
         entities.camera = entity;
     }
+
+    scene.setSkybox(skybox);
 }
 
 void ViewGalaxy::update(const float deltaTime) {
@@ -107,18 +109,8 @@ void ViewGalaxy::eventCharTyped(const uint32_t code) {
     scene.eventCharTyped(code);
 }
 
-const Renderer::Options& ViewGalaxy::getRenderOptions() {
-    static Renderer::Options options{};
-    options.bloomEnabled = false;
-    return options;
-}
-
-Scene& ViewGalaxy::getRenderScene() {
+Scene& ViewGalaxy::getScene() {
     return scene;
-}
-
-const Skybox& ViewGalaxy::getRenderSkybox() {
-    return skybox;
 }
 
 void ViewGalaxy::load() {

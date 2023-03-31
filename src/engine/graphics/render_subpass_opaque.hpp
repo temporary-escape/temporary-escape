@@ -1,0 +1,21 @@
+#pragma once
+
+#include "render_subpass.hpp"
+
+namespace Engine {
+class ENGINE_API RenderSubpassOpaque : public RenderSubpass {
+public:
+    explicit RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& registry, VoxelShapeCache& voxelShapeCache);
+    virtual ~RenderSubpassOpaque() = default;
+
+    void render(VulkanCommandBuffer& vkb, Scene& scene);
+
+private:
+    void renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scene);
+
+    VulkanRenderer& vulkan;
+    VoxelShapeCache& voxelShapeCache;
+    RenderPipeline pipelineGrid;
+    TexturePtr palette;
+};
+} // namespace Engine

@@ -84,6 +84,10 @@ void VulkanCommandBuffer::beginRenderPass(const VulkanRenderPassBeginInfo& rende
     vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+void VulkanCommandBuffer::nextSubpass() {
+    vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+}
+
 void VulkanCommandBuffer::endRenderPass() {
     vkCmdEndRenderPass(commandBuffer);
 }
@@ -168,23 +172,35 @@ void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, co
     vkCmdPipelineBarrier(commandBuffer, source, destination, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void VulkanCommandBuffer::bindDescriptors(VulkanPipeline& pipeline, VulkanDescriptorSetLayout& layout,
+void VulkanCommandBuffer::bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
                                           const Span<VulkanBufferBinding>& uniforms,
-                                          const Span<VulkanTextureBinding>& textures) {
+                                          const Span<VulkanTextureBinding>& textures,
+                                          const Span<VulkanTextureBinding>& inputs) {
 
     auto descriptorSet = descriptorPool->createDescriptorSet(layout);
-    descriptorSet.bind(uniforms, textures);
+    descriptorSet.bind(uniforms, textures, inputs);
 
     bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
 }
 
-void VulkanCommandBuffer::pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage,
+void VulkanCommandBuffer::bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
+                                          VulkanDescriptorPool& pool, const Span<VulkanBufferBinding>& uniforms,
+                                          const Span<VulkanTextureBinding>& textures,
+                                          const Span<VulkanTextureBinding>& inputs) {
+    auto descriptorSet = pool.createDescriptorSet(layout);
+    descriptorSet.bind(uniforms, textures, inputs);
+
+    bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
+}
+
+void VulkanCommandBuffer::pushConstants(const VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage,
                                         const size_t offset, const size_t size, const void* data) {
     vkCmdPushConstants(commandBuffer, pipeline.getLayout(), shaderStage, offset, size, data);
 }
 
-void VulkanCommandBuffer::blitImage(const VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst,
-                                    VkImageLayout dstLayout, const Span<VkImageBlit>& regions, VkFilter filter) {
+void VulkanCommandBuffer::blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst,
+                                    const VkImageLayout dstLayout, const Span<VkImageBlit>& regions,
+                                    const VkFilter filter) {
     vkCmdBlitImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(),
                    regions.data(), filter);
 }

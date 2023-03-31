@@ -27,6 +27,14 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device) : device{device
     }
 }
 
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, const CreateInfo& createInfo) :
+    device{device.getDevice()} {
+    if (vkCreateDescriptorPool(device.getDevice(), &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        destroy();
+        EXCEPTION("Failed to create descriptor pool!");
+    }
+}
+
 VulkanDescriptorPool::~VulkanDescriptorPool() {
     destroy();
 }

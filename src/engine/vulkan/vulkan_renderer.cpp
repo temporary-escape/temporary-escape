@@ -169,12 +169,12 @@ void VulkanRenderer::onExit() {
     exitTriggered = true;
 }
 
-VulkanShaderModule VulkanRenderer::createShaderModule(const Path& path, VkShaderStageFlagBits stage) {
-    return VulkanShaderModule{config, *this, path, stage};
+VulkanShader VulkanRenderer::createShaderModule(const Path& path, VkShaderStageFlagBits stage) {
+    return VulkanShader{config, *this, path, stage};
 }
 
-VulkanShaderModule VulkanRenderer::createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage) {
-    return VulkanShaderModule{config, *this, glsl, stage};
+VulkanShader VulkanRenderer::createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage) {
+    return VulkanShader{config, *this, glsl, stage};
 }
 
 VulkanPipeline VulkanRenderer::createPipeline(const VulkanRenderPass& renderPass,
@@ -225,6 +225,10 @@ VulkanRenderer::createDescriptorSetLayout(const VulkanDescriptorSetLayout::Creat
 
 VulkanDescriptorPool VulkanRenderer::createDescriptorPool() {
     return VulkanDescriptorPool{*this};
+}
+
+VulkanDescriptorPool VulkanRenderer::createDescriptorPool(const VulkanDescriptorPool::CreateInfo& createInfo) {
+    return VulkanDescriptorPool{*this, createInfo};
 }
 
 VulkanDescriptorSetLayout

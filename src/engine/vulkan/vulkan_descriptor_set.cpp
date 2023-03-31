@@ -6,8 +6,8 @@
 
 using namespace Engine;
 
-VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, VulkanDescriptorPool& descriptorPool,
-                                         VulkanDescriptorSetLayout& layout) :
+VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, const VulkanDescriptorPool& descriptorPool,
+                                         const VulkanDescriptorSetLayout& layout) :
     device{device} {
 
     auto layoutPtr = layout.getHandle();
@@ -41,10 +41,15 @@ void VulkanDescriptorSet::swap(VulkanDescriptorSet& other) noexcept {
     std::swap(device, other.device);
 }
 
-void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures) {
+void VulkanDescriptorSet::bind(const Span<VkWriteDescriptorSet>& writes) {
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+
+void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures,
+                               const Span<VulkanTextureBinding>& inputAttachments) {
 
     std::vector<VkDescriptorBufferInfo> bufferInfos{uniforms.size()};
-    std::vector<VkDescriptorImageInfo> imageInfos{textures.size()};
+    std::vector<VkDescriptorImageInfo> imageInfos{textures.size() + inputAttachments.size()};
 
     for (size_t i = 0; i < uniforms.size(); i++) {
         bufferInfos[i].buffer = uniforms[i].uniform->getHandle();
@@ -58,7 +63,13 @@ void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const 
         imageInfos[i].sampler = textures[i].texture->getSampler();
     }
 
-    std::vector<VkWriteDescriptorSet> writes{uniforms.size() + textures.size()};
+    for (size_t i = 0, w = textures.size(); i < inputAttachments.size(); w++, i++) {
+        imageInfos[w].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfos[w].imageView = inputAttachments[i].texture->getImageView();
+        imageInfos[w].sampler = inputAttachments[i].texture->getSampler();
+    }
+
+    std::vector<VkWriteDescriptorSet> writes{uniforms.size() + textures.size() + inputAttachments.size()};
 
     for (size_t i = 0; i < uniforms.size(); i++) {
         if (uniforms[i].uniform->getDescriptorType() == VK_DESCRIPTOR_TYPE_MAX_ENUM) {
@@ -82,6 +93,16 @@ void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const 
         writes[w].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writes[w].descriptorCount = 1;
         writes[w].pImageInfo = &imageInfos.at(i);
+    }
+
+    for (size_t i = 0, w = uniforms.size() + textures.size(); i < inputAttachments.size(); w++, i++) {
+        writes[w].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[w].dstSet = descriptorSet;
+        writes[w].dstBinding = inputAttachments[i].binding;
+        writes[w].dstArrayElement = 0;
+        writes[w].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        writes[w].descriptorCount = 1;
+        writes[w].pImageInfo = &imageInfos.at(textures.size() + i);
     }
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);

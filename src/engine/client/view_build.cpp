@@ -29,6 +29,7 @@ void ViewBuild::createScene() {
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene.setPrimaryCamera(entity);
+    scene.setSkybox(skybox);
 }
 
 void ViewBuild::createGridLines() {
@@ -109,6 +110,9 @@ void ViewBuild::createEntityShip() {
 
     auto block = registry.getBlocks().find("block_crew_quarters_t1");
     grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    grid.insert(Vector3i{1, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    grid.insert(Vector3i{0, 1, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    grid.insert(Vector3i{0, 0, 1}, block, 0, 0, VoxelShape::Type::Cube);
 }
 
 void ViewBuild::addBlock() {
@@ -200,15 +204,6 @@ void ViewBuild::onExit() {
     gui.blockActionBar.setEnabled(false);
 }
 
-const Renderer::Options& ViewBuild::getRenderOptions() {
-    static Renderer::Options options{};
-    return options;
-}
-
-Scene& ViewBuild::getRenderScene() {
+Scene& ViewBuild::getScene() {
     return scene;
-}
-
-const Skybox& ViewBuild::getRenderSkybox() {
-    return skybox;
 }

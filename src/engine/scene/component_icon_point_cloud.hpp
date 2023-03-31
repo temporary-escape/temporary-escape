@@ -2,13 +2,18 @@
 
 #include "../assets/image.hpp"
 #include "../graphics/mesh.hpp"
-#include "../graphics/shaders/shader_component_point_cloud.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentIconPointCloud : public Component {
 public:
-    using Point = ShaderComponentPointCloud::Vertex;
+    struct Point {
+        Vector3 position;
+        Vector2 size;
+        Vector4 color;
+        Vector2 uv;
+        Vector2 st;
+    };
 
     ComponentIconPointCloud() = default;
     virtual ~ComponentIconPointCloud() = default; // NOLINT(modernize-use-override)

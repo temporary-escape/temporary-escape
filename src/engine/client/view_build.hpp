@@ -22,9 +22,7 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
-    const Renderer::Options& getRenderOptions() override;
-    Scene& getRenderScene() override;
-    const Skybox& getRenderSkybox() override;
+    Scene& getScene() override;
 
 private:
     void createScene();

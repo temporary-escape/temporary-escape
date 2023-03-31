@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../graphics/shader.hpp"
 #include "camera.hpp"
 #include "component_transform.hpp"
 #include "component_user_input.hpp"
@@ -8,7 +7,16 @@
 namespace Engine {
 class ENGINE_API ComponentCamera : public Component, public Camera, public UserInput {
 public:
-    using Uniform = Shader::CameraUniform;
+    struct Uniform {
+        Matrix4 transformationProjectionMatrix;
+        Matrix4 viewProjectionInverseMatrix;
+        Matrix4 viewMatrix;
+        Matrix4 projectionMatrix;
+        Vector2i viewport;
+        float padding0[2];
+        Vector3 eyesPos;
+        float padding1[1];
+    };
 
     ComponentCamera() = default;
     explicit ComponentCamera(ComponentTransform& transform) : Camera{transform.getTransform()} {

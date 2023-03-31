@@ -39,6 +39,8 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, R
     camera->lookAt({0.0f, 1000.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
     camera->setZoomRange(3.0f, 250.0f);
     scene.setPrimaryCamera(cameraEntity);
+
+    scene.setSkybox(skybox);
 }
 
 void ViewSystem::update(const float deltaTime) {
@@ -84,18 +86,8 @@ void ViewSystem::eventCharTyped(const uint32_t code) {
     scene.eventCharTyped(code);
 }
 
-const Renderer::Options& ViewSystem::getRenderOptions() {
-    static Renderer::Options options{};
-    options.bloomEnabled = false;
-    return options;
-}
-
-Scene& ViewSystem::getRenderScene() {
+Scene& ViewSystem::getScene() {
     return scene;
-}
-
-const Skybox& ViewSystem::getRenderSkybox() {
-    return skybox;
 }
 
 void ViewSystem::clear() {

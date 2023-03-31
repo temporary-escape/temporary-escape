@@ -3,13 +3,12 @@
 #include "../database/database.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
+#include "../gui/gui_create_profile.hpp"
+#include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "editor.hpp"
 #include "game.hpp"
-#include "gui/gui_create_profile.hpp"
-#include "gui/gui_main_menu.hpp"
-#include "offscreen_renderer.hpp"
 #include <queue>
 
 namespace Engine {
@@ -46,10 +45,7 @@ private:
     void createRegistry();
     void createVoxelShapeCache();
     void createRenderer();
-    void createThumbnailRenderer();
     void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
-    void compileShaders();
-    void compileNextShaderInQueue(ShaderModules::LoadQueue::iterator next);
     void startDatabase();
     void startServer();
     void startClient();
@@ -75,10 +71,8 @@ private:
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::thread serverThread;
-    std::unique_ptr<ShaderModules> shaderModules;
     std::unique_ptr<SkyboxGenerator> skyboxGenerator;
     std::unique_ptr<Renderer> renderer;
-    std::unique_ptr<OffscreenRenderer> thumbnailRenderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;
     PlayerLocalProfile playerLocalProfile;

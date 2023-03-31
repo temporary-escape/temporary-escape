@@ -5,7 +5,7 @@
 #include <msgpack.hpp>
 
 namespace Engine {
-class Lz4FileWriter {
+class ENGINE_API Lz4FileWriter {
 public:
     explicit Lz4FileWriter(const Path& path);
     Lz4FileWriter(const Lz4FileWriter& other) = delete;
@@ -34,7 +34,7 @@ private:
     size_t offset{0};
 };
 
-class Lz4FileReader {
+class ENGINE_API Lz4FileReader {
 public:
     explicit Lz4FileReader(const Path& path);
     Lz4FileReader(const Lz4FileReader& other) = delete;

@@ -8,6 +8,8 @@
 #include <vector>
 
 namespace Engine {
+class ENGINE_API Skybox;
+
 class ENGINE_API Scene : public UserInput {
 public:
     /*struct Pipelines {
@@ -94,6 +96,12 @@ public:
     }
 
     ComponentCamera* getPrimaryCamera();
+    Skybox* getSkybox() const {
+        return skybox;
+    }
+    void setSkybox(Skybox& value) {
+        skybox = &value;
+    }
 
 private:
     void addEntity(EntityPtr entity);
@@ -112,5 +120,6 @@ private:
 
     BulletSystem bullets;
     EntityWeakPtr primaryCamera;
+    Skybox* skybox{nullptr};
 };
 } // namespace Engine

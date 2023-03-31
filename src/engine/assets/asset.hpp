@@ -6,11 +6,12 @@
 namespace Engine {
 class ENGINE_API Registry;
 
-class ENGINE_API Asset {
+class ENGINE_API Asset : public NonCopyable {
 public:
     explicit Asset(std::string name) : name(std::move(name)) {
     }
     virtual ~Asset() = default;
+    MOVEABLE(Asset);
 
     virtual void load(Registry& registry, VulkanRenderer& vulkan) = 0;
 

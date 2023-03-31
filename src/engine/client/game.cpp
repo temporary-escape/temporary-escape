@@ -6,12 +6,10 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
-Game::Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, SkyboxGenerator& skyboxGenerator,
-           Registry& registry, FontFamily& font, Client& client) :
+Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, Registry& registry,
+           FontFamily& font, Client& client) :
     config{config},
     renderer{renderer},
-    canvas{canvas},
-    nuklear{nuklear},
     skyboxGenerator{skyboxGenerator},
     registry{registry},
     font{font},
@@ -31,15 +29,21 @@ void Game::update(float deltaTime) {
     view->update(deltaTime);
 }
 
-void Game::render(const Vector2i& viewport) {
+void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     if (client.getSystemSeed() != 0 && client.getSystemSeed() != skyboxSeed) {
         skyboxSeed = client.getSystemSeed();
         renderer.getVulkan().waitQueueIdle();
         skybox = skyboxGenerator.generate(skyboxSeed);
+        client.getScene()->setSkybox(skybox);
     }
 
-    // view->render(viewport);
-    renderer.render(viewport, view->getRenderScene(), view->getRenderSkybox(), view->getRenderOptions(), gui);
+    renderer.render(vkb, viewport, view->getScene());
+}
+
+void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
+    nuklear.begin(viewport);
+    gui.draw(nuklear, viewport);
+    nuklear.end();
 }
 
 /*void Game::renderCanvas(const Vector2i& viewport) {

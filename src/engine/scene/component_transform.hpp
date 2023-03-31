@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../graphics/shader.hpp"
 #include "camera.hpp"
 #include "component_user_input.hpp"
 

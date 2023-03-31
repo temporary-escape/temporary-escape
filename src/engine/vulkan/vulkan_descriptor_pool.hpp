@@ -8,8 +8,11 @@ class ENGINE_API VulkanDevice;
 
 class ENGINE_API VulkanDescriptorPool : public VulkanDisposable {
 public:
+    using CreateInfo = VkDescriptorPoolCreateInfo;
+
     VulkanDescriptorPool() = default;
     explicit VulkanDescriptorPool(VulkanDevice& device);
+    explicit VulkanDescriptorPool(VulkanDevice& device, const CreateInfo& createInfo);
     ~VulkanDescriptorPool();
     VulkanDescriptorPool(const VulkanDescriptorPool& other) = delete;
     VulkanDescriptorPool(VulkanDescriptorPool&& other) noexcept;
@@ -29,7 +32,7 @@ public:
         return descriptorPool;
     }
 
-    VulkanDescriptorSet createDescriptorSet(VulkanDescriptorSetLayout& layout) {
+    VulkanDescriptorSet createDescriptorSet(const VulkanDescriptorSetLayout& layout) {
         return VulkanDescriptorSet{device, *this, layout};
     }
 

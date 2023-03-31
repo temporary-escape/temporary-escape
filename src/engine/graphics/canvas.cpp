@@ -321,10 +321,10 @@ void Canvas::end(VulkanCommandBuffer& vkb) {
 
             if (cmd.draw.texture) {
                 textureBindings[0] = {1, cmd.draw.texture};
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings);
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings, {});
             } else {
                 textureBindings[0] = {1, &defaultTexture};
-                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings);
+                vkb.bindDescriptors(pipeline, descriptorSetLayout, uboBindings, textureBindings, {});
             }
             vkb.drawIndexed(cmd.draw.length, 1, cmd.draw.start, 0, 0);
         }

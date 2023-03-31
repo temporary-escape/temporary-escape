@@ -36,9 +36,7 @@ public:
     };
 
     explicit ImageAtlas(const Config& config, VulkanRenderer& vulkan);
-    ImageAtlas(const ImageAtlas& other) = delete;
     ImageAtlas(ImageAtlas&& other) = default;
-    ImageAtlas& operator=(const ImageAtlas& other) = delete;
     ImageAtlas& operator=(ImageAtlas&& other) = default;
 
     Allocation add(const Vector2i& size, const void* pixels);

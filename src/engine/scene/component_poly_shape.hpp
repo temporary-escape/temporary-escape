@@ -2,14 +2,16 @@
 
 #include "../assets/texture.hpp"
 #include "../graphics/mesh.hpp"
-#include "../graphics/shaders/shader_component_poly_shape.hpp"
 #include "../library.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentPolyShape : public Component {
 public:
-    using Point = ShaderComponentPolyShape::Vertex;
+    struct Point {
+        Vector3 position;
+        Vector4 color;
+    };
 
     ComponentPolyShape() = default;
     virtual ~ComponentPolyShape() = default; // NOLINT(modernize-use-override)

@@ -17,6 +17,8 @@ VulkanRenderPass::VulkanRenderPass(VulkanDevice& device, const CreateInfo& creat
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         EXCEPTION("Failed to create render pass!");
     }
+
+    attachments = createInfo.attachments;
 }
 
 VulkanRenderPass::~VulkanRenderPass() {
@@ -37,6 +39,7 @@ VulkanRenderPass& VulkanRenderPass::operator=(VulkanRenderPass&& other) noexcept
 void VulkanRenderPass::swap(VulkanRenderPass& other) noexcept {
     std::swap(device, other.device);
     std::swap(renderPass, other.renderPass);
+    std::swap(attachments, other.attachments);
 }
 
 void VulkanRenderPass::destroy() {

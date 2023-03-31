@@ -20,8 +20,8 @@ class ENGINE_API VulkanRenderPass;
 class ENGINE_API VulkanDescriptorPool;
 
 struct ENGINE_API VulkanRenderPassBeginInfo {
-    VulkanRenderPass* renderPass{nullptr};
-    VulkanFramebuffer* framebuffer{nullptr};
+    const VulkanRenderPass* renderPass{nullptr};
+    const VulkanFramebuffer* framebuffer{nullptr};
     std::vector<VkClearValue> clearValues;
     Vector2i offset;
     Vector2i size;
@@ -55,6 +55,7 @@ public:
     void end();
 
     void beginRenderPass(const VulkanRenderPassBeginInfo& renderPassInfo);
+    void nextSubpass();
     void endRenderPass();
 
     void setViewport(const Vector2i& pos, const Vector2i& size, float minDepth = 0.0f, float maxDepth = 1.0f);
@@ -72,11 +73,15 @@ public:
                            bool isCompute = false);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                          VkImageMemoryBarrier& barrier);
-    void bindDescriptors(VulkanPipeline& pipeline, VulkanDescriptorSetLayout& layout,
-                         const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures);
-    void pushConstants(VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
+    void bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
+                         const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures,
+                         const Span<VulkanTextureBinding>& inputs);
+    void bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
+                         VulkanDescriptorPool& pool, const Span<VulkanBufferBinding>& uniforms,
+                         const Span<VulkanTextureBinding>& textures, const Span<VulkanTextureBinding>& inputs);
+    void pushConstants(const VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
-    void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, VulkanTexture& dst, VkImageLayout dstLayout,
+    void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);
     void generateMipMaps(VulkanTexture& texture);
     void destroy() override;

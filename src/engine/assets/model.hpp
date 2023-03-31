@@ -7,10 +7,7 @@ namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
     explicit Model(std::string name, Path path);
-    Model(const Model& other) = delete;
-    Model(Model&& other) = default;
-    Model& operator=(const Model& other) = delete;
-    Model& operator=(Model&& other) = default;
+    MOVEABLE(Model);
 
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 

@@ -2,13 +2,18 @@
 
 #include "../assets/texture.hpp"
 #include "../graphics/mesh.hpp"
-#include "../graphics/shaders/shader_component_point_cloud.hpp"
 #include "component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentPointCloud : public Component {
 public:
-    using Point = ShaderComponentPointCloud::Vertex;
+    struct Point {
+        Vector3 position;
+        Vector2 size;
+        Vector4 color;
+        Vector2 uv;
+        Vector2 st;
+    };
 
     ComponentPointCloud() = default;
     explicit ComponentPointCloud(TexturePtr texture) : texture{std::move(texture)} {

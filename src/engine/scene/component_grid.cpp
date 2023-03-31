@@ -12,7 +12,7 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
             // logger.debug("Add box: {}", pos);
-            debug->addBox(glm::translate(pos), 0.95f, Color4{1.0f, 0.0f, 0.0f, 1.0f});
+            debug->addBox(glm::translate(pos), 1.1f /*0.95f*/, Color4{1.0f, 0.0f, 0.0f, 1.0f});
         } else {
             debugIterate(iterator.children());
         }

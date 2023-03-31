@@ -75,3 +75,19 @@ VkDeviceSize Engine::getFormatDataSize(const VkFormat format, const VkExtent3D& 
     }
     }
 }
+
+bool Engine::isDepthFormat(const VkFormat format) {
+    switch (format) {
+    case VkFormat::VK_FORMAT_D24_UNORM_S8_UINT:
+    case VkFormat::VK_FORMAT_D16_UNORM:
+    case VkFormat::VK_FORMAT_D16_UNORM_S8_UINT:
+    case VkFormat::VK_FORMAT_X8_D24_UNORM_PACK32:
+    case VkFormat::VK_FORMAT_D32_SFLOAT:
+    case VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT: {
+        return true;
+    }
+    default: {
+        return false;
+    }
+    }
+}

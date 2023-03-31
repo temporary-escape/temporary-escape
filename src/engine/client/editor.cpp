@@ -6,12 +6,9 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
-Editor::Editor(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear, Registry& registry,
-               FontFamily& font) :
+Editor::Editor(const Config& config, Renderer& renderer, Registry& registry, FontFamily& font) :
     config{config},
     renderer{renderer},
-    canvas{canvas},
-    nuklear{nuklear},
     registry{registry},
     font{font},
     gui{config, registry},
@@ -29,8 +26,14 @@ void Editor::update(float deltaTime) {
     view.update(deltaTime);
 }
 
-void Editor::render(const Vector2i& viewport) {
-    renderer.render(viewport, view.getRenderScene(), view.getRenderSkybox(), view.getRenderOptions(), gui);
+void Editor::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
+    renderer.render(vkb, viewport, view.getScene());
+}
+
+void Editor::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
+    nuklear.begin(viewport);
+    gui.draw(nuklear, viewport);
+    nuklear.end();
 }
 
 void Editor::eventMouseMoved(const Vector2i& pos) {

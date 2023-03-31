@@ -39,10 +39,7 @@ public:
     };
 
     explicit Block(std::string name, Path path);
-    Block(const Block& other) = delete;
-    Block(Block&& other) = default;
-    Block& operator=(const Block& other) = delete;
-    Block& operator=(Block&& other) = default;
+    MOVEABLE(Block);
 
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 

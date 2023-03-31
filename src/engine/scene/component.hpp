@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/matrix.hpp"
+#include "../utils/aligned.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
 #include "../utils/moveable_copyable.hpp"

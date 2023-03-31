@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../graphics/nuklear.hpp"
-#include "gui/gui_block_action_bar.hpp"
-#include "gui/gui_block_selector.hpp"
-#include "gui/gui_context_menu.hpp"
+#include "../gui/gui_block_action_bar.hpp"
+#include "../gui/gui_block_selector.hpp"
+#include "../gui/gui_context_menu.hpp"
 
 namespace Engine {
 class Gui : public NuklearWindow {

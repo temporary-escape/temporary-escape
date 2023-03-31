@@ -7,6 +7,7 @@
 #include "mod_manifest.hpp"
 #include "model.hpp"
 #include "planet_type.hpp"
+#include "shader.hpp"
 #include "texture.hpp"
 #include "voxel_shape_cache.hpp"
 #include <mutex>
@@ -88,6 +89,10 @@ public:
         return planetTypes;
     }
 
+    const Category<Shader>& getShaders() const {
+        return shaders;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -133,6 +138,7 @@ private:
     Category<Image> images;
     Category<Model> models;
     Category<PlanetType> planetTypes;
+    Category<Shader> shaders;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

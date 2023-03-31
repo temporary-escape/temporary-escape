@@ -16,8 +16,6 @@ public:
     virtual void update(float deltaTime) = 0;
     virtual void onEnter() = 0;
     virtual void onExit() = 0;
-    virtual const Renderer::Options& getRenderOptions() = 0;
-    virtual Scene& getRenderScene() = 0;
-    virtual const Skybox& getRenderSkybox() = 0;
+    virtual Scene& getScene() = 0;
 };
 } // namespace Engine

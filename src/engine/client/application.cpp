@@ -57,22 +57,20 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         client->update();
     }
 
-    if (game) {
-        game->update(deltaTime);
-        game->render(viewport);
-        return;
-    } else if (editor) {
-        editor->update(deltaTime);
-        editor->render(viewport);
-        return;
-    }
-
     auto vkb = createCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
+
+    if (game) {
+        game->update(deltaTime);
+        game->render(vkb, viewport);
+    } else if (editor) {
+        editor->update(deltaTime);
+        editor->render(vkb, viewport);
+    }
 
     VulkanRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.framebuffer = &getSwapChainFramebuffer();
@@ -85,20 +83,34 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     vkb.beginRenderPass(renderPassInfo);
 
-    canvas.begin(viewport);
-    if (!status.message.empty()) {
-        renderStatus(viewport);
+    if (game || editor) {
+        renderer->blit(vkb, viewport);
     }
-    renderVersion(viewport);
-    nuklear.begin(viewport);
 
-    nuklear.draw(gui.mainMenu);
-    nuklear.draw(gui.createProfile);
+    canvas.begin(viewport);
 
-    nuklear.end();
+    if (game) {
+        game->renderCanvas(canvas, nuklear, viewport);
+    } else if (editor) {
+        editor->renderCanvas(canvas, nuklear, viewport);
+    } else {
+        if (!game && !editor) {
+            if (!status.message.empty()) {
+                renderStatus(viewport);
+            }
+            renderVersion(viewport);
+        }
+
+        nuklear.begin(viewport);
+        nuklear.draw(gui.mainMenu);
+        nuklear.draw(gui.createProfile);
+        nuklear.end();
+    }
+
     canvas.end(vkb);
 
     vkb.endRenderPass();
+
     vkb.end();
 
     submitPresentCommandBuffer(vkb);
@@ -135,7 +147,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *renderer, canvas, nuklear, *registry, font);
+    editor = std::make_unique<Editor>(config, *renderer, *registry, font);
 }
 
 void Application::checkForClientScene() {
@@ -145,7 +157,7 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         logger.info("Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, canvas, nuklear, *skyboxGenerator, *registry, font, *client);
+        game = std::make_unique<Game>(config, *renderer, *skyboxGenerator, *registry, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -228,15 +240,15 @@ void Application::startDatabase() {
 void Application::createEmptyThumbnail() {
     logger.info("Creating empty thumbnail");
 
-    thumbnailRenderer->render(nullptr, VoxelShape::Cube);
+    /*thumbnailRenderer->render(nullptr, VoxelShape::Cube);
     const auto alloc = registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
-    registry->addImage("block_empty_image", alloc);
+    registry->addImage("block_empty_image", alloc);*/
 }
 
 void Application::createBlockThumbnails() {
     logger.info("Creating block thumbnails");
 
-    for (const auto& block : registry->getBlocks().findAll()) {
+    /*for (const auto& block : registry->getBlocks().findAll()) {
         for (const auto shape : block->getShapes()) {
             thumbnailRenderer->render(block, shape);
             const auto alloc =
@@ -245,7 +257,7 @@ void Application::createBlockThumbnails() {
             const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
             block->setThumbnail(shape, registry->addImage(name, alloc));
         }
-    }
+    }*/
 }
 
 void Application::createThumbnails() {
@@ -317,16 +329,6 @@ void Application::createRegistry() {
     });
 }
 
-void Application::createThumbnailRenderer() {
-    logger.info("Creating thumbnail renderer");
-
-    const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    thumbnailRenderer = std::make_unique<OffscreenRenderer>(config, viewport, *this, canvas, nuklear, *shaderModules,
-                                                            *voxelShapeCache, *registry, font);
-
-    NEXT(createThumbnails());
-}
-
 void Application::createRenderer() {
     logger.info("Creating renderer");
 
@@ -334,12 +336,11 @@ void Application::createRenderer() {
     status.value = 0.3f;
 
     const auto viewport = Vector2i{config.windowWidth, config.windowHeight};
-    renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *shaderModules, *voxelShapeCache,
-                                          *registry, font);
+    renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
 
-    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *shaderModules);
+    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *registry);
 
-    NEXT(createThumbnailRenderer());
+    NEXT(createThumbnails());
 }
 
 void Application::createVoxelShapeCache() {
@@ -353,49 +354,6 @@ void Application::createVoxelShapeCache() {
     NEXT(createRegistry());
 }
 
-void Application::compileShaders() {
-    logger.info("Compiling shaders");
-
-    status.message = "Loading shaders...";
-    status.value = 0.1f;
-
-    shaderModules = std::make_unique<ShaderModules>(config, *this);
-    NEXT(compileNextShaderInQueue(shaderModules->getLoadQueue().begin()));
-}
-
-void Application::compileNextShaderInQueue(ShaderModules::LoadQueue::iterator next) {
-    if (next == shaderModules->getLoadQueue().end()) {
-        NEXT(createVoxelShapeCache());
-    }
-    // Not yet done, we have more shaders to compile
-    else {
-        const auto start = std::chrono::steady_clock::now();
-
-        while (next != shaderModules->getLoadQueue().end()) {
-            const auto count = std::distance(shaderModules->getLoadQueue().begin(), next) + 1;
-            const auto progress = static_cast<float>(count) / static_cast<float>(shaderModules->getLoadQueue().size());
-
-            try {
-                (*next)();
-                ++next;
-            } catch (...) {
-                EXCEPTION_NESTED("Failed to compile shader");
-            }
-
-            status.message = fmt::format("Loading shaders ({}/{})...", count, shaderModules->getLoadQueue().size());
-            status.value = 0.1f + progress * 0.2f;
-
-            const auto now = std::chrono::steady_clock::now();
-            const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
-            if (test > std::chrono::microseconds(10000)) {
-                break;
-            }
-        }
-
-        NEXT(compileNextShaderInQueue(next));
-    }
-}
-
 void Application::startSinglePlayer() {
     logger.info("Starting single player mode");
 
@@ -404,7 +362,7 @@ void Application::startSinglePlayer() {
 
     gui.mainMenu.setEnabled(false);
 
-    NEXT(compileShaders());
+    NEXT(createVoxelShapeCache());
 
     // game = std::make_unique<Game>(config, *this, canvas, font, nuklear, skyboxGenerator);
     /*future = std::async([]() {

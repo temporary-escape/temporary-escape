@@ -23,12 +23,13 @@ class ENGINE_API TransactionalDatabase;
 
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, Renderer& renderer, Canvas& canvas, Nuklear& nuklear,
-                  SkyboxGenerator& skyboxGenerator, Registry& registry, FontFamily& font, Client& client);
+    explicit Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, Registry& registry,
+                  FontFamily& font, Client& client);
     virtual ~Game();
 
     void update(float deltaTime);
-    void render(const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
+    void renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
@@ -45,8 +46,6 @@ public:
 private:
     const Config& config;
     Renderer& renderer;
-    Canvas& canvas;
-    Nuklear& nuklear;
     SkyboxGenerator& skyboxGenerator;
     Registry& registry;
     FontFamily& font;

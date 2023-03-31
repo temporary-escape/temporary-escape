@@ -42,6 +42,9 @@ jobs:
     #        configurePreset: 'ninja'
     #        buildPreset: 'ninja - ninja'
 
+    env:
+      VCPKG_BINARY_SOURCES: "${{ secrets.VCPKG_BINARY_SOURCES }}"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3

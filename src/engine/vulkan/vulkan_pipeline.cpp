@@ -71,7 +71,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
     pipelineInfo.pDepthStencilState = &createInfo.depthStencilState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = renderPass.getHandle();
-    pipelineInfo.subpass = 0;
+    pipelineInfo.subpass = createInfo.subpass;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=

@@ -71,7 +71,6 @@ int main(int argc, char** argv) {
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";
         config.shaderCachePath = config.userdataPath / "Shaders";
-        config.shadersPath = rootPath / "shaders";
         config.fontsPath = rootPath / "fonts";
         config.shapesPath = rootPath / "shapes";
 

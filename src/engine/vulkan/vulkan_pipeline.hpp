@@ -2,7 +2,7 @@
 
 #include "../utils/path.hpp"
 #include "vulkan_render_pass.hpp"
-#include "vulkan_shader_module.hpp"
+#include "vulkan_shader.hpp"
 
 namespace Engine {
 class ENGINE_API VulkanDevice;
@@ -10,12 +10,12 @@ class ENGINE_API VulkanDevice;
 class ENGINE_API VulkanPipeline : public VulkanDisposable {
 public:
     struct CreateComputeInfo {
-        VulkanShaderModule* shaderModule{nullptr};
+        VulkanShader* shaderModule{nullptr};
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     };
 
     struct CreateInfo {
-        std::vector<VulkanShaderModule*> shaderModules;
+        std::vector<VulkanShader*> shaderModules;
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         VkPipelineViewportStateCreateInfo viewportState{};
@@ -25,6 +25,7 @@ public:
         VkPipelineDepthStencilStateCreateInfo depthStencilState{};
         VkPipelineDynamicStateCreateInfo dynamicState{};
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        uint32_t subpass{0};
     };
 
     VulkanPipeline() = default;
