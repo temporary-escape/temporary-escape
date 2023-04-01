@@ -12,7 +12,7 @@ static const std::unordered_map<std::string, VkShaderStageFlagBits> extensionSta
     {".comp", VK_SHADER_STAGE_COMPUTE_BIT},
 };
 
-Shader::Shader(std::string name, Path path) : Asset{path.filename()}, path{std::move(path)} {
+Shader::Shader(std::string name, Path path) : Asset{path.filename().string()}, path{std::move(path)} {
 }
 
 void Shader::load(Registry& registry, VulkanRenderer& vulkan) {
