@@ -3,16 +3,24 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassNonHdr::RenderPassNonHdr(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                                    const RenderPassForward& forward) :
     RenderPass{vulkan, viewport}, subpassNonHdr{vulkan, registry} {
 
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
     // Depth
-    addAttachment(forward.getTexture(RenderPassForward::Depth), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ATTACHMENT_LOAD_OP_LOAD);
+    addAttachment(forward.getTexture(RenderPassForward::Depth),
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                  VK_ATTACHMENT_LOAD_OP_LOAD);
     // Forward
-    addAttachment(forward.getTexture(RenderPassForward::Forward), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ATTACHMENT_LOAD_OP_LOAD);
+    addAttachment(forward.getTexture(RenderPassForward::Forward),
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                  VK_ATTACHMENT_LOAD_OP_LOAD);
 
     addSubpass(subpassNonHdr);
     init();

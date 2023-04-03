@@ -3,14 +3,20 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassFxaa::RenderPassFxaa(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                                const VulkanTexture& forward) :
     RenderPass{vulkan, viewport}, subpassFxaa{vulkan, registry, forward} {
 
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
     // Forward
-    addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+    addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                  VK_IMAGE_LAYOUT_UNDEFINED,
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     addSubpass(subpassFxaa);
     init();

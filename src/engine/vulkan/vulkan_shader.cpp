@@ -41,7 +41,7 @@ VulkanShader::VulkanShader(const Config& config, VulkanDevice& device, const std
     }
 
     // Shader was not cached, we need to compile it!
-    else {
+    if (!createInfo.pCode || createInfo.codeSize == 0) {
         std::string infoLog;
 
         logger.debug("Compiling GLSL code of size: {}", glsl.size());

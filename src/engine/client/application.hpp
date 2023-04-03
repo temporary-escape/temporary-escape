@@ -51,8 +51,8 @@ private:
     void startClient();
     void startSinglePlayer();
     void startEditor();
-    void createBlockThumbnails();
-    void createEmptyThumbnail();
+    void createBlockThumbnails(Renderer& thumbnailRenderer);
+    void createEmptyThumbnail(Renderer& thumbnailRenderer);
 
     const Config& config;
 

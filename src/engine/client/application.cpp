@@ -237,34 +237,38 @@ void Application::startDatabase() {
     });
 }
 
-void Application::createEmptyThumbnail() {
+void Application::createEmptyThumbnail(Renderer& thumbnailRenderer) {
     logger.info("Creating empty thumbnail");
 
-    /*thumbnailRenderer->render(nullptr, VoxelShape::Cube);
-    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
-    registry->addImage("block_empty_image", alloc);*/
+    thumbnailRenderer.render(nullptr, VoxelShape::Cube);
+    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+    registry->addImage("block_empty_image", alloc);
 }
 
-void Application::createBlockThumbnails() {
+void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
     logger.info("Creating block thumbnails");
 
-    /*for (const auto& block : registry->getBlocks().findAll()) {
+    for (const auto& block : registry->getBlocks().findAll()) {
         for (const auto shape : block->getShapes()) {
-            thumbnailRenderer->render(block, shape);
+            thumbnailRenderer.render(block, shape);
             const auto alloc =
-                registry->getImageAtlas().add(thumbnailRenderer->getViewport(), thumbnailRenderer->getTexture());
+                registry->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
 
             const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
             block->setThumbnail(shape, registry->addImage(name, alloc));
         }
-    }*/
+    }
 }
 
 void Application::createThumbnails() {
     logger.info("Creating thumbnails");
 
-    createBlockThumbnails();
-    createEmptyThumbnail();
+    const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
+    auto thumbnailRenderer =
+        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
+
+    createBlockThumbnails(*thumbnailRenderer);
+    createEmptyThumbnail(*thumbnailRenderer);
 
     registry->finalize();
 

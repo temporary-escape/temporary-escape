@@ -4,9 +4,13 @@ using namespace Engine;
 
 static const int viewportDivision = 4;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassBloom::Downsample::Downsample(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                                         const VulkanTexture& forward) :
     RenderPass{vulkan, viewport / viewportDivision}, forward{forward} {
+
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
     // Color
     addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -104,6 +108,8 @@ RenderPassBloom::Extract::Extract(VulkanRenderer& vulkan, Registry& registry, co
                                   const VulkanTexture& forward) :
     RenderPass{vulkan, viewport / viewportDivision}, subpassBloomExtract{vulkan, registry, forward} {
 
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
     // Color
     addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
@@ -135,6 +141,8 @@ void RenderPassBloom::Extract::render(VulkanCommandBuffer& vkb, const Vector2i& 
 RenderPassBloom::Blur::Blur(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                             const VulkanTexture& dst, const VulkanTexture& color, const bool vertical) :
     RenderPass{vulkan, viewport / viewportDivision}, subpassBloomBlur{vulkan, registry, color, vertical} {
+
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
     addAttachment(
         dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
@@ -182,6 +190,8 @@ RenderPassBloom::RenderPassBloom(VulkanRenderer& vulkan, Registry& registry, con
           extract.getTexture(Downsample::Attachments::Color),
           downsample.getTexture(Downsample::Attachments::Color),
           true} {
+
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 }
 
 void RenderPassBloom::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {

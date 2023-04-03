@@ -2,13 +2,18 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassSsao::RenderPassSsao(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                                const RenderPassOpaque& previous) :
     RenderPass{vulkan, viewport}, subpassSsao{vulkan, registry, previous} {
 
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
     // Ssao
     addAttachment({VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                  VK_IMAGE_LAYOUT_UNDEFINED,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     addSubpass(subpassSsao);
     init();

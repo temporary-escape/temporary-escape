@@ -28,13 +28,23 @@ public:
     virtual ~Renderer();
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
+    void render(const std::shared_ptr<Block>& block, VoxelShape::Type shape);
+
     void blit(VulkanCommandBuffer& vkb, const Vector2i& viewport);
 
     VulkanRenderer& getVulkan() {
         return vulkan;
     }
 
+    const Vector2i& getViewport() const {
+        return lastViewportSize;
+    }
+
+    const VulkanTexture& getTexture() const;
+
 private:
+    void renderOneTime(Scene& scene);
+
     void createRenderPasses(const Vector2i& viewport);
     void createPipelineBlit();
     void renderBrdf();
@@ -47,6 +57,7 @@ private:
     Registry& registry;
     FontFamily& font;
     Vector2i lastViewportSize;
+    Skybox skybox;
 
     struct {
         std::unique_ptr<RenderPassBrdf> brdf;

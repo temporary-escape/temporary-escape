@@ -51,7 +51,7 @@ void RenderSubpassBloomExtract::render(VulkanCommandBuffer& vkb) {
 
     pipelineBloomExtract.bindDescriptors(vkb, {}, textures, {});
 
-    const auto threshold = 0.5f;
+    const auto threshold = 0.3f;
     pipelineBloomExtract.pushConstants(vkb, PushConstant{"threshold", threshold});
 
     pipelineBloomExtract.renderMesh(vkb, fullScreenQuad);

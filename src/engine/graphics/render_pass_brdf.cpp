@@ -2,11 +2,16 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassBrdf::RenderPassBrdf(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport) :
     RenderPass{vulkan, viewport}, subpassBrdf{vulkan, registry} {
 
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
     addAttachment({VK_FORMAT_R16G16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                  VK_IMAGE_LAYOUT_UNDEFINED,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     addSubpass(subpassBrdf);
     init();
 }

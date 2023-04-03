@@ -2,13 +2,17 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(__FILENAME__);
+
 RenderPassCombine::RenderPassCombine(const Config& config, VulkanRenderer& vulkan, Registry& registry,
                                      const Vector2i& viewport, const VulkanTexture& dst, const VulkanTexture& color,
                                      const VulkanTexture& blured) :
     RenderPass{vulkan, viewport}, subpassCombine{config, vulkan, registry, color, blured} {
 
-    addAttachment(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                  VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
+
+    addAttachment(
+        dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     addSubpass(subpassCombine);
     init();

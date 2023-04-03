@@ -15,5 +15,6 @@ layout(location = 0) out vec4 outColor;
 
 void main() {
     vec4 sourceColor = texture(texSourceColor, vs_out.texCoords);
-    outColor = vec4(max(vec3(0.0), (sourceColor.rgb - vec3(uniforms.threshold)) * 2.0f), sourceColor.a);
+    // outColor = vec4(max(vec3(0.0), (sourceColor.rgb - vec3(uniforms.threshold)) * 2.0f), sourceColor.a);
+    outColor = vec4(sourceColor.rgb * uniforms.threshold, sourceColor.a);
 }
