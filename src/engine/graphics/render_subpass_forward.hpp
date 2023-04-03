@@ -42,11 +42,17 @@ private:
                             ComponentPointCloud& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentIconPointCloud& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentPolyShape& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentStarFlare& component);
 
     VulkanRenderer& vulkan;
     RenderPipeline pipelineDebug;
     RenderPipeline pipelineLines;
     RenderPipeline pipelinePointCloud;
+    RenderPipeline pipelinePolyShape;
+    RenderPipeline pipelineStarFlare;
     Mesh cube;
     RenderPipeline* currentPipeline{nullptr};
 };

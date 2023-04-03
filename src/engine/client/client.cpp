@@ -52,8 +52,8 @@ void Client::fetchModInfo(std::shared_ptr<Promise<void>> promise) {
         for (const auto& manifest : res.manifests) {
             logger.info("Checking for server mod: '{}' @{}", manifest.name, manifest.version);
 
-            const auto it = std::find_if(ourManifests.begin(), ourManifests.end(),
-                                         [&](const auto& m) { return m.name == manifest.name; });
+            const auto it = std::find_if(
+                ourManifests.begin(), ourManifests.end(), [&](const auto& m) { return m.name == manifest.name; });
 
             if (it == ourManifests.end()) {
                 promise->reject<std::runtime_error>(fmt::format("Client is missing mod pack: '{}'", manifest.name));
@@ -64,8 +64,10 @@ void Client::fetchModInfo(std::shared_ptr<Promise<void>> promise) {
 
             if (found.version != manifest.version) {
                 promise->reject<std::runtime_error>(
-                    fmt::format("Client has mod pack: '{}' of version: {} but server has: {}", manifest.name,
-                                found.version, manifest.version));
+                    fmt::format("Client has mod pack: '{}' of version: {} but server has: {}",
+                                manifest.name,
+                                found.version,
+                                manifest.version));
                 return;
             }
         }
@@ -136,13 +138,18 @@ void Client::update() {
 void Client::handle(MessagePlayerLocationChanged res) {
     logger.info("Sector has changed, creating new scene");
 
+    const auto starTexture = registry.getTextures().find("space_sun_flare");
+    const auto starTextureLow = registry.getTextures().find("star_spectrum_low");
+    const auto starTextureHigh = registry.getTextures().find("star_spectrum_high");
+
     camera.reset();
     scene.reset();
     scene = std::make_unique<Scene>();
 
     auto sun = scene->createEntity();
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
+    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f} * 100.0f);
+    sun->addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
 
     camera = scene->createEntity();
     auto& cameraTransform = camera->addComponent<ComponentTransform>();

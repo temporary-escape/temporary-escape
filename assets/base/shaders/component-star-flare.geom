@@ -4,7 +4,7 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
-layout (std140, binding = 0) uniform CameraMatrices {
+layout (std140, binding = 0) uniform Camera {
     mat4 transformationProjectionMatrix;
     mat4 viewProjectionInverseMatrix;
     mat4 viewMatrix;
@@ -14,6 +14,7 @@ layout (std140, binding = 0) uniform CameraMatrices {
 } camera;
 
 layout (push_constant) uniform Uniforms {
+    mat4 modelMatrix;
     vec2 size;
     float temp;
 } uniforms;
@@ -29,19 +30,19 @@ void main() {
     // a: left-bottom
     vec2 va = P.xy + vec2(-1.0, -1.0) * uniforms.size * dist;
     gl_Position = camera.projectionMatrix * vec4(va, P.zw);
-    gs_out.coords = vec2(-1.0, -1.0);
+    gs_out.coords = vec2(0.0, 0.0);
     EmitVertex();
 
     // b: left-top
     vec2 vb = P.xy + vec2(-1.0, 1.0) * uniforms.size * dist;
     gl_Position = camera.projectionMatrix * vec4(vb, P.zw);
-    gs_out.coords = vec2(-1.0, 1.0);
+    gs_out.coords = vec2(0.0, 1.0);
     EmitVertex();
 
     // d: right-bottom
     vec2 vd = P.xy + vec2(1.0, -1.0) * uniforms.size * dist;
     gl_Position = camera.projectionMatrix * vec4(vd, P.zw);
-    gs_out.coords = vec2(1.0, -1.0);
+    gs_out.coords = vec2(1.0, 0.0);
     EmitVertex();
 
     // c: right-top

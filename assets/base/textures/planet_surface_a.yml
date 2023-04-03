@@ -1,3 +1,4 @@
+srgb: true
 filtering:
   minification: 'Nearest'
   magnification: 'Nearest'

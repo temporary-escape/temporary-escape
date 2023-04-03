@@ -64,8 +64,50 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         {
             // Additional pipeline options
             VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-            RenderPipeline::DepthMode::ReadWrite,
+            RenderPipeline::DepthMode::Read,
             RenderPipeline::Blending::Normal,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        },
+    },
+    pipelinePolyShape{
+        vulkan,
+        {
+            // List of shader modules
+            registry.getShaders().find("component-poly-shape.vert"),
+            registry.getShaders().find("component-poly-shape.frag"),
+        },
+        {
+            // Vertex inputs
+            RenderPipeline::VertexInput::of<ComponentPolyShape::Point>(0),
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            RenderPipeline::DepthMode::Read,
+            RenderPipeline::Blending::Normal,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_CLOCKWISE,
+        },
+    },
+    pipelineStarFlare{
+        vulkan,
+        {
+            // List of shader modules
+            registry.getShaders().find("component-star-flare.vert"),
+            registry.getShaders().find("component-star-flare.geom"),
+            registry.getShaders().find("component-star-flare.frag"),
+        },
+        {
+            // Vertex inputs
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+            RenderPipeline::DepthMode::Read,
+            RenderPipeline::Blending::Additive,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
@@ -80,19 +122,24 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
     addPipeline(pipelineDebug);
     addPipeline(pipelineLines);
     addPipeline(pipelinePointCloud);
+    addPipeline(pipelinePolyShape);
+    addPipeline(pipelineStarFlare);
 }
 
 void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineDebug.getDescriptorPool().reset();
     pipelineLines.getDescriptorPool().reset();
     pipelinePointCloud.getDescriptorPool().reset();
+    pipelinePolyShape.getDescriptorPool().reset();
+    pipelineStarFlare.getDescriptorPool().reset();
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);
     collectForRender<ComponentLines>(vkb, scene, jobs);
     collectForRender<ComponentIconPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPointCloud>(vkb, scene, jobs);
-    // collectForRender<ComponentPolyShape>(vkb, scene, jobs);
+    collectForRender<ComponentPolyShape>(vkb, scene, jobs);
+    collectForRender<ComponentStarFlare>(vkb, scene, jobs);
     // collectForRender<ComponentPlanet>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
@@ -210,4 +257,60 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
 
         pipelinePointCloud.renderMesh(vkb, mesh);
     }
+}
+
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                              ComponentTransform& transform, ComponentPolyShape& component) {
+    component.recalculate(vulkan);
+
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelinePolyShape) {
+        currentPipeline = &pipelinePolyShape;
+        pipelinePolyShape.bind(vkb);
+    }
+
+    std::array<UniformBindingRef, 1> uniforms{};
+    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+    pipelinePolyShape.bindDescriptors(vkb, uniforms, {}, {});
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelinePolyShape.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
+
+    pipelinePolyShape.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                              ComponentTransform& transform, ComponentStarFlare& component) {
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelineStarFlare) {
+        currentPipeline = &pipelineStarFlare;
+        pipelineStarFlare.bind(vkb);
+    }
+
+    std::array<UniformBindingRef, 1> uniforms{};
+    uniforms[0] = {"Camera", camera.getUboZeroPos().getCurrentBuffer()};
+
+    std::array<SamplerBindingRef, 3> textures{};
+    textures[0] = {"colorTexture", component.getTexture()->getVulkanTexture()};
+    textures[1] = {"spectrumLowTexture", component.getTextureLow()->getVulkanTexture()};
+    textures[2] = {"spectrumHighTexture", component.getTextureHigh()->getVulkanTexture()};
+
+    pipelineStarFlare.bindDescriptors(vkb, uniforms, textures, {});
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    const Vector2 size{0.3f, 0.3f};
+    const float temp = 0.5f;
+    pipelineStarFlare.pushConstants(
+        vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"size", size}, PushConstant{"temp", temp});
+
+    pipelineStarFlare.renderMesh(vkb, mesh);
 }

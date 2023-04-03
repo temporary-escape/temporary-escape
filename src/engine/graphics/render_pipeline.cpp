@@ -33,9 +33,9 @@ void RenderPipeline::init(VulkanRenderPass& renderPass, const std::vector<uint32
     const auto resources = reflect();
 
     // Validate if the shader has any vertex inputs
-    if (resources.vertexInputs.empty()) {
+    /*if (resources.vertexInputs.empty()) {
         EXCEPTION("Pipeline has no vertex inputs, shaders: '{}'", id);
-    }
+    }*/
 
     createDescriptorSetLayout(resources);
     createPipeline(resources, renderPass, attachments, subpass);
@@ -82,9 +82,7 @@ void RenderPipeline::pushConstantsBuffer(VulkanCommandBuffer& vkb, const char* s
         flags = VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
-    vkb.pushConstants(getPipeline(),
-                      flags, 0,
-                      pushConstantsSize, src);
+    vkb.pushConstants(getPipeline(), flags, 0, pushConstantsSize, src);
 }
 
 void RenderPipeline::bind(VulkanCommandBuffer& vkb) {
@@ -303,8 +301,11 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
             description.format = attribute.format;
             description.offset = attribute.offset;
 
-            logger.debug("Adding vertex attribute binding: {} location: {} format: {} offset: {}", input.binding,
-                         attribute.location, attribute.format, attribute.offset);
+            logger.debug("Adding vertex attribute binding: {} location: {} format: {} offset: {}",
+                         input.binding,
+                         attribute.location,
+                         attribute.format,
+                         attribute.offset);
         }
     }
 
@@ -356,13 +357,6 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
 
         colorBlendAttachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = VK_FALSE;
-        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 
         if (createInfo.options.blending == Blending::Normal) {
             colorBlendAttachment.blendEnable = VK_TRUE;
@@ -380,10 +374,18 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
             colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
             colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
             colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        } else {
+            colorBlendAttachment.blendEnable = VK_FALSE;
+            colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+            colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+            colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+            colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         }
 
-        logger.debug("Adding color blend attachment position: {} index: {}", colorBlendAttachments.size() - 1,
-                     attachmentIndex);
+        logger.debug(
+            "Adding color blend attachment position: {} index: {}", colorBlendAttachments.size() - 1, attachmentIndex);
     }
 
     pipelineInfo.colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -491,8 +493,11 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
 
 void RenderPipeline::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
     std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
-    vboBindings[0] = {&mesh.vbo, 0};
-    vkb.bindBuffers(vboBindings);
+
+    if (mesh.vbo) {
+        vboBindings[0] = {&mesh.vbo, 0};
+        vkb.bindBuffers(vboBindings);
+    }
 
     if (mesh.ibo) {
         vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);

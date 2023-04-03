@@ -11,6 +11,13 @@ public:
     struct Point {
         Vector3 position;
         Vector4 color;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Point, position)},
+                {1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Point, color)},
+            };
+        };
     };
 
     ComponentPolyShape() = default;

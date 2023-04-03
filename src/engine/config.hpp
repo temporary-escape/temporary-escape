@@ -37,7 +37,7 @@ struct Config {
         bool enableValidationLayers = true;
         bool vsync = true;
         size_t maxFramesInFlight = 2;
-        float bloomStrength = 0.15f;
+        float bloomStrength = 0.10f;
         float bloomPower = 1.0f;
         float exposure = 1.0f;
         float gamma = 2.2f;

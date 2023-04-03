@@ -9,9 +9,11 @@ RenderPassBloom::Downsample::Downsample(VulkanRenderer& vulkan, Registry& regist
     RenderPass{vulkan, viewport / viewportDivision}, forward{forward} {
 
     // Color
-    addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+    addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT,
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                  VK_IMAGE_LAYOUT_UNDEFINED,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RenderPassBloom::Downsample::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
@@ -56,7 +58,11 @@ void RenderPassBloom::Downsample::render(VulkanCommandBuffer& vkb, const Vector2
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
-    vkb.blitImage(forward, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstTexture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blit,
+    vkb.blitImage(forward,
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  dstTexture,
+                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                  blit,
                   VK_FILTER_LINEAR);
 
     barrier = VkImageMemoryBarrier{};
@@ -100,7 +106,8 @@ RenderPassBloom::Extract::Extract(VulkanRenderer& vulkan, Registry& registry, co
 
     // Color
     addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                  VK_IMAGE_LAYOUT_UNDEFINED,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     addSubpass(subpassBloomExtract);
     init();
@@ -129,8 +136,8 @@ RenderPassBloom::Blur::Blur(VulkanRenderer& vulkan, Registry& registry, const Ve
                             const VulkanTexture& dst, const VulkanTexture& color, const bool vertical) :
     RenderPass{vulkan, viewport / viewportDivision}, subpassBloomBlur{vulkan, registry, color, vertical} {
 
-    addAttachment(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                  VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    addAttachment(
+        dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     addSubpass(subpassBloomBlur);
     init();
