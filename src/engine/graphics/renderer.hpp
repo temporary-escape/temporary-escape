@@ -15,6 +15,7 @@
 #include "render_pass_lighting.hpp"
 #include "render_pass_non_hdr.hpp"
 #include "render_pass_opaque.hpp"
+#include "render_pass_skybox.hpp"
 #include "render_pass_ssao.hpp"
 #include "skybox.hpp"
 
@@ -62,6 +63,7 @@ private:
     struct {
         std::unique_ptr<RenderPassBrdf> brdf;
         std::unique_ptr<RenderPassCompute> compute;
+        std::unique_ptr<RenderPassSkybox> skybox;
         std::unique_ptr<RenderPassOpaque> opaque;
         std::unique_ptr<RenderPassSsao> ssao;
         std::unique_ptr<RenderPassLighting> lighting;

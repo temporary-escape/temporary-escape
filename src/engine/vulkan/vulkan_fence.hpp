@@ -19,6 +19,7 @@ public:
 
     void reset();
     void wait();
+    bool isDone();
 
     VkFence& getHandle() {
         return fence;

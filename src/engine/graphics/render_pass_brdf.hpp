@@ -10,7 +10,7 @@ public:
         Color = 0,
     };
 
-    static const size_t totalAttachments = 4;
+    static const size_t totalAttachments = 1;
 
     explicit RenderPassBrdf(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport);
     virtual ~RenderPassBrdf() = default;

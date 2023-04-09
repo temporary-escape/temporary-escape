@@ -86,6 +86,10 @@ public:
         return cmp;
     }
 
+    [[nodiscard]] entt::id_type getId() const {
+        return static_cast<entt::id_type>(handle);
+    }
+
 private:
     entt::registry* reg{nullptr};
     entt::entity handle;

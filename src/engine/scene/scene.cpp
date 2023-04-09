@@ -5,12 +5,13 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
-Scene::Scene(EventListener& eventListener) : eventListener{eventListener}, nextId{0} {
+Scene::Scene(EventListener& eventListener) : eventListener{eventListener} {
 }
 
 Scene::~Scene() = default;
- 
+
 void Scene::addEntity(EntityPtr entity) {
+    entityMap.insert(std::make_pair(entity->getId(), entity));
     entities.push_back(std::move(entity));
 }
 
@@ -20,6 +21,7 @@ void Scene::removeEntity(const EntityPtr& entity) {
     }
 
     entity->destroy();
+    entityMap.erase(entity->getId());
     entities.erase(std::remove(entities.begin(), entities.end(), entity), entities.end());
 
     /*for (const auto& child : entity->getChildren()) {

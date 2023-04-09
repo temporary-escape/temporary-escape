@@ -8,6 +8,7 @@
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
+#include "../graphics/planet_generator.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
 #include "../server/server.hpp"
@@ -23,8 +24,8 @@ class ENGINE_API TransactionalDatabase;
 
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, Registry& registry,
-                  FontFamily& font, Client& client);
+    explicit Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator,
+                  PlanetGenerator& planetGenerator, Registry& registry, FontFamily& font, Client& client);
     virtual ~Game();
 
     void update(float deltaTime);
@@ -47,6 +48,7 @@ private:
     const Config& config;
     Renderer& renderer;
     SkyboxGenerator& skyboxGenerator;
+    PlanetGenerator& planetGenerator;
     Registry& registry;
     FontFamily& font;
     Client& client;

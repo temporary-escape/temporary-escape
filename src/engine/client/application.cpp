@@ -157,7 +157,7 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         logger.info("Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, *skyboxGenerator, *registry, font, *client);
+        game = std::make_unique<Game>(config, *renderer, *skyboxGenerator, *planetGenerator, *registry, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -343,6 +343,7 @@ void Application::createRenderer() {
     renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
 
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *registry);
+    planetGenerator = std::make_unique<PlanetGenerator>(config, *this, *registry);
 
     NEXT(createThumbnails());
 }

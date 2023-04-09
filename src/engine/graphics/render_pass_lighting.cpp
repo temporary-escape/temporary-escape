@@ -7,19 +7,17 @@ static auto logger = createLogger(__FILENAME__);
 
 RenderPassLighting::RenderPassLighting(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
                                        const RenderPassOpaque& opaque, const RenderPassSsao& ssao,
-                                       const VulkanTexture& brdf) :
-    RenderPass{vulkan, viewport}, subpassPbr{vulkan, registry, opaque, ssao, brdf}, subpassSkybox{vulkan, registry} {
+                                       const VulkanTexture& brdf, const VulkanTexture& forward) :
+    RenderPass{vulkan, viewport}, subpassPbr{vulkan, registry, opaque, ssao, brdf} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
     // Forward
-    addAttachment({VK_FORMAT_R16G16B16A16_SFLOAT,
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                   VK_IMAGE_ASPECT_COLOR_BIT},
-                  VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    addAttachment(forward,
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                  VK_ATTACHMENT_LOAD_OP_LOAD);
 
-    addSubpass(subpassSkybox);
     addSubpass(subpassPbr);
     init();
 }
@@ -38,9 +36,6 @@ void RenderPassLighting::render(VulkanCommandBuffer& vkb, const Vector2i& viewpo
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    subpassSkybox.render(vkb, scene);
-
-    vkb.nextSubpass();
     subpassPbr.render(vkb, scene);
 
     vkb.endRenderPass();

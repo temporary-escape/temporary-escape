@@ -50,3 +50,10 @@ void VulkanFence::reset() {
 void VulkanFence::wait() {
     vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
 }
+
+bool VulkanFence::isDone() {
+    if (vkGetFenceStatus(device, fence) == VK_NOT_READY) {
+        return false;
+    }
+    return true;
+}

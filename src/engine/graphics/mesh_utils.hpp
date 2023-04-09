@@ -24,6 +24,23 @@ struct ENGINE_API SkyboxVertex {
     };
 };
 
+struct ENGINE_API PlanetVertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 texCoords;
+    Vector4 tangent;
+
+    static VulkanVertexLayoutMap getLayout() {
+        return {
+            {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(PlanetVertex, position)},
+            {1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(PlanetVertex, normal)},
+            {2, VK_FORMAT_R32G32_SFLOAT, offsetof(PlanetVertex, texCoords)},
+            {3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(PlanetVertex, tangent)},
+        };
+    };
+};
+
 Mesh ENGINE_API createFullScreenQuad(VulkanRenderer& vulkan);
 Mesh ENGINE_API createSkyboxCube(VulkanRenderer& vulkan);
+Mesh ENGINE_API createPlanetMesh(VulkanRenderer& vulkan);
 } // namespace Engine

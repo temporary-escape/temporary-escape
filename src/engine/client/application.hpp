@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../database/database.hpp"
+#include "../graphics/planet_generator.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
 #include "../gui/gui_create_profile.hpp"
@@ -72,6 +73,7 @@ private:
     std::unique_ptr<Server> server;
     std::thread serverThread;
     std::unique_ptr<SkyboxGenerator> skyboxGenerator;
+    std::unique_ptr<PlanetGenerator> planetGenerator;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;

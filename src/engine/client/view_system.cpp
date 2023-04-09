@@ -325,7 +325,7 @@ void ViewSystem::createEntitiesBodies() {
                         entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
                     }
 
-                    entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
+                    // entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
 
                     clickable.add(pos);
                     // names.add(pos, planet->name);

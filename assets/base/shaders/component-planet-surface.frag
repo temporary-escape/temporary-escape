@@ -5,6 +5,7 @@ layout(location = 0) in VS_OUT {
     vec3 normal;
     vec3 texCoords;
     vec3 worldPos;
+    mat3 TBN;
 } vs_out;
 
 layout(location = 0) out vec4 outColor;
@@ -24,118 +25,164 @@ layout (std140, binding = 0) uniform Camera {
     vec3 eyesPos;
 } camera;
 
-layout(binding = 2) uniform sampler2D surfaceTexture;
+layout (binding = 2) uniform samplerCube albedoTexture;
+layout (binding = 3) uniform samplerCube normalTexture;
+layout (binding = 4) uniform samplerCube metallicRoughnessTexture;
+layout (binding = 5) uniform samplerCube irradianceTexture;
+layout (binding = 6) uniform samplerCube prefilterTexture;
+layout (binding = 7) uniform sampler2D brdfTexture;
 
-#define NUM_OCTAVES 8
+const float PI = 3.14159265359;
+const float gamma = 2.2;
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Simplex 3D Noise
-// by Ian McEwan, Ashima Arts
-//
-vec4 permute(vec4 x) {
-    return mod(((x*34.0)+1.0)*x, 289.0);
+// ----------------------------------------------------------------------------
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float nom = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return nom / denom;
 }
 
-vec4 taylorInvSqrt(vec4 r) {
-    return 1.79284291400159 - 0.85373472095314 * r;
+// ----------------------------------------------------------------------------
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+
+    float nom = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
 }
 
-float snoise(vec3 v) {
-    const vec2  C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+// ----------------------------------------------------------------------------
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
-    // First corner
-    vec3 i  = floor(v + dot(v, C.yyy));
-    vec3 x0 =   v - i + dot(i, C.xxx);
-
-    // Other corners
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-
-    //  x0 = x0 - 0. + 0.0 * C
-    vec3 x1 = x0 - i1 + 1.0 * C.xxx;
-    vec3 x2 = x0 - i2 + 2.0 * C.xxx;
-    vec3 x3 = x0 - 1. + 3.0 * C.xxx;
-
-    // Permutations
-    i = mod(i, 289.0);
-    vec4 p = permute(permute(permute(
-    i.z + vec4(0.0, i1.z, i2.z, 1.0))
-    + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-    + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-
-    // Gradients
-    // ( N*N points uniformly over a square, mapped onto an octahedron.)
-    float n_ = 1.0/7.0;// N=7
-    vec3  ns = n_ * D.wyz - D.xzx;
-
-    vec4 j = p - 49.0 * floor(p * ns.z *ns.z);//  mod(p,N*N)
-
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);// mod(j,N)
-
-    vec4 x = x_ *ns.x + ns.yyyy;
-    vec4 y = y_ *ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-
-    //Normalise gradients
-    vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
-    p0 *= norm.x;
-    p1 *= norm.y;
-    p2 *= norm.z;
-    p3 *= norm.w;
-
-    // Mix final noise value
-    vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0, x0), dot(p1, x1),
-    dot(p2, x2), dot(p3, x3)));
+    return ggx1 * ggx2;
 }
 
-float fbm(vec3 x) {
-    float v = 0.0;
-    float a = 0.5;
-    vec3 shift = vec3(100);
-    for (int i = 0; i < NUM_OCTAVES; ++i) {
-        v += a * snoise(x);
-        x = x * 2.0 + shift;
-        a *= 0.5;
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// ----------------------------------------------------------------------------
+vec3 vertexPos(float depth, vec2 texCoords) {
+    return vec3(texCoords * 2.0 - 1.0, 0.0);
+}
+
+// ----------------------------------------------------------------------------
+vec4 getClipSpacePos(float depth, vec2 texCoords) {
+    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
+    vec4 clipSpaceLocation;
+    clipSpaceLocation.xy = texCoords * 2.0f - 1.0f;
+    clipSpaceLocation.z = depth;
+    clipSpaceLocation.w = 1.0f;
+
+    return clipSpaceLocation;
+}
+
+// ----------------------------------------------------------------------------
+vec3 getWorldPos(float depth, vec2 texCoords) {
+    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
+    vec4 clipSpaceLocation = getClipSpacePos(depth, texCoords);
+    vec4 homogenousLocation = camera.viewProjectionInverseMatrix * clipSpaceLocation;
+    vec3 worldPos = homogenousLocation.xyz / homogenousLocation.w;
+
+    return worldPos;
+}
+
+vec3 getColor(vec3 worldPos, vec3 albedo, vec3 normal, float metallic, float roughness) {
+    // input lighting data
+    vec3 V = normalize(camera.eyesPos - worldPos);
+    vec3 R = reflect(-V, normal);
+
+    // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
+    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo, metallic);
+
+    // reflectance equation
+    vec3 Lo = vec3(0.0);
+    for (int i = 0; i < directionalLights.count; ++i)
+    {
+        // calculate per-light radiance
+    /*vec3 L = normalize(directionalLights.directions[i].xyz - worldpos);
+        vec3 H = normalize(V + L);
+        float distance = length(directionalLights.directions[i].xyz - worldpos);
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance = directionalLights.colors[i].xyz * attenuation;*/
+
+        vec3 L = normalize(directionalLights.directions[i].xyz);
+        vec3 H = normalize(V + L);
+        vec3 radiance = directionalLights.colors[i].xyz;
+
+        // Cook-Torrance BRDF
+        float NDF = DistributionGGX(normal, H, roughness);
+        float G = GeometrySmith(normal, V, L, roughness);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+        vec3 nominator = NDF * G * F;
+        float denominator = 4 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.001;// 0.001 to prevent divide by zero.
+        vec3 specular = nominator / denominator;
+
+        // kS is equal to Fresnel
+        vec3 kS = F;
+        // for energy conservation, the diffuse and specular light can't
+        // be above 1.0 (unless the surface emits light); to preserve this
+        // relationship the diffuse component (kD) should equal 1.0 - kS.
+        vec3 kD = vec3(1.0) - kS;
+        // multiply kD by the inverse metalness such that only non-metals
+        // have diffuse lighting, or a linear blend if partly metal (pure metals
+        // have no diffuse light).
+        kD *= 1.0 - metallic;
+
+        // scale light by NdotL
+        float NdotL = max(dot(normal, L), 0.0);
+
+        // add to outgoing radiance Lo
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL;// note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
     }
-    return v;
-}
 
-const vec3 sunPos = vec3(0.0, 0.0, 0.0);
+    // ambient lighting (we now use IBL as the ambient term)
+    // vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 F = F0;
 
-// ---------------------------------------------------------------------------------------------------------------------
-vec4 surfaceColor() {
-    float height = clamp(fbm(vs_out.texCoords * 1.35) + 0.5, 0.0, 1.0);
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
 
-    vec3 surface = texture(surfaceTexture, vec2(height, 1.0)).rgb;
+    vec3 irradiance = texture(irradianceTexture, normal).rgb * 0.1;
+    vec3 diffuse = irradiance * albedo.xyz;
 
-    vec3 light = normalize(sunPos - vs_out.worldPos);
-    vec3 radiance = directionalLights.colors[0].xyz;
+    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterTexture, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf = texture(brdfTexture, vec2(max(dot(normal, V), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y) * 0.5;
 
-    float d = clamp(dot(vs_out.normal, light), 0.0, 1.0);
-    vec3 ambient = vec3(d);
+    vec3 ambient = kD * diffuse + specular;
 
-    return vec4(surface * ambient, 1.0);
+    return ambient + Lo;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -146,7 +193,7 @@ vec4 atmosphereColor() {
     vec4 atmosphereColorEnd = vec4(0.8, 0.9, 1.0, 1.0);
 
     // Light scattering
-    vec3 light = normalize(sunPos - vs_out.worldPos);
+    vec3 light = normalize(directionalLights.directions[0].xyz);
     vec3 radiance = directionalLights.colors[0].xyz;
 
     float d = clamp(dot(vs_out.normal, light), 0.0, 1.0);
@@ -155,7 +202,7 @@ vec4 atmosphereColor() {
     vec3 eyesDir = normalize(camera.eyesPos - vs_out.worldPos);
 
     float f = 1.0 - clamp(dot(vs_out.normal, eyesDir), 0.0, 1.0);
-    f = pow(f, 2.3);
+    f = pow(f, 5.1);
 
     float factor = clamp(f * d, 0.0, 1.0);
 
@@ -167,7 +214,15 @@ vec4 atmosphereColor() {
 
 // ---------------------------------------------------------------------------------------------------------------------
 void main() {
-    vec4 color = surfaceColor() + atmosphereColor();
+    vec3 albedo = texture(albedoTexture, vs_out.texCoords).rgb;
+    vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
+    normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;
+    vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
 
-    outColor = vec4(pow(color.rgb, vec3(2.2)), 1.0);
+    vec2 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rg;
+    float metallic = metallicRoughness.r;
+    float roughness = metallicRoughness.g;
+
+    vec3 color = getColor(vs_out.worldPos, albedo, normal, metallic, roughness) + atmosphereColor().rgb;
+    outColor = vec4(color, 1.0);
 }

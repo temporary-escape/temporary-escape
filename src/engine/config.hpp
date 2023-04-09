@@ -64,6 +64,7 @@ struct Config {
     int skyboxSize = 2048;
     int imageAtlasSize = 4096;
     int brdfSize = 512;
+    int planetTextureSize = 2048;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 18;

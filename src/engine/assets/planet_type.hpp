@@ -9,16 +9,21 @@ namespace Engine {
 class ENGINE_API PlanetType : public Asset {
 public:
     struct Definition {
-        TexturePtr texture;
+        TexturePtr biome;
+        TexturePtr roughness;
 
-        YAML_DEFINE(texture);
+        YAML_DEFINE(biome, roughness);
     };
 
     explicit PlanetType(std::string name, Path path);
     void load(Registry& registry, VulkanRenderer& vulkan) override;
 
-    [[nodiscard]] const TexturePtr& getTexture() const {
-        return definition.texture;
+    [[nodiscard]] const TexturePtr& getBiomeTexture() const {
+        return definition.biome;
+    }
+
+    [[nodiscard]] const TexturePtr& getRoughnessTexture() const {
+        return definition.roughness;
     }
 
     static std::shared_ptr<PlanetType> from(const std::string& name);

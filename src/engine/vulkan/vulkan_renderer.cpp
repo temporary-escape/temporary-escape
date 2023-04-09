@@ -623,18 +623,37 @@ bool VulkanRenderer::canBeMipMapped(const VkFormat format) const {
 }
 
 void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
-    const auto formatProperties = getPhysicalDeviceFormatProperties(texture.getFormat());
-
-    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        EXCEPTION("Texture image format does not support linear blitting!");
-    }
-
     auto commandBuffer = createCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     commandBuffer.start(beginInfo);
+
+    generateMipMaps(commandBuffer, texture);
+
+    commandBuffer.end();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
+
+    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, submit error");
+    }
+
+    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
+        EXCEPTION("Failed to upload buffer data, wait queue error");
+    }
+}
+
+void VulkanRenderer::generateMipMaps(VulkanCommandBuffer& commandBuffer, VulkanTexture& texture) {
+    const auto formatProperties = getPhysicalDeviceFormatProperties(texture.getFormat());
+
+    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        EXCEPTION("Texture image format does not support linear blitting!");
+    }
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -697,21 +716,6 @@ void VulkanRenderer::generateMipMaps(VulkanTexture& texture) {
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     commandBuffer.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
-
-    commandBuffer.end();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
-
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-        EXCEPTION("Failed to upload buffer data, submit error");
-    }
-
-    if (vkQueueWaitIdle(getGraphicsQueue()) != VK_SUCCESS) {
-        EXCEPTION("Failed to upload buffer data, wait queue error");
-    }
 }
 
 void VulkanRenderer::createRenderPass() {

@@ -39,9 +39,13 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
         }
 
         // clang-format off
+        renderPasses.skybox = std::make_unique<RenderPassSkybox>(
+            vulkan, registry, viewport,
+            renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color));
+
         renderPasses.opaque = std::make_unique<RenderPassOpaque>(
             vulkan, registry, viewport,
-            voxelShapeCache);
+            voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
         renderPasses.ssao = std::make_unique<RenderPassSsao>(
             vulkan, registry, viewport,
@@ -51,7 +55,8 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             vulkan, registry, viewport,
             *renderPasses.opaque,
             *renderPasses.ssao,
-            renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color));
+            renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color),
+            renderPasses.skybox->getTexture(RenderPassSkybox::Forward));
 
         renderPasses.forward = std::make_unique<RenderPassForward>(
             vulkan, registry, viewport,
@@ -118,6 +123,7 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     camera->recalculate(vulkan, viewport);
 
     renderPasses.compute->render(vkb, scene);
+    renderPasses.skybox->render(vkb, viewport, scene);
     renderPasses.opaque->render(vkb, viewport, scene);
     renderPasses.ssao->render(vkb, viewport, scene);
     renderPasses.lighting->render(vkb, viewport, scene);
@@ -183,7 +189,7 @@ void Renderer::render(const std::shared_ptr<Block>& block, VoxelShape::Type shap
     cameraCamera.setProjection(19.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene.setPrimaryCamera(entityCamera);
-    
+
     scene.setSkybox(skybox);
 
     if (block) {

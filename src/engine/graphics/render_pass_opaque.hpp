@@ -16,7 +16,7 @@ public:
     static const size_t totalAttachments = 4;
 
     explicit RenderPassOpaque(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
-                              VoxelShapeCache& voxelShapeCache);
+                              VoxelShapeCache& voxelShapeCache, const VulkanTexture& depth);
     virtual ~RenderPassOpaque() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

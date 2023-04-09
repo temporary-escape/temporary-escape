@@ -114,7 +114,6 @@ private:
     EventListener& eventListener;
     entt::registry reg;
 
-    uint64_t nextId;
     std::vector<EntityPtr> entities;
     std::unordered_map<uint64_t, EntityPtr> entityMap;
 

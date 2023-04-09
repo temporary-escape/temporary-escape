@@ -142,6 +142,8 @@ void Client::handle(MessagePlayerLocationChanged res) {
     const auto starTextureLow = registry.getTextures().find("star_spectrum_low");
     const auto starTextureHigh = registry.getTextures().find("star_spectrum_high");
 
+    const auto planetSurface = registry.getPlanetTypes().find("planet_life");
+
     camera.reset();
     scene.reset();
     scene = std::make_unique<Scene>();
@@ -150,6 +152,11 @@ void Client::handle(MessagePlayerLocationChanged res) {
     sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
     sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f} * 100.0f);
     sun->addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
+
+    auto planet = scene->createEntity();
+    planet->addComponent<ComponentTransform>().translate(Vector3{-5.0f, 0.0f, 0.0f} * 1.0f);
+    planet->getComponent<ComponentTransform>().scale(Vector3{5.0f});
+    planet->addComponent<ComponentPlanet>(planetSurface, 7869732137);
 
     camera = scene->createEntity();
     auto& cameraTransform = camera->addComponent<ComponentTransform>();

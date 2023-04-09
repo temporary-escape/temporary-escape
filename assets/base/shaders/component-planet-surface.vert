@@ -17,11 +17,14 @@ layout(push_constant) uniform Uniforms {
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_texCoords;
+layout(location = 3) in vec4 in_tangent;
 
 layout(location = 0) out VS_OUT {
     vec3 normal;
     vec3 texCoords;
     vec3 worldPos;
+    mat3 TBN;
 } vs_out;
 
 out gl_PerVertex {
@@ -29,13 +32,16 @@ out gl_PerVertex {
 };
 
 void main() {
+    vec4 worldPos = uniforms.modelMatrix * vec4(in_position, 1.0);
+    vec3 N = normalize(uniforms.modelMatrix * vec4(in_normal, 0.0)).xyz;
+    vec3 T = normalize(uniforms.modelMatrix * vec4(in_tangent.xyz, 0.0)).xyz;
+
+    vs_out.normal = N;
+    vs_out.worldPos = worldPos.xyz;
     vs_out.texCoords = normalize(in_position);
 
-    vec4 worldPos = uniforms.modelMatrix * vec4(in_position.xyz, 1.0);
-    vec3 N = normalize(uniforms.normalMatrix * in_normal);
-
-    vs_out.worldPos = worldPos.xyz;
-    vs_out.normal = in_normal;
+    vec3 B = cross(N, T);
+    vs_out.TBN = mat3(T, B, N);
 
     gl_Position = camera.transformationProjectionMatrix * worldPos;
 }

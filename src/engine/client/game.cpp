@@ -6,11 +6,12 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
-Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, Registry& registry,
-           FontFamily& font, Client& client) :
+Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, PlanetGenerator& planetGenerator,
+           Registry& registry, FontFamily& font, Client& client) :
     config{config},
     renderer{renderer},
     skyboxGenerator{skyboxGenerator},
+    planetGenerator{planetGenerator},
     registry{registry},
     font{font},
     client{client},
@@ -35,6 +36,12 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
         renderer.getVulkan().waitQueueIdle();
         skybox = skyboxGenerator.generate(skyboxSeed);
         client.getScene()->setSkybox(skybox);
+    }
+
+    planetGenerator.run();
+
+    if (auto scene = client.getScene(); scene != nullptr) {
+        planetGenerator.update(*scene);
     }
 
     renderer.render(vkb, viewport, view->getScene());
