@@ -14,7 +14,8 @@ RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, Registry& registry, c
     addAttachment(depth,
                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                  VK_ATTACHMENT_LOAD_OP_CLEAR);
+                  VK_ATTACHMENT_LOAD_OP_CLEAR,
+                  VK_ATTACHMENT_LOAD_OP_LOAD);
 
     // AlbedoAmbient
     addAttachment({VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},

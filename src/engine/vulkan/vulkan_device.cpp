@@ -43,7 +43,7 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     createInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanDeviceExtensions.size());
     createInfo.ppEnabledExtensionNames = vulkanDeviceExtensions.data();
 
-    if (config.vulkan.enableValidationLayers) {
+    if (config.graphics.enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(vulkanValidationLayers.size());
         createInfo.ppEnabledLayerNames = vulkanValidationLayers.data();
     } else {

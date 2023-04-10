@@ -16,6 +16,7 @@ RenderPassForward::RenderPassForward(VulkanRenderer& vulkan, Registry& registry,
     addAttachment(opaque.getTexture(RenderPassOpaque::Depth),
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                  VK_ATTACHMENT_LOAD_OP_LOAD,
                   VK_ATTACHMENT_LOAD_OP_LOAD);
     // Forward
     addAttachment(lighting.getTexture(RenderPassLighting::Forward),

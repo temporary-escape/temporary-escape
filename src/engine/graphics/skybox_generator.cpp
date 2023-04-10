@@ -51,12 +51,21 @@ SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, R
 
     createSkyboxMesh();
 
-    createRenderPass(renderPasses.color, Vector2i{config.skyboxSize}, VK_FORMAT_R8G8B8A8_UNORM,
-                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_CLEAR);
-    createRenderPass(renderPasses.irradiance, Vector2i{config.skyboxIrradianceSize}, VK_FORMAT_R16G16B16A16_SFLOAT,
-                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-    createRenderPass(renderPasses.prefilter, Vector2i{config.skyboxPrefilterSize}, VK_FORMAT_R16G16B16A16_SFLOAT,
-                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    createRenderPass(renderPasses.color,
+                     Vector2i{config.graphics.skyboxSize},
+                     VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     VK_ATTACHMENT_LOAD_OP_CLEAR);
+    createRenderPass(renderPasses.irradiance,
+                     Vector2i{config.graphics.skyboxIrradianceSize},
+                     VK_FORMAT_R16G16B16A16_SFLOAT,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    createRenderPass(renderPasses.prefilter,
+                     Vector2i{config.graphics.skyboxPrefilterSize},
+                     VK_FORMAT_R16G16B16A16_SFLOAT,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     createPipelineStars(registry, renderPasses.color.renderPass);
     createPipelineNebula(registry, renderPasses.color.renderPass);
@@ -647,7 +656,11 @@ static void copyTexture(VulkanCommandBuffer& vkb, VulkanTexture& source, VulkanT
     blit[0].dstSubresource.baseArrayLayer = side;
     blit[0].dstSubresource.layerCount = 1;
 
-    vkb.blitImage(source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blit,
+    vkb.blitImage(source,
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  target,
+                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                  blit,
                   VK_FILTER_NEAREST);
 }
 
@@ -680,15 +693,19 @@ Skybox SkyboxGenerator::generate(uint64_t seed) {
         vkb.start(beginInfo);
 
         // Transition the FBO texture so we can copy from it
-        transitionTexture(vkb, renderPasses.color.texture, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0, VK_ACCESS_SHADER_WRITE_BIT);
+        transitionTexture(vkb,
+                          renderPasses.color.texture,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                          0,
+                          VK_ACCESS_SHADER_WRITE_BIT);
 
         // Render pass for creating the skybox
         VulkanRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.framebuffer = &renderPasses.color.fbo;
         renderPassInfo.renderPass = &renderPasses.color.renderPass;
         renderPassInfo.offset = {0, 0};
-        renderPassInfo.size = {config.skyboxSize, config.skyboxSize};
+        renderPassInfo.size = {config.graphics.skyboxSize, config.graphics.skyboxSize};
         VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValues = {clearColor};
         vkb.beginRenderPass(renderPassInfo);
@@ -732,7 +749,7 @@ Skybox SkyboxGenerator::generate(uint64_t seed) {
         renderPassInfo.framebuffer = &renderPasses.irradiance.fbo;
         renderPassInfo.renderPass = &renderPasses.irradiance.renderPass;
         renderPassInfo.offset = {0, 0};
-        renderPassInfo.size = {config.skyboxIrradianceSize, config.skyboxIrradianceSize};
+        renderPassInfo.size = {config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize};
         renderPassInfo.clearValues = {VkClearValue{}};
         vkb.beginRenderPass(renderPassInfo);
         vkb.setScissor({0, 0}, renderPassInfo.size);
@@ -747,7 +764,7 @@ Skybox SkyboxGenerator::generate(uint64_t seed) {
         renderPassInfo.framebuffer = &renderPasses.prefilter.fbo;
         renderPassInfo.renderPass = &renderPasses.prefilter.renderPass;
         renderPassInfo.offset = {0, 0};
-        renderPassInfo.size = {config.skyboxPrefilterSize, config.skyboxPrefilterSize};
+        renderPassInfo.size = {config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize};
         renderPassInfo.clearValues = {VkClearValue{}};
         vkb.beginRenderPass(renderPassInfo);
         vkb.setScissor({0, 0}, renderPassInfo.size);
@@ -804,8 +821,10 @@ void SkyboxGenerator::renderStars(VulkanCommandBuffer& vkb, SkyboxGenerator::Sta
     SkyboxStarsUniforms constants{};
     constants.particleSize = {particleSize, particleSize};
     vkb.pushConstants(shaders.stars.pipeline,
-                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                      sizeof(SkyboxStarsUniforms), &constants);
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                      0,
+                      sizeof(SkyboxStarsUniforms),
+                      &constants);
 
     std::array<VulkanBufferBinding, 1> uboBindings{};
     uboBindings[0] = {0, &renderPasses.cameraUbo};
@@ -823,8 +842,10 @@ void SkyboxGenerator::renderNebula(VulkanCommandBuffer& vkb, const SkyboxNebulaU
     vkb.bindBuffers(vboBinings);
 
     vkb.pushConstants(shaders.nebula.pipeline,
-                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                      sizeof(SkyboxNebulaUniforms), &params);
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                      0,
+                      sizeof(SkyboxNebulaUniforms),
+                      &params);
 
     std::array<VulkanBufferBinding, 1> uboBindings{};
     uboBindings[0] = {0, &renderPasses.cameraUbo};
@@ -847,8 +868,8 @@ void SkyboxGenerator::renderIrradiance(VulkanCommandBuffer& vkb, VulkanTexture& 
     std::array<VulkanTextureBinding, 1> textureBindings{};
     textureBindings[0] = {1, &color};
 
-    vkb.bindDescriptors(shaders.irradiance.pipeline, shaders.irradiance.descriptorSetLayout, uboBindings,
-                        textureBindings, {});
+    vkb.bindDescriptors(
+        shaders.irradiance.pipeline, shaders.irradiance.descriptorSetLayout, uboBindings, textureBindings, {});
 
     vkb.draw(skyboxVertices.size(), 1, 0, 0);
 }
@@ -868,8 +889,10 @@ void SkyboxGenerator::renderPrefilter(VulkanCommandBuffer& vkb, VulkanTexture& c
     uniforms.roughness = roughness;
 
     vkb.pushConstants(shaders.prefilter.pipeline,
-                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                      sizeof(SkyboxPrefilterUniforms), &uniforms);
+                      VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                      0,
+                      sizeof(SkyboxPrefilterUniforms),
+                      &uniforms);
 
     std::array<VulkanBufferBinding, 1> uboBindings{};
     uboBindings[0] = {0, &renderPasses.cameraUbo};
@@ -877,14 +900,14 @@ void SkyboxGenerator::renderPrefilter(VulkanCommandBuffer& vkb, VulkanTexture& c
     std::array<VulkanTextureBinding, 1> textureBindings{};
     textureBindings[0] = {1, &color};
 
-    vkb.bindDescriptors(shaders.prefilter.pipeline, shaders.prefilter.descriptorSetLayout, uboBindings, textureBindings,
-                        {});
+    vkb.bindDescriptors(
+        shaders.prefilter.pipeline, shaders.prefilter.descriptorSetLayout, uboBindings, textureBindings, {});
 
     vkb.draw(skyboxVertices.size(), 1, 0, 0);
 }
 
 void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
-    auto size = Vector2i{config.skyboxSize, config.skyboxSize};
+    auto size = Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize};
 
     logger.debug("Preparing skybox cubemap of size: {}", size);
 
@@ -929,7 +952,7 @@ void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
 
     skybox.getTexture() = vulkan.createTexture(textureInfo);
 
-    size = Vector2i{config.skyboxPrefilterSize, config.skyboxPrefilterSize};
+    size = Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize};
 
     textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
     textureInfo.view.format = VK_FORMAT_R16G16B16A16_UNORM;
@@ -939,7 +962,7 @@ void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
 
     skybox.getPrefilter() = vulkan.createTexture(textureInfo);
 
-    size = Vector2i{config.skyboxIrradianceSize, config.skyboxIrradianceSize};
+    size = Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize};
 
     textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
     textureInfo.view.format = VK_FORMAT_R16G16B16A16_UNORM;
@@ -950,10 +973,10 @@ void SkyboxGenerator::prepareCubemap(Skybox& skybox) {
     skybox.getIrradiance() = vulkan.createTexture(textureInfo);
 
     vulkan.transitionImageLayout(skybox.getTexture(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vulkan.transitionImageLayout(skybox.getIrradiance(), VK_IMAGE_LAYOUT_UNDEFINED,
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vulkan.transitionImageLayout(skybox.getPrefilter(), VK_IMAGE_LAYOUT_UNDEFINED,
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vulkan.transitionImageLayout(
+        skybox.getIrradiance(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vulkan.transitionImageLayout(
+        skybox.getPrefilter(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 }
 
 void SkyboxGenerator::prepareStars(Rng& rng, Stars& stars, const size_t count) {

@@ -39,7 +39,8 @@ protected:
     void addAttachment(const AttachmentInfo& attachmentInfo, const VkImageLayout initialLayout,
                        VkImageLayout finalLayout, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
     void addAttachment(const VulkanTexture& texture, const VkImageLayout initialLayout, VkImageLayout finalLayout,
-                       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD);
+                       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                       VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE);
     void addSubpass(RenderSubpass& subpass) {
         subpasses.push_back(&subpass);
     }

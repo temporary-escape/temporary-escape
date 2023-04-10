@@ -202,7 +202,7 @@ vec4 atmosphereColor() {
     vec3 eyesDir = normalize(camera.eyesPos - vs_out.worldPos);
 
     float f = 1.0 - clamp(dot(vs_out.normal, eyesDir), 0.0, 1.0);
-    f = pow(f, 5.1);
+    f = pow(f, 4.5) + 0.05;
 
     float factor = clamp(f * d, 0.0, 1.0);
 

@@ -30,7 +30,7 @@ Renderer::~Renderer() = default;
 void Renderer::createRenderPasses(const Vector2i& viewport) {
     try {
         if (!renderPasses.brdf) {
-            const auto brdfSize = Vector2i{config.brdfSize, config.brdfSize};
+            const auto brdfSize = Vector2i{config.graphics.brdfSize, config.graphics.brdfSize};
             renderPasses.brdf = std::make_unique<RenderPassBrdf>(vulkan, registry, brdfSize);
         }
 
@@ -229,7 +229,7 @@ void Renderer::renderBrdf() {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
 
-    const auto brdfSize = Vector2i{config.brdfSize, config.brdfSize};
+    const auto brdfSize = Vector2i{config.graphics.brdfSize, config.graphics.brdfSize};
     renderPasses.brdf->render(vkb, brdfSize);
 
     vkb.end();

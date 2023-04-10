@@ -73,14 +73,15 @@ void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkIma
     attachmentDescription.loadOp = loadOp;
     attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentDescription.stencilLoadOp = loadOp;
-    attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentDescription.initialLayout = initialLayout; // VK_IMAGE_LAYOUT_UNDEFINED
     attachmentDescription.finalLayout = finalLayout;
     attachmentDescriptions.push_back(attachmentDescription);
 }
 
 void RenderPass::addAttachment(const VulkanTexture& texture, const VkImageLayout initialLayout,
-                               const VkImageLayout finalLayout, const VkAttachmentLoadOp loadOp) {
+                               const VkImageLayout finalLayout, const VkAttachmentLoadOp loadOp,
+                               const VkAttachmentLoadOp stencilOp) {
     attachmentViews.push_back(texture.getImageView());
     attachments.push_back(&texture);
 
@@ -93,8 +94,8 @@ void RenderPass::addAttachment(const VulkanTexture& texture, const VkImageLayout
     attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
     attachmentDescription.loadOp = loadOp;
     attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachmentDescription.stencilLoadOp = loadOp;
-    attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachmentDescription.stencilLoadOp = stencilOp;
+    attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     attachmentDescription.initialLayout = initialLayout;

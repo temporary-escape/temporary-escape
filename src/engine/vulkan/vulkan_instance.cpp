@@ -236,7 +236,7 @@ static const char* name = "TemporaryEscape";
 
 VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, config{config} {
 
-    if (config.vulkan.enableValidationLayers && !checkValidationLayerSupport()) {
+    if (config.graphics.enableValidationLayers && !checkValidationLayerSupport()) {
         destroy();
         EXCEPTION("validation layers requested, but not available!");
     }
@@ -254,7 +254,7 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     appCreateInfo.pApplicationInfo = &appInfo;
 
     auto extensions = getRequiredExtensions();
-    if (config.vulkan.enableValidationLayers) {
+    if (config.graphics.enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -264,7 +264,7 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     populateDebugMessengerCreateInfo(debugCreateInfo);
 
-    if (config.vulkan.enableValidationLayers) {
+    if (config.graphics.enableValidationLayers) {
         appCreateInfo.enabledLayerCount = static_cast<uint32_t>(vulkanValidationLayers.size());
         appCreateInfo.ppEnabledLayerNames = vulkanValidationLayers.data();
 
@@ -284,7 +284,7 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
 
     surface = createSurface(instance);
 
-    if (config.vulkan.enableValidationLayers) {
+    if (config.graphics.enableValidationLayers) {
         debugCreateInfo.pUserData = this;
 
         if (createDebugUtilsMessengerEXT(instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
@@ -318,6 +318,8 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
 
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     logger.info("Chosen GPU device name: {}", physicalDeviceProperties.deviceName);
+
+    vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 }
 
 VulkanInstance::~VulkanInstance() {
@@ -355,7 +357,7 @@ VkSwapchainCreateInfoKHR VulkanInstance::getSwapChainInfo() {
     const auto swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, config.vulkan.vsync);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, config.graphics.vsync);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, getFramebufferSize());
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;

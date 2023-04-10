@@ -1,7 +1,0 @@
-srgb: true
-filtering:
-  minification: 'Nearest'
-  magnification: 'Nearest'
-wrapping:
-  vertical: 'ClampToEdge'
-  horizontal: 'ClampToEdge'

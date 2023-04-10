@@ -139,30 +139,33 @@ static Key toKey(int key) {
 }
 
 static void errorCallback(const int error, const char* description) {
+    (void)error;
+    
     logger.error("{}", description);
 }
 
 static const char* name = "TemporaryEscape";
 
-VulkanWindow::VulkanWindow(const Engine::Config& config) : currentWindowSize{config.windowWidth, config.windowHeight} {
+VulkanWindow::VulkanWindow(const Engine::Config& config) :
+    currentWindowSize{config.graphics.windowWidth, config.graphics.windowHeight}, mousePos{} {
 
     glfwSetErrorCallback(errorCallback);
 
     if (!glfwInit()) {
-        EXCEPTION("Failed to initialize GLFW");
+        EXCEPTION("Failed to initialize GLFW")
     }
 
     if (!glfwVulkanSupported()) {
-        EXCEPTION("Vulkan is not supported on this platform");
+        EXCEPTION("Vulkan is not supported on this platform")
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
-    auto windowPtr = glfwCreateWindow(config.windowWidth, config.windowHeight, name, nullptr, nullptr);
+    auto windowPtr = glfwCreateWindow(currentWindowSize.x, currentWindowSize.y, name, nullptr, nullptr);
     if (!windowPtr) {
-        EXCEPTION("Failed to create GLFW window");
+        EXCEPTION("Failed to create GLFW window")
     }
 
     window = std::shared_ptr<GLFWwindow>(windowPtr, [](auto* w) { glfwDestroyWindow(w); });
@@ -223,7 +226,7 @@ std::vector<const char*> VulkanWindow::getRequiredExtensions() {
 VkSurfaceKHR VulkanWindow::createSurface(VkInstance instance) {
     VkSurfaceKHR surface;
     if (glfwCreateWindowSurface(instance, window.get(), nullptr, &surface) != VK_SUCCESS) {
-        EXCEPTION("Failed to create window surface!");
+        EXCEPTION("Failed to create window surface!")
     }
     return surface;
 }
@@ -301,10 +304,9 @@ void VulkanWindow::keyCallback(GLFWwindow* window, int key, int scancode, int ac
 }
 
 void VulkanWindow::windowSizeCallback(GLFWwindow* window, int width, int height) {
-    auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
+    // auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
 
     const Vector2i size = {width, height};
-
     logger.debug("windowSizeCallback new size: {}", size);
 }
 

@@ -54,11 +54,11 @@ void RenderSubpassCombine::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelineCombine.bindDescriptors(vkb, {}, textures, {});
 
-    const auto bloomStrength = config.vulkan.bloomStrength;
-    const auto bloomPower = config.vulkan.bloomPower;
-    const auto exposure = config.vulkan.exposure;
-    const auto gamma = config.vulkan.gamma;
-    const auto contrast = config.vulkan.contrast;
+    const auto bloomStrength = config.graphics.bloomStrength;
+    const auto bloomPower = config.graphics.bloomPower;
+    const auto exposure = config.graphics.exposure;
+    const auto gamma = config.graphics.gamma;
+    const auto contrast = config.graphics.contrast;
 
     pipelineCombine.pushConstants(vkb,
                                   PushConstant{"bloomStrength", bloomStrength},

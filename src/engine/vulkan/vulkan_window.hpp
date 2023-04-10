@@ -20,7 +20,7 @@ protected:
     virtual void onNextFrame() = 0;
     virtual void onExit() = 0;
     virtual void onFrameDraw(const Vector2i& viewport, float timeDelta) = 0;
-    std::vector<const char*> getRequiredExtensions();
+    static std::vector<const char*> getRequiredExtensions();
     VkSurfaceKHR createSurface(VkInstance instance);
 
 private:
@@ -32,7 +32,7 @@ private:
     static void charCallback(GLFWwindow* window, unsigned int codepoint);
 
     std::shared_ptr<GLFWwindow> window;
-    Vector2i mousePos;
+    Vector2i mousePos{};
     Vector2i currentWindowSize;
 };
 } // namespace Engine

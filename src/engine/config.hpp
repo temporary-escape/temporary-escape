@@ -30,10 +30,10 @@ struct Config {
 
     // Window related variables
     std::string windowName = "Temporary Escape";
-    int windowWidth = 1920;
-    int windowHeight = 1080;
 
-    struct {
+    struct Graphics {
+        int windowWidth = 1920;
+        int windowHeight = 1080;
         bool enableValidationLayers = true;
         bool vsync = true;
         size_t maxFramesInFlight = 2;
@@ -42,7 +42,14 @@ struct Config {
         float exposure = 1.0f;
         float gamma = 2.2f;
         float contrast = 1.0f;
-    } vulkan;
+        float anisotropy = 4.0f;
+        int skyboxIrradianceSize = 32;
+        int skyboxPrefilterSize = 128;
+        int skyboxSize = 2048;
+        int imageAtlasSize = 4096;
+        int brdfSize = 512;
+        int planetTextureSize = 2048;
+    } graphics;
 
     // Paths of interests
     std::filesystem::path assetsPath;
@@ -59,23 +66,17 @@ struct Config {
     bool voxelTest = false;
     std::string serverPassword = "";
     int serverPort = 22443;
-    int skyboxIrradianceSize = 32;
-    int skyboxPrefilterSize = 128;
-    int skyboxSize = 2048;
-    int imageAtlasSize = 4096;
-    int brdfSize = 512;
-    int planetTextureSize = 2048;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 18;
     std::string guiFontName = "iosevka-aile";
 
-    struct {
+    struct Gui {
         float dragAndDropSize{96.0f};
         float actionBarSize{96.0f};
     } gui;
 
-    struct {
+    struct Generator {
         int totalSystems{2000};
         float galaxyWidth{300.0f};
         float regionDistance{35.0f};
@@ -96,7 +97,7 @@ struct Config {
         int planetMoonsMax{3};
     } generator;
 
-    struct {
+    struct Input {
         KeyBinding cameraForward{Key::LetterW};
         KeyBinding cameraBackwards{Key::LetterS};
         KeyBinding cameraLeft{Key::LetterA};

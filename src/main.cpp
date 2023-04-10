@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
     parser.add_option("--python-home", config.pythonHome, "Python lib directory")
         ->check(CLI::ExistingDirectory)
         ->default_val(defaultPythonHome.string());
-    parser.add_option("--width", config.windowWidth, "Window width");
-    parser.add_option("--height", config.windowHeight, "Window height");
+    parser.add_option("--width", config.graphics.windowWidth, "Window width");
+    parser.add_option("--height", config.graphics.windowHeight, "Window height");
 
     CLI11_PARSE(parser, argc, argv);
 

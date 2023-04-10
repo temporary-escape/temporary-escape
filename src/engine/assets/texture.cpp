@@ -94,8 +94,16 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
         textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        textureInfo.sampler.anisotropyEnable = VK_FALSE;
-        textureInfo.sampler.maxAnisotropy = 1.0f;
+
+        if (vulkan.getPhysicalDeviceFeatures().samplerAnisotropy) {
+            textureInfo.sampler.anisotropyEnable = VK_TRUE;
+            textureInfo.sampler.maxAnisotropy =
+                std::max(4.0f, vulkan.getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+        } else {
+            textureInfo.sampler.anisotropyEnable = VK_FALSE;
+            textureInfo.sampler.maxAnisotropy = 1.0f;
+        }
+
         textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
         textureInfo.sampler.compareEnable = VK_FALSE;
@@ -104,8 +112,6 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
 
         options.apply(textureInfo);
 
-        auto hasAlpha = false;
-
         switch (image.getPixelType()) {
         case ImageImporter::PixelType::Rgba8u: {
             if (options.srgb && *options.srgb) {
@@ -113,13 +119,11 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
             } else {
                 textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
             }
-            hasAlpha = true;
             break;
         }
         case ImageImporter::PixelType::Rgba16u: {
             textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
             textureInfo.image.format = VK_FORMAT_R16G16B16A16_UNORM;
-            hasAlpha = true;
             break;
         }
         default: {
@@ -129,11 +133,14 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
 
         textureInfo.view.format = textureInfo.image.format;
 
-        if (vulkan.canBeMipMapped(textureInfo.view.format) && hasAlpha) {
+        if (vulkan.canBeMipMapped(textureInfo.view.format)) {
             textureInfo.image.mipLevels = getMipMapLevels(image.getSize());
             textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+            textureInfo.view.subresourceRange.levelCount = textureInfo.image.mipLevels;
             textureInfo.image.usage =
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        } else {
+            logger.warn("Texture: '{}' can not be mip-mapped", getPath());
         }
 
         texture = vulkan.createTexture(textureInfo);
@@ -142,12 +149,12 @@ void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
         vulkan.copyDataToImage(texture, 0, {0, 0}, 0, image.getSize(), image.getData());
 
         if (textureInfo.image.mipLevels > 1) {
+            logger.debug("Texture: '{}' generating {} mip-maps", getPath(), textureInfo.image.mipLevels);
             vulkan.generateMipMaps(texture);
         } else {
-            vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            vulkan.transitionImageLayout(
+                texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
-
     } catch (...) {
         EXCEPTION_NESTED("Failed to load texture: '{}'", getName());
     }

@@ -6,7 +6,7 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 VulkanRenderer::VulkanRenderer(const Config& config) :
-    VulkanDevice{config}, config{config}, lastViewportSize{config.windowWidth, config.windowHeight} {
+    VulkanDevice{config}, config{config}, lastViewportSize{config.graphics.windowWidth, config.graphics.windowHeight} {
 
     const auto indices = getQueueFamilies();
 
@@ -119,8 +119,11 @@ void VulkanRenderer::onNextFrame() {
     destroyDisposables();
 
     // Grab the next swap image index
-    const auto result = vkAcquireNextImageKHR(getDevice(), swapChain.getHandle(), UINT64_MAX,
-                                              getCurrentImageAvailableSemaphore().getHandle(), VK_NULL_HANDLE,
+    const auto result = vkAcquireNextImageKHR(getDevice(),
+                                              swapChain.getHandle(),
+                                              UINT64_MAX,
+                                              getCurrentImageAvailableSemaphore().getHandle(),
+                                              VK_NULL_HANDLE,
                                               &swapChainFramebufferIndex);
 
     // Do we need to recreate the swap chain?
@@ -538,7 +541,8 @@ void VulkanRenderer::copyImageToImage(VulkanTexture& texture, int level, const V
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     commandBuffer.start(beginInfo);
 
-    logger.debug("copyImageToImage src: {:x} dst: {:x}", reinterpret_cast<uint64_t>(source.getHandle()),
+    logger.debug("copyImageToImage src: {:x} dst: {:x}",
+                 reinterpret_cast<uint64_t>(source.getHandle()),
                  reinterpret_cast<uint64_t>(texture.getHandle()));
 
     VkImageBlit blit{};
@@ -558,8 +562,12 @@ void VulkanRenderer::copyImageToImage(VulkanTexture& texture, int level, const V
     std::array<VkImageBlit, 1> imageBlit{};
     imageBlit[0] = blit;
 
-    commandBuffer.blitImage(source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            imageBlit, VK_FILTER_NEAREST);
+    commandBuffer.blitImage(source,
+                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            texture,
+                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            imageBlit,
+                            VK_FILTER_NEAREST);
 
     commandBuffer.end();
 
@@ -693,8 +701,12 @@ void VulkanRenderer::generateMipMaps(VulkanCommandBuffer& commandBuffer, VulkanT
 
         std::array<VkImageBlit, 1> imageBlit{};
         imageBlit[0] = blit;
-        commandBuffer.blitImage(texture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texture,
-                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageBlit, VK_FILTER_LINEAR);
+        commandBuffer.blitImage(texture,
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                texture,
+                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                imageBlit,
+                                VK_FILTER_LINEAR);
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

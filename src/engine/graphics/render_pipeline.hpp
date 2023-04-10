@@ -74,6 +74,8 @@ public:
         VkPolygonMode polygonMode{VkPolygonMode::VK_POLYGON_MODE_FILL};
         VkCullModeFlags cullMode{VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT};
         VkFrontFace frontFace{VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE};
+        bool stencilWrite{false};
+        bool stencilRead{false};
     };
 
     explicit RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> shaders, std::vector<VertexInput> inputs,

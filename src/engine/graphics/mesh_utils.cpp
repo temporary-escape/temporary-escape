@@ -1,4 +1,6 @@
 #include "mesh_utils.hpp"
+#include "../utils/exceptions.hpp"
+#include <iostream>
 
 using namespace Engine;
 
@@ -121,50 +123,84 @@ Mesh Engine::createPlanetMesh(VulkanRenderer& vulkan) {
 
     using Vertex = PlanetVertex;
 
-    // Source: https://stackoverflow.com/a/5989676
+    // Sphere generation code source: http://www.songho.ca/opengl/gl_sphere.html
+
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
-    static const auto radius = 0.5f;
-    static const auto rings = 32;
-    static const auto sectors = 64;
+    const float radius = 0.5f;
+    const int stackCount = 32;
+    const int sectorCount = 64;
 
-    const auto R = 1.0f / static_cast<float>(rings - 1);
-    const auto S = 1.0f / static_cast<float>(sectors - 1);
+    float x, y, z, xy;                           // vertex position
+    float nx, ny, nz, lengthInv = 1.0f / radius; // vertex normal
+    float s, t;                                  // vertex texCoord
 
-    vertices.resize(rings * sectors);
-    indices.resize(rings * sectors * 6);
+    float sectorStep = 2 * pi / sectorCount;
+    float stackStep = pi / stackCount;
 
-    auto v = vertices.begin();
-    for (auto r = 0; r < rings; r++)
-        for (auto s = 0; s < sectors; s++) {
-            float const y = std::sin(-pi2 + pi * r * R);
-            float const x = std::cos(2 * pi * s * S) * std::sin(pi * r * R);
-            float const z = std::sin(2 * pi * s * S) * std::sin(pi * r * R);
+    for (int i = 0; i <= stackCount; ++i) {
+        float stackAngle = pi / 2 - i * stackStep; // starting from pi/2 to -pi/2
+        xy = radius * cosf(stackAngle);            // r * cos(u)
+        z = radius * sinf(stackAngle);             // r * sin(u)
 
-            v->position = Vector3{x, y, z} * radius;
-            v->normal = {x, y, z};
-            v->texCoords = Vector2{s * S, r * R};
-            v++;
+        // add (sectorCount+1) vertices per stack
+        // the first and last vertices have same position and normal, but different tex coords
+        for (int j = 0; j <= sectorCount; ++j) {
+            float sectorAngle = j * sectorStep; // starting from 0 to 2pi
+
+            vertices.emplace_back();
+            auto& v = vertices.back();
+
+            // vertex position (x, y, z)
+            x = xy * cosf(sectorAngle); // r * cos(u) * cos(v)
+            y = xy * sinf(sectorAngle); // r * cos(u) * sin(v)
+            v.position = Vector3{x, y, z};
+
+            // normalized vertex normal (nx, ny, nz)
+            nx = x * lengthInv;
+            ny = y * lengthInv;
+            nz = z * lengthInv;
+            v.normal = Vector3{nx, ny, nz};
+
+            // vertex tex coord (s, t) range between [0, 1]
+            s = (float)j / sectorCount;
+            t = (float)i / stackCount;
+            v.texCoords = Vector2{s, t};
         }
+    }
 
-    auto i = indices.begin();
-    for (auto r = 0; r < rings; r++) {
-        for (auto s = 0; s < sectors; s++) {
-            *i++ = r * sectors + s;
-            *i++ = r * sectors + (s + 1);
-            *i++ = (r + 1) * sectors + (s + 1);
+    // indices
+    //  k1--k1+1
+    //  |  / |
+    //  | /  |
+    //  k2--k2+1
+    for (int i = 0; i < stackCount; ++i) {
+        auto k1 = i * (sectorCount + 1); // beginning of current stack
+        auto k2 = k1 + sectorCount + 1;  // beginning of next stack
 
-            *i++ = r * sectors + s;
-            *i++ = (r + 1) * sectors + (s + 1);
-            *i++ = (r + 1) * sectors + s;
+        for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+            // 2 triangles per sector excluding 1st and last stacks
+            if (i != 0) {
+                indices.push_back(k1);
+                indices.push_back(k2);
+                indices.push_back(k1 + 1);
+            }
+
+            if (i != (stackCount - 1)) {
+                indices.push_back(k1 + 1);
+                indices.push_back(k2);
+                indices.push_back(k2 + 1);
+            }
         }
     }
 
     for (size_t i = 0; i < indices.size(); i += 3) {
-        auto& v0 = vertices[indices[i + 0]];
-        auto& v1 = vertices[indices[i + 1]];
-        auto& v2 = vertices[indices[i + 2]];
+        std::cout << "tangent: " << i << ", " << indices[i + 0] << ", " << indices[i + 1] << ", " << indices[i + 2]
+                  << std::endl;
+        auto& v0 = vertices.at(indices[i + 0]);
+        auto& v1 = vertices.at(indices[i + 1]);
+        auto& v2 = vertices.at(indices[i + 2]);
 
         const auto deltaPos1 = v1.position - v0.position;
         const auto deltaPos2 = v2.position - v0.position;

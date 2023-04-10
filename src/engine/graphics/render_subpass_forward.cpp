@@ -111,6 +111,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            false,
+            true,
         },
     } {
 

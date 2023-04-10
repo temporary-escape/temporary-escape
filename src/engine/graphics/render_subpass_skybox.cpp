@@ -49,7 +49,8 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& regis
             RenderPipeline::Blending::Normal,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
-            VK_FRONT_FACE_CLOCKWISE,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            true,
         },
     } {
 
@@ -130,7 +131,7 @@ void RenderSubpassSkybox::renderPlanet(VulkanCommandBuffer& vkb, const Component
     }
 
     std::array<UniformBindingRef, 2> uniforms{};
-    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+    uniforms[0] = {"Camera", camera.getUboZeroPos().getCurrentBuffer()};
     uniforms[1] = {"DirectionalLights", directionalLightsUbo.getCurrentBuffer()};
 
     std::array<SamplerBindingRef, 6> textures{};

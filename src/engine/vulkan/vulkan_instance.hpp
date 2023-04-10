@@ -24,6 +24,10 @@ public:
     }
 
     VkFormatProperties getPhysicalDeviceFormatProperties(VkFormat format) const;
+    const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() const {
+        return supportedFeatures;
+    }
+
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
                                  VkFormatFeatureFlags features) const;
     void setDebugMessengerEnabled(const bool value) {
@@ -46,5 +50,6 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
     VkPhysicalDeviceProperties physicalDeviceProperties;
     bool debugMessengerEnabled{true};
+    VkPhysicalDeviceFeatures supportedFeatures{};
 };
 } // namespace Engine

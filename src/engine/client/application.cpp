@@ -339,7 +339,7 @@ void Application::createRenderer() {
     status.message = "Creating renderer...";
     status.value = 0.3f;
 
-    const auto viewport = Vector2i{config.windowWidth, config.windowHeight};
+    const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
     renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
 
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *registry);
