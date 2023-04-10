@@ -56,6 +56,12 @@ public:
         Additive,
     };
 
+    enum class Stencil {
+        None,
+        Write,
+        Read,
+    };
+
     struct VertexInput {
         uint32_t binding;
         VulkanVertexLayoutMap layout;
@@ -74,8 +80,8 @@ public:
         VkPolygonMode polygonMode{VkPolygonMode::VK_POLYGON_MODE_FILL};
         VkCullModeFlags cullMode{VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT};
         VkFrontFace frontFace{VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE};
-        bool stencilWrite{false};
-        bool stencilRead{false};
+        Stencil stencil{Stencil::None};
+        int stencilValue{0xff};
     };
 
     explicit RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> shaders, std::vector<VertexInput> inputs,

@@ -19,8 +19,9 @@ void main() {
     float moisture = subpassLoad(samplerMoisture).r;
 
     vec3 biome = texture(textureBiome, vec2(moisture, height)).rgb;
-    float roughness = texture(textureRoughness, vec2(moisture, height)).r;
+    float metallic = texture(textureRoughness, vec2(moisture, height)).g;
+    float roughness = texture(textureRoughness, vec2(moisture, height)).b;
 
     outColor = vec4(biome, 1.0);
-    outMetallicRoughness = vec4(0.1, roughness, 0.0, 1.0);
+    outMetallicRoughness = vec4(metallic, roughness, 0.0, 1.0);
 }

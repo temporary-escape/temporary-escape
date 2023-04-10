@@ -25,12 +25,18 @@ layout (std140, binding = 0) uniform Camera {
     vec3 eyesPos;
 } camera;
 
-layout (binding = 2) uniform samplerCube albedoTexture;
-layout (binding = 3) uniform samplerCube normalTexture;
-layout (binding = 4) uniform samplerCube metallicRoughnessTexture;
-layout (binding = 5) uniform samplerCube irradianceTexture;
-layout (binding = 6) uniform samplerCube prefilterTexture;
-layout (binding = 7) uniform sampler2D brdfTexture;
+layout (std140, binding = 2) uniform Atmosphere {
+    vec4 start;
+    vec4 end;
+    float strength;
+} atmosphere;
+
+layout (binding = 3) uniform samplerCube albedoTexture;
+layout (binding = 4) uniform samplerCube normalTexture;
+layout (binding = 5) uniform samplerCube metallicRoughnessTexture;
+layout (binding = 6) uniform samplerCube irradianceTexture;
+layout (binding = 7) uniform samplerCube prefilterTexture;
+layout (binding = 8) uniform sampler2D brdfTexture;
 
 const float PI = 3.14159265359;
 const float gamma = 2.2;
@@ -187,11 +193,6 @@ vec3 getColor(vec3 worldPos, vec3 albedo, vec3 normal, float metallic, float rou
 
 // ---------------------------------------------------------------------------------------------------------------------
 vec4 atmosphereColor() {
-    vec4 atmosphere = vec4(0.0);
-
-    vec4 atmosphereColorStart = vec4(0.1, 0.7, 1.0, 1.0);
-    vec4 atmosphereColorEnd = vec4(0.8, 0.9, 1.0, 1.0);
-
     // Light scattering
     vec3 light = normalize(directionalLights.directions[0].xyz);
     vec3 radiance = directionalLights.colors[0].xyz;
@@ -206,15 +207,15 @@ vec4 atmosphereColor() {
 
     float factor = clamp(f * d, 0.0, 1.0);
 
-    vec4 atmosphereColor = mix(atmosphereColorStart, atmosphereColorEnd, pow(f, 1.5));
+    vec4 atmosphereColor = mix(pow(atmosphere.start, vec4(2.2)), pow(atmosphere.end, vec4(2.2)), pow(f, 1.5));
     // atmosphereColor *= vec4(radiance, 1.0);
 
-    return atmosphereColor * vec4(factor * 1.0);
+    return atmosphereColor * vec4(factor * 1.0) * atmosphere.strength;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 void main() {
-    vec3 albedo = texture(albedoTexture, vs_out.texCoords).rgb;
+    vec3 albedo = pow(texture(albedoTexture, vs_out.texCoords).rgb, vec3(2.2));
     vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
     normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;
     vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);

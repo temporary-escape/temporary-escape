@@ -1,6 +1,5 @@
 #include "mesh_utils.hpp"
 #include "../utils/exceptions.hpp"
-#include <iostream>
 
 using namespace Engine;
 
@@ -196,8 +195,6 @@ Mesh Engine::createPlanetMesh(VulkanRenderer& vulkan) {
     }
 
     for (size_t i = 0; i < indices.size(); i += 3) {
-        std::cout << "tangent: " << i << ", " << indices[i + 0] << ", " << indices[i + 1] << ", " << indices[i + 2]
-                  << std::endl;
         auto& v0 = vertices.at(indices[i + 0]);
         auto& v1 = vertices.at(indices[i + 1]);
         auto& v2 = vertices.at(indices[i + 2]);

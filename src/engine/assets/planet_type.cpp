@@ -14,6 +14,15 @@ PlanetType::PlanetType(std::string name, Path path) : Asset{std::move(name)}, pa
 }
 
 void PlanetType::load(Registry& registry, VulkanRenderer& vulkan) {
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(Definition::Amotsphere);
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    ubo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(ubo, &definition.atmosphere, sizeof(Definition::Amotsphere));
 }
 
 PlanetTypePtr PlanetType::from(const std::string& name) {

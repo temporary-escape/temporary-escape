@@ -9,7 +9,8 @@ public:
     explicit RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Registry& registry);
     virtual ~RenderSubpassPlanetNormal() = default;
 
-    void render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture, float resolution);
+    void render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture, float resolution,
+                const PlanetTypePtr& planetType);
 
 private:
     VulkanRenderer& vulkan;

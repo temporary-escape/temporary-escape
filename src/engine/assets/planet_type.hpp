@@ -12,7 +12,16 @@ public:
         TexturePtr biome;
         TexturePtr roughness;
 
-        YAML_DEFINE(biome, roughness);
+        struct Amotsphere {
+            Color4 start;
+            Color4 end;
+            float strength{0.0f};
+            float waterLevel{0.0f};
+
+            YAML_DEFINE(start, end, strength, waterLevel);
+        } atmosphere;
+
+        YAML_DEFINE(biome, roughness, atmosphere);
     };
 
     explicit PlanetType(std::string name, Path path);
@@ -26,11 +35,20 @@ public:
         return definition.roughness;
     }
 
+    [[nodiscard]] const Definition::Amotsphere& getAtmosphere() const {
+        return definition.atmosphere;
+    }
+
+    [[nodiscard]] const VulkanBuffer& getUbo() const {
+        return ubo;
+    }
+
     static std::shared_ptr<PlanetType> from(const std::string& name);
 
 private:
     Path path;
     Definition definition;
+    VulkanBuffer ubo;
 };
 
 using PlanetTypePtr = std::shared_ptr<PlanetType>;

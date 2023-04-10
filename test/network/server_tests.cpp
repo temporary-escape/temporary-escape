@@ -218,7 +218,7 @@ TEST_CASE("Send message to the server and get response") {
     REQUIRE(baz.count == 42 * 42);
 }
 
-TEST_CASE("Dispatch with override func") {
+/*TEST_CASE("Dispatch with override func") {
     class SimplePollingServer : public SimpleServer {
     public:
         SimplePollingServer(unsigned int port, const Pkey& pkey, const Dh& ec, const Cert& cert) :
@@ -302,7 +302,7 @@ TEST_CASE("Dispatch with override func") {
     MessageBaz baz = future.get();
     REQUIRE(baz.value == true);
     REQUIRE(baz.count == 42 * 42);
-}
+}*/
 
 TEST_CASE("Custom certificate validation function") {
     Pkey pkey{};

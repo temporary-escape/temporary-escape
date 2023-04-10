@@ -434,7 +434,7 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
     pipelineInfo.depthStencilState.stencilTestEnable = VK_FALSE;
     pipelineInfo.subpass = subpass;
 
-    if (createInfo.options.stencilWrite) {
+    if (createInfo.options.stencil == Stencil::Write) {
         pipelineInfo.depthStencilState.stencilTestEnable = VK_TRUE;
         pipelineInfo.depthStencilState.back.failOp = VK_STENCIL_OP_REPLACE;
         pipelineInfo.depthStencilState.back.depthFailOp = VK_STENCIL_OP_REPLACE;
@@ -442,9 +442,9 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
         pipelineInfo.depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
         pipelineInfo.depthStencilState.back.compareMask = 0xff;
         pipelineInfo.depthStencilState.back.writeMask = 0xff;
-        pipelineInfo.depthStencilState.back.reference = 0xff;
+        pipelineInfo.depthStencilState.back.reference = createInfo.options.stencilValue;
         pipelineInfo.depthStencilState.front = pipelineInfo.depthStencilState.back;
-    } else if (createInfo.options.stencilRead) {
+    } else if (createInfo.options.stencil == Stencil::Read) {
         pipelineInfo.depthStencilState.stencilTestEnable = VK_TRUE;
         pipelineInfo.depthStencilState.back.failOp = VK_STENCIL_OP_ZERO;
         pipelineInfo.depthStencilState.back.depthFailOp = VK_STENCIL_OP_ZERO;
@@ -452,7 +452,7 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
         pipelineInfo.depthStencilState.back.compareOp = VK_COMPARE_OP_EQUAL;
         pipelineInfo.depthStencilState.back.compareMask = 0xff;
         pipelineInfo.depthStencilState.back.writeMask = 0xff;
-        pipelineInfo.depthStencilState.back.reference = 0x00;
+        pipelineInfo.depthStencilState.back.reference = createInfo.options.stencilValue;
         pipelineInfo.depthStencilState.front = pipelineInfo.depthStencilState.back;
     }
 

@@ -21,7 +21,7 @@ RenderPassPlanetNormal::RenderPassPlanetNormal(VulkanRenderer& vulkan, Registry&
 }
 
 void RenderPassPlanetNormal::render(VulkanCommandBuffer& vkb, const Vector2i& viewport,
-                                    const VulkanTexture& heightmapTexture) {
+                                    const VulkanTexture& heightmapTexture, const PlanetTypePtr& planetType) {
     VulkanRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.framebuffer = &getFbo();
     renderPassInfo.renderPass = &getRenderPass();
@@ -35,7 +35,7 @@ void RenderPassPlanetNormal::render(VulkanCommandBuffer& vkb, const Vector2i& vi
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    subpassPlanetNormal.render(vkb, heightmapTexture, viewport.x);
+    subpassPlanetNormal.render(vkb, heightmapTexture, viewport.x, planetType);
 
     vkb.endRenderPass();
 }

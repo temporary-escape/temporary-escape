@@ -38,7 +38,7 @@ RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Reg
 }
 
 void RenderSubpassPlanetNormal::render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture,
-                                       const float resolution) {
+                                       const float resolution, const PlanetTypePtr& planetType) {
     pipelineNormal.getDescriptorPool().reset();
 
     pipelineNormal.bind(vkb);
@@ -48,7 +48,7 @@ void RenderSubpassPlanetNormal::render(VulkanCommandBuffer& vkb, const VulkanTex
 
     pipelineNormal.bindDescriptors(vkb, {}, textures, {});
 
-    const float waterLevel = 0.3f;
+    const float waterLevel = planetType->getAtmosphere().waterLevel;
     pipelineNormal.pushConstants(vkb, PushConstant{"resolution", resolution}, PushConstant{"waterLevel", waterLevel});
 
     pipelineNormal.renderMesh(vkb, fullScreenQuad);

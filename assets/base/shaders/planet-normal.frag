@@ -19,6 +19,8 @@ void main() {
     float y = vs_out.texCoords.y;
     float pixelSize = 1.0 / uniforms.resolution;
 
+    float c = texture(textureHeightmap, vec2(x, y)).r;
+
     float tl = texture(textureHeightmap, vec2(x-pixelSize, y-pixelSize)).r;
     float l = texture(textureHeightmap, vec2(x-pixelSize, y)).r;
     float bl = texture(textureHeightmap, vec2(x-pixelSize, y+pixelSize)).r;
@@ -41,7 +43,7 @@ void main() {
     float dY = bl + 2.0 * b + br - tl - 2.0 * t - tr;
 
     float strength = 0.8;
-    vec3 normal = normalize(vec3(dX, dY, 1.0 / strength));
+    vec3 normal = c > uniforms.waterLevel ? normalize(vec3(dX, dY, 1.0 / strength)) : vec3(0.0, 0.0, 1.0);
 
     outColor = vec4(normal * 0.5 + 0.5, 1.0);
 }

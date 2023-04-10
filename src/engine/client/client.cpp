@@ -142,7 +142,10 @@ void Client::handle(MessagePlayerLocationChanged res) {
     const auto starTextureLow = registry.getTextures().find("star_spectrum_low");
     const auto starTextureHigh = registry.getTextures().find("star_spectrum_high");
 
-    const auto planetSurface = registry.getPlanetTypes().find("planet_life");
+    const auto planetLife = registry.getPlanetTypes().find("planet_life");
+    const auto planetAlien = registry.getPlanetTypes().find("planet_alien");
+    const auto planetDesert = registry.getPlanetTypes().find("planet_desert");
+    const auto planetSulfur = registry.getPlanetTypes().find("planet_sulfur");
 
     camera.reset();
     scene.reset();
@@ -154,9 +157,14 @@ void Client::handle(MessagePlayerLocationChanged res) {
     sun->addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
 
     auto planet = scene->createEntity();
-    planet->addComponent<ComponentTransform>().translate(Vector3{-5.0f, 0.0f, 0.0f} * 1.0f);
-    planet->getComponent<ComponentTransform>().scale(Vector3{5.0f});
-    planet->addComponent<ComponentPlanet>(planetSurface, 7869732137);
+    planet->addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
+    planet->getComponent<ComponentTransform>().scale(Vector3{1.0f});
+    planet->addComponent<ComponentPlanet>(planetLife, 7869732137);
+
+    planet = scene->createEntity();
+    planet->addComponent<ComponentTransform>().translate(Vector3{0.7f, 0.0f, -1.5f} * 1.0f);
+    planet->getComponent<ComponentTransform>().scale(Vector3{2.5f});
+    planet->addComponent<ComponentPlanet>(planetSulfur, 123478);
 
     camera = scene->createEntity();
     auto& cameraTransform = camera->addComponent<ComponentTransform>();

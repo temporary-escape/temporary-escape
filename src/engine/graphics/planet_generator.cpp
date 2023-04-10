@@ -165,7 +165,7 @@ void PlanetGenerator::startWork() {
     renderPasses.planetSurface->render(vkb, viewport, rng, work.side, work.planetType);
 
     const auto& heightmap = renderPasses.planetSurface->getTexture(RenderPassPlanetSurface::Attachments::Heightmap);
-    renderPasses.planetNormal->render(vkb, viewport, heightmap);
+    renderPasses.planetNormal->render(vkb, viewport, heightmap, work.planetType);
 
     const auto& color = renderPasses.planetSurface->getTexture(RenderPassPlanetSurface::Attachments::Color);
     const auto& metallicRoughness =
