@@ -78,6 +78,11 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(config.userdataSavesPath);
         std::filesystem::create_directories(config.shaderCachePath);
 
+        if (std::getenv("VK_LAYER_PATH") == nullptr && config.graphics.enableValidationLayers) {
+            logger.warn("Vulkan validation layers requested but no env value 'VK_LAYER_PATH' provided");
+            config.graphics.enableValidationLayers = false;
+        }
+
         {
             Application window{config};
             window.run();
