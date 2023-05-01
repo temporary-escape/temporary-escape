@@ -12,12 +12,11 @@ static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
 ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                       Gui& gui, FontFamily& font) :
+                       FontFamily& font) :
     parent{parent},
     config{config},
     registry{registry},
     client{client},
-    gui{gui},
     font{font},
     skybox{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}},
     scene{} {
@@ -308,14 +307,14 @@ void ViewGalaxy::createEntitiesRegions() {
         const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
         const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
 
-        gui.contextMenu.setEnabled(true);
+        /*gui.contextMenu.setEnabled(true);
         gui.contextMenu.setPos(viewPos);
         gui.contextMenu.setItems({
             {"View", [this, system]() { parent.switchToSystemMap(system->galaxyId, system->id); }},
             {"Info", [this]() {}},
             {"Note", [this]() {}},
             {"Set Destination", [this]() {}},
-        });
+        });*/
     });
 
     clickable.setOnBlurCallback([this]() {

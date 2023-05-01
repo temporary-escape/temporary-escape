@@ -11,12 +11,11 @@ static const Vector2 systemBodySelectable{32.0f, 32.0f};
 static const Vector2 systemBodySize{32.0f, 32.0f};
 
 ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                       Gui& gui, FontFamily& font) :
+                       FontFamily& font) :
     parent{parent},
     config{config},
     registry{registry},
     client{client},
-    gui{gui},
     font{font},
     skybox{renderer.getVulkan(), Color4{0.01f, 0.01f, 0.01f, 1.0f}},
     scene{} {

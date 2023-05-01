@@ -74,6 +74,7 @@ struct Config {
     struct Gui {
         float dragAndDropSize{96.0f};
         float actionBarSize{96.0f};
+        float sideMenuSize{64.0f};
     } gui;
 
     struct Generator {

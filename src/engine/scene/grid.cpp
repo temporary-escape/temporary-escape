@@ -223,23 +223,39 @@ Vector2 boxProjection(Vector3 normal, Vector3 position) {
         }
     }
 
+    // TODO This function was intended for OpenGL and needs fixing for Vulkan
+    texCoords.y = 1.0f - texCoords.y;
+
     return texCoords;
 }
 
 void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
                  RawPrimitiveData& map, const Vector3& offset) {
     static const Vector3i neighbourOffset[6] = {
-        Vector3i{1, 0, 0},  Vector3i{-1, 0, 0}, Vector3i{0, 1, 0},
-        Vector3i{0, -1, 0}, Vector3i{0, 0, -1}, Vector3i{0, 0, 1},
+        Vector3i{1, 0, 0},
+        Vector3i{-1, 0, 0},
+        Vector3i{0, 1, 0},
+        Vector3i{0, -1, 0},
+        Vector3i{0, 0, -1},
+        Vector3i{0, 0, 1},
     };
 
     static const VoxelShape::Face neighbourSides[6] = {
-        VoxelShape::Face::PositiveX, VoxelShape::Face::NegativeX, VoxelShape::Face::PositiveY,
-        VoxelShape::Face::NegativeY, VoxelShape::Face::PositiveZ, VoxelShape::Face::NegativeZ,
+        VoxelShape::Face::PositiveX,
+        VoxelShape::Face::NegativeX,
+        VoxelShape::Face::PositiveY,
+        VoxelShape::Face::NegativeY,
+        VoxelShape::Face::PositiveZ,
+        VoxelShape::Face::NegativeZ,
     };
 
     static const uint8_t neighbourMasks[6] = {
-        0x01, 0x02, 0x04, 0x08, 0x10, 0x20,
+        0x01,
+        0x02,
+        0x04,
+        0x08,
+        0x10,
+        0x20,
     };
 
     static const uint8_t shapeSolidMask[4] = {
@@ -298,7 +314,8 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
 
     const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data,
-                                         const VoxelShapeCache::ShapePrebuilt& shape, const Vector3& pos,
+                                         const VoxelShapeCache::ShapePrebuilt& shape,
+                                         const Vector3& pos,
                                          const uint8_t color) {
         auto vertexOffset = data.vertices.size();
         // std::cout << "vertexOffset: " << vertexOffset << " adding: " << shape.vertices.size() << std::endl;
@@ -547,7 +564,12 @@ std::optional<Grid::RayCastResult> Grid::Octree::rayCast(const Grid::Node& paren
                     const auto diff = pos.value() - worldChildPos;
                     const auto normal = vecToNormal(diff);
                     result = RayCastResult{
-                        child, normal, pos.value(), childPosFloor(childPos), worldChildPos, normalToOrientation(normal),
+                        child,
+                        normal,
+                        pos.value(),
+                        childPosFloor(childPos),
+                        worldChildPos,
+                        normalToOrientation(normal),
                     };
                 }
             } else {

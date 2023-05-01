@@ -16,7 +16,7 @@ class ENGINE_API Game;
 class ENGINE_API ViewSystem : public View {
 public:
     explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                        Gui& gui, FontFamily& font);
+                        FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -49,7 +49,6 @@ private:
     const Config& config;
     Registry& registry;
     Client& client;
-    Gui& gui;
     FontFamily& font;
     Skybox skybox;
     Scene scene;

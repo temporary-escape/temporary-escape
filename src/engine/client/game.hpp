@@ -52,7 +52,6 @@ private:
     Registry& registry;
     FontFamily& font;
     Client& client;
-    Gui gui;
     Stats stats;
     Skybox skybox;
     uint64_t skyboxSeed{0};

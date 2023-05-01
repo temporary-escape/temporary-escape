@@ -264,8 +264,8 @@ void Canvas::createDefaultTexture() {
 
     vulkan.transitionImageLayout(defaultTexture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vulkan.copyDataToImage(defaultTexture, 0, {0, 0}, 0, {4, 4}, pixels.get());
-    vulkan.transitionImageLayout(defaultTexture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vulkan.transitionImageLayout(
+        defaultTexture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void Canvas::begin(const Vector2i& viewport) {
@@ -485,7 +485,7 @@ void Canvas::image(const Vector2& pos, const Vector2& size, const Image& asset) 
     auto& cmd = addDrawCommand();
     cmd.start = indexOffset;
     cmd.length = 6;
-    cmd.mode = 1;
+    cmd.mode = 0;
 
     const auto dst = allocate();
 

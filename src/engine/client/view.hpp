@@ -4,7 +4,6 @@
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox.hpp"
 #include "../window.hpp"
-#include "gui.hpp"
 
 namespace Engine {
 class ENGINE_API Renderer;

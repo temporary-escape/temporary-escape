@@ -181,14 +181,4 @@ public:
 
     virtual void draw(Nuklear& nuklear, const Vector2& viewport) = 0;
 };
-
-class ENGINE_API NuklearWindowNull : public NuklearWindow {
-public:
-    virtual ~NuklearWindowNull() = default;
-
-    void draw(Nuklear& nuklear, const Vector2& viewport) override {
-        (void)nuklear;
-        (void)viewport;
-    }
-};
 } // namespace Engine

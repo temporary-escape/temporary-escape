@@ -15,12 +15,11 @@ Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGene
     registry{registry},
     font{font},
     client{client},
-    gui{config, registry},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client, gui);
-    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, registry, client, gui, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, gui, font);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, registry, client, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, font);
     view = viewSpace.get();
 }
 
@@ -49,7 +48,7 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
 
 void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
     nuklear.begin(viewport);
-    gui.draw(nuklear, viewport);
+    // gui.draw(nuklear, viewport);
     nuklear.end();
 }
 
@@ -107,9 +106,9 @@ void Game::switchToSystemMap(const std::string& galaxyId, const std::string& sys
 }
 
 void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
+    /*if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
         gui.contextMenu.setEnabled(false);
-    }
+    }*/
 
     if (view) {
         view->eventMousePressed(pos, button);

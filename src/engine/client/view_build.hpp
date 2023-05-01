@@ -3,12 +3,23 @@
 #include "../assets/registry.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
+#include "../gui/gui_block_action_bar.hpp"
+#include "../gui/gui_block_selector.hpp"
+#include "../gui/gui_side_menu.hpp"
 #include "../scene/scene.hpp"
 #include "view.hpp"
 
 namespace Engine {
-class ViewBuild : public View {
+class ENGINE_API ViewBuild : public View {
 public:
+    struct Gui {
+        explicit Gui(const Config& config, Registry& registry);
+
+        GuiBlockActionBar blockActionBar;
+        GuiBlockSelector blockSelector;
+        GuiSideMenu blockSideMenu;
+    };
+
     explicit ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui);
     ~ViewBuild() = default;
 

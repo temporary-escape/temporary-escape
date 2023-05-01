@@ -1,22 +1,18 @@
 #pragma once
 
 #include "../assets/registry.hpp"
-#include "../assets/voxel_shape_cache.hpp"
 #include "../config.hpp"
-#include "../database/rocks_db.hpp"
 #include "../font/font_family.hpp"
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/renderer.hpp"
 #include "../graphics/skybox_generator.hpp"
+#include "../gui/gui_block_selector.hpp"
+#include "../gui/gui_context_menu.hpp"
+#include "../gui/gui_side_menu.hpp"
 #include "../server/server.hpp"
-#include "client.hpp"
-#include "stats.hpp"
 #include "view_build.hpp"
-#include "view_galaxy.hpp"
-#include "view_space.hpp"
-#include "view_system.hpp"
 
 namespace Engine {
 class ENGINE_API TransactionalDatabase;
@@ -43,7 +39,7 @@ private:
     Renderer& renderer;
     Registry& registry;
     FontFamily& font;
-    Gui gui;
+    ViewBuild::Gui guiBuild;
     ViewBuild view;
 };
 } // namespace Engine

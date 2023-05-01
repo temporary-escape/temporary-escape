@@ -105,11 +105,11 @@ PngImporter::PngImporter(const Path& path) : png{nullptr}, info{nullptr}, file{n
     png_read_update_info(png, info);
 
     pixels.reset(new uint8_t[size]);
-    auto dst = pixels.get() + static_cast<size_t>(width * (height - 1) * bpp);
+    auto dst = pixels.get();
 
     for (auto row = 0; row < height; row++) {
         png_read_row(png, (png_bytep)dst, nullptr);
-        dst -= width * bpp;
+        dst += width * bpp;
     }
 }
 

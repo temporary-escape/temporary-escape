@@ -14,7 +14,7 @@ class ENGINE_API Game;
 class ENGINE_API ViewSpace : public View {
 public:
     explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
-                       Client& client, Gui& gui);
+                       Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -35,6 +35,5 @@ private:
     Registry& registry;
     Skybox& skyboxSystem;
     Client& client;
-    Gui& gui;
 };
 } // namespace Engine

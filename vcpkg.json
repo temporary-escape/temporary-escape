@@ -93,6 +93,9 @@
     },
     {
       "name": "pybind11"
+    },
+    {
+      "name": "ktx"
     }
   ],
   "overrides": [
@@ -245,6 +248,11 @@
       "name": "pybind11",
       "version": "2.10.0",
       "port-version": 1
+    },
+    {
+      "name": "ktx",
+      "version": "4.1.0-rc2",
+      "port-version": 0
     }
   ],
   "builtin-baseline": "f14984af3738e69f197bf0e647a8dca12de92996"

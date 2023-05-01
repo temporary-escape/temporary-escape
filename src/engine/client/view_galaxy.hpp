@@ -18,7 +18,7 @@ class ENGINE_API Game;
 class ENGINE_API ViewGalaxy : public View {
 public:
     explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                        Gui& gui, FontFamily& font);
+                        FontFamily& font);
     ~ViewGalaxy() = default;
 
     void update(float deltaTime) override;
@@ -51,7 +51,6 @@ private:
     const Config& config;
     Registry& registry;
     Client& client;
-    Gui& gui;
     FontFamily& font;
     Skybox skybox;
     Scene scene;

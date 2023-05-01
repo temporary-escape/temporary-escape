@@ -6,8 +6,8 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
-                     Client& client, Gui& gui) :
-    parent{parent}, config{config}, registry{registry}, skyboxSystem{skybox}, client{client}, gui{gui} {
+                     Client& client) :
+    parent{parent}, config{config}, registry{registry}, skyboxSystem{skybox}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {

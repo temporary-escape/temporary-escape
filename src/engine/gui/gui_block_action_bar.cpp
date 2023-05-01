@@ -5,21 +5,10 @@
 
 using namespace Engine;
 
-GuiBlockActionBar::GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry) :
-    config{config}, preferences{preferences}, registry{registry} {
+GuiBlockActionBar::GuiBlockActionBar(const Config& config, Registry& registry) : config{config}, registry{registry} {
 
     setFlags(Nuklear::WindowFlags::NoScrollbar | Nuklear::WindowFlags::Border);
-    // defaultImage = registry.getImages().find("block_empty_image");
-
-    for (size_t b = 0; b < preferences.items.size(); b++) {
-        for (size_t i = 0; i < preferences.items[b].size(); i++) {
-            items[b][i].block = preferences.items[b][i].block;
-            items[b][i].shape = preferences.items[b][i].shape;
-        }
-    }
-
-    activeBar = preferences.activeBar % items.size();
-    activeColor = preferences.activeColor % colors.size();
+    defaultImage = registry.getImages().find("block_empty_image");
 
     loadColors(registry.getTextures().find("palette"));
 }
@@ -59,7 +48,6 @@ void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
         nuklear.buttonToggle(fmt::format("{}", (i + 1) % 10), isActive);
         if (isActive) {
             activeBar = i;
-            preferences.activeBar = activeBar;
         }
     }
 
@@ -72,7 +60,6 @@ void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
             if (nuklear.button(colors[i])) {
                 nuklear.comboClose();
                 activeColor = i;
-                preferences.activeColor = i;
             }
         }
         nuklear.comboEnd();
@@ -83,12 +70,9 @@ void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
         auto& item = items[activeBar][i];
         bool value = activeItem == i;
 
-        if (const auto pair = nuklear.getDragAndDrop<ActionBarBlock>()) {
+        if (const auto pair = nuklear.getDragAndDrop<ActionBarItem>()) {
             item.block = pair->block;
             item.shape = pair->shape;
-
-            preferences.items[activeBar][i].block = item.block;
-            preferences.items[activeBar][i].shape = item.shape;
         }
 
         if (item.block) {
@@ -100,7 +84,6 @@ void GuiBlockActionBar::drawLayout(Nuklear& nuklear) {
         // Clear
         if (nuklear.isClicked(MouseButton::Middle)) {
             item.block = nullptr;
-            preferences.items[activeBar][i].block = nullptr;
         }
 
         nuklear.imageToggle(item.block ? item.block->getThumbnail(item.shape) : defaultImage, value);

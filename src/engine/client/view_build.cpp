@@ -4,12 +4,45 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
+ViewBuild::Gui::Gui(const Config& config, Registry& registry) :
+    blockActionBar{config, registry}, blockSelector{config}, blockSideMenu{config} {
+}
+
 ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui) :
     config{config},
     registry{registry},
     gui{gui},
     skybox{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}},
     scene{} {
+
+    gui.blockSelector.setBlocks(registry.getBlocks().findAll());
+
+    gui.blockSideMenu.setItems({
+        GuiSideMenu::Item{
+            registry.getImages().find("icon_save"),
+            "Save current ship",
+            [this](bool active) {},
+            false,
+        },
+        GuiSideMenu::Item{
+            registry.getImages().find("icon_open_folder"),
+            "Open a ship to edit",
+            [this](bool active) {},
+            false,
+        },
+        GuiSideMenu::Item{
+            registry.getImages().find("icon_anticlockwise_rotation"),
+            "Undo",
+            [this](bool active) {},
+            false,
+        },
+        GuiSideMenu::Item{
+            registry.getImages().find("icon_clockwise_rotation"),
+            "Redo",
+            [this](bool active) {},
+            false,
+        },
+    });
 
     createScene();
     createEntityShip();
@@ -128,8 +161,11 @@ void ViewBuild::addBlock() {
 
     auto& grid = entityShip->getComponent<ComponentGrid>();
     const auto pos = raycastResult->pos + raycastResult->orientation;
-    logger.info("Inserting pos: {} hit: {} orientation: {} insert pos: {}", raycastResult->pos, raycastResult->hitPos,
-                raycastResult->orientation, pos);
+    logger.info("Inserting pos: {} hit: {} orientation: {} insert pos: {}",
+                raycastResult->pos,
+                raycastResult->hitPos,
+                raycastResult->orientation,
+                pos);
     grid.insert(pos, actionBarItem.block, 0, actionBarColor, actionBarItem.shape);
     grid.setDirty(true);
 }
@@ -158,6 +194,10 @@ void ViewBuild::eventMouseMoved(const Vector2i& pos) {
 }
 
 void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    /*if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
+        gui.contextMenu.setEnabled(false);
+    }*/
+
     scene.eventMousePressed(pos, button);
 
     if (button == MouseButton::Left) {
@@ -197,11 +237,13 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 void ViewBuild::onEnter() {
     gui.blockSelector.setEnabled(true);
     gui.blockActionBar.setEnabled(true);
+    gui.blockSideMenu.setEnabled(true);
 }
 
 void ViewBuild::onExit() {
     gui.blockSelector.setEnabled(false);
     gui.blockActionBar.setEnabled(false);
+    gui.blockSideMenu.setEnabled(false);
 }
 
 Scene& ViewBuild::getScene() {

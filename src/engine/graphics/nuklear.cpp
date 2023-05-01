@@ -7,8 +7,10 @@
 using namespace Engine;
 
 static Color4 asColor(const nk_color& color) {
-    return {static_cast<float>(color.r) / 255.0f, static_cast<float>(color.g) / 255.0f,
-            static_cast<float>(color.b) / 255.0f, static_cast<float>(color.a) / 255.0f};
+    return {static_cast<float>(color.r) / 255.0f,
+            static_cast<float>(color.g) / 255.0f,
+            static_cast<float>(color.b) / 255.0f,
+            static_cast<float>(color.a) / 255.0f};
 }
 
 static float getTextWidth(const nk_handle handle, const float height, const char* str, const int len) {
@@ -207,7 +209,8 @@ void Nuklear::render() {
             if (image) {
                 canvas.color(color);
                 canvas.image({static_cast<float>(c->x), static_cast<float>(c->y)},
-                             {static_cast<float>(c->w), static_cast<float>(c->h)}, *image);
+                             {static_cast<float>(c->w), static_cast<float>(c->h)},
+                             *image);
             }
             break;
         }
@@ -387,6 +390,8 @@ bool Nuklear::image(const ImagePtr& img) {
     } else {
         customStyle->image.border_color = ctx->style.button.border_color;
     }
+
+    customStyle->image.text_background.a = 0.0f;
 
     return nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true;
 }
@@ -793,7 +798,7 @@ void Nuklear::applyTheme() {
     progress.padding.y = 0;
 
     customStyle->image = button;
-    customStyle->image.normal.data.color = BLACK;
-    customStyle->image.hover.data.color = BLACK;
-    customStyle->image.active.data.color = BLACK;
+    customStyle->image.normal.data.color = TRANSPARENT_COLOR;
+    customStyle->image.hover.data.color = TRANSPARENT_COLOR;
+    customStyle->image.active.data.color = TRANSPARENT_COLOR;
 }

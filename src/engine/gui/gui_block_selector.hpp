@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API GuiBlockSelector : public GuiWindow {
 public:
-    explicit GuiBlockSelector();
+    explicit GuiBlockSelector(const Config& config);
 
     ~GuiBlockSelector() override = default;
 

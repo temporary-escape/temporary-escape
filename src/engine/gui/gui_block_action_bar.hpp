@@ -4,31 +4,21 @@
 #include "gui_window.hpp"
 
 namespace Engine {
-struct ENGINE_API ActionBarBlock {
-    BlockPtr block{nullptr};
-    VoxelShape::Type shape{VoxelShape::Cube};
-
-    YAML_DEFINE(block, shape);
-};
-
 class ENGINE_API GuiBlockActionBar : public GuiWindow {
 public:
-    struct Preferences {
-        std::array<std::array<ActionBarBlock, 10>, 10> items{};
-        size_t activeBar{0};
-        size_t activeColor{0};
-
-        YAML_DEFINE(items, activeBar, activeColor);
+    struct ActionBarItem {
+        BlockPtr block{nullptr};
+        VoxelShape::Type shape{VoxelShape::Cube};
     };
 
-    explicit GuiBlockActionBar(const Config& config, Preferences& preferences, Registry& registry);
+    explicit GuiBlockActionBar(const Config& config, Registry& registry);
     ~GuiBlockActionBar() override = default;
 
     [[nodiscard]] size_t getActiveIndex() const {
         return activeItem;
     }
 
-    [[nodiscard]] const ActionBarBlock& getActiveBlock() const {
+    [[nodiscard]] const ActionBarItem& getActiveBlock() const {
         return items[activeBar][activeItem];
     }
 
@@ -45,14 +35,11 @@ public:
     }
 
 private:
-    struct ActionBarItem : ActionBarBlock {};
-
     void loadColors(const TexturePtr& asset);
     void drawLayout(Nuklear& nuklear) override;
     void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
     const Config& config;
-    Preferences& preferences;
     Registry& registry;
     std::array<Color4, 16 * 4> colors;
     std::array<std::array<ActionBarItem, 10>, 10> items;

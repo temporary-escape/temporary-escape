@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-GuiBlockSelector::GuiBlockSelector() {
+GuiBlockSelector::GuiBlockSelector(const Config& config) {
     setSize({800.0f, 500.0f});
     setPos({100.0f, 100.0f});
     setFlags(Nuklear::WindowFlags::NoScrollbar | Nuklear::WindowFlags::Border | Nuklear::WindowFlags::Title |
@@ -80,7 +80,8 @@ void GuiBlockSelector::drawBlockSelection(Nuklear& nuklear) {
                 const auto tooltip =
                     fmt::format("{} ({})", item.block->getLabel(), VoxelShape::typeFriendlyNames[shape]);
 
-                nuklear.setDragAndDrop(ActionBarBlock{item.block, shape}, item.block->getThumbnail(shape));
+                nuklear.setDragAndDrop(GuiBlockActionBar::ActionBarItem{item.block, shape},
+                                       item.block->getThumbnail(shape));
                 nuklear.tooltip(tooltip);
                 nuklear.image(item.block->getThumbnail(shape));
             }

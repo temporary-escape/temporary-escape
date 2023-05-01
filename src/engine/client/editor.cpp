@@ -11,10 +11,9 @@ Editor::Editor(const Config& config, Renderer& renderer, Registry& registry, Fon
     renderer{renderer},
     registry{registry},
     font{font},
-    gui{config, registry},
-    view{config, renderer, registry, gui} {
+    guiBuild{config, registry},
+    view{config, renderer, registry, guiBuild} {
 
-    gui.blockSelector.setBlocks(registry.getBlocks().findAll());
     view.onEnter();
 }
 
@@ -32,7 +31,9 @@ void Editor::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
 
 void Editor::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
     nuklear.begin(viewport);
-    gui.draw(nuklear, viewport);
+    guiBuild.blockActionBar.draw(nuklear, viewport);
+    guiBuild.blockSelector.draw(nuklear, viewport);
+    guiBuild.blockSideMenu.draw(nuklear, viewport);
     nuklear.end();
 }
 
@@ -41,10 +42,6 @@ void Editor::eventMouseMoved(const Vector2i& pos) {
 }
 
 void Editor::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
-        gui.contextMenu.setEnabled(false);
-    }
-
     view.eventMousePressed(pos, button);
 }
 
