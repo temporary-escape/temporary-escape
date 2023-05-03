@@ -31,11 +31,11 @@ constexpr const char* pathstem(const char* path) {
 
 #define EXCEPTION(MSG, ...)                                                                                            \
     throw std::runtime_error(                                                                                          \
-        fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__)));
+        fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__)))
 
 #define EXCEPTION_NESTED(MSG, ...)                                                                                     \
-    std::throw_with_nested(std::runtime_error(fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__,      \
-                                                          __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__))));
+    std::throw_with_nested(std::runtime_error(                                                                         \
+        fmt::format(std::string("Exception at {}:{} ") + MSG, __FILENAME__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__))))
 
 #define BACKTRACE(EXP, MESSAGE, ...)                                                                                   \
     logger.error("Error at {} {}", WHERE, fmt::format(MESSAGE EXCEPTION_VA_ARGS(__VA_ARGS__)));                        \

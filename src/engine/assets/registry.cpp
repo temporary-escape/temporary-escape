@@ -1,10 +1,45 @@
 #include "registry.hpp"
+#include "../utils/ktx2_file.hpp"
 
 using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
 Registry* Registry::instance{nullptr};
+
+static void compressTexture(const Path& file) {
+    const auto textureOptions = Texture::loadOptions(file);
+
+    // Should we compress it?
+    auto shouldCompress = true;
+    if (textureOptions.compress && !(*textureOptions.compress)) {
+        shouldCompress = false;
+    }
+
+    const auto dst = replaceExtension(file, ".ktx2");
+    if (!Fs::exists(dst) || Fs::last_write_time(file) > Fs::last_write_time(dst)) {
+        ktxCompressFile(file, dst, shouldCompress);
+    } else {
+        logger.info("Skipping texture: {}, not modified", file);
+    }
+}
+
+void Registry::compressAssets(const Config& config) {
+    try {
+        const std::vector<Path> paths = {config.assetsPath / "base"};
+
+        for (const auto& path : paths) {
+            if (!Fs::is_directory(path)) {
+                continue;
+            }
+
+            iterateDir(path / "textures", {".png"}, [&](const Path& file) { compressTexture(file); });
+            iterateDir(path / "models", {".png"}, [&](const Path& file) { compressTexture(file); });
+        }
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to compress assets");
+    }
+}
 
 Registry::Registry(const Config& config) : config{config} {
     instance = this;
@@ -54,7 +89,7 @@ void Registry::findAssets() {
         }
 
         for (const auto& path : paths) {
-            init(textures, path / "textures", {".png"});
+            init(textures, path / "textures", {".ktx2"});
         }
 
         for (const auto& path : paths) {
@@ -85,7 +120,7 @@ void Registry::addManifest(const Path& path) {
 
 Registry& Registry::getInstance() {
     if (!instance) {
-        EXCEPTION("No instance initialized of registry")
+        EXCEPTION("No instance initialized of registry");
     }
     return *instance;
 }
@@ -143,8 +178,8 @@ TexturePtr Registry::createTextureOfColor(VulkanRenderer& vulkan, const Color4& 
 
     vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vulkan.copyDataToImage(texture, 0, {0, 0}, 0, {4, 4}, pixels.get());
-    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vulkan.transitionImageLayout(
+        texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     return asset;
 }
@@ -157,6 +192,8 @@ template <typename T> void Registry::init(Category<T>& assets, const Path& path,
     if (!Fs::is_directory(path)) {
         EXCEPTION("Assets path: \'{}\' is not a directory", path.string());
     }
+
+    std::set<std::string> processed;
 
     iterateDir(path, ext, [&](const Path& file) { addAsset(assets, file); });
 }

@@ -20,7 +20,7 @@ void GuiBlockActionBar::loadColors(const TexturePtr& asset) {
         EXCEPTION("Palette has wrong size");
     }
 
-    if (img.getPixelType() != ImageImporter::PixelType::Rgba8u) {
+    if (img.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
         EXCEPTION("Palette has wrong pixel type, expected RGBA8");
     }
 

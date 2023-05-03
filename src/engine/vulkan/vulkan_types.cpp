@@ -3,23 +3,6 @@
 
 using namespace Engine;
 
-VkFormat Engine::toVkFormat(const ImageImporter::PixelType pixelType) {
-    switch (pixelType) {
-    case ImageImporter::PixelType::Rgb16u: {
-        return VK_FORMAT_R16G16B16_UNORM;
-    }
-    case ImageImporter::PixelType::Rgba16u: {
-        return VK_FORMAT_R16G16B16_UNORM;
-    }
-    case ImageImporter::PixelType::Rgb8u: {
-        return VK_FORMAT_R8G8B8_UNORM;
-    }
-    case ImageImporter::PixelType::Rgba8u: {
-        return VK_FORMAT_R8G8B8A8_UNORM;
-    }
-    }
-}
-
 VkDeviceSize Engine::getFormatDataSize(const VkFormat format, const VkExtent3D& extent) {
     switch (format) {
     case VK_FORMAT_R8_UNORM: {
@@ -69,6 +52,9 @@ VkDeviceSize Engine::getFormatDataSize(const VkFormat format, const VkExtent3D& 
     }
     case VK_FORMAT_R32G32B32A32_SFLOAT: {
         return extent.width * extent.height * extent.depth * 16;
+    }
+    case VK_FORMAT_BC1_RGBA_UNORM_BLOCK: {
+        return (extent.width * extent.height * extent.depth) * 4;
     }
     default: {
         EXCEPTION("Unable to calculate texture size, unknown format");

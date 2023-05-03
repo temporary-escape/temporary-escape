@@ -46,3 +46,11 @@ std::string Engine::toLower(const std::string_view& str) {
     std::transform(res.begin(), res.end(), res.begin(), [](char c) { return std::tolower(c); });
     return res;
 }
+
+bool Engine::endsWith(const std::string_view& str, const std::string_view& ending) {
+    if (str.length() >= ending.length()) {
+        return (0 == str.compare(str.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}

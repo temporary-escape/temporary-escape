@@ -7,6 +7,21 @@ using namespace Engine;
 
 static auto logger = createLogger(__FILENAME__);
 
+static int commandPlay(const Config& config) {
+    {
+        Application window{config};
+        window.run();
+    }
+    logger.info("Exit success");
+    return EXIT_SUCCESS;
+}
+
+static int commandCompressAssets(const Config& config) {
+    { Registry::compressAssets(config); }
+    logger.info("Exit success");
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char** argv) {
     const auto defaultRoot = getExecutablePath();
     const auto defaultUserData = getAppDataPath();
@@ -25,40 +40,12 @@ int main(int argc, char** argv) {
     parser.add_option("--width", config.graphics.windowWidth, "Window width");
     parser.add_option("--height", config.graphics.windowHeight, "Window height");
 
+    parser.add_subcommand("play", "Play the game")->fallthrough(true);
+    parser.add_subcommand("compress-assets", "Compress all PNG textures into KTX2")->fallthrough(true);
+
     CLI11_PARSE(parser, argc, argv);
 
     try {
-        /*auto args = parser.parse(argc, argv);
-
-        if (args["version"].as<bool>()) {
-            std::cout << "v0.0.1" << std::endl;
-            return EXIT_SUCCESS;
-        }
-
-        const auto userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
-        const auto logPath = userdataPath / "debug.log";
-
-        Log::configure(true, logPath);
-        Log::i("main", "Temporary Escape main");
-        Log::i("main", "Log file location: '{}'", logPath.string());
-
-        const auto rootPath = std::filesystem::absolute(Path(args["root"].as<std::string>()));
-        Config config{};
-        config.assetsPath = rootPath / "assets";
-        config.wrenPaths = {config.assetsPath.string()};
-        config.userdataPath = std::filesystem::absolute(Path(args["userdata"].as<std::string>()));
-        config.userdataSavesPath = config.userdataPath / "Saves";
-        config.shadersPath = rootPath / "shaders";
-
-        if (args.count("save-name")) {
-            config.saveFolderName = args["save-name"].as<std::string>();
-        }
-        config.saveFolderClean = args["save-clean"].as<bool>();
-        config.voxelTest = args["voxel-test"].as<bool>();
-
-        std::filesystem::create_directories(config.userdataPath);
-        std::filesystem::create_directories(config.userdataSavesPath);*/
-
         const auto userdataPath = std::filesystem::absolute(Path(defaultUserData));
         const auto logPath = userdataPath / "debug.log";
 
@@ -83,12 +70,13 @@ int main(int argc, char** argv) {
             config.graphics.enableValidationLayers = false;
         }
 
-        {
-            Application window{config};
-            window.run();
+        if (parser.got_subcommand("compress-assets")) {
+            return commandCompressAssets(config);
+        } else if (parser.got_subcommand("play")) {
+            return commandPlay(config);
+        } else {
+            return commandPlay(config);
         }
-        logger.info("Exit success");
-        return EXIT_SUCCESS;
 
     } catch (const std::exception& e) {
         BACKTRACE(e, "fatal error");

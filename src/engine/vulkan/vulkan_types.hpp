@@ -3,7 +3,6 @@
 #include "../config.hpp"
 #include "../library.hpp"
 #include "../math/vector.hpp"
-#include "../utils/image_importer.hpp"
 #include "../utils/moveable_copyable.hpp"
 #include "../utils/span.hpp"
 #include <memory>
@@ -16,6 +15,12 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 
 namespace Engine {
+enum class VulkanCompressionType {
+    None,
+    ETC2,
+    BC3,
+};
+
 struct ENGINE_API VulkanQueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -116,7 +121,7 @@ struct ENGINE_API VulkanStageSampler {
     uint32_t binding;
 };
 
-struct VulkanVertexLayout {
+struct ENGINE_API VulkanVertexLayout {
     uint32_t location;
     VkFormat format;
     size_t offset;
@@ -138,7 +143,6 @@ public:
     virtual void destroy() = 0;
 };
 
-ENGINE_API VkFormat toVkFormat(const ImageImporter::PixelType pixelType);
 ENGINE_API VkDeviceSize getFormatDataSize(const VkFormat format, const VkExtent3D& extent);
 ENGINE_API bool isDepthFormat(VkFormat format);
 } // namespace Engine

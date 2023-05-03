@@ -1,4 +1,5 @@
 type: 'Texture1D'
+compress: false
 filtering:
   minification: 'Nearest'
   magnification: 'Nearest'

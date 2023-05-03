@@ -34,6 +34,10 @@ public:
         debugMessengerEnabled = value;
     }
 
+    VulkanCompressionType getCompressionType() const {
+        return compressionType;
+    }
+
 private:
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -51,5 +55,6 @@ private:
     VkPhysicalDeviceProperties physicalDeviceProperties;
     bool debugMessengerEnabled{true};
     VkPhysicalDeviceFeatures supportedFeatures{};
+    VulkanCompressionType compressionType{VulkanCompressionType::None};
 };
 } // namespace Engine

@@ -21,7 +21,7 @@ void Image::load(Registry& registry, VulkanRenderer& vulkan) {
     try {
         PngImporter image{path};
 
-        if (image.getPixelType() != ImageImporter::PixelType::Rgba8u) {
+        if (image.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
             EXCEPTION("Image must be of format RGBA 8bit");
         }
 

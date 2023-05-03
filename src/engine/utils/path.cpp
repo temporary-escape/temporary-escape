@@ -85,3 +85,9 @@ void Engine::writeFileBinary(const Path& path, const void* data, const size_t si
 void Engine::writeFileBinary(const Path& path, const std::vector<char>& data) {
     writeFileBinary(path, data.data(), data.size());
 }
+
+Path Engine::replaceExtension(const Path& path, const std::string& ext) {
+    const auto dir = path.parent_path();
+    const auto filename = path.stem().string();
+    return dir / (filename + ext);
+}

@@ -1,6 +1,9 @@
 #pragma once
 
-#include "image_importer.hpp"
+#include "../library.hpp"
+#include "../math/vector.hpp"
+#include "../vulkan/vulkan_types.hpp"
+#include "path.hpp"
 
 #ifndef PNG_H
 typedef void* png_structp;
@@ -8,19 +11,19 @@ typedef void* png_infop;
 #endif
 
 namespace Engine {
-class ENGINE_API PngImporter : public ImageImporter {
+class ENGINE_API PngImporter {
 public:
     explicit PngImporter(const Path& path);
-    ~PngImporter() override;
+    virtual ~PngImporter();
 
-    [[nodiscard]] PixelType getPixelType() const override {
-        return pixelType;
+    [[nodiscard]] VkFormat getFormat() const {
+        return format;
     }
-    [[nodiscard]] void* getData() const override;
-    [[nodiscard]] size_t getDataSize() const override {
+    [[nodiscard]] const void* getData() const;
+    [[nodiscard]] size_t getDataSize() const {
         return size;
     }
-    [[nodiscard]] Vector2i getSize() const override {
+    [[nodiscard]] Vector2i getSize() const {
         return {width, height};
     }
 
@@ -37,6 +40,6 @@ private:
     int depth = 0;
     int bpp = 0;
     size_t size = 0;
-    PixelType pixelType = PixelType::Rgba8u;
+    VkFormat format{VkFormat::VK_FORMAT_UNDEFINED};
 };
 } // namespace Engine

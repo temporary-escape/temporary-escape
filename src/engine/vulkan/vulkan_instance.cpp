@@ -320,6 +320,12 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
     logger.info("Chosen GPU device name: {}", physicalDeviceProperties.deviceName);
 
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+
+    if (supportedFeatures.textureCompressionETC2) {
+        compressionType = VulkanCompressionType::ETC2;
+    } else if (supportedFeatures.textureCompressionBC) {
+        compressionType = VulkanCompressionType::BC3;
+    }
 }
 
 VulkanInstance::~VulkanInstance() {

@@ -67,8 +67,11 @@ public:
     void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                      uint32_t firstInstance);
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void copyImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
+                   const VkImageCopy& region);
     void copyBuffer(const VulkanBuffer& src, const VulkanBuffer& dst, const VkBufferCopy& region);
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const VkBufferImageCopy& region);
+    void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const Span<VkBufferImageCopy>& regions);
     void bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
                            bool isCompute = false);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,

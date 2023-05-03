@@ -64,6 +64,8 @@ public:
         std::unordered_map<std::string, std::shared_ptr<T>> assets;
     };
 
+    static void compressAssets(const Config& config);
+
     static Registry* instance;
     static Registry& getInstance();
 
@@ -125,9 +127,7 @@ public:
 private:
     void addManifest(const Path& path);
     TexturePtr createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name);
-
     template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext);
-
     template <typename T> std::shared_ptr<T> addAsset(Category<T>& assets, const Path& path);
 
     const Config& config;

@@ -140,7 +140,7 @@ static Key toKey(int key) {
 
 static void errorCallback(const int error, const char* description) {
     (void)error;
-    
+
     logger.error("{}", description);
 }
 
@@ -152,11 +152,11 @@ VulkanWindow::VulkanWindow(const Engine::Config& config) :
     glfwSetErrorCallback(errorCallback);
 
     if (!glfwInit()) {
-        EXCEPTION("Failed to initialize GLFW")
+        EXCEPTION("Failed to initialize GLFW");
     }
 
     if (!glfwVulkanSupported()) {
-        EXCEPTION("Vulkan is not supported on this platform")
+        EXCEPTION("Vulkan is not supported on this platform");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -165,7 +165,7 @@ VulkanWindow::VulkanWindow(const Engine::Config& config) :
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
     auto windowPtr = glfwCreateWindow(currentWindowSize.x, currentWindowSize.y, name, nullptr, nullptr);
     if (!windowPtr) {
-        EXCEPTION("Failed to create GLFW window")
+        EXCEPTION("Failed to create GLFW window");
     }
 
     window = std::shared_ptr<GLFWwindow>(windowPtr, [](auto* w) { glfwDestroyWindow(w); });
@@ -226,7 +226,7 @@ std::vector<const char*> VulkanWindow::getRequiredExtensions() {
 VkSurfaceKHR VulkanWindow::createSurface(VkInstance instance) {
     VkSurfaceKHR surface;
     if (glfwCreateWindowSurface(instance, window.get(), nullptr, &surface) != VK_SUCCESS) {
-        EXCEPTION("Failed to create window surface!")
+        EXCEPTION("Failed to create window surface!");
     }
     return surface;
 }

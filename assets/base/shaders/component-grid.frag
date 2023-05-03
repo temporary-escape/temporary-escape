@@ -54,6 +54,7 @@ vec3 paletteColorForEmissive(vec3 c) {
 void main() {
     vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
     vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
+    normalRaw.z = sqrt(1.0 - normalRaw.x * normalRaw.x - normalRaw.y * normalRaw.y);
     normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;
     vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
     vec3 paletteColor = texture(paletteTexture, vs_out.color).rgb;

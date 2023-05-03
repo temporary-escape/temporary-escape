@@ -39,15 +39,18 @@ public:
         };
 
         std::optional<bool> isArray;
+        std::optional<bool> compress;
         std::optional<bool> srgb;
         std::optional<Type> type;
         std::optional<OptionsFiltering> filtering;
         std::optional<OptionsWrapping> wrapping;
 
-        YAML_DEFINE(isArray, srgb, type, filtering, wrapping);
+        YAML_DEFINE(isArray, compress, srgb, type, filtering, wrapping);
 
-        void apply(VulkanTexture::CreateInfo& textureInfo);
+        void apply(VulkanTexture::CreateInfo& textureInfo) const;
     };
+
+    static Options loadOptions(const Path& path);
 
     explicit Texture(std::string name, Path path);
     MOVEABLE(Texture);
@@ -69,6 +72,9 @@ public:
     static std::shared_ptr<Texture> from(const std::string& name);
 
 private:
+    void loadPng(const Options& options, VulkanRenderer& vulkan);
+    void loadKtx2(const Options& options, VulkanRenderer& vulkan);
+
     Path path;
     VulkanTexture texture;
 };

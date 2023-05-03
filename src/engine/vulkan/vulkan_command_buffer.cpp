@@ -145,6 +145,11 @@ void VulkanCommandBuffer::dispatch(const uint32_t groupCountX, const uint32_t gr
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
+void VulkanCommandBuffer::copyImage(const VulkanTexture& src, const VkImageLayout srcLayout, const VulkanTexture& dst,
+                                    const VkImageLayout dstLayout, const VkImageCopy& region) {
+    vkCmdCopyImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, 1, &region);
+}
+
 void VulkanCommandBuffer::copyBuffer(const VulkanBuffer& src, const VulkanBuffer& dst, const VkBufferCopy& region) {
     vkCmdCopyBuffer(commandBuffer, src.getHandle(), dst.getHandle(), 1, &region);
 }
@@ -156,15 +161,31 @@ void VulkanCommandBuffer::bindIndexBuffer(const VulkanBuffer& buffer, const VkDe
 
 void VulkanCommandBuffer::copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst,
                                             const VkBufferImageCopy& region) {
-    vkCmdCopyBufferToImage(commandBuffer, src.getHandle(), dst.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                           &region);
+    vkCmdCopyBufferToImage(
+        commandBuffer, src.getHandle(), dst.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
+void VulkanCommandBuffer::copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst,
+                                            const Span<VkBufferImageCopy>& regions) {
+    vkCmdCopyBufferToImage(commandBuffer,
+                           src.getHandle(),
+                           dst.getHandle(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           regions.size(),
+                           regions.data());
 }
 
 void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
                                             const bool isCompute) {
     auto set = descriptorSet.getHandle();
-    vkCmdBindDescriptorSets(commandBuffer, isCompute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout, 0, 1, &set, 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer,
+                            isCompute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout,
+                            0,
+                            1,
+                            &set,
+                            0,
+                            nullptr);
 }
 
 void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
@@ -201,8 +222,8 @@ void VulkanCommandBuffer::pushConstants(const VulkanPipeline& pipeline, const Vk
 void VulkanCommandBuffer::blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst,
                                     const VkImageLayout dstLayout, const Span<VkImageBlit>& regions,
                                     const VkFilter filter) {
-    vkCmdBlitImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(),
-                   regions.data(), filter);
+    vkCmdBlitImage(
+        commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(), regions.data(), filter);
 }
 
 void VulkanCommandBuffer::generateMipMaps(VulkanTexture& texture) {
@@ -244,8 +265,12 @@ void VulkanCommandBuffer::generateMipMaps(VulkanTexture& texture) {
 
         std::array<VkImageBlit, 1> imageBlit{};
         imageBlit[0] = blit;
-        blitImage(texture, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                  imageBlit, VK_FILTER_LINEAR);
+        blitImage(texture,
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  texture,
+                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                  imageBlit,
+                  VK_FILTER_LINEAR);
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

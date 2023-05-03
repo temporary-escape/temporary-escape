@@ -512,13 +512,13 @@ void VulkanRenderer::transitionImageLayout(VulkanTexture& texture, const VkImage
 }
 
 void VulkanRenderer::copyDataToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer,
-                                     const Vector2i& size, const void* data) {
+                                     const Vector2i& size, const void* data, const std::optional<size_t>& dataSize) {
 
     auto region = VkExtent3D{static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
 
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = getFormatDataSize(texture.getFormat(), region);
+    bufferInfo.size = dataSize ? *dataSize : getFormatDataSize(texture.getFormat(), region);
     bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferInfo.memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY;

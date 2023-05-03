@@ -129,7 +129,7 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const ImageAtlas::L
 
     auto res = provider(*layer);
     if (!res) {
-        EXCEPTION("Unable to allocate image of size: {} in image atlas", size)
+        EXCEPTION("Unable to allocate image of size: {} in image atlas", size);
     }
 
     allocation.pos = *res;

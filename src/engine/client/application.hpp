@@ -45,6 +45,7 @@ private:
     void createThumbnails();
     void createRegistry();
     void createVoxelShapeCache();
+    void compressAssets();
     void createRenderer();
     void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
     void startDatabase();

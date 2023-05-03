@@ -80,7 +80,8 @@ target_link_libraries(${PROJECT_NAME}Library
         lz4::lz4
         RocksDB::rocksdb
         PythonUnofficial::PythonUnofficial
-        Pybind11Unofficial::Pybind11Unofficial)
+        Pybind11Unofficial::Pybind11Unofficial
+        KTX::ktx KTX::astcenc-avx2-static)
 
 # The main target
 add_executable(${PROJECT_NAME}Main ${CMAKE_CURRENT_LIST_DIR}/main.cpp)

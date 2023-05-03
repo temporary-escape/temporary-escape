@@ -18,6 +18,8 @@
 #include "vulkan_swap_chain.hpp"
 #include "vulkan_texture.hpp"
 
+struct ktxVulkanDeviceInfo;
+
 namespace Engine {
 using VulkanSemaphoreOpt = std::optional<std::reference_wrapper<VulkanSemaphore>>;
 using VulkanFenceOpt = std::optional<std::reference_wrapper<VulkanFence>>;
@@ -60,7 +62,7 @@ public:
     void recreateSwapChain();
     void copyDataToBuffer(VulkanBuffer& buffer, const void* data, size_t size);
     void copyDataToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer, const Vector2i& size,
-                         const void* data);
+                         const void* data, const std::optional<size_t>& dataSize = std::nullopt);
     void copyImageToImage(VulkanTexture& texture, int level, const Vector2i& offset, int layer, const Vector2i& size,
                           const VulkanTexture& source);
     void copyBufferToImage(const VulkanBuffer& buffer, VulkanTexture& texture, int level, int layer,

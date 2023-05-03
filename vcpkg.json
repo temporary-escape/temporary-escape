@@ -95,7 +95,10 @@
       "name": "pybind11"
     },
     {
-      "name": "ktx"
+      "name": "ktx",
+      "features": [
+        "vulkan"
+      ]
     }
   ],
   "overrides": [

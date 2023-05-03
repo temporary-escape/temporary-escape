@@ -325,7 +325,7 @@ void Application::createRegistry() {
     logger.info("Setting up registry");
 
     status.message = "Loading mod packs...";
-    status.value = 0.3f;
+    status.value = 0.4f;
 
     future = std::async([this]() -> std::function<void()> {
         this->registry = std::make_unique<Registry>(config);
@@ -352,11 +352,23 @@ void Application::createVoxelShapeCache() {
     logger.info("Creating voxel shape cache");
 
     status.message = "Creating voxel shape cache...";
-    status.value = 0.3f;
+    status.value = 0.4f;
 
     voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
     NEXT(createRegistry());
+}
+
+void Application::compressAssets() {
+    logger.info("Compressing assets");
+
+    status.message = "Compressing assets (may take several minutes)...";
+    status.value = 0.3f;
+
+    future = std::async([this]() -> std::function<void()> {
+        Registry::compressAssets(config);
+        return [=]() { createVoxelShapeCache(); };
+    });
 }
 
 void Application::startSinglePlayer() {
@@ -367,7 +379,7 @@ void Application::startSinglePlayer() {
 
     gui.mainMenu.setEnabled(false);
 
-    NEXT(createVoxelShapeCache());
+    NEXT(compressAssets());
 
     // game = std::make_unique<Game>(config, *this, canvas, font, nuklear, skyboxGenerator);
     /*future = std::async([]() {

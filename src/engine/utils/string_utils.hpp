@@ -13,6 +13,7 @@ extern std::vector<std::string> ENGINE_API splitLast(const std::string& str, con
 extern std::vector<std::string> ENGINE_API split(const std::string& str, const std::string& delim);
 extern std::string ENGINE_API intToRomanNumeral(const int value);
 extern std::string ENGINE_API toLower(const std::string_view& str);
+extern bool ENGINE_API endsWith(const std::string_view& str, const std::string_view& ending);
 
 template <typename T> extern std::string join(const std::string& joiner, const std::vector<T>& items) {
     std::stringstream ss;

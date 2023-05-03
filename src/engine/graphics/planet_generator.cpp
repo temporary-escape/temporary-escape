@@ -5,6 +5,24 @@ using namespace Engine;
 static auto logger = createLogger(__FILENAME__);
 
 static void copyTexture(VulkanCommandBuffer& vkb, const VulkanTexture& source, const VulkanTexture& target, int side) {
+    /*VkImageCopy imageCopy{};
+    imageCopy.srcOffset = {0, 0, 0};
+    imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopy.srcSubresource.baseArrayLayer = 0;
+    imageCopy.srcSubresource.layerCount = 1;
+    imageCopy.srcSubresource.mipLevel = 0;
+    imageCopy.dstOffset = {0, 0, 0};
+    imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopy.dstSubresource.baseArrayLayer = side;
+    imageCopy.dstSubresource.layerCount = 1;
+    imageCopy.dstSubresource.mipLevel = 0;
+    imageCopy.extent = source.getExtent();
+
+    vkb.copyImage(
+        source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageCopy);
+
+    return;*/
+
     VkOffset3D offset = {
         static_cast<int32_t>(source.getExtent().width),
         static_cast<int32_t>(source.getExtent().height),
@@ -85,7 +103,7 @@ PlanetGenerator::PlanetGenerator(const Config& config, VulkanRenderer& vulkan, R
 void PlanetGenerator::enqueue(const uint64_t seed, const PlanetTypePtr& planetType,
                               std::function<void(PlanetTextures)> callback) {
     if (work.seed || work.isRunning) {
-        EXCEPTION("Can not enqueue planet texture generation, already in progress")
+        EXCEPTION("Can not enqueue planet texture generation, already in progress");
     }
 
     work.seed = seed;
@@ -198,7 +216,7 @@ void PlanetGenerator::prepareCubemap() {
     logger.debug("Preparing planet cubemap of size: {}", size);
 
     VulkanTexture::CreateInfo textureInfo{};
-    textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM; // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
     textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
     textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
     textureInfo.image.mipLevels = getMipMapLevels(size);

@@ -70,13 +70,13 @@ PngImporter::PngImporter(const Path& path) : png{nullptr}, info{nullptr}, file{n
 
     if (bits == 8) {
         if (colorType == PNG_COLOR_TYPE_RGB) {
-            pixelType = PixelType::Rgb8u;
+            format = VK_FORMAT_R8G8B8_UNORM;
             bpp = 3;
         } else if (colorType == PNG_COLOR_TYPE_RGB_ALPHA) {
-            pixelType = PixelType::Rgba8u;
+            format = VK_FORMAT_R8G8B8A8_UNORM;
             bpp = 4;
         } else if (colorType == PNG_COLOR_TYPE_PALETTE) {
-            pixelType = PixelType::Rgb8u;
+            format = VK_FORMAT_R8G8B8_UNORM;
             bpp = 3;
         } else {
             fclose(file);
@@ -85,10 +85,10 @@ PngImporter::PngImporter(const Path& path) : png{nullptr}, info{nullptr}, file{n
 
     } else if (bits == 16) {
         if (colorType == PNG_COLOR_TYPE_RGB) {
-            pixelType = PixelType::Rgb16u;
+            format = VK_FORMAT_R16G16B16_UNORM;
             bpp = 6;
         } else if (colorType == PNG_COLOR_TYPE_RGB_ALPHA) {
-            pixelType = PixelType::Rgba16u;
+            format = VK_FORMAT_R16G16B16A16_UNORM;
             bpp = 8;
         } else {
             fclose(file);
@@ -122,6 +122,6 @@ PngImporter::~PngImporter() {
     }
 }
 
-void* PngImporter::getData() const {
+const void* PngImporter::getData() const {
     return pixels.get();
 }
