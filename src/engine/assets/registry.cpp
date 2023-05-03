@@ -35,6 +35,7 @@ void Registry::compressAssets(const Config& config) {
 
             iterateDir(path / "textures", {".png"}, [&](const Path& file) { compressTexture(file); });
             iterateDir(path / "models", {".png"}, [&](const Path& file) { compressTexture(file); });
+            iterateDir(path / "images", {".png"}, [&](const Path& file) { compressTexture(file); });
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to compress assets");
@@ -85,7 +86,7 @@ void Registry::findAssets() {
         }
 
         for (const auto& path : paths) {
-            init(images, path / "images", {".png"});
+            init(images, path / "images", {".ktx2"});
         }
 
         for (const auto& path : paths) {

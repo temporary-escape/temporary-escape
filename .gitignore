@@ -39,3 +39,6 @@ docs/themes/hugo-book/
 
 # Python
 __pycache__
+
+# Generated assets
+*.ktx2

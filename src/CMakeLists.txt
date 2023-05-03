@@ -81,7 +81,7 @@ target_link_libraries(${PROJECT_NAME}Library
         RocksDB::rocksdb
         PythonUnofficial::PythonUnofficial
         Pybind11Unofficial::Pybind11Unofficial
-        KTX::ktx KTX::astcenc-avx2-static)
+        KTX::ktx)
 
 # The main target
 add_executable(${PROJECT_NAME}Main ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
@@ -108,3 +108,5 @@ add_custom_command(
 install(TARGETS ${PROJECT_NAME}Main ${PROJECT_NAME}Library
         LIBRARY DESTINATION "."
         RUNTIME DESTINATION ".")
+
+install(CODE "execute_process(COMMAND $<TARGET_FILE:${PROJECT_NAME}Main> compress-assets --root \"${CMAKE_SOURCE_DIR}\")")

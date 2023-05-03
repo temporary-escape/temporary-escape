@@ -1,7 +1,7 @@
 #include "gui_block_action_bar.hpp"
 #include "../assets/registry.hpp"
 #include "../math/utils.hpp"
-#include "../utils/png_importer.hpp"
+#include "../utils/ktx2_file.hpp"
 
 using namespace Engine;
 
@@ -14,17 +14,27 @@ GuiBlockActionBar::GuiBlockActionBar(const Config& config, Registry& registry) :
 }
 
 void GuiBlockActionBar::loadColors(const TexturePtr& asset) {
-    PngImporter img{asset->getPath()};
+    Ktx2FileReader image{asset->getPath()};
 
-    if (img.getSize().x != colors.size() || img.getSize().y != 1) {
+    if (image.needsTranscoding()) {
+        image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);
+    }
+
+    image.readData();
+
+    if (image.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
+        EXCEPTION("Image must be of format RGBA 8bit");
+    }
+
+    if (image.getSize().x != colors.size() || image.getSize().y != 1) {
         EXCEPTION("Palette has wrong size");
     }
 
-    if (img.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
+    if (image.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
         EXCEPTION("Palette has wrong pixel type, expected RGBA8");
     }
 
-    const auto* data = img.getData();
+    const auto* data = image.getData(0, 0).pixels.data();
     for (size_t i = 0; i < colors.size(); i++) {
         const auto* src = &reinterpret_cast<const uint8_t*>(data)[i * 4];
         colors[i] = fromRgbBytes(src[0], src[1], src[2], 255);

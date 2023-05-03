@@ -1,5 +1,5 @@
 #include "image.hpp"
-#include "../utils/png_importer.hpp"
+#include "../utils/ktx2_file.hpp"
 #include "registry.hpp"
 
 using namespace Engine;
@@ -19,13 +19,19 @@ void Image::load(Registry& registry, VulkanRenderer& vulkan) {
     }
 
     try {
-        PngImporter image{path};
+        Ktx2FileReader image{path};
+
+        if (image.needsTranscoding()) {
+            image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);
+        }
+
+        image.readData();
 
         if (image.getFormat() != VK_FORMAT_R8G8B8A8_UNORM) {
             EXCEPTION("Image must be of format RGBA 8bit");
         }
 
-        allocation = registry.getImageAtlas().add(image.getSize(), image.getData());
+        allocation = registry.getImageAtlas().add(image.getSize(), image.getData(0, 0).pixels.data());
 
     } catch (...) {
         EXCEPTION_NESTED("Failed to load texture: '{}'", getName());
