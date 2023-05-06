@@ -59,7 +59,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y \
               ninja-build clang llvm libxinerama-dev libxcursor-dev xorg-dev \
-              libglu1-mesa-dev libc6-dev linux-libc-dev liburing-dev
+              libglu1-mesa-dev libc6-dev linux-libc-dev liburing-dev libfuse2
           elif [ "$RUNNER_OS" == "macOS" ]; then
             brew install ninja llvm
           fi
