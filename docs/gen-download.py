@@ -58,6 +58,8 @@ def get_file_type(file: str):
         return 'Installer'
     if file.endswith('.tar.gz'):
         return 'TAR Archive'
+    if file.endswith('.AppImage'):
+        return 'AppImage'
     assert False, f'Unknown file type: {file}'
 
 
@@ -65,7 +67,7 @@ def get_file_name(file: str):
     return file.rsplit('/', maxsplit=1)[-1]
 
 
-def create_markdown_version(s3, endpoint: str, bucket: str, version: dict, id=None):
+def create_markdown_version(endpoint: str, bucket: str, version: dict, id=None):
     platforms = {
         'Windows': [],
         'Linux': [],
@@ -107,7 +109,7 @@ def create_markdown(s3, endpoint: str, bucket: str, versions: List[dict]):
     print('## Latest Releases\n')
 
     print('_Version: {} ({:%B %d, %Y})_\n'.format(latest['version'], latest['created']))
-    create_markdown_version(s3, endpoint, bucket, latest, id='latest')
+    create_markdown_version(endpoint, bucket, latest, id='latest')
 
     print(SYSTEM_REQUIREMENTS)
 
@@ -119,7 +121,7 @@ def create_markdown(s3, endpoint: str, bucket: str, versions: List[dict]):
         print('{{< /expand >}}')
 
 
-def process_versions(s3, endpoint: str, bucket: str, files: List[str]):
+def process_versions(s3, endpoint: str, bucket: str, files: List[dict]):
     # Sort by modified time
     files = reversed(sorted(files, key=lambda f: f['LastModified']))
 

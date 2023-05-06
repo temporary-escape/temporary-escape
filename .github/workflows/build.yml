@@ -131,6 +131,15 @@ jobs:
         run: |
           cmake --build --preset "${{ matrix.buildPreset }}" --target package
 
+      - name: AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O /usr/local/bin/appimagetool
+          sudo chmod +x /usr/local/bin/appimagetool
+          TAR_GZ_FILE=$(ls ./build/release/*.tar.gz | head -n1)
+          ./appimage/build.sh ${TAR_GZ_FILE}
+
       - name: Unit Test
         shell: bash
         run: |

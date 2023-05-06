@@ -184,15 +184,15 @@
     "images" : [
         {
             "name" : "model_asteroid_01_diff",
-            "uri" : "model_asteroid_01_diff.png"
+            "uri" : "model_asteroid_01_diff.ktx2"
         },
         {
             "name" : "model_asteroid_01_meta",
-            "uri" : "model_asteroid_01_meta.png"
+            "uri" : "model_asteroid_01_meta.ktx2"
         },
         {
             "name" : "model_asteroid_01_norm",
-            "uri" : "model_asteroid_01_norm.png"
+            "uri" : "model_asteroid_01_norm.ktx2"
         }
     ],
     "materials" : [

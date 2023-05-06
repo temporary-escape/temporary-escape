@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>io.github.temporaryescape</id>
+    <metadata_license>MIT</metadata_license>
+    <project_license>LGPL-3.0</project_license>
+    <name>Temporary Escape Game</name>
+    <summary>A multiplayer space trading, building, and combat game.</summary>
+    <description>
+        <p>A multiplayer space trading, building, and combat game. Acquire your own fleet to travel a procedurally
+            generated galaxy. Research new technologies to customize your path. Use modules and blocks to build your own
+            ships or space stations. Explore the universe of thousands of stars.
+        </p>
+    </description>
+    <launchable type="desktop-id">io.github.temporaryescape.desktop</launchable>
+    <url type="homepage">https://temporary-escape.github.io/</url>
+    <provides>
+        <id>io.github.temporaryescape.desktop</id>
+    </provides>
+</component>
