@@ -1,9 +1,11 @@
 if (UNIX)
     find_package(ZLIB REQUIRED)
     find_package(LibLZMA REQUIRED)
-    find_package(unofficial-libuuid CONFIG REQUIRED)
     if (APPLE)
         find_package(Iconv)
+        find_package(Gettext REQUIRED)
+    else  ()
+        find_package(unofficial-libuuid CONFIG REQUIRED)
     endif ()
 endif ()
 

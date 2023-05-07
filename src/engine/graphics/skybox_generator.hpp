@@ -59,7 +59,7 @@ private:
         Vector2 particleSize;
     };
 
-    void createPipelineStars(Registry& registry, VulkanRenderPass& renderPass);
+    //void createPipelineStars(Registry& registry, VulkanRenderPass& renderPass);
     void createPipelineNebula(Registry& registry, VulkanRenderPass& renderPass);
     void createPipelineIrradiance(Registry& registry, VulkanRenderPass& renderPass);
     void createPipelinePrefilter(Registry& registry, VulkanRenderPass& renderPass);
@@ -71,7 +71,7 @@ private:
     void prepareStars(Rng& rng, Stars& stars, size_t count);
     static void prepareNebulaUbo(Rng& rng, std::vector<SkyboxNebulaUniforms>& params);
     void prepareCubemap(Skybox& skybox);
-    void renderStars(VulkanCommandBuffer& vkb, Stars& stars, float particleSize);
+    //void renderStars(VulkanCommandBuffer& vkb, Stars& stars, float particleSize);
     void renderNebula(VulkanCommandBuffer& vkb, const SkyboxNebulaUniforms& params);
     void renderIrradiance(VulkanCommandBuffer& vkb, VulkanTexture& color);
     void renderPrefilter(VulkanCommandBuffer& vkb, VulkanTexture& color, const Vector2i& viewport, int level);
@@ -85,7 +85,7 @@ private:
     } mesh;
 
     struct {
-        Pipeline stars;
+        //Pipeline stars;
         Pipeline nebula;
         Pipeline irradiance;
         Pipeline prefilter;

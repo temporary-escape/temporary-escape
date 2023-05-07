@@ -135,6 +135,10 @@ static inline const std::vector<const char*> vulkanValidationLayers = {
 
 static const std::vector<const char*> vulkanDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#ifdef __APPLE__
+    "VK_KHR_portability_subset",
+#else
+#endif
 };
 
 class ENGINE_API VulkanDisposable {

@@ -30,7 +30,6 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.geometryShader = VK_TRUE;
     if (getPhysicalDeviceFeatures().samplerAnisotropy) {
         deviceFeatures.samplerAnisotropy = VK_TRUE;
     }
@@ -55,7 +54,7 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
 
     if (vkCreateDevice(getPhysicalDevice(), &createInfo, nullptr, &device) != VK_SUCCESS) {
         destroy();
-        EXCEPTION("failed to create logical device!");
+        EXCEPTION("Failed to create Vulkan logical device!");
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);

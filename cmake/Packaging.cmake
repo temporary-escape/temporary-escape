@@ -3,12 +3,21 @@ set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}-${CMAKE_SYSTEM_NA
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
 if (MSVC)
     set(CPACK_GENERATOR "ZIP;WIX" CACHE STRING "Generators to support")
+elseif (APPLE)
+    set(CPACK_GENERATOR "ZIP;Bundle" CACHE STRING "Generators to support")
 else ()
     set(CPACK_GENERATOR "TGZ" CACHE STRING "Generators to support")
 endif ()
+
 set(CPACK_WIX_UPGRADE_GUID "bfeb66e2-663a-4707-b59a-3ea8c3783bf6")
 set(CPACK_WIX_PRODUCT_GUID "497ecb7f-941d-427f-984c-8b794383d8c4")
 set(CPACK_WIX_PROGRAM_MENU_FOLDER "Games")
 set(CPACK_WIX_ARCHITECTURE "x64")
+
+set(CPACK_BUNDLE_NAME "TemporaryEscape")
+set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_LIST_DIR}/bundle/Info.plist")
+set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_LIST_DIR}/bundle/TemporaryEscape.icns")
+set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_CURRENT_LIST_DIR}/bundle/TemporaryEscape.sh")
+
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Temporary Escape")
 include(CPack)

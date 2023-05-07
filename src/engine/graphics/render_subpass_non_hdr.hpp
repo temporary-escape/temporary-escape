@@ -34,11 +34,11 @@ private:
         }
     }
 
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentWorldText& component);
+    /*void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentWorldText& component);*/
 
     VulkanRenderer& vulkan;
-    RenderPipeline pipelineWorldText;
+    //RenderPipeline pipelineWorldText;
     Mesh cube;
     RenderPipeline* currentPipeline{nullptr};
 };

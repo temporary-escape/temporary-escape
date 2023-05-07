@@ -67,7 +67,7 @@ SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, R
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                      VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
-    createPipelineStars(registry, renderPasses.color.renderPass);
+    //createPipelineStars(registry, renderPasses.color.renderPass);
     createPipelineNebula(registry, renderPasses.color.renderPass);
     createPipelinePrefilter(registry, renderPasses.prefilter.renderPass);
     createPipelineIrradiance(registry, renderPasses.irradiance.renderPass);
@@ -181,7 +181,7 @@ void SkyboxGenerator::createPipelinePrefilter(Registry& registry, VulkanRenderPa
     shaders.prefilter.pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }
 
-void SkyboxGenerator::createPipelineStars(Registry& registry, VulkanRenderPass& renderPass) {
+/*void SkyboxGenerator::createPipelineStars(Registry& registry, VulkanRenderPass& renderPass) {
     VkDescriptorSetLayoutBinding uboCameraLayoutBinding{};
     uboCameraLayoutBinding.binding = 0;
     uboCameraLayoutBinding.descriptorCount = 1;
@@ -290,7 +290,7 @@ void SkyboxGenerator::createPipelineStars(Registry& registry, VulkanRenderPass& 
     pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     shaders.stars.pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
-}
+}*/
 
 void SkyboxGenerator::createPipelineNebula(Registry& registry, VulkanRenderPass& renderPass) {
     VkDescriptorSetLayoutBinding uboCameraLayoutBinding{};
@@ -712,8 +712,8 @@ Skybox SkyboxGenerator::generate(uint64_t seed) {
         vkb.setScissor({0, 0}, renderPassInfo.size);
         vkb.setViewport({0, 0}, renderPassInfo.size);
 
-        renderStars(vkb, starsSmall, 0.10f);
-        renderStars(vkb, starsLarge, 0.20f);
+        //renderStars(vkb, starsSmall, 0.10f);
+        //renderStars(vkb, starsLarge, 0.20f);
 
         for (const auto& p : nebulaParams) {
             renderNebula(vkb, p);
@@ -811,7 +811,7 @@ void SkyboxGenerator::prepareCameraUbo(int side) {
     renderPasses.cameraUbo.subDataLocal(&uniform, 0, sizeof(CameraUniform));
 }
 
-void SkyboxGenerator::renderStars(VulkanCommandBuffer& vkb, SkyboxGenerator::Stars& stars, const float particleSize) {
+/*void SkyboxGenerator::renderStars(VulkanCommandBuffer& vkb, SkyboxGenerator::Stars& stars, const float particleSize) {
     vkb.bindPipeline(shaders.stars.pipeline);
 
     std::array<VulkanVertexBufferBindRef, 1> vboBinings{};
@@ -832,7 +832,7 @@ void SkyboxGenerator::renderStars(VulkanCommandBuffer& vkb, SkyboxGenerator::Sta
     vkb.bindDescriptors(shaders.stars.pipeline, shaders.stars.descriptorSetLayout, uboBindings, {}, {});
 
     vkb.draw(stars.count, 1, 0, 0);
-}
+}*/
 
 void SkyboxGenerator::renderNebula(VulkanCommandBuffer& vkb, const SkyboxNebulaUniforms& params) {
     vkb.bindPipeline(shaders.nebula.pipeline);

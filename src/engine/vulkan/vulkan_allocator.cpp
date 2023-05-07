@@ -1,5 +1,8 @@
 // clang-format off
 #define VMA_IMPLEMENTATION
+#ifdef __APPLE__
+#define VMA_STATS_STRING_ENABLED 0
+#endif
 #define VMA_VULKAN_VERSION 1001000
 #include <vk_mem_alloc.h>
 // clang-format on

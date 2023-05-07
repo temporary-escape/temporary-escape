@@ -73,7 +73,7 @@
     },
     {
       "name": "libuuid",
-      "platform": "!windows"
+      "platform": "!windows & !osx"
     },
     {
       "name": "liblzma",
@@ -99,6 +99,10 @@
       "features": [
         "vulkan"
       ]
+    },
+    {
+      "name": "gettext",
+      "platform": "osx"
     }
   ],
   "overrides": [
@@ -256,6 +260,11 @@
       "name": "ktx",
       "version": "4.1.0-rc2",
       "port-version": 0
+    },
+    {
+      "name": "gettext",
+      "version": "0.21",
+      "port-version": 9
     }
   ],
   "builtin-baseline": "f14984af3738e69f197bf0e647a8dca12de92996"

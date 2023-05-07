@@ -258,8 +258,16 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
+#ifdef __APPLE__
+    extensions.push_back("VK_KHR_portability_enumeration");
+#endif
+
     appCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     appCreateInfo.ppEnabledExtensionNames = extensions.data();
+
+#ifdef __APPLE__
+    appCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     populateDebugMessengerCreateInfo(debugCreateInfo);
@@ -277,9 +285,11 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
         appCreateInfo.pNext = nullptr;
     }
 
+    logger.info("Creating Vulkan instance");
+
     if (vkCreateInstance(&appCreateInfo, nullptr, &instance) != VK_SUCCESS) {
         destroy();
-        EXCEPTION("failed to create instance!");
+        EXCEPTION("Failed to create vulkan instance!");
     }
 
     surface = createSurface(instance);
@@ -321,10 +331,10 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
 
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-    if (supportedFeatures.textureCompressionETC2) {
-        compressionType = VulkanCompressionType::ETC2;
-    } else if (supportedFeatures.textureCompressionBC) {
+    if (supportedFeatures.textureCompressionBC) {
         compressionType = VulkanCompressionType::BC3;
+    } else if (supportedFeatures.textureCompressionETC2) {
+        compressionType = VulkanCompressionType::ETC2;
     }
 }
 

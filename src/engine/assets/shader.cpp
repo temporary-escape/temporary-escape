@@ -8,7 +8,6 @@ static auto logger = createLogger(__FILENAME__);
 static const std::unordered_map<std::string, VkShaderStageFlagBits> extensionStageMap = {
     {".vert", VK_SHADER_STAGE_VERTEX_BIT},
     {".frag", VK_SHADER_STAGE_FRAGMENT_BIT},
-    {".geom", VK_SHADER_STAGE_GEOMETRY_BIT},
     {".comp", VK_SHADER_STAGE_COMPUTE_BIT},
 };
 

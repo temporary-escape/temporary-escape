@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../audio/audio_context.hpp"
 #include "../database/database.hpp"
 #include "../graphics/planet_generator.hpp"
 #include "../graphics/renderer.hpp"
@@ -62,6 +63,7 @@ private:
     FontFamily font;
     Nuklear nuklear;
     Status status;
+    AudioContext audio;
 
     struct {
         GuiMainMenu mainMenu;

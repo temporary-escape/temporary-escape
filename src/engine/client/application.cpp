@@ -12,7 +12,8 @@ Application::Application(const Config& config) :
     config{config},
     canvas{*this},
     font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
-    nuklear{config, canvas, font, config.guiFontSize} {
+    nuklear{config, canvas, font, config.guiFontSize},
+    audio{} {
 
     gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},

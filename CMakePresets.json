@@ -57,6 +57,29 @@
           "intelliSenseMode": "windows-clang-x64"
         }
       }
+    },
+    {
+      "name": "ninja-macos",
+      "displayName": "Ninja MacOS Clang Configure Settings",
+      "description": "Configure with vcpkg toolchain",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Ninja",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64",
+        "VCPKG_TARGET_TRIPLET": "x64-osx",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install"
+      }
     }
   ],
   "buildPresets": [
@@ -71,6 +94,12 @@
       "configurePreset": "ninja-msvc",
       "displayName": "Build MSBuild",
       "description": "Build with MSBuild (VS)"
+    },
+    {
+      "name": "ninja-macos",
+      "configurePreset": "ninja-macos",
+      "displayName": "Build with Ninja",
+      "description": "Build with Ninja"
     }
   ],
   "testPresets": [
@@ -94,6 +123,11 @@
     {
       "name": "ninja-msvc",
       "configurePreset": "ninja-msvc",
+      "inherits": "test-common"
+    },
+    {
+      "name": "ninja-macos",
+      "configurePreset": "ninja-macos",
       "inherits": "test-common"
     }
   ]

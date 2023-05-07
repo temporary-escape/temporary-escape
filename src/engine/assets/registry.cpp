@@ -82,7 +82,7 @@ void Registry::findAssets() {
         }
 
         for (const auto& path : paths) {
-            init(shaders, path / "shaders", {".vert", ".frag", ".geom", ".comp"});
+            init(shaders, path / "shaders", {".vert", ".frag", ".comp"});
         }
 
         for (const auto& path : paths) {

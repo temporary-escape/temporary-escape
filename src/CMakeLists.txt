@@ -45,8 +45,8 @@ elseif (APPLE)
             PRIVATE
             ZLIB::ZLIB
             LibLZMA::LibLZMA
-            unofficial::UUID::uuid
-            Iconv::Iconv)
+            Iconv::Iconv
+            Gettext)
 endif ()
 
 # Component specific libraries

@@ -386,7 +386,7 @@ void VulkanRenderer::copyDataToBuffer(VulkanBuffer& buffer, const void* data, si
 
     while (bytesRemaining) {
         // Determine total byte size to copy this iteration.
-        auto bytesToCopy = std::min(transferBuffer.getSize(), bytesRemaining);
+        auto bytesToCopy = std::min(static_cast<size_t>(transferBuffer.getSize()), bytesRemaining);
 
         std::memcpy(transferBuffer.getMappedPtr(), src, bytesToCopy);
 

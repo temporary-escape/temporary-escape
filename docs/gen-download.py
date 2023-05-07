@@ -60,6 +60,8 @@ def get_file_type(file: str):
         return 'TAR Archive'
     if file.endswith('.AppImage'):
         return 'AppImage'
+    if file.endswith('.dmg'):
+        return 'Apple Disk Image'
     assert False, f'Unknown file type: {file}'
 
 
@@ -81,7 +83,11 @@ def create_markdown_version(endpoint: str, bucket: str, version: dict, id=None):
         tokens = tokens[1].split('.', maxsplit=1)
         assert len(tokens) == 2, f'Bad filename: {file}'
 
-        platforms[tokens[0]].append(to_download_link(endpoint, bucket, file))
+        platform_key = tokens[0]
+        if platform_key == 'Darwin':
+            platform_key = 'MacOS'
+
+        platforms[platform_key].append(to_download_link(endpoint, bucket, file))
 
     tag = version['version'] if id is None else id
 

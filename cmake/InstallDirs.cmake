@@ -34,3 +34,23 @@ install(FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         DESTINATION ".")
+
+if (APPLE)
+    install(FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bundle/TemporaryEscape.icns
+        DESTINATION ".")
+    
+    # Copy the Vulkan and MotelVK library to the install directory.
+    # Without this the user won't be able to run the app.
+    # Vulkan library is not distributed in the MacOS, only in the SDK!
+    file(GLOB LIB_VULKAN_DYLIBS "$ENV{VULKAN_SDK}/lib/libvulkan.1*.dylib")
+    install(FILES
+        "$ENV{VULKAN_SDK}/lib/libMoltenVK.dylib"
+        ${LIB_VULKAN_DYLIBS}
+        DESTINATION ".")
+
+    # We also need the MotelVK ICD JSON file.
+    install(FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bundle/MoltenVK_icd.json
+        DESTINATION "./vulkan/icd.d/")
+endif ()

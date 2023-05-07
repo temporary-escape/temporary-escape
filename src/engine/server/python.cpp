@@ -44,13 +44,19 @@ Python::Python(const Path& home, const std::vector<Path>& paths) {
         pythonPath += path.wstring();
     }
 
-#ifdef _WIN32
+#if defined(_WIN32)
     std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
+#elif defined(__APPLE__)
+    // std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
 #else
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 #endif
+
+// :( no idea why std::codecvt is so fucked up in C++
+#if !defined(__APPLE__)
     logger.info("Using Python home: '{}'", converter.to_bytes(pythonHome));
     logger.info("Using Python path: '{}'", converter.to_bytes(pythonPath));
+#endif
 
     try {
         // Initialize python
