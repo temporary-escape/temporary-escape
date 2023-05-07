@@ -68,8 +68,10 @@ public:
         size_t size;
         VkVertexInputRate inputRate{VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX};
 
-        template <typename T> static VertexInput of(uint32_t binding = 0) {
-            return {binding, T::getLayout(), sizeof(T)};
+        template <typename T>
+        static VertexInput of(uint32_t binding = 0,
+                              VkVertexInputRate inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX) {
+            return {binding, T::getLayout(), sizeof(T), inputRate};
         }
     };
 

@@ -7,5 +7,6 @@ static auto logger = createLogger(__FILENAME__);
 ComponentStarFlare::ComponentStarFlare(TexturePtr texture, TexturePtr textureLow, TexturePtr textureHigh) :
     texture{std::move(texture)}, textureLow{std::move(textureLow)}, textureHigh{std::move(textureHigh)} {
 
-    mesh.count = 1;
+    mesh.count = 4;
+    mesh.instances = 1;
 }

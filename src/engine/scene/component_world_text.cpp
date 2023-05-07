@@ -25,7 +25,8 @@ void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
-    mesh.count = vertices.size();
+    mesh.instances = vertices.size();
+    mesh.count = 4;
 }
 
 void ComponentWorldText::add(const Vector3& pos, const std::string& text) {

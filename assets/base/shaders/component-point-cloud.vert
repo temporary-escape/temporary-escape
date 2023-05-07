@@ -21,21 +21,48 @@ layout(location = 3) in vec2 in_Uv;
 layout(location = 4) in vec2 in_St;
 
 layout(location = 0) out VS_OUT {
-    vec2 size;
     vec4 color;
-    vec2 uv;
-    vec2 st;
+    vec2 texCoords;
 } vs_out;
 
 out gl_PerVertex {
     vec4 gl_Position;
 };
 
-void main() {
-    vs_out.size = in_Size;
+void geometrize(vec4 pos) {
     vs_out.color = in_Color;
-    vs_out.uv = in_Uv;
-    vs_out.st = in_St;
+    vec2 particleSize = in_Size / camera.viewport;
+
+    // a: left-bottom
+    if (gl_VertexIndex == 0) {
+        vec2 va = pos.xy + vec2(-1.0, -1.0) * particleSize;
+        gl_Position = vec4(va, pos.zw);
+        vs_out.texCoords = in_Uv;
+    }
+
+    // b: left-top
+    if (gl_VertexIndex == 1) {
+        vec2 vb = pos.xy + vec2(-1.0, 1.0) * particleSize;
+        gl_Position = vec4(vb, pos.zw);
+        vs_out.texCoords = vec2(in_Uv.x, in_Uv.y + in_St.y);
+    }
+
+    // d: right-bottom
+    if (gl_VertexIndex == 2) {
+        vec2 vd = pos.xy + vec2(1.0, -1.0) * particleSize;
+        gl_Position = vec4(vd, pos.zw);
+        vs_out.texCoords = vec2(in_Uv.x + in_St.x, in_Uv.y);
+    }
+
+    // c: right-top
+    if (gl_VertexIndex == 3) {
+        vec2 vc = pos.xy + vec2(1.0, 1.0) * particleSize;
+        gl_Position = vec4(vc, pos.zw);
+        vs_out.texCoords = vec2(in_Uv.x + in_St.x, in_Uv.y + in_St.y);
+    }
+}
+
+void main() {
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
-    gl_Position = camera.transformationProjectionMatrix * worldPos;
+    geometrize(camera.transformationProjectionMatrix * worldPos);
 }

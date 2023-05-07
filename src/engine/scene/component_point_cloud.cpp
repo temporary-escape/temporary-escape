@@ -35,5 +35,6 @@ void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, points.data(), sizeof(Point) * points.size());
-    mesh.count = points.size();
+    mesh.instances = points.size();
+    mesh.count = 4;
 }

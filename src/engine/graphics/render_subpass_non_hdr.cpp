@@ -6,43 +6,42 @@
 using namespace Engine;
 
 RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, Registry& registry) :
-    vulkan{vulkan}/*,
+    vulkan{vulkan},
     pipelineWorldText{
         vulkan,
         {
             // List of shader modules
             registry.getShaders().find("component-world-text.vert"),
-            registry.getShaders().find("component-world-text.geom"),
             registry.getShaders().find("component-world-text.frag"),
         },
         {
             // Vertex inputs
-            RenderPipeline::VertexInput::of<ComponentWorldText::Vertex>(0),
+            RenderPipeline::VertexInput::of<ComponentWorldText::Vertex>(0, VK_VERTEX_INPUT_RATE_INSTANCE),
         },
         {
             // Additional pipeline options
-            VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
             RenderPipeline::DepthMode::Read,
             RenderPipeline::Blending::Normal,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
-    }*/ {
+    } {
 
     setAttachments({
         RenderPassNonHdr::Attachments::Depth,
         RenderPassNonHdr::Attachments::Forward,
     });
 
-    //addPipeline(pipelineWorldText);
+    addPipeline(pipelineWorldText);
 }
 
 void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
-    // pipelineWorldText.getDescriptorPool().reset();
+    pipelineWorldText.getDescriptorPool().reset();
 
     std::vector<ForwardRenderJob> jobs;
-    //collectForRender<ComponentWorldText>(vkb, scene, jobs);
+    collectForRender<ComponentWorldText>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -52,7 +51,7 @@ void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 }
 
-/*void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                              ComponentTransform& transform, ComponentWorldText& component) {
     component.recalculate(vulkan);
 
@@ -80,4 +79,4 @@ void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineWorldText.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"color", color});
 
     pipelineWorldText.renderMesh(vkb, mesh);
-}*/
+}

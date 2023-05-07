@@ -37,6 +37,7 @@ void ComponentIconPointCloud::recalculate(VulkanRenderer& vulkan) {
 
         meshes[image].vbo = vulkan.createBuffer(bufferInfo);
         vulkan.copyDataToBuffer(meshes[image].vbo, points.data(), sizeof(Point) * points.size());
-        meshes[image].count = points.size();
+        meshes[image].instances = points.size();
+        meshes[image].count = 4;
     }
 }

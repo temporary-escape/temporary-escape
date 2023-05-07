@@ -287,7 +287,7 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
         }
 
         binding.binding = input.binding;
-        binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        binding.inputRate = input.inputRate;
         binding.stride = input.size;
 
         logger.debug("Adding vertex input binding: {} stride: {}", input.binding, input.size);
@@ -523,8 +523,8 @@ void RenderPipeline::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) {
 
     if (mesh.ibo) {
         vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
-        vkb.drawIndexed(mesh.count, 1, 0, 0, 0);
+        vkb.drawIndexed(mesh.count, mesh.instances, 0, 0, 0);
     } else {
-        vkb.draw(mesh.count, 1, 0, 0);
+        vkb.draw(mesh.count, mesh.instances, 0, 0);
     }
 }

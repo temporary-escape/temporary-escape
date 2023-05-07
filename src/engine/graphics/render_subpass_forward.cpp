@@ -49,28 +49,27 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
     },
-    /*pipelinePointCloud{
+    pipelinePointCloud{
         vulkan,
         {
             // List of shader modules
             registry.getShaders().find("component-point-cloud.vert"),
-            registry.getShaders().find("component-point-cloud.geom"),
             registry.getShaders().find("component-point-cloud.frag"),
         },
         {
             // Vertex inputs
-            RenderPipeline::VertexInput::of<ComponentPointCloud::Point>(0),
+            RenderPipeline::VertexInput::of<ComponentPointCloud::Point>(0, VK_VERTEX_INPUT_RATE_INSTANCE),
         },
         {
             // Additional pipeline options
-            VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
             RenderPipeline::DepthMode::Read,
             RenderPipeline::Blending::Normal,
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
-    },*/
+    },
     pipelinePolyShape{
         vulkan,
         {
@@ -91,13 +90,12 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_CLOCKWISE,
         },
-    }/*,
+    },
     pipelineStarFlare{
         vulkan,
         {
             // List of shader modules
             registry.getShaders().find("component-star-flare.vert"),
-            registry.getShaders().find("component-star-flare.geom"),
             registry.getShaders().find("component-star-flare.frag"),
         },
         {
@@ -105,7 +103,7 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         },
         {
             // Additional pipeline options
-            VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
             RenderPipeline::DepthMode::Read,
             RenderPipeline::Blending::Additive,
             VK_POLYGON_MODE_FILL,
@@ -114,7 +112,7 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
             RenderPipeline::Stencil::Read,
             0x00,
         },
-    }*/ {
+    } {
 
     setAttachments({
         RenderPassForward::Attachments::Depth,
@@ -123,26 +121,25 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
 
     addPipeline(pipelineDebug);
     addPipeline(pipelineLines);
-    //addPipeline(pipelinePointCloud);
+    addPipeline(pipelinePointCloud);
     addPipeline(pipelinePolyShape);
-    //addPipeline(pipelineStarFlare);
+    addPipeline(pipelineStarFlare);
 }
 
 void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineDebug.getDescriptorPool().reset();
     pipelineLines.getDescriptorPool().reset();
-    //pipelinePointCloud.getDescriptorPool().reset();
+    pipelinePointCloud.getDescriptorPool().reset();
     pipelinePolyShape.getDescriptorPool().reset();
-    //pipelineStarFlare.getDescriptorPool().reset();
+    pipelineStarFlare.getDescriptorPool().reset();
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);
     collectForRender<ComponentLines>(vkb, scene, jobs);
-    //collectForRender<ComponentIconPointCloud>(vkb, scene, jobs);
-    //collectForRender<ComponentPointCloud>(vkb, scene, jobs);
+    collectForRender<ComponentIconPointCloud>(vkb, scene, jobs);
+    collectForRender<ComponentPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, scene, jobs);
-    //collectForRender<ComponentStarFlare>(vkb, scene, jobs);
-    // collectForRender<ComponentPlanet>(vkb, scene, jobs);
+    collectForRender<ComponentStarFlare>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -204,7 +201,7 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     pipelineLines.renderMesh(vkb, mesh);
 }
 
-/*void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                               ComponentTransform& transform, ComponentPointCloud& component) {
     component.recalculate(vulkan);
 
@@ -230,9 +227,9 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
 
     pipelinePointCloud.renderMesh(vkb, mesh);
-}*/
+}
 
-/*void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                               ComponentTransform& transform, ComponentIconPointCloud& component) {
     component.recalculate(vulkan);
 
@@ -259,7 +256,7 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
 
         pipelinePointCloud.renderMesh(vkb, mesh);
     }
-}*/
+}
 
 void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                               ComponentTransform& transform, ComponentPolyShape& component) {
@@ -286,7 +283,7 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     pipelinePolyShape.renderMesh(vkb, mesh);
 }
 
-/*void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                               ComponentTransform& transform, ComponentStarFlare& component) {
     const auto& mesh = component.getMesh();
     if (mesh.count == 0) {
@@ -315,4 +312,4 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
         vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"size", size}, PushConstant{"temp", temp});
 
     pipelineStarFlare.renderMesh(vkb, mesh);
-}*/
+}
