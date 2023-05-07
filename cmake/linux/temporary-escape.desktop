@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+StartupWMClass=temporary-escape
+Name=Temporary Escape Game
+Icon=temporary-escape
+Categories=Game;
+Terminal=false
+Exec=/opt/temporary-escape/TemporaryEscape
+Path=/opt/temporary-escape

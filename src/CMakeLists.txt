@@ -84,7 +84,15 @@ target_link_libraries(${PROJECT_NAME}Library
         KTX::ktx)
 
 # The main target
-add_executable(${PROJECT_NAME}Main ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
+if (MSVC)
+    add_executable(${PROJECT_NAME}Main
+            WIN32
+            "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/windows/appicon.rc"
+            "${CMAKE_CURRENT_LIST_DIR}/main.cpp")
+else ()
+    add_executable(${PROJECT_NAME}Main ${CMAKE_CURRENT_LIST_DIR}/main.cpp)
+endif ()
+
 set_target_properties(${PROJECT_NAME}Main PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 
 target_link_libraries(${PROJECT_NAME}Main
@@ -110,3 +118,14 @@ install(TARGETS ${PROJECT_NAME}Main ${PROJECT_NAME}Library
         RUNTIME DESTINATION ".")
 
 install(CODE "execute_process(COMMAND $<TARGET_FILE:${PROJECT_NAME}Main> compress-assets --root \"${CMAKE_SOURCE_DIR}\")")
+
+if (MSVC)
+    # Start menu shortcut
+    set_property(INSTALL
+            "$<TARGET_FILE_NAME:${PROJECT_NAME}Main>"
+            PROPERTY CPACK_START_MENU_SHORTCUTS "Temporary Escape")
+    # Desktop shortcut
+    set_property(INSTALL
+            "$<TARGET_FILE_NAME:${PROJECT_NAME}Main>"
+            PROPERTY CPACK_DESKTOP_SHORTCUTS "Temporary Escape")
+endif ()

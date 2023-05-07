@@ -22,7 +22,15 @@ static int commandCompressAssets(const Config& config) {
     return EXIT_SUCCESS;
 }
 
+#if defined(_WIN32)
+int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, const int cmdshow) {
+    (void)hInst;
+    (void)hInstPrev;
+    (void)cmdline;
+    (void)cmdshow;
+#else
 int main(int argc, char** argv) {
+#endif
     const auto defaultRoot = getExecutablePath();
     const auto defaultUserData = getAppDataPath();
     const auto defaultPythonHome = getExecutablePath() / "python";
@@ -43,7 +51,11 @@ int main(int argc, char** argv) {
     parser.add_subcommand("play", "Play the game")->fallthrough(true);
     parser.add_subcommand("compress-assets", "Compress all PNG textures into KTX2")->fallthrough(true);
 
+#if defined(_WIN32)
+    CLI11_PARSE(parser, __argc, __argv);
+#else
     CLI11_PARSE(parser, argc, argv);
+#endif
 
     try {
         const auto userdataPath = std::filesystem::absolute(Path(defaultUserData));
