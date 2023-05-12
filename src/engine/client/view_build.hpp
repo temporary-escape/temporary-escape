@@ -44,13 +44,13 @@ private:
     void addBlock();
 
     const Config& config;
+    Renderer& renderer;
     Registry& registry;
     Gui& gui;
 
     Vector2 raycastScreenPos;
     std::optional<Grid::RayCastResult> raycastResult;
 
-    Skybox skybox;
     Scene scene;
     EntityPtr entityShip;
     EntityPtr entityHelperAdd;

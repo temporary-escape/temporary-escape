@@ -21,12 +21,12 @@ SYSTEM_REQUIREMENTS = """
 
 These are the minimum system requirements.
 You must have Vulkan 1.1 (or higher) compatible graphics card and a 64-bit operating system.
-The game may run on a lower hardware.
+The game may run on a lower hardware. Both Intel Mac and M1 Macs (with Rosetta) are supported.
 
 {{< tabs "system-requirements" >}}
 {{< tab "Minimum" >}}
-* **OS:** Windows 10 64-bit, Ubuntu/Debian/Manjaro 64-bit, or MacOS
-* **Display:** 1680x1050
+* **OS:** Windows 10 64-bit or later, Ubuntu/Debian/Manjaro 64-bit, MacOS 12.6 or later
+* **Display:** 1920x1080
 * **Processor:** Intel Core i3 or AMD Ryzen 3
 * **Memory:** 4 GB RAM
 * **Graphics:** Intel HD Graphics 500, NVidia GTX 650 Ti, or AMD Radeon R7
@@ -34,8 +34,8 @@ The game may run on a lower hardware.
 * **Storage:** 500 MB available space
 {{< /tab >}}
 {{< tab "Recommended" >}}
-* **OS:** Windows 10 64-bit, Ubuntu/Debian/Manjaro 64-bit, or MacOS
-* **Display:** 1920x1080
+* **OS:** Windows 10 64-bit or later, Ubuntu/Debian/Manjaro 64-bit, MacOS 12.6 or later
+* **Display:** 2560x1440
 * **Processor:** Intel Core i5 or AMD Ryzen 5
 * **Memory:** 8 GB RAM
 * **Graphics:** NVidia GTX 1050 Ti or AMD Radeon RX 5600

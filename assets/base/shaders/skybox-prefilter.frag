@@ -2,6 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(push_constant) uniform Uniforms {
+    mat4 projectionViewMatrix;
     float roughness;
 } uniforms;
 

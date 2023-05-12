@@ -38,6 +38,14 @@ void ServiceSystems::create(const PlanetaryBodyData& planetaryBody) {
     db.put(fmt::format("{}/{}/{}", planetaryBody.galaxyId, planetaryBody.systemId, planetaryBody.id), planetaryBody);
 }
 
+SystemData ServiceSystems::get(const std::string& galaxyId, const std::string& systemId) {
+    auto data = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
+    if (!data) {
+        EXCEPTION("No such system: {}/{}", galaxyId, systemId);
+    }
+    return *data;
+}
+
 std::vector<SystemData> ServiceSystems::getForGalaxy(const std::string& galaxyId) {
     return db.seekAll<SystemData>(fmt::format("{}/", galaxyId));
 }

@@ -7,7 +7,6 @@
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/renderer.hpp"
-#include "../graphics/skybox_generator.hpp"
 #include "../gui/gui_block_selector.hpp"
 #include "../gui/gui_context_menu.hpp"
 #include "../gui/gui_side_menu.hpp"

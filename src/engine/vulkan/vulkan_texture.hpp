@@ -99,6 +99,10 @@ public:
         return extent;
     }
 
+    Vector2i getSize2D() const {
+        return {static_cast<int>(extent.width), static_cast<int>(extent.height)};
+    }
+
     uint32_t getMipMaps() const {
         return mipMaps;
     }

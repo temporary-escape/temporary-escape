@@ -12,10 +12,12 @@ public:
 
 private:
     void renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderSceneModels(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
     VoxelShapeCache& voxelShapeCache;
     RenderPipeline pipelineGrid;
+    RenderPipeline pipelineModel;
     TexturePtr palette;
 };
 } // namespace Engine

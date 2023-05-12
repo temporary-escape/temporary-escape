@@ -96,9 +96,7 @@ public:
     }
 
     ComponentCamera* getPrimaryCamera();
-    Skybox* getSkybox() const {
-        return skybox;
-    }
+    const SkyboxTextures* getSkybox();
     void setSkybox(Skybox& value) {
         skybox = &value;
     }

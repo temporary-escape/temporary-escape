@@ -229,6 +229,8 @@ void Sector::addPlayer(SessionPtr session) {
     sync.post([this, session = std::move(session)]() {
         logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
 
+        auto systemData = world.systems.get(galaxyId, systemId);
+
         players.emplace_back();
         players.back().session = session;
 
@@ -237,6 +239,7 @@ void Sector::addPlayer(SessionPtr session) {
         msg.location.galaxyId = getGalaxyId();
         msg.location.systemId = getSystemId();
         msg.location.sectorId = getSectorId();
+        msg.systemSeed = systemData.seed;
         session->send(msg);
 
         // Send an event that a new player has entered the sector

@@ -84,6 +84,7 @@ public:
     void create(const SystemData& system);
     void update(const SystemData& system);
     void create(const PlanetaryBodyData& planetaryBody);
+    SystemData get(const std::string& galaxyId, const std::string& systemId);
     std::vector<SystemData> getForGalaxy(const std::string& galaxyId);
     std::vector<PlanetaryBodyData> getPlanetaryBodies(const std::string& galaxyId, const std::string& systemId);
 

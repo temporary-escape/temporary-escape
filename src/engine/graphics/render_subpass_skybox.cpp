@@ -10,6 +10,7 @@ using namespace Engine;
 RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& brdf) :
     vulkan{vulkan},
     brdf{brdf},
+    defaultSkybox{vulkan, Color4{0.5f, 0.0f, 0.5f, 1.0f}},
     pipelineSkybox{
         vulkan,
         {
@@ -81,7 +82,7 @@ void RenderSubpassSkybox::renderSkybox(VulkanCommandBuffer& vkb, Scene& scene) {
     auto camera = scene.getPrimaryCamera();
     auto skybox = scene.getSkybox();
     if (!skybox) {
-        EXCEPTION("Scene has no skybox attached");
+        skybox = &defaultSkybox;
     }
 
     pipelineSkybox.getDescriptorPool().reset();
@@ -115,7 +116,7 @@ void RenderSubpassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) 
 
     auto skybox = scene.getSkybox();
     if (!skybox) {
-        EXCEPTION("Scene has no skybox attached");
+        skybox = &defaultSkybox;
     }
 
     const auto& entities = scene.getView<ComponentTransform, ComponentPlanet>(entt::exclude<TagDisabled>).each();
@@ -124,8 +125,9 @@ void RenderSubpassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) 
     }
 }
 
-void RenderSubpassSkybox::renderPlanet(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Skybox& skybox,
-                                       ComponentTransform& transform, ComponentPlanet& component) {
+void RenderSubpassSkybox::renderPlanet(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                       const SkyboxTextures& skybox, ComponentTransform& transform,
+                                       ComponentPlanet& component) {
 
     if (!component.getTextures().getColor()) {
         return;

@@ -14,7 +14,7 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, Registry& registry, c
     opaque{opaque},
     ssao{ssao},
     brdf{brdf},
-
+    defaultSkybox{vulkan, Color4{0.5f, 0.0f, 0.5f, 1.0f}},
     pipelinePbr{
         vulkan,
         {
@@ -51,7 +51,7 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     auto camera = scene.getPrimaryCamera();
     auto skybox = scene.getSkybox();
     if (!skybox) {
-        EXCEPTION("Scene has no skybox attached");
+        skybox = &defaultSkybox;
     }
 
     pipelinePbr.getDescriptorPool().reset();

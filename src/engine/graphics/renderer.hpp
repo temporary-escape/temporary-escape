@@ -58,7 +58,6 @@ private:
     Registry& registry;
     FontFamily& font;
     Vector2i lastViewportSize;
-    Skybox skybox;
 
     struct {
         std::unique_ptr<RenderPassBrdf> brdf;

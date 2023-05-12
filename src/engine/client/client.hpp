@@ -42,10 +42,6 @@ public:
         return playerLocation;
     }
 
-    uint64_t getSystemSeed() const {
-        return systemSeed;
-    }
-
     void handle(MessagePlayerLocationChanged res);
     void handle(MessageSceneEntitiesChanged res);
     void handle(MessageSceneDeltasChanged res);
@@ -66,7 +62,6 @@ private:
     const PlayerLocalProfile& localProfile;
     std::string playerId;
     PlayerLocationData playerLocation;
-    uint64_t systemSeed{0};
 
     // Promise<void> loggedIn;
 

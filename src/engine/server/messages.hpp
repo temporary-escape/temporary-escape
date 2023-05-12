@@ -61,8 +61,9 @@ struct MessageSpawnResponse {
 
 struct MessagePlayerLocationChanged {
     PlayerLocationData location;
+    uint64_t systemSeed{0};
 
-    MESSAGE_DEFINE(MessagePlayerLocationChanged, location);
+    MESSAGE_DEFINE(MessagePlayerLocationChanged, location, systemSeed);
 };
 
 struct MessageSceneEntitiesChanged {

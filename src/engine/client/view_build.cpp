@@ -9,11 +9,7 @@ ViewBuild::Gui::Gui(const Config& config, Registry& registry) :
 }
 
 ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui) :
-    config{config},
-    registry{registry},
-    gui{gui},
-    skybox{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}},
-    scene{} {
+    config{config}, renderer{renderer}, registry{registry}, gui{gui}, scene{} {
 
     gui.blockSelector.setBlocks(registry.getBlocks().findAll());
 
@@ -51,18 +47,22 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registr
 }
 
 void ViewBuild::createScene() {
-    auto sun = scene.createEntity();
-    sun->addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
-
     auto entity = scene.createEntity();
+    entity->addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
+    entity->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
+
+    entity = scene.createEntity();
+    auto& skybox = entity->addComponent<ComponentSkybox>(0);
+    auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}};
+    skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
+
+    entity = scene.createEntity();
     auto& cameraTransform = entity->addComponent<ComponentTransform>();
     auto& cameraCamera = entity->addComponent<ComponentCamera>(cameraTransform);
     entity->addComponent<ComponentUserInput>(cameraCamera);
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene.setPrimaryCamera(entity);
-    scene.setSkybox(skybox);
 }
 
 void ViewBuild::createGridLines() {
@@ -145,7 +145,7 @@ void ViewBuild::createEntityShip() {
     grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
     grid.insert(Vector3i{1, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
     grid.insert(Vector3i{0, 1, 0}, block, 0, 0, VoxelShape::Type::Cube);
-    grid.insert(Vector3i{0, 0, 1}, block, 0, 0, VoxelShape::Type::Cube);
+    // grid.insert(Vector3i{0, 0, 1}, block, 0, 0, VoxelShape::Type::Cube);
 }
 
 void ViewBuild::addBlock() {

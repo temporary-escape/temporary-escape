@@ -13,26 +13,25 @@ static const Vector2 systemStarSize{32.0f, 32.0f};
 
 ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
                        FontFamily& font) :
-    parent{parent},
-    config{config},
-    registry{registry},
-    client{client},
-    font{font},
-    skybox{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}},
-    scene{} {
+    parent{parent}, config{config}, registry{registry}, client{client}, font{font}, scene{} {
 
     textures.systemStar = registry.getTextures().find("star_flare");
     images.iconSelect = registry.getImages().find("icon_target");
 
-    // To keep the renderer away from complaining
-    {
+    { // To keep the renderer away from complaining
         auto entity = scene.createEntity();
         entity->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
         entity->addComponent<ComponentTransform>().translate(Vector3{0.0f, 1.0f, 0.0f});
     }
 
-    // Our primary camera
-    {
+    { // Skybox
+        auto entity = scene.createEntity();
+        auto& skybox = entity->addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
+    }
+
+    { // Our primary camera
         auto entity = scene.createEntity();
         auto& transform = entity->addComponent<ComponentTransform>();
         auto& camera = entity->addComponent<ComponentCamera>(transform);
@@ -44,8 +43,6 @@ ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, R
 
         entities.camera = entity;
     }
-
-    scene.setSkybox(skybox);
 }
 
 void ViewGalaxy::update(const float deltaTime) {

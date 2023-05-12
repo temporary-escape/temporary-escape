@@ -3,9 +3,13 @@
 
 layout(location = 0) in vec3 in_Position;
 
-layout (std140, binding = 0) uniform CameraUniform {
+layout (std140, binding = 0) uniform Camera {
+    mat4 transformationProjectionMatrix;
+    mat4 viewProjectionInverseMatrix;
     mat4 viewMatrix;
     mat4 projectionMatrix;
+    ivec2 viewport;
+    vec3 eyesPos;
 } camera;
 
 layout(location = 0) out VS_OUT {

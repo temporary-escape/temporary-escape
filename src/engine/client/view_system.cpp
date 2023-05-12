@@ -17,29 +17,35 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, R
     registry{registry},
     client{client},
     font{font},
-    skybox{renderer.getVulkan(), Color4{0.01f, 0.01f, 0.01f, 1.0f}},
     scene{} {
 
     images.systemPlanet = registry.getImages().find("icon_ringed_planet");
     images.systemMoon = registry.getImages().find("icon_world");
     images.iconSelect = registry.getImages().find("icon_target");
 
-    // To keep the renderer away from complaining
-    auto sun = scene.createEntity();
-    sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 0.0f, 1.0f});
+    { // To keep the renderer away from complaining
+        auto sun = scene.createEntity();
+        sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
+        sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 0.0f, 1.0f});
+    }
 
-    // Our primary camera
-    auto cameraEntity = scene.createEntity();
-    auto& cameraTransform = cameraEntity->addComponent<ComponentTransform>();
-    camera = &cameraEntity->addComponent<ComponentCamera>(cameraTransform);
-    cameraEntity->addComponent<ComponentUserInput>(*camera);
-    camera->setOrthographic(25.0f);
-    camera->lookAt({0.0f, 1000.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
-    camera->setZoomRange(3.0f, 250.0f);
-    scene.setPrimaryCamera(cameraEntity);
+    { // Skybox
+        auto entity = scene.createEntity();
+        auto& skybox = entity->addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
+    }
 
-    scene.setSkybox(skybox);
+    { // Our primary camera
+        auto cameraEntity = scene.createEntity();
+        auto& cameraTransform = cameraEntity->addComponent<ComponentTransform>();
+        camera = &cameraEntity->addComponent<ComponentCamera>(cameraTransform);
+        cameraEntity->addComponent<ComponentUserInput>(*camera);
+        camera->setOrthographic(25.0f);
+        camera->lookAt({0.0f, 1000.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+        camera->setZoomRange(3.0f, 250.0f);
+        scene.setPrimaryCamera(cameraEntity);
+    }
 }
 
 void ViewSystem::update(const float deltaTime) {

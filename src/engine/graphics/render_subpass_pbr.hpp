@@ -28,6 +28,7 @@ private:
     const RenderPassOpaque& opaque;
     const RenderPassSsao& ssao;
     const VulkanTexture& brdf;
+    SkyboxTextures defaultSkybox;
     RenderPipeline pipelinePbr;
     Mesh fullScreenQuad;
     VulkanDoubleBuffer directionalLightsUbo;

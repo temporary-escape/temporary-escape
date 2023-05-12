@@ -16,8 +16,7 @@ Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRendere
     voxelShapeCache{voxelShapeCache},
     registry{registry},
     font{font},
-    lastViewportSize{viewport},
-    skybox{vulkan, Color4{0.05f, 0.05f, 0.05f, 1.0f}} {
+    lastViewportSize{viewport} {
 
     createRenderPasses(viewport);
     renderBrdf();
@@ -178,24 +177,33 @@ void Renderer::render(const std::shared_ptr<Block>& block, VoxelShape::Type shap
 
     Scene scene{};
 
-    auto sun = scene.createEntity();
-    sun->addComponent<ComponentDirectionalLight>(Color4{1.5f, 1.5f, 1.5f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 3.0f, 1.0f});
+    { // Sun
+        auto sun = scene.createEntity();
+        sun->addComponent<ComponentDirectionalLight>(Color4{1.5f, 1.5f, 1.5f, 1.0f});
+        sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 3.0f, 1.0f});
+    }
 
-    auto entityCamera = scene.createEntity();
-    auto& cameraTransform = entityCamera->addComponent<ComponentTransform>();
-    auto& cameraCamera = entityCamera->addComponent<ComponentCamera>(cameraTransform);
-    entityCamera->addComponent<ComponentUserInput>(cameraCamera);
-    cameraCamera.setProjection(19.0f);
-    cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
-    scene.setPrimaryCamera(entityCamera);
+    { // Camera
+        auto entity = scene.createEntity();
+        auto& transform = entity->addComponent<ComponentTransform>();
+        auto& camera = entity->addComponent<ComponentCamera>(transform);
+        entity->addComponent<ComponentUserInput>(camera);
+        camera.setProjection(19.0f);
+        camera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+        scene.setPrimaryCamera(entity);
+    }
 
-    scene.setSkybox(skybox);
+    { // Skybox
+        auto entity = scene.createEntity();
+        auto& skybox = entity->addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.05f, 0.05f, 0.05f, 1.0f}};
+        skybox.setTextures(vulkan, std::move(skyboxTextures));
+    }
 
     if (block) {
-        auto entityBlock = scene.createEntity();
-        auto& entityTransform = entityBlock->addComponent<ComponentTransform>();
-        auto& grid = entityBlock->addComponent<ComponentGrid>();
+        auto entity = scene.createEntity();
+        auto& transform = entity->addComponent<ComponentTransform>();
+        auto& grid = entity->addComponent<ComponentGrid>();
         grid.setDirty(true);
         grid.insert(Vector3i{0, 0, 0}, block, 0, 0, shape);
     }

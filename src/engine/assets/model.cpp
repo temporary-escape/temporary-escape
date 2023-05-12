@@ -241,36 +241,33 @@ void Model::load(Registry& registry, VulkanRenderer& vulkan) {
                 EXCEPTION("Invalid primitive type");
             }
 
-            /*const auto vboData =
+            const auto vboData =
                 GltfUtils::combine(positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
-
             const auto& iboData = part.indices->bufferView.getBuffer();
 
-            primitive.vbo = vulkan.createBuffer(VulkanBuffer::Type::Vertex, VulkanBuffer::Usage::Dynamic,
-                                                vboData.size() * sizeof(float));
-            primitive.vbo.subData(vboData.data(), 0, vboData.size() * sizeof(float));
+            VulkanBuffer::CreateInfo bufferInfo{};
+            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.size = vboData.size() * sizeof(float);
+            bufferInfo.usage =
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+            primitive.vbo = vulkan.createBuffer(bufferInfo);
+            vulkan.copyDataToBuffer(primitive.vbo, vboData.data(), bufferInfo.size);
 
-            primitive.ibo =
-                vulkan.createBuffer(VulkanBuffer::Type::Index, VulkanBuffer::Usage::Dynamic, iboData.size());
-            primitive.ibo.subData(iboData.data(), 0, iboData.size());
-
-            material.ubo = vulkan.createBuffer(VulkanBuffer::Type::Uniform, VulkanBuffer::Usage::Dynamic,
-                                               sizeof(Material::Uniform));
-            material.ubo.subData(&material.uniform, 0, sizeof(Material::Uniform));
+            bufferInfo.size = iboData.size() * sizeof(uint8_t);
+            bufferInfo.usage =
+                VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            primitive.ibo = vulkan.createBuffer(bufferInfo);
+            vulkan.copyDataToBuffer(primitive.ibo, iboData.data(), bufferInfo.size);
 
             primitive.count = static_cast<uint32_t>(part.indices->count);
 
-            primitive.vboFormat = vulkan.createVertexInputFormat({
-                {
-                    0,
-                    {
-                        {0, 0, VulkanVertexInputFormat::Format::Vec3},
-                        {1, 0, VulkanVertexInputFormat::Format::Vec3},
-                        {2, 0, VulkanVertexInputFormat::Format::Vec2},
-                        {3, 0, VulkanVertexInputFormat::Format::Vec4},
-                    },
-                },
-            });*/
+            bufferInfo.size = iboData.size() * sizeof(uint8_t);
+            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            material.ubo = vulkan.createBuffer(bufferInfo);
+            vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
         }
 
         bbRadius = std::max(std::abs(bbMin.x), bbRadius);

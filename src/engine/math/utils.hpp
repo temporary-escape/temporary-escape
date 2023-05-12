@@ -30,4 +30,7 @@ template <typename T> inline T lerp(T a, T b, T f) {
 
 extern ENGINE_API Color4 fromRgbBytes(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 extern ENGINE_API Color4 hsvToRgb(const Vector4& in);
+
+extern ENGINE_API Vector2i mipMapSize(const Vector2i& size, uint32_t level);
+extern ENGINE_API Vector2i mipMapOffset(const Vector2i& size, uint32_t level);
 } // namespace Engine

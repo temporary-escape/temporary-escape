@@ -13,6 +13,7 @@
 #include "component_label.hpp"
 #include "component_lines.hpp"
 #include "component_model.hpp"
+#include "component_nebula.hpp"
 #include "component_particle_emitter.hpp"
 #include "component_planet.hpp"
 #include "component_player.hpp"
@@ -20,6 +21,7 @@
 #include "component_poly_shape.hpp"
 #include "component_script.hpp"
 #include "component_ship_control.hpp"
+#include "component_skybox.hpp"
 #include "component_star_flare.hpp"
 #include "component_text.hpp"
 #include "component_turret.hpp"
@@ -38,7 +40,8 @@ using EntityComponentIds =
     entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                 ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
                 ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
-                ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare>;
+                ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare, ComponentSkybox,
+                ComponentNebula>;
 
 class ENGINE_API Entity {
 public:

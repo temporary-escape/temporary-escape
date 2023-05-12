@@ -100,9 +100,13 @@ PlanetGenerator::PlanetGenerator(const Config& config, VulkanRenderer& vulkan, R
     // clang-format on
 }
 
+bool PlanetGenerator::isBusy() const {
+    return work.seed || work.isRunning;
+}
+
 void PlanetGenerator::enqueue(const uint64_t seed, const PlanetTypePtr& planetType,
                               std::function<void(PlanetTextures)> callback) {
-    if (work.seed || work.isRunning) {
+    if (isBusy()) {
         EXCEPTION("Can not enqueue planet texture generation, already in progress");
     }
 
@@ -195,9 +199,9 @@ void PlanetGenerator::startWork() {
     copyTexture(vkb, normal, planetTextures.getNormal(), work.side);
 
     if (work.side == 5) {
-        vulkan.generateMipMaps(vkb, planetTextures.getColor());
-        vulkan.generateMipMaps(vkb, planetTextures.getMetallicRoughness());
-        vulkan.generateMipMaps(vkb, planetTextures.getNormal());
+        vkb.generateMipMaps(planetTextures.getColor());
+        vkb.generateMipMaps(planetTextures.getMetallicRoughness());
+        vkb.generateMipMaps(planetTextures.getNormal());
         // transitionTextureShaderRead(vkb, planetTextures.getColor());
         // transitionTextureShaderRead(vkb, planetTextures.getMetallicRoughness());
         // transitionTextureShaderRead(vkb, planetTextures.getNormal());

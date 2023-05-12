@@ -116,7 +116,7 @@ void Client::fetchSystemInfo() {
     send(req, [=](MessageFetchSystemResponse res) {
         logger.info("Got system info for player location");
 
-        systemSeed = res.system.seed;
+        // systemSeed = res.system.seed;
     });
 }
 
@@ -156,6 +156,9 @@ void Client::handle(MessagePlayerLocationChanged res) {
     sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f} * 100.0f);
     sun->addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
 
+    auto skybox = scene->createEntity();
+    skybox->addComponent<ComponentSkybox>(res.systemSeed);
+
     auto planet = scene->createEntity();
     planet->addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
     planet->getComponent<ComponentTransform>().scale(Vector3{1.0f});
@@ -181,13 +184,17 @@ void Client::handle(MessagePlayerLocationChanged res) {
     auto& grid = entity->addComponent<ComponentGrid>(debug);
     grid.setDirty(true);
 
+    entity = scene->createEntity();
+    entity->addComponent<ComponentTransform>().move({0.0f, 5.0f, 0.0f});
+    entity->addComponent<ComponentModel>(registry.getModels().find("model_asteroid_01_h"));
+
     auto block = registry.getBlocks().find("block_crew_quarters_t1");
     for (auto a = 0; a < 4; a++) {
         for (auto b = 0; b < 4; b++) {
-            grid.insert(Vector3i{a, 0, b}, block, a * b, 0, VoxelShape::Type::Cube);
+            grid.insert(Vector3i{a, 0, b}, block, a * b, 1, VoxelShape::Type::Cube);
         }
     }
-    grid.insert(Vector3i{2, 1, 2}, block, 0, 0, VoxelShape::Type::Cube);
+    grid.insert(Vector3i{2, 1, 2}, block, 0, 1, VoxelShape::Type::Cube);
 
     playerLocation = res.location;
 }

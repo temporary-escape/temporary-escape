@@ -9,7 +9,7 @@ layout(location = 0) in VS_OUT {
     vec3 position;
 } vs_out;
 
-layout(push_constant) uniform Uniforms {
+layout (std140, binding = 1) uniform Nebula {
     vec4 uColor;
     vec4 uOffset;
     float uScale;

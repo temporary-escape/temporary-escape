@@ -50,7 +50,6 @@ private:
     Registry& registry;
     Client& client;
     FontFamily& font;
-    Skybox skybox;
     Scene scene;
     ComponentCamera* camera{nullptr};
 

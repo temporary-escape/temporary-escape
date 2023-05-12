@@ -15,6 +15,7 @@ public:
     void enqueue(uint64_t seed, const PlanetTypePtr& planetType, std::function<void(PlanetTextures)> callback);
     void update(Scene& scene);
     void run();
+    bool isBusy() const;
 
 private:
     using Rng = std::mt19937_64;

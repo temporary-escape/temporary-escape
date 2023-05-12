@@ -14,12 +14,13 @@ public:
 private:
     void renderSkybox(VulkanCommandBuffer& vkb, Scene& scene);
     void renderPlanets(VulkanCommandBuffer& vkb, Scene& scene);
-    void renderPlanet(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Skybox& skybox,
+    void renderPlanet(VulkanCommandBuffer& vkb, const ComponentCamera& camera, const SkyboxTextures& skybox,
                       ComponentTransform& transform, ComponentPlanet& component);
     void updateDirectionalLights(Scene& scene);
 
     VulkanRenderer& vulkan;
     const VulkanTexture& brdf;
+    SkyboxTextures defaultSkybox;
     RenderPipeline pipelineSkybox;
     RenderPipeline pipelinePlanetSurface;
     Mesh cube;

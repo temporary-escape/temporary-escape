@@ -80,8 +80,8 @@ Vector3 Engine::intersectBoxNormal(const Vector3& center, const Vector3& pos) {
 
 Vector3 Engine::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
                               const Vector2& pos) {
-    const Vector4 rayClip((pos.x - 0) / float(viewport.x) * 2.0f - 1.0f,
-                          -((pos.y - 0) / float(viewport.y) * 2.0f - 1.0f), 0.5f, 0.0f);
+    const Vector4 rayClip(
+        (pos.x - 0) / float(viewport.x) * 2.0f - 1.0f, -((pos.y - 0) / float(viewport.y) * 2.0f - 1.0f), 0.5f, 0.0f);
 
     const Vector4 rayEye = glm::inverse(projectionMatrix) * rayClip;
 
@@ -94,7 +94,7 @@ Vector3 Engine::screenToWorld(const Matrix4& viewMatrix, const Matrix4& projecti
 Vector2 Engine::worldToScreen(const Matrix4& viewMatrix, const Matrix4& projectionMatrix, const Vector2i& viewport,
                               const Vector3& pos, const bool invert) {
     const auto vp = projectionMatrix * glm::inverse(viewMatrix);
-    const auto clipSpace = vp * Vector4{pos, 1.0f};
+    const auto clipSpace = vp* Vector4{pos, 1.0f};
     auto ndcSpace = Vector3{clipSpace} / clipSpace.w;
     ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
     const auto res = ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
@@ -113,7 +113,7 @@ std::vector<Vector2> Engine::worldToScreen(const Matrix4& viewMatrix, const Matr
     results.resize(positions.size());
 
     for (size_t i = 0; i < positions.size(); i++) {
-        const auto clipSpace = vp * Vector4{positions[i], 1.0f};
+        const auto clipSpace = vp* Vector4{positions[i], 1.0f};
         auto ndcSpace = Vector3{clipSpace} / clipSpace.w;
         ndcSpace = Vector3{ndcSpace.x, -ndcSpace.y, ndcSpace.z};
         results[i] = ((Vector2{ndcSpace} + Vector2{1.0f}) / 2.0f) * Vector2{viewport};
@@ -238,4 +238,20 @@ Color4 Engine::hsvToRgb(const Vector4& in) {
         break;
     }
     return out;
+}
+
+Vector2i Engine::mipMapSize(const Vector2i& size, uint32_t level) {
+    return {size.x >> level, size.y >> level};
+}
+
+Vector2i Engine::mipMapOffset(const Vector2i& size, uint32_t level) {
+    if (level == 0) {
+        return {0, 0};
+    } else {
+        Vector2i offset{size.x, 0};
+        for (uint32_t i = 2; i < level + 1; i++) {
+            offset.y += size.y >> (i - 1);
+        }
+        return offset;
+    }
 }

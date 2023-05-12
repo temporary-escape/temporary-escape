@@ -70,7 +70,6 @@ public:
     // void getGpuMemoryStats();
     void transitionImageLayout(VulkanTexture& texture, VkImageLayout oldLayout, VkImageLayout newLayout);
     void generateMipMaps(VulkanTexture& texture);
-    void generateMipMaps(VulkanCommandBuffer& commandBuffer, VulkanTexture& texture);
 
     template <typename T> void dispose(T&& resource) {
         if (!resource) {

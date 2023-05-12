@@ -122,11 +122,11 @@ void main() {
     vec4 normalMetallicRaw = texture(texNormalMetallic, vs_out.texCoords);
     float ssao = texture(texSsao, vs_out.texCoords).r;
 
-    vec3 albedo = pow(baseColorAmbientRaw.rgb, vec3(gamma));
-    vec3 emissive = pow(emissiveRoughnessRaw.rgb, vec3(gamma));
+    vec3 albedo = baseColorAmbientRaw.rgb;
+    vec3 emissive = emissiveRoughnessRaw.rgb;
     float metallic = normalMetallicRaw.a;
     float roughness = emissiveRoughnessRaw.a;
-    float ambientOcclusion = baseColorAmbientRaw.b;
+    float ambientOcclusion = baseColorAmbientRaw.a;
     vec3 N = normalize(normalMetallicRaw.rgb * 2.0 - 1.0);
 
     // Get world pos from UV and camera projection matrix
@@ -191,7 +191,7 @@ void main() {
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
 
-    vec3 irradiance = texture(texIrradiance, N).rgb;
+    vec3 irradiance = texture(texIrradiance, N).rgb * 0.7;
     vec3 diffuse = irradiance * albedo.xyz;
 
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.

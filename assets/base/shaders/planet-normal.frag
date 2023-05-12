@@ -21,14 +21,14 @@ void main() {
 
     float c = texture(textureHeightmap, vec2(x, y)).r;
 
-    float tl = texture(textureHeightmap, vec2(x-pixelSize, y-pixelSize)).r;
+    float tl = texture(textureHeightmap, vec2(x-pixelSize, y+pixelSize)).r;
     float l = texture(textureHeightmap, vec2(x-pixelSize, y)).r;
-    float bl = texture(textureHeightmap, vec2(x-pixelSize, y+pixelSize)).r;
+    float bl = texture(textureHeightmap, vec2(x-pixelSize, y-pixelSize)).r;
     float b = texture(textureHeightmap, vec2(x, y+pixelSize)).r;
-    float br = texture(textureHeightmap, vec2(x+pixelSize, y+pixelSize)).r;
+    float br = texture(textureHeightmap, vec2(x+pixelSize, y-pixelSize)).r;
     float r = texture(textureHeightmap, vec2(x+pixelSize, y)).r;
-    float tr = texture(textureHeightmap, vec2(x+pixelSize, y-pixelSize)).r;
-    float t = texture(textureHeightmap, vec2(x, y-pixelSize)).r;
+    float tr = texture(textureHeightmap, vec2(x+pixelSize, y+pixelSize)).r;
+    float t = texture(textureHeightmap, vec2(x, y+pixelSize)).r;
 
     // Compute dx using Sobel:
     //           -1 0 1

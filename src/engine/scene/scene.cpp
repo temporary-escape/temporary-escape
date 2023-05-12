@@ -122,6 +122,16 @@ ComponentCamera* Scene::getPrimaryCamera() {
     return nullptr;
 }
 
+const SkyboxTextures* Scene::getSkybox() {
+    for (auto&& [entity, skybox] : getView<ComponentSkybox>().each()) {
+        if (!skybox.isGenerated() || !skybox.getTextures().getTexture()) {
+            continue;
+        }
+        return &skybox.getTextures();
+    }
+    return nullptr;
+}
+
 void Scene::eventMouseMoved(const Vector2i& pos) {
     for (auto&& [entity, input] : getView<ComponentUserInput>().each()) {
         input.eventMouseMoved(pos);
