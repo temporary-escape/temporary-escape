@@ -42,3 +42,4 @@ __pycache__
 
 # Generated assets
 *.ktx2
+*.spirv

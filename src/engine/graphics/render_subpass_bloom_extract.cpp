@@ -14,8 +14,8 @@ RenderSubpassBloomExtract::RenderSubpassBloomExtract(VulkanRenderer& vulkan, Reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-bloom-extract.vert"),
-            registry.getShaders().find("pass-bloom-extract.frag"),
+            registry.getShaders().find("pass_bloom_extract_vert"),
+            registry.getShaders().find("pass_bloom_extract_frag"),
         },
         {
             // Vertex inputs

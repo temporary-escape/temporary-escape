@@ -28,6 +28,7 @@ public:
                   PlanetGenerator& planetGenerator, Registry& registry, FontFamily& font, Client& client);
     virtual ~Game();
 
+    bool isReady() const;
     void update(float deltaTime);
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
     void renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport);

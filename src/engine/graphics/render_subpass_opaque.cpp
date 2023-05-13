@@ -12,8 +12,8 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-grid.vert"),
-            registry.getShaders().find("component-grid.frag"),
+            registry.getShaders().find("component_grid_vert"),
+            registry.getShaders().find("component_grid_frag"),
         },
         {
             // Vertex inputs
@@ -33,8 +33,8 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-model.vert"),
-            registry.getShaders().find("component-model.frag"),
+            registry.getShaders().find("component_model_vert"),
+            registry.getShaders().find("component_model_frag"),
         },
         {
             // Vertex inputs

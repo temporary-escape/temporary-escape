@@ -16,8 +16,8 @@ RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer&
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-combine.vert"),
-            registry.getShaders().find("pass-combine.frag"),
+            registry.getShaders().find("pass_combine_vert"),
+            registry.getShaders().find("pass_combine_frag"),
         },
         {
             // Vertex inputs

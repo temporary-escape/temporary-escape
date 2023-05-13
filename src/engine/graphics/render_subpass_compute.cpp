@@ -10,7 +10,7 @@ RenderSubpassCompute::RenderSubpassCompute(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("position-feedback.comp"),
+            registry.getShaders().find("position_feedback_comp"),
         },
     } {
 
@@ -42,8 +42,10 @@ void RenderSubpassCompute::renderSceneCompute(VulkanCommandBuffer& vkb, const Co
     const auto modelMatrix = transform.getAbsoluteTransform();
     const auto viewport = Vector2{camera.getViewport()};
     const auto count = static_cast<int>(component.getCount());
-    pipelinePositionFeedback.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix},
-                                           PushConstant{"viewport", viewport}, PushConstant{"count", count});
+    pipelinePositionFeedback.pushConstants(vkb,
+                                           PushConstant{"modelMatrix", modelMatrix},
+                                           PushConstant{"viewport", viewport},
+                                           PushConstant{"count", count});
 
     const uint32_t workCount = (component.getCount() / 256) + 1;
     vkb.dispatch(workCount, 1, 1);

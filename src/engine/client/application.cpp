@@ -84,23 +84,21 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     vkb.beginRenderPass(renderPassInfo);
 
-    if (game || editor) {
+    if ((game && game->isReady()) || editor) {
         renderer->blit(vkb, viewport);
     }
 
     canvas.begin(viewport);
 
-    if (game) {
+    if (game && game->isReady()) {
         game->renderCanvas(canvas, nuklear, viewport);
     } else if (editor) {
         editor->renderCanvas(canvas, nuklear, viewport);
     } else {
-        if (!game && !editor) {
-            if (!status.message.empty()) {
-                renderStatus(viewport);
-            }
-            renderVersion(viewport);
+        if (!status.message.empty()) {
+            renderStatus(viewport);
         }
+        renderVersion(viewport);
 
         nuklear.begin(viewport);
         nuklear.draw(gui.mainMenu);

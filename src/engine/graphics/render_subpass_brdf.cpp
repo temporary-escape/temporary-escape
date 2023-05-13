@@ -11,8 +11,8 @@ RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, Registry& registry)
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("brdf.vert"),
-            registry.getShaders().find("brdf.frag"),
+            registry.getShaders().find("brdf_vert"),
+            registry.getShaders().find("brdf_frag"),
         },
         {
             // Vertex inputs

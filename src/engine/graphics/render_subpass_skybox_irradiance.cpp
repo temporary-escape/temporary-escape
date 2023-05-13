@@ -11,8 +11,8 @@ RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vul
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox-irradiance.vert"),
-            registry.getShaders().find("skybox-irradiance.frag"),
+            registry.getShaders().find("skybox_irradiance_vert"),
+            registry.getShaders().find("skybox_irradiance_frag"),
         },
         {
             // Vertex inputs

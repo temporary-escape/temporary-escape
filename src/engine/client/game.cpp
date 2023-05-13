@@ -29,14 +29,11 @@ void Game::update(float deltaTime) {
     view->update(deltaTime);
 }
 
-void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
-    /*if (client.getSystemSeed() != 0 && client.getSystemSeed() != skyboxSeed) {
-        skyboxSeed = client.getSystemSeed();
-        renderer.getVulkan().waitQueueIdle();
-        skybox = skyboxGenerator.generate(skyboxSeed);
-        client.getScene()->setSkybox(skybox);
-    }*/
+bool Game::isReady() const {
+    return !planetGenerator.isBusy() && !skyboxGenerator.isBusy();
+}
 
+void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     if (!planetGenerator.isBusy()) {
         skyboxGenerator.run();
         if (auto scene = client.getScene(); scene != nullptr) {

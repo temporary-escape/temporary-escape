@@ -10,8 +10,8 @@ RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet-normal.vert"),
-            registry.getShaders().find("planet-normal.frag"),
+            registry.getShaders().find("planet_normal_vert"),
+            registry.getShaders().find("planet_normal_frag"),
         },
         {
             // Vertex inputs

@@ -13,8 +13,8 @@ RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, Registry& registry,
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-fxaa.vert"),
-            registry.getShaders().find("pass-fxaa.frag"),
+            registry.getShaders().find("pass_fxaa_vert"),
+            registry.getShaders().find("pass_fxaa_frag"),
         },
         {
             // Vertex inputs

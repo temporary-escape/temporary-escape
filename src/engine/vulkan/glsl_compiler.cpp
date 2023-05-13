@@ -26,9 +26,15 @@
 #include <glslang/Public/ShaderLang.h>
 #include <string>
 // #include <glslang/OSDependent/osinclude.h>
+#include "../utils/log.hpp"
+#include "../utils/string_utils.hpp"
 #include "glsl_compiler.hpp"
 #include <glslang/SPIRV/GLSL.std.450.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+
+using namespace Engine;
+
+static auto logger = createLogger(__FILENAME__);
 
 const TBuiltInResource defaultTBuiltInResource = {
     /* .MaxLights = */ 32,
@@ -242,8 +248,8 @@ EShLanguage MapShaderStage(VkShaderStageFlagBits stage) {
     }
 }
 
-bool CompileGLSL2SPIRV(VkShaderStageFlagBits stage, const std::string& source, const std::string& entryPoint,
-                       std::vector<uint32_t>& spirv, std::string& infoLog) {
+bool Engine::compileGLSL2SPIRV(VkShaderStageFlagBits stage, const std::string& source, const std::string& entryPoint,
+                               std::vector<uint32_t>& spirv, std::string& infoLog) {
     // Get default built in resource limits.
     const auto& resourceLimits = defaultTBuiltInResource;
 
@@ -312,4 +318,33 @@ bool CompileGLSL2SPIRV(VkShaderStageFlagBits stage, const std::string& source, c
     glslang::FinalizeProcess();
 
     return true;
+}
+
+VkShaderStageFlagBits Engine::getGLSLFileFlags(const Path& src) {
+    const auto filename = src.filename().stem().string();
+    if (endsWith(filename, "_vert")) {
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+    } else if (endsWith(filename, "_frag")) {
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+    } else if (endsWith(filename, "_comp")) {
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT;
+    } else {
+        EXCEPTION("Unknown shader type: '{}'", filename);
+    }
+}
+
+void Engine::compileGLSLFile(const Path& src, const Path& dst) {
+    logger.info("Compiling GLSL file: {} to {}", src, dst);
+
+    const auto flags = getGLSLFileFlags(src);
+    const auto glsl = readFileStr(src);
+
+    std::vector<uint32_t> spirv;
+    std::string infoLog;
+
+    if (!compileGLSL2SPIRV(flags, glsl, "main", spirv, infoLog)) {
+        EXCEPTION("Failed to compile shader error: {}", infoLog);
+    }
+
+    writeFileBinary(dst, spirv.data(), spirv.size() * sizeof(uint32_t));
 }

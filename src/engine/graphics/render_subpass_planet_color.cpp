@@ -14,8 +14,8 @@ RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, Regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet-color.vert"),
-            registry.getShaders().find("planet-color.frag"),
+            registry.getShaders().find("planet_color_vert"),
+            registry.getShaders().find("planet_color_frag"),
         },
         {
             // Vertex inputs

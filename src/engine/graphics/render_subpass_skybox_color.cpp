@@ -12,8 +12,8 @@ RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox-nebula.vert"),
-            registry.getShaders().find("skybox-nebula.frag"),
+            registry.getShaders().find("skybox_nebula_vert"),
+            registry.getShaders().find("skybox_nebula_frag"),
         },
         {
             // Vertex inputs
@@ -33,8 +33,8 @@ RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-point-cloud.vert"),
-            registry.getShaders().find("component-point-cloud.frag"),
+            registry.getShaders().find("component_point_cloud_vert"),
+            registry.getShaders().find("component_point_cloud_frag"),
         },
         {
             // Vertex inputs

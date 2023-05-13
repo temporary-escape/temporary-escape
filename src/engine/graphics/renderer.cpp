@@ -91,8 +91,8 @@ void Renderer::createPipelineBlit() {
     pipelineBlit = std::make_unique<RenderPipeline>(
         vulkan,
         std::vector<ShaderPtr>({
-            registry.getShaders().find("blit.vert"),
-            registry.getShaders().find("blit.frag"),
+            registry.getShaders().find("blit_vert"),
+            registry.getShaders().find("blit_frag"),
         }),
         std::vector<RenderPipeline::VertexInput>({RenderPipeline::VertexInput::of<FullScreenVertex>(0)}),
         RenderPipeline::Options{

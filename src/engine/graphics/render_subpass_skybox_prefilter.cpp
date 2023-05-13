@@ -11,8 +11,8 @@ RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulka
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox-prefilter.vert"),
-            registry.getShaders().find("skybox-prefilter.frag"),
+            registry.getShaders().find("skybox_prefilter_vert"),
+            registry.getShaders().find("skybox_prefilter_frag"),
         },
         {
             // Vertex inputs

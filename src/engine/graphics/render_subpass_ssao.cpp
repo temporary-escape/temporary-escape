@@ -13,8 +13,8 @@ RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, Registry& registry,
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-ssao.vert"),
-            registry.getShaders().find("pass-ssao.frag"),
+            registry.getShaders().find("pass_ssao_vert"),
+            registry.getShaders().find("pass_ssao_frag"),
         },
         {
             // Vertex inputs
@@ -124,8 +124,8 @@ void RenderSubpassSsao::createSsaoNoise() {
     ssaoSamples.noise = vulkan.createTexture(textureInfo);
     vulkan.transitionImageLayout(ssaoSamples.noise, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vulkan.copyDataToImage(ssaoSamples.noise, 0, {0, 0}, 0, {4, 4}, ssaoNoise.data());
-    vulkan.transitionImageLayout(ssaoSamples.noise, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vulkan.transitionImageLayout(
+        ssaoSamples.noise, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RenderSubpassSsao::createSsaoSamples() {
@@ -136,8 +136,8 @@ void RenderSubpassSsao::createSsaoSamples() {
     std::array<Vector4, 64> weights{};
 
     for (unsigned int i = 0; i < sizeof(weights) / sizeof(Vector4); ++i) {
-        Vector3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0,
-                       randomFloats(generator));
+        Vector3 sample(
+            randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
         sample = glm::normalize(sample);
         sample *= randomFloats(generator);
         float scale = float(i) / 64.0f;

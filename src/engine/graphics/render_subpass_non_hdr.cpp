@@ -11,8 +11,8 @@ RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-world-text.vert"),
-            registry.getShaders().find("component-world-text.frag"),
+            registry.getShaders().find("component_world_text_vert"),
+            registry.getShaders().find("component_world_text_frag"),
         },
         {
             // Vertex inputs

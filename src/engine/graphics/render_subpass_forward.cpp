@@ -11,8 +11,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-debug.vert"),
-            registry.getShaders().find("component-debug.frag"),
+            registry.getShaders().find("component_debug_vert"),
+            registry.getShaders().find("component_debug_frag"),
         },
         {
             // Vertex inputs
@@ -32,8 +32,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-lines.vert"),
-            registry.getShaders().find("component-lines.frag"),
+            registry.getShaders().find("component_lines_vert"),
+            registry.getShaders().find("component_lines_frag"),
         },
         {
             // Vertex inputs
@@ -53,8 +53,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-point-cloud.vert"),
-            registry.getShaders().find("component-point-cloud.frag"),
+            registry.getShaders().find("component_point_cloud_vert"),
+            registry.getShaders().find("component_point_cloud_frag"),
         },
         {
             // Vertex inputs
@@ -74,8 +74,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-poly-shape.vert"),
-            registry.getShaders().find("component-poly-shape.frag"),
+            registry.getShaders().find("component_poly_shape_vert"),
+            registry.getShaders().find("component_poly_shape_frag"),
         },
         {
             // Vertex inputs
@@ -95,8 +95,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-star-flare.vert"),
-            registry.getShaders().find("component-star-flare.frag"),
+            registry.getShaders().find("component_star_flare_vert"),
+            registry.getShaders().find("component_star_flare_frag"),
         },
         {
             // Vertex inputs

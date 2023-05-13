@@ -12,8 +12,8 @@ RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulka
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet-flow-noise.vert"),
-            registry.getShaders().find("planet-flow-noise.frag"),
+            registry.getShaders().find("planet_flow_noise_vert"),
+            registry.getShaders().find("planet_flow_noise_frag"),
         },
         {
             // Vertex inputs

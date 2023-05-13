@@ -14,8 +14,8 @@ RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, Registry& registry,
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-blur.vert"),
-            registry.getShaders().find("pass-blur.frag"),
+            registry.getShaders().find("pass_blur_vert"),
+            registry.getShaders().find("pass_blur_frag"),
         },
         {
             // Vertex inputs

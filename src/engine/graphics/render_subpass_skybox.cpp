@@ -10,13 +10,13 @@ using namespace Engine;
 RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& brdf) :
     vulkan{vulkan},
     brdf{brdf},
-    defaultSkybox{vulkan, Color4{0.5f, 0.0f, 0.5f, 1.0f}},
+    defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}},
     pipelineSkybox{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-skybox.vert"),
-            registry.getShaders().find("pass-skybox.frag"),
+            registry.getShaders().find("pass_skybox_vert"),
+            registry.getShaders().find("pass_skybox_frag"),
         },
         {
             // Vertex inputs
@@ -36,8 +36,8 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component-planet-surface.vert"),
-            registry.getShaders().find("component-planet-surface.frag"),
+            registry.getShaders().find("component_planet_surface_vert"),
+            registry.getShaders().find("component_planet_surface_frag"),
         },
         {
             // Vertex inputs

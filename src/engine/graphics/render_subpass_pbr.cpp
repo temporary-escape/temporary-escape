@@ -14,13 +14,13 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, Registry& registry, c
     opaque{opaque},
     ssao{ssao},
     brdf{brdf},
-    defaultSkybox{vulkan, Color4{0.5f, 0.0f, 0.5f, 1.0f}},
+    defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}},
     pipelinePbr{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass-pbr.vert"),
-            registry.getShaders().find("pass-pbr.frag"),
+            registry.getShaders().find("pass_pbr_vert"),
+            registry.getShaders().find("pass_pbr_frag"),
         },
         {
             // Vertex inputs
