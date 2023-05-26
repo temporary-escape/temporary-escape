@@ -1,18 +1,18 @@
 #include "render_subpass_skybox_prefilter.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_skybox_prefilter.hpp"
 
 using namespace Engine;
 
-RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelinePrefilter{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox_prefilter_vert"),
-            registry.getShaders().find("skybox_prefilter_frag"),
+            assetsManager.getShaders().find("skybox_prefilter_vert"),
+            assetsManager.getShaders().find("skybox_prefilter_frag"),
         },
         {
             // Vertex inputs

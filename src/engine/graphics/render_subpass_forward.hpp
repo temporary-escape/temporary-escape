@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassForward : public RenderSubpass {
 public:
-    explicit RenderSubpassForward(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassForward() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

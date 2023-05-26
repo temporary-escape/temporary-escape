@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../config.hpp"
 #include "../database/database.hpp"
 #include "../future.hpp"
@@ -9,14 +9,15 @@
 #include "../utils/worker.hpp"
 #include "generator.hpp"
 #include "messages.hpp"
+#include "peer_lobby.hpp"
+#include "player_sessions.hpp"
 #include "sector.hpp"
-#include "session.hpp"
 #include <shared_mutex>
 
 namespace Engine {
-class ENGINE_API Python;
+class ENGINE_API Lua;
 
-class ENGINE_API Server : public Network::Server, public Service::SessionValidator {
+class ENGINE_API Server : public Network::Server {
 public:
     struct Certs {
         Certs() : key{}, cert{key}, dh{} {
@@ -27,47 +28,46 @@ public:
         Network::Dh dh;
     };
 
-    explicit Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db);
+    explicit Server(const Config& config, const Certs& certs, AssetsManager& assetsManager, Database& db);
     virtual ~Server();
 
-    void load();
-    void tick();
-    void cleanup();
-
     void onAcceptSuccess(PeerPtr peer) override;
+
+    // Player specific requests
     void handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res);
-    void handle(const PeerPtr& peer, MessageModsInfoRequest req, MessageModsInfoResponse& res);
-    void handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res);
-    void handle(const PeerPtr& peer, MessageShipMovementRequest req, MessageShipMovementResponse& res);
+    void handle(const PeerPtr& peer, MessageModManifestsRequest req, MessageModManifestsResponse& res);
+    void handle(const PeerPtr& peer, MessagePlayerLocationRequest req, MessagePlayerLocationResponse& res);
     void handle(const PeerPtr& peer, MessagePingResponse res);
 
-    std::shared_ptr<Service::Session> find(const std::shared_ptr<Network::Peer>& peer) override;
-
-    EventBus& getEventBus() const {
-        if (!eventBus) {
-            EXCEPTION("Event bus not initialized");
-        }
-        return *eventBus;
+    EventBus& getEventBus() const;
+    AssetsManager& getAssetManager() const {
+        return assetsManager;
     }
-
-    bool isLoaded() const {
-        return loaded.load();
+    Database& getDatabase() {
+        return db;
+    }
+    void setGenerator(std::function<void(uint64_t)> value) {
+        generator = std::move(value);
     }
 
     static Server* instance;
 
+    static void bind(Lua& lua);
+
 private:
-    void addPeerToLobby(const PeerPtr& peer);
-    void removePeerFromLobby(const PeerPtr& peer);
-    SessionPtr createSession(const PeerPtr& peer, const PlayerData& player);
-    SessionPtr peerToSession(const PeerPtr& peer);
-    std::tuple<SessionPtr, SectorPtr> peerToSessionSector(const PeerPtr& peer);
-    bool isPeerLoggedIn(const std::string& playerId);
-    void disconnectPeer(const PeerPtr& peer);
+    void load();
+    void tick();
+    void cleanup();
+    void pollEvents();
+    void updateSectors();
+
+    // Sector functions
+    void movePlayerToSector(const std::string& playerId, const std::string& sectorId);
+    SessionPtr getPlayerSession(const std::string& playerId);
     SectorPtr startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
-    std::vector<SessionPtr> getAllSessions();
-    void updateSessionsPing(const std::vector<SessionPtr>& sessions);
+
+    // Network overrides
     void onError(std::error_code ec) override;
     void onError(const PeerPtr& peer, std::error_code ec) override;
     void onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) override;
@@ -75,28 +75,20 @@ private:
 
 private:
     const Config& config;
-    Registry& registry;
-    TransactionalDatabase& db;
+    AssetsManager& assetsManager;
+    Database& db;
+    PlayerSessions playerSessions;
+    PeerLobby lobby;
+    World world;
     std::unique_ptr<EventBus> eventBus;
-    std::unique_ptr<World> world;
-    std::unique_ptr<Generator> generator;
+    std::function<void(uint64_t)> generator;
 
     std::thread tickThread;
     std::atomic_bool tickFlag;
-    std::atomic_bool loaded;
 
-    std::unique_ptr<Python> python;
+    std::unique_ptr<Lua> lua;
     BackgroundWorker worker;
-    Worker::Strand commands;
-
-    // BackgroundWorker& worker;
-    // BackgroundWorker loader;
-
-    struct {
-        std::shared_mutex mutex;
-        std::unordered_set<Network::Peer*> lobby;
-        std::unordered_map<Network::Peer*, SessionPtr> sessions;
-    } players;
+    BackgroundWorker loadQueue;
 
     struct {
         std::shared_mutex mutex;

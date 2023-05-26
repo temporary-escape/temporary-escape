@@ -2,10 +2,10 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassCompute::RenderPassCompute(VulkanRenderer& vulkan, Registry& registry) :
-    RenderPass{vulkan, {0, 0}}, subpassCompute{vulkan, registry} {
+RenderPassCompute::RenderPassCompute(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+    RenderPass{vulkan, {0, 0}}, subpassCompute{vulkan, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

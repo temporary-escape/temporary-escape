@@ -2,10 +2,11 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassSkyboxColor::RenderPassSkyboxColor(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport) :
-    RenderPass{vulkan, viewport}, subpassSkyboxColor{vulkan, registry} {
+RenderPassSkyboxColor::RenderPassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                             const Vector2i& viewport) :
+    RenderPass{vulkan, viewport}, subpassSkyboxColor{vulkan, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

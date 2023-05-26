@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBrdf : public RenderSubpass {
 public:
-    explicit RenderSubpassBrdf(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassBrdf() = default;
 
     void render(VulkanCommandBuffer& vkb);

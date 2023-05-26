@@ -54,11 +54,21 @@ public:
         return log;
     }
 
+    static void bind(Lua& lua);
+
 private:
     std::string name;
     const SpdLogger& root;
     SpdLogger log;
 };
 
-extern ENGINE_API Logger createLogger(std::string name);
+extern ENGINE_API Logger createLogger(const std::string_view& name);
+
+namespace Detail {
+constexpr auto logFilename(std::string_view path) {
+    constexpr std::string_view sourcePath{SOURCE_ROOT};
+    return path.substr(sourcePath.size() + 1).substr(0, path.find_last_of('.'));
+}
+} // namespace Detail
 } // namespace Engine
+#define LOG_FILENAME Engine::Detail::logFilename(__FILE__)

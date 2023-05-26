@@ -6,7 +6,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBlur : public RenderSubpass {
 public:
-    explicit RenderSubpassBlur(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& color, bool vertical);
+    explicit RenderSubpassBlur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& color,
+                               bool vertical);
     virtual ~RenderSubpassBlur() = default;
 
     void reset();

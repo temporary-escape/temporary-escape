@@ -5,7 +5,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassOpaque : public RenderSubpass {
 public:
-    explicit RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& registry, VoxelShapeCache& voxelShapeCache);
+    explicit RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                 VoxelShapeCache& voxelShapeCache);
     virtual ~RenderSubpassOpaque() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

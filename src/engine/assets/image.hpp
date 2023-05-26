@@ -11,13 +11,15 @@ public:
     explicit Image(std::string name, Path path);
     explicit Image(std::string name, const ImageAtlas::Allocation& allocation);
     MOVEABLE(Image);
-    void load(Registry& registry, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const ImageAtlas::Allocation& getAllocation() const {
         return allocation;
     }
 
     static std::shared_ptr<Image> from(const std::string& name);
+
+    static void bind(Lua& lua);
 
 private:
     Path path;

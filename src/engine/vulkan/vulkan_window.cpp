@@ -6,7 +6,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static MouseButton toMouseButton(int button) {
     switch (button) {

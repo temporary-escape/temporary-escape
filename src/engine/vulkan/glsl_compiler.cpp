@@ -34,7 +34,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 const TBuiltInResource defaultTBuiltInResource = {
     /* .MaxLights = */ 32,

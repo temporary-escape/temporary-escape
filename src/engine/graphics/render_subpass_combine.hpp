@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassCombine : public RenderSubpass {
 public:
-    explicit RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, Registry& registry,
+    explicit RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                                   const VulkanTexture& color, const VulkanTexture& blured);
     virtual ~RenderSubpassCombine() = default;
 

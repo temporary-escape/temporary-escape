@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkyboxPrefilter : public RenderSubpass {
 public:
-    explicit RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassSkyboxPrefilter() = default;
 
     void reset();

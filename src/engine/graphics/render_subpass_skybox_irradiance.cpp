@@ -1,18 +1,18 @@
 #include "render_subpass_skybox_irradiance.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_skybox_irradiance.hpp"
 
 using namespace Engine;
 
-RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineIrradiance{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox_irradiance_vert"),
-            registry.getShaders().find("skybox_irradiance_frag"),
+            assetsManager.getShaders().find("skybox_irradiance_vert"),
+            assetsManager.getShaders().find("skybox_irradiance_frag"),
         },
         {
             // Vertex inputs

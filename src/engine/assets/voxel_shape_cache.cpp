@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static VoxelShape::Face sideFromString(const std::string& str) {
     if (str == "X+") {
@@ -145,8 +145,8 @@ static VoxelShape load(const Path& path) {
                 if (attr.type == GltfAttributeType::Position) {
                     if (attr.accessor.type != GltfType::Vec3 &&
                         attr.accessor.componentType != GltfComponentType::R32f) {
-                        EXCEPTION("Node: '{}' mesh: '{}' expected positions to be of vec3 f32 type", node.name,
-                                  mesh.name);
+                        EXCEPTION(
+                            "Node: '{}' mesh: '{}' expected positions to be of vec3 f32 type", node.name, mesh.name);
                     }
 
                     auto span = attr.accessor.bufferView.getSpan();
@@ -155,8 +155,8 @@ static VoxelShape load(const Path& path) {
                 } else if (attr.type == GltfAttributeType::Normal) {
                     if (attr.accessor.type != GltfType::Vec3 &&
                         attr.accessor.componentType != GltfComponentType::R32f) {
-                        EXCEPTION("Node: '{}' mesh: '{}' expected normals to be of vec3 f32 type", node.name,
-                                  mesh.name);
+                        EXCEPTION(
+                            "Node: '{}' mesh: '{}' expected normals to be of vec3 f32 type", node.name, mesh.name);
                     }
 
                     auto span = attr.accessor.bufferView.getSpan();
@@ -165,8 +165,8 @@ static VoxelShape load(const Path& path) {
                 } else if (attr.type == GltfAttributeType::Tangent) {
                     if (attr.accessor.type != GltfType::Vec4 &&
                         attr.accessor.componentType != GltfComponentType::R32f) {
-                        EXCEPTION("Node: '{}' mesh: '{}' expected tangents to be of vec4 f32 type", node.name,
-                                  mesh.name);
+                        EXCEPTION(
+                            "Node: '{}' mesh: '{}' expected tangents to be of vec4 f32 type", node.name, mesh.name);
                     }
 
                     auto span = attr.accessor.bufferView.getSpan();
@@ -185,8 +185,8 @@ static VoxelShape load(const Path& path) {
             }
 
             if (positions.size() != normals.size() || normals.size() != tangents.size()) {
-                EXCEPTION("Node: '{}' mesh: '{}' incorrect number of positions, normals, and tangents", node.name,
-                          mesh.name);
+                EXCEPTION(
+                    "Node: '{}' mesh: '{}' incorrect number of positions, normals, and tangents", node.name, mesh.name);
             }
 
             data.vertices.resize(positions.size());
@@ -268,8 +268,8 @@ void VoxelShapeCache::precompute() {
                 }
 
                 for (auto& v : shape.vertices) {
-                    v.position = Vector3{rotationMatrix * Vector4{v.position, 1.0f}};
-                    v.normal = Vector3{transformInverted * Vector4{v.normal, 0.0f}};
+                    v.position = Vector3{rotationMatrix* Vector4{v.position, 1.0f}};
+                    v.normal = Vector3{transformInverted* Vector4{v.normal, 0.0f}};
                     // v.tangent = Vector4{transformInverted * v.tangent, 0.0f};
                     // v.tangent = v.tangent;
                 }

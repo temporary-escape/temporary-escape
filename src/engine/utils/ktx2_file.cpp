@@ -13,7 +13,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static bool isPowerOfTwo(const uint32_t x) {
     return (x & (x - 1)) == 0;

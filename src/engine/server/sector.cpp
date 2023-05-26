@@ -4,13 +4,13 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-Sector::Sector(const Config& config, World& world, Registry& registry, EventBus& eventBus, std::string galaxyId,
-               std::string systemId, std::string sectorId) :
+Sector::Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
+               std::string galaxyId, std::string systemId, std::string sectorId) :
     config{config},
-    world{world},
-    registry{registry},
+    db{db},
+    assetsManager{assetsManager},
     eventBus{eventBus},
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
@@ -21,255 +21,77 @@ Sector::Sector(const Config& config, World& world, Registry& registry, EventBus&
 }
 
 Sector::~Sector() {
+    logger.info("Stopping sector: '{}'", sectorId);
+
+    players.clear();
+    scene.reset();
+    lua.reset();
+
     logger.info("Stopped sector: '{}'", sectorId);
 }
 
 void Sector::load() {
+    logger.info("Sector is loading: '{}'", sectorId);
+
     if (loaded) {
-        return;
+        EXCEPTION("Sector was already loaded id: '{}'", sectorId);
     }
 
-    loaded = true;
+    scene = std::make_unique<Scene>();
+    lua = std::make_unique<Lua>(config, eventBus);
 
-    try {
+    /*try {
         auto found = world.sectors.find(galaxyId, systemId, sectorId);
         if (!found) {
-            EXCEPTION("Unable to populate sector: '{}' not found", sectorId);
+            EXCEPTION("Unable to load sector: '{}' not found", sectorId);
         }
 
         const auto& sector = found.value();
 
-        // std::mt19937_64 rng{sector.seed};
-
-        /*auto skybox = std::make_shared<Entity>();
-        skybox->addComponent<ComponentSkybox>(sector.seed);
-        skybox->scale(Vector3{1000.0f});
-        scene.addEntity(skybox);*/
-
-        /*auto sun = std::make_shared<Entity>();
-        sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f} * 3.0f);
-        sun->translate(Vector3{-2.0f, 2.0f, 2.0f});
-        scene.addEntity(sun);*/
-
-        /*auto particles = assetManager.find<AssetParticles>("particles_engine_exhaust_01");
-        auto dummy = std::make_shared<Entity>();
-        dummy->addComponent<ComponentParticleEmitter>(particles);
-        dummy->translate({0.0f, 3.0f, 0.0f});
-        scene.addEntity(dummy);
-
-        auto asteroidModel = assetManager.find<AssetModel>("model_asteroid_01_a");
-
-        for (auto y = 0; y < 10; y++) {
-            for (auto x = 0; x < 10; x++) {
-                auto asteroid = std::make_shared<Entity>();
-                asteroid->addComponent<ComponentModel>(asteroidModel);
-                asteroid->translate(Vector3{x * 3.0f, 0.0f, y * 3.0f});
-                scene.addEntity(asteroid);
-            }
-        }*/
-
-        /*auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
-        auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
-        auto blockFrame = assetManager.find<AssetBlock>("block_frame_t1");
-        auto blockBattery = assetManager.find<AssetBlock>("block_battery_t1");
-        auto blockSmallReactor = assetManager.find<AssetBlock>("block_reactor_small_t1");
-        auto blockTank = assetManager.find<AssetBlock>("block_tank_t1");
-
-        auto dummy = std::make_shared<Entity>();
-        auto grid = dummy->addComponent<ComponentGrid>();
-        grid->insert(blockEngineHousing, Vector3i{-1, 0, 0}, 0);
-        grid->insert(blockEngineHousing, Vector3i{1, 0, 0}, 0);
-        grid->insert(blockEngineNozzle, Vector3i{-1, 0, 1}, 0);
-        grid->insert(blockEngineNozzle, Vector3i{1, 0, 1}, 0);
-        grid->insert(blockFrame, Vector3i{0, 0, 0}, 0);
-        grid->insert(blockBattery, Vector3i{-1, 0, -1}, 0);
-        grid->insert(blockBattery, Vector3i{1, 0, -1}, 0);
-        grid->insert(blockSmallReactor, Vector3i{0, 0, -1}, 0);
-        grid->insert(blockTank, Vector3i{-1, 0, -2}, 0);
-        grid->insert(blockTank, Vector3i{1, 0, -2}, 0);
-        grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);
-
-        auto turretAsset = assetManager.find<AssetTurret>("turret_01");
-
-        auto turret = std::make_shared<Entity>();
-        turret->setParent(dummy);
-        turret->translate(Vector3{1, 1, -2});
-        auto turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
-        turretCmp->setTarget(Vector3{-4, 6, -15});
-
-        turret = std::make_shared<Entity>();
-        turret->setParent(dummy);
-        turret->translate(Vector3{-1, 1, -2});
-        turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
-        turretCmp->setTarget(Vector3{-4, 6, -15});
-
-        dummy->rotate(Vector3{0.0f, 1.0f, 0.0f}, 45.0f);
-        dummy->rotate(Vector3{1.0f, 0.0f, 0.0f}, -25.0f);
-        dummy->translate(Vector3{3.0f, 0.0f, 0.0f});
-
-        auto control = dummy->addComponent<ComponentShipControl>();
-        control->init();
-
-        scene.addEntity(dummy);*/
-
-        /*dummy = std::make_shared<Entity>();
-        dummy->addComponent<ComponentModel>(blockFrame->getModel());
-        dummy->translate(turretCmp->getTarget());
-        scene.addEntity(dummy);*/
     } catch (...) {
-        EXCEPTION_NESTED("Failed to populate sector");
-    }
-}
-
-void Sector::spawnPlayerShip(SessionPtr session) {
-    /*auto blockEngineHousing = assetManager.find<AssetBlock>("block_engine_housing_t1");
-    auto blockEngineNozzle = assetManager.find<AssetBlock>("block_engine_nozzle_t1");
-    auto blockFrame = assetManager.find<AssetBlock>("block_frame_t1");
-    auto blockBattery = assetManager.find<AssetBlock>("block_battery_t1");
-    auto blockSmallReactor = assetManager.find<AssetBlock>("block_reactor_small_t1");
-    auto blockTank = assetManager.find<AssetBlock>("block_tank_t1");
-
-    auto dummy = std::make_shared<Entity>();
-    auto grid = dummy->addComponent<ComponentGrid>();
-    grid->insert(blockEngineHousing, Vector3i{-1, 0, 0}, 0);
-    grid->insert(blockEngineHousing, Vector3i{1, 0, 0}, 0);
-    grid->insert(blockEngineNozzle, Vector3i{-1, 0, 1}, 0);
-    grid->insert(blockEngineNozzle, Vector3i{1, 0, 1}, 0);
-    grid->insert(blockFrame, Vector3i{0, 0, 0}, 0);
-    grid->insert(blockBattery, Vector3i{-1, 0, -1}, 0);
-    grid->insert(blockBattery, Vector3i{1, 0, -1}, 0);
-    grid->insert(blockSmallReactor, Vector3i{0, 0, -1}, 0);
-    grid->insert(blockTank, Vector3i{-1, 0, -2}, 0);
-    grid->insert(blockTank, Vector3i{1, 0, -2}, 0);
-    grid->insert(blockFrame, Vector3i{0, 0, -2}, 0);
-
-    auto turretAsset = assetManager.find<AssetTurret>("turret_01");
-
-    auto turret = std::make_shared<Entity>();
-    turret->setParent(dummy);
-    turret->translate(Vector3{1, 1, -2});
-    auto turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
-    turretCmp->setTarget(Vector3{-4, 6, -15});
-
-    turret = std::make_shared<Entity>();
-    turret->setParent(dummy);
-    turret->translate(Vector3{-1, 1, -2});
-    turretCmp = turret->addComponent<ComponentTurret>(turretAsset);
-    turretCmp->setTarget(Vector3{-4, 6, -15});
-
-    dummy->rotate(Vector3{0.0f, 1.0f, 0.0f}, 45.0f);
-    dummy->rotate(Vector3{1.0f, 0.0f, 0.0f}, -25.0f);
-    dummy->translate(Vector3{3.0f, 0.0f, 0.0f});
-
-    auto control = dummy->addComponent<ComponentShipControl>();
-    control->init();
-
-    dummy->addComponent<ComponentPlayer>(session->getPlayerId());
-
-    scene.addEntity(dummy);*/
-}
-
-void Sector::update(const float delta) {
-    /*for (auto& entity : scene.getEntities()) {
-        if (entity->isDirty()) {
-            entity->clearDirty();
-            entityDeltas.push_back(entity->getDelta());
-        }
-    }
-
-    for (auto& player : players) {
-        MessageSceneEntities::Response msg{};
-        for (auto& entity : player.entitiesToSync) {
-            msg.entities.push_back(entity);
-            if (msg.entities.size() >= 32) {
-                break;
-            }
-        }
-
-        player.entitiesToSync.erase(player.entitiesToSync.begin(), player.entitiesToSync.begin() + msg.entities.size());
-
-        if (!msg.entities.empty()) {
-            player.session->send(msg);
-        }
+        EXCEPTION_NESTED("Failed to load sector");
     }*/
 
-    /*sync.post([=]() {
-        try {
-            scene.update(delta);
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Sector tick error");
-        }
-    });*/
-
-    /*while (!entityDeltas.empty()) {
-        MessageSceneDeltas::Response msg{};
-        for (const auto& d : entityDeltas) {
-            msg.deltas.push_back(d);
-            if (msg.deltas.size() >= 32) {
-                break;
-            }
-        }
-
-        entityDeltas.erase(entityDeltas.begin(), entityDeltas.begin() + msg.deltas.size());
-
-        if (!msg.deltas.empty()) {
-            for (auto& player : players) {
-                player.session->send(msg);
-            }
-        }
-    }
-
-    entityDeltas.clear();*/
-
-    sync.reset();
-    sync.run();
+    loaded = true;
+    logger.info("Sector is loaded: '{}'", sectorId);
 }
 
-void Sector::addPlayer(SessionPtr session) {
-    sync.post([this, session = std::move(session)]() {
-        logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
+void Sector::update() {
+    try {
+        worker.poll();
 
-        auto systemData = world.systems.get(galaxyId, systemId);
+        const auto tickF = static_cast<float>(config.tickLengthUs.count()) / 1000000.0f;
+        scene->update(tickF);
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to update sector: {}", sectorId);
+    }
+}
 
-        players.emplace_back();
-        players.back().session = session;
+void Sector::addPlayer(const SessionPtr& session) {
+    worker.post([this, session]() {
+        const auto it = players.find(session);
+        if (it != players.end()) {
+            EXCEPTION("Player: {} is already in sector: {}", session->getPlayerId(), sectorId);
+        }
+        players.insert(std::make_pair(session, PlayerSessionData{}));
+
+        auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
 
         // Send a message to the player that their location has changed
-        MessagePlayerLocationChanged msg{};
+        MessagePlayerLocationEvent msg{};
         msg.location.galaxyId = getGalaxyId();
         msg.location.systemId = getSystemId();
         msg.location.sectorId = getSectorId();
-        msg.systemSeed = systemData.seed;
         session->send(msg);
 
         // Send an event that a new player has entered the sector
-        EventPlayer event{};
-        event.playerId = session->getPlayerId();
-        eventBus.enqueue("sector_player_added", event);
+        // EventPlayer event{};
+        // event.playerId = session->getPlayerId();
+        // TODO:
+        // eventBus.enqueue("sector_player_added", event);
+
+        logger.info("Player: '{}' added to sector: '{}'", session->getPlayerId(), sectorId);
     });
-
-    /*sync.post([this, session = std::move(session)]() {
-        logger.info("Adding player: '{}' to sector: '{}'", session->getPlayerId(), sectorId);
-
-        players.emplace_back();
-        players.back().session = session;
-
-        spawnPlayerShip(session);
-
-        const auto op = [](const EntityPtr& entity) {
-            // EntityView view;
-            // view.ptr = entity;
-            return entity;
-        };
-
-        std::transform(scene.getEntities().begin(), scene.getEntities().end(),
-                       std::back_inserter(players.back().entitiesToSync), op);
-
-        auto location = world.getPlayerLocation(session->getPlayerId());
-        MessagePlayerLocationChanged::Response msg{};
-        msg.location = location;
-        session->send(msg);
-    });*/
 }
 
 /*void Sector::handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res) {

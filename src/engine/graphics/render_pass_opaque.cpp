@@ -2,11 +2,11 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                                    VoxelShapeCache& voxelShapeCache, const VulkanTexture& depth) :
-    RenderPass{vulkan, viewport}, subpassOpaque{vulkan, registry, voxelShapeCache} {
+    RenderPass{vulkan, viewport}, subpassOpaque{vulkan, assetsManager, voxelShapeCache} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

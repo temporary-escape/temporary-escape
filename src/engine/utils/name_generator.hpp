@@ -14,7 +14,7 @@ public:
 
     std::string operator()(std::mt19937_64& rng);
 
-    static NameGenerator systemsNames;
+    static void bind(Lua& lua);
 
 private:
     void build(const std::vector<std::string>& words);
@@ -23,6 +23,4 @@ private:
     std::vector<std::string> sequencesKeys;
     std::uniform_int_distribution<size_t> distLength;
 };
-
-ENGINE_API extern std::string randomName(std::mt19937_64& rng);
 } // namespace Engine

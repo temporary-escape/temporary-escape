@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 void ComponentPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color) {
     setDirty(true);

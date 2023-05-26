@@ -7,11 +7,15 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 namespace Engine {
+using EventDataValue = std::variant<std::nullptr_t, int64_t, double, std::string>;
+using EventData = std::unordered_map<std::string, EventDataValue>;
+
 class ENGINE_API EventBus {
 public:
-    template <typename F> struct Traits;
+    /*template <typename F> struct Traits;
 
     template <typename C, typename T> struct Traits<void (C::*)(T) const> {
         using Arg = T;
@@ -42,16 +46,45 @@ public:
 
     private:
         std::list<std::function<void(const T&)>> listeners;
+    };*/
+
+    using Callback = std::function<void(EventData)>;
+    using Handle = std::list<Callback>::const_iterator;
+
+    class Listener {
+    public:
+        Listener() = default;
+        explicit Listener(EventBus& eventBus);
+        virtual ~Listener();
+        Listener(const Listener& other) = delete;
+        Listener(Listener&& other) = default;
+        Listener& operator=(const Listener& other) = delete;
+        Listener& operator=(Listener&& other) = default;
+
+        void reset();
+        void push(const std::string& name, const EventData& data);
+        Handle addHandler(std::string name, Callback fn);
+        void removeHandler(const std::string& name, const Handle& handle);
+        void enqueue(std::string name, EventData data);
+
+    private:
+        EventBus* eventBus{nullptr};
+        std::unordered_map<std::string, std::list<Callback>> handlers;
     };
 
     EventBus() = default;
-    ~EventBus() = default;
+    ~EventBus();
     EventBus(const EventBus& other) = delete;
-    EventBus(EventBus&& other) = default;
+    EventBus(EventBus&& other) = delete;
     EventBus& operator=(const EventBus& other) = delete;
-    EventBus& operator=(EventBus&& other) = default;
+    EventBus& operator=(EventBus&& other) = delete;
 
-    template <typename Fn> void addListener(const std::string& name, Fn&& fn) {
+    void addListener(Listener& listener);
+    void removeListener(Listener& listener);
+    void enqueue(std::string name, EventData data);
+    void poll();
+
+    /*template <typename Fn> void addListener(const std::string& name, Fn&& fn) {
         using T = typename Traits<decltype(&Fn::operator())>::Arg;
         addListenerForType<T>(name, std::forward<Fn>(fn));
     }
@@ -77,10 +110,14 @@ public:
         }
         auto ptr = static_cast<EventTypeImpl<Type>*>(it->second.get());
         queue.push_back([ptr, e = std::move(event)]() { ptr->process(e); });
-    }
+    }*/
 
 private:
-    template <typename T, typename Fn> void addListenerForType(const std::string& name, Fn&& fn) {
+    struct EventDataWrapper {
+        std::string name;
+        EventData data;
+    };
+    /*template <typename T, typename Fn> void addListenerForType(const std::string& name, Fn&& fn) {
         using Type = typename std::remove_all_extents<T>::type;
 
         auto it = callbacks.find(name);
@@ -98,7 +135,9 @@ private:
         ptr->addListener(std::forward<Fn>(fn));
     }
 
-    std::unordered_map<std::string, std::unique_ptr<EventType>> callbacks;
-    std::list<std::function<void()>> queue;
+    std::unordered_map<std::string, std::unique_ptr<EventType>> callbacks;*/
+    std::mutex mutex;
+    std::list<EventDataWrapper> queue;
+    std::list<Listener*> listeners;
 };
 } // namespace Engine

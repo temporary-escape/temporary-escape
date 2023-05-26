@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     vulkan{vulkan}, packer{2048, Vector2i{config.graphics.imageAtlasSize}} {

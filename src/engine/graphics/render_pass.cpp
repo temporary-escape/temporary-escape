@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 RenderPass::RenderPass(VulkanRenderer& vulkan, const Vector2i& viewport) : vulkan{vulkan}, viewport{viewport} {
 }

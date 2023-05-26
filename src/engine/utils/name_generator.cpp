@@ -1,20 +1,11 @@
 #include "name_generator.hpp"
+#include "../server/lua.hpp"
 #include <iostream>
+#include <sol/sol.hpp>
 #include <sstream>
 #include <string_view>
 
 using namespace Engine;
-
-static const std::vector<std::string> defaultWords = {
-    "Adara",     "Adena",     "Adrianne",  "Alarice",  "Alvita",  "Amara",   "Ambika",    "Antonia",   "Araceli",
-    "Balandria", "Basha",     "Beryl",     "Bryn",     "Callia",  "Caryssa", "Cassandra", "Casondrah", "Chatha",
-    "Ciara",     "Cynara",    "Cytheria",  "Dabria",   "Darcei",  "Deandra", "Deirdre",   "Delores",   "Desdomna",
-    "Devi",      "Dominique", "Drucilla",  "Duvessa",  "Ebony",   "Fantine", "Fuscienne", "Gabi",      "Gallia",
-    "Hanna",     "Hedda",     "Jerica",    "Jetta",    "Joby",    "Kacila",  "Kagami",    "Kala",      "Kallie",
-    "Keelia",    "Kerry",     "Kerry-Ann", "Kimberly", "Killian", "Kory",    "Lilith",    "Lucretia",  "Lysha",
-    "Mercedes",  "Mia",       "Maura",     "Perdita",  "Quella",  "Riona",   "Safiya",    "Salina",    "Severin",
-    "Sidonia",   "Sirena",    "Solita",    "Tempest",  "Thea",    "Treva",   "Trista",    "Vala",      "Winta",
-};
 
 static bool isLatinChar(const char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
@@ -107,8 +98,13 @@ std::string NameGenerator::operator()(std::mt19937_64& rng) {
     return {ss.data(), ss.size()};
 }
 
-NameGenerator NameGenerator::systemsNames(defaultWords);
+static std::shared_ptr<NameGenerator> createNameGenerator(sol::as_table_t<std::vector<std::string>> arg) {
+    return std::make_shared<NameGenerator>(arg.value());
+}
 
-std::string Engine::randomName(std::mt19937_64& rng) {
-    return NameGenerator::systemsNames(rng);
+void NameGenerator::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<NameGenerator>("NameGenerator", sol::factories(&createNameGenerator));
+    cls["get"] = &NameGenerator::operator();
 }

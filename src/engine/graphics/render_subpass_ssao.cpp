@@ -1,20 +1,21 @@
 #include "render_subpass_ssao.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_opaque.hpp"
 #include "render_pass_ssao.hpp"
 
 using namespace Engine;
 
-RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, Registry& registry, const RenderPassOpaque& previous) :
+RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                     const RenderPassOpaque& previous) :
     vulkan{vulkan},
     previous{previous},
     pipelineSsao{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_ssao_vert"),
-            registry.getShaders().find("pass_ssao_frag"),
+            assetsManager.getShaders().find("pass_ssao_vert"),
+            assetsManager.getShaders().find("pass_ssao_frag"),
         },
         {
             // Vertex inputs

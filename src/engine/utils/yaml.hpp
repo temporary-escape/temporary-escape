@@ -7,6 +7,7 @@
 #include "path.hpp"
 #include <functional>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 // Forward declaration
@@ -444,7 +445,7 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
         try {                                                                                                          \
             auto node = Yaml::load(p);                                                                                 \
             if (!node || !node.isMap()) {                                                                              \
-                EXCEPTION("Root is no a map");                                                                         \
+                EXCEPTION("Root is not a map");                                                                        \
             }                                                                                                          \
             Engine::Yaml::Adaptor<decltype(*this)>::convert(node, *this);                                              \
         } catch (...) {                                                                                                \
@@ -483,8 +484,8 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
                                                                                                                        \
             const auto it = map.find(node.asString());                                                                 \
             if (it == map.end()) {                                                                                     \
-                EXCEPTION("Can not convert string: '{}' into enum of type: '{}'", node.asString(),                     \
-                          typeid(Enum).name());                                                                        \
+                EXCEPTION(                                                                                             \
+                    "Can not convert string: '{}' into enum of type: '{}'", node.asString(), typeid(Enum).name());     \
             }                                                                                                          \
             value = it->second;                                                                                        \
         }                                                                                                              \
@@ -493,8 +494,45 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
             const auto it = map.find(value);                                                                           \
             if (it == map.end()) {                                                                                     \
                 EXCEPTION("Can not convert enum value: '{}' of type: '{}' into string, missing lookup pair",           \
-                          int(value), typeid(Enum).name());                                                            \
+                          int(value),                                                                                  \
+                          typeid(Enum).name());                                                                        \
             }                                                                                                          \
             node.packString(it->second);                                                                               \
         }                                                                                                              \
     };
+
+#define YAML_CALL_INSERT_TO_VARIANT(f)                                                                                 \
+    if (type == #f) {                                                                                                  \
+        value = f{};                                                                                                   \
+        Yaml::Adaptor<f>::convert(data, std::get<f>(value));                                                           \
+        return;                                                                                                        \
+    }
+
+#define YAML_CALL_INSERT_FROM_VARIANT(f)                                                                               \
+    if (std::holds_alternative<f>(value)) {                                                                            \
+        node.insert("type").packString(#f);                                                                            \
+        auto data = node.insert("data");                                                                               \
+        Engine::Yaml::Adaptor<f>::pack(data, std::get<f>(value));                                                      \
+        return;                                                                                                        \
+    }
+
+#define YAML_DEFINE_VARIANT(Variant, ...)                                                                              \
+    template <> struct Engine::Yaml::Adaptor<Variant> {                                                                \
+        static void convert(const Yaml::Node& node, Variant& value) {                                                  \
+            if (!node || !node.isMap()) {                                                                              \
+                throw std::runtime_error("variant field must be a map");                                               \
+            }                                                                                                          \
+            if (!node.contains("type")) {                                                                              \
+                throw std::runtime_error("variant field must have 'type' key");                                        \
+            }                                                                                                          \
+            if (!node.contains("data")) {                                                                              \
+                throw std::runtime_error("variant field must have 'data' key");                                        \
+            }                                                                                                          \
+            const auto type = node.child("type").asString();                                                           \
+            const auto& data = node.child("data");                                                                     \
+            YAML_FOR_EACH(YAML_CALL_INSERT_TO_VARIANT, __VA_ARGS__);                                                   \
+        }                                                                                                              \
+        static void pack(Yaml::Node& node, const Variant& value) {                                                     \
+            YAML_FOR_EACH(YAML_CALL_INSERT_FROM_VARIANT, __VA_ARGS__);                                                 \
+        }                                                                                                              \
+    }

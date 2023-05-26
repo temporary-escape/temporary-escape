@@ -1,19 +1,19 @@
 #include "render_subpass_planet_moisture.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../math/random.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_planet_surface.hpp"
 
 using namespace Engine;
 
-RenderSubpassPlanetMoisture::RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassPlanetMoisture::RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineMoisture{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet_flow_noise_vert"),
-            registry.getShaders().find("planet_flow_noise_frag"),
+            assetsManager.getShaders().find("planet_flow_noise_vert"),
+            assetsManager.getShaders().find("planet_flow_noise_frag"),
         },
         {
             // Vertex inputs

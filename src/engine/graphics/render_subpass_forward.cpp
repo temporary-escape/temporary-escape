@@ -1,18 +1,18 @@
 #include "render_subpass_forward.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "render_pass_forward.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineDebug{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_debug_vert"),
-            registry.getShaders().find("component_debug_frag"),
+            assetsManager.getShaders().find("component_debug_vert"),
+            assetsManager.getShaders().find("component_debug_frag"),
         },
         {
             // Vertex inputs
@@ -32,8 +32,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_lines_vert"),
-            registry.getShaders().find("component_lines_frag"),
+            assetsManager.getShaders().find("component_lines_vert"),
+            assetsManager.getShaders().find("component_lines_frag"),
         },
         {
             // Vertex inputs
@@ -53,8 +53,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_point_cloud_vert"),
-            registry.getShaders().find("component_point_cloud_frag"),
+            assetsManager.getShaders().find("component_point_cloud_vert"),
+            assetsManager.getShaders().find("component_point_cloud_frag"),
         },
         {
             // Vertex inputs
@@ -74,8 +74,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_poly_shape_vert"),
-            registry.getShaders().find("component_poly_shape_frag"),
+            assetsManager.getShaders().find("component_poly_shape_vert"),
+            assetsManager.getShaders().find("component_poly_shape_frag"),
         },
         {
             // Vertex inputs
@@ -95,8 +95,8 @@ RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, Registry& reg
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_star_flare_vert"),
-            registry.getShaders().find("component_star_flare_frag"),
+            assetsManager.getShaders().find("component_star_flare_vert"),
+            assetsManager.getShaders().find("component_star_flare_frag"),
         },
         {
             // Vertex inputs

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
@@ -15,8 +15,8 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSystem : public View {
 public:
-    explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                        FontFamily& font);
+    explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                        Client& client, FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -35,7 +35,7 @@ public:
     void load(const std::string& galaxyId, const std::string& systemId);
 
 private:
-    void clear();
+    /*void clear();
     void fetchCurrentLocation(const StopToken& stop);
     void fetchSectors(const StopToken& stop, const std::string& token);
     void fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token);
@@ -43,11 +43,11 @@ private:
     void clearEntities();
     void createEntityPositions();
     void createEntityCursor();
-    void createEntitiesBodies();
+    void createEntitiesBodies();*/
 
     Game& parent;
     const Config& config;
-    Registry& registry;
+    AssetsManager& assetsManager;
     Client& client;
     FontFamily& font;
     Scene scene;
@@ -61,9 +61,9 @@ private:
 
     struct {
         std::string name;
-        std::unordered_map<std::string, PlanetaryBodyData> planets;
+        std::unordered_map<std::string, PlanetData> planets;
         std::unordered_map<std::string, SectorData> sectors;
-        std::vector<std::variant<PlanetaryBodyData*, SectorData*>> bodies;
+        std::vector<std::variant<PlanetData*, SectorData*>> bodies;
     } system;
 
     struct {

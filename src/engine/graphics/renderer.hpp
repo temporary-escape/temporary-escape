@@ -25,7 +25,8 @@ class ENGINE_API VoxelShapeCache;
 class ENGINE_API Renderer {
 public:
     explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                      Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, Registry& registry, FontFamily& font);
+                      Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager,
+                      FontFamily& font);
     virtual ~Renderer();
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
@@ -55,7 +56,7 @@ private:
     Canvas& canvas;
     Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
-    Registry& registry;
+    AssetsManager& assetsManager;
     FontFamily& font;
     Vector2i lastViewportSize;
 

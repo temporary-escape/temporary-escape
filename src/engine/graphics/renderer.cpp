@@ -1,20 +1,20 @@
 #include "renderer.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../utils/exceptions.hpp"
 #include "mesh_utils.hpp"
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                   Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, Registry& registry, FontFamily& font) :
+                   Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     canvas{canvas},
     nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
-    registry{registry},
+    assetsManager{assetsManager},
     font{font},
     lastViewportSize{viewport} {
 
@@ -30,54 +30,54 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
     try {
         if (!renderPasses.brdf) {
             const auto brdfSize = Vector2i{config.graphics.brdfSize, config.graphics.brdfSize};
-            renderPasses.brdf = std::make_unique<RenderPassBrdf>(vulkan, registry, brdfSize);
+            renderPasses.brdf = std::make_unique<RenderPassBrdf>(vulkan, assetsManager, brdfSize);
         }
 
         if (!renderPasses.compute) {
-            renderPasses.compute = std::make_unique<RenderPassCompute>(vulkan, registry);
+            renderPasses.compute = std::make_unique<RenderPassCompute>(vulkan, assetsManager);
         }
 
         // clang-format off
         renderPasses.skybox = std::make_unique<RenderPassSkybox>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color));
 
         renderPasses.opaque = std::make_unique<RenderPassOpaque>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
         renderPasses.ssao = std::make_unique<RenderPassSsao>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             *renderPasses.opaque);
 
         renderPasses.lighting = std::make_unique<RenderPassLighting>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             *renderPasses.opaque,
             *renderPasses.ssao,
             renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color),
             renderPasses.skybox->getTexture(RenderPassSkybox::Forward));
 
         renderPasses.forward = std::make_unique<RenderPassForward>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             *renderPasses.opaque,
             *renderPasses.lighting);
 
         renderPasses.fxaa = std::make_unique<RenderPassFxaa>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             renderPasses.forward->getTexture(RenderPassForward::Attachments::Forward));
 
         renderPasses.bloom = std::make_unique<RenderPassBloom>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             renderPasses.fxaa->getTexture(RenderPassFxaa::Attachments::Color));
 
         renderPasses.combine = std::make_unique<RenderPassCombine>(
-            config, vulkan, registry, viewport,
+            config, vulkan, assetsManager, viewport,
             renderPasses.forward->getTexture(RenderPassForward::Attachments::Forward),
             renderPasses.fxaa->getTexture(RenderPassFxaa::Attachments::Color),
             renderPasses.bloom->getBluredTexture());
 
         renderPasses.nonHdr = std::make_unique<RenderPassNonHdr>(
-            vulkan, registry, viewport,
+            vulkan, assetsManager, viewport,
             *renderPasses.forward);
         // clang-format on
     } catch (...) {
@@ -91,8 +91,8 @@ void Renderer::createPipelineBlit() {
     pipelineBlit = std::make_unique<RenderPipeline>(
         vulkan,
         std::vector<ShaderPtr>({
-            registry.getShaders().find("blit_vert"),
-            registry.getShaders().find("blit_frag"),
+            assetsManager.getShaders().find("blit_vert"),
+            assetsManager.getShaders().find("blit_frag"),
         }),
         std::vector<RenderPipeline::VertexInput>({RenderPipeline::VertexInput::of<FullScreenVertex>(0)}),
         RenderPipeline::Options{

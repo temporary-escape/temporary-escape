@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../future.hpp"
 #include "cert.hpp"
 #include "dispatcher.hpp"
 #include "peer.hpp"
@@ -85,6 +86,29 @@ public:
         if (peer) {
             peer->send<Req>(message);
         }
+    }
+
+    /**
+     * Send some message to the server.
+     *
+     * @tparam Req The type of the message to send. This is auto deduced from the parameter.
+     * @tparam Res The type of the response we expect.
+     * @param message The message to send to the server.
+     */
+    template <typename Req, typename Res> Future<Res> send(const Req& message, const UseFuture<Res>&) {
+        if (peer) {
+            auto promise = std::make_shared<Promise<Res>>();
+            auto future = promise->future();
+            peer->send<Req>(message, [p = std::move(promise)](Res res) {
+                if (!res.error.empty()) {
+                    p->template reject<std::runtime_error>(res.error);
+                } else {
+                    p->resolve(std::move(res));
+                }
+            });
+            return future;
+        }
+        return Future<Res>{};
     }
 
     /**

@@ -1,15 +1,15 @@
 #include "shader.hpp"
 #include "../vulkan/glsl_compiler.hpp"
-#include "registry.hpp"
+#include "assets_manager.hpp"
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Shader::Shader(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Shader::load(Registry& registry, VulkanRenderer& vulkan) {
+void Shader::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
     try {
         stage = getGLSLFileFlags(path.filename().string());
         shader = vulkan.createShaderModule(path, stage);
@@ -19,5 +19,5 @@ void Shader::load(Registry& registry, VulkanRenderer& vulkan) {
 }
 
 ShaderPtr Shader::from(const std::string& name) {
-    return Registry::getInstance().getShaders().find(name);
+    return AssetsManager::getInstance().getShaders().find(name);
 }

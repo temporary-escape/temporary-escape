@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 VulkanRenderer::VulkanRenderer(const Config& config) :
     VulkanDevice{config}, config{config}, lastViewportSize{config.graphics.windowWidth, config.graphics.windowHeight} {
@@ -173,11 +173,11 @@ void VulkanRenderer::onExit() {
 }
 
 VulkanShader VulkanRenderer::createShaderModule(const Path& path, VkShaderStageFlagBits stage) {
-    return VulkanShader{config, *this, path, stage};
+    return VulkanShader{*this, path, stage};
 }
 
 VulkanShader VulkanRenderer::createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage) {
-    return VulkanShader{config, *this, glsl, stage};
+    return VulkanShader{*this, glsl, stage};
 }
 
 VulkanPipeline VulkanRenderer::createPipeline(const VulkanRenderPass& renderPass,

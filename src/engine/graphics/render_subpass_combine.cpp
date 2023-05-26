@@ -1,12 +1,12 @@
 #include "render_subpass_combine.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_combine.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, Registry& registry,
+RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                                            const VulkanTexture& color, const VulkanTexture& blured) :
     config{config},
     vulkan{vulkan},
@@ -16,8 +16,8 @@ RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer&
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_combine_vert"),
-            registry.getShaders().find("pass_combine_frag"),
+            assetsManager.getShaders().find("pass_combine_vert"),
+            assetsManager.getShaders().find("pass_combine_frag"),
         },
         {
             // Vertex inputs

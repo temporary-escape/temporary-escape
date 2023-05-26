@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../assets/voxel_shape_cache.hpp"
 #include "../config.hpp"
 #include "../database/rocks_db.hpp"
@@ -20,12 +20,12 @@
 #include "view_system.hpp"
 
 namespace Engine {
-class ENGINE_API TransactionalDatabase;
+class ENGINE_API Database;
 
 class ENGINE_API Game : public UserInput {
 public:
     explicit Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator,
-                  PlanetGenerator& planetGenerator, Registry& registry, FontFamily& font, Client& client);
+                  PlanetGenerator& planetGenerator, AssetsManager& assetsManager, FontFamily& font, Client& client);
     virtual ~Game();
 
     bool isReady() const;
@@ -50,7 +50,7 @@ private:
     Renderer& renderer;
     SkyboxGenerator& skyboxGenerator;
     PlanetGenerator& planetGenerator;
-    Registry& registry;
+    AssetsManager& assetsManager;
     FontFamily& font;
     Client& client;
     Stats stats;

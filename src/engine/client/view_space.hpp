@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
@@ -13,8 +13,8 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSpace : public View {
 public:
-    explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
-                       Client& client);
+    explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                       Skybox& skybox, Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -32,7 +32,7 @@ public:
 private:
     Game& parent;
     const Config& config;
-    Registry& registry;
+    AssetsManager& assetsManager;
     Skybox& skyboxSystem;
     Client& client;
 };

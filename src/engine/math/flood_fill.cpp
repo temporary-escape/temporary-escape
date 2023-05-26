@@ -1,14 +1,12 @@
 #include "flood_fill.hpp"
+#include "../server/lua.hpp"
 #include "../utils/exceptions.hpp"
+#include <sol/sol.hpp>
 #include <unordered_set>
 
 using namespace Engine;
 
-void Engine::floodFill(const std::vector<Vector2>& positions,
-                       const std::unordered_map<size_t, std::vector<size_t>>& connections,
-                       const std::unordered_map<size_t, Vector2>& startingPoints,
-                       const std::function<void(size_t, size_t)>& yield) {
-
+void FloodFill::calculate() {
     const auto getNearestPoint = [&](const Vector2& pos) -> size_t {
         const Vector2* found = &positions.at(0);
         for (size_t i = 1; i < positions.size(); i++) {
@@ -58,7 +56,7 @@ void Engine::floodFill(const std::vector<Vector2>& positions,
                     processed.insert(otherIndex);
                     pointsIndexes.push_back(otherIndex);
 
-                    yield(otherIndex, id);
+                    results.push_back({otherIndex, id});
                 }
             }
 
@@ -74,5 +72,26 @@ void Engine::floodFill(const std::vector<Vector2>& positions,
         if (progress.empty()) {
             break;
         }
+    }
+}
+
+void FloodFill::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    {
+        auto cls = m.new_usertype<FloodFill::Result>("FloodFillResult", sol::constructors<FloodFill::Result()>{});
+        cls["index"] = &FloodFill::Result::index;
+        cls["point"] = &FloodFill::Result::point;
+    }
+    
+    { // FloodFill
+        auto cls = m.new_usertype<FloodFill>("FloodFill", sol::constructors<FloodFill()>{});
+        cls["calculate"] = &FloodFill::calculate;
+        cls["add_start_point"] = &FloodFill::addStartPoint;
+        cls["size"] = &FloodFill::size;
+        cls["get"] = &FloodFill::get;
+        cls["add_position"] = [](FloodFill& self, const Vector2& pos, sol::as_table_t<std::vector<size_t>> conns) {
+            self.addPosition(pos, conns.value());
+        };
     }
 }

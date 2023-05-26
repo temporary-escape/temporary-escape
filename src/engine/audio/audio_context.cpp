@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 struct AudioContext::Data {
     std::shared_ptr<ALCdevice> device;

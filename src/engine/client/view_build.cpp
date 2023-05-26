@@ -2,38 +2,38 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-ViewBuild::Gui::Gui(const Config& config, Registry& registry) :
-    blockActionBar{config, registry}, blockSelector{config}, blockSideMenu{config} {
+ViewBuild::Gui::Gui(const Config& config, AssetsManager& assetsManager) :
+    blockActionBar{config, assetsManager}, blockSelector{config}, blockSideMenu{config} {
 }
 
-ViewBuild::ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui) :
-    config{config}, renderer{renderer}, registry{registry}, gui{gui}, scene{} {
+ViewBuild::ViewBuild(const Config& config, Renderer& renderer, AssetsManager& assetsManager, Gui& gui) :
+    config{config}, renderer{renderer}, assetsManager{assetsManager}, gui{gui}, scene{} {
 
-    gui.blockSelector.setBlocks(registry.getBlocks().findAll());
+    gui.blockSelector.setBlocks(assetsManager.getBlocks().findAll());
 
     gui.blockSideMenu.setItems({
         GuiSideMenu::Item{
-            registry.getImages().find("icon_save"),
+            assetsManager.getImages().find("icon_save"),
             "Save current ship",
             [this](bool active) {},
             false,
         },
         GuiSideMenu::Item{
-            registry.getImages().find("icon_open_folder"),
+            assetsManager.getImages().find("icon_open_folder"),
             "Open a ship to edit",
             [this](bool active) {},
             false,
         },
         GuiSideMenu::Item{
-            registry.getImages().find("icon_anticlockwise_rotation"),
+            assetsManager.getImages().find("icon_anticlockwise_rotation"),
             "Undo",
             [this](bool active) {},
             false,
         },
         GuiSideMenu::Item{
-            registry.getImages().find("icon_clockwise_rotation"),
+            assetsManager.getImages().find("icon_clockwise_rotation"),
             "Redo",
             [this](bool active) {},
             false,
@@ -141,7 +141,7 @@ void ViewBuild::createEntityShip() {
     auto& grid = entityShip->addComponent<ComponentGrid>(debug);
     grid.setDirty(true);
 
-    auto block = registry.getBlocks().find("block_crew_quarters_t1");
+    auto block = assetsManager.getBlocks().find("block_crew_quarters_t1");
     grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
     grid.insert(Vector3i{1, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
     grid.insert(Vector3i{0, 1, 0}, block, 0, 0, VoxelShape::Type::Cube);

@@ -4,22 +4,22 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, PlanetGenerator& planetGenerator,
-           Registry& registry, FontFamily& font, Client& client) :
+           AssetsManager& assetsManager, FontFamily& font, Client& client) :
     config{config},
     renderer{renderer},
     skyboxGenerator{skyboxGenerator},
     planetGenerator{planetGenerator},
-    registry{registry},
+    assetsManager{assetsManager},
     font{font},
     client{client},
     skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, registry, skybox, client);
-    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, registry, client, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, registry, client, font);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, assetsManager, skybox, client);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, assetsManager, client, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, assetsManager, client, font);
     view = viewSpace.get();
 }
 

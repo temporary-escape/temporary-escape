@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkyboxIrradiance : public RenderSubpass {
 public:
-    explicit RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassSkyboxIrradiance() = default;
 
     void reset();

@@ -1,9 +1,11 @@
 #include "block.hpp"
-#include "registry.hpp"
+#include "../server/lua.hpp"
+#include "assets_manager.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
     try {
@@ -21,8 +23,8 @@ Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::mo
     }
 }
 
-void Block::load(Registry& registry, VulkanRenderer& vulkan) {
-    auto& defaults = registry.getDefaultTextures();
+void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+    auto& defaults = assetsManager.getDefaultTextures();
 
     std::unordered_map<const Definition::MaterialDefinition*, size_t> map;
 
@@ -70,5 +72,12 @@ void Block::load(Registry& registry, VulkanRenderer& vulkan) {
 }
 
 BlockPtr Block::from(const std::string& name) {
-    return Registry::getInstance().getBlocks().find(name);
+    return AssetsManager::getInstance().getBlocks().find(name);
+}
+
+void Block::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Block>("Block");
+    cls["name"] = sol::property(&Block::getName);
 }

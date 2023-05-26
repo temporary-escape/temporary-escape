@@ -8,7 +8,7 @@ class ENGINE_API RenderSubpassPlanetHeightmap : public RenderSubpass {
 public:
     using Rng = std::mt19937_64;
 
-    explicit RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassPlanetHeightmap() = default;
 
     void render(VulkanCommandBuffer& vkb, Rng& rng, int index, float resolution);

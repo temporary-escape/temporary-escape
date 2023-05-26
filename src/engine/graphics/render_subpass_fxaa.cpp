@@ -1,20 +1,21 @@
 #include "render_subpass_fxaa.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_fxaa.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& forward) :
+RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                     const VulkanTexture& forward) :
     vulkan{vulkan},
     forward{forward},
     pipelineFxaa{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_fxaa_vert"),
-            registry.getShaders().find("pass_fxaa_frag"),
+            assetsManager.getShaders().find("pass_fxaa_vert"),
+            assetsManager.getShaders().find("pass_fxaa_frag"),
         },
         {
             // Vertex inputs

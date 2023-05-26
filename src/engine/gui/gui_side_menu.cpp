@@ -1,5 +1,5 @@
 #include "gui_side_menu.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 
 using namespace Engine;
 

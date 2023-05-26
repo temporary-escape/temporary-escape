@@ -2,11 +2,11 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                                    const VulkanTexture& brdf) :
-    RenderPass{vulkan, viewport}, subpassSkybox{vulkan, registry, brdf} {
+    RenderPass{vulkan, viewport}, subpassSkybox{vulkan, assetsManager, brdf} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

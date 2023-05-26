@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassFxaa : public RenderSubpass {
 public:
-    explicit RenderSubpassFxaa(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& forward);
+    explicit RenderSubpassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& forward);
     virtual ~RenderSubpassFxaa() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

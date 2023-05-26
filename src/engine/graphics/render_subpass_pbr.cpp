@@ -1,5 +1,5 @@
 #include "render_subpass_pbr.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_lighting.hpp"
 #include "render_pass_opaque.hpp"
@@ -8,7 +8,7 @@
 
 using namespace Engine;
 
-RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, Registry& registry, const RenderPassOpaque& opaque,
+RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& opaque,
                                    const RenderPassSsao& ssao, const VulkanTexture& brdf) :
     vulkan{vulkan},
     opaque{opaque},
@@ -19,8 +19,8 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, Registry& registry, c
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_pbr_vert"),
-            registry.getShaders().find("pass_pbr_frag"),
+            assetsManager.getShaders().find("pass_pbr_vert"),
+            assetsManager.getShaders().find("pass_pbr_frag"),
         },
         {
             // Vertex inputs

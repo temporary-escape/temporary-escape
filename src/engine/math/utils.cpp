@@ -193,7 +193,7 @@ Color4 Engine::hsvToRgb(const Vector4& in) {
         out.b = in.z;
         return out;
     }
-    hh = in.r;
+    hh = in.r * 360.0f;
     if (hh >= 360.0f)
         hh = 0.0f;
     hh /= 60.0f;

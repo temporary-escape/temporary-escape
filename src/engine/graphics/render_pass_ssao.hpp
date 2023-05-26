@@ -12,7 +12,7 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassSsao(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+    explicit RenderPassSsao(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                             const RenderPassOpaque& previous);
     virtual ~RenderPassSsao() = default;
 

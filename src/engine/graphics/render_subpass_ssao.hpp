@@ -8,7 +8,7 @@ class ENGINE_API RenderPassOpaque;
 
 class ENGINE_API RenderSubpassSsao : public RenderSubpass {
 public:
-    explicit RenderSubpassSsao(VulkanRenderer& vulkan, Registry& registry, const RenderPassOpaque& previous);
+    explicit RenderSubpassSsao(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& previous);
     virtual ~RenderSubpassSsao() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

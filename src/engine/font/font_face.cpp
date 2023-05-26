@@ -6,7 +6,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) : size{size} {
     auto loader = FontLoader{path, size};

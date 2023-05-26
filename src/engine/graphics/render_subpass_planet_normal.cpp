@@ -1,17 +1,17 @@
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_planet_normal.hpp"
 
 using namespace Engine;
 
-RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineNormal{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet_normal_vert"),
-            registry.getShaders().find("planet_normal_frag"),
+            assetsManager.getShaders().find("planet_normal_vert"),
+            assetsManager.getShaders().find("planet_normal_frag"),
         },
         {
             // Vertex inputs

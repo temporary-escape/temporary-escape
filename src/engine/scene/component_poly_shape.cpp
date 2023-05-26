@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 void ComponentPolyShape::recalculate(VulkanRenderer& vulkan) {
     if (!isDirty()) {

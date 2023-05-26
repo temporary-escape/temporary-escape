@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkyboxColor : public RenderSubpass {
 public:
-    explicit RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassSkyboxColor() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

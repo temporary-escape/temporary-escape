@@ -9,7 +9,8 @@ target_compile_definitions(${PROJECT_NAME}Common
         GLM_FORCE_LEFT_HANDED=1
         MSGPACK_USE_DEFINE_MAP=1
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING=1
-        _CRT_SECURE_NO_WARNINGS=1)
+        _CRT_SECURE_NO_WARNINGS=1
+        "SOURCE_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 if (UNIX)
     target_compile_options(${PROJECT_NAME}Common INTERFACE -ftemplate-backtrace-limit=0)

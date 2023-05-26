@@ -2,23 +2,29 @@
 
 #include "../scene/scene.hpp"
 #include "../utils/worker.hpp"
+#include "generator.hpp"
+#include "lua.hpp"
 #include "messages.hpp"
 #include "session.hpp"
 #include "world.hpp"
 
 namespace Engine {
-class Server;
+class ENGINE_API Server;
 
-class Sector : public Scene::EventListener {
+class ENGINE_API Sector : public Scene::EventListener {
 public:
-    explicit Sector(const Config& config, World& world, Registry& registry, EventBus& eventBus, std::string galaxyId,
-                    std::string systemId, std::string sectorId);
+    explicit Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
+                    std::string galaxyId, std::string systemId, std::string sectorId);
     virtual ~Sector();
 
     void load();
-    void update(float delta);
+    void update();
 
-    void addPlayer(SessionPtr session);
+    void addPlayer(const SessionPtr& session);
+
+    bool isLoaded() const {
+        return loaded;
+    }
 
     const std::string& getGalaxyId() const {
         return galaxyId;
@@ -35,26 +41,20 @@ public:
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
-    struct PlayerData {
-        SessionPtr session;
-    };
-
-    void spawnPlayerShip(SessionPtr session);
+    struct PlayerSessionData {};
 
     const Config& config;
-    World& world;
-    Registry& registry;
+    Database& db;
+    AssetsManager& assetsManager;
     EventBus& eventBus;
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
     bool loaded;
-    Scene scene;
-    // std::unique_ptr<wrenbind17::VM> vm;
-
-    std::list<PlayerData> players;
-
-    asio::io_service sync;
+    std::unique_ptr<Scene> scene;
+    std::unique_ptr<Lua> lua;
+    std::unordered_map<SessionPtr, PlayerSessionData> players;
+    SynchronizedWorker worker;
 };
 
 using SectorPtr = std::shared_ptr<Sector>;

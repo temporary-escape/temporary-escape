@@ -15,7 +15,7 @@ public:
         int count{0};
     };
 
-    explicit RenderSubpassPbr(VulkanRenderer& vulkan, Registry& registry, const RenderPassOpaque& opaque,
+    explicit RenderSubpassPbr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& opaque,
                               const RenderPassSsao& ssao, const VulkanTexture& brdf);
     virtual ~RenderSubpassPbr() = default;
 

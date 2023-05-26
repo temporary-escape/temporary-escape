@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
@@ -17,8 +17,8 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewGalaxy : public View {
 public:
-    explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                        FontFamily& font);
+    explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                        Client& client, FontFamily& font);
     ~ViewGalaxy() = default;
 
     void update(float deltaTime) override;
@@ -36,7 +36,7 @@ public:
     void load();
 
 private:
-    void fetchCurrentLocation(const StopToken& stop);
+    /*void fetchCurrentLocation(const StopToken& stop);
     void fetchGalaxyInfo(const StopToken& stop);
     void fetchFactionsPage(const StopToken& stop, const std::string& token);
     void fetchSystemsPage(const StopToken& stop, const std::string& token);
@@ -45,11 +45,11 @@ private:
     void clearEntities();
     void createEntitiesRegions();
     void calculateBackground();
-    void createBackground(const VoronoiResult& voronoi);
+    void createBackground(const VoronoiResult& voronoi);*/
 
     Game& parent;
     const Config& config;
-    Registry& registry;
+    AssetsManager& assetsManager;
     Client& client;
     FontFamily& font;
     Scene scene;

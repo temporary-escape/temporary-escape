@@ -7,7 +7,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 TEST_CASE("Ray box intersection", TAG) {
     Vector3 min{-0.5f};
@@ -38,11 +38,22 @@ TEST_CASE("Ray box intersection", TAG) {
 
 TEST_CASE("Gift wrap", TAG) {
     std::vector<Vector2> positions = {
-        {5.0f, 5.0f}, {10.0f, 5.0f}, {5.0f, 0.0f}, {3.0f, 10.0f}, {7.0f, 10.0f}, {0.0f, 5.0f}, {0.0f, 0.0f},
+        {5.0f, 5.0f},
+        {10.0f, 5.0f},
+        {5.0f, 0.0f},
+        {3.0f, 10.0f},
+        {7.0f, 10.0f},
+        {0.0f, 5.0f},
+        {0.0f, 0.0f},
     };
 
     std::vector<size_t> connections = {
-        1, 6, 3, 4, 5, 2,
+        1,
+        6,
+        3,
+        4,
+        5,
+        2,
     };
 
     const auto findLargestX = [&]() {
@@ -81,8 +92,8 @@ TEST_CASE("Gift wrap", TAG) {
                 testOriented += glm::radians(360.0f);
             }
 
-            logger.debug("Pos: {} dir: {} test: {} oriented: {}", pos, dir, glm::degrees(test),
-                         glm::degrees(testOriented));
+            logger.debug(
+                "Pos: {} dir: {} test: {} oriented: {}", pos, dir, glm::degrees(test), glm::degrees(testOriented));
         }
 
         break;

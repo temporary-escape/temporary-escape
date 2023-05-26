@@ -16,6 +16,8 @@ target_link_libraries(${PROJECT_NAME}Library PUBLIC ${PROJECT_NAME}Common::${PRO
 
 # Common compile definitions
 target_compile_definitions(${PROJECT_NAME}Library
+        PUBLIC
+        SOL_ALL_SAFETIES_ON=1
         PRIVATE
         ENGINE_EXPORTS=1
         "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine")
@@ -74,13 +76,15 @@ target_link_libraries(${PROJECT_NAME}Library
         unofficial::vulkan-memory-allocator::vulkan-memory-allocator
         spirv-cross-glsl
         freetype
+        SimplexNoise::SimplexNoise
+        Voronoi::Voronoi
         nuklear
         OpenSSL::SSL
         OpenSSL::Crypto
         lz4::lz4
         RocksDB::rocksdb
-        PythonUnofficial::PythonUnofficial
-        Pybind11Unofficial::Pybind11Unofficial
+        LuaUnofficial
+        sol2
         KTX::ktx)
 
 # The main target
@@ -106,12 +110,6 @@ set_target_properties(${PROJECT_NAME}Main
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
-add_custom_command(
-        TARGET ${PROJECT_NAME}Main
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-        -E copy_directory ${CPYTHON_STDLIB_DIR} ${CMAKE_BINARY_DIR}/python)
 
 install(TARGETS ${PROJECT_NAME}Main ${PROJECT_NAME}Library
         LIBRARY DESTINATION "."

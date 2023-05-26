@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../gui/gui_block_action_bar.hpp"
@@ -13,14 +13,14 @@ namespace Engine {
 class ENGINE_API ViewBuild : public View {
 public:
     struct Gui {
-        explicit Gui(const Config& config, Registry& registry);
+        explicit Gui(const Config& config, AssetsManager& assetsManager);
 
         GuiBlockActionBar blockActionBar;
         GuiBlockSelector blockSelector;
         GuiSideMenu blockSideMenu;
     };
 
-    explicit ViewBuild(const Config& config, Renderer& renderer, Registry& registry, Gui& gui);
+    explicit ViewBuild(const Config& config, Renderer& renderer, AssetsManager& assetsManager, Gui& gui);
     ~ViewBuild() = default;
 
     void update(float deltaTime) override;
@@ -45,7 +45,7 @@ private:
 
     const Config& config;
     Renderer& renderer;
-    Registry& registry;
+    AssetsManager& assetsManager;
     Gui& gui;
 
     Vector2 raycastScreenPos;

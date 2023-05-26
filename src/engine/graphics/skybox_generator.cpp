@@ -1,9 +1,9 @@
 #include "skybox_generator.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static const float PI = static_cast<float>(std::atan(1) * 4);
 
@@ -193,19 +193,19 @@ static void transitionTextureShaderRead(VulkanCommandBuffer& vkb, const VulkanTe
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
-SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, Registry& registry) :
+SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     config{config}, vulkan{vulkan} {
 
     // clang-format off
     renderPasses.skyboxColor = std::make_unique<RenderPassSkyboxColor>(
-        vulkan, registry, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
+        vulkan, assetsManager, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
     renderPasses.skyboxIrradiance = std::make_unique<RenderPassSkyboxIrradiance>(
-            vulkan, registry, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
+            vulkan, assetsManager, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
     renderPasses.skyboxPrefilter = std::make_unique<RenderPassSkyboxPrefilter>(
-            vulkan, registry, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
+            vulkan, assetsManager, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
     // clang-format on
 
-    textures.star = registry.getTextures().find("system_map_sun");
+    textures.star = assetsManager.getTextures().find("system_map_sun");
 }
 
 bool SkyboxGenerator::isBusy() const {

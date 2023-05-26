@@ -1,12 +1,14 @@
 #include "texture.hpp"
+#include "../server/lua.hpp"
 #include "../utils/ktx2_file.hpp"
 #include "../utils/png_importer.hpp"
 #include "../utils/string_utils.hpp"
-#include "registry.hpp"
+#include "assets_manager.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) const {
     if (filtering) {
@@ -76,8 +78,8 @@ Texture::Options Texture::loadOptions(const Path& path) {
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Texture::load(Registry& registry, VulkanRenderer& vulkan) {
-    (void)registry;
+void Texture::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+    (void)assetsManager;
 
     const auto options = loadOptions(path);
 
@@ -279,5 +281,12 @@ void Texture::loadKtx2(const Texture::Options& options, VulkanRenderer& vulkan) 
 }
 
 TexturePtr Texture::from(const std::string& name) {
-    return Registry::getInstance().getTextures().find(name);
+    return AssetsManager::getInstance().getTextures().find(name);
+}
+
+void Texture::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Texture>("Texture");
+    cls["name"] = sol::property(&Texture::getName);
 }

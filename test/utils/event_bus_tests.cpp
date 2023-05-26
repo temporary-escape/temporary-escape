@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-struct EventFoo {
+/*struct EventFoo {
     std::string msg;
 };
 
@@ -78,4 +78,4 @@ TEST_CASE("Enqueue bad type must fail", TEST_TAG) {
     bus.addListener("foos", [&](const EventFoo& e) { (void)e; });
 
     REQUIRE_THROWS(bus.enqueue("foos", event));
-}
+}*/

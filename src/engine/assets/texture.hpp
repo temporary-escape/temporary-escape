@@ -55,7 +55,7 @@ public:
     explicit Texture(std::string name, Path path);
     MOVEABLE(Texture);
 
-    void load(Registry& registry, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
     VulkanTexture& getVulkanTexture() {
         return texture;
@@ -70,6 +70,8 @@ public:
     }
 
     static std::shared_ptr<Texture> from(const std::string& name);
+
+    static void bind(Lua& lua);
 
 private:
     void loadPng(const Options& options, VulkanRenderer& vulkan);

@@ -12,7 +12,7 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassFxaa(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+    explicit RenderPassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                             const VulkanTexture& forward);
     virtual ~RenderPassFxaa() = default;
 

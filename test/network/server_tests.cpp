@@ -65,25 +65,31 @@ TEST_CASE("Start and connect to the server") {
 struct MessageFoo {
     std::string msg;
 
-    MESSAGE_DEFINE(MessageFoo, msg);
+    MSGPACK_DEFINE(msg);
 };
+
+MESSAGE_DEFINE(MessageFoo);
 
 struct MessageBar {
     size_t count;
 
-    MESSAGE_DEFINE(MessageBar, count);
+    MSGPACK_DEFINE(count);
 };
+
+MESSAGE_DEFINE(MessageBar);
 
 struct MessageBaz {
     size_t count;
     bool value;
 
-    MESSAGE_DEFINE(MessageBaz, count, value);
+    MSGPACK_DEFINE(count, value);
 };
+
+MESSAGE_DEFINE(MessageBaz);
 
 TEST_CASE("Message hash sanity check") {
     // This must be platform independent!
-    REQUIRE(MessageBar::hash == 0xcb4327037bc501e8);
+    REQUIRE(Network::Detail::MessageHelper<MessageBar>::hash == 0xcb4327037bc501e8);
 }
 
 class SimpleServer : public Server {

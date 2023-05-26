@@ -1,16 +1,16 @@
 #include "render_subpass_compute.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassCompute::RenderSubpassCompute(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassCompute::RenderSubpassCompute(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelinePositionFeedback{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("position_feedback_comp"),
+            assetsManager.getShaders().find("position_feedback_comp"),
         },
     } {
 

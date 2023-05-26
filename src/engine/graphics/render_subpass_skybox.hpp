@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkybox : public RenderSubpass {
 public:
-    explicit RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& brdf);
+    explicit RenderSubpassSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& brdf);
     virtual ~RenderSubpassSkybox() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

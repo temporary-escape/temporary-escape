@@ -1,18 +1,18 @@
 #include "render_subpass_brdf.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_brdf.hpp"
 
 using namespace Engine;
 
-RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineBrdf{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("brdf_vert"),
-            registry.getShaders().find("brdf_frag"),
+            assetsManager.getShaders().find("brdf_vert"),
+            assetsManager.getShaders().find("brdf_frag"),
         },
         {
             // Vertex inputs

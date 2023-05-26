@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../config.hpp"
 #include "../future.hpp"
 #include "../library.hpp"
@@ -23,7 +23,7 @@ struct PlayerLocalProfile {
 
 class ENGINE_API Client : public Network::Client {
 public:
-    explicit Client(const Config& config, Registry& registry, const PlayerLocalProfile& localProfile);
+    explicit Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile);
     virtual ~Client();
 
     void connect(const std::string& address, int port);
@@ -42,23 +42,24 @@ public:
         return playerLocation;
     }
 
-    void handle(MessagePlayerLocationChanged res);
-    void handle(MessageSceneEntitiesChanged res);
-    void handle(MessageSceneDeltasChanged res);
+    void handle(MessagePlayerLocationEvent res);
     void handle(MessagePingRequest req);
 
 private:
-    void fetchModInfo(std::shared_ptr<Promise<void>> promise);
+    void doLogin();
+    void validateManifests(const std::vector<ModManifest>& serverManifests);
+    void createScene(SectorData sector);
+    /*void fetchModInfo(std::shared_ptr<Promise<void>> promise);
     void fetchLogin(std::shared_ptr<Promise<void>> promise);
     void fetchSpawnRequest(std::shared_ptr<Promise<void>> promise);
-    void fetchSystemInfo();
+    void fetchSystemInfo();*/
     void onError(std::error_code ec) override;
     void onError(const PeerPtr& peer, std::error_code ec) override;
     void onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) override;
     void postDispatch(std::function<void()> fn) override;
 
 private:
-    Registry& registry;
+    AssetsManager& assetsManager;
     const PlayerLocalProfile& localProfile;
     std::string playerId;
     PlayerLocationData playerLocation;

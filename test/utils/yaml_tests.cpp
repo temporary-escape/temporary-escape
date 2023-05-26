@@ -178,3 +178,70 @@ baz: "Third"
 
     REQUIRE(foo.baz == EnumBaz::Third);
 }
+
+class VariantTypeA {
+public:
+    std::string msg;
+
+    YAML_DEFINE(msg);
+};
+
+class VariantTypeB {
+public:
+    bool flag{false};
+
+    YAML_DEFINE(flag);
+};
+
+class VariantTypeC {
+public:
+    float value{0.0f};
+
+    YAML_DEFINE(value);
+};
+
+using VariantType = std::variant<VariantTypeA, VariantTypeB, VariantTypeC>;
+YAML_DEFINE_VARIANT(VariantType, VariantTypeA, VariantTypeB, VariantTypeC);
+
+class VariantUser {
+public:
+    std::vector<VariantType> variants;
+
+    YAML_DEFINE(variants);
+};
+
+TEST_CASE("Variants", TAG) {
+    // convertEach("aaa", "bbb", "ccc");
+
+    VariantUser v{};
+    v.fromYaml(asFile(R"(
+variants:
+    - type: VariantTypeA
+      data:
+        msg: "Hello World!"
+    - type: VariantTypeB
+      data:
+        flag: true
+    - type: VariantTypeC
+      data:
+        value: 42.123
+)"));
+
+    REQUIRE(v.variants.size() == 3);
+    REQUIRE(std::holds_alternative<VariantTypeA>(v.variants[0]));
+    REQUIRE(std::holds_alternative<VariantTypeB>(v.variants[1]));
+    REQUIRE(std::holds_alternative<VariantTypeC>(v.variants[2]));
+    REQUIRE(std::get<VariantTypeA>(v.variants[0]).msg == "Hello World!");
+    REQUIRE(std::get<VariantTypeB>(v.variants[1]).flag == true);
+    REQUIRE(std::get<VariantTypeC>(v.variants[2]).value == Approx(42.123f));
+
+    saveAndLoad(v);
+
+    REQUIRE(v.variants.size() == 3);
+    REQUIRE(std::holds_alternative<VariantTypeA>(v.variants[0]));
+    REQUIRE(std::holds_alternative<VariantTypeB>(v.variants[1]));
+    REQUIRE(std::holds_alternative<VariantTypeC>(v.variants[2]));
+    REQUIRE(std::get<VariantTypeA>(v.variants[0]).msg == "Hello World!");
+    REQUIRE(std::get<VariantTypeB>(v.variants[1]).flag == true);
+    REQUIRE(std::get<VariantTypeC>(v.variants[2]).value == Approx(42.123f));
+}

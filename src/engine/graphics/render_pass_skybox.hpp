@@ -13,7 +13,7 @@ public:
 
     static const size_t totalAttachments = 2;
 
-    explicit RenderPassSkybox(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+    explicit RenderPassSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                               const VulkanTexture& brdf);
     virtual ~RenderPassSkybox() = default;
 

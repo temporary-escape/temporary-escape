@@ -2,6 +2,7 @@
 #include <functional>
 #include <rocksdb/db.h>
 #include <rocksdb/filter_policy.h>
+#include <rocksdb/slice_transform.h>
 #include <rocksdb/table.h>
 #include <rocksdb/utilities/optimistic_transaction_db.h>
 #include <rocksdb/utilities/transaction.h>
@@ -9,7 +10,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 class DefaultLogger : public rocksdb::Logger {
 public:
@@ -55,138 +56,189 @@ public:
     }
 };
 
-class RocksDBIterator : public Database::InternalIterator {
-public:
-    explicit RocksDBIterator(rocksdb::DB& db, std::string prefix, const std::optional<std::string>& lowerBound) :
-        prefix(std::move(prefix)) {
+RocksDBBackend::Transaction::Transaction(std::unique_ptr<rocksdb::Transaction> txn, rocksdb::DB& db) :
+    txn(std::move(txn)), db(db) {
+}
 
-        rocksdb::ReadOptions options{};
-        options.prefix_same_as_start = true;
-        if (lowerBound.has_value()) {
-            this->lowerBound = rocksdb::Slice(lowerBound.value());
-            options.iterate_lower_bound = &this->lowerBound;
+RocksDBBackend::Transaction::~Transaction() = default;
+
+std::optional<msgpack::object_handle> RocksDBBackend::Transaction::get(const std::string_view& key) {
+    rocksdb::ReadOptions options{};
+    rocksdb::PinnableSlice slice;
+    const auto s = txn->Get(options, db.DefaultColumnFamily(), key, &slice);
+    if (!s.ok()) {
+        if (s.code() == rocksdb::Status::Code::kNotFound) {
+            return {};
         }
-        iter.reset(db.NewIterator(options));
-        iter->Seek(this->prefix);
+        throw std::runtime_error(fmt::format("Failed to get database key: {} error: {}", key, s.ToString()));
     }
 
-    bool next(const Database::Callback& callback) override {
-        while (iter->Valid()) {
-            if (iter->key().starts_with(prefix)) {
-                callback(iter->key().ToString(), {iter->value().data(), iter->value().size()});
-                iter->Next();
-                return true;
-            }
-            iter->Next();
+    msgpack::object_handle oh;
+    msgpack::unpack(oh, slice.data(), slice.size());
+    return oh;
+}
+
+std::vector<msgpack::object_handle> RocksDBBackend::Transaction::multiGet(const std::vector<std::string>& keys) {
+    rocksdb::ReadOptions options{};
+    std::vector<rocksdb::Slice> keysSlice;
+    keysSlice.reserve(keys.size());
+    for (const auto& key : keys) {
+        keysSlice.emplace_back(key.data(), key.size());
+    }
+    std::vector<rocksdb::PinnableSlice> slices;
+    std::vector<rocksdb::Status> statuses;
+    slices.resize(keys.size());
+    statuses.resize(keys.size());
+    txn->MultiGet(options, db.DefaultColumnFamily(), keys.size(), keysSlice.data(), slices.data(), statuses.data());
+
+    std::vector<msgpack::object_handle> handles;
+    for (size_t i = 0; i < keys.size(); i++) {
+        if (statuses[i].code() == rocksdb::Status::Code::kNotFound) {
+            continue;
         }
 
+        if (!statuses[i].ok()) {
+            throw std::runtime_error(
+                fmt::format("Failed to get database key: {} error: {}", keys[i], statuses[i].ToString()));
+        }
+
+        handles.emplace_back();
+        msgpack::unpack(handles.back(), slices[i].data(), slices[i].size());
+    }
+
+    return handles;
+}
+
+void RocksDBBackend::Transaction::put(const std::string_view& key, const void* data, size_t size) {
+    rocksdb::Slice slice(reinterpret_cast<const char*>(data), size);
+    const auto s = txn->Put(db.DefaultColumnFamily(), key, slice);
+    if (!s.ok()) {
+        throw std::runtime_error(fmt::format("Failed to put database key: {} error: {}", key, s.ToString()));
+    }
+}
+
+void RocksDBBackend::Transaction::remove(const std::string_view& key) {
+    const auto s = txn->Delete(db.DefaultColumnFamily(), key);
+    if (!s.ok()) {
+        throw std::runtime_error(fmt::format("Failed to delete database key: {} error: {}", key, s.ToString()));
+    }
+}
+
+std::optional<msgpack::object_handle> RocksDBBackend::Transaction::getForUpdate(const std::string_view& key) {
+    rocksdb::ReadOptions options{};
+    rocksdb::PinnableSlice slice;
+    const auto s = txn->GetForUpdate(options, db.DefaultColumnFamily(), key, &slice);
+    if (!s.ok()) {
+        if (s.code() == rocksdb::Status::Code::kNotFound) {
+            return {};
+        }
+
+        throw std::runtime_error(fmt::format("Failed to get database key: {} error: {}", key, s.ToString()));
+    }
+
+    msgpack::object_handle oh;
+    msgpack::unpack(oh, slice.data(), slice.size());
+    return oh;
+}
+
+std::unique_ptr<DatabaseBackendIterator>
+RocksDBBackend::Transaction::seek(const std::string_view& prefix, const std::optional<std::string_view>& lowerBound) {
+    rocksdb::ReadOptions options{};
+    options.prefix_same_as_start = true;
+
+    std::unique_ptr<rocksdb::Slice> lowerBoundSlice;
+    if (lowerBound.has_value()) {
+        lowerBoundSlice = std::make_unique<rocksdb::Slice>(lowerBound.value());
+        options.iterate_lower_bound = lowerBoundSlice.get();
+    }
+
+    std::unique_ptr<rocksdb::Iterator> iter(txn->GetIterator(options));
+
+    return std::unique_ptr<DatabaseBackendIterator>{
+        new Iterator{std::move(iter), std::string{prefix}, std::move(lowerBoundSlice)}};
+}
+
+bool RocksDBBackend::Transaction::commit() {
+    const auto s = txn->Commit();
+    if (s.code() == rocksdb::Status::Code::kBusy) {
         return false;
     }
 
-private:
-    std::unique_ptr<rocksdb::Iterator> iter;
-    std::string prefix;
-    rocksdb::Slice lowerBound;
-    bool first{true};
-};
-
-class RocksDBTransaction : public Transaction {
-public:
-    explicit RocksDBTransaction(std::unique_ptr<rocksdb::Transaction> txn, rocksdb::DB& db) :
-        txn(std::move(txn)), db(db) {
+    if (!s.ok()) {
+        throw std::runtime_error(fmt::format("Failed to commit database transaction error: {}", s.ToString()));
     }
 
-    virtual ~RocksDBTransaction() = default;
+    return true;
+}
 
-    rocksdb::Status commit() {
-        return txn->Commit();
-    }
+RocksDBBackend::Iterator::Iterator(std::unique_ptr<rocksdb::Iterator> iter, std::string prefix,
+                                   std::unique_ptr<rocksdb::Slice> lowerBound) :
+    iter{std::move(iter)}, prefix{std::move(prefix)}, lowerBound{std::move(lowerBound)} {
+    this->iter->Seek(this->prefix);
+}
 
-private:
-    void internalGetForUpdate(const std::string& key, const Callback& callback) override {
-        rocksdb::ReadOptions options{};
-        rocksdb::PinnableSlice slice;
-        const auto s = txn->GetForUpdate(options, db.DefaultColumnFamily(), key, &slice);
-        if (!s.ok()) {
-            if (s.code() == rocksdb::Status::Code::kNotFound) {
-                return;
-            }
-            EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
-        }
+RocksDBBackend::Iterator::operator bool() const {
+    return hasValue;
+}
 
-        callback(key, {slice.data(), slice.size()});
-    }
+bool RocksDBBackend::Iterator::next() {
+    hasValue = false;
 
-    void internalGet(const std::string& key, const Callback& callback) override {
-        rocksdb::ReadOptions options{};
-        rocksdb::PinnableSlice slice;
-        const auto s = txn->Get(options, db.DefaultColumnFamily(), key, &slice);
-        if (!s.ok()) {
-            if (s.code() == rocksdb::Status::Code::kNotFound) {
-                return;
-            }
-            EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
-        }
-
-        callback(key, {slice.data(), slice.size()});
-    }
-
-    void internalMultiGet(const std::vector<std::string>& keys, const Callback& callback) override {
-        rocksdb::ReadOptions options{};
-        std::vector<rocksdb::Slice> keysSlice;
-        keysSlice.reserve(keys.size());
-        for (const auto& key : keys) {
-            keysSlice.emplace_back(key.data(), key.size());
-        }
-        std::vector<rocksdb::PinnableSlice> slices;
-        std::vector<rocksdb::Status> statuses;
-        slices.resize(keys.size());
-        statuses.resize(keys.size());
-        txn->MultiGet(options, db.DefaultColumnFamily(), keys.size(), keysSlice.data(), slices.data(), statuses.data());
-
-        for (size_t i = 0; i < keys.size(); i++) {
-            if (statuses[i].ok()) {
-                callback(keys[i], {slices[i].data(), slices[i].size()});
+    while (iter->Valid()) {
+        if (isFirst) {
+            isFirst = false;
+        } else {
+            iter->Next();
+            if (!iter->Valid()) {
+                break;
             }
         }
-    }
 
-    void internalPut(const std::string& key, const Span<char>& data) override {
-        rocksdb::Slice slice(data.data(), data.size());
-        const auto s = txn->Put(db.DefaultColumnFamily(), key, slice);
-        if (!s.ok()) {
-            EXCEPTION("Failed to put database key: {} error: {}", key, s.ToString());
+        if (iter->key().starts_with(prefix)) {
+            iterKey = iter->key().ToString();
+            oh = {};
+            msgpack::unpack(oh, iter->value().data(), iter->value().size());
+            hasValue = true;
+            return true;
         }
     }
 
-    void internalRemove(const std::string& key) override {
-        const auto s = txn->Delete(db.DefaultColumnFamily(), key);
-        if (!s.ok()) {
-            EXCEPTION("Failed to delete database key: {} error: {}", key, s.ToString());
-        }
+    return false;
+}
+
+const std::string& RocksDBBackend::Iterator::key() const {
+    if (!hasValue) {
+        throw std::runtime_error("Iterator has no value");
     }
+    return iterKey;
+}
 
-    std::unique_ptr<InternalIterator> internalSeek(const std::string& key,
-                                                   const std::optional<std::string>& lowerBound) override {
-        return std::unique_ptr<InternalIterator>();
+const msgpack::object_handle& RocksDBBackend::Iterator::value() const {
+    if (!hasValue) {
+        throw std::runtime_error("Iterator has no value");
     }
+    return oh;
+}
 
-    std::unique_ptr<rocksdb::Transaction> txn;
-    rocksdb::DB& db;
-};
+std::string RocksDBBackend::Iterator::valueRaw() const {
+    if (!hasValue) {
+        throw std::runtime_error("Iterator has no value");
+    }
+    return iter->value().ToString();
+}
 
-RocksDB::RocksDB(const Path& path) {
+RocksDBBackend::RocksDBBackend(const Path& path) {
     rocksdb::Options options;
     options.create_if_missing = true;
     options.info_log_level = rocksdb::InfoLogLevel::WARN_LEVEL;
     options.info_log = std::make_shared<DefaultLogger>();
 
-    rocksdb::BlockBasedTableOptions tableOptions;
-    tableOptions.block_cache = rocksdb::NewLRUCache(100 * 1048576);
+    // options.table_factory.reset(rocksdb::NewTotalOrderPlainTableFactory());
+    options.prefix_extractor.reset(rocksdb::NewFixedPrefixTransform(16));
 
-    tableOptions.filter_policy.reset(
-        rocksdb::NewBloomFilterPolicy(10 /* bits_per_key */, false /* use_block_based_builder*/));
-
+    rocksdb::BlockBasedTableOptions tableOptions{};
+    tableOptions.block_cache = rocksdb::NewLRUCache(128 * 1024 * 1024);
+    tableOptions.filter_policy.reset(rocksdb::NewBloomFilterPolicy(10, false));
     options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(tableOptions));
 
     logger.info("Opening database: {}", path.string());
@@ -205,40 +257,25 @@ RocksDB::RocksDB(const Path& path) {
     db = std::shared_ptr<rocksdb::DB>(txn->GetBaseDB(), [](rocksdb::DB* ptr) {});
 }
 
-RocksDB::~RocksDB() = default;
+RocksDBBackend::~RocksDBBackend() = default;
 
-void RocksDB::internalGet(const std::string& key, const Callback& callback) {
+std::optional<msgpack::object_handle> RocksDBBackend::get(const std::string_view& key) {
     rocksdb::ReadOptions options{};
     rocksdb::PinnableSlice slice;
     const auto s = db->Get(options, db->DefaultColumnFamily(), key, &slice);
     if (!s.ok()) {
         if (s.code() == rocksdb::Status::Code::kNotFound) {
-            return;
+            return {};
         }
-        EXCEPTION("Failed to get database key: {} error: {}", key, s.ToString());
+        throw std::runtime_error(fmt::format("Failed to get database key: {} error: {}", key, s.ToString()));
     }
 
-    callback(key, {slice.data(), slice.size()});
+    msgpack::object_handle oh;
+    msgpack::unpack(oh, slice.data(), slice.size());
+    return oh;
 }
 
-void RocksDB::internalPut(const std::string& key, const Span<char>& data) {
-    rocksdb::WriteOptions options{};
-    rocksdb::Slice slice(data.data(), data.size());
-    const auto s = db->Put(options, db->DefaultColumnFamily(), key, slice);
-    if (!s.ok()) {
-        EXCEPTION("Failed to put database key: {} error: {}", key, s.ToString());
-    }
-}
-
-void RocksDB::internalRemove(const std::string& key) {
-    rocksdb::WriteOptions options{};
-    const auto s = db->Delete(options, db->DefaultColumnFamily(), key);
-    if (!s.ok()) {
-        EXCEPTION("Failed to delete database key: {} error: {}", key, s.ToString());
-    }
-}
-
-void RocksDB::internalMultiGet(const std::vector<std::string>& keys, const Database::Callback& callback) {
+std::vector<msgpack::object_handle> RocksDBBackend::multiGet(const std::vector<std::string>& keys) {
     rocksdb::ReadOptions options{};
     std::vector<rocksdb::Slice> keysSlice;
     keysSlice.reserve(keys.size());
@@ -251,36 +288,55 @@ void RocksDB::internalMultiGet(const std::vector<std::string>& keys, const Datab
     statuses.resize(keys.size());
     db->MultiGet(options, db->DefaultColumnFamily(), keys.size(), keysSlice.data(), slices.data(), statuses.data());
 
+    std::vector<msgpack::object_handle> handles;
     for (size_t i = 0; i < keys.size(); i++) {
-        if (statuses[i].ok()) {
-            callback(keys[i], {slices[i].data(), slices[i].size()});
+        if (statuses[i].code() == rocksdb::Status::Code::kNotFound) {
+            continue;
         }
+
+        if (!statuses[i].ok()) {
+            throw std::runtime_error(
+                fmt::format("Failed to get database key: {} error: {}", keys[i], statuses[i].ToString()));
+        }
+
+        handles.emplace_back();
+        msgpack::unpack(handles.back(), slices[i].data(), slices[i].size());
+    }
+
+    return handles;
+}
+
+void RocksDBBackend::put(const std::string_view& key, const void* data, size_t size) {
+    rocksdb::WriteOptions options{};
+    rocksdb::Slice slice(reinterpret_cast<const char*>(data), size);
+    const auto s = db->Put(options, db->DefaultColumnFamily(), key, slice);
+    if (!s.ok()) {
+        throw std::runtime_error(fmt::format("Failed to put database key: {} error: {}", key, s.ToString()));
     }
 }
 
-std::unique_ptr<Database::InternalIterator> RocksDB::internalSeek(const std::string& key,
-                                                                  const std::optional<std::string>& lowerBound) {
-    return std::unique_ptr<Database::InternalIterator>(new RocksDBIterator(*db, key, lowerBound));
+void RocksDBBackend::remove(const std::string_view& key) {
+    rocksdb::WriteOptions options{};
+    const auto s = db->Delete(options, db->DefaultColumnFamily(), key);
+    if (!s.ok()) {
+        throw std::runtime_error(fmt::format("Failed to delete database key: {} error: {}", key, s.ToString()));
+    }
 }
 
-bool RocksDB::transaction(const std::function<bool(Transaction&)>& callback, bool retry) {
+bool RocksDBBackend::transaction(const std::function<bool(DatabaseBackendTransaction&)>& callback, bool retry) {
     while (true) {
         rocksdb::WriteOptions writeOptions{};
         std::unique_ptr<rocksdb::Transaction> tx(txn->BeginTransaction(writeOptions));
 
-        RocksDBTransaction wrapper(std::move(tx), *db);
+        RocksDBBackend::Transaction wrapper(std::move(tx), *db);
 
         if (callback(wrapper)) {
-            const auto s = wrapper.commit();
-            if (s.code() == rocksdb::Status::Code::kBusy) {
+            if (!wrapper.commit()) {
                 if (retry) {
                     continue;
+                } else {
+                    return false;
                 }
-                return false;
-            }
-
-            if (!s.ok()) {
-                EXCEPTION("Failed to commit database transaction error: {}", s.ToString());
             }
 
             return true;
@@ -288,4 +344,21 @@ bool RocksDB::transaction(const std::function<bool(Transaction&)>& callback, boo
 
         return false;
     }
+}
+
+std::unique_ptr<DatabaseBackendIterator> RocksDBBackend::seek(const std::string_view& prefix,
+                                                              const std::optional<std::string_view>& lowerBound) {
+    rocksdb::ReadOptions options{};
+    options.prefix_same_as_start = true;
+
+    std::unique_ptr<rocksdb::Slice> lowerBoundSlice;
+    if (lowerBound.has_value()) {
+        lowerBoundSlice = std::make_unique<rocksdb::Slice>(lowerBound.value());
+        options.iterate_lower_bound = lowerBoundSlice.get();
+    }
+
+    std::unique_ptr<rocksdb::Iterator> iter(db->NewIterator(options));
+
+    return std::unique_ptr<DatabaseBackendIterator>{
+        new Iterator{std::move(iter), std::string{prefix}, std::move(lowerBoundSlice)}};
 }

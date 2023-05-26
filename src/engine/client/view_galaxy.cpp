@@ -6,17 +6,17 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static const Vector2 systemStarSelectable{32.0f, 32.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
-ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                       FontFamily& font) :
-    parent{parent}, config{config}, registry{registry}, client{client}, font{font}, scene{} {
+ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                       Client& client, FontFamily& font) :
+    parent{parent}, config{config}, assetsManager{assetsManager}, client{client}, font{font}, scene{} {
 
-    textures.systemStar = registry.getTextures().find("star_flare");
-    images.iconSelect = registry.getImages().find("icon_target");
+    textures.systemStar = assetsManager.getTextures().find("star_flare");
+    images.iconSelect = assetsManager.getImages().find("icon_target");
 
     { // To keep the renderer away from complaining
         auto entity = scene.createEntity();
@@ -49,7 +49,7 @@ void ViewGalaxy::update(const float deltaTime) {
     scene.update(deltaTime);
 
     if (futureVoronoi.valid() && futureVoronoi.ready()) {
-        createBackground(futureVoronoi.get());
+        // createBackground(futureVoronoi.get());
     }
 
     const auto* camera = scene.getPrimaryCamera();
@@ -114,16 +114,16 @@ void ViewGalaxy::load() {
     loadingValue = 0.1f;
 
     // Reset entities
-    clearEntities();
+    // clearEntities();
 
     // Cancel previous load sequence
-    stopToken.stop();
+    // stopToken.stop();
 
-    stopToken = StopToken{};
-    fetchCurrentLocation(stopToken);
+    // stopToken = StopToken{};
+    // fetchCurrentLocation(stopToken);
 }
 
-void ViewGalaxy::fetchCurrentLocation(const StopToken& stop) {
+/*void ViewGalaxy::fetchCurrentLocation(const StopToken& stop) {
     MessagePlayerLocationRequest req{};
 
     client.send(req, [this, stop](MessagePlayerLocationResponse res) {
@@ -141,9 +141,9 @@ void ViewGalaxy::fetchCurrentLocation(const StopToken& stop) {
 
         fetchGalaxyInfo(stop);
     });
-}
+}*/
 
-void ViewGalaxy::fetchGalaxyInfo(const StopToken& stop) {
+/*void ViewGalaxy::fetchGalaxyInfo(const StopToken& stop) {
     MessageFetchGalaxyRequest req{};
     req.galaxyId = location.galaxyId;
 
@@ -163,9 +163,9 @@ void ViewGalaxy::fetchGalaxyInfo(const StopToken& stop) {
 
         fetchFactionsPage(stop, "");
     });
-}
+}*/
 
-void ViewGalaxy::fetchFactionsPage(const StopToken& stop, const std::string& token) {
+/*void ViewGalaxy::fetchFactionsPage(const StopToken& stop, const std::string& token) {
     MessageFetchFactionsRequest req{};
     req.token = token;
     req.galaxyId = location.galaxyId;
@@ -187,9 +187,9 @@ void ViewGalaxy::fetchFactionsPage(const StopToken& stop, const std::string& tok
             fetchRegionsPage(stop, "");
         }
     });
-}
+}*/
 
-void ViewGalaxy::fetchRegionsPage(const StopToken& stop, const std::string& token) {
+/*void ViewGalaxy::fetchRegionsPage(const StopToken& stop, const std::string& token) {
     MessageFetchRegionsRequest req{};
     req.token = token;
     req.galaxyId = location.galaxyId;
@@ -211,9 +211,9 @@ void ViewGalaxy::fetchRegionsPage(const StopToken& stop, const std::string& toke
             fetchSystemsPage(stop, "");
         }
     });
-}
+}*/
 
-void ViewGalaxy::fetchSystemsPage(const StopToken& stop, const std::string& token) {
+/*void ViewGalaxy::fetchSystemsPage(const StopToken& stop, const std::string& token) {
     MessageFetchSystemsRequest req{};
     req.token = token;
     req.galaxyId = location.galaxyId;
@@ -235,18 +235,18 @@ void ViewGalaxy::fetchSystemsPage(const StopToken& stop, const std::string& toke
             updateGalaxy();
         }
     });
-}
+}*/
 
-void ViewGalaxy::updateGalaxy() {
+/*void ViewGalaxy::updateGalaxy() {
     logger.info("Recreating galaxy objects with {} systems", galaxy.systems.size());
     loading = false;
     loadingValue = 1.0f;
 
     clearEntities();
     createEntitiesRegions();
-}
+}*/
 
-void ViewGalaxy::clearEntities() {
+/*void ViewGalaxy::clearEntities() {
     for (const auto& [_, entity] : entities.regions) {
         scene.removeEntity(entity);
     }
@@ -275,9 +275,9 @@ void ViewGalaxy::clearEntities() {
         scene.removeEntity(entities.names);
         entities.names.reset();
     }
-}
+}*/
 
-void ViewGalaxy::createEntitiesRegions() {
+/*void ViewGalaxy::createEntitiesRegions() {
     std::unordered_map<std::string, ComponentPointCloud*> pointCloudMap;
     std::unordered_map<std::string, ComponentLines*> linesMap;
 
@@ -304,14 +304,14 @@ void ViewGalaxy::createEntitiesRegions() {
         const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
         const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
 
-        /*gui.contextMenu.setEnabled(true);
-        gui.contextMenu.setPos(viewPos);
-        gui.contextMenu.setItems({
-            {"View", [this, system]() { parent.switchToSystemMap(system->galaxyId, system->id); }},
-            {"Info", [this]() {}},
-            {"Note", [this]() {}},
-            {"Set Destination", [this]() {}},
-        });*/
+        //gui.contextMenu.setEnabled(true);
+        //gui.contextMenu.setPos(viewPos);
+        //gui.contextMenu.setItems({
+        //    {"View", [this, system]() { parent.switchToSystemMap(system->galaxyId, system->id); }},
+        //    {"Info", [this]() {}},
+        //    {"Note", [this]() {}},
+        //    {"Set Destination", [this]() {}},
+        //});
     });
 
     clickable.setOnBlurCallback([this]() {
@@ -352,17 +352,17 @@ void ViewGalaxy::createEntitiesRegions() {
         entities.labels[regionId] = entity;
     }
 
-    /*for (const auto& [factionId, faction] : factions) {
-        const auto& system = galaxy.systems[faction.homeSectorId];
-        const auto color = hsvToRgb(Color4{faction.color, 0.6f, 1.0f, 0.1f});
-
-        auto entity = scene.createEntity();
-        entity->addComponent<ComponentTransform>().move({system.pos.x, 0.0f, system.pos.y});
-        auto& text = entity->addComponent<ComponentText>(faction.name, color, 18.0f);
-        text.setCentered(true);
-
-        entities.labels[factionId] = entity;
-    }*/
+    //for (const auto& [factionId, faction] : factions) {
+    //    const auto& system = galaxy.systems[faction.homeSectorId];
+    //    const auto color = hsvToRgb(Color4{faction.color, 0.6f, 1.0f, 0.1f});
+//
+    //    auto entity = scene.createEntity();
+    //    entity->addComponent<ComponentTransform>().move({system.pos.x, 0.0f, system.pos.y});
+    //    auto& text = entity->addComponent<ComponentText>(faction.name, color, 18.0f);
+    //    text.setCentered(true);
+//
+    //    entities.labels[factionId] = entity;
+    //}
 
     galaxy.systemsOrdered.clear();
     galaxy.systemsOrdered.reserve(galaxy.systems.size());
@@ -405,9 +405,9 @@ void ViewGalaxy::createEntitiesRegions() {
     }
 
     calculateBackground();
-}
+}*/
 
-void ViewGalaxy::calculateBackground() {
+/*void ViewGalaxy::calculateBackground() {
     logger.info("Calculating background");
 
     std::vector<Vector2> positions;
@@ -425,9 +425,9 @@ void ViewGalaxy::calculateBackground() {
 
     futureVoronoi =
         std::async([p = std::move(positions), c = std::move(clip)]() { return computeVoronoiDiagram(p, c); });
-}
+}*/
 
-void ViewGalaxy::createBackground(const VoronoiResult& voronoi) {
+/*void ViewGalaxy::createBackground(const VoronoiResult& voronoi) {
     logger.info("Creating background");
 
     if (voronoi.cells.size() != galaxy.systemsOrdered.size()) {
@@ -455,7 +455,7 @@ void ViewGalaxy::createBackground(const VoronoiResult& voronoi) {
             polyShape.add({triangle[2].x, 0.0f, triangle[2].y}, cellColor);
         }
     }
-}
+}*/
 
 void ViewGalaxy::onEnter() {
 }

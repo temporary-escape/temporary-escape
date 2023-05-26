@@ -11,7 +11,7 @@ public:
         VoxelShape::Type shape{VoxelShape::Cube};
     };
 
-    explicit GuiBlockActionBar(const Config& config, Registry& registry);
+    explicit GuiBlockActionBar(const Config& config, AssetsManager& assetsManager);
     ~GuiBlockActionBar() override = default;
 
     [[nodiscard]] size_t getActiveIndex() const {
@@ -40,7 +40,7 @@ private:
     void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
     const Config& config;
-    Registry& registry;
+    AssetsManager& assetsManager;
     std::array<Color4, 16 * 4> colors;
     std::array<std::array<ActionBarItem, 10>, 10> items;
     size_t activeItem{0};

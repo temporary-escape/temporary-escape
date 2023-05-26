@@ -15,7 +15,7 @@ public:
 
     static const size_t totalAttachments = 2;
 
-    explicit RenderPassNonHdr(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+    explicit RenderPassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                               const RenderPassForward& forward);
     virtual ~RenderPassNonHdr() = default;
 

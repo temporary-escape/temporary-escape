@@ -5,23 +5,18 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
 static const Vector2 systemBodySize{32.0f, 32.0f};
 
-ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Client& client,
-                       FontFamily& font) :
-    parent{parent},
-    config{config},
-    registry{registry},
-    client{client},
-    font{font},
-    scene{} {
+ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                       Client& client, FontFamily& font) :
+    parent{parent}, config{config}, assetsManager{assetsManager}, client{client}, font{font}, scene{} {
 
-    images.systemPlanet = registry.getImages().find("icon_ringed_planet");
-    images.systemMoon = registry.getImages().find("icon_world");
-    images.iconSelect = registry.getImages().find("icon_target");
+    images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
+    images.systemMoon = assetsManager.getImages().find("icon_world");
+    images.iconSelect = assetsManager.getImages().find("icon_target");
 
     { // To keep the renderer away from complaining
         auto sun = scene.createEntity();
@@ -95,7 +90,7 @@ Scene& ViewSystem::getScene() {
     return scene;
 }
 
-void ViewSystem::clear() {
+/*void ViewSystem::clear() {
     loading = true;
     loadingValue = 0.1f;
     input.hover = nullptr;
@@ -110,26 +105,26 @@ void ViewSystem::clear() {
     system.bodies.clear();
     system.planets.clear();
     system.sectors.clear();
-}
+}*/
 
 void ViewSystem::load() {
-    clear();
+    // clear();
 
     stopToken = StopToken{};
-    fetchCurrentLocation(stopToken);
+    // fetchCurrentLocation(stopToken);
 }
 
 void ViewSystem::load(const std::string& galaxyId, const std::string& systemId) {
-    clear();
+    // clear();
 
     location.galaxyId = galaxyId;
     location.systemId = systemId;
 
-    stopToken = StopToken{};
-    fetchSectors(stopToken, "");
+    // stopToken = StopToken{};
+    // fetchSectors(stopToken, "");
 }
 
-void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
+/*void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
     MessagePlayerLocationRequest req{};
 
     client.send(req, [this, stop](MessagePlayerLocationResponse res) {
@@ -147,9 +142,9 @@ void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
 
         fetchSectors(stop, "");
     });
-}
+}*/
 
-void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
+/*void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
     MessageFetchSectorsRequest req{};
     req.token = token;
     req.galaxyId = location.galaxyId;
@@ -173,15 +168,15 @@ void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
             fetchPlanetaryBodiesPage(stop, "");
         }
     });
-}
+}*/
 
-void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token) {
-    MessageFetchPlanetaryBodiesRequest req{};
+/*void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token) {
+    MessageFetchPlanetsRequest req{};
     req.token = token;
     req.galaxyId = location.galaxyId;
     req.systemId = location.systemId;
 
-    client.send(req, [this, stop](MessageFetchPlanetaryBodiesResponse res) {
+    client.send(req, [this, stop](MessageFetchPlanetsResponse res) {
         if (stop.shouldStop()) {
             return;
         }
@@ -199,9 +194,9 @@ void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::stri
             updateSystem();
         }
     });
-}
+}*/
 
-void ViewSystem::updateSystem() {
+/*void ViewSystem::updateSystem() {
     logger.info("Recreating system with objects");
     loading = false;
     loadingValue = 1.0f;
@@ -210,9 +205,9 @@ void ViewSystem::updateSystem() {
     createEntityCursor();
     createEntityPositions();
     createEntitiesBodies();
-}
+}*/
 
-void ViewSystem::clearEntities() {
+/*void ViewSystem::clearEntities() {
     for (auto& entity : entities.bodies) {
         scene.removeEntity(entity);
     }
@@ -234,9 +229,9 @@ void ViewSystem::clearEntities() {
 
     scene.removeEntity(entities.cursor);
     entities.cursor.reset();
-}
+}*/
 
-void ViewSystem::createEntityPositions() {
+/*void ViewSystem::createEntityPositions() {
     entities.positions = scene.createEntity();
     entities.positions->addComponent<ComponentTransform>();
     auto& clickable = entities.positions->addComponent<ComponentClickablePoints>();
@@ -246,7 +241,7 @@ void ViewSystem::createEntityPositions() {
         auto& body = system.bodies[i];
 
         std::visit(overloaded{
-                       [&](PlanetaryBodyData* planet) {
+                       [&](PlanetData* planet) {
                            const auto pos = Vector3{planet->pos.x, 0.1f, planet->pos.y};
                            entities.cursor->getComponent<ComponentTransform>().move(pos);
                            auto& text = entities.cursor->getComponent<ComponentText>();
@@ -269,27 +264,27 @@ void ViewSystem::createEntityPositions() {
             return;
         }
 
-        /*const auto& system = galaxy.systemsOrdered[i];
-        const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
-        const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
+        //const auto& system = galaxy.systemsOrdered[i];
+        //const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
+        //const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
 
-        gui.contextMenu.setEnabled(true);
-        gui.contextMenu.setPos(viewPos);
-        gui.contextMenu.setItems({
-            {"View", [this]() {}},
-            {"Info", [this]() {}},
-            {"Note", [this]() {}},
-            {"Set Destination", [this]() {}},
-        });*/
+        //gui.contextMenu.setEnabled(true);
+        //gui.contextMenu.setPos(viewPos);
+        //gui.contextMenu.setItems({
+        //    {"View", [this]() {}},
+        //    {"Info", [this]() {}},
+        //    {"Note", [this]() {}},
+        //    {"Set Destination", [this]() {}},
+        //});
     });
 
     clickable.setOnBlurCallback([this]() {
         entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.1f, 0.0f});
         entities.cursor->setDisabled(true);
     });
-}
+}*/
 
-void ViewSystem::createEntityCursor() {
+/*void ViewSystem::createEntityCursor() {
     entities.cursor = scene.createEntity();
     entities.cursor->setDisabled(true);
     entities.cursor->addComponent<ComponentTransform>().move(Vector3{0.0f, 0.1f, 0.0f});
@@ -297,9 +292,9 @@ void ViewSystem::createEntityCursor() {
     auto& cursorText = entities.cursor->addComponent<ComponentText>("", Theme::primary, config.guiFontSize);
     cursorText.setCentered(true);
     cursorText.setOffset(Vector2{0, -(systemBodySelectable.y / 2.0f)});
-}
+}*/
 
-void ViewSystem::createEntitiesBodies() {
+/*void ViewSystem::createEntitiesBodies() {
     static const Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
 
     auto& clickable = entities.positions->getComponent<ComponentClickablePoints>();
@@ -317,20 +312,20 @@ void ViewSystem::createEntitiesBodies() {
     for (const auto& body : system.bodies) {
         std::visit(
             overloaded{
-                [&](PlanetaryBodyData* planet) {
+                [&](PlanetData* planet) {
                     auto entity = scene.createEntity();
                     entities.bodies.push_back(entity);
 
                     const auto pos = Vector3{planet->pos.x, 0.0f, planet->pos.y};
                     entity->addComponent<ComponentTransform>().move(pos);
-                    if (planet->isMoon) {
+                    if (planet->parent) {
                         icons.add(pos, systemBodySize, color, images.systemMoon);
                     } else {
                         icons.add(pos, systemBodySize, color, images.systemPlanet);
                         entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
                     }
 
-                    // entity->addComponent<ComponentPlanet>(registry.getPlanetTypes().find("planet_a"));
+                    // entity->addComponent<ComponentPlanet>(planet->type, planet->seed);
 
                     clickable.add(pos);
                     // names.add(pos, planet->name);
@@ -361,7 +356,7 @@ void ViewSystem::createEntitiesBodies() {
             },
             body);
     }
-}
+}*/
 
 void ViewSystem::onEnter() {
 }

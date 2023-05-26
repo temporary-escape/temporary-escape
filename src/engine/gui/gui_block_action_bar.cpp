@@ -1,16 +1,17 @@
 #include "gui_block_action_bar.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../math/utils.hpp"
 #include "../utils/ktx2_file.hpp"
 
 using namespace Engine;
 
-GuiBlockActionBar::GuiBlockActionBar(const Config& config, Registry& registry) : config{config}, registry{registry} {
+GuiBlockActionBar::GuiBlockActionBar(const Config& config, AssetsManager& assetsManager) :
+    config{config}, assetsManager{assetsManager} {
 
     setFlags(Nuklear::WindowFlags::NoScrollbar | Nuklear::WindowFlags::Border);
-    defaultImage = registry.getImages().find("block_empty_image");
+    defaultImage = assetsManager.getImages().find("block_empty_image");
 
-    loadColors(registry.getTextures().find("palette"));
+    loadColors(assetsManager.getTextures().find("palette"));
 }
 
 void GuiBlockActionBar::loadColors(const TexturePtr& asset) {

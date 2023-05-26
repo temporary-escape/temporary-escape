@@ -1,12 +1,12 @@
 #include "server.hpp"
 #include "../utils/random.hpp"
-#include "generator_default.hpp"
-#include "python.hpp"
+#include "lua.hpp"
 #include <memory>
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req, Res)                                                                                       \
@@ -14,37 +14,45 @@ static auto logger = createLogger(__FILENAME__);
         Res res{};                                                                                                     \
         this->handle(peer, std::move(req), res);                                                                       \
         return res;                                                                                                    \
-    });
+    })
+#undef HANDLE_REQUEST_VOID
 #define HANDLE_REQUEST_VOID(Req)                                                                                       \
-    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); });
+    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); })
 
 Server* Server::instance;
 
-Server::Server(const Config& config, const Certs& certs, Registry& registry, TransactionalDatabase& db) :
+Server::Server(const Config& config, const Certs& certs, AssetsManager& assetsManager, Database& db) :
     Network::Server{static_cast<unsigned int>(config.serverPort), certs.key, certs.dh, certs.cert},
     config{config},
-    registry{registry},
+    assetsManager{assetsManager},
     db{db},
+    playerSessions{config, assetsManager, db},
+    world{config, assetsManager, db, playerSessions},
+    lobby{config},
     tickFlag{true},
-    loaded{false},
     worker{4},
-    commands{worker.strand()} {
+    loadQueue{1} {
 
     instance = this;
 
     HANDLE_REQUEST(MessageLoginRequest, MessageLoginResponse);
-    HANDLE_REQUEST(MessageModsInfoRequest, MessageModsInfoResponse);
-    HANDLE_REQUEST(MessageSpawnRequest, MessageSpawnResponse);
+    HANDLE_REQUEST(MessageModManifestsRequest, MessageModManifestsResponse);
+    HANDLE_REQUEST(MessagePlayerLocationRequest, MessagePlayerLocationResponse);
     HANDLE_REQUEST_VOID(MessagePingResponse);
+    world.registerHandlers(*this);
 
-    tickThread = std::thread([this]() {
+    auto promise = std::make_shared<Promise<void>>();
+    tickThread = std::thread([this, promise]() {
         try {
             load();
         } catch (std::exception& e) {
             BACKTRACE(e, "Server load thread error");
+            cleanup();
+            promise->reject<std::runtime_error>("Server failed to start");
+            return;
         }
 
-        loaded.store(true);
+        promise->resolve();
 
         try {
             tick();
@@ -53,22 +61,35 @@ Server::Server(const Config& config, const Certs& certs, Registry& registry, Tra
         }
         cleanup();
     });
+
+    try {
+        auto future = promise->future();
+        future.get();
+    } catch (...) {
+        tickThread.join();
+        throw;
+    }
+}
+
+EventBus& Server::getEventBus() const {
+    if (!eventBus) {
+        EXCEPTION("EventBus is not initialized");
+    }
+    return *eventBus;
 }
 
 void Server::load() {
     eventBus = std::make_unique<EventBus>();
-    world = std::make_unique<World>(config, registry, db, *this, *this, *eventBus);
-    generator = std::make_unique<GeneratorDefault>(config, *world);
-    python = std::make_unique<Python>(config.pythonHome, std::vector<Path>{config.assetsPath});
+    lua = std::make_unique<Lua>(config, *eventBus);
 
     try {
-        python->importModule("base");
+        lua->importModule("base");
     } catch (...) {
         EXCEPTION_NESTED("Failed to import base assets module");
     }
 
     try {
-        generator->generate(123456789ULL);
+        generator(123456789LL);
         logger.info("Universe has been generated and is ready");
     } catch (...) {
         EXCEPTION_NESTED("Failed to generate the universe");
@@ -80,20 +101,26 @@ void Server::load() {
     } catch (...) {
         EXCEPTION_NESTED("Failed to start the server");
     }
+
+    EventData eventData{};
+    eventData["seed"] = 123456789LL;
+    eventBus->enqueue("server_started", eventData);
 }
 
 void Server::cleanup() {
     logger.info("Cleanup started");
 
-    logger.info("Clearing lobby and sessions");
-    {
-        std::unique_lock<std::shared_mutex> lock{players.mutex};
-        players.lobby.clear();
-        players.sessions.clear();
-    }
+    logger.info("Clearing lobby");
+    lobby.clear();
+
+    logger.info("Clearing sessions");
+    playerSessions.clear();
 
     logger.info("Waiting for network to stop");
     Network::Server::stop();
+
+    logger.info("Waiting for load queue to stop");
+    loadQueue.stop();
 
     logger.info("Waiting for workers to stop");
     worker.stop();
@@ -104,14 +131,12 @@ void Server::cleanup() {
         sectors.map.clear();
     }
 
-    logger.info("Stopping generator");
-    generator.reset();
-
     logger.info("Stopping event bus");
     eventBus.reset();
 
-    logger.info("Stopping python");
-    python.reset();
+    logger.info("Stopping lua");
+    generator = nullptr;
+    lua.reset();
 
     logger.info("Stop done");
 }
@@ -125,38 +150,39 @@ Server::~Server() {
     }
 }
 
+void Server::pollEvents() {
+    try {
+        eventBus->poll();
+    } catch (std::exception& e) {
+        EXCEPTION_NESTED("Error while polling event bus");
+    }
+}
+
+void Server::updateSectors() {
+    std::shared_lock<std::shared_mutex> lock{sectors.mutex};
+    for (auto& [compoundId, sector] : sectors.map) {
+        // Skip sectors that are not yet ready
+        if (!sector->isLoaded()) {
+            continue;
+        }
+
+        try {
+            sector->update();
+        } catch (std::exception& e) {
+            EXCEPTION_NESTED("Failed to update sector: '{}'", compoundId);
+        }
+    }
+}
+
 void Server::tick() {
     logger.info("Starting tick");
 
     while (tickFlag.load()) {
         const auto start = std::chrono::steady_clock::now();
 
-        const auto sessions = getAllSessions();
-        updateSessionsPing(sessions);
-
-        try {
-            eventBus->poll();
-        } catch (std::exception& e) {
-            BACKTRACE(e, "Error while polling event bus");
-        }
-
-        std::optional<std::string> failedId;
-
-        {
-            std::shared_lock<std::shared_mutex> lock{sectors.mutex};
-            for (auto& [compoundId, sector] : sectors.map) {
-                try {
-                    sector->update(config.tickLengthUs.count() / 1000000.0f);
-                } catch (std::exception& e) {
-                    BACKTRACE(e, "Failed to update sector: '{}'", compoundId);
-                }
-            }
-        }
-
-        if (failedId.has_value()) {
-            logger.error("Sector: '{}' failed to update, stopping tick", failedId.value());
-            break;
-        }
+        playerSessions.updateSessionsPing();
+        pollEvents();
+        updateSectors();
 
         const auto now = std::chrono::steady_clock::now();
         const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
@@ -168,81 +194,28 @@ void Server::tick() {
     logger.info("Stopped tick");
 }
 
-void Server::updateSessionsPing(const std::vector<SessionPtr>& sessions) {
-    const auto now = std::chrono::steady_clock::now();
-    for (const auto& session : sessions) {
-        if (!session->hasFlag(Session::Flags::PingSent)) {
-            if (now - session->getLastPingTime() > std::chrono::milliseconds{250}) {
-                session->setFlag(Session::Flags::PingSent);
-
-                MessagePingRequest req{};
-                req.time = now;
-                session->send(req);
-            }
-        }
-    }
-}
-
 void Server::onAcceptSuccess(PeerPtr peer) {
     logger.info("New connection peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
-    addPeerToLobby(peer);
+    lobby.addPeerToLobby(peer);
 }
 
-SessionPtr Server::peerToSession(const PeerPtr& peer) {
-    std::shared_lock<std::shared_mutex> lock{players.mutex};
-    const auto it = players.sessions.find(peer.get());
-    if (it == players.sessions.end()) {
-        EXCEPTION("Player session not found for peer: {}", reinterpret_cast<uint64_t>(peer.get()));
-    }
-    return it->second;
-}
-
-bool Server::isPeerLoggedIn(const std::string& playerId) {
-    std::shared_lock<std::shared_mutex> lock{players.mutex};
-    for (const auto& [_, session] : players.sessions) {
-        if (session->getPlayerId() == playerId) {
-            return true;
-        }
+void Server::movePlayerToSector(const std::string& playerId, const std::string& sectorId) {
+    auto session = getPlayerSession(playerId);
+    if (!session) {
+        EXCEPTION("Can not move player: '{}' to sector: '{}', error: player is not logged in", playerId, sectorId);
     }
 
-    return false;
+    addPlayerToSector(session, sectorId);
 }
 
-void Server::addPeerToLobby(const PeerPtr& peer) {
-    logger.info("Adding to lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
-    std::unique_lock<std::shared_mutex> lock{players.mutex};
-    players.lobby.insert(peer.get());
-}
-
-void Server::removePeerFromLobby(const PeerPtr& peer) {
-    std::unique_lock<std::shared_mutex> lock{players.mutex};
-    players.lobby.erase(peer.get());
-
-    const auto it = players.lobby.find(peer.get());
-    if (it != players.lobby.end()) {
-        logger.info("Removing from lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
-        players.lobby.erase(it);
-    }
-}
-
-void Server::disconnectPeer(const PeerPtr& peer) {
-    logger.info("Disconnecting peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
-    removePeerFromLobby(peer);
-    peer->close();
-}
-
-SessionPtr Server::createSession(const PeerPtr& peer, const PlayerData& player) {
-    logger.info("Creating session for peer id: {} player: {}", reinterpret_cast<uint64_t>(peer.get()), player.id);
-    std::unique_lock<std::shared_mutex> lock{players.mutex};
-    auto session = std::make_shared<Session>(player.id, peer);
-    players.sessions.insert(std::make_pair(peer.get(), session));
-    return session;
+SessionPtr Server::getPlayerSession(const std::string& playerId) {
+    return playerSessions.getSession(playerId);
 }
 
 SectorPtr Server::startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId) {
     logger.info("Starting sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
 
-    auto sectorOpt = world->sectors.find(galaxyId, systemId, sectorId);
+    auto sectorOpt = db.find<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
     if (!sectorOpt) {
         EXCEPTION_NESTED("Can not start sector: '{}/{}/{}' not found", galaxyId, systemId, sectorId);
     }
@@ -258,11 +231,14 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
 
     try {
         logger.info("Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
-        auto instance =
-            std::make_shared<Sector>(config, *world, registry, *eventBus, sector.galaxyId, sector.systemId, sector.id);
-        sectors.map.insert(std::make_pair(sector.id, instance));
+        auto sectorPtr =
+            std::make_shared<Sector>(config, db, assetsManager, *eventBus, sector.galaxyId, sector.systemId, sector.id);
+        sectors.map.insert(std::make_pair(sector.id, sectorPtr));
 
-        return instance;
+        // Load the sector in a separate thread
+        loadQueue.postSafe([this, sectorPtr]() { sectorPtr->load(); });
+
+        return sectorPtr;
     } catch (...) {
         EXCEPTION_NESTED("Failed to start sector '{}'", sector.id);
     }
@@ -280,161 +256,58 @@ void Server::addPlayerToSector(const SessionPtr& session, const std::string& sec
     it->second->addPlayer(session);
 }
 
-std::tuple<SessionPtr, SectorPtr> Server::peerToSessionSector(const PeerPtr& peer) {
-    /*SessionPtr session;
-    std::string sectorId;
-    SectorPtr sector;
-
-    {
-        std::shared_lock<std::shared_mutex> lock{players.mutex};
-        const auto it = players.map.find(peer.get());
-        if (it == players.map.end()) {
-            EXCEPTION("Player session not found for peer: {}", reinterpret_cast<uint64_t>(peer.get()));
-        }
-        session = it->second;
-
-        const auto it2 = players.sectors.find(session.get());
-        if (it2 == players.sectors.end()) {
-            EXCEPTION("Player session not present in any sector, player id: {}", session->getPlayerId());
-        }
-
-        sectorId = it2->second;
-    }
-
-    {
-        std::shared_lock<std::shared_mutex> lock{sectors.mutex};
-        const auto it = sectors.map.find(sectorId);
-        if (it == sectors.map.end()) {
-            EXCEPTION("Player session present in invalid sector id: {} player id: {}", sectorId,
-                      session->getPlayerId());
-        }
-
-        sector = it->second;
-    }
-
-    return {session, sector};*/
-
-    return {nullptr, nullptr};
-}
-
-std::vector<SessionPtr> Server::getAllSessions() {
-    std::shared_lock<std::shared_mutex> lock{players.mutex};
-    std::vector<SessionPtr> sessions;
-    sessions.reserve(players.sessions.size());
-    for (const auto& [_, peer] : players.sessions) {
-        sessions.push_back(peer);
-    }
-    return sessions;
-}
-
 void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res) {
     logger.info("New login peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
 
     // Check for server password
     if (!config.serverPassword.empty() && config.serverPassword != req.password) {
         res.error = "Bad server password";
-        disconnectPeer(peer);
+        lobby.disconnectPeer(peer);
         return;
     }
 
-    // Remove peer from lobby
-    removePeerFromLobby(peer);
-
     // Check if the player is already logged in
-    const auto playerIdFound = world->players.secretToId(req.secret);
+    const auto playerIdFound = playerSessions.secretToId(req.secret);
     if (playerIdFound) {
-        if (isPeerLoggedIn(*playerIdFound)) {
+        if (playerSessions.isLoggedIn(*playerIdFound)) {
             res.error = "Already logged in";
-            disconnectPeer(peer);
+            lobby.disconnectPeer(peer);
             return;
         }
     }
+
+    // Remove peer from lobby
+    lobby.removePeerFromLobby(peer);
 
     // Login
     logger.info("Logging in player name: '{}'", req.name);
 
     PlayerData player;
     try {
-        player = world->players.login(req.secret, req.name);
+        player = playerSessions.login(req.secret, req.name);
     } catch (...) {
         res.error = "Failed logging in";
-        disconnectPeer(peer);
+        lobby.disconnectPeer(peer);
         EXCEPTION_NESTED("Failed to log in player: '{}'", req.name);
     }
 
     logger.info("Logged in player: {} name: '{}'", player.id, req.name);
 
-    createSession(peer, player);
+    playerSessions.createSession(peer, player.id);
 
-    /*
-
-    // Login
-    logger.info("Logging in player: '{}'", req.name);
-
-    PlayerData player;
-    SessionPtr session;
-    try {
-        player = world.loginPlayer(req.secret, req.name);
-        session = std::make_shared<Session>(player.id, peer);
-
-        std::unique_lock<std::shared_mutex> lock{players.mutex};
-        players.map.insert(std::make_pair(peer.get(), session));
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to log in player: '{}'", req.name);
-    }
-
-    res.playerId = player.id;
-
-    // Find starting location, so we can move the player to the correct sector
-    PlayerLocationData location;
-    try {
-        location = world.findPlayerStartingLocation(player.id);
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to find starting location for player: '{}'", req.name);
-    }
-
-    // Find the sector
-    auto sectorOpt = world.findSector(location.galaxyId, location.systemId, location.sectorId);
-    if (!sectorOpt) {
-        EXCEPTION_NESTED("Invalid starting location for player: '{}'", req.name);
-    }
-    auto& sector = sectorOpt.value();
-
-    // Start the sector
-    std::shared_ptr<Sector> instance;
-    {
-        std::shared_lock<std::shared_mutex> lock{sectors.mutex};
-        auto it = sectors.map.find(sector.id);
-        if (it == sectors.map.end()) {
-            try {
-                instance =
-                    std::make_shared<Sector>(config, world, registry, db, sector.galaxyId, sector.systemId, sector.id);
-                it = sectors.map.insert(std::make_pair(sector.id, instance)).first;
-            } catch (...) {
-                EXCEPTION_NESTED("Failed to start sector '{}'", sector.id);
-            }
-        }
-    }
-
-    {
-        std::unique_lock<std::shared_mutex> lock{players.mutex};
-        players.sectors.insert(std::make_pair(session.get(), sector.id));
-    }
-
-    loader.post([this, instance, session, sector]() {
-        try {
-            instance->load();
-            instance->addPlayer(session);
-        } catch (std::exception& e) {
-            BACKTRACE(CMP, e, "Failed to load sector id: '{}'", sector.id);
-        }
-    });*/
+    // Publish an event
+    EventData event{};
+    event["player_id"] = player.id;
+    event["player_name"] = player.name;
+    eventBus->enqueue("player_logged_in", event);
 }
 
-void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res) {
-    auto session = peerToSession(peer);
+/*void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res) {
+    (void)req;
+
+    auto session = playerSessions.getSession(peer);
     try {
-        const auto location = world->players.findStartingLocation(session->getPlayerId());
+        const auto location = playerSessions.findStartingLocation(session->getPlayerId());
         res.location = location;
 
         startSector(location.galaxyId, location.systemId, location.sectorId);
@@ -442,23 +315,36 @@ void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnRe
     } catch (...) {
         EXCEPTION_NESTED("Failed to find starting location for player: '{}'", session->getPlayerId());
     }
+}*/
+
+void Server::handle(const PeerPtr& peer, MessageModManifestsRequest req, MessageModManifestsResponse& res) {
+    (void)peer;
+    (void)req;
+
+    const auto& manifests = assetsManager.getManifests();
+    res.items.reserve(manifests.size());
+    for (const auto& manifest : manifests) {
+        res.items.push_back(manifest);
+    }
+    res.page.hasNext = false;
 }
 
-void Server::handle(const PeerPtr& peer, MessageModsInfoRequest req, MessageModsInfoResponse& res) {
-    const auto& manifests = registry.getManifests();
-    res.manifests.reserve(manifests.size());
-    for (const auto& manifest : manifests) {
-        res.manifests.push_back(manifest);
+void Server::handle(const PeerPtr& peer, MessagePlayerLocationRequest req, MessagePlayerLocationResponse& res) {
+    (void)req;
+
+    const auto session = playerSessions.getSession(peer);
+    const auto location = db.find<PlayerLocationData>(session->getPlayerId());
+    if (location) {
+        res.location = *location;
+    } else {
+        logger.warn("Player location requested for: '{}' but player has no location", session->getPlayerId());
     }
 }
 
-void Server::handle(const PeerPtr& peer, MessageShipMovementRequest req, MessageShipMovementResponse& res) {
-    auto [session, sector] = peerToSessionSector(peer);
-    // sector->handle(session, std::move(req), res);
-}
-
 void Server::handle(const PeerPtr& peer, MessagePingResponse res) {
-    auto session = peerToSession(peer);
+    (void)res;
+
+    auto session = playerSessions.getSession(peer);
     session->setLastPingTime(std::chrono::steady_clock::now());
     session->clearFlag(Session::Flags::PingSent);
 }
@@ -485,6 +371,19 @@ void Server::postDispatch(std::function<void()> fn) {
     worker.postSafe(std::forward<decltype(fn)>(fn));
 }
 
-std::shared_ptr<Service::Session> Server::find(const std::shared_ptr<Network::Peer>& peer) {
-    return peerToSession(peer);
+void Server::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Server>("Server");
+    cls["set_generator"] = [](Server& self, sol::function fn) {
+        self.setGenerator([fn](uint64_t seed) {
+            sol::protected_function_result result = fn(seed);
+            if (!result.valid()) {
+                sol::error err = result;
+                EXCEPTION("{}", err.what());
+            }
+        });
+    };
+    cls["start_sector"] = &Server::startSector;
+    cls["move_player_to_sector"] = &Server::movePlayerToSector;
 }

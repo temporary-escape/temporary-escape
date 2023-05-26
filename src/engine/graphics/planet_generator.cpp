@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static void copyTexture(VulkanCommandBuffer& vkb, const VulkanTexture& source, const VulkanTexture& target, int side) {
     /*VkImageCopy imageCopy{};
@@ -89,14 +89,14 @@ static void transitionTextureShaderRead(VulkanCommandBuffer& vkb, const VulkanTe
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
-PlanetGenerator::PlanetGenerator(const Config& config, VulkanRenderer& vulkan, Registry& registry) :
+PlanetGenerator::PlanetGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     config{config}, vulkan{vulkan} {
 
     // clang-format off
     renderPasses.planetSurface = std::make_unique<RenderPassPlanetSurface>(
-        vulkan, registry, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
+        vulkan, assetsManager, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
     renderPasses.planetNormal = std::make_unique<RenderPassPlanetNormal>(
-        vulkan, registry, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
+        vulkan, assetsManager, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
     // clang-format on
 }
 

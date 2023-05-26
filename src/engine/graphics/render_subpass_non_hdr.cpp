@@ -1,18 +1,18 @@
 #include "render_subpass_non_hdr.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "render_pass_non_hdr.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineWorldText{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_world_text_vert"),
-            registry.getShaders().find("component_world_text_frag"),
+            assetsManager.getShaders().find("component_world_text_vert"),
+            assetsManager.getShaders().find("component_world_text_frag"),
         },
         {
             // Vertex inputs

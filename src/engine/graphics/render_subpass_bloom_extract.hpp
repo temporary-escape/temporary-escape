@@ -6,7 +6,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBloomExtract : public RenderSubpass {
 public:
-    explicit RenderSubpassBloomExtract(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& source);
+    explicit RenderSubpassBloomExtract(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                       const VulkanTexture& source);
     virtual ~RenderSubpassBloomExtract() = default;
 
     void render(VulkanCommandBuffer& vkb);

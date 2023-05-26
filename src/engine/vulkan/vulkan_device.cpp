@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, config{config} {
     const auto indices = getQueueFamilies();

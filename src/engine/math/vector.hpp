@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../library.hpp"
 #include <fmt/format.h>
 #include <glm/geometric.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -22,6 +23,8 @@ using Color4 = glm::vec4;
 inline Color4 alpha(float a) {
     return Color4{1.0f, 1.0f, 1.0f, a};
 }
+
+ENGINE_API void bindMathVectors(Lua& lua);
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Vector2> {
@@ -175,7 +178,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 4)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<float>(), o.via.array.ptr[1].as<float>(), o.via.array.ptr[2].as<float>(),
+            v = {o.via.array.ptr[0].as<float>(),
+                 o.via.array.ptr[1].as<float>(),
+                 o.via.array.ptr[2].as<float>(),
                  o.via.array.ptr[3].as<float>()};
             return o;
         }
@@ -198,7 +203,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 4)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<int>(), o.via.array.ptr[1].as<int>(), o.via.array.ptr[2].as<int>(),
+            v = {o.via.array.ptr[0].as<int>(),
+                 o.via.array.ptr[1].as<int>(),
+                 o.via.array.ptr[2].as<int>(),
                  o.via.array.ptr[3].as<int>()};
             return o;
         }

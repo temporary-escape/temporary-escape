@@ -1,12 +1,12 @@
 #include "render_subpass_planet_color.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../math/random.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_planet_surface.hpp"
 
 using namespace Engine;
 
-RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, Registry& registry,
+RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, AssetsManager& assetsManager,
                                                    RenderPassPlanetSurface& parent) :
     vulkan{vulkan},
     parent{parent},
@@ -14,8 +14,8 @@ RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, Regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet_color_vert"),
-            registry.getShaders().find("planet_color_frag"),
+            assetsManager.getShaders().find("planet_color_vert"),
+            assetsManager.getShaders().find("planet_color_frag"),
         },
         {
             // Vertex inputs

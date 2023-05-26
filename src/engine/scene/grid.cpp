@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static Vector3i normalToOrientation(const Vector3& normal) {
     if (normal.x > 0.5f) {

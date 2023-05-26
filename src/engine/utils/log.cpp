@@ -1,6 +1,8 @@
 #include "log.hpp"
+#include "../server/lua.hpp"
 #include "path.hpp"
 #include <memory>
+#include <sol/sol.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
@@ -26,6 +28,16 @@ static std::unique_ptr<spdlog::logger> createLogger(const Path& path) {
 
 std::shared_ptr<spdlog::logger> root = createLogger(getAppDataPath() / "TemporaryEscape.log");
 
-Logger Engine::createLogger(std::string name) {
-    return Logger{std::move(name), root};
+Logger Engine::createLogger(const std::string_view& name) {
+    return Logger{std::string{name}, root};
+}
+
+void Logger::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Logger>("Logger");
+    cls["info"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::info);
+    cls["debug"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::debug);
+    cls["warn"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::warn);
+    cls["error"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::error);
 }

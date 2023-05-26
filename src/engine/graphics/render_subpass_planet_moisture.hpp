@@ -8,7 +8,7 @@ class ENGINE_API RenderSubpassPlanetMoisture : public RenderSubpass {
 public:
     using Rng = std::mt19937_64;
 
-    explicit RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassPlanetMoisture() = default;
 
     void render(VulkanCommandBuffer& vkb, Rng& rng, int index, float resolution);

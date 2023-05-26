@@ -1,5 +1,5 @@
 #include "render_subpass_skybox.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_skybox.hpp"
 #include "render_subpass_pbr.hpp"
@@ -7,7 +7,8 @@
 
 using namespace Engine;
 
-RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& brdf) :
+RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                         const VulkanTexture& brdf) :
     vulkan{vulkan},
     brdf{brdf},
     defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}},
@@ -15,8 +16,8 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_skybox_vert"),
-            registry.getShaders().find("pass_skybox_frag"),
+            assetsManager.getShaders().find("pass_skybox_vert"),
+            assetsManager.getShaders().find("pass_skybox_frag"),
         },
         {
             // Vertex inputs
@@ -36,8 +37,8 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_planet_surface_vert"),
-            registry.getShaders().find("component_planet_surface_frag"),
+            assetsManager.getShaders().find("component_planet_surface_vert"),
+            assetsManager.getShaders().find("component_planet_surface_frag"),
         },
         {
             // Vertex inputs

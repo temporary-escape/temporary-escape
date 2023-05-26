@@ -1,27 +1,29 @@
 #pragma once
 
 #include "../network/peer.hpp"
-#include "../services/service.hpp"
-#include "messages.hpp"
 
 namespace Engine {
-class ENGINE_API Session : public Service::Session {
+using PeerPtr = std::shared_ptr<Network::Peer>;
+
+class ENGINE_API Session {
 public:
     enum Flags : uint64_t {
         PingSent,
     };
 
-    explicit Session(std::string playerId, const std::shared_ptr<Network::Peer>& stream) :
+    explicit Session(std::string playerId, const PeerPtr& stream) :
         playerId{std::move(playerId)}, stream{stream}, lastPingTime{}, flags{0} {
     }
 
-    [[nodiscard]] const std::string& getPlayerId() const override {
+    [[nodiscard]] const std::string& getPlayerId() const {
         return playerId;
     }
 
     template <typename T> void send(T& msg) {
         if (auto ptr = stream.lock(); ptr != nullptr) {
             ptr->send(msg);
+        } else {
+            connected = false;
         }
     }
 
@@ -45,11 +47,21 @@ public:
         return flags & flag;
     }
 
+    void close() {
+        if (auto ptr = stream.lock(); ptr != nullptr) {
+            ptr->close();
+        }
+        connected = false;
+    }
+
+    static void bind(Lua& lua);
+
 private:
     std::string playerId;
     std::weak_ptr<Network::Peer> stream;
     std::chrono::steady_clock::time_point lastPingTime;
     uint64_t flags;
+    bool connected{true};
 };
 
 using SessionPtr = std::shared_ptr<Session>;

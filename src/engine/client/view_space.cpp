@@ -3,11 +3,11 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Registry& registry, Skybox& skybox,
-                     Client& client) :
-    parent{parent}, config{config}, registry{registry}, skyboxSystem{skybox}, client{client} {
+ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+                     Skybox& skybox, Client& client) :
+    parent{parent}, config{config}, assetsManager{assetsManager}, skyboxSystem{skybox}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {

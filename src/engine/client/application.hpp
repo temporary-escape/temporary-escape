@@ -48,7 +48,7 @@ private:
     void createVoxelShapeCache();
     void compressAssets();
     void createRenderer();
-    void loadNextAssetInQueue(Registry::LoadQueue::const_iterator next);
+    void loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next);
     void startDatabase();
     void startServer();
     void startClient();
@@ -70,8 +70,8 @@ private:
         GuiCreateProfile createProfile;
     } gui;
 
-    std::unique_ptr<Registry> registry;
-    std::unique_ptr<TransactionalDatabase> db;
+    std::unique_ptr<AssetsManager> assetsManager;
+    std::unique_ptr<Database> db;
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::thread serverThread;

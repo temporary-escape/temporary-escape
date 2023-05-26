@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 static const auto profileFilename = "profile.yaml";
 
 Application::Application(const Config& config) :
@@ -44,7 +44,11 @@ Application::Application(const Config& config) :
 Application::~Application() {
     shouldStop.store(true);
     if (future.valid()) {
-        future.get();
+        try {
+            future.get();
+        } catch (const std::exception& e) {
+            BACKTRACE(e, "fatal error");
+        }
     }
 }
 
@@ -146,7 +150,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *renderer, *registry, font);
+    editor = std::make_unique<Editor>(config, *renderer, *assetsManager, font);
 }
 
 void Application::checkForClientScene() {
@@ -156,7 +160,8 @@ void Application::checkForClientScene() {
     if (client->getScene()) {
         logger.info("Client has a scene, creating Game instance");
 
-        game = std::make_unique<Game>(config, *renderer, *skyboxGenerator, *planetGenerator, *registry, font, *client);
+        game = std::make_unique<Game>(
+            config, *renderer, *skyboxGenerator, *planetGenerator, *assetsManager, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -168,7 +173,7 @@ void Application::startClient() {
     status.message = "Connecting...";
     status.value = 0.9f;
 
-    client = std::make_unique<Client>(config, *registry, playerLocalProfile);
+    client = std::make_unique<Client>(config, *assetsManager, playerLocalProfile);
 
     logger.info("Connecting to the server");
 
@@ -187,17 +192,7 @@ void Application::startServer() {
 
     future = std::async([this]() -> std::function<void()> {
         serverCerts = std::make_unique<Server::Certs>();
-
-        try {
-            server = std::make_unique<Server>(config, *serverCerts, *registry, *db);
-
-            while (!server->isLoaded() && !shouldStop.load()) {
-                std::this_thread::sleep_for(std::chrono::microseconds(100));
-            }
-
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to start the server");
-        }
+        server = std::make_unique<Server>(config, *serverCerts, *assetsManager, *db);
 
         return [this]() { startClient(); };
     });
@@ -240,21 +235,22 @@ void Application::createEmptyThumbnail(Renderer& thumbnailRenderer) {
     logger.info("Creating empty thumbnail");
 
     thumbnailRenderer.render(nullptr, VoxelShape::Cube);
-    const auto alloc = registry->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
-    registry->addImage("block_empty_image", alloc);
+    const auto alloc =
+        assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+    assetsManager->addImage("block_empty_image", alloc);
 }
 
 void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
     logger.info("Creating block thumbnails");
 
-    for (const auto& block : registry->getBlocks().findAll()) {
+    for (const auto& block : assetsManager->getBlocks().findAll()) {
         for (const auto shape : block->getShapes()) {
             thumbnailRenderer.render(block, shape);
             const auto alloc =
-                registry->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+                assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
 
             const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
-            block->setThumbnail(shape, registry->addImage(name, alloc));
+            block->setThumbnail(shape, assetsManager->addImage(name, alloc));
         }
     }
 }
@@ -264,12 +260,12 @@ void Application::createThumbnails() {
 
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
     auto thumbnailRenderer =
-        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
+        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
 
     createBlockThumbnails(*thumbnailRenderer);
     createEmptyThumbnail(*thumbnailRenderer);
 
-    registry->finalize();
+    assetsManager->finalize();
 
     if (editorOnly) {
         NEXT(createEditor());
@@ -278,15 +274,15 @@ void Application::createThumbnails() {
     }
 }
 
-void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next) {
-    if (next == registry->getLoadQueue().cend()) {
+void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next) {
+    if (next == assetsManager->getLoadQueue().cend()) {
         NEXT(createRenderer());
     } else {
         const auto start = std::chrono::steady_clock::now();
 
-        while (next != registry->getLoadQueue().cend()) {
-            const auto count = std::distance(registry->getLoadQueue().cbegin(), next) + 1;
-            const auto progress = static_cast<float>(count) / static_cast<float>(registry->getLoadQueue().size());
+        while (next != assetsManager->getLoadQueue().cend()) {
+            const auto count = std::distance(assetsManager->getLoadQueue().cbegin(), next) + 1;
+            const auto progress = static_cast<float>(count) / static_cast<float>(assetsManager->getLoadQueue().size());
 
             try {
                 (*next)(*this);
@@ -295,7 +291,7 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
                 EXCEPTION_NESTED("Failed to load asset");
             }
 
-            status.message = fmt::format("Loading assets ({}/{})...", count, registry->getLoadQueue().size());
+            status.message = fmt::format("Loading assets ({}/{})...", count, assetsManager->getLoadQueue().size());
             status.value = 0.4f + progress * 0.3f;
 
             const auto now = std::chrono::steady_clock::now();
@@ -312,22 +308,22 @@ void Application::loadNextAssetInQueue(Registry::LoadQueue::const_iterator next)
 void Application::loadAssets() {
     logger.info("Loading assets");
 
-    this->registry->init(*this);
+    this->assetsManager->init(*this);
 
     status.message = "Loading assets...";
     status.value = 0.4f;
 
-    loadNextAssetInQueue(registry->getLoadQueue().cbegin());
+    loadNextAssetInQueue(assetsManager->getLoadQueue().cbegin());
 }
 
 void Application::createRegistry() {
-    logger.info("Setting up registry");
+    logger.info("Setting up assetsManager");
 
     status.message = "Loading mod packs...";
     status.value = 0.4f;
 
     future = std::async([this]() -> std::function<void()> {
-        this->registry = std::make_unique<Registry>(config);
+        this->assetsManager = std::make_unique<AssetsManager>(config);
         return [this]() { loadAssets(); };
     });
 }
@@ -339,10 +335,11 @@ void Application::createRenderer() {
     status.value = 0.3f;
 
     const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
-    renderer = std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *registry, font);
+    renderer =
+        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
 
-    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *registry);
-    planetGenerator = std::make_unique<PlanetGenerator>(config, *this, *registry);
+    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *assetsManager);
+    planetGenerator = std::make_unique<PlanetGenerator>(config, *this, *assetsManager);
 
     NEXT(createThumbnails());
 }
@@ -365,7 +362,7 @@ void Application::compressAssets() {
     status.value = 0.3f;
 
     future = std::async([this]() -> std::function<void()> {
-        Registry::compressAssets(config);
+        AssetsManager::compressAssets(config);
         return [=]() { createVoxelShapeCache(); };
     });
 }
@@ -382,7 +379,7 @@ void Application::startSinglePlayer() {
 
     // game = std::make_unique<Game>(config, *this, canvas, font, nuklear, skyboxGenerator);
     /*future = std::async([]() {
-        registry = std::make_unique<Registry>(config);
+        assetsManager = std::make_unique<Registry>(config);
     });*/
 }
 

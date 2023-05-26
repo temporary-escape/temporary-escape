@@ -9,13 +9,15 @@ public:
     explicit Model(std::string name, Path path);
     MOVEABLE(Model);
 
-    void load(Registry& registry, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
     const std::list<Primitive>& getPrimitives() const {
         return primitives;
     }
 
     static std::shared_ptr<Model> from(const std::string& name);
+
+    static void bind(Lua& lua);
 
 private:
     Path path;

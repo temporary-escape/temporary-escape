@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 void Worker::Strand::backtrace(std::exception& e) {
     BACKTRACE(e, "Work failed");

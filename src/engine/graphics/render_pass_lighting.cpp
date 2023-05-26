@@ -3,12 +3,12 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassLighting::RenderPassLighting(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport,
+RenderPassLighting::RenderPassLighting(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
                                        const RenderPassOpaque& opaque, const RenderPassSsao& ssao,
                                        const VulkanTexture& brdf, const VulkanTexture& forward) :
-    RenderPass{vulkan, viewport}, subpassPbr{vulkan, registry, opaque, ssao, brdf} {
+    RenderPass{vulkan, viewport}, subpassPbr{vulkan, assetsManager, opaque, ssao, brdf} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

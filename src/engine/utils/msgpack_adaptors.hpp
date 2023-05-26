@@ -109,7 +109,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
             if (o.via.array.ptr[0].via.i64 == idx) {
                 v = T{};
                 auto& vv = std::get<T>(v);
-                o.via.array.ptr[0].convert(vv);
+                o.via.array.ptr[1].convert(vv);
             } else {
                 variant_adaptor<Other...>::template convert(o, v, idx + 1);
             }

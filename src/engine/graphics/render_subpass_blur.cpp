@@ -1,11 +1,11 @@
 #include "render_subpass_blur.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "mesh_utils.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, Registry& registry, const VulkanTexture& color,
+RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& color,
                                      const bool vertical) :
     vulkan{vulkan},
     color{color},
@@ -14,8 +14,8 @@ RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, Registry& registry,
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("pass_blur_vert"),
-            registry.getShaders().find("pass_blur_frag"),
+            assetsManager.getShaders().find("pass_blur_vert"),
+            assetsManager.getShaders().find("pass_blur_frag"),
         },
         {
             // Vertex inputs

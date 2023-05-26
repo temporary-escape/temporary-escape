@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 /*void ComponentShipControl::initParticles(const EntityPtr& entity, const ComponentGrid& grid) {
     // For all block types in the grid
@@ -41,7 +41,7 @@ std::tuple<float, float, float> ComponentShipControl::getAngles() const {
     }
     auto& transform = componentTransform->getTransform();
 
-    const auto forwardDir = Vector3{transform * Vector4{0.0f, 0.0f, -1.0f, 0.0f}};
+    const auto forwardDir = Vector3{transform* Vector4{0.0f, 0.0f, -1.0f, 0.0f}};
     const float pitch = glm::degrees(glm::acos(forwardDir.y / glm::length(forwardDir)));
     const float yaw = glm::degrees(glm::atan(forwardDir.x / forwardDir.z));
     const Quaternion rotation = glm::quat_cast(transform);

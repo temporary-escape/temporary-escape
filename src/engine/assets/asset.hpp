@@ -4,7 +4,7 @@
 #include <msgpack.hpp>
 
 namespace Engine {
-class ENGINE_API Registry;
+class ENGINE_API AssetsManager;
 
 class ENGINE_API Asset : public NonCopyable {
 public:
@@ -13,7 +13,7 @@ public:
     virtual ~Asset() = default;
     MOVEABLE(Asset);
 
-    virtual void load(Registry& registry, VulkanRenderer& vulkan) = 0;
+    virtual void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) = 0;
 
     [[nodiscard]] const std::string& getName() const {
         return name;

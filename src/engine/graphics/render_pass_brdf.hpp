@@ -12,7 +12,7 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassBrdf(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport);
+    explicit RenderPassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport);
     virtual ~RenderPassBrdf() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);

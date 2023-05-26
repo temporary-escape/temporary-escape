@@ -10,7 +10,7 @@ public:
     explicit Shader(std::string name, Path path);
     MOVEABLE(Shader);
 
-    void load(Registry& registry, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
     static std::shared_ptr<Shader> from(const std::string& name);
 

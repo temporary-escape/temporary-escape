@@ -1,9 +1,9 @@
 #include "scene.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Scene::Scene(EventListener& eventListener) : eventListener{eventListener} {
 }

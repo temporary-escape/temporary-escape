@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassNonHdr : public RenderSubpass {
 public:
-    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassNonHdr() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

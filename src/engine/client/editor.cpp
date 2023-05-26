@@ -4,15 +4,15 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
-Editor::Editor(const Config& config, Renderer& renderer, Registry& registry, FontFamily& font) :
+Editor::Editor(const Config& config, Renderer& renderer, AssetsManager& assetsManager, FontFamily& font) :
     config{config},
     renderer{renderer},
-    registry{registry},
+    assetsManager{assetsManager},
     font{font},
-    guiBuild{config, registry},
-    view{config, renderer, registry, guiBuild} {
+    guiBuild{config, assetsManager},
+    view{config, renderer, assetsManager, guiBuild} {
 
     view.onEnter();
 }

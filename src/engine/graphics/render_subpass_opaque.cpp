@@ -1,19 +1,20 @@
 #include "render_subpass_opaque.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../scene/component_grid.hpp"
 #include "render_pass_opaque.hpp"
 
 using namespace Engine;
 
-RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& registry, VoxelShapeCache& voxelShapeCache) :
+RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                                         VoxelShapeCache& voxelShapeCache) :
     vulkan{vulkan},
     voxelShapeCache{voxelShapeCache},
     pipelineGrid{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_grid_vert"),
-            registry.getShaders().find("component_grid_frag"),
+            assetsManager.getShaders().find("component_grid_vert"),
+            assetsManager.getShaders().find("component_grid_frag"),
         },
         {
             // Vertex inputs
@@ -33,8 +34,8 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_model_vert"),
-            registry.getShaders().find("component_model_frag"),
+            assetsManager.getShaders().find("component_model_vert"),
+            assetsManager.getShaders().find("component_model_frag"),
         },
         {
             // Vertex inputs
@@ -61,7 +62,7 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, Registry& regis
     addPipeline(pipelineGrid);
     addPipeline(pipelineModel);
 
-    palette = registry.getTextures().find("palette");
+    palette = assetsManager.getTextures().find("palette");
 }
 
 void RenderSubpassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {

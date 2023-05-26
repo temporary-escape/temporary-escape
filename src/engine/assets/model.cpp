@@ -1,10 +1,12 @@
 #include "model.hpp"
+#include "../server/lua.hpp"
 #include "../utils/gltf_importer.hpp"
-#include "registry.hpp"
+#include "assets_manager.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static bool isCollision(const std::string& name) {
     if (name.find("_CCX") == name.size() - 4) {
@@ -34,16 +36,16 @@ findOne(const Container& container, const std::function<bool(const typename Cont
 Model::Model(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Model::load(Registry& registry, VulkanRenderer& vulkan) {
-    (void)registry;
+void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+    (void)assetsManager;
 
-    const auto resolveTexture = [this, &registry](const std::string& filename) -> TexturePtr {
+    const auto resolveTexture = [this, &assetsManager](const std::string& filename) -> TexturePtr {
         try {
             const auto baseName = Path(filename).stem().string();
-            return registry.getTextures().find(baseName);
+            return assetsManager.getTextures().find(baseName);
         } catch (std::exception& e) {
             const auto file = path.parent_path() / Path(filename);
-            return registry.addTexture(file);
+            return assetsManager.addTexture(file);
         }
     };
 
@@ -182,33 +184,33 @@ void Model::load(Registry& registry, VulkanRenderer& vulkan) {
             if (partMaterial.baseColorTexture) {
                 material.baseColorTexture = resolveTexture(partMaterial.baseColorTexture.value().getUri());
             } else {
-                material.baseColorTexture = registry.getDefaultTextures().baseColor;
+                material.baseColorTexture = assetsManager.getDefaultTextures().baseColor;
             }
 
             if (partMaterial.normalTexture) {
                 material.normalTexture = resolveTexture(partMaterial.normalTexture.value().getUri());
             } else {
-                material.normalTexture = registry.getDefaultTextures().normal;
+                material.normalTexture = assetsManager.getDefaultTextures().normal;
             }
 
             if (partMaterial.emissiveTexture) {
                 material.emissiveTexture = resolveTexture(partMaterial.emissiveTexture.value().getUri());
             } else {
-                material.emissiveTexture = registry.getDefaultTextures().emissive;
+                material.emissiveTexture = assetsManager.getDefaultTextures().emissive;
             }
 
             if (partMaterial.metallicRoughnessTexture) {
                 material.metallicRoughnessTexture =
                     resolveTexture(partMaterial.metallicRoughnessTexture.value().getUri());
             } else {
-                material.metallicRoughnessTexture = registry.getDefaultTextures().metallicRoughness;
+                material.metallicRoughnessTexture = assetsManager.getDefaultTextures().metallicRoughness;
             }
 
             if (partMaterial.ambientOcclusionTexture) {
                 material.ambientOcclusionTexture =
                     resolveTexture(partMaterial.ambientOcclusionTexture.value().getUri());
             } else {
-                material.ambientOcclusionTexture = registry.getDefaultTextures().ambient;
+                material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
             }
 
             switch (part.indices.value().componentType) {
@@ -282,5 +284,12 @@ void Model::load(Registry& registry, VulkanRenderer& vulkan) {
 }
 
 ModelPtr Model::from(const std::string& name) {
-    return Registry::getInstance().getModels().find(name);
+    return AssetsManager::getInstance().getModels().find(name);
+}
+
+void Model::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Model>("Model");
+    cls["name"] = sol::property(&Model::getName);
 }

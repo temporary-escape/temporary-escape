@@ -1,10 +1,12 @@
 #include "image.hpp"
+#include "../server/lua.hpp"
 #include "../utils/ktx2_file.hpp"
-#include "registry.hpp"
+#include "assets_manager.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 Image::Image(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
@@ -13,7 +15,7 @@ Image::Image(std::string name, const ImageAtlas::Allocation& allocation) :
     Asset{std::move(name)}, allocation{allocation} {
 }
 
-void Image::load(Registry& registry, VulkanRenderer& vulkan) {
+void Image::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
     if (path.empty()) {
         return;
     }
@@ -31,7 +33,7 @@ void Image::load(Registry& registry, VulkanRenderer& vulkan) {
             EXCEPTION("Image must be of format RGBA 8bit");
         }
 
-        allocation = registry.getImageAtlas().add(image.getSize(), image.getData(0, 0).pixels.data());
+        allocation = assetsManager.getImageAtlas().add(image.getSize(), image.getData(0, 0).pixels.data());
 
     } catch (...) {
         EXCEPTION_NESTED("Failed to load texture: '{}'", getName());
@@ -39,5 +41,12 @@ void Image::load(Registry& registry, VulkanRenderer& vulkan) {
 }
 
 ImagePtr Image::from(const std::string& name) {
-    return Registry::getInstance().getImages().find(name);
+    return AssetsManager::getInstance().getImages().find(name);
+}
+
+void Image::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<Image>("Image");
+    cls["name"] = sol::property(&Image::getName);
 }

@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static const std::unordered_map<spirv_cross::SPIRType::BaseType, VkFormat> spirvTypeToVkFormat = {
     {spirv_cross::SPIRType::Boolean, VkFormat::VK_FORMAT_R32_UINT},

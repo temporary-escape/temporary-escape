@@ -1,19 +1,19 @@
 #include "render_subpass_skybox_color.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../math/random.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_skybox_color.hpp"
 
 using namespace Engine;
 
-RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineNebula{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("skybox_nebula_vert"),
-            registry.getShaders().find("skybox_nebula_frag"),
+            assetsManager.getShaders().find("skybox_nebula_vert"),
+            assetsManager.getShaders().find("skybox_nebula_frag"),
         },
         {
             // Vertex inputs
@@ -33,8 +33,8 @@ RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Regis
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("component_point_cloud_vert"),
-            registry.getShaders().find("component_point_cloud_frag"),
+            assetsManager.getShaders().find("component_point_cloud_vert"),
+            assetsManager.getShaders().find("component_point_cloud_frag"),
         },
         {
             // Vertex inputs

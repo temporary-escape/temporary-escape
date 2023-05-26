@@ -12,7 +12,7 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, Registry& registry, const Vector2i& viewport);
+    explicit RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport);
     virtual ~RenderPassSkyboxPrefilter() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, const VulkanTexture& skyboxColor,

@@ -10,7 +10,7 @@
 namespace Engine {
 class ENGINE_API PlanetGenerator {
 public:
-    explicit PlanetGenerator(const Config& config, VulkanRenderer& vulkan, Registry& registry);
+    explicit PlanetGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager);
 
     void enqueue(uint64_t seed, const PlanetTypePtr& planetType, std::function<void(PlanetTextures)> callback);
     void update(Scene& scene);

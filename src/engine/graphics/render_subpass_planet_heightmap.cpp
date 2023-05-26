@@ -1,19 +1,19 @@
 #include "render_subpass_planet_heightmap.hpp"
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../math/random.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_planet_surface.hpp"
 
 using namespace Engine;
 
-RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, Registry& registry) :
+RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
     vulkan{vulkan},
     pipelineHeightmap{
         vulkan,
         {
             // List of shader modules
-            registry.getShaders().find("planet_flow_noise_vert"),
-            registry.getShaders().find("planet_flow_noise_frag"),
+            assetsManager.getShaders().find("planet_flow_noise_vert"),
+            assetsManager.getShaders().find("planet_flow_noise_frag"),
         },
         {
             // Vertex inputs

@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassPlanetNormal : public RenderSubpass {
 public:
-    explicit RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Registry& registry);
+    explicit RenderSubpassPlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager);
     virtual ~RenderSubpassPlanetNormal() = default;
 
     void render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture, float resolution,

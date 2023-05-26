@@ -41,7 +41,7 @@ public:
     explicit Block(std::string name, Path path);
     MOVEABLE(Block);
 
-    void load(Registry& registry, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
     [[nodiscard]] const Material& getMaterialForSide(const VoxelShape::Face side) const {
         const auto* ptr = shapeSideToMaterial.at(side);
@@ -80,6 +80,8 @@ public:
     }
 
     static std::shared_ptr<Block> from(const std::string& name);
+
+    static void bind(Lua& lua);
 
 private:
     Path path;

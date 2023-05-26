@@ -87,40 +87,44 @@ public:
 private:
     template <typename Res, typename Req> struct HandlerFactory {
         static void create(HandlerMap& handlers, std::function<Res(const PeerPtr&, Req)> fn) {
+            const auto hash = Detail::MessageHelper<Req>::hash;
+
             // Sanity check
-            const auto check = handlers.find(Req::hash);
+            const auto check = handlers.find(hash);
             if (check != handlers.end()) {
                 throw std::runtime_error("The type of this message has already been registered");
             }
 
-            handlers[Req::hash] = [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId,
-                                                       const msgpack::object& object) {
-                Req req{};
-                object.convert(req);
+            handlers[hash] =
+                [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, const msgpack::object& object) {
+                    Req req{};
+                    object.convert(req);
 
-                Res res = fn(peer, std::move(req));
-                peer->send<Res>(res, reqId, true);
-            };
+                    Res res = fn(peer, std::move(req));
+                    peer->send<Res>(res, reqId, true);
+                };
         }
     };
 
     template <typename Req> struct HandlerFactory<void, Req> {
         static void create(HandlerMap& handlers, std::function<void(const PeerPtr&, Req)> fn) {
+            const auto hash = Detail::MessageHelper<Req>::hash;
+
             // Sanity check
-            const auto check = handlers.find(Req::hash);
+            const auto check = handlers.find(hash);
             if (check != handlers.end()) {
                 throw std::runtime_error("The type of this message has already been registered");
             }
 
-            handlers[Req::hash] = [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId,
-                                                       const msgpack::object& object) {
-                (void)reqId;
+            handlers[hash] =
+                [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, const msgpack::object& object) {
+                    (void)reqId;
 
-                Req req{};
-                object.convert(req);
+                    Req req{};
+                    object.convert(req);
 
-                fn(peer, std::move(req));
-            };
+                    fn(peer, std::move(req));
+                };
         }
     };
 

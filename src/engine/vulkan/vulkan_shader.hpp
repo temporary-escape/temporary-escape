@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../utils/path.hpp"
-#include "vulkan_types.hpp"
 #include "spirv_reflection.hpp"
+#include "vulkan_types.hpp"
 
 namespace Engine {
 class ENGINE_API VulkanDevice;
@@ -10,9 +10,8 @@ class ENGINE_API VulkanDevice;
 class ENGINE_API VulkanShader : public VulkanDisposable {
 public:
     VulkanShader() = default;
-    explicit VulkanShader(const Config& config, VulkanDevice& device, const std::string& glsl,
-                          VkShaderStageFlagBits stage);
-    explicit VulkanShader(const Config& config, VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage);
+    explicit VulkanShader(VulkanDevice& device, const std::string& glsl, VkShaderStageFlagBits stage);
+    explicit VulkanShader(VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage);
 
     ~VulkanShader();
     VulkanShader(const VulkanShader& other) = delete;

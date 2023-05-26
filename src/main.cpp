@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static int commandPlay(const Config& config) {
     {
@@ -17,7 +17,7 @@ static int commandPlay(const Config& config) {
 }
 
 static int commandCompressAssets(const Config& config) {
-    { Registry::compressAssets(config); }
+    { AssetsManager::compressAssets(config); }
     logger.info("Exit success");
     return EXIT_SUCCESS;
 }
@@ -33,7 +33,6 @@ int main(int argc, char** argv) {
 #endif
     const auto defaultRoot = getExecutablePath();
     const auto defaultUserData = getAppDataPath();
-    const auto defaultPythonHome = getExecutablePath() / "python";
 
     Config config{};
     CLI::App parser{"Temporary Escape"};
@@ -42,9 +41,6 @@ int main(int argc, char** argv) {
     parser.add_option("--root", rootPath, "Root directory")
         ->check(CLI::ExistingDirectory)
         ->default_val(defaultRoot.string());
-    parser.add_option("--python-home", config.pythonHome, "Python lib directory")
-        ->check(CLI::ExistingDirectory)
-        ->default_val(defaultPythonHome.string());
     parser.add_option("--width", config.graphics.windowWidth, "Window width");
     parser.add_option("--height", config.graphics.windowHeight, "Window height");
 
@@ -69,13 +65,11 @@ int main(int argc, char** argv) {
         config.assetsPath = rootPath / "assets";
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";
-        config.shaderCachePath = config.userdataPath / "Shaders";
         config.fontsPath = rootPath / "fonts";
         config.shapesPath = rootPath / "shapes";
 
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
-        std::filesystem::create_directories(config.shaderCachePath);
 
         if (std::getenv("VK_LAYER_PATH") == nullptr && config.graphics.enableValidationLayers) {
             logger.warn("Vulkan validation layers requested but no env value 'VK_LAYER_PATH' provided");

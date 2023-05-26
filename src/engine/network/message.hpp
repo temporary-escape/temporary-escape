@@ -4,10 +4,19 @@
 #include <typeindex>
 #include <unordered_map>
 
-namespace Engine::Network::Detail {
-ENGINE_API uint64_t getMessageHash(const std::string& name);
-} // namespace Engine::Network::Detail
+namespace Engine::Network {
+template <typename T> struct UseFuture {
+    using Type = T;
+};
 
-#define MESSAGE_DEFINE(Type, ...)                                                                                      \
-    static inline const uint64_t hash = Network::Detail::getMessageHash(#Type);                                        \
-    MSGPACK_DEFINE_ARRAY(__VA_ARGS__);
+namespace Detail {
+ENGINE_API uint64_t getMessageHash(const std::string& name);
+
+template <typename T> struct MessageHelper {};
+} // namespace Detail
+} // namespace Engine::Network
+
+#define MESSAGE_DEFINE(Type)                                                                                           \
+    template <> struct Network::Detail::MessageHelper<Type> {                                                          \
+        static inline const uint64_t hash = Network::Detail::getMessageHash(#Type);                                    \
+    }

@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static const std::string vertexShaderSource = R"(#version 450
 

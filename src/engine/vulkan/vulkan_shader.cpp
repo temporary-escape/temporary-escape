@@ -7,17 +7,15 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static std::string loadShaderFile(const Path& path) {
     logger.info("Loading shader: '{}'", path);
     return readFileStr(path);
 }
 
-VulkanShader::VulkanShader(const Config& config, VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage) :
+VulkanShader::VulkanShader(VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage) :
     device{device.getDevice()}, stage{stage} {
-
-    (void)config;
 
     if (path.extension().string() != ".spirv") {
         EXCEPTION("Failed to load shader file: '{}' error: only SPIRV format is supported", path);
@@ -38,43 +36,21 @@ VulkanShader::VulkanShader(const Config& config, VulkanDevice& device, const Pat
     }
 }
 
-VulkanShader::VulkanShader(const Config& config, VulkanDevice& device, const std::string& glsl,
-                           VkShaderStageFlagBits stage) :
+VulkanShader::VulkanShader(VulkanDevice& device, const std::string& glsl, VkShaderStageFlagBits stage) :
     device{device.getDevice()}, stage{stage} {
-
-    const auto codeMd5 = md5sum(glsl.data(), glsl.size());
-    const auto binaryPath = config.shaderCachePath / (codeMd5 + ".bin");
 
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 
-    // Is shader cached?
-    if (Fs::exists(binaryPath) && Fs::is_regular_file(binaryPath)) {
-        logger.info("Loading shader module binary: '{}'", binaryPath);
+    std::string infoLog;
 
-        const auto binaryData = readFileBinary(binaryPath);
-        spirv.resize(binaryData.size() / sizeof(uint32_t));
-        std::memcpy(spirv.data(), binaryData.data(), binaryData.size());
-
-        createInfo.codeSize = spirv.size() * sizeof(uint32_t);
-        createInfo.pCode = spirv.data();
+    logger.debug("Compiling GLSL code of size: {}", glsl.size());
+    if (!compileGLSL2SPIRV(stage, glsl, "main", spirv, infoLog)) {
+        EXCEPTION("Failed to compile shader error: {}", infoLog);
     }
 
-    // Shader was not cached, we need to compile it!
-    if (!createInfo.pCode || createInfo.codeSize == 0) {
-        std::string infoLog;
-
-        logger.debug("Compiling GLSL code of size: {}", glsl.size());
-        if (!compileGLSL2SPIRV(stage, glsl, "main", spirv, infoLog)) {
-            EXCEPTION("Failed to compile shader error: {}", infoLog);
-        }
-
-        createInfo.codeSize = spirv.size() * sizeof(uint32_t);
-        createInfo.pCode = spirv.data();
-
-        logger.info("Writing shader module binary: '{}'", binaryPath);
-        writeFileBinary(binaryPath, spirv.data(), spirv.size() * sizeof(uint32_t));
-    }
+    createInfo.codeSize = spirv.size() * sizeof(uint32_t);
+    createInfo.pCode = spirv.data();
 
     if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         EXCEPTION("Failed to create shader module!");

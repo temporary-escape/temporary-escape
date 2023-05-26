@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static FT_Library initFreeType() {
     FT_Library ft;

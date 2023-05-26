@@ -1,7 +1,7 @@
 #include "voronoi_diagram.hpp"
 #define JC_VORONOI_IMPLEMENTATION
 #define JC_VORONOI_CLIP_IMPLEMENTATION
-#include "voronoi/jc_voronoi_clip.h"
+#include <jc_voronoi_clip.h>
 
 using namespace Engine;
 

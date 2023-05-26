@@ -6,11 +6,6 @@ install(DIRECTORY
         PATTERN "*.kra" EXCLUDE
         PATTERN "*.png" EXCLUDE)
 
-install(DIRECTORY
-        "${CPYTHON_STDLIB_DIR}/"
-        DESTINATION "python"
-        PATTERN "__pycache__" EXCLUDE)
-
 if (MSVC)
     install(DIRECTORY
             "${CPYTHON_DLLS_DIR}/"

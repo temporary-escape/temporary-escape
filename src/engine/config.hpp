@@ -57,7 +57,6 @@ struct Config {
     std::filesystem::path cwdPath;
     std::filesystem::path fontsPath;
     std::filesystem::path userdataSavesPath;
-    std::filesystem::path shaderCachePath;
     std::filesystem::path shapesPath;
     std::filesystem::path pythonHome;
 

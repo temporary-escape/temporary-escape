@@ -77,7 +77,7 @@ public:
 
         PacketInfo info;
 
-        info.id = Req::hash;
+        info.id = Detail::MessageHelper<Req>::hash;
         info.reqId = reqId;
         info.isResponse = isResponse;
 
@@ -133,7 +133,7 @@ private:
         const auto reqId = requests.nextId.fetch_add(1ULL);
 
         Handler handler{};
-        handler.callback = [fn](const msgpack::object& object) {
+        handler.callback = [fn = std::move(fn)](const msgpack::object& object) {
             Res res{};
             object.convert(res);
 

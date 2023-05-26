@@ -6,6 +6,8 @@
 
 using namespace Engine;
 
+using Transaction = DatabaseTransaction;
+
 SCHEMA(SchemaNonVersioned) {
     std::string bar;
     int baz = 0;
@@ -71,23 +73,23 @@ TEST_CASE("Simple schema put get and delete", TAG) {
     foo.baz = 42;
     db.put<SchemaFoo>("123456789", foo);
 
-    auto found = db.get<SchemaFoo>("123456789");
+    auto found = db.find<SchemaFoo>("123456789");
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().baz == foo.baz);
     REQUIRE(found.value().baz == foo.baz);
 
     db.remove<SchemaFoo>("123456789");
 
-    found = db.get<SchemaFoo>("123456789");
+    found = db.find<SchemaFoo>("123456789");
     REQUIRE(found.has_value() == false);
 }
 
 TEST_CASE("Schema versioning", TAG) {
-    REQUIRE(Database::getSchemaVersion<SchemaNonVersioned>() == 1ULL);
+    REQUIRE(Details::getSchemaVersion<SchemaNonVersioned>() == 1ULL);
 
-    REQUIRE(Database::getSchemaVersion<SchemaFoo>() == 1ULL);
-    REQUIRE(Database::getSchemaVersion<SchemaFooV2>() == 2ULL);
-    REQUIRE(Database::getSchemaVersion<SchemaFooV3>() == 3ULL);
+    REQUIRE(Details::getSchemaVersion<SchemaFoo>() == 1ULL);
+    REQUIRE(Details::getSchemaVersion<SchemaFooV2>() == 2ULL);
+    REQUIRE(Details::getSchemaVersion<SchemaFooV3>() == 3ULL);
 }
 
 TEST_CASE("Schema version conversion", TAG) {
@@ -100,7 +102,7 @@ TEST_CASE("Schema version conversion", TAG) {
         foo1.baz = 42;
         db.put<SchemaFoo>("123456789", foo1);
 
-        auto found = db.get<SchemaFooV2>("123456789");
+        auto found = db.find<SchemaFooV2>("123456789");
         REQUIRE(found.has_value() == true);
         REQUIRE(found.value().msg == "Hello World");
         REQUIRE(found.value().bazs.size() == 1);
@@ -113,7 +115,7 @@ TEST_CASE("Schema version conversion", TAG) {
         foo2.bazs = {42};
         db.put<SchemaFooV2>("123456789", foo2);
 
-        auto found = db.get<SchemaFooV3>("123456789");
+        auto found = db.find<SchemaFooV3>("123456789");
         REQUIRE(found.has_value() == true);
         REQUIRE(found.value().msgs.size() == 1);
         REQUIRE(found.value().msgs.at(0) == "Hello World");
@@ -127,7 +129,7 @@ TEST_CASE("Schema version conversion", TAG) {
         foo1.baz = 42;
         db.put<SchemaFoo>("123456789", foo1);
 
-        auto found = db.get<SchemaFooV3>("123456789");
+        auto found = db.find<SchemaFooV3>("123456789");
         REQUIRE(found.has_value() == true);
         REQUIRE(found.value().msgs.size() == 1);
         REQUIRE(found.value().msgs.at(0) == "Hello World");
@@ -193,28 +195,26 @@ TEST_CASE("Seek many values", TAG) {
     }
 
     auto it = db.seek<Player>("Bad prefix");
-    REQUIRE(it == false);
+    REQUIRE(it.next() == false);
 
     size_t count = 0;
     it = db.seek<Player>("Some");
-    while (it) {
+    while (it.next()) {
         count++;
-        REQUIRE(it.value.name.find("Some") == 0);
-        it.next();
+        REQUIRE(it.value().name.find("Some") == 0);
     }
     REQUIRE(count == 10);
 
     count = 0;
     it = db.seek<Player>("Some Other");
-    while (it) {
+    while (it.next()) {
         count++;
-        REQUIRE(it.value.name.find("Some") == 0);
-        it.next();
+        REQUIRE(it.value().name.find("Some") == 0);
     }
     REQUIRE(count == 5);
 
     it = db.seek<Player>("Some Unknown");
-    REQUIRE(it == false);
+    REQUIRE(it.next() == false);
 }
 
 SCHEMA(SchemaComplexKey) {
@@ -240,9 +240,8 @@ TEST_CASE("Seek with lower bound", TAG) {
     const auto collect = [&](const std::string& start) {
         std::vector<SchemaComplexKey> items;
         auto it = db.seek<SchemaComplexKey>(parentKey, start);
-        while (it) {
-            items.push_back(it.value);
-            it.next();
+        while (it.next()) {
+            items.push_back(it.value());
         }
         return items;
     };
@@ -296,9 +295,8 @@ TEST_CASE("Remove all by prefix", TAG) {
     const auto collect = [&](const std::string& key) {
         std::vector<Player> items;
         auto it = db.seek<Player>(key);
-        while (it) {
-            items.push_back(it.value);
-            it.next();
+        while (it.next()) {
+            items.push_back(it.value());
         }
         return items;
     };
@@ -363,12 +361,12 @@ TEST_CASE("Perform a transcation", TAG) {
     REQUIRE(res.get() == false);
     REQUIRE(counter == 1);
 
-    const auto found = db.get<Player>("1234");
+    const auto found = db.find<Player>("1234");
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().name == "Some Name 3");
 }
 
-TEST_CASE("Perform a ranscation with retry", TAG) {
+TEST_CASE("Perform a transcation with retry", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
     RocksDB db(tmpDir->value());
 
@@ -420,7 +418,7 @@ TEST_CASE("Perform a ranscation with retry", TAG) {
     REQUIRE(res.get() == true);
     REQUIRE(counter == 2);
 
-    const auto found = db.get<Player>("1234");
+    const auto found = db.find<Player>("1234");
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().name == "Some Name 2");
 }
@@ -444,7 +442,7 @@ TEST_CASE("Update a single key", TAG) {
     auto counter = 0;
 
     auto res = std::async([&]() {
-        return db.update<Player>("1234", [&](std::optional<Player>& value) {
+        db.update<Player>("1234", [&](std::optional<Player> value) {
             counter++;
 
             if (!resolved) {
@@ -454,7 +452,7 @@ TEST_CASE("Update a single key", TAG) {
             }
 
             value.value().name = "Some Name 2";
-            return true;
+            return value.value();
         });
     });
 
@@ -467,11 +465,10 @@ TEST_CASE("Update a single key", TAG) {
     signal.resolve();
 
     res.wait();
-    auto [updated, value] = res.get();
-    REQUIRE(updated == true);
+    res.get();
     REQUIRE(counter == 2);
 
-    const auto found = db.get<Player>("1234");
+    const auto found = db.find<Player>("1234");
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().name == "Some Name 2");
 }
@@ -487,9 +484,9 @@ SCHEMA(SchemaIndexedPlayer) {
 };
 
 TEST_CASE("Schema indexes", TAG) {
-    REQUIRE(std::string(Database::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::name>()) == "name");
-    REQUIRE(std::string(Database::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::admin>()) == "admin");
-    REQUIRE_THROWS(Database::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::uid>());
+    REQUIRE(std::string(Details::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::name>()) == "name");
+    REQUIRE(std::string(Details::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::admin>()) == "admin");
+    REQUIRE_THROWS(Details::getSchemaIndexName<SchemaIndexedPlayer, &SchemaIndexedPlayer::uid>());
 
     auto tmpDir = std::make_shared<TmpDir>();
     RocksDB db(tmpDir->value());
@@ -506,7 +503,7 @@ TEST_CASE("Schema indexes", TAG) {
     player.admin = true;
     db.put("1235", player);
 
-    auto check = db.get<SchemaIndexedPlayer>("1234");
+    auto check = db.find<SchemaIndexedPlayer>("1234");
     REQUIRE(check.has_value() == true);
 
     auto found = db.getByIndex<&SchemaIndexedPlayer::name>(std::string("Hello World"));

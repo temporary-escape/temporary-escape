@@ -1,11 +1,13 @@
 #include "minimum_spanning_tree.hpp"
+#include "../server/lua.hpp"
 #include "../utils/random.hpp"
 #include <glm/gtx/norm.hpp>
 #include <queue>
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
-MinimumSpanningTreeResult Engine::minimumSpanningTree(const std::vector<Vector2>& positions) {
+void MinimumSpanningTree::calculate() {
     struct WeightedConnection {
         float weight = 0.0f;
         size_t src = 0;
@@ -116,8 +118,6 @@ MinimumSpanningTreeResult Engine::minimumSpanningTree(const std::vector<Vector2>
     std::vector<bool> added;
     added.resize(positions.size(), false);
 
-    MinimumSpanningTreeResult result;
-
     while (!q.empty()) {
         auto item = q.top();
         q.pop();
@@ -128,7 +128,7 @@ MinimumSpanningTreeResult Engine::minimumSpanningTree(const std::vector<Vector2>
             added[node] = true;
 
             if (item.src != node) {
-                result[item.src].push_back(node);
+                results[item.src].push_back(node);
             }
 
             for (auto& pair : graph.at(node)) {
@@ -139,6 +139,16 @@ MinimumSpanningTreeResult Engine::minimumSpanningTree(const std::vector<Vector2>
             }
         }
     }
+}
 
-    return result;
+void MinimumSpanningTree::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<MinimumSpanningTree>("MinimumSpanningTree", sol::constructors<MinimumSpanningTree()>{});
+    cls["add_position"] = &MinimumSpanningTree::addPosition;
+    cls["calculate"] = &MinimumSpanningTree::calculate;
+    cls["has_connections"] = &MinimumSpanningTree::hasConnections;
+    cls["get_connections"] = [](MinimumSpanningTree& self, const size_t index) {
+        return sol::as_table(self.getConnections(index));
+    };
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assets/registry.hpp"
+#include "../assets/assets_manager.hpp"
 #include "../config.hpp"
 #include "../font/font_family.hpp"
 #include "../future.hpp"
@@ -14,11 +14,11 @@
 #include "view_build.hpp"
 
 namespace Engine {
-class ENGINE_API TransactionalDatabase;
+class ENGINE_API Database;
 
 class ENGINE_API Editor : public UserInput {
 public:
-    explicit Editor(const Config& config, Renderer& renderer, Registry& registry, FontFamily& font);
+    explicit Editor(const Config& config, Renderer& renderer, AssetsManager& assetsManager, FontFamily& font);
     virtual ~Editor();
 
     void update(float deltaTime);
@@ -36,7 +36,7 @@ public:
 private:
     const Config& config;
     Renderer& renderer;
-    Registry& registry;
+    AssetsManager& assetsManager;
     FontFamily& font;
     ViewBuild::Gui guiBuild;
     ViewBuild view;

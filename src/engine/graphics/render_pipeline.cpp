@@ -4,7 +4,7 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(__FILENAME__);
+static auto logger = createLogger(LOG_FILENAME);
 
 static std::string idFromShaders(const std::vector<ShaderPtr>& shaders) {
     std::string id;

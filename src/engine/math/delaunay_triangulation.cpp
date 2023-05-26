@@ -1,6 +1,8 @@
 #include "delaunay_triangulation.hpp"
+#include "../server/lua.hpp"
 #include <algorithm>
 #include <optional>
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -101,7 +103,7 @@ static bool almostEqual(const Triangle& t1, const Triangle& t2) {
            (almostEqual(t1.c, t2.a) || almostEqual(t1.c, t2.b) || almostEqual(t1.c, t2.c));
 }
 
-DelaunayTriangulationResult Engine::delaunayTriangulation(const std::vector<Vector2>& vertices) {
+void DelaunayTriangulation::calculate() {
     // Determinate the super triangle
     auto minX = vertices[0].x;
     auto minY = vertices[0].y;
@@ -164,7 +166,8 @@ DelaunayTriangulationResult Engine::delaunayTriangulation(const std::vector<Vect
             triangles.push_back(Triangle(e.v, e.w, *p));
     }
 
-    triangles.erase(std::remove_if(begin(triangles), end(triangles),
+    triangles.erase(std::remove_if(begin(triangles),
+                                   end(triangles),
                                    [p1, p2, p3](Triangle& t) {
                                        return t.containsVertex(p1) || t.containsVertex(p2) || t.containsVertex(p3);
                                    }),
@@ -176,7 +179,6 @@ DelaunayTriangulationResult Engine::delaunayTriangulation(const std::vector<Vect
         vertexToIndex.insert(std::make_pair(vertices.at(i), i));
     }
 
-    DelaunayTriangulationResult connections;
     connections.reserve(vertices.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         connections.insert(std::make_pair(i, std::vector<size_t>{}));
@@ -210,6 +212,17 @@ DelaunayTriangulationResult Engine::delaunayTriangulation(const std::vector<Vect
         addConnection(t.b, t.c);
         addConnection(t.c, t.a);
     }
+}
 
-    return connections;
+void DelaunayTriangulation::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls =
+        m.new_usertype<DelaunayTriangulation>("DelaunayTriangulation", sol::constructors<DelaunayTriangulation()>{});
+    cls["add_position"] = &DelaunayTriangulation::addPosition;
+    cls["calculate"] = &DelaunayTriangulation::calculate;
+    cls["has_connections"] = &DelaunayTriangulation::hasConnections;
+    cls["get_connections"] = [](DelaunayTriangulation& self, const size_t index) {
+        return sol::as_table(self.getConnections(index));
+    };
 }
