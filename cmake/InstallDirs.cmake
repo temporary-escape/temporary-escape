@@ -4,17 +4,15 @@ install(DIRECTORY
         "${CMAKE_CURRENT_SOURCE_DIR}/fonts"
         DESTINATION "."
         PATTERN "*.kra" EXCLUDE
-        PATTERN "*.png" EXCLUDE)
+        PATTERN "*.png" EXCLUDE
+        PATTERN "*.glsl" EXCLUDE)
 
 if (MSVC)
-    install(DIRECTORY
-            "${CPYTHON_DLLS_DIR}/"
-            DESTINATION ".")
-
     install(DIRECTORY
             "${CMAKE_BINARY_DIR}/"
             DESTINATION "."
             FILES_MATCHING PATTERN "*.dll"
+            PATTERN ".cmake" EXCLUDE
             PATTERN "src" EXCLUDE
             PATTERN "test" EXCLUDE
             PATTERN "vcpkg_installed" EXCLUDE
@@ -22,7 +20,10 @@ if (MSVC)
             PATTERN "CMakeFiles" EXCLUDE
             PATTERN "install" EXCLUDE
             PATTERN "release" EXCLUDE
-            PATTERN "_CPack_Packages" EXCLUDE)
+            PATTERN "third_party" EXCLUDE
+            PATTERN "Testing" EXCLUDE
+            PATTERN "_CPack_Packages" EXCLUDE
+            PATTERN "ZIP" EXCLUDE)
 endif ()
 
 install(FILES
