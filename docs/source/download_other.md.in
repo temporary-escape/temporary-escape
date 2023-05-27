@@ -1,0 +1,13 @@
+# All Versions
+
+The following is a list of all available versions sorted chronologically.
+
+**These are alternative downloads and you should download the latest version from [here](./download)!**
+
+```{note} This list also contains development versions! A development version
+contains a dash, followed by some number, another dash, and a random short string (git sha).
+```
+
+| Version | Date Released | Download Link |
+| ------- | ------------- | ------------- |
+DOWNLOAD_ALL_TABLE

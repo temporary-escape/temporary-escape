@@ -1,0 +1,82 @@
+# Downloads
+
+You can download Temporary Escape game for free from the following links below.
+Simply choose your platform. Alternatively, you can download it in a portable ZIP format. You can also compile it yourself. All you need is a C++ Clang compiler, Vcpkg, Git, and CMake.
+
+All releases are built automatically on GitHub Actions from the master branch in [here](https://github.com/temporary-escape/temporary-escape/actions).
+
+## Choose Your Platform
+
+**Latest version v0.2.4 (27th April 2023)**
+
+````{grid} 1 1 2 3
+```{grid-item-card} Windows 64-bit
+:img-top: images/windows.png
+:link: DOWNLOAD_WINDOWS_LATEST_EXE
+:text-align: center
+
+MSI Installer (DOWNLOAD_WINDOWS_LATEST_SIZE)
+```
+
+```{grid-item-card} Linux 64-bit
+:img-top: images/linux.png
+:link: DOWNLOAD_LINUX_LATEST_EXE
+:text-align: center
+
+AppImage (DOWNLOAD_LINUX_LATEST_SIZE)
+```
+
+```{grid-item-card} Mac OS
+:img-top: images/apple.png
+:link: DOWNLOAD_MACOS_LATEST_EXE
+:text-align: center
+
+Apple Disk Image (DOWNLOAD_MACOS_LATEST_SIZE)
+```
+````
+
+```{card} Other Versions and Formats
+:link: download_other.html
+
+Are you looking for an older version or want to download it in a portable ZIP or TAR.GZ format?
+```
+
+```{card} Source Code
+:link: https://github.com/temporary-escape/temporary-escape/
+
+The source code is available at github.com/temporary-escape
+```
+
+## System Requirements
+
+These are the minimum system requirements.
+You must have Vulkan 1.1 (or higher) compatible graphics card and a 64-bit operating system.
+The game may run on a lower hardware. Both Intel Mac and M1 Macs (with Rosetta) are supported.
+
+````{tab-set}
+```{tab-item} Minimum
+* **OS:** Windows 10 64-bit or later, Ubuntu/Debian/Manjaro 64-bit, MacOS 12.6 or later
+* **Display:** 1920x1080
+* **Processor:** Intel Core i3 or AMD Ryzen 3
+* **Memory:** 4 GB RAM
+* **Graphics:** Intel HD Graphics 500, NVidia GTX 650 Ti, or AMD Radeon R7
+* **Vulkan:** 1.1 minimum
+* **Storage:** 500 MB available space
+```
+
+```{tab-item} Recommended
+* **OS:** Windows 10 64-bit or later, Ubuntu/Debian/Manjaro 64-bit, MacOS 12.6 or later
+* **Display:** 2560x1440
+* **Processor:** Intel Core i5 or AMD Ryzen 5
+* **Memory:** 8 GB RAM
+* **Graphics:** NVidia GTX 1050 Ti or AMD Radeon RX 5600
+* **Vulkan:** 1.1 minimum
+* **Storage:** 2 GB available space
+```
+````
+
+```{toctree}
+:hidden:
+
+download_other
+```

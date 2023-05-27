@@ -242,18 +242,13 @@ jobs:
 
       - name: Dependencies
         run: |
-          wget https://github.com/gohugoio/hugo/releases/download/v0.92.1/hugo_extended_0.92.1_Linux-64bit.tar.gz
-          tar xvf hugo_extended_0.92.1_Linux-64bit.tar.gz
-          sudo mv ./hugo /usr/local/bin/hugo
-          sudo chmod +x /usr/local/bin/hugo
-          hugo version
-          
-          sudo python3 -m pip install boto3
+          cd docs
+          sudo python3 -m pip install -r requirements.txt
 
       - name: Generate
         run: |
           cd docs
-          make default
+          make html
 
       - name: Clone temporary-escape.github.io
         if: startsWith(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/tags/v')
@@ -268,7 +263,7 @@ jobs:
         shell: bash
         run: |
           rm -rf ${{ github.workspace }}/docs-git/*
-          cp -rv ${{ github.workspace }}/docs/public/* ${{ github.workspace }}/docs-git/
+          cp -rv ${{ github.workspace }}/docs/build/html/* ${{ github.workspace }}/docs-git/
           
           cd docs-git
           git config --local user.email "actions@github.com"

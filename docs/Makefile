@@ -1,15 +1,23 @@
-theme = themes/hugo-book
+# Minimal makefile for Sphinx documentation
+#
 
-$(theme):
-	git clone --branch v9 https://github.com/alex-shpak/hugo-book.git themes/hugo-book
+# You can set these variables from the command line, and also
+# from the environment for the first two.
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     = source
+BUILDDIR      = build
 
-generate:
-	python3 gen-download.py --endpoint "https://${AWS_ENDPOINT_URL}" --bucket ${AWS_BUCKET_NAME} > ./content/docs/download.md
+# Put it first so that "make" without argument is like "make help".
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-hugo: $(theme) generate
-	hugo
-	@echo "Done"
+.PHONY: help Makefile
 
-default: hugo
+releases_py:
+	python3 ./releases.py
 
-.PHONY: generate hugo default
+# Catch-all target: route all unknown targets to Sphinx using the new
+# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+%: Makefile releases_py
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
