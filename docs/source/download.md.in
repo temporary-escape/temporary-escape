@@ -7,7 +7,7 @@ All releases are built automatically on GitHub Actions from the master branch in
 
 ## Choose Your Platform
 
-**Latest version v0.2.4 (27th April 2023)**
+**Latest version LATEST_VERSION_STR (LATEST_VERSION_DATE)**
 
 ````{grid} 1 1 2 3
 ```{grid-item-card} Windows 64-bit
