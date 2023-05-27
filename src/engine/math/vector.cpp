@@ -45,12 +45,50 @@ template <typename T, typename O> static void metaArithemtic(sol::usertype<T>& c
 void Engine::bindMathVectors(Lua& lua) {
     auto& m = lua.root();
 
-    { // Vector2
+    /**
+     * @module engine
+     */
+
+    {
+        /**
+         * @class Vector2
+         * A simple 2D vector class of float type
+         */
+        /**
+         * @function Vector2.new
+         * Default constructor that initializes the vector to [0, 0]
+         */
+        /**
+         * @function Vector2.new
+         * Parametrized constructor that initializes the vector to [x, y]
+         * @param x number The x component
+         * @param y number The y component
+         */
         auto cls = m.new_usertype<Vector2>("Vector2", sol::constructors<Vector2(), Vector2(float, float)>{});
+        /**
+         * @field Vector2.x
+         * @type number
+         */
         cls["x"] = &Vector2::x;
+        /**
+         * @field Vector2.y
+         * @type number
+         */
         cls["y"] = &Vector2::x;
         metaArithemtic<Vector2, float>(cls);
+        /**
+         * @function Vector2:distance
+         * Calculates a distance to some other vector
+         * @param other Vector2 The other vector to get distance to
+         * @return number The distance
+         */
         cls["distance"] = [](Vector2& self, const Vector2& other) { return glm::distance(self, other); };
+        /**
+         * @function Vector2:rotate
+         * Returns a new vector that is rotated by some angle
+         * @param angle Angle in radians
+         * @return Vector2 A new roatted vector
+         */
         cls["rotate"] = [](Vector2& self, const float angle) { return glm::rotate(self, angle); };
     }
 

@@ -113,7 +113,6 @@ Lua::Lua(const Config& config, EventBus& eventBus) : config{config}, data{std::m
 
     // Global variables for easy data sharing across mods
     data->state["globals"] = data->state.create_table();
-    data->state["globals"]["sector_types"] = data->state.create_table();
 
     // The "engine" module.
     data->engine = data->state.create_table();

@@ -6,6 +6,8 @@ stations. Explore the universe of thousands of stars.
 
 ```{toctree}
 :hidden:
+:maxdepth: 3
 
 download
+modding/index
 ```

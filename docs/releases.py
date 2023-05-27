@@ -235,16 +235,19 @@ def replace_content(path: str, releases: List[Release]):
     }
 
     for file in Path(path).rglob("*.md.in"):
-        with open(os.path.join(path, file.name), "r") as f:
+        with open(file, "r") as f:
             content = f.read()
 
         content = replace_all(content, replacements)
 
-        with open(os.path.join(path, file.name.replace(".in", "")), "w") as f:
+        with open(str(file).replace(".in", ""), "w") as f:
             f.write(content)
 
 
 def main():
+    if os.getenv("AWS_ACCESS_KEY_ID") is None:
+        print("Skipping, no AWS S3 credentials supplied")
+
     session = boto3.session.Session()
     endpoint_url = "https://{}".format(get_env("AWS_ENDPOINT_URL"))
     s3 = session.client(

@@ -229,22 +229,73 @@ template <> struct BindSchemaHelper<MetaData> {
 void Engine::bindSchemas(Lua& lua) {
     auto& m = lua.root();
 
-    { // GalaxyData
+    /**
+     * @module engine
+     */
+
+    {
+        /**
+         * @class GalaxyData
+         * Database type that represents basic galaxy information such us its name
+         */
+        /**
+         * @function GalaxyData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<GalaxyData>("GalaxyData", sol::constructors<GalaxyData>{});
+        /**
+         * @field GalaxyData.id
+         * A unique UUID of the galaxy
+         * @type string
+         */
         cls["id"] = &GalaxyData::id;
+        /**
+         * @field GalaxyData.pos
+         * The position within the system
+         * @type Vector2
+         */
         cls["pos"] = &GalaxyData::pos;
+        /**
+         * @field GalaxyData.seed
+         * A seed that is specific to this galaxy
+         * @type integer
+         */
         cls["seed"] = &GalaxyData::seed;
+        /**
+         * @field GalaxyData.name
+         * Name of the galaxy
+         * @type string
+         */
         cls["name"] = &GalaxyData::name;
     }
 
-    { // RegionData
+    {
+        /**
+         * @class RegionData
+         * Database type that represents region data within a galaxy
+         */
+        /**
+         * @function RegionData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<RegionData>("RegionData", sol::constructors<RegionData>{});
         cls["id"] = &RegionData::id;
         cls["pos"] = &RegionData::pos;
         cls["name"] = &RegionData::name;
     }
 
-    { // FactionData
+    {
+        /**
+         * @class FactionData
+         * Database type that represents some faction
+         */
+        /**
+         * @function FactionData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<FactionData>("FactionData", sol::constructors<FactionData>{});
         cls["id"] = &FactionData::id;
         cls["name"] = &FactionData::name;
@@ -253,7 +304,16 @@ void Engine::bindSchemas(Lua& lua) {
         cls["home_system_id"] = &FactionData::homeSystemId;
     }
 
-    { // SystemData
+    {
+        /**
+         * @class SystemData
+         * Database type that represents some system within a galaxy that also belongs to a region
+         */
+        /**
+         * @function SystemData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<SystemData>("SystemData", sol::constructors<SystemData>{});
         cls["id"] = &SystemData::id;
         cls["name"] = &SystemData::name;
@@ -265,7 +325,16 @@ void Engine::bindSchemas(Lua& lua) {
         cls["connections"] = &SystemData::connections;
     }
 
-    { // SectorData
+    {
+        /**
+         * @class SectorData
+         * Database type that represents some sector within a system
+         */
+        /**
+         * @function SectorData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<SectorData>("SectorData", sol::constructors<SectorData>{});
         cls["id"] = &SectorData::id;
         cls["name"] = &SectorData::name;
@@ -275,7 +344,16 @@ void Engine::bindSchemas(Lua& lua) {
         cls["pos"] = &SectorData::pos;
     }
 
-    { // PlanetData
+    {
+        /**
+         * @class PlanetData
+         * Database type that represents some planet within a system
+         */
+        /**
+         * @function PlanetData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<PlanetData>("PlanetData", sol::constructors<PlanetData>{});
         cls["id"] = &PlanetData::id;
         cls["name"] = &PlanetData::name;
@@ -287,7 +365,16 @@ void Engine::bindSchemas(Lua& lua) {
         cls["type"] = &PlanetData::type;
     }
 
-    { // PlanetData
+    {   
+        /**
+         * @class PlayerLocationData
+         * Database type that specifies the location of the player within the universe
+         */
+        /**
+         * @function PlayerLocationData.new
+         * Default constructor
+         * @type string
+         */
         auto cls = m.new_usertype<PlayerLocationData>("PlayerLocationData", sol::constructors<PlayerLocationData>{});
         cls["galaxy_id"] = &PlayerLocationData::galaxyId;
         cls["system_id"] = &PlayerLocationData::systemId;
@@ -306,7 +393,11 @@ void Engine::bindSchemas(Lua& lua) {
         BindSchemaHelper<MetaData>::bind(lua, cls, "metadata", "MetaData");
     }
 
-    { // Database
+    {
+        /**
+         * @class Database
+         * Database class that can be used to access all of the data structures.
+         */
         auto cls = m.new_usertype<Database>("Database");
         bindRepository<GalaxyData>(cls, "galaxies");
         bindRepository<RegionData>(cls, "regions");

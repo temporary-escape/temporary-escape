@@ -372,9 +372,21 @@ void Server::postDispatch(std::function<void()> fn) {
 }
 
 void Server::bind(Lua& lua) {
+    /**
+     * @module engine
+     */
     auto& m = lua.root();
 
+    /**
+     * @class Server
+     * A class that represents server operations
+     */
     auto cls = m.new_usertype<Server>("Server");
+    /**
+     * @function Server:set_generator
+     * Sets the function to be called when generating the universe.
+     * @param fn function A callback function that accepts a seed as a number
+     */
     cls["set_generator"] = [](Server& self, sol::function fn) {
         self.setGenerator([fn](uint64_t seed) {
             sol::protected_function_result result = fn(seed);
@@ -384,6 +396,18 @@ void Server::bind(Lua& lua) {
             }
         });
     };
+    /**
+     * @function Server:start_sector
+     * Starts a sector. The function won't do anything if the server is already started.
+     * @param galaxy_id string The galaxy ID
+     * @param system_id string The system ID
+     * @param sector_id string The sector ID
+     */
     cls["start_sector"] = &Server::startSector;
+    /**
+     * @function Server:move_player_to_sector
+     * Starts a sector. The function won't do anything if the server is already started.
+     * @param server engine.Server The other server
+     */
     cls["move_player_to_sector"] = &Server::movePlayerToSector;
 }

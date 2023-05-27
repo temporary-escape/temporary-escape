@@ -137,7 +137,7 @@ end
 
 -- Find the nearest system for a given position
 local function find_nearest_system (systems, pos)
-    chosen = nil
+    local chosen = nil
     for _, system in pairs(systems) do
         if chosen == nil then
             chosen = system
@@ -291,7 +291,7 @@ function Generator:create_system_planets (galaxy, system)
     end
 end
 
--- Populates the system with sectors
+--- Populates the system with sectors
 function Generator:create_system_sectors (rng, galaxy, system)
     local planets = db.planets:seek_all(string.format("%s/%s/", galaxy.id, system.id), 0)
 

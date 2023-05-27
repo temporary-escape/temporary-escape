@@ -17,7 +17,10 @@ help:
 releases_py:
 	python3 ./releases.py
 
+genapi_py:
+	python3 ./genapi.py
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile releases_py
+%: Makefile releases_py genapi_py
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
