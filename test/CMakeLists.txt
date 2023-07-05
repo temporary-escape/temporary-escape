@@ -15,8 +15,7 @@ target_link_libraries(${PROJECT_NAME}UnitTests
         Catch2::Catch2WithMain
         ${PROJECT_NAME}Library
         OpenSSL::SSL
-        OpenSSL::Crypto
-        lmdb)
+        OpenSSL::Crypto)
 
 set_target_properties(${PROJECT_NAME}UnitTests
         PROPERTIES

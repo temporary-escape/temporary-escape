@@ -112,11 +112,11 @@ jobs:
       - name: Configure - Windows
         if: runner.os == 'Windows'
         env:
-          VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
           VULKAN_SDK: "C:/VulkanSDK"
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          set VCPKG_ROOT=${{ matrix.vcpkgDir }}
           cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DVCPKG_BUILD_TYPE=release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Configure - Linux
