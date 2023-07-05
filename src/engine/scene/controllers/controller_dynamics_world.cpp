@@ -12,8 +12,8 @@ public:
     ~CollisionDebugDraw() override = default;
 
     void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override {
-        if (capacity < lines.size() + 1) {
-            lines.reserve(lines.capacity() + 1024);
+        if (capacity < count + 2) {
+            reserve();
         }
     }
 
@@ -35,7 +35,7 @@ private:
     VulkanRenderer& vulkan;
     VulkanDoubleBuffer vbo;
     size_t capacity{0};
-    Mesh mesh;
+    size_t count{0};
 };
 
 ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg) :

@@ -43,6 +43,7 @@ jobs:
 
     env:
       VCPKG_BINARY_SOURCES: "${{ secrets.VCPKG_BINARY_SOURCES }}"
+      VCPKG_USE_SYSTEM_BINARIES: "true"
 
     steps:
       - name: Checkout
