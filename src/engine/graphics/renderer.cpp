@@ -7,10 +7,12 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                   Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager, FontFamily& font) :
+Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, RenderResources& resources,
+                   Canvas& canvas, Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager,
+                   FontFamily& font) :
     config{config},
     vulkan{vulkan},
+    resources{resources},
     canvas{canvas},
     nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
@@ -30,54 +32,54 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
     try {
         if (!renderPasses.brdf) {
             const auto brdfSize = Vector2i{config.graphics.brdfSize, config.graphics.brdfSize};
-            renderPasses.brdf = std::make_unique<RenderPassBrdf>(vulkan, assetsManager, brdfSize);
+            renderPasses.brdf = std::make_unique<RenderPassBrdf>(vulkan, resources, assetsManager, brdfSize);
         }
 
         if (!renderPasses.compute) {
-            renderPasses.compute = std::make_unique<RenderPassCompute>(vulkan, assetsManager);
+            renderPasses.compute = std::make_unique<RenderPassCompute>(vulkan, resources, assetsManager);
         }
 
         // clang-format off
         renderPasses.skybox = std::make_unique<RenderPassSkybox>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color));
 
         renderPasses.opaque = std::make_unique<RenderPassOpaque>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
         renderPasses.ssao = std::make_unique<RenderPassSsao>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque);
 
         renderPasses.lighting = std::make_unique<RenderPassLighting>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque,
             *renderPasses.ssao,
             renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color),
             renderPasses.skybox->getTexture(RenderPassSkybox::Forward));
 
         renderPasses.forward = std::make_unique<RenderPassForward>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque,
             *renderPasses.lighting);
 
         renderPasses.fxaa = std::make_unique<RenderPassFxaa>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             renderPasses.forward->getTexture(RenderPassForward::Attachments::Forward));
 
         renderPasses.bloom = std::make_unique<RenderPassBloom>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             renderPasses.fxaa->getTexture(RenderPassFxaa::Attachments::Color));
 
         renderPasses.combine = std::make_unique<RenderPassCombine>(
-            config, vulkan, assetsManager, viewport,
+            config, vulkan, resources, assetsManager, viewport,
             renderPasses.forward->getTexture(RenderPassForward::Attachments::Forward),
             renderPasses.fxaa->getTexture(RenderPassFxaa::Attachments::Color),
             renderPasses.bloom->getBluredTexture());
 
         renderPasses.nonHdr = std::make_unique<RenderPassNonHdr>(
-            vulkan, assetsManager, viewport,
+            vulkan, resources, assetsManager, viewport,
             *renderPasses.forward);
         // clang-format on
     } catch (...) {
@@ -107,6 +109,10 @@ void Renderer::createPipelineBlit() {
     pipelineBlit->init(vulkan.getRenderPass(), {0}, {});
 }
 
+void Renderer::update() {
+    blitReady = false;
+}
+
 void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
     if (viewport != lastViewportSize) {
         lastViewportSize = viewport;
@@ -131,6 +137,8 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     renderPasses.bloom->render(vkb, viewport, scene);
     renderPasses.combine->render(vkb, viewport, scene);
     renderPasses.nonHdr->render(vkb, viewport, scene);
+
+    blitReady = true;
 }
 
 void Renderer::renderOneTime(Scene& scene) {
@@ -172,22 +180,68 @@ const VulkanTexture& Renderer::getTexture() const {
     return renderPasses.nonHdr->getTexture(RenderPassNonHdr::Attachments::Forward);
 }
 
-void Renderer::render(const std::shared_ptr<Block>& block, VoxelShape::Type shape) {
+void Renderer::render(const PlanetTypePtr& planetType) {
+    logger.info("Rendering thumbnail for planet type: {}", planetType->getName());
+
+    if (!planetType->getLowResTextures().getColor()) {
+        EXCEPTION("Planet type: {} has no textures generated", planetType->getName());
+    }
+
+    Scene scene{};
+
+    { // Sun
+        auto sun = scene.createEntity();
+        sun.addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
+        sun.addComponent<ComponentTransform>().translate(Vector3{-3.0f, 1.0f, 1.0f});
+    }
+
+    { // Camera
+        auto entity = scene.createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& camera = entity.addComponent<ComponentCamera>(transform);
+        camera.setProjection(40.0f);
+        camera.lookAt({0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+        scene.setPrimaryCamera(entity);
+    }
+
+    { // Skybox
+        auto entity = scene.createEntity();
+        auto& skybox = entity.addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(vulkan, std::move(skyboxTextures));
+    }
+
+    { // Planet
+        auto entity = scene.createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        transform.translate(Vector3{0.0f, 0.0f, -2.0f});
+        auto& planet = entity.addComponent<ComponentPlanet>(planetType, 1234);
+        planet.setBackground(true);
+        planet.setHighRes(false);
+    }
+
+    scene.update(0.1f);
+
+    renderOneTime(scene);
+
+    vulkan.waitQueueIdle();
+}
+
+void Renderer::render(const BlockPtr& block, const VoxelShape::Type shape) {
     logger.info("Rendering thumbnail for block: {}", block ? block->getName() : "nullptr");
 
     Scene scene{};
 
     { // Sun
         auto sun = scene.createEntity();
-        sun->addComponent<ComponentDirectionalLight>(Color4{1.5f, 1.5f, 1.5f, 1.0f});
-        sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 3.0f, 1.0f});
+        sun.addComponent<ComponentDirectionalLight>(Color4{1.5f, 1.5f, 1.5f, 1.0f});
+        sun.addComponent<ComponentTransform>().translate(Vector3{3.0f, 3.0f, 1.0f});
     }
 
     { // Camera
         auto entity = scene.createEntity();
-        auto& transform = entity->addComponent<ComponentTransform>();
-        auto& camera = entity->addComponent<ComponentCamera>(transform);
-        entity->addComponent<ComponentUserInput>(camera);
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& camera = entity.addComponent<ComponentCamera>(transform);
         camera.setProjection(19.0f);
         camera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
         scene.setPrimaryCamera(entity);
@@ -195,17 +249,17 @@ void Renderer::render(const std::shared_ptr<Block>& block, VoxelShape::Type shap
 
     { // Skybox
         auto entity = scene.createEntity();
-        auto& skybox = entity->addComponent<ComponentSkybox>(0);
-        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.05f, 0.05f, 0.05f, 1.0f}};
+        auto& skybox = entity.addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
         skybox.setTextures(vulkan, std::move(skyboxTextures));
     }
 
     if (block) {
         auto entity = scene.createEntity();
-        auto& transform = entity->addComponent<ComponentTransform>();
-        auto& grid = entity->addComponent<ComponentGrid>();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& grid = entity.addComponent<ComponentGrid>();
         grid.setDirty(true);
-        grid.insert(Vector3i{0, 0, 0}, block, 0, 0, shape);
+        grid.insert(Vector3i{0, 0, 0}, block, 0, 1, shape);
     }
 
     scene.update(0.1f);
@@ -216,6 +270,10 @@ void Renderer::render(const std::shared_ptr<Block>& block, VoxelShape::Type shap
 }
 
 void Renderer::blit(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
+    if (!blitReady) {
+        return;
+    }
+
     const auto& texture = renderPasses.nonHdr->getTexture(RenderPassNonHdr::Attachments::Forward);
 
     pipelineBlit->getDescriptorPool().reset();

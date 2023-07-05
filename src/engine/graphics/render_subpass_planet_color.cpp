@@ -6,9 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                                   RenderPassPlanetSurface& parent) :
+RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, RenderResources& resources,
+                                                   AssetsManager& assetsManager, RenderPassPlanetSurface& parent) :
     vulkan{vulkan},
+    resources{resources},
     parent{parent},
     pipelineColor{
         vulkan,
@@ -43,8 +44,6 @@ RenderSubpassPlanetColor::RenderSubpassPlanetColor(VulkanRenderer& vulkan, Asset
     });
 
     addPipeline(pipelineColor);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassPlanetColor::render(VulkanCommandBuffer& vkb, const PlanetTypePtr& planetType) {
@@ -62,5 +61,5 @@ void RenderSubpassPlanetColor::render(VulkanCommandBuffer& vkb, const PlanetType
 
     pipelineColor.bindDescriptors(vkb, {}, textures, inputs);
 
-    pipelineColor.renderMesh(vkb, fullScreenQuad);
+    pipelineColor.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

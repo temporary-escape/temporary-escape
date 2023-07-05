@@ -103,6 +103,9 @@
     {
       "name": "gettext",
       "platform": "osx"
+    },
+    {
+      "name": "bullet3"
     }
   ],
   "overrides": [
@@ -188,7 +191,7 @@
     },
     {
       "name": "catch2",
-      "version": "3.2.1",
+      "version": "3.3.2",
       "port-version": 0
     },
     {
@@ -208,7 +211,7 @@
     },
     {
       "name": "rocksdb",
-      "version": "7.8.3",
+      "version": "8.0.0",
       "port-version": 0
     },
     {
@@ -265,7 +268,12 @@
       "name": "gettext",
       "version": "0.21",
       "port-version": 9
+    },
+    {
+      "name": "bullet3",
+      "version": "3.25",
+      "port-version": 0
     }
   ],
-  "builtin-baseline": "f14984af3738e69f197bf0e647a8dca12de92996"
+  "builtin-baseline": "f6a5d4e8eb7476b8d7fc12a56dff300c1c986131"
 }

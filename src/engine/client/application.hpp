@@ -54,8 +54,11 @@ private:
     void startClient();
     void startSinglePlayer();
     void startEditor();
+    void createPlanetLowResTextures(PlanetGenerator& planetGenerator);
+    void createPlanetLowResTextures();
     void createBlockThumbnails(Renderer& thumbnailRenderer);
     void createEmptyThumbnail(Renderer& thumbnailRenderer);
+    void createPlanetThumbnails(Renderer& thumbnailRenderer);
 
     const Config& config;
 
@@ -77,6 +80,7 @@ private:
     std::thread serverThread;
     std::unique_ptr<SkyboxGenerator> skyboxGenerator;
     std::unique_ptr<PlanetGenerator> planetGenerator;
+    std::unique_ptr<RenderResources> renderResources;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;

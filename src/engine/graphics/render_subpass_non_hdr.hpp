@@ -4,9 +4,11 @@
 #include "render_subpass.hpp"
 
 namespace Engine {
+class ENGINE_API ControllerIcon;
+
 class ENGINE_API RenderSubpassNonHdr : public RenderSubpass {
 public:
-    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
     virtual ~RenderSubpassNonHdr() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -36,10 +38,12 @@ private:
 
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentWorldText& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ControllerIcon& controller);
 
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderPipeline pipelineWorldText;
-    Mesh cube;
+    RenderPipeline pipelinePointCloud;
     RenderPipeline* currentPipeline{nullptr};
 };
 } // namespace Engine

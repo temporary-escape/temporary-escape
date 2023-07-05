@@ -4,8 +4,10 @@
 
 using namespace Engine;
 
-RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, RenderResources& resources,
+                                                     AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineNormal{
         vulkan,
         {
@@ -33,8 +35,6 @@ RenderSubpassPlanetNormal::RenderSubpassPlanetNormal(VulkanRenderer& vulkan, Ass
     });
 
     addPipeline(pipelineNormal);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassPlanetNormal::render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture,
@@ -49,7 +49,11 @@ void RenderSubpassPlanetNormal::render(VulkanCommandBuffer& vkb, const VulkanTex
     pipelineNormal.bindDescriptors(vkb, {}, textures, {});
 
     const float waterLevel = planetType->getAtmosphere().waterLevel;
-    pipelineNormal.pushConstants(vkb, PushConstant{"resolution", resolution}, PushConstant{"waterLevel", waterLevel});
+    const float strength = glm::clamp(map(resolution, 128.0f, 2048.0f, 0.2f, 0.8f), 0.1f, 1.0f);
+    pipelineNormal.pushConstants(vkb,
+                                 PushConstant{"resolution", resolution},
+                                 PushConstant{"waterLevel", waterLevel},
+                                 PushConstant{"strength", strength});
 
-    pipelineNormal.renderMesh(vkb, fullScreenQuad);
+    pipelineNormal.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

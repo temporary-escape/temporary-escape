@@ -193,16 +193,17 @@ static void transitionTextureShaderRead(VulkanCommandBuffer& vkb, const VulkanTe
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
-SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                                 AssetsManager& assetsManager) :
     config{config}, vulkan{vulkan} {
 
     // clang-format off
     renderPasses.skyboxColor = std::make_unique<RenderPassSkyboxColor>(
-        vulkan, assetsManager, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
+        vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
     renderPasses.skyboxIrradiance = std::make_unique<RenderPassSkyboxIrradiance>(
-            vulkan, assetsManager, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
+            vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
     renderPasses.skyboxPrefilter = std::make_unique<RenderPassSkyboxPrefilter>(
-            vulkan, assetsManager, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
+            vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
     // clang-format on
 
     textures.star = assetsManager.getTextures().find("system_map_sun");
@@ -231,13 +232,13 @@ void SkyboxGenerator::update(Scene& scene) {
     }
 
     auto skyboxes = scene.getView<ComponentSkybox>();
-    for (auto&& [id, skybox] : skyboxes.each()) {
+    for (auto&& [handle, skybox] : skyboxes.each()) {
         if (!skybox.isGenerated()) {
-            const EntityWeakPtr entity = scene.getEntityById(static_cast<entt::id_type>(id));
+            const Entity entity = scene.fromHandle(handle);
 
             enqueue(skybox.getSeed(), [this, entity](SkyboxTextures result) {
-                if (auto ptr = entity.lock(); ptr != nullptr) {
-                    ptr->getComponent<ComponentSkybox>().setTextures(vulkan, std::move(result));
+                if (entity) {
+                    entity.getComponent<ComponentSkybox>().setTextures(vulkan, std::move(result));
                 }
             });
 
@@ -365,8 +366,8 @@ void SkyboxGenerator::prepareScene() {
     work.scene = std::make_unique<Scene>();
 
     auto entity = work.scene->createEntity();
-    auto& transform = entity->addComponent<ComponentTransform>();
-    entity->addComponent<ComponentCamera>(transform);
+    auto& transform = entity.addComponent<ComponentTransform>();
+    entity.addComponent<ComponentCamera>(transform);
 
     work.scene->setPrimaryCamera(entity);
 }
@@ -390,8 +391,8 @@ void SkyboxGenerator::prepareNebulas(SkyboxGenerator::Rng& rng) const {
             Vector3{dist(rng) * 2000.0f - 1000.0f, dist(rng) * 2000.0f - 1000.0f, dist(rng) * 2000.0f - 1000.0f};
 
         auto entity = work.scene->createEntity();
-        entity->addComponent<ComponentTransform>();
-        auto& nebula = entity->addComponent<ComponentNebula>();
+        entity.addComponent<ComponentTransform>();
+        auto& nebula = entity.addComponent<ComponentNebula>();
 
         nebula.setColor(color);
         nebula.setOffset({offset, 1.0f});
@@ -413,8 +414,8 @@ void SkyboxGenerator::prepareStars(Rng& rng, const Vector2& size, const size_t c
     std::uniform_real_distribution<float> distBrightness(0.2f, 1.0f);
 
     auto entity = work.scene->createEntity();
-    entity->addComponent<ComponentTransform>();
-    auto& pointCloud = entity->addComponent<ComponentPointCloud>(textures.star);
+    entity.addComponent<ComponentTransform>();
+    auto& pointCloud = entity.addComponent<ComponentPointCloud>(textures.star);
 
     for (size_t i = 0; i < count; i++) {
         const auto u = distUV(rng);

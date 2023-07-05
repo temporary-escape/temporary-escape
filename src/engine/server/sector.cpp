@@ -1,6 +1,8 @@
 #include "sector.hpp"
+#include "../scene/controllers/controller_network.hpp"
 #include "../utils/string_utils.hpp"
 #include "server.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -40,6 +42,19 @@ void Sector::load() {
     scene = std::make_unique<Scene>();
     lua = std::make_unique<Lua>(config, eventBus);
 
+    const auto galaxyData = db.get<GalaxyData>(galaxyId);
+    const auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
+    const auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
+
+    std::mt19937_64 rng{sectorData.seed};
+
+    lua->require(sectorData.luaTemplate, [&](sol::table& table) {
+        auto res = table["populate"](table, rng, galaxyData, systemData, sectorData, scene.get());
+        if (!res.valid()) {
+            sol::error err = res;
+            EXCEPTION("Failed to call sector template: '{}' error: {}", sectorData.luaTemplate, err.what());
+        }
+    });
     /*try {
         auto found = world.sectors.find(galaxyId, systemId, sectorId);
         if (!found) {
@@ -91,6 +106,14 @@ void Sector::addPlayer(const SessionPtr& session) {
         // eventBus.enqueue("sector_player_added", event);
 
         logger.info("Player: '{}' added to sector: '{}'", session->getPlayerId(), sectorId);
+
+        // Send all entities to the player
+        worker.post([this, session]() {
+            const auto peer = session->getStream();
+            if (peer) {
+                scene->getController<ControllerNetwork>().sendSnapshot(*peer);
+            }
+        });
     });
 }
 

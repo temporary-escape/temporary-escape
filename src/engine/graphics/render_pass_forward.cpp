@@ -6,9 +6,10 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassForward::RenderPassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                                     const RenderPassOpaque& opaque, const RenderPassLighting& lighting) :
-    RenderPass{vulkan, viewport}, subpassForward{vulkan, assetsManager} {
+RenderPassForward::RenderPassForward(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                     const Vector2i& viewport, const RenderPassOpaque& opaque,
+                                     const RenderPassLighting& lighting) :
+    RenderPass{vulkan, viewport}, subpassForward{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

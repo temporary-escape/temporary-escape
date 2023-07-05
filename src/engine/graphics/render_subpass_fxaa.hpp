@@ -6,15 +6,16 @@
 namespace Engine {
 class ENGINE_API RenderSubpassFxaa : public RenderSubpass {
 public:
-    explicit RenderSubpassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& forward);
+    explicit RenderSubpassFxaa(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const VulkanTexture& forward);
     virtual ~RenderSubpassFxaa() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
 
 private:
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const VulkanTexture& forward;
     RenderPipeline pipelineFxaa;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

@@ -5,8 +5,10 @@
 
 using namespace Engine;
 
-RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, RenderResources& resources,
+                                                           AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelinePrefilter{
         vulkan,
         {
@@ -34,8 +36,6 @@ RenderSubpassSkyboxPrefilter::RenderSubpassSkyboxPrefilter(VulkanRenderer& vulka
     });
 
     addPipeline(pipelinePrefilter);
-
-    skyboxMesh = createSkyboxCube(vulkan);
 }
 
 void RenderSubpassSkyboxPrefilter::reset() {
@@ -55,5 +55,5 @@ void RenderSubpassSkyboxPrefilter::render(VulkanCommandBuffer& vkb, const Vulkan
     pipelinePrefilter.pushConstants(
         vkb, PushConstant{"projectionViewMatrix", projectionViewMatrix}, PushConstant{"roughness", roughness});
 
-    pipelinePrefilter.renderMesh(vkb, skyboxMesh);
+    pipelinePrefilter.renderMesh(vkb, resources.getMeshSkyboxCube());
 }

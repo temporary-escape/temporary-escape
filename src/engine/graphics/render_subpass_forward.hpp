@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassForward : public RenderSubpass {
 public:
-    explicit RenderSubpassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassForward(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
     virtual ~RenderSubpassForward() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -41,19 +41,17 @@ private:
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentPointCloud& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentIconPointCloud& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentPolyShape& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentStarFlare& component);
 
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderPipeline pipelineDebug;
     RenderPipeline pipelineLines;
     RenderPipeline pipelinePointCloud;
     RenderPipeline pipelinePolyShape;
     RenderPipeline pipelineStarFlare;
-    Mesh cube;
     RenderPipeline* currentPipeline{nullptr};
 };
 } // namespace Engine

@@ -11,6 +11,10 @@ add_library(${PROJECT_NAME}Library SHARED ${SOURCES})
 set_target_properties(${PROJECT_NAME}Library PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 set_target_properties(${PROJECT_NAME}Library PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 
+if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
+    target_compile_options(${PROJECT_NAME}Library PUBLIC -fsanitize=address -fno-omit-frame-pointer)
+endif ()
+
 # Inherit the common options
 target_link_libraries(${PROJECT_NAME}Library PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
 
@@ -85,7 +89,8 @@ target_link_libraries(${PROJECT_NAME}Library
         RocksDB::rocksdb
         LuaUnofficial
         sol2
-        KTX::ktx)
+        KTX::ktx
+        ${BULLET_LIBRARIES})
 
 # The main target
 if (MSVC)
@@ -98,6 +103,9 @@ else ()
 endif ()
 
 set_target_properties(${PROJECT_NAME}Main PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
+    target_link_options(${PROJECT_NAME}Main PRIVATE -lasan)
+endif ()
 
 target_link_libraries(${PROJECT_NAME}Main
         PRIVATE CLI11::CLI11

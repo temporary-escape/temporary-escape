@@ -27,7 +27,7 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
-    Scene& getScene() override;
+    Scene* getScene() override;
 
 private:
     Game& parent;

@@ -89,14 +89,15 @@ static void transitionTextureShaderRead(VulkanCommandBuffer& vkb, const VulkanTe
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
-PlanetGenerator::PlanetGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    config{config}, vulkan{vulkan} {
+PlanetGenerator::PlanetGenerator(const Vector2i& textureSize, VulkanRenderer& vulkan, RenderResources& resources,
+                                 AssetsManager& assetsManager) :
+    vulkan{vulkan}, textureSize{textureSize} {
 
     // clang-format off
     renderPasses.planetSurface = std::make_unique<RenderPassPlanetSurface>(
-        vulkan, assetsManager, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
+        vulkan, resources, assetsManager, textureSize);
     renderPasses.planetNormal = std::make_unique<RenderPassPlanetNormal>(
-        vulkan, assetsManager, Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize});
+        vulkan, resources, assetsManager, textureSize);
     // clang-format on
 }
 
@@ -105,7 +106,7 @@ bool PlanetGenerator::isBusy() const {
 }
 
 void PlanetGenerator::enqueue(const uint64_t seed, const PlanetTypePtr& planetType,
-                              std::function<void(PlanetTextures)> callback) {
+                              std::function<void(PlanetTextures)>&& callback) {
     if (isBusy()) {
         EXCEPTION("Can not enqueue planet texture generation, already in progress");
     }
@@ -122,16 +123,13 @@ void PlanetGenerator::update(Scene& scene) {
     }
 
     auto planets = scene.getView<ComponentTransform, ComponentPlanet>();
-    for (auto&& [id, transform, planet] : planets.each()) {
+    for (auto&& [handle, transform, planet] : planets.each()) {
         if (!planet.isGenerated()) {
-            const EntityWeakPtr entity = scene.getEntityById(static_cast<entt::id_type>(id));
+            Entity entity = scene.fromHandle(handle);
 
             enqueue(planet.getSeed(), planet.getPlanetType(), [this, entity](PlanetTextures textures) {
-                (void)textures;
-                (void)entity;
-
-                if (auto ptr = entity.lock(); ptr != nullptr) {
-                    ptr->getComponent<ComponentPlanet>().setTextures(vulkan, std::move(textures));
+                if (entity) {
+                    entity.getComponent<ComponentPlanet>().setTextures(vulkan, std::move(textures));
                 }
             });
 
@@ -166,6 +164,23 @@ void PlanetGenerator::run() {
     }
 }
 
+PlanetTextures PlanetGenerator::render(const uint64_t seed, const PlanetTypePtr& planetType) {
+    logger.info("Starting planet low-res texture generation seed: {}", seed);
+
+    for (auto i = 0; i < 6; i++) {
+        fence = VulkanFence{vulkan};
+        work.seed = seed;
+        work.side = i;
+        work.planetType = planetType;
+
+        startWork();
+
+        fence.wait();
+    }
+
+    return std::move(planetTextures);
+}
+
 void PlanetGenerator::startWork() {
     fence.reset();
 
@@ -183,11 +198,10 @@ void PlanetGenerator::startWork() {
 
     Rng rng{work.seed};
 
-    const auto viewport = Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-    renderPasses.planetSurface->render(vkb, viewport, rng, work.side, work.planetType);
+    renderPasses.planetSurface->render(vkb, textureSize, rng, work.side, work.planetType);
 
     const auto& heightmap = renderPasses.planetSurface->getTexture(RenderPassPlanetSurface::Attachments::Heightmap);
-    renderPasses.planetNormal->render(vkb, viewport, heightmap, work.planetType);
+    renderPasses.planetNormal->render(vkb, textureSize, heightmap, work.planetType);
 
     const auto& color = renderPasses.planetSurface->getTexture(RenderPassPlanetSurface::Attachments::Color);
     const auto& metallicRoughness =
@@ -215,15 +229,13 @@ void PlanetGenerator::prepareCubemap() {
     planetTextures.dispose(vulkan);
     planetTextures = PlanetTextures{};
 
-    auto size = Vector2i{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-
-    logger.debug("Preparing planet cubemap of size: {}", size);
+    logger.debug("Preparing planet cubemap of size: {}", textureSize);
 
     VulkanTexture::CreateInfo textureInfo{};
     textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM; // VK_FORMAT_BC1_RGBA_UNORM_BLOCK
     textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
-    textureInfo.image.extent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y), 1};
-    textureInfo.image.mipLevels = getMipMapLevels(size);
+    textureInfo.image.extent = {static_cast<uint32_t>(textureSize.x), static_cast<uint32_t>(textureSize.y), 1};
+    textureInfo.image.mipLevels = getMipMapLevels(textureSize);
     textureInfo.image.arrayLayers = 6;
     textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
     textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -238,7 +250,7 @@ void PlanetGenerator::prepareCubemap() {
     textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     textureInfo.view.subresourceRange.baseMipLevel = 0;
-    textureInfo.view.subresourceRange.levelCount = getMipMapLevels(size);
+    textureInfo.view.subresourceRange.levelCount = getMipMapLevels(textureSize);
     textureInfo.view.subresourceRange.baseArrayLayer = 0;
     textureInfo.view.subresourceRange.layerCount = 6;
 

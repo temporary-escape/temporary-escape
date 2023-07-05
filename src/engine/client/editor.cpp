@@ -26,7 +26,10 @@ void Editor::update(float deltaTime) {
 }
 
 void Editor::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
-    renderer.render(vkb, viewport, view.getScene());
+    auto* scene = view.getScene();
+    if (scene) {
+        renderer.render(vkb, viewport, *scene);
+    }
 }
 
 void Editor::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {

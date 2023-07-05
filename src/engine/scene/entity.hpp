@@ -3,30 +3,30 @@
 #include "../library.hpp"
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
-#include "component_camera.hpp"
-#include "component_clickable_points.hpp"
-#include "component_debug.hpp"
-#include "component_directional_light.hpp"
-#include "component_grid.hpp"
-#include "component_icon.hpp"
-#include "component_icon_point_cloud.hpp"
-#include "component_label.hpp"
-#include "component_lines.hpp"
-#include "component_model.hpp"
-#include "component_nebula.hpp"
-#include "component_particle_emitter.hpp"
-#include "component_planet.hpp"
-#include "component_player.hpp"
-#include "component_point_cloud.hpp"
-#include "component_poly_shape.hpp"
-#include "component_script.hpp"
-#include "component_ship_control.hpp"
-#include "component_skybox.hpp"
-#include "component_star_flare.hpp"
-#include "component_text.hpp"
-#include "component_turret.hpp"
-#include "component_user_input.hpp"
-#include "component_world_text.hpp"
+#include "components/component_2d_selectable.hpp"
+#include "components/component_camera.hpp"
+#include "components/component_debug.hpp"
+#include "components/component_directional_light.hpp"
+#include "components/component_grid.hpp"
+#include "components/component_icon.hpp"
+#include "components/component_label.hpp"
+#include "components/component_lines.hpp"
+#include "components/component_model.hpp"
+#include "components/component_nebula.hpp"
+#include "components/component_particle_emitter.hpp"
+#include "components/component_planet.hpp"
+#include "components/component_player.hpp"
+#include "components/component_point_cloud.hpp"
+#include "components/component_point_light.hpp"
+#include "components/component_poly_shape.hpp"
+#include "components/component_rigid_body.hpp"
+#include "components/component_script.hpp"
+#include "components/component_ship_control.hpp"
+#include "components/component_skybox.hpp"
+#include "components/component_star_flare.hpp"
+#include "components/component_text.hpp"
+#include "components/component_turret.hpp"
+#include "components/component_world_text.hpp"
 #include <entt/core/ident.hpp>
 #include <entt/entity/view.hpp>
 #include <iostream>
@@ -38,40 +38,47 @@ class ENGINE_API Scene;
 
 using EntityComponentIds =
     entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
-                ComponentDirectionalLight, ComponentUserInput, ComponentPointCloud, ComponentIconPointCloud,
-                ComponentLines, ComponentDebug, ComponentClickablePoints, ComponentIcon, ComponentPolyShape,
-                ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare, ComponentSkybox,
-                ComponentNebula>;
+                ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
+                ComponentIcon, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
+                ComponentStarFlare, ComponentSkybox, ComponentNebula, Component2DSelectable, ComponentRigidBody>;
 
 class ENGINE_API Entity {
 public:
-    explicit Entity(entt::registry& reg) : reg{&reg}, handle{reg.create()} {
+    Entity() = default;
+    explicit Entity(entt::registry& reg, entt::entity handle) : reg{&reg}, handle{handle} {
     }
     ~Entity() = default;
 
-    void destroy();
-
+    void reset();
     void setDisabled(bool value);
+    void setStatic(bool value);
 
-    [[nodiscard]] bool isDisabled() const {
-        return disabled;
+    template <typename T> bool hasComponent() const {
+        if (!reg) {
+            EXCEPTION("Invalid entity");
+        }
+
+        return reg->template try_get<T>(handle) != nullptr;
     }
 
-    template <typename T> bool hasComponent() {
-        const auto index = EntityComponentIds::value<T>;
-        return (mask & (1 << index)) != 0;
-    }
-
-    template <typename T> T& getComponent() {
+    template <typename T> T& getComponent() const {
         if (!reg) {
             EXCEPTION("Invalid entity");
         }
 
         if (!hasComponent<T>()) {
-            EXCEPTION("Entity does not contain component of this type");
+            EXCEPTION("Entity has no component of type: {}", typeid(T).name());
         }
 
         return reg->get<T>(handle);
+    }
+
+    template <typename T> T* tryGetComponent() const {
+        if (!reg) {
+            EXCEPTION("Invalid entity");
+        }
+
+        return reg->template try_get<T>(handle);
     }
 
     template <typename T, typename... Args> T& addComponent(Args&&... args) {
@@ -79,29 +86,23 @@ public:
             EXCEPTION("Invalid entity");
         }
 
-        if (hasComponent<T>()) {
-            EXCEPTION("Entity already contains component of this type");
-        }
-
-        auto& cmp = reg->template emplace<T>(handle, std::forward<Args>(args)...);
-        const auto index = EntityComponentIds::value<T>;
-        mask |= 1 << index;
-        return cmp;
+        return reg->template emplace<T>(handle, *reg, handle, std::forward<Args>(args)...);
     }
 
-    [[nodiscard]] entt::id_type getId() const {
-        return static_cast<entt::id_type>(handle);
+    [[nodiscard]] entt::entity getHandle() const {
+        return handle;
     }
+
+    operator bool() const {
+        return reg && reg->valid(handle);
+    }
+
+    static void bind(Lua& lua);
 
 private:
     entt::registry* reg{nullptr};
     entt::entity handle;
-    bool disabled{false};
-    uint64_t mask{0};
 };
-
-using EntityPtr = std::shared_ptr<Entity>;
-using EntityWeakPtr = std::weak_ptr<Entity>;
 
 /*
 // clang-format off

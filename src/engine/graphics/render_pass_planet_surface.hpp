@@ -19,7 +19,8 @@ public:
 
     static const size_t totalAttachments = 4;
 
-    explicit RenderPassPlanetSurface(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport);
+    explicit RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                     const Vector2i& viewport);
     virtual ~RenderPassPlanetSurface() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Rng& rng, int index,

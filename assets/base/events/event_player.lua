@@ -14,22 +14,19 @@ function module.init_player_location (player_id)
     if location == nil then
         logger:info("Player has no starting location, creating one...")
 
-        -- Get the first faction
-        local faction = db.factions:seek_all("", 1)[1]
-
-        -- Get the first sector in the faction's home system
-        local sectors = db.sectors:seek_all(string.format("%s/%s/", faction.home_galaxy_id, faction.home_system_id), 1)
-        if #sectors == 0 then
-            error(string.format("There are no sectors in: '%s/%s", faction.home_galaxy_id, faction.home_system_id))
+        -- Get the starting locations
+        local starting_locations = db.starting_locations:seek_all("", 1)
+        if #starting_locations == 0 then
+            error("There are no starting locations")
         end
 
-        local sector = sectors[1]
+        local starting_location = starting_locations[1]
 
         -- Create the location data
         location = engine.PlayerLocationData.new()
-        location.galaxy_id = faction.home_galaxy_id
-        location.system_id = faction.home_system_id
-        location.sector_id = sector.id
+        location.galaxy_id = starting_location.galaxy_id
+        location.system_id = starting_location.system_id
+        location.sector_id = starting_location.sector_id
 
         db.player_locations:put(player_id, location)
     else

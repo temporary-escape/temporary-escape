@@ -5,8 +5,9 @@
 
 using namespace Engine;
 
-RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineBrdf{
         vulkan,
         {
@@ -34,13 +35,11 @@ RenderSubpassBrdf::RenderSubpassBrdf(VulkanRenderer& vulkan, AssetsManager& asse
     });
 
     addPipeline(pipelineBrdf);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassBrdf::render(VulkanCommandBuffer& vkb) {
     pipelineBrdf.getDescriptorPool().reset();
 
     pipelineBrdf.bind(vkb);
-    pipelineBrdf.renderMesh(vkb, fullScreenQuad);
+    pipelineBrdf.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

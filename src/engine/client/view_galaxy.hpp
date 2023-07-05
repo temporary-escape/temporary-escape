@@ -5,6 +5,7 @@
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
+#include "../gui/gui_modal_loading.hpp"
 #include "../math/voronoi_diagram.hpp"
 #include "../scene/scene.hpp"
 #include "../server/world.hpp"
@@ -17,9 +18,15 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewGalaxy : public View {
 public:
+    struct Gui {
+        explicit Gui(const Config& config, AssetsManager& assetsManager);
+
+        GuiModalLoading modalLoading;
+    };
+
     explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                        Client& client, FontFamily& font);
-    ~ViewGalaxy() = default;
+                        Client& client, Gui& gui, FontFamily& font);
+    ~ViewGalaxy();
 
     void update(float deltaTime) override;
     void eventMouseMoved(const Vector2i& pos) override;
@@ -31,11 +38,12 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
-    Scene& getScene() override;
-
-    void load();
+    Scene* getScene() override;
 
 private:
+    void load();
+    void finalize();
+    void clearEntities();
     /*void fetchCurrentLocation(const StopToken& stop);
     void fetchGalaxyInfo(const StopToken& stop);
     void fetchFactionsPage(const StopToken& stop, const std::string& token);
@@ -49,10 +57,12 @@ private:
 
     Game& parent;
     const Config& config;
+    Renderer& renderer;
     AssetsManager& assetsManager;
     Client& client;
+    Gui& gui;
     FontFamily& font;
-    Scene scene;
+    std::unique_ptr<Scene> scene;
 
     struct {
         std::string galaxyId;
@@ -70,14 +80,14 @@ private:
     std::unordered_map<std::string, FactionData> factions;
 
     struct {
-        std::shared_ptr<Entity> camera;
-        std::unordered_map<std::string, EntityPtr> regions;
-        std::unordered_map<std::string, EntityPtr> labels;
-        std::unordered_map<std::string, EntityPtr> factions;
-        EntityPtr positions;
-        EntityPtr cursor;
-        EntityPtr voronoi;
-        EntityPtr names;
+        Entity camera;
+        Entity regions;
+        Entity systems;
+        Entity cursor;
+        Entity voronoi;
+        Entity names;
+        std::vector<Entity> selectables;
+        Entity currentPos;
     } entities;
 
     struct {
@@ -86,11 +96,12 @@ private:
 
     struct {
         ImagePtr iconSelect;
+        ImagePtr iconCurrentPos;
     } images;
 
     bool loading{false};
-    float loadingValue{0.0f};
+    std::atomic<float> loadingValue{0.0f};
     StopToken stopToken;
-    Future<VoronoiResult> futureVoronoi;
+    Future<void> futureLoad;
 };
 } // namespace Engine

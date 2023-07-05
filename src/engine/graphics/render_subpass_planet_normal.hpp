@@ -6,7 +6,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassPlanetNormal : public RenderSubpass {
 public:
-    explicit RenderSubpassPlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassPlanetNormal(VulkanRenderer& vulkan, RenderResources& resources,
+                                       AssetsManager& assetsManager);
     virtual ~RenderSubpassPlanetNormal() = default;
 
     void render(VulkanCommandBuffer& vkb, const VulkanTexture& heightmapTexture, float resolution,
@@ -14,8 +15,7 @@ public:
 
 private:
     VulkanRenderer& vulkan;
-
+    RenderResources& resources;
     RenderPipeline pipelineNormal;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

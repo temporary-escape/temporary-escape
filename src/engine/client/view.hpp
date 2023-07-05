@@ -15,6 +15,6 @@ public:
     virtual void update(float deltaTime) = 0;
     virtual void onEnter() = 0;
     virtual void onExit() = 0;
-    virtual Scene& getScene() = 0;
+    virtual Scene* getScene() = 0;
 };
 } // namespace Engine

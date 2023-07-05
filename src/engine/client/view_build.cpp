@@ -48,18 +48,17 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, AssetsManager& as
 
 void ViewBuild::createScene() {
     auto entity = scene.createEntity();
-    entity->addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
-    entity->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
+    entity.addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
+    entity.addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
 
     entity = scene.createEntity();
-    auto& skybox = entity->addComponent<ComponentSkybox>(0);
+    auto& skybox = entity.addComponent<ComponentSkybox>(0);
     auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}};
     skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
 
     entity = scene.createEntity();
-    auto& cameraTransform = entity->addComponent<ComponentTransform>();
-    auto& cameraCamera = entity->addComponent<ComponentCamera>(cameraTransform);
-    entity->addComponent<ComponentUserInput>(cameraCamera);
+    auto& cameraTransform = entity.addComponent<ComponentTransform>();
+    auto& cameraCamera = entity.addComponent<ComponentCamera>(cameraTransform);
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     scene.setPrimaryCamera(entity);
@@ -73,8 +72,8 @@ void ViewBuild::createGridLines() {
     static const Vector3 offset{0.5f, 0.0f, 0.5f};
 
     auto entity = scene.createEntity();
-    auto& lines = entity->addComponent<ComponentLines>();
-    entity->addComponent<ComponentTransform>();
+    auto& lines = entity.addComponent<ComponentLines>(std::vector<ComponentLines::Line>{});
+    entity.addComponent<ComponentTransform>();
 
     for (int z = -width; z <= width; z++) {
         const auto start = Vector3{static_cast<float>(-width), 0.0f, static_cast<float>(z)} + offset;
@@ -105,16 +104,16 @@ void ViewBuild::createGridLines() {
 
 void ViewBuild::createHelpers() {
     entityHelperAdd = createHelperBox(Color4{0.0f, 1.0f, 0.0f, 1.0f}, 0.525f);
-    entityHelperAdd->setDisabled(true);
+    entityHelperAdd.setDisabled(true);
 
     entityHelperRemove = createHelperBox(Color4{1.0f, 0.0f, 0.0f, 1.0f}, 0.525f);
-    entityHelperRemove->setDisabled(true);
+    entityHelperRemove.setDisabled(true);
 }
 
-EntityPtr ViewBuild::createHelperBox(const Color4& color, const float width) {
+Entity ViewBuild::createHelperBox(const Color4& color, const float width) {
     auto entity = scene.createEntity();
-    auto& lines = entity->addComponent<ComponentLines>();
-    entity->addComponent<ComponentTransform>();
+    auto& lines = entity.addComponent<ComponentLines>(std::vector<ComponentLines::Line>{});
+    entity.addComponent<ComponentTransform>();
 
     lines.add({width, -width, width}, {width, width, width}, color);
     lines.add({-width, -width, width}, {-width, width, width}, color);
@@ -136,9 +135,9 @@ EntityPtr ViewBuild::createHelperBox(const Color4& color, const float width) {
 
 void ViewBuild::createEntityShip() {
     entityShip = scene.createEntity();
-    entityShip->addComponent<ComponentTransform>();
-    auto& debug = entityShip->addComponent<ComponentDebug>();
-    auto& grid = entityShip->addComponent<ComponentGrid>(debug);
+    entityShip.addComponent<ComponentTransform>();
+    auto& debug = entityShip.addComponent<ComponentDebug>();
+    auto& grid = entityShip.addComponent<ComponentGrid>();
     grid.setDirty(true);
 
     auto block = assetsManager.getBlocks().find("block_crew_quarters_t1");
@@ -159,7 +158,7 @@ void ViewBuild::addBlock() {
         return;
     }
 
-    auto& grid = entityShip->getComponent<ComponentGrid>();
+    auto& grid = entityShip.getComponent<ComponentGrid>();
     const auto pos = raycastResult->pos + raycastResult->orientation;
     logger.info("Inserting pos: {} hit: {} orientation: {} insert pos: {}",
                 raycastResult->pos,
@@ -175,15 +174,15 @@ void ViewBuild::update(const float deltaTime) {
 
     const auto [eyes, rayEnd] = scene.screenToWorld(raycastScreenPos, 16.0f);
 
-    const auto& grid = entityShip->getComponent<ComponentGrid>();
+    const auto& grid = entityShip.getComponent<ComponentGrid>();
     raycastResult = grid.rayCast(eyes, rayEnd);
 
     if (raycastResult) {
-        entityHelperAdd->setDisabled(false);
-        auto& transform = entityHelperAdd->getComponent<ComponentTransform>();
+        entityHelperAdd.setDisabled(false);
+        auto& transform = entityHelperAdd.getComponent<ComponentTransform>();
         transform.move(raycastResult->worldPos + raycastResult->normal);
     } else {
-        entityHelperAdd->setDisabled(true);
+        entityHelperAdd.setDisabled(true);
     }
 }
 
@@ -246,6 +245,6 @@ void ViewBuild::onExit() {
     gui.blockSideMenu.setEnabled(false);
 }
 
-Scene& ViewBuild::getScene() {
-    return scene;
+Scene* ViewBuild::getScene() {
+    return &scene;
 }

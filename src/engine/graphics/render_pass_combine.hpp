@@ -12,9 +12,9 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassCombine(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                               const Vector2i& viewport, const VulkanTexture& dst, const VulkanTexture& color,
-                               const VulkanTexture& blured);
+    explicit RenderPassCombine(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                               AssetsManager& assetsManager, const Vector2i& viewport, const VulkanTexture& dst,
+                               const VulkanTexture& color, const VulkanTexture& blured);
     virtual ~RenderPassCombine() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

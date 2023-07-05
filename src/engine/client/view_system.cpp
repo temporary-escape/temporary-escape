@@ -8,358 +8,304 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
-static const Vector2 systemBodySize{32.0f, 32.0f};
+static const Vector2 systemBodyIconSize{48.0f, 48.0f};
+
+ViewSystem::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"System Map"} {
+
+    modalLoading.setEnabled(false);
+}
 
 ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                       Client& client, FontFamily& font) :
-    parent{parent}, config{config}, assetsManager{assetsManager}, client{client}, font{font}, scene{} {
+                       Client& client, Gui& gui, FontFamily& font) :
+    parent{parent},
+    config{config},
+    renderer{renderer},
+    assetsManager{assetsManager},
+    client{client},
+    gui{gui},
+    font{font},
+    scene{} {
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
     images.iconSelect = assetsManager.getImages().find("icon_target");
 
+    textures.star = assetsManager.getTextures().find("space_sun_flare");
+    textures.starLow = assetsManager.getTextures().find("star_spectrum_low");
+    textures.starHigh = assetsManager.getTextures().find("star_spectrum_high");
+}
+
+void ViewSystem::update(const float deltaTime) {
+    gui.modalLoading.setProgress(loadingValue);
+
+    if (futureLoad.valid() && futureLoad.ready()) {
+        try {
+            futureLoad.get();
+            finalize();
+            loading = false;
+            gui.modalLoading.setEnabled(false);
+        } catch (...) {
+            EXCEPTION_NESTED("Failed to construct galaxy scene");
+        }
+    }
+
+    if (loading) {
+        return;
+    }
+
+    scene->update(deltaTime);
+}
+
+void ViewSystem::eventMouseMoved(const Vector2i& pos) {
+    if (!loading) {
+        scene->eventMouseMoved(pos);
+    }
+}
+
+void ViewSystem::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    if (!loading) {
+        scene->eventMousePressed(pos, button);
+    }
+}
+
+void ViewSystem::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+    if (!loading) {
+        scene->eventMouseReleased(pos, button);
+    }
+}
+
+void ViewSystem::eventMouseScroll(const int xscroll, const int yscroll) {
+    if (!loading) {
+        scene->eventMouseScroll(xscroll, yscroll);
+    }
+}
+
+void ViewSystem::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    if (!loading) {
+        scene->eventKeyPressed(key, modifiers);
+    }
+}
+
+void ViewSystem::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    if (!loading) {
+        scene->eventKeyReleased(key, modifiers);
+    }
+}
+
+void ViewSystem::eventCharTyped(const uint32_t code) {
+    if (!loading) {
+        scene->eventCharTyped(code);
+    }
+}
+
+Scene* ViewSystem::getScene() {
+    if (loading) {
+        return nullptr;
+    }
+    return scene.get();
+}
+
+void ViewSystem::load() {
+    scene = std::make_unique<Scene>();
+
+    { // Figure out where we are
+        logger.info("Fetching player location");
+        MessagePlayerLocationRequest req{};
+
+        auto future = client.send(req, useFuture<MessagePlayerLocationResponse>());
+        auto res = future.get(std::chrono::seconds(1));
+
+        if (!res.location) {
+            EXCEPTION("Player has no location");
+        }
+
+        // We have user interface supplied galaxy ID and system ID that we need to view.
+        // Check if this location is the player's current location
+        if (!location.galaxyId.empty()) {
+            location.isCurrent =
+                location.galaxyId == res.location->galaxyId && location.systemId == res.location->systemId;
+            if (location.isCurrent) {
+                location.sectorId = res.location->sectorId;
+            } else {
+                location.sectorId.clear();
+            }
+        }
+        // We have no interface supplied galaxy ID or system ID.
+        // We should display the current player's location.
+        else {
+            location.galaxyId = res.location->galaxyId;
+            location.systemId = res.location->systemId;
+            location.sectorId = res.location->sectorId;
+        }
+    }
+
+    loadingValue = 0.2f;
+    if (stopToken.shouldStop()) {
+        return;
+    }
+
+    { // Get the galaxy
+        logger.info("Fetching galaxy data");
+        MessageFetchGalaxyRequest req{};
+        req.galaxyId = location.galaxyId;
+
+        auto future = client.send(req, useFuture<MessageFetchGalaxyResponse>());
+        auto res = future.get(std::chrono::seconds(1));
+
+        galaxy.name = res.name;
+    }
+
+    loadingValue = 0.2f;
+    if (stopToken.shouldStop()) {
+        return;
+    }
+
+    { // Get the planets
+        logger.info("Fetching planets data");
+        system.planets.clear();
+
+        MessageFetchPlanetsRequest req{};
+        req.galaxyId = location.galaxyId;
+        req.systemId = location.systemId;
+
+        while (!stopToken.shouldStop()) {
+            auto future = client.send(req, useFuture<MessageFetchPlanetsResponse>());
+            auto res = future.get(std::chrono::seconds(1));
+
+            logger.info("Got planets page with {} items", res.items.size());
+            for (auto& planet : res.items) {
+                system.planets.insert(std::make_pair(planet.id, std::move(planet)));
+            }
+
+            if (res.page.hasNext && !req.token.empty()) {
+                req.token = res.page.token;
+            } else {
+                break;
+            }
+        }
+    }
+
+    loadingValue = 0.4f;
+    if (stopToken.shouldStop()) {
+        return;
+    }
+
+    { // Get the planets
+        logger.info("Fetching sectors data");
+        system.sectors.clear();
+
+        MessageFetchSectorsRequest req{};
+        req.galaxyId = location.galaxyId;
+        req.systemId = location.systemId;
+
+        while (!stopToken.shouldStop()) {
+            auto future = client.send(req, useFuture<MessageFetchSectorsResponse>());
+            auto res = future.get(std::chrono::seconds(1));
+
+            logger.info("Got sectors page with {} items", res.items.size());
+            for (auto& sector : res.items) {
+                system.sectors.insert(std::make_pair(sector.id, std::move(sector)));
+            }
+
+            if (res.page.hasNext && !req.token.empty()) {
+                req.token = res.page.token;
+            } else {
+                break;
+            }
+        }
+    }
+
+    loadingValue = 0.8f;
+    if (stopToken.shouldStop()) {
+        return;
+    }
+
+    { // Setup Entities
+        for (const auto& [_, planet] : system.planets) {
+            auto entity = scene->createEntity();
+            auto& transform = entity.addComponent<ComponentTransform>();
+            transform.move(Vector3{planet.pos.x, 0.0f, planet.pos.y});
+            transform.scale(Vector3{planet.radius * 2.0f});
+            auto& componentPlanet = entity.addComponent<ComponentPlanet>(planet.type, 1);
+            componentPlanet.setBackground(false);
+            componentPlanet.setHighRes(false);
+            entity.addComponent<ComponentIcon>(images.systemPlanet, systemBodyIconSize, Color4{1.0f});
+        }
+    }
+}
+
+void ViewSystem::finalize() {
     { // To keep the renderer away from complaining
-        auto sun = scene.createEntity();
-        sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
-        sun->addComponent<ComponentTransform>().translate(Vector3{0.0f, 0.0f, 1.0f});
+        auto entity = scene->createEntity();
+        entity.addComponent<ComponentPointLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
+        entity.addComponent<ComponentTransform>();
     }
 
     { // Skybox
-        auto entity = scene.createEntity();
-        auto& skybox = entity->addComponent<ComponentSkybox>(0);
+        auto entity = scene->createEntity();
+        auto& skybox = entity.addComponent<ComponentSkybox>(0);
         auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
         skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
     }
 
+    { // Sun
+        auto entity = scene->createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        transform.translate(Vector3{0.0f, -1.0f, 0.0f});
+        auto& flare = entity.addComponent<ComponentStarFlare>(textures.star, textures.starLow, textures.starHigh);
+        flare.setSize(Vector2{0.75f, 0.75f});
+        flare.setBackground(false);
+    }
+
     { // Our primary camera
-        auto cameraEntity = scene.createEntity();
-        auto& cameraTransform = cameraEntity->addComponent<ComponentTransform>();
-        camera = &cameraEntity->addComponent<ComponentCamera>(cameraTransform);
-        cameraEntity->addComponent<ComponentUserInput>(*camera);
-        camera->setOrthographic(25.0f);
-        camera->lookAt({0.0f, 1000.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
-        camera->setZoomRange(3.0f, 250.0f);
-        scene.setPrimaryCamera(cameraEntity);
+        auto entity = scene->createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& camera = entity.addComponent<ComponentCamera>(transform);
+        camera.setOrthographic(25.0f);
+        camera.lookAt({0.0f, 10.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+        camera.setZoomRange(5.0f, 250.0f);
+        scene->setPrimaryCamera(entity);
+
+        entities.camera = entity;
     }
 }
 
-void ViewSystem::update(const float deltaTime) {
-    scene.update(deltaTime);
+void ViewSystem::clearEntities() {
+    entities.camera.reset();
+    entities.bodies.clear();
+    entities.orbits.clear();
+    entities.icons.reset();
+    entities.cursor.reset();
+    entities.positions.reset();
+    entities.names.reset();
 }
 
-void ViewSystem::eventMouseMoved(const Vector2i& pos) {
-    scene.eventMouseMoved(pos);
+void ViewSystem::reset() {
+    location.galaxyId.clear();
+    location.systemId.clear();
 }
 
-void ViewSystem::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    scene.eventMousePressed(pos, button);
-}
-
-void ViewSystem::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    scene.eventMouseReleased(pos, button);
-
-    /*if (button == MouseButton::Right && input.hover && !gui.contextMenu.isEnabled() && gui.oldMousePos == pos) {
-        gui.contextMenu.setPos(camera->worldToScreen({input.hover->pos.x, 0.0f, input.hover->pos.y}, true));
-        gui.contextMenu.setEnabled(true);
-        gui.contextMenu.setItems({
-            {"Travel to", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"View", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"Info", [this]() { gui.contextMenu.setEnabled(false); }},
-            {"Add notes", [this]() { gui.contextMenu.setEnabled(false); }},
-        });
-    }*/
-}
-
-void ViewSystem::eventMouseScroll(const int xscroll, const int yscroll) {
-    scene.eventMouseScroll(xscroll, yscroll);
-}
-
-void ViewSystem::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    scene.eventKeyPressed(key, modifiers);
-}
-
-void ViewSystem::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    scene.eventKeyReleased(key, modifiers);
-}
-
-void ViewSystem::eventCharTyped(const uint32_t code) {
-    scene.eventCharTyped(code);
-}
-
-Scene& ViewSystem::getScene() {
-    return scene;
-}
-
-/*void ViewSystem::clear() {
-    loading = true;
-    loadingValue = 0.1f;
-    input.hover = nullptr;
-    input.selected = nullptr;
-
-    // Reset entities
-    clearEntities();
-
-    // Cancel previous load sequence
-    stopToken.stop();
-
-    system.bodies.clear();
-    system.planets.clear();
-    system.sectors.clear();
-}*/
-
-void ViewSystem::load() {
-    // clear();
-
-    stopToken = StopToken{};
-    // fetchCurrentLocation(stopToken);
-}
-
-void ViewSystem::load(const std::string& galaxyId, const std::string& systemId) {
-    // clear();
-
+void ViewSystem::reset(const std::string& galaxyId, const std::string& systemId) {
     location.galaxyId = galaxyId;
     location.systemId = systemId;
-
-    // stopToken = StopToken{};
-    // fetchSectors(stopToken, "");
 }
 
-/*void ViewSystem::fetchCurrentLocation(const StopToken& stop) {
-    MessagePlayerLocationRequest req{};
-
-    client.send(req, [this, stop](MessagePlayerLocationResponse res) {
-        if (stop.shouldStop()) {
-            return;
-        }
-
-        logger.debug("Received player location info");
-
-        location.galaxyId = res.galaxyId;
-        location.systemId = res.systemId;
-        location.sectorId = res.sectorId;
-
-        loadingValue = 0.2f;
-
-        fetchSectors(stop, "");
-    });
-}*/
-
-/*void ViewSystem::fetchSectors(const StopToken& stop, const std::string& token) {
-    MessageFetchSectorsRequest req{};
-    req.token = token;
-    req.galaxyId = location.galaxyId;
-    req.systemId = location.systemId;
-
-    client.send(req, [this, stop](MessageFetchSectorsResponse res) {
-        if (stop.shouldStop()) {
-            return;
-        }
-
-        for (const auto& sector : res.sectors) {
-            system.sectors[sector.id] = sector;
-            system.bodies.emplace_back(&system.sectors[sector.id]);
-        }
-
-        if (res.hasNext) {
-            fetchPlanetaryBodiesPage(stop, res.token);
-        } else {
-            logger.info("Received system with {} sector", system.sectors.size());
-            loadingValue = 0.7f;
-            fetchPlanetaryBodiesPage(stop, "");
-        }
-    });
-}*/
-
-/*void ViewSystem::fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token) {
-    MessageFetchPlanetsRequest req{};
-    req.token = token;
-    req.galaxyId = location.galaxyId;
-    req.systemId = location.systemId;
-
-    client.send(req, [this, stop](MessageFetchPlanetsResponse res) {
-        if (stop.shouldStop()) {
-            return;
-        }
-
-        for (const auto& body : res.bodies) {
-            system.planets[body.id] = body;
-            system.bodies.emplace_back(&system.planets[body.id]);
-        }
-
-        if (res.hasNext) {
-            fetchPlanetaryBodiesPage(stop, res.token);
-        } else {
-            logger.info("Received system with {} planetary bodies", system.bodies.size());
-            loadingValue = 0.7f;
-            updateSystem();
-        }
-    });
-}*/
-
-/*void ViewSystem::updateSystem() {
-    logger.info("Recreating system with objects");
-    loading = false;
-    loadingValue = 1.0f;
-
-    clearEntities();
-    createEntityCursor();
-    createEntityPositions();
-    createEntitiesBodies();
-}*/
-
-/*void ViewSystem::clearEntities() {
-    for (auto& entity : entities.bodies) {
-        scene.removeEntity(entity);
-    }
-    entities.bodies.clear();
-
-    for (auto& entity : entities.orbits) {
-        scene.removeEntity(entity);
-    }
-    entities.orbits.clear();
-
-    scene.removeEntity(entities.names);
-    entities.names.reset();
-
-    scene.removeEntity(entities.positions);
-    entities.positions.reset();
-
-    scene.removeEntity(entities.icons);
-    entities.icons.reset();
-
-    scene.removeEntity(entities.cursor);
-    entities.cursor.reset();
-}*/
-
-/*void ViewSystem::createEntityPositions() {
-    entities.positions = scene.createEntity();
-    entities.positions->addComponent<ComponentTransform>();
-    auto& clickable = entities.positions->addComponent<ComponentClickablePoints>();
-    entities.positions->addComponent<ComponentUserInput>(clickable);
-
-    clickable.setOnHoverCallback([this](const size_t i) {
-        auto& body = system.bodies[i];
-
-        std::visit(overloaded{
-                       [&](PlanetData* planet) {
-                           const auto pos = Vector3{planet->pos.x, 0.1f, planet->pos.y};
-                           entities.cursor->getComponent<ComponentTransform>().move(pos);
-                           auto& text = entities.cursor->getComponent<ComponentText>();
-                           text.setText(planet->name);
-                       },
-                       [&](SectorData* sector) {
-                           const auto pos = Vector3{sector->pos.x, 0.1f, sector->pos.y};
-                           entities.cursor->getComponent<ComponentTransform>().move(pos);
-                           auto& text = entities.cursor->getComponent<ComponentText>();
-                           text.setText(sector->name);
-                       },
-                   },
-                   body);
-
-        entities.cursor->setDisabled(false);
-    });
-
-    clickable.setOnClickCallback([this](const size_t i, const bool pressed, const MouseButton button) {
-        if (pressed || scene.getPrimaryCamera()->isPanning() || button != MouseButton::Right) {
-            return;
-        }
-
-        //const auto& system = galaxy.systemsOrdered[i];
-        //const auto systemPos = Vector3{system->pos.x, 0.0f, system->pos.y};
-        //const auto viewPos = scene.getPrimaryCamera()->worldToScreen(systemPos, true);
-
-        //gui.contextMenu.setEnabled(true);
-        //gui.contextMenu.setPos(viewPos);
-        //gui.contextMenu.setItems({
-        //    {"View", [this]() {}},
-        //    {"Info", [this]() {}},
-        //    {"Note", [this]() {}},
-        //    {"Set Destination", [this]() {}},
-        //});
-    });
-
-    clickable.setOnBlurCallback([this]() {
-        entities.cursor->getComponent<ComponentTransform>().move({0.0f, 0.1f, 0.0f});
-        entities.cursor->setDisabled(true);
-    });
-}*/
-
-/*void ViewSystem::createEntityCursor() {
-    entities.cursor = scene.createEntity();
-    entities.cursor->setDisabled(true);
-    entities.cursor->addComponent<ComponentTransform>().move(Vector3{0.0f, 0.1f, 0.0f});
-    entities.cursor->addComponent<ComponentIcon>(images.iconSelect, systemBodySelectable, Theme::primary);
-    auto& cursorText = entities.cursor->addComponent<ComponentText>("", Theme::primary, config.guiFontSize);
-    cursorText.setCentered(true);
-    cursorText.setOffset(Vector2{0, -(systemBodySelectable.y / 2.0f)});
-}*/
-
-/*void ViewSystem::createEntitiesBodies() {
-    static const Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
-
-    auto& clickable = entities.positions->getComponent<ComponentClickablePoints>();
-
-    entities.icons = scene.createEntity();
-    entities.icons->addComponent<ComponentTransform>().move(Vector3{0.0f, 1.0f, 0.0f});
-    auto& icons = entities.icons->addComponent<ComponentIconPointCloud>();
-
-    entities.names = scene.createEntity();
-    entities.names->addComponent<ComponentTransform>().move(Vector3{0.0f, 2.0f, 0.0f});
-    auto& names =
-        entities.names->addComponent<ComponentWorldText>(font.regular, Theme::text * alpha(0.5f), config.guiFontSize);
-    names.setOffset(Vector2{0.0f, -systemBodySize.y});
-
-    for (const auto& body : system.bodies) {
-        std::visit(
-            overloaded{
-                [&](PlanetData* planet) {
-                    auto entity = scene.createEntity();
-                    entities.bodies.push_back(entity);
-
-                    const auto pos = Vector3{planet->pos.x, 0.0f, planet->pos.y};
-                    entity->addComponent<ComponentTransform>().move(pos);
-                    if (planet->parent) {
-                        icons.add(pos, systemBodySize, color, images.systemMoon);
-                    } else {
-                        icons.add(pos, systemBodySize, color, images.systemPlanet);
-                        entity->getComponent<ComponentTransform>().scale({2.0f, 2.0f, 2.0f});
-                    }
-
-                    // entity->addComponent<ComponentPlanet>(planet->type, planet->seed);
-
-                    clickable.add(pos);
-                    // names.add(pos, planet->name);
-
-                    auto orbit = scene.createEntity();
-                    entities.orbits.push_back(orbit);
-                    orbit->addComponent<ComponentTransform>();
-                    // orbit->addComponent<Component2DShape>(Component2DShape::Type::Circle, Theme::text * alpha(0.1f));
-
-                    if (planet->parent) {
-                        if (const auto it = system.planets.find(planet->parent.value()); it != system.planets.end()) {
-                            orbit->getComponent<ComponentTransform>().move({it->second.pos.x, 0.0f, it->second.pos.y});
-
-                            const auto length = glm::length(glm::distance(it->second.pos, planet->pos));
-                            orbit->getComponent<ComponentTransform>().scale(Vector3{length});
-                        }
-                    } else {
-                        orbit->getComponent<ComponentTransform>().scale(Vector3{glm::length(pos)});
-                    }
-                },
-                [&](SectorData* sector) {
-                    const auto pos = Vector3{sector->pos.x, 0.0f, sector->pos.y};
-                    icons.add(pos, systemBodySize, color, images.systemMoon);
-
-                    clickable.add(pos);
-                    names.add(pos, sector->name);
-                },
-            },
-            body);
-    }
-}*/
-
 void ViewSystem::onEnter() {
+    clearEntities();
+    scene.reset();
+
+    loading = true;
+    loadingValue = 0.0f;
+    gui.modalLoading.setEnabled(true);
+
+    stopToken.stop();
+    stopToken = StopToken{};
+
+    futureLoad = std::async([this]() { return load(); });
 }
 
 void ViewSystem::onExit() {
+    // Stop loading if we have exited
+    stopToken.stop();
+    gui.modalLoading.setEnabled(false);
 }

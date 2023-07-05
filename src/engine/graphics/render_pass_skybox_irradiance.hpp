@@ -12,7 +12,8 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport);
+    explicit RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderResources& resources,
+                                        AssetsManager& assetsManager, const Vector2i& viewport);
     virtual ~RenderPassSkyboxIrradiance() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, const VulkanTexture& skyboxColor,

@@ -6,7 +6,7 @@
 
 using namespace Engine::Network;
 
-uint64_t Detail::getMessageHash(const std::string& name) {
+uint64_t Detail::getMessageHash(const std::string_view& name) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);

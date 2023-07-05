@@ -6,8 +6,9 @@
 namespace Engine {
 class ENGINE_API RenderSubpassCombine : public RenderSubpass {
 public:
-    explicit RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                  const VulkanTexture& color, const VulkanTexture& blured);
+    explicit RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                                  AssetsManager& assetsManager, const VulkanTexture& color,
+                                  const VulkanTexture& blured);
     virtual ~RenderSubpassCombine() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -15,9 +16,9 @@ public:
 private:
     const Config& config;
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const VulkanTexture& color;
     const VulkanTexture& blured;
     RenderPipeline pipelineCombine;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

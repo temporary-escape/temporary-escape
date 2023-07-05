@@ -1,4 +1,5 @@
 // clang-format off
+#include <cstdio>
 #define VMA_IMPLEMENTATION
 #ifdef __APPLE__
 #define VMA_STATS_STRING_ENABLED 0

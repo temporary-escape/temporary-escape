@@ -6,9 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassBloomExtract::RenderSubpassBloomExtract(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                                     const VulkanTexture& source) :
+RenderSubpassBloomExtract::RenderSubpassBloomExtract(VulkanRenderer& vulkan, RenderResources& resources,
+                                                     AssetsManager& assetsManager, const VulkanTexture& source) :
     vulkan{vulkan},
+    resources{resources},
     source{source},
     pipelineBloomExtract{
         vulkan,
@@ -37,8 +38,6 @@ RenderSubpassBloomExtract::RenderSubpassBloomExtract(VulkanRenderer& vulkan, Ass
     });
 
     addPipeline(pipelineBloomExtract);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassBloomExtract::render(VulkanCommandBuffer& vkb) {
@@ -54,5 +53,5 @@ void RenderSubpassBloomExtract::render(VulkanCommandBuffer& vkb) {
     const auto threshold = 0.3f;
     pipelineBloomExtract.pushConstants(vkb, PushConstant{"threshold", threshold});
 
-    pipelineBloomExtract.renderMesh(vkb, fullScreenQuad);
+    pipelineBloomExtract.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

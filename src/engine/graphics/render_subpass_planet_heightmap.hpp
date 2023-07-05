@@ -8,15 +8,15 @@ class ENGINE_API RenderSubpassPlanetHeightmap : public RenderSubpass {
 public:
     using Rng = std::mt19937_64;
 
-    explicit RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, RenderResources& resources,
+                                          AssetsManager& assetsManager);
     virtual ~RenderSubpassPlanetHeightmap() = default;
 
     void render(VulkanCommandBuffer& vkb, Rng& rng, int index, float resolution);
 
 private:
     VulkanRenderer& vulkan;
-
+    RenderResources& resources;
     RenderPipeline pipelineHeightmap;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

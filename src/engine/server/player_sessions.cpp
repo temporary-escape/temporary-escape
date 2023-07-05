@@ -47,29 +47,6 @@ PlayerData PlayerSessions::login(const uint64_t secret, const std::string& name)
     return result;
 }
 
-PlayerLocationData PlayerSessions::findStartingLocation(const std::string& playerId) {
-    auto result = db.update<PlayerLocationData>(playerId, [&](std::optional<PlayerLocationData> location) {
-        if (!location) {
-            logger.info("Choosing starting position for player: '{}'", playerId);
-
-            const auto choices = db.seekAll<SectorData>("", 1);
-            if (choices.empty()) {
-                EXCEPTION("No choices for starting sector");
-            }
-            const auto& choice = choices.back();
-
-            location = PlayerLocationData{};
-            location->galaxyId = choice.galaxyId;
-            location->systemId = choice.systemId;
-            location->sectorId = choice.id;
-        }
-
-        return location.value();
-    });
-
-    return result;
-}
-
 void PlayerSessions::createSession(const PeerPtr& peer, const std::string& playerId) {
     logger.info("Creating session peer id: {} player: {}", reinterpret_cast<uint64_t>(peer.get()), playerId);
     std::unique_lock<std::shared_mutex> lock{sessions.mutex};

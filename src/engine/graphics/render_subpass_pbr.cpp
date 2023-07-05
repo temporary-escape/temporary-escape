@@ -8,9 +8,11 @@
 
 using namespace Engine;
 
-RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& opaque,
-                                   const RenderPassSsao& ssao, const VulkanTexture& brdf) :
+RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                   const RenderPassOpaque& opaque, const RenderPassSsao& ssao,
+                                   const VulkanTexture& brdf) :
     vulkan{vulkan},
+    resources{resources},
     opaque{opaque},
     ssao{ssao},
     brdf{brdf},
@@ -42,8 +44,6 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, AssetsManager& assets
     });
 
     addPipeline(pipelinePbr);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -81,21 +81,34 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelinePbr.bindDescriptors(vkb, uniforms, textures, {});
 
-    pipelinePbr.renderMesh(vkb, fullScreenQuad);
+    pipelinePbr.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }
 
 void RenderSubpassPbr::updateDirectionalLights(Scene& scene) {
     DirectionalLights uniform{};
 
-    auto system = scene.getView<ComponentTransform, ComponentDirectionalLight>();
-    for (auto&& [entity, transform, light] : system.each()) {
+    auto systemDirLights = scene.getView<ComponentTransform, ComponentDirectionalLight>();
+    for (auto&& [entity, transform, light] : systemDirLights.each()) {
+        if (uniform.count + 1 >= sizeof(DirectionalLights::colors) / sizeof(Vector4)) {
+            break;
+        }
+
         uniform.colors[uniform.count] = light.getColor();
         uniform.directions[uniform.count] = Vector4{transform.getPosition(), 0.0f};
 
         uniform.count++;
-        if (uniform.count >= sizeof(DirectionalLights::colors) / sizeof(Vector4)) {
+    }
+
+    auto systemPointLights = scene.getView<ComponentTransform, ComponentPointLight>();
+    for (auto&& [entity, transform, light] : systemPointLights.each()) {
+        if (uniform.count + 1 >= sizeof(DirectionalLights::colors) / sizeof(Vector4)) {
             break;
         }
+
+        uniform.colors[uniform.count] = light.getColor();
+        uniform.directions[uniform.count] = Vector4{transform.getPosition(), 1.0f};
+
+        uniform.count++;
     }
 
     if (!directionalLightsUbo) {

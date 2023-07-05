@@ -5,6 +5,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
+static const int margin = 0;
+
 ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
     vulkan{vulkan}, packer{2048, Vector2i{config.graphics.imageAtlasSize}} {
 
@@ -59,24 +61,24 @@ ImageAtlas::Layer::Layer(const Config& config, VulkanRenderer& vulkan) :
 }
 
 std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const void* pixels) {
-    const auto res = packer.add(size + Vector2i{8, 8});
+    const auto res = packer.add(size + Vector2i{margin * 2, margin * 2});
     if (!res) {
         return std::nullopt;
     }
 
-    const auto pos = *res + Vector2i{4, 4};
+    const auto pos = *res + Vector2i{margin, margin};
 
     vulkan.copyDataToImage(texture, 0, pos, 0, size, pixels);
     return pos;
 }
 
 std::optional<Vector2i> ImageAtlas::Layer::add(const Vector2i& size, const VulkanTexture& source) {
-    const auto res = packer.add(size + Vector2i{8, 8});
+    const auto res = packer.add(size + Vector2i{margin * 2, margin * 2});
     if (!res) {
         return std::nullopt;
     }
 
-    const auto pos = *res + Vector2i{4, 4};
+    const auto pos = *res + Vector2i{margin, margin};
 
     vulkan.copyImageToImage(texture, 0, pos, 0, size, source);
 

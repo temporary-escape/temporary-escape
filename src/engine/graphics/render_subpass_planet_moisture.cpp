@@ -6,8 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassPlanetMoisture::RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassPlanetMoisture::RenderSubpassPlanetMoisture(VulkanRenderer& vulkan, RenderResources& resources,
+                                                         AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineMoisture{
         vulkan,
         {
@@ -35,8 +37,6 @@ RenderSubpassPlanetMoisture::RenderSubpassPlanetMoisture(VulkanRenderer& vulkan,
     });
 
     addPipeline(pipelineMoisture);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassPlanetMoisture::render(VulkanCommandBuffer& vkb, Rng& rng, const int index, const float resolution) {
@@ -64,5 +64,5 @@ void RenderSubpassPlanetMoisture::render(VulkanCommandBuffer& vkb, Rng& rng, con
                                    PushConstant{"mixScale", mixScale},
                                    PushConstant{"doesRidged", doesRidged});
 
-    pipelineMoisture.renderMesh(vkb, fullScreenQuad);
+    pipelineMoisture.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

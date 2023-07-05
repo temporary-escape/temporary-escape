@@ -8,82 +8,99 @@
 namespace Engine {
 using MetaDataValue = std::variant<bool, std::string, int64_t, double>;
 
-SCHEMA(MetaData) {
+struct MetaData {
     MetaDataValue value;
 
-    SCHEMA_DEFINE(value);
-    SCHEMA_INDEXES_NONE();
-    SCHEMA_NAME("MetaData");
+    MSGPACK_DEFINE_MAP(value);
 };
 
-SCHEMA(PlayerData) {
+SCHEMA_DEFINE(MetaData);
+
+struct PlayerData {
     std::string id;
     uint64_t secret;
     std::string name;
     bool admin;
 
-    SCHEMA_DEFINE(id, secret, name, admin);
-    SCHEMA_INDEXES(secret);
-    SCHEMA_NAME("PlayerData");
+    MSGPACK_DEFINE_MAP(id, secret, name, admin);
 };
 
-SCHEMA(PlayerLocationData) {
+SCHEMA_DEFINE(PlayerData);
+SCHEMA_INDEXES(PlayerData, secret);
+
+struct PlayerLocationData {
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
 
-    SCHEMA_DEFINE(galaxyId, systemId, sectorId);
-    SCHEMA_INDEXES_NONE();
-    SCHEMA_NAME("PlayerLocationData");
+    MSGPACK_DEFINE_MAP(galaxyId, systemId, sectorId);
 };
 
-SCHEMA(FactionData) {
+SCHEMA_DEFINE(PlayerLocationData);
+
+struct FactionData {
     std::string id;
     std::string name;
     float color{0.0f};
     std::string homeGalaxyId;
     std::string homeSystemId;
 
-    SCHEMA_DEFINE(id, name, color, homeGalaxyId, homeSystemId);
-    SCHEMA_INDEXES(name);
-    SCHEMA_NAME("FactionData");
+    MSGPACK_DEFINE_MAP(id, name, color, homeGalaxyId, homeSystemId);
 };
 
-SCHEMA(GalaxyData) {
+SCHEMA_DEFINE(FactionData);
+SCHEMA_INDEXES(FactionData, name);
+
+struct GalaxyData {
     std::string id;
     std::string name;
     Vector2 pos;
     uint64_t seed = 0;
 
-    SCHEMA_DEFINE(id, name, pos, seed);
-    SCHEMA_INDEXES(name);
-    SCHEMA_NAME("GalaxyData");
+    MSGPACK_DEFINE_MAP(id, name, pos, seed);
 };
 
-SCHEMA(RegionData) {
+SCHEMA_DEFINE(GalaxyData);
+SCHEMA_INDEXES(GalaxyData, name);
+
+struct RegionData {
     std::string id;
     std::string name;
     Vector2 pos;
 
-    SCHEMA_DEFINE(id, name, pos);
-    SCHEMA_INDEXES(name);
-    SCHEMA_NAME("RegionData");
+    MSGPACK_DEFINE_MAP(id, name, pos);
 };
 
-SCHEMA(SectorData) {
+SCHEMA_DEFINE(RegionData);
+SCHEMA_INDEXES(RegionData, name);
+
+struct SectorData {
     std::string id;
     std::string galaxyId;
     std::string systemId;
     std::string name;
     Vector2 pos{0.0f, 0.0f};
     uint64_t seed{0};
+    ImagePtr icon{nullptr};
+    std::string luaTemplate;
 
-    SCHEMA_DEFINE(id, galaxyId, systemId, name, pos, seed);
-    SCHEMA_INDEXES(name);
-    SCHEMA_NAME("SectorData");
+    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, pos, seed, icon, luaTemplate);
 };
 
-SCHEMA(SystemData) {
+SCHEMA_DEFINE(SectorData);
+SCHEMA_INDEXES(SectorData, name);
+
+struct StartingLocationData {
+    std::string galaxyId;
+    std::string systemId;
+    std::string sectorId;
+
+    MSGPACK_DEFINE_MAP(galaxyId, systemId, sectorId);
+};
+
+SCHEMA_DEFINE(StartingLocationData);
+
+struct SystemData {
     std::string id;
     std::string galaxyId;
     std::string regionId;
@@ -93,26 +110,27 @@ SCHEMA(SystemData) {
     uint64_t seed{0};
     std::vector<std::string> connections;
 
-    SCHEMA_DEFINE(id, galaxyId, regionId, name, factionId, pos, seed, connections);
-    SCHEMA_INDEXES(name);
-    SCHEMA_NAME("SystemData");
+    MSGPACK_DEFINE_MAP(id, galaxyId, regionId, name, factionId, pos, seed, connections);
 };
 
-SCHEMA(PlanetData) {
+SCHEMA_DEFINE(SystemData);
+SCHEMA_INDEXES(SystemData, name);
+
+struct PlanetData {
     std::string id;
     std::string galaxyId;
     std::string systemId;
     std::string name;
-    std::optional<std::string> parent;
+    std::optional<std::string> parentId;
     PlanetTypePtr type;
     Vector2 pos;
     uint64_t seed{0};
     float radius{0.5f};
 
-    SCHEMA_DEFINE(id, galaxyId, systemId, name, parent, type, pos, seed, radius);
-    SCHEMA_INDEXES_NONE();
-    SCHEMA_NAME("PlanetData");
+    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, parentId, type, pos, seed, radius);
 };
+
+SCHEMA_DEFINE(PlanetData);
 
 ENGINE_API void bindSchemas(Lua& lua);
 } // namespace Engine

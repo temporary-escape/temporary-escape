@@ -33,14 +33,14 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
-    Scene& getScene() override;
+    Scene* getScene() override;
 
 private:
     void createScene();
     void createGridLines();
     void createEntityShip();
     void createHelpers();
-    EntityPtr createHelperBox(const Color4& color, float width);
+    Entity createHelperBox(const Color4& color, float width);
     void addBlock();
 
     const Config& config;
@@ -52,8 +52,8 @@ private:
     std::optional<Grid::RayCastResult> raycastResult;
 
     Scene scene;
-    EntityPtr entityShip;
-    EntityPtr entityHelperAdd;
-    EntityPtr entityHelperRemove;
+    Entity entityShip;
+    Entity entityHelperAdd;
+    Entity entityHelperRemove;
 };
 } // namespace Engine

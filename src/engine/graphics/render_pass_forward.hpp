@@ -16,8 +16,9 @@ public:
 
     static const size_t totalAttachments = 2;
 
-    explicit RenderPassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                               const RenderPassOpaque& opaque, const RenderPassLighting& ssao);
+    explicit RenderPassForward(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const Vector2i& viewport, const RenderPassOpaque& opaque,
+                               const RenderPassLighting& ssao);
     virtual ~RenderPassForward() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

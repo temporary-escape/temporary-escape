@@ -4,9 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassSkyboxPrefilter::RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                                     const Vector2i& viewport) :
-    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxPrefilter{vulkan, assetsManager} {
+RenderPassSkyboxPrefilter::RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, RenderResources& resources,
+                                                     AssetsManager& assetsManager, const Vector2i& viewport) :
+    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxPrefilter{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

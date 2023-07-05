@@ -3,7 +3,7 @@
 #include "../assets/assets_manager.hpp"
 #include "../assets/voxel_shape_cache.hpp"
 #include "../config.hpp"
-#include "../database/rocks_db.hpp"
+#include "../database/database_rocksdb.hpp"
 #include "../font/font_family.hpp"
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
@@ -56,6 +56,9 @@ private:
     Stats stats;
     Skybox skybox;
     uint64_t skyboxSeed{0};
+
+    ViewGalaxy::Gui guiGalaxy;
+    ViewSystem::Gui guiSystem;
 
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;

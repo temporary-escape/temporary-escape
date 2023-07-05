@@ -8,7 +8,7 @@ template <typename T> class DatabaseWrapper;
 
 template <typename T> class DatabaseWrapper {
 public:
-    explicit DatabaseWrapper(DatabaseOperations& db) : db{db} {
+    explicit DatabaseWrapper(Database& db) : db{db} {
     }
 
     std::optional<T> find(const std::string& key) {
@@ -19,14 +19,6 @@ public:
         return db.get<T>(key);
     }
 
-    std::optional<T> findForUpdate(const std::string& key) {
-        auto ptr = dynamic_cast<DatabaseTransaction*>(&db);
-        if (!ptr) {
-            throw std::runtime_error("Database find_for_update() function can be called only in transaction");
-        }
-        return ptr->getForUpdate<T>(key);
-    }
-
     void put(const std::string& key, const T& value) {
         db.put<T>(key, value);
     }
@@ -35,11 +27,11 @@ public:
         return db.multiGet<T>(keys.value());
     }
 
-    bool remove(const std::string& key) {
-        return db.remove<T>(key);
+    void remove(const std::string& key) {
+        db.remove<T>(key);
     }
 
-    DatabaseIterator<T> seek(const std::string& prefix, const std::variant<std::nullptr_t, std::string>& lowerBound) {
+    Database::Iterator<T> seek(const std::string& prefix, const std::variant<std::nullptr_t, std::string>& lowerBound) {
         return db.seek<T>(prefix, lowerBound.index() == 1 ? std::get<std::string>(lowerBound) : "");
     }
 
@@ -52,28 +44,20 @@ public:
     }
 
     T update(const std::string& key, const std::function<T(std::optional<T>)>& callback) {
-        auto ptr = dynamic_cast<Database*>(&db);
-        if (!ptr) {
-            throw std::runtime_error("Database update() function can not be called in transaction");
-        }
-        return ptr->update(key, callback);
+        return db.update(key, callback);
     }
 
-    void transaction(const std::function<bool(DatabaseTransaction&)>& callback) {
-        auto ptr = dynamic_cast<Database*>(&db);
-        if (!ptr) {
-            throw std::runtime_error("Database transaction() function can not be called in transaction");
-        }
-        ptr->transaction(callback);
+    void transaction(const std::function<bool(Database&)>& callback) {
+        db.transaction(callback);
     }
 
 private:
-    DatabaseOperations& db;
+    Database& db;
 };
 
 template <> class DatabaseWrapper<MetaData> {
 public:
-    explicit DatabaseWrapper(DatabaseOperations& db) : db{db} {
+    explicit DatabaseWrapper(Database& db) : db{db} {
     }
 
     std::optional<MetaDataValue> find(const std::string& key) {
@@ -89,11 +73,7 @@ public:
     }
 
     std::optional<MetaDataValue> findForUpdate(const std::string& key) {
-        auto ptr = dynamic_cast<DatabaseTransaction*>(&db);
-        if (!ptr) {
-            throw std::runtime_error("Database find_for_update() function can be called only in transaction");
-        }
-        auto found = ptr->getForUpdate<MetaData>(key);
+        auto found = db.find<MetaData>(key);
         if (!found) {
             return {};
         }
@@ -116,8 +96,8 @@ public:
         return results;
     }
 
-    bool remove(const std::string& key) {
-        return db.remove<MetaData>(key);
+    void remove(const std::string& key) {
+        db.remove<MetaData>(key);
     }
 
     void removeByPrefix(const std::string& key) {
@@ -136,11 +116,7 @@ public:
 
     MetaDataValue update(const std::string& key,
                          const std::function<MetaDataValue(std::optional<MetaDataValue>)>& callback) {
-        auto ptr = dynamic_cast<Database*>(&db);
-        if (!ptr) {
-            throw std::runtime_error("Database update() function can not be called in transaction");
-        }
-        const auto res = ptr->update<MetaData>(key, [&](std::optional<MetaData> found) -> MetaData {
+        const auto res = db.update<MetaData>(key, [&](std::optional<MetaData> found) -> MetaData {
             auto res = callback(found.has_value() ? std::optional<MetaDataValue>{found->value} : std::nullopt);
             MetaData v{};
             v.value = res;
@@ -149,7 +125,7 @@ public:
         return res.value;
     }
 
-    void transaction(const std::function<bool(DatabaseTransaction&)>& callback) {
+    void transaction(const std::function<bool(Database&)>& callback) {
         auto ptr = dynamic_cast<Database*>(&db);
         if (!ptr) {
             throw std::runtime_error("Database transaction() function can not be called in transaction");
@@ -158,7 +134,7 @@ public:
     }
 
 private:
-    DatabaseOperations& db;
+    Database& db;
 };
 
 template <typename T, typename C> static DatabaseWrapper<T> getWrapper(C& db) {
@@ -172,27 +148,121 @@ template <typename T, typename C> static void bindRepository(sol::usertype<C>& k
 template <typename T> struct BindSchemaHelper {
     template <typename C>
     static void bind(Lua& lua, sol::usertype<C>& klass, const std::string& field, const std::string& name) {
-        using Iterator = DatabaseIterator<T>;
+        using Iterator = Database::Iterator<T>;
         using Repository = DatabaseWrapper<T>;
 
         auto& m = lua.root();
 
-        { // Iterator
+        /**
+         * @module engine
+         */
+
+        {
+            /**
+             * @class Iterator<T>
+             * An iterator that is used by the seek() function from the Repository class.
+             * This iterator can be used to iterate through set of values, one at a time, by some prefix.
+             * @see Repository<T>
+             */
             auto cls = m.new_usertype<Iterator>(name + "Iterator");
+            /**
+             * @function Iterator<T>:next
+             * Retrieves the next value
+             * @warning This function must be called first before trying to read the value or the key.
+             * @return bool True if there is some value to read or false if this is end of the seek
+             */
             cls["next"] = &Iterator::next;
+            /**
+             * @field Iterator<T>.value
+             * The current value that the iterator points to. You must first call
+             * next() before using this field, otherwise this raises an error.
+             * @readonly
+             * @type T
+             */
             cls["value"] = sol::readonly_property(&Iterator::value);
+            /**
+             * @field Iterator<T>.value
+             * The current key that the iterator points to. You must first call
+             * next() before using this field, otherwise this raises an error.
+             * @readonly
+             * @type string
+             */
             cls["key"] = sol::readonly_property(&Iterator::key);
         }
 
         { // Repository
+            /**
+             * @class Repository<T>
+             * Repository of some specific database type
+             * @code
+             * local engine = require("engine")
+             * local db = engine.get_database()
+             *
+             * local faction_terran = db.factions:find("faction_terran")
+             * if faction_terran == nil then
+             *     error("Faction was not found")
+             * else
+             *     print(string.format("Found faction: %s", faction_terran.name))
+             * end
+             * @endcode
+             */
             auto cls = m.new_usertype<Repository>(name + "Repository");
+            /**
+             * @function Repository<T>:find
+             * Finds the value given some key
+             * @param key string The key of the value
+             * @return T|nil The value or nil if not found
+             */
             cls["find"] = &Repository::find;
+            /**
+             * @function Repository<T>:get
+             * Similar to the find function but raises an error if the key is not found
+             * @param key string The key of the value
+             * @return T The value under that specific key
+             */
             cls["get"] = &Repository::get;
+            /**
+             * @function Repository<T>:put
+             * Puts or overwrites a value with some key
+             * @param key string The key of the value
+             * @param value T The value to store
+             */
             cls["put"] = &Repository::put;
+            /**
+             * @function Repository<T>:multi_get
+             * Returns values as a list using a list of keys
+             * @param keys <string>[] A list of keys to retrieve
+             * @return <T>[] A list (table) of results or an empty list
+             */
             cls["multi_get"] = &Repository::multiGet;
+            /**
+             * @function Repository<T>:remove
+             * Removes a key from the database
+             * @param key string The key to remove
+             * @return bool True if removed or false otherwise
+             */
             cls["remove"] = &Repository::remove;
+            /**
+             * @function Repository<T>:seek
+             * Seeks a value by some prefix and an optional lower bound
+             * @param prefix string The prefix to seek through
+             * @return Iterator<T> An instance of an iterator
+             * @see Iterator<T>
+             */
             cls["seek"] = &Repository::seek;
+            /**
+             * @function Repository<T>:remove_by_prefix
+             * Removes all values by some prefix from the database
+             * @param prefix string The prefix of keys to remove
+             */
             cls["remove_by_prefix"] = &Repository::removeByPrefix;
+            /**
+             * @function Repository<T>:seek_all
+             * Returns all values as a list by some prefix from the database
+             * @param prefix string The prefix of keys to retrieve
+             * @param max integer|nil Maximum number of items to get (set to nil to get all results)
+             * @return <T>[] A list (table) of results or an empty list
+             */
             cls["seek_all"] = &Repository::seekAll;
             cls["update"] = &Repository::update;
             cls["transaction"] = &Repository::transaction;
@@ -209,7 +279,7 @@ template <> struct BindSchemaHelper<MetaData> {
 
         auto& m = lua.root();
 
-        { // Repository
+        {
             auto cls = m.new_usertype<Repository>(name + "Repository");
             cls["find"] = &Repository::find;
             cls["get"] = &Repository::get;
@@ -228,11 +298,6 @@ template <> struct BindSchemaHelper<MetaData> {
 
 void Engine::bindSchemas(Lua& lua) {
     auto& m = lua.root();
-
-    /**
-     * @module engine
-     */
-
     {
         /**
          * @class GalaxyData
@@ -342,6 +407,8 @@ void Engine::bindSchemas(Lua& lua) {
         cls["system_id"] = &SectorData::systemId;
         cls["seed"] = &SectorData::seed;
         cls["pos"] = &SectorData::pos;
+        cls["icon"] = &SectorData::icon;
+        cls["template"] = &SectorData::luaTemplate;
     }
 
     {
@@ -361,11 +428,12 @@ void Engine::bindSchemas(Lua& lua) {
         cls["system_id"] = &PlanetData::systemId;
         cls["seed"] = &PlanetData::seed;
         cls["pos"] = &PlanetData::pos;
-        cls["parent"] = &PlanetData::parent;
+        cls["parent_id"] = &PlanetData::parentId;
         cls["type"] = &PlanetData::type;
+        cls["radius"] = &PlanetData::radius;
     }
 
-    {   
+    {
         /**
          * @class PlayerLocationData
          * Database type that specifies the location of the player within the universe
@@ -381,16 +449,16 @@ void Engine::bindSchemas(Lua& lua) {
         cls["sector_id"] = &PlayerLocationData::sectorId;
     }
 
-    { // Transaction
-        auto cls = m.new_usertype<DatabaseTransaction>("DatabaseTransaction");
-        BindSchemaHelper<GalaxyData>::bind(lua, cls, "galaxies", "GalaxyData");
-        BindSchemaHelper<RegionData>::bind(lua, cls, "regions", "RegionData");
-        BindSchemaHelper<FactionData>::bind(lua, cls, "factions", "FactionData");
-        BindSchemaHelper<SystemData>::bind(lua, cls, "systems", "SystemData");
-        BindSchemaHelper<SectorData>::bind(lua, cls, "sectors", "SectorData");
-        BindSchemaHelper<PlanetData>::bind(lua, cls, "planets", "PlanetData");
-        BindSchemaHelper<PlayerLocationData>::bind(lua, cls, "player_locations", "PlayerLocationData");
-        BindSchemaHelper<MetaData>::bind(lua, cls, "metadata", "MetaData");
+    {
+        /**
+         * @class StartingLocationData
+         * Database type that specifies the starting location for new players.
+         */
+        auto cls =
+            m.new_usertype<StartingLocationData>("StartingLocationData", sol::constructors<StartingLocationData>{});
+        cls["galaxy_id"] = &StartingLocationData::galaxyId;
+        cls["system_id"] = &StartingLocationData::systemId;
+        cls["sector_id"] = &StartingLocationData::sectorId;
     }
 
     {
@@ -399,13 +467,54 @@ void Engine::bindSchemas(Lua& lua) {
          * Database class that can be used to access all of the data structures.
          */
         auto cls = m.new_usertype<Database>("Database");
-        bindRepository<GalaxyData>(cls, "galaxies");
-        bindRepository<RegionData>(cls, "regions");
-        bindRepository<FactionData>(cls, "factions");
-        bindRepository<SystemData>(cls, "systems");
-        bindRepository<SectorData>(cls, "sectors");
-        bindRepository<PlanetData>(cls, "planets");
-        bindRepository<PlayerLocationData>(cls, "player_locations");
-        bindRepository<MetaData>(cls, "metadata");
+        /**
+         * @field Database.galaxies
+         * @type Repository<GalaxyData>
+         * @readonly
+         */
+        BindSchemaHelper<GalaxyData>::bind(lua, cls, "galaxies", "GalaxyData");
+        /**
+         * @field Database.regions
+         * @type Repository<RegionData>
+         * @readonly
+         */
+        BindSchemaHelper<RegionData>::bind(lua, cls, "regions", "RegionData");
+        /**
+         * @field Database.factions
+         * @type Repository<FactionData>
+         * @readonly
+         */
+        BindSchemaHelper<FactionData>::bind(lua, cls, "factions", "FactionData");
+        /**
+         * @field Database.systems
+         * @type Repository<SystemData>
+         * @readonly
+         */
+        BindSchemaHelper<SystemData>::bind(lua, cls, "systems", "SystemData");
+        /**
+         * @field Database.sectors
+         * @type Repository<SectorData>
+         * @readonly
+         */
+        BindSchemaHelper<SectorData>::bind(lua, cls, "sectors", "SectorData");
+        /**
+         * @field Database.planets
+         * @type Repository<PlanetData>
+         * @readonly
+         */
+        BindSchemaHelper<PlanetData>::bind(lua, cls, "planets", "PlanetData");
+        /**
+         * @field Database.player_locations
+         * @type Repository<PlayerLocationData>
+         * @readonly
+         */
+        BindSchemaHelper<PlayerLocationData>::bind(lua, cls, "player_locations", "PlayerLocationData");
+        /**
+         * @field Database.metadata
+         * @type Repository<MetaData>
+         * @readonly
+         */
+        BindSchemaHelper<MetaData>::bind(lua, cls, "metadata", "MetaData");
+        BindSchemaHelper<StartingLocationData>::bind(lua, cls, "starting_locations", "StartingLocationData");
     }
 }

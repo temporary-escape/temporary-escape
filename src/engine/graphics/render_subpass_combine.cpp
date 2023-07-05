@@ -6,10 +6,12 @@
 
 using namespace Engine;
 
-RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                           const VulkanTexture& color, const VulkanTexture& blured) :
+RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                                           AssetsManager& assetsManager, const VulkanTexture& color,
+                                           const VulkanTexture& blured) :
     config{config},
     vulkan{vulkan},
+    resources{resources},
     color{color},
     blured{blured},
     pipelineCombine{
@@ -39,8 +41,6 @@ RenderSubpassCombine::RenderSubpassCombine(const Config& config, VulkanRenderer&
     });
 
     addPipeline(pipelineCombine);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassCombine::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -67,5 +67,5 @@ void RenderSubpassCombine::render(VulkanCommandBuffer& vkb, Scene& scene) {
                                   PushConstant{"gamma", gamma},
                                   PushConstant{"contrast", contrast});
 
-    pipelineCombine.renderMesh(vkb, fullScreenQuad);
+    pipelineCombine.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

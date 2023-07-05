@@ -13,7 +13,8 @@ class ENGINE_API SkyboxGenerator {
 public:
     using Rng = std::mt19937_64;
 
-    explicit SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                             AssetsManager& assetsManager);
 
     void enqueue(uint64_t seed, std::function<void(SkyboxTextures)> callback);
     void update(Scene& scene);
@@ -40,7 +41,6 @@ private:
         bool postProcess{false};
         std::unique_ptr<Scene> scene;
         std::vector<ComponentCamera> cameras;
-        ComponentTransform cameraTransform{};
         std::function<void(SkyboxTextures)> callback;
     } work;
 

@@ -6,8 +6,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBlur : public RenderSubpass {
 public:
-    explicit RenderSubpassBlur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& color,
-                               bool vertical);
+    explicit RenderSubpassBlur(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const VulkanTexture& color, bool vertical);
     virtual ~RenderSubpassBlur() = default;
 
     void reset();
@@ -22,10 +22,10 @@ private:
     void createGaussianKernel(const size_t size, double sigma);
 
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const VulkanTexture& color;
     const bool vertical;
     RenderPipeline pipelineBlur;
-    Mesh fullScreenQuad;
     VulkanBuffer weightsUbo;
 };
 } // namespace Engine

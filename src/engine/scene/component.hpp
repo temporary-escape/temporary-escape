@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/matrix.hpp"
+#include "../network/message.hpp"
 #include "../utils/aligned.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
@@ -12,17 +13,41 @@
 #include <unordered_set>
 #include <variant>
 
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+    namespace adaptor {
+
+    template <> struct convert<entt::entity> {
+        msgpack::object const& operator()(msgpack::object const& o, entt::entity& v) const {
+            if (o.type != msgpack::type::POSITIVE_INTEGER) {
+                throw std::bad_cast();
+            }
+
+            v = static_cast<entt::entity>(o.as<uint32_t>());
+            return o;
+        }
+    };
+    template <> struct pack<entt::entity> {
+        template <typename Stream> packer<Stream>& operator()(msgpack::packer<Stream>& o, entt::entity const& v) const {
+            o.pack(static_cast<uint32_t>(v));
+            return o;
+        }
+    };
+    } // namespace adaptor
+}
+} // namespace msgpack
+
 #define COMPONENT_DEFAULTS(ClassName)                                                                                  \
     NON_COPYABLE(ClassName)                                                                                            \
     MOVEABLE(ClassName)                                                                                                \
     static constexpr auto in_place_delete = true;
 
 namespace Engine {
-class ENGINE_API Entity;
-
 class ENGINE_API Component {
 public:
     Component() = default;
+    explicit Component(entt::registry& reg, entt::entity handle) : reg{&reg}, handle{handle} {
+    }
     virtual ~Component() = default;
 
     [[nodiscard]] bool isDirty() const {
@@ -31,9 +56,22 @@ public:
 
     void setDirty(const bool value) {
         dirty = value;
+        if (value && reg) {
+            patch(*reg, handle);
+        }
     }
 
+    MSGPACK_DEFINE_ARRAY(handle);
+
+protected:
+    virtual void patch(entt::registry& reg, entt::entity handle) {
+        (void)reg;
+        (void)handle;
+    };
+
 private:
+    entt::registry* reg{nullptr};
+    entt::entity handle{0};
     bool dirty{false};
 };
 
@@ -41,6 +79,12 @@ class ENGINE_API TagDisabled : public Component {
 public:
     TagDisabled() = default;
     COMPONENT_DEFAULTS(TagDisabled);
+};
+
+class ENGINE_API TagStatic : public Component {
+public:
+    TagStatic() = default;
+    COMPONENT_DEFAULTS(TagStatic);
 };
 
 /*class ENGINE_API Component;

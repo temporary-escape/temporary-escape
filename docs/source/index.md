@@ -9,5 +9,7 @@ stations. Explore the universe of thousands of stars.
 :maxdepth: 3
 
 download
+wiki/index
 modding/index
+development/index
 ```

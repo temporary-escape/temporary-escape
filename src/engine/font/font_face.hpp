@@ -5,6 +5,18 @@
 #include <unordered_map>
 
 namespace Engine {
+enum class TextAlign {
+    Left = 0,
+    Center,
+    Right,
+    LeftTop,
+    CenterTop,
+    RightTop,
+    LeftBottom,
+    CenterBottom,
+    RightBottom,
+};
+
 class ENGINE_API FontFace {
 public:
     struct Glyph {
@@ -32,6 +44,7 @@ public:
     }
 
     Vector2 getBounds(const std::string_view& text, float height) const;
+    Vector2 getPenOffset(const std::string_view& text, float height, const TextAlign textAlign) const;
 
     [[nodiscard]] VulkanTexture& getTexture() {
         return texture;

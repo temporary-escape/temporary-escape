@@ -15,6 +15,10 @@ public:
         return primitives;
     }
 
+    float getRadius() const {
+        return bbRadius;
+    }
+
     static std::shared_ptr<Model> from(const std::string& name);
 
     static void bind(Lua& lua);

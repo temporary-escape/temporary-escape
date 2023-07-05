@@ -54,6 +54,10 @@ public:
         connected = false;
     }
 
+    [[nodiscard]] std::shared_ptr<Network::Peer> getStream() const {
+        return stream.lock();
+    }
+
     static void bind(Lua& lua);
 
 private:

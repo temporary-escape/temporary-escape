@@ -18,7 +18,7 @@ public:
         using Arg = T;
     };
 
-    using Handler = std::function<void(const PeerPtr&, uint64_t, const msgpack::object&)>;
+    using Handler = std::function<void(const PeerPtr&, uint64_t, ObjectHandlePtr)>;
     using HandlerMap = std::unordered_map<uint64_t, Handler>;
 
     explicit Dispatcher(ErrorHandler& errorHandler);
@@ -38,7 +38,8 @@ public:
     template <typename Fn> void addHandler(Fn fn) {
         using Req = typename Traits<decltype(&Fn::operator())>::Arg;
         using Res = typename Traits<decltype(&Fn::operator())>::Ret;
-        HandlerFactory<Res, Req>::create(handlers, std::forward<Fn>(fn));
+        const auto hash = Detail::MessageHelper<Req>::hash;
+        HandlerFactory<Res, Req>::create(handlers, hash, std::forward<Fn>(fn));
     }
 
     /**
@@ -56,8 +57,16 @@ public:
      * @param fn Pointer to the function.
      */
     template <typename C, typename R, typename T> void addHandler(C* instance, R (C::*fn)(const PeerPtr&, T)) {
-        HandlerFactory<R, T>::create(handlers,
-                                     [instance, fn](const PeerPtr& peer, T m) { (instance->*fn)(peer, std::move(m)); });
+        const auto hash = Detail::MessageHelper<T>::hash;
+        HandlerFactory<R, T>::create(
+            handlers, hash, [instance, fn](const PeerPtr& peer, T m) { (instance->*fn)(peer, std::move(m)); });
+    }
+
+    template <typename C, typename R, typename T>
+    void addHandler(C* instance, R (C::*fn)(const PeerPtr&, T), const std::string_view& name) {
+        const auto hash = Detail::getMessageHash(name);
+        HandlerFactory<R, T>::create(
+            handlers, hash, [instance, fn](const PeerPtr& peer, T m) { (instance->*fn)(peer, std::move(m)); });
     }
 
     /**
@@ -68,9 +77,9 @@ public:
      * @param peer Shared pointer to the peer.
      * @param id Unique message ID that is used to route the message to the correct handler.
      * @param reqId Request ID of this message, indicating that the sender is invoking a request.
-     * @param object The raw Msgpack object that needs to be converted into the correct handler message type.
+     * @param oh The raw Msgpack object handle that needs to be converted into the correct handler message type.
      */
-    virtual void dispatch(const PeerPtr& peer, uint64_t id, uint64_t reqId, const msgpack::object& object);
+    virtual void dispatch(const PeerPtr& peer, uint64_t id, uint64_t reqId, ObjectHandlePtr oh);
 
     /**
      * This function is executed every time there is some work to be done.
@@ -86,49 +95,58 @@ public:
 
 private:
     template <typename Res, typename Req> struct HandlerFactory {
-        static void create(HandlerMap& handlers, std::function<Res(const PeerPtr&, Req)> fn) {
-            const auto hash = Detail::MessageHelper<Req>::hash;
-
+        static void create(HandlerMap& handlers, const uint64_t hash, std::function<Res(const PeerPtr&, Req)> fn) {
             // Sanity check
             const auto check = handlers.find(hash);
             if (check != handlers.end()) {
                 throw std::runtime_error("The type of this message has already been registered");
             }
 
-            handlers[hash] =
-                [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, const msgpack::object& object) {
-                    Req req{};
-                    object.convert(req);
+            handlers[hash] = [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, ObjectHandlePtr oh) {
+                Req req{};
+                oh->get().via.array.ptr[1].convert(req);
 
-                    Res res = fn(peer, std::move(req));
-                    peer->send<Res>(res, reqId, true);
-                };
+                Res res = fn(peer, std::move(req));
+                peer->send<Res>(res, reqId, true);
+            };
         }
     };
 
     template <typename Req> struct HandlerFactory<void, Req> {
-        static void create(HandlerMap& handlers, std::function<void(const PeerPtr&, Req)> fn) {
-            const auto hash = Detail::MessageHelper<Req>::hash;
-
+        static void create(HandlerMap& handlers, const uint64_t hash, std::function<void(const PeerPtr&, Req)> fn) {
             // Sanity check
             const auto check = handlers.find(hash);
             if (check != handlers.end()) {
                 throw std::runtime_error("The type of this message has already been registered");
             }
 
-            handlers[hash] =
-                [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, const msgpack::object& object) {
-                    (void)reqId;
+            handlers[hash] = [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, ObjectHandlePtr oh) {
+                (void)reqId;
 
-                    Req req{};
-                    object.convert(req);
+                Req req{};
+                oh->get().via.array.ptr[1].convert(req);
 
-                    fn(peer, std::move(req));
-                };
+                fn(peer, std::move(req));
+            };
         }
     };
 
     ErrorHandler& errorHandler;
     HandlerMap handlers;
+};
+
+template <> struct Dispatcher::HandlerFactory<void, RawMessage> {
+    static void create(HandlerMap& handlers, const uint64_t hash, std::function<void(const PeerPtr&, RawMessage)> fn) {
+        // Sanity check
+        const auto check = handlers.find(hash);
+        if (check != handlers.end()) {
+            throw std::runtime_error("The type of this message has already been registered");
+        }
+
+        handlers[hash] = [fn = std::move(fn)](const PeerPtr& peer, const uint64_t reqId, ObjectHandlePtr oh) {
+            (void)reqId;
+            fn(peer, RawMessage{std::move(oh)});
+        };
+    }
 };
 } // namespace Engine::Network

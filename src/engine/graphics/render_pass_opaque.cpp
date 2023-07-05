@@ -4,9 +4,10 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                                   VoxelShapeCache& voxelShapeCache, const VulkanTexture& depth) :
-    RenderPass{vulkan, viewport}, subpassOpaque{vulkan, assetsManager, voxelShapeCache} {
+RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                   const Vector2i& viewport, VoxelShapeCache& voxelShapeCache,
+                                   const VulkanTexture& depth) :
+    RenderPass{vulkan, viewport}, subpassOpaque{vulkan, resources, assetsManager, voxelShapeCache} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -23,7 +24,7 @@ RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, AssetsManager& assets
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // EmissiveRoughness
-    addAttachment({VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
+    addAttachment({VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 

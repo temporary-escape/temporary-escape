@@ -181,6 +181,26 @@ def get_macos_exe(release: Release) -> Content:
     )
 
 
+def get_windows_zip(release: Release) -> Content:
+    return next(
+        (f for f in release.files if f.os == "Windows" and f.kind == "Portable ZIP"), None
+    )
+
+
+def get_linux_zip(release: Release) -> Content:
+    return next(
+        (f for f in release.files if f.os == "Linux" and f.kind == "TAR Archive"), None
+    )
+
+
+def get_macos_zip(release: Release) -> Content:
+    return next(
+        (f for f in release.files if f.os == "MacOS" and f.kind == "Portable ZIP"),
+        None,
+    )
+
+
+
 def convert_size(size_bytes: int) -> str:
     """
     Source: https://stackoverflow.com/a/14822210
@@ -223,12 +243,18 @@ def replace_content(path: str, releases: List[Release]):
     latest = get_latest_release(releases)
 
     replacements = {
-        "DOWNLOAD_WINDOWS_LATEST_EXE": get_windows_exe(latest).url,
-        "DOWNLOAD_LINUX_LATEST_EXE": get_linux_exe(latest).url,
-        "DOWNLOAD_MACOS_LATEST_EXE": get_macos_exe(latest).url,
-        "DOWNLOAD_WINDOWS_LATEST_SIZE": convert_size(get_windows_exe(latest).size),
-        "DOWNLOAD_LINUX_LATEST_SIZE": convert_size(get_linux_exe(latest).size),
-        "DOWNLOAD_MACOS_LATEST_SIZE": convert_size(get_macos_exe(latest).size),
+        "DOWNLOAD_WINDOWS_LATEST_EXE_URL": get_windows_exe(latest).url,
+        "DOWNLOAD_LINUX_LATEST_EXE_URL": get_linux_exe(latest).url,
+        "DOWNLOAD_MACOS_LATEST_EXE_URL": get_macos_exe(latest).url,
+        "DOWNLOAD_WINDOWS_LATEST_EXE_SIZE": convert_size(get_windows_exe(latest).size),
+        "DOWNLOAD_LINUX_LATEST_EXE_SIZE": convert_size(get_linux_exe(latest).size),
+        "DOWNLOAD_MACOS_LATEST_EXE_SIZE": convert_size(get_macos_exe(latest).size),
+        "DOWNLOAD_WINDOWS_LATEST_ZIP_URL": get_windows_exe(latest).url,
+        "DOWNLOAD_LINUX_LATEST_ZIP_URL": get_linux_zip(latest).url,
+        "DOWNLOAD_MACOS_LATEST_ZIP_URL": get_macos_zip(latest).url,
+        "DOWNLOAD_WINDOWS_LATEST_ZIP_SIZE": convert_size(get_windows_zip(latest).size),
+        "DOWNLOAD_LINUX_LATEST_ZIP_SIZE": convert_size(get_linux_zip(latest).size),
+        "DOWNLOAD_MACOS_LATEST_ZIP_SIZE": convert_size(get_macos_zip(latest).size),
         "DOWNLOAD_ALL_TABLE": create_md_table_rows(releases),
         "LATEST_VERSION_STR": latest.version,
         "LATEST_VERSION_DATE": "{:%B %d, %Y}".format(latest.created),
@@ -247,6 +273,7 @@ def replace_content(path: str, releases: List[Release]):
 def main():
     if os.getenv("AWS_ACCESS_KEY_ID") is None:
         print("Skipping, no AWS S3 credentials supplied")
+        return
 
     session = boto3.session.Session()
     endpoint_url = "https://{}".format(get_env("AWS_ENDPOINT_URL"))

@@ -49,6 +49,7 @@ struct Config {
         int imageAtlasSize = 4096;
         int brdfSize = 512;
         int planetTextureSize = 2048;
+        int planetLowResTextureSize = 128;
     } graphics;
 
     // Paths of interests
@@ -75,27 +76,6 @@ struct Config {
         float actionBarSize{96.0f};
         float sideMenuSize{64.0f};
     } gui;
-
-    struct Generator {
-        int totalSystems{2000};
-        float galaxyWidth{300.0f};
-        float regionDistance{35.0f};
-        int regionMaxCount{20};
-        float factionDistance{20.0f};
-        int factionMaxCount{30};
-        int factionSystemsMin{15};
-        int factionSystemsMax{75};
-        float planetDistanceMin{10.0f};
-        float planetDistanceMax{40.0f};
-        float planetStartDistance{20.0f};
-        float moonDistanceMin{3.0f};
-        float moonDistanceMax{6.0f};
-        float moonStartDistance{5.0f};
-        int systemPlanetsMin{2};
-        int systemPlanetsMax{7};
-        int planetMoonsMin{0};
-        int planetMoonsMax{3};
-    } generator;
 
     struct Input {
         KeyBinding cameraForward{Key::LetterW};

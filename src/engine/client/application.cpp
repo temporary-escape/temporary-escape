@@ -64,6 +64,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     auto vkb = createCommandBuffer();
 
+    if (renderer) {
+        renderer->update();
+    }
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -222,7 +226,7 @@ void Application::startDatabase() {
             }
             logger.info("Starting database with save: '{}'", path);
 
-            db = std::make_unique<RocksDB>(path);
+            db = std::make_unique<DatabaseRocksDB>(path, DatabaseRocksDB::Options{});
         } catch (...) {
             EXCEPTION_NESTED("Failed to start the database");
         }
@@ -238,6 +242,39 @@ void Application::createEmptyThumbnail(Renderer& thumbnailRenderer) {
     const auto alloc =
         assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
     assetsManager->addImage("block_empty_image", alloc);
+}
+
+void Application::createPlanetLowResTextures(PlanetGenerator& planetGenerator) {
+    uint64_t seed = 1;
+    for (auto& planet : assetsManager->getPlanetTypes().findAll()) {
+        auto textures = planetGenerator.render(seed++ * 100, planet);
+        planet->setLowResTextures(std::move(textures));
+    }
+}
+
+void Application::createPlanetLowResTextures() {
+    logger.info("Creating planet low-res textures");
+
+    const auto planetTextureSize = Vector2i{config.graphics.planetLowResTextureSize};
+    auto planetGeneratorLowRes =
+        std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
+
+    createPlanetLowResTextures(*planetGeneratorLowRes);
+
+    NEXT(createThumbnails());
+}
+
+void Application::createPlanetThumbnails(Renderer& thumbnailRenderer) {
+    logger.info("Creating planet thumbnails");
+
+    for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
+        thumbnailRenderer.render(planet);
+        const auto alloc =
+            assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+
+        const auto name = fmt::format("{}_image", planet->getName());
+        planet->setThumbnail(assetsManager->addImage(name, alloc));
+    }
 }
 
 void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
@@ -259,11 +296,12 @@ void Application::createThumbnails() {
     logger.info("Creating thumbnails");
 
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    auto thumbnailRenderer =
-        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
+    auto thumbnailRenderer = std::make_unique<Renderer>(
+        config, viewport, *this, *renderResources, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
 
     createBlockThumbnails(*thumbnailRenderer);
     createEmptyThumbnail(*thumbnailRenderer);
+    createPlanetThumbnails(*thumbnailRenderer);
 
     assetsManager->finalize();
 
@@ -335,13 +373,16 @@ void Application::createRenderer() {
     status.value = 0.3f;
 
     const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
-    renderer =
-        std::make_unique<Renderer>(config, viewport, *this, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
+    renderResources = std::make_unique<RenderResources>(*this);
+    renderer = std::make_unique<Renderer>(
+        config, viewport, *this, *renderResources, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
 
-    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *assetsManager);
-    planetGenerator = std::make_unique<PlanetGenerator>(config, *this, *assetsManager);
+    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *renderResources, *assetsManager);
 
-    NEXT(createThumbnails());
+    const Vector2i planetTextureSize{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
+    planetGenerator = std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
+
+    NEXT(createPlanetLowResTextures());
 }
 
 void Application::createVoxelShapeCache() {

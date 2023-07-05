@@ -7,7 +7,6 @@
 #include "../library.hpp"
 #include "../network/server.hpp"
 #include "../utils/worker.hpp"
-#include "generator.hpp"
 #include "messages.hpp"
 #include "peer_lobby.hpp"
 #include "player_sessions.hpp"

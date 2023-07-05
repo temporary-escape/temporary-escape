@@ -1,9 +1,11 @@
 #pragma once
 
 #include "../assets/assets_manager.hpp"
+#include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../graphics/skybox.hpp"
+#include "../gui/gui_modal_loading.hpp"
 #include "../scene/scene.hpp"
 #include "../server/world.hpp"
 #include "../utils/stop_token.hpp"
@@ -15,8 +17,14 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSystem : public View {
 public:
+    struct Gui {
+        explicit Gui(const Config& config, AssetsManager& assetsManager);
+
+        GuiModalLoading modalLoading;
+    };
+
     explicit ViewSystem(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                        Client& client, FontFamily& font);
+                        Client& client, Gui& gui, FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -29,34 +37,30 @@ public:
     void eventCharTyped(uint32_t code) override;
     void onEnter() override;
     void onExit() override;
-    Scene& getScene() override;
+    Scene* getScene() override;
 
-    void load();
-    void load(const std::string& galaxyId, const std::string& systemId);
+    void reset();
+    void reset(const std::string& galaxyId, const std::string& systemId);
 
 private:
-    /*void clear();
-    void fetchCurrentLocation(const StopToken& stop);
-    void fetchSectors(const StopToken& stop, const std::string& token);
-    void fetchPlanetaryBodiesPage(const StopToken& stop, const std::string& token);
-    void updateSystem();
+    void load();
+    void finalize();
     void clearEntities();
-    void createEntityPositions();
-    void createEntityCursor();
-    void createEntitiesBodies();*/
 
     Game& parent;
     const Config& config;
+    Renderer& renderer;
     AssetsManager& assetsManager;
     Client& client;
     FontFamily& font;
-    Scene scene;
-    ComponentCamera* camera{nullptr};
+    Gui& gui;
+    std::unique_ptr<Scene> scene;
 
     struct {
         std::string galaxyId;
         std::string systemId;
         std::string sectorId;
+        bool isCurrent{false};
     } location;
 
     struct {
@@ -67,12 +71,17 @@ private:
     } system;
 
     struct {
-        std::vector<EntityPtr> bodies;
-        std::vector<EntityPtr> orbits;
-        EntityPtr icons;
-        EntityPtr cursor;
-        EntityPtr positions;
-        EntityPtr names;
+        std::string name;
+    } galaxy;
+
+    struct {
+        Entity camera;
+        std::vector<Entity> bodies;
+        std::vector<Entity> orbits;
+        Entity icons;
+        Entity cursor;
+        Entity positions;
+        Entity names;
     } entities;
 
     struct {
@@ -82,12 +91,19 @@ private:
     } images;
 
     struct {
+        TexturePtr star;
+        TexturePtr starLow;
+        TexturePtr starHigh;
+    } textures;
+
+    struct {
         const SystemData* hover{nullptr};
         const SystemData* selected{nullptr};
     } input;
 
     bool loading{false};
-    float loadingValue{0.0f};
+    std::atomic<float> loadingValue{0.0f};
     StopToken stopToken;
+    Future<void> futureLoad;
 };
 } // namespace Engine

@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderPassCompute : public RenderPass {
 public:
-    explicit RenderPassCompute(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPassCompute(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
     virtual ~RenderPassCompute() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);

@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassNonHdr::RenderPassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                                   const RenderPassForward& forward) :
-    RenderPass{vulkan, viewport}, subpassNonHdr{vulkan, assetsManager} {
+RenderPassNonHdr::RenderPassNonHdr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                   const Vector2i& viewport, const RenderPassForward& forward) :
+    RenderPass{vulkan, viewport}, subpassNonHdr{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

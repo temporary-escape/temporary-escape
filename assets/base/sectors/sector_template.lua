@@ -1,17 +1,17 @@
-local SectorTemplate = {
-    icon = nil,
-}
+local SectorTemplate = {}
 
 function SectorTemplate.new ()
-    o = o or {}
-    local meta = {
-        __index = SectorTemplate
-    }
-    return setmetatable(o, meta)
+    local inst = {}
+    setmetatable(inst, { __index = SectorTemplate })
+    return inst
 end
 
-function SectorTemplate:generate(rng, galaxy, system, planets)
-    error("Not implemented")
+function SectorTemplate:generate(rng, galaxy, system, planets, faction)
+    error("Function generate() not implemented")
+end
+
+function SectorTemplate:populate(rng, galaxy, system, sector, scene)
+    error("Function populate() not implemented")
 end
 
 return SectorTemplate

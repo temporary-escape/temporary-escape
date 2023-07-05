@@ -13,12 +13,12 @@ ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, Ass
 void ViewSpace::update(const float deltaTime) {
 }
 
-Scene& ViewSpace::getScene() {
+Scene* ViewSpace::getScene() {
     auto scene = client.getScene();
     if (!scene) {
         EXCEPTION("No scene present!");
     }
-    return *scene;
+    return scene;
 }
 
 void ViewSpace::onEnter() {

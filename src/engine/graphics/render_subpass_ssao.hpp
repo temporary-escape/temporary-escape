@@ -8,7 +8,8 @@ class ENGINE_API RenderPassOpaque;
 
 class ENGINE_API RenderSubpassSsao : public RenderSubpass {
 public:
-    explicit RenderSubpassSsao(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& previous);
+    explicit RenderSubpassSsao(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const RenderPassOpaque& previous);
     virtual ~RenderSubpassSsao() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -18,6 +19,7 @@ private:
     void createSsaoSamples();
 
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const RenderPassOpaque& previous;
     RenderPipeline pipelineSsao;
 
@@ -25,7 +27,5 @@ private:
         VulkanBuffer ubo;
         VulkanTexture noise;
     } ssaoSamples;
-
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

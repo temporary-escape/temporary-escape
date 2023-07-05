@@ -14,11 +14,11 @@ public:
 
     void setViewport(const Vector2i& viewport);
 
-    void setProjection(float fov);
+    virtual void setProjection(float fov);
 
     void setProjectionMatrix(const Matrix4& value);
 
-    void setOrthographic(float zoom);
+    virtual void setOrthographic(float zoom);
 
     void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, -1.0f, 0.0f});
 

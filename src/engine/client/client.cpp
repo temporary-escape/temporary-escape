@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "../scene/controllers/controller_network.hpp"
 #include "../utils/random.hpp"
 #include <fstream>
 
@@ -16,6 +17,7 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
 
     HANDLE_REQUEST(MessagePlayerLocationEvent);
     HANDLE_REQUEST(MessagePingRequest);
+    addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 }
 
 Client::~Client() {
@@ -117,17 +119,6 @@ void Client::validateManifests(const std::vector<ModManifest>& serverManifests) 
 
 void Client::update() {
     sync.poll();
-
-    if (scene) {
-        const auto now = std::chrono::steady_clock::now();
-        auto timeDiff = now - lastTimePoint;
-        lastTimePoint = now;
-        if (timeDiff > std::chrono::milliseconds(100)) {
-            timeDiff = std::chrono::milliseconds(100);
-        }
-        const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(timeDiff).count() / 1000000.0f;
-        scene->update(delta);
-    }
 }
 
 void Client::createScene(SectorData sector) {
@@ -142,46 +133,41 @@ void Client::createScene(SectorData sector) {
     const auto planetDesert = assetsManager.getPlanetTypes().find("planet_desert");
     const auto planetSulfur = assetsManager.getPlanetTypes().find("planet_sulfur");
 
-    camera.reset();
-    scene.reset();
-    scene = std::make_unique<Scene>();
-
     auto sun = scene->createEntity();
-    sun->addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
-    sun->addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f} * 100.0f);
-    sun->addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
+    sun.addComponent<ComponentDirectionalLight>(Color4{1.0f, 0.9f, 0.8f, 1.0f});
+    sun.addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f} * 100.0f);
+    sun.addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
 
     auto skybox = scene->createEntity();
-    skybox->addComponent<ComponentSkybox>(sector.seed);
+    skybox.addComponent<ComponentSkybox>(sector.seed);
 
     auto planet = scene->createEntity();
-    planet->addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
-    planet->getComponent<ComponentTransform>().scale(Vector3{1.0f});
-    planet->addComponent<ComponentPlanet>(planetLife, 7869732137);
+    planet.addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
+    planet.getComponent<ComponentTransform>().scale(Vector3{1.0f});
+    planet.addComponent<ComponentPlanet>(planetLife, 7869732137);
 
     planet = scene->createEntity();
-    planet->addComponent<ComponentTransform>().translate(Vector3{0.7f, 0.0f, -1.5f} * 1.0f);
-    planet->getComponent<ComponentTransform>().scale(Vector3{2.5f});
-    planet->addComponent<ComponentPlanet>(planetSulfur, 123478);
+    planet.addComponent<ComponentTransform>().translate(Vector3{0.7f, 0.0f, -1.5f} * 1.0f);
+    planet.getComponent<ComponentTransform>().scale(Vector3{2.5f});
+    planet.addComponent<ComponentPlanet>(planetSulfur, 123478);
 
-    camera = scene->createEntity();
-    auto& cameraTransform = camera->addComponent<ComponentTransform>();
-    auto& cameraCamera = camera->addComponent<ComponentCamera>(cameraTransform);
-    camera->addComponent<ComponentUserInput>(cameraCamera);
+    auto camera = scene->createEntity();
+    auto& cameraTransform = camera.addComponent<ComponentTransform>();
+    auto& cameraCamera = camera.addComponent<ComponentCamera>(cameraTransform);
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
     logger.info("Setting scene primary camera");
     scene->setPrimaryCamera(camera);
 
-    auto entity = scene->createEntity();
-    auto& entityTransform = entity->addComponent<ComponentTransform>();
-    auto& debug = entity->addComponent<ComponentDebug>();
-    auto& grid = entity->addComponent<ComponentGrid>(debug);
+    /*auto entity = scene->createEntity();
+    auto& entityTransform = entity.addComponent<ComponentTransform>();
+    auto& debug = entity.addComponent<ComponentDebug>();
+    auto& grid = entity.addComponent<ComponentGrid>(debug);
     grid.setDirty(true);
 
     entity = scene->createEntity();
-    entity->addComponent<ComponentTransform>().move({0.0f, 5.0f, 0.0f});
-    entity->addComponent<ComponentModel>(assetsManager.getModels().find("model_asteroid_01_h"));
+    entity.addComponent<ComponentTransform>().move({0.0f, 5.0f, 0.0f});
+    entity.addComponent<ComponentModel>(assetsManager.getModels().find("model_asteroid_01_h"));
 
     auto block = assetsManager.getBlocks().find("block_crew_quarters_t1");
     for (auto a = 0; a < 4; a++) {
@@ -189,7 +175,7 @@ void Client::createScene(SectorData sector) {
             grid.insert(Vector3i{a, 0, b}, block, a * b, 1, VoxelShape::Type::Cube);
         }
     }
-    grid.insert(Vector3i{2, 1, 2}, block, 0, 1, VoxelShape::Type::Cube);
+    grid.insert(Vector3i{2, 1, 2}, block, 0, 1, VoxelShape::Type::Cube);*/
 }
 
 void Client::handle(MessagePlayerLocationEvent res) {
@@ -200,11 +186,26 @@ void Client::handle(MessagePlayerLocationEvent res) {
     req.galaxyId = res.location.galaxyId;
     req.systemId = res.location.systemId;
     req.sectorId = res.location.sectorId;
+
+    sync.postSafe([this]() {
+        scene.reset();
+        scene = std::make_unique<Scene>();
+    });
+
     send(req, [this](MessageFetchSectorResponse res) {
         if (!res.error.empty()) {
             EXCEPTION("Unable to fetch sector at player's location");
         }
         createScene(std::move(res.sector));
+    });
+}
+
+void Client::handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message) {
+    (void)peer;
+
+    sync.postSafe([this, msg = std::move(message)]() {
+        logger.debug("Applying scene snapshot");
+        scene->getController<ControllerNetwork>().receiveSnapshot(msg.get());
     });
 }
 

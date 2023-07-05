@@ -24,13 +24,15 @@ class ENGINE_API VoxelShapeCache;
 
 class ENGINE_API Renderer {
 public:
-    explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, Canvas& canvas,
-                      Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager,
-                      FontFamily& font);
+    explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
+                      RenderResources& resources, Canvas& canvas, Nuklear& nuklear, VoxelShapeCache& voxelShapeCache,
+                      AssetsManager& assetsManager, FontFamily& font);
     virtual ~Renderer();
 
+    void update();
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
-    void render(const std::shared_ptr<Block>& block, VoxelShape::Type shape);
+    void render(const BlockPtr& block, VoxelShape::Type shape);
+    void render(const PlanetTypePtr& planetType);
 
     void blit(VulkanCommandBuffer& vkb, const Vector2i& viewport);
 
@@ -53,12 +55,14 @@ private:
 
     const Config& config;
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     Canvas& canvas;
     Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
     AssetsManager& assetsManager;
     FontFamily& font;
     Vector2i lastViewportSize;
+    bool blitReady{false};
 
     struct {
         std::unique_ptr<RenderPassBrdf> brdf;

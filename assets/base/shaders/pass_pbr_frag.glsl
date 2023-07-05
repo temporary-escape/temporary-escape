@@ -153,6 +153,10 @@ void main() {
         vec3 radiance = directionalLights.colors[i].xyz * attenuation;*/
 
         vec3 L = normalize(directionalLights.directions[i].xyz);
+        if (directionalLights.directions[i].w > 0.5) {
+            L = normalize(directionalLights.directions[i].xyz - worldpos);
+        }
+
         vec3 H = normalize(V + L);
         vec3 radiance = directionalLights.colors[i].xyz;
 

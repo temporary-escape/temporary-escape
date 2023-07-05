@@ -2,7 +2,6 @@
 
 #include "../scene/scene.hpp"
 #include "../utils/worker.hpp"
-#include "generator.hpp"
 #include "lua.hpp"
 #include "messages.hpp"
 #include "session.hpp"
@@ -11,7 +10,7 @@
 namespace Engine {
 class ENGINE_API Server;
 
-class ENGINE_API Sector : public Scene::EventListener {
+class ENGINE_API Sector {
 public:
     explicit Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
                     std::string galaxyId, std::string systemId, std::string sectorId);

@@ -1,13 +1,15 @@
 #include "render_subpass_opaque.hpp"
 #include "../assets/assets_manager.hpp"
-#include "../scene/component_grid.hpp"
+#include "../scene/components/component_grid.hpp"
+#include "mesh_utils.hpp"
 #include "render_pass_opaque.hpp"
 
 using namespace Engine;
 
-RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                         VoxelShapeCache& voxelShapeCache) :
+RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, RenderResources& resources,
+                                         AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache) :
     vulkan{vulkan},
+    resources{resources},
     voxelShapeCache{voxelShapeCache},
     pipelineGrid{
         vulkan,
@@ -50,6 +52,27 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& 
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
+    },
+    pipelinePlanet{
+        vulkan,
+        {
+            // List of shader modules
+            assetsManager.getShaders().find("component_planet_vert"),
+            assetsManager.getShaders().find("component_planet_frag"),
+        },
+        {
+            // Vertex inputs
+            RenderPipeline::VertexInput::of<PlanetVertex>(0),
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            RenderPipeline::DepthMode::ReadWrite,
+            RenderPipeline::Blending::None,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        },
     } {
 
     setAttachments({
@@ -61,6 +84,7 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& 
 
     addPipeline(pipelineGrid);
     addPipeline(pipelineModel);
+    addPipeline(pipelinePlanet);
 
     palette = assetsManager.getTextures().find("palette");
 }
@@ -68,9 +92,11 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, AssetsManager& 
 void RenderSubpassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineGrid.getDescriptorPool().reset();
     pipelineModel.getDescriptorPool().reset();
+    pipelinePlanet.getDescriptorPool().reset();
 
     renderSceneGrids(vkb, scene);
     renderSceneModels(vkb, scene);
+    renderScenePlanets(vkb, scene);
 }
 
 static void validateMaterial(const Material& material) {
@@ -195,5 +221,43 @@ void RenderSubpassOpaque::renderSceneModels(VulkanCommandBuffer& vkb, Scene& sce
 
             vkb.drawIndexed(primitive.count, 1, 0, 0, 0);
         }
+    }
+}
+
+void RenderSubpassOpaque::renderScenePlanets(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto systemPlanets = scene.getView<ComponentTransform, ComponentPlanet>();
+    auto camera = scene.getPrimaryCamera();
+
+    std::array<UniformBindingRef, 2> uniforms;
+    std::array<SamplerBindingRef, 3> textures;
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+
+    pipelinePlanet.bind(vkb);
+
+    for (auto&& [entity, transform, planet] : systemPlanets.each()) {
+        if (planet.isBackground()) {
+            continue;
+        }
+
+        uniforms[0] = {"Camera", camera->getUbo().getCurrentBuffer()};
+        uniforms[1] = {"Atmosphere", planet.getPlanetType()->getUbo()};
+
+        const auto& planetTextures = planet.getPlanetType()->getLowResTextures();
+
+        textures[0] = {"albedoTexture", planetTextures.getColor()};
+        textures[1] = {"normalTexture", planetTextures.getNormal()};
+        textures[2] = {"metallicRoughnessTexture", planetTextures.getMetallicRoughness()};
+
+        pipelinePlanet.bindDescriptors(vkb, uniforms, textures, {});
+
+        const auto modelMatrix = transform.getAbsoluteTransform();
+        const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
+
+        pipelinePlanet.pushConstants(vkb,
+                                     // Constants
+                                     PushConstant{"modelMatrix", modelMatrix},
+                                     PushConstant{"normalMatrix", normalMatrix});
+
+        pipelinePlanet.renderMesh(vkb, resources.getMeshPlanet());
     }
 }

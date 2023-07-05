@@ -17,8 +17,8 @@ public:
             Color = 0,
         };
 
-        explicit Downsample(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                            const VulkanTexture& forward);
+        explicit Downsample(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                            const Vector2i& viewport, const VulkanTexture& forward);
         virtual ~Downsample() = default;
 
         void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
@@ -33,8 +33,8 @@ public:
             Color = 0,
         };
 
-        explicit Extract(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                         const VulkanTexture& forward);
+        explicit Extract(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                         const Vector2i& viewport, const VulkanTexture& forward);
         virtual ~Extract() = default;
 
         void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);
@@ -49,8 +49,8 @@ public:
             Color = 0,
         };
 
-        explicit Blur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                      const VulkanTexture& dst, const VulkanTexture& color, bool vertical);
+        explicit Blur(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                      const Vector2i& viewport, const VulkanTexture& dst, const VulkanTexture& color, bool vertical);
         virtual ~Blur() = default;
 
         void reset();
@@ -60,8 +60,8 @@ public:
         RenderSubpassBlur subpassBloomBlur;
     };
 
-    explicit RenderPassBloom(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                             const VulkanTexture& forward);
+    explicit RenderPassBloom(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                             const Vector2i& viewport, const VulkanTexture& forward);
     virtual ~RenderPassBloom() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

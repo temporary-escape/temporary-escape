@@ -1,12 +1,15 @@
 #include "render_subpass_non_hdr.hpp"
 #include "../assets/assets_manager.hpp"
+#include "../scene/controllers/controller_icon.hpp"
 #include "render_pass_non_hdr.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
 
-RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, RenderResources& resources,
+                                         AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineWorldText{
         vulkan,
         {
@@ -27,6 +30,27 @@ RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& 
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
+    },
+    pipelinePointCloud{
+        vulkan,
+        {
+            // List of shader modules
+            assetsManager.getShaders().find("component_point_cloud_vert"),
+            assetsManager.getShaders().find("component_point_cloud_frag"),
+        },
+        {
+            // Vertex inputs
+            RenderPipeline::VertexInput::of<ComponentPointCloud::Point>(0, VK_VERTEX_INPUT_RATE_INSTANCE),
+        },
+        {
+            // Additional pipeline options
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+            RenderPipeline::DepthMode::Ignore,
+            RenderPipeline::Blending::Normal,
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_BACK_BIT,
+            VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        },
     } {
 
     setAttachments({
@@ -35,10 +59,12 @@ RenderSubpassNonHdr::RenderSubpassNonHdr(VulkanRenderer& vulkan, AssetsManager& 
     });
 
     addPipeline(pipelineWorldText);
+    addPipeline(pipelinePointCloud);
 }
 
 void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineWorldText.getDescriptorPool().reset();
+    pipelinePointCloud.getDescriptorPool().reset();
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentWorldText>(vkb, scene, jobs);
@@ -49,6 +75,9 @@ void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     for (auto& job : jobs) {
         job.fn();
     }
+
+    auto& camera = *scene.getPrimaryCamera();
+    renderSceneForward(vkb, camera, scene.getController<ControllerIcon>());
 }
 
 void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
@@ -79,4 +108,42 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
     pipelineWorldText.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"color", color});
 
     pipelineWorldText.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                             ControllerIcon& controller) {
+    controller.recalculate(vulkan);
+
+    if (currentPipeline != &pipelinePointCloud) {
+        currentPipeline = &pipelinePointCloud;
+        currentPipeline->bind(vkb);
+    }
+
+    const auto& vbos = controller.getVbos();
+    const auto& counts = controller.getCounts();
+
+    const auto modelMatrix = Matrix4{1.0f};
+    pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
+
+    for (const auto& [image, vbo] : vbos) {
+        const auto count = counts.at(image);
+
+        if (count == 0) {
+            continue;
+        }
+
+        std::array<UniformBindingRef, 1> uniforms{};
+        uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+        std::array<SamplerBindingRef, 1> textures{};
+        textures[0] = {"colorTexture", *image->getAllocation().texture};
+
+        pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
+
+        std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+        vboBindings[0] = {&vbo.getCurrentBuffer(), 0};
+        vkb.bindBuffers(vboBindings);
+
+        vkb.draw(4, count, 0, 0);
+    }
 }

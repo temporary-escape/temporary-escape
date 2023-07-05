@@ -2,6 +2,7 @@
 
 #include "../scene/scene.hpp"
 #include "render_pipeline.hpp"
+#include "render_resources.hpp"
 
 namespace Engine {
 class ENGINE_API RenderPass;

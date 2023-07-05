@@ -4,8 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassBrdf::RenderPassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport) :
-    RenderPass{vulkan, viewport}, subpassBrdf{vulkan, assetsManager} {
+RenderPassBrdf::RenderPassBrdf(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const Vector2i& viewport) :
+    RenderPass{vulkan, viewport}, subpassBrdf{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

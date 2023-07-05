@@ -1,6 +1,6 @@
+import enum
 import os
 import sys
-import enum
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
@@ -12,6 +12,12 @@ class LuaKind(enum.Enum):
     Function = "function"
     Field = "field"
     Class = "class"
+
+
+class LuaAccess(enum.Enum):
+    Readonly = "readonly"
+    Writeonly = "writeonly"
+    ReadWrite = "readwrite"
 
 
 @dataclass
@@ -32,6 +38,12 @@ class LuaElement:
     module: Optional['LuaModule'] = None
     readonly: bool = False
     type: Optional[str] = None
+    returns: Optional[LuaPatameter] = None
+    access: LuaAccess = LuaAccess.ReadWrite
+    note: Optional[str] = None
+    warn: Optional[str] = None
+    code: Optional[str] = None
+    see: Optional[str] = None
 
 
 @dataclass
@@ -55,16 +67,16 @@ class Parser:
         self.line = self.lines[index]
         self.index += 1
         return True
-    
+
     def new_module(self, name: str):
         if name not in self.modules:
             self.module = LuaModule(name=name, items=[])
             self.modules[name] = self.module
         else:
             self.module = self.modules[name]
-        
+
         return self.module
-    
+
     def find_parent(self, name: str):
         if self.module is None:
             return None
@@ -73,7 +85,6 @@ class Parser:
                 return item
         return None
 
-    
     def accept_description(self, item: LuaElement, line: str):
         if item.description and not item.description.endswith(" "):
             item.description += " "
@@ -94,20 +105,76 @@ class Parser:
     def accept_type(self, item: LuaElement, text: str):
         item.type = text
 
+    def accept_return(self, item: LuaElement, text: str):
+        tokens = text.split(" ", maxsplit=1)
+        if len(tokens) != 2:
+            print(f"Bad param string: '{text}', expected <type> <text]")
+            sys.exit(1)
+        item.returns = LuaPatameter(
+            type=tokens[0],
+            name="result",
+            description=tokens[1]
+        )
+
+    def accept_readonly(self, item: LuaElement):
+        item.access = LuaAccess.Readonly
+
+    def accept_note(self, item: LuaElement, text: str):
+        item.note = text
+
+    def accept_warn(self, item: LuaElement, text: str):
+        item.warn = text
+
+    def accept_code(self, item: LuaElement):
+        code = ""
+        while self.next():
+            stripped = self.line.strip()
+            if stripped.startswith("* "):
+                stripped = stripped[2:]
+            elif stripped.startswith("*"):
+                stripped = stripped[1:]
+
+            if stripped == "@endcode":
+                break
+            if code:
+                code += "\n"
+            code += stripped
+        item.code = code
+
+    def accept_see(self, item: LuaElement, text: str):
+        item.see = text
+
     def accept_annotation(self, item: LuaElement):
         while self.next():
             stripped = self.line.strip()
             if not stripped.startswith("* ") or stripped == "*/":
                 return
-            
+
             # Erase "* " beginning
             stripped = stripped[2:]
             if stripped.startswith("@"):
-                annotation, text = stripped.split(" ", maxsplit=1)
+                tokens = stripped.split(" ")
+                annotation = tokens[0]
+                if len(tokens) > 1:
+                    text = " ".join(tokens[1:])
+                else:
+                    text = None
                 if annotation == "@param":
                     self.accept_param(item, text)
                 elif annotation == "@type":
                     self.accept_type(item, text)
+                elif annotation == "@return":
+                    self.accept_return(item, text)
+                elif annotation == "@readonly":
+                    self.accept_readonly(item)
+                elif annotation == "@note":
+                    self.accept_note(item, text)
+                elif annotation == "@warning":
+                    self.accept_warn(item, text)
+                elif annotation == "@code":
+                    self.accept_code(item)
+                elif annotation == "@see":
+                    self.accept_see(item, text)
             else:
                 self.accept_description(item, stripped)
 
@@ -123,7 +190,6 @@ class Parser:
             is_static = True
         return is_static, owner, name
 
-
     def accept_class(self, name: str):
         klass = LuaElement(
             name=name,
@@ -134,7 +200,6 @@ class Parser:
         )
         self.module.items.append(klass)
         self.accept_annotation(klass)
-
 
     def accept_function(self, name: str):
         is_static, parent, function_name = self.parse_ownership(name)
@@ -159,7 +224,6 @@ class Parser:
             self.module.items.append(function)
 
         self.accept_annotation(function)
-
 
     def accept_field(self, name: str):
         is_static, parent, field_name = self.parse_ownership(name)
@@ -188,7 +252,6 @@ class Parser:
             self.module.items.append(field)
         self.accept_annotation(field)
 
-
     def accept_comment(self, line: str):
         annotation, text = line.split(" ", maxsplit=1)
         if annotation == "@module":
@@ -202,7 +265,6 @@ class Parser:
         elif annotation == "@endmodule":
             self.module = None
 
-
     def accept_comment_body(self):
         while self.next():
             stripped = self.line.strip()
@@ -213,7 +275,6 @@ class Parser:
             if stripped.startswith("@"):
                 self.accept_comment(stripped)
                 return
-
 
     def parse(self):
         while self.next():
@@ -272,27 +333,74 @@ def params_str(item: LuaElement) -> str:
     return text
 
 
+def safe_url(text: str):
+    return text.replace("<", "_").replace(">", "_")
+
+
+def safe_md(text: str):
+    return text.replace("<", "&lt;").replace(">", "&gt;")
+
+
 def generate_docs_child(f, child: LuaElement):
     if child.description:
         f.write(f"{child.description}\n\n")
 
-        if child.params:
-            f.write(f"**Parameters:**\n\n")
-            for param in child.params:
-                if param.description:
-                    f.write(f"* `{param.name}: {param.type}` - {param.description}\n")
-                else:
-                    f.write(f"* `{param.name}: {param.type}`\n")
-            f.write("\n")
+    if child.access == LuaAccess.Readonly:
+        f.write(f"**Read-only!**\n\n")
+
+    if child.access == LuaAccess.Writeonly:
+        f.write(f"**Write-only!**\n\n")
+
+    if child.kind == LuaKind.Field and child.type:
+        f.write(f"**Type:** `{child.type}`\n\n")
+
+    if child.params:
+        f.write(f"**Parameters:**\n\n")
+        for param in child.params:
+            f.write(f"* {param.name}: `{param.type}`")
+            if param.description:
+                f.write(f" - {param.description}\n")
+            else:
+                f.write(f"\n")
+
+        f.write("\n")
+
+    if child.returns:
+        f.write(f"**Returns:** `{child.returns.type}`")
+        if child.returns.description:
+            f.write(f" - {child.returns.description}\n")
+        else:
+            f.write(f"\n")
+
+        f.write("\n")
+
+    if child.code:
+        f.write("**Example:**\n\n")
+        f.write("```lua\n")
+        f.write(child.code)
+        f.write("\n```\n\n")
+
+    if child.note:
+        f.write("```{note}\n")
+        f.write(child.note)
+        f.write("\n```\n\n")
+    
+    if child.warn:
+        f.write("```{warning}\n")
+        f.write(child.warn)
+        f.write("\n```\n\n")
+
+    if child.see:
+        f.write(f"**See also:** [{safe_md(child.see)}]({safe_url(child.see)})\n\n")
 
 
 def generate_docs_class(path: str, item: LuaElement):
     with open(path, "w") as f:
-        f.write(f"# Class {item.name}\n\n")
+        f.write(f"# Class {safe_md(item.name)}\n\n")
 
         f.write(f"**Module:** `require(\"{item.module.name}\")`\n\n")
 
-        f.write(f"{item.description}\n\n")
+        generate_docs_child(f, item)
 
         constructors = get_constructors(item)
         if constructors:
@@ -338,15 +446,14 @@ def generate_docs_class(path: str, item: LuaElement):
             f.write("\n")
 
             for child in fields:
-                child_type = ": " + child.type if child.type else ""
-                f.write(f"### {child.name}{child_type}\n\n")
+                f.write(f"### {child.name}\n\n")
                 generate_docs_child(f, child)
 
 
 def generate_docs_index(path: str, toctree: str, module: LuaModule):
     with open(path, "w") as f:
         f.write(f"# Lua API\n\n")
-        
+
         f.write("## Classes\n\n")
 
         f.write("| Class | Description |\n")
@@ -355,9 +462,9 @@ def generate_docs_index(path: str, toctree: str, module: LuaModule):
             if item.kind != LuaKind.Class:
                 continue
 
-            f.write(f"| [{item.name}]({item.name}) | {item.description} |\n")
+            f.write(f"| [{item.name}]({safe_url(item.name)}) | {item.description} |\n")
         f.write("\n")
-    
+
         f.write("```{toctree}\n")
         f.write(":hidden:\n")
         f.write(toctree)
@@ -366,7 +473,7 @@ def generate_docs_index(path: str, toctree: str, module: LuaModule):
 
 def generate_docs(path: str, module: LuaModule):
     print(f"Generating docs in: {path}")
-    
+
     # Remove old files
     for file in Path(path).rglob("*.md"):
         print(f"Removing old file: {file}")
@@ -375,10 +482,9 @@ def generate_docs(path: str, module: LuaModule):
     toctree = ""
     for item in module.items:
         if item.kind == LuaKind.Class:
-            dst = os.path.join(path, item.name + ".md")
+            dst = os.path.join(path, safe_url(item.name) + ".md")
             generate_docs_class(dst, item)
-            toctree += f"{item.name}\n"
-
+            toctree += f"{safe_url(item.name)}\n"
 
     generate_docs_index(os.path.join(path, "index.md"), toctree, module)
 
@@ -392,6 +498,6 @@ def main():
 
     generate_docs(dst, modules["engine"])
 
+
 if __name__ == "__main__":
     main()
-

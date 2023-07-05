@@ -86,8 +86,15 @@ void Engine::bindMathVectors(Lua& lua) {
         /**
          * @function Vector2:rotate
          * Returns a new vector that is rotated by some angle
-         * @param angle Angle in radians
-         * @return Vector2 A new roatted vector
+         * @param angle number in radians
+         * @return Vector2 A new rotated vector
+         * @code
+         * local PI = 3.141592653589
+         * local a = engine.Vector2.new(1.0, 0.0)
+         * local b = a:rotate(PI)
+         * -- Prints: Rotated vector [1, 0] by 180 degrees is: [-1, -8.742278e-08]
+         * print(string.format("Rotated vector %s by 180 degrees is: %s", a, b))
+         * @endcode
          */
         cls["rotate"] = [](Vector2& self, const float angle) { return glm::rotate(self, angle); };
     }

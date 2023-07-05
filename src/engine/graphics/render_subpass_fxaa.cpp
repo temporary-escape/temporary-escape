@@ -6,9 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                      const VulkanTexture& forward) :
     vulkan{vulkan},
+    resources{resources},
     forward{forward},
     pipelineFxaa{
         vulkan,
@@ -37,8 +38,6 @@ RenderSubpassFxaa::RenderSubpassFxaa(VulkanRenderer& vulkan, AssetsManager& asse
     });
 
     addPipeline(pipelineFxaa);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassFxaa::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -56,5 +55,5 @@ void RenderSubpassFxaa::render(VulkanCommandBuffer& vkb, Scene& scene) {
     const auto textureSize = Vector2{camera->getViewport()};
     pipelineFxaa.pushConstants(vkb, PushConstant{"textureSize", textureSize});
 
-    pipelineFxaa.renderMesh(vkb, fullScreenQuad);
+    pipelineFxaa.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

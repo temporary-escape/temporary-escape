@@ -11,7 +11,7 @@ class ENGINE_API RenderSubpassPlanetColor : public RenderSubpass {
 public:
     using Rng = std::mt19937_64;
 
-    explicit RenderSubpassPlanetColor(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+    explicit RenderSubpassPlanetColor(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                       RenderPassPlanetSurface& parent);
     virtual ~RenderSubpassPlanetColor() = default;
 
@@ -19,9 +19,9 @@ public:
 
 private:
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderPassPlanetSurface& parent;
 
     RenderPipeline pipelineColor;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

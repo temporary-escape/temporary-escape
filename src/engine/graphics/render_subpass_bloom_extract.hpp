@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBloomExtract : public RenderSubpass {
 public:
-    explicit RenderSubpassBloomExtract(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+    explicit RenderSubpassBloomExtract(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                        const VulkanTexture& source);
     virtual ~RenderSubpassBloomExtract() = default;
 
@@ -14,8 +14,8 @@ public:
 
 private:
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const VulkanTexture& source;
     RenderPipeline pipelineBloomExtract;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

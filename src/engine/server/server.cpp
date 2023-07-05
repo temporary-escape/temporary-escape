@@ -89,8 +89,11 @@ void Server::load() {
     }
 
     try {
+        const auto t0 = std::chrono::high_resolution_clock::now();
         generator(123456789LL);
-        logger.info("Universe has been generated and is ready");
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<float> duration = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
+        logger.info("Universe has been generated in {} seconds and is ready", duration.count());
     } catch (...) {
         EXCEPTION_NESTED("Failed to generate the universe");
     }
@@ -236,11 +239,17 @@ SectorPtr Server::startSector(const std::string& galaxyId, const std::string& sy
         sectors.map.insert(std::make_pair(sector.id, sectorPtr));
 
         // Load the sector in a separate thread
-        loadQueue.postSafe([this, sectorPtr]() { sectorPtr->load(); });
+        loadQueue.post([this, sectorPtr]() {
+            try {
+                sectorPtr->load();
+            } catch (std::exception& e) {
+                BACKTRACE(e, "Failed to load sector: '{}'", sectorPtr->getSectorId());
+            }
+        });
 
         return sectorPtr;
     } catch (...) {
-        EXCEPTION_NESTED("Failed to start sector '{}'", sector.id);
+        EXCEPTION_NESTED("Failed to start sector: '{}'", sector.id);
     }
 }
 

@@ -2,8 +2,10 @@
 
 #include "../utils/exceptions.hpp"
 #include "../vulkan/vulkan_pipeline.hpp"
+#include "controller.hpp"
 #include "entity.hpp"
 
+#include <typeindex>
 #include <unordered_map>
 #include <vector>
 
@@ -12,64 +14,15 @@ class ENGINE_API Skybox;
 
 class ENGINE_API Scene : public UserInput {
 public:
-    /*struct Pipelines {
-        VulkanPipeline debug;
-        VulkanPipeline grid;
-        VulkanPipeline wireframe;
-        VulkanPipeline pointCloud;
-        VulkanPipeline iconPointCloud;
-        VulkanPipeline lines;
-    };*/
-
-    struct Bullet {
-        Vector3 pos;
-        Vector3 dir;
-        Color4 color;
-        float time{0.0f};
-        float speed{0.0f};
-    };
-
-    class EventListener {
-    public:
-        virtual void eventEntityAdded(const EntityPtr& entity) {
-            (void)entity;
-        }
-    };
-
-    static inline EventListener defaultEventListener;
-
-    explicit Scene(EventListener& eventListener = defaultEventListener);
+    explicit Scene();
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
     void update(float delta);
-    void removeEntity(const EntityPtr& entity);
 
-    EntityPtr createEntity() {
-        return createEntityOfType<Entity>();
-    }
-
-    template <typename T, typename... Args> std::shared_ptr<T> createEntityOfType(Args&&... args) {
-        auto entity = std::make_shared<T>(reg, std::forward<Args>(args)...);
-        addEntity(entity);
-        return entity;
-    }
-
-    void addBullet(const Vector3& pos, const Vector3& dir);
-    EntityPtr getEntityById(uint64_t id);
-    const std::vector<Bullet>& getBulletsData() const {
-        return bullets.data;
-    }
-    /*template <typename T, typename... Args> T& addComponent(const EntityPtr& entity, Args&&... args) {
-        auto& system = getComponentSystem<T>();
-        auto& component = system.add(*entity, std::forward<Args>(args)...);
-        entity->addComponent<T>(component);
-        return component;
-    }*/
-
-    template <typename T> entt::view<T> getComponentSystem() {
-        return reg.view<T>();
-    }
+    void removeEntity(Entity& entity);
+    Entity createEntity();
+    Entity fromHandle(entt::entity handle);
 
     template <typename... Ts> auto getView() {
         return reg.view<Ts...>();
@@ -77,10 +30,6 @@ public:
 
     template <typename... Ts, typename Exclude> auto getView(Exclude&& exclude) {
         return reg.view<Ts...>(exclude);
-    }
-
-    const std::vector<EntityPtr>& getEntities() const {
-        return entities;
     }
 
     void eventMouseMoved(const Vector2i& pos) override;
@@ -91,32 +40,47 @@ public:
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventCharTyped(uint32_t code) override;
 
-    void setPrimaryCamera(const EntityPtr& entity) {
+    void setPrimaryCamera(Entity& entity) {
         primaryCamera = entity;
+    }
+
+    template <typename T> T& addController() {
+        const auto& type = std::type_index{typeid(T)};
+        if (controllers.find(type) != controllers.end()) {
+            EXCEPTION("Controller of type: {} already added!", typeid(T).name());
+        }
+
+        auto controller = std::make_unique<T>(reg);
+        auto ptr = dynamic_cast<T*>(controller.get());
+
+        controllers.emplace(type, std::move(controller));
+
+        if constexpr (std::is_base_of_v<UserInput, T>) {
+            userInputs.push_back(ptr);
+        }
+
+        return *ptr;
+    }
+
+    template <typename T> T& getController() const {
+        const auto& type = std::type_index{typeid(T)};
+        const auto it = controllers.find(type);
+        if (it == controllers.end()) {
+            EXCEPTION("Controller of type: {} does not exist!", typeid(T).name());
+        }
+        return *dynamic_cast<T*>(it->second.get());
     }
 
     ComponentCamera* getPrimaryCamera();
     const SkyboxTextures* getSkybox();
-    void setSkybox(Skybox& value) {
-        skybox = &value;
-    }
+
+    static void bind(Lua& lua);
 
 private:
-    void addEntity(EntityPtr entity);
-
-    struct BulletSystem {
-        std::vector<Bullet> data;
-        size_t next{0};
-    };
-
-    EventListener& eventListener;
     entt::registry reg;
+    std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
+    std::vector<UserInput*> userInputs;
 
-    std::vector<EntityPtr> entities;
-    std::unordered_map<uint64_t, EntityPtr> entityMap;
-
-    BulletSystem bullets;
-    EntityWeakPtr primaryCamera;
-    Skybox* skybox{nullptr};
+    Entity primaryCamera;
 };
 } // namespace Engine

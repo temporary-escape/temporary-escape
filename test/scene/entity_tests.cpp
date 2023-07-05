@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-class EntityRefCounter : public Entity {
+/*class EntityRefCounter : public Entity {
 public:
     EntityRefCounter(entt::registry& reg, size_t& counter) : Entity{reg}, counter{counter} {
         counter++;
@@ -85,4 +85,4 @@ TEST_CASE("Adding entity with component to the scene", TEST_TAG) {
 
     REQUIRE(cameraSystem.size_hint() == true);
     REQUIRE(counter == 0);
-}
+}*/

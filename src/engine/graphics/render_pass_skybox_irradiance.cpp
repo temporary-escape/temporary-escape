@@ -4,9 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassSkyboxIrradiance::RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                                       const Vector2i& viewport) :
-    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxIrradiance{vulkan, assetsManager} {
+RenderPassSkyboxIrradiance::RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderResources& resources,
+                                                       AssetsManager& assetsManager, const Vector2i& viewport) :
+    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxIrradiance{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

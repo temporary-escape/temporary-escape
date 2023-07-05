@@ -73,12 +73,10 @@ void Peer::receiveObject(std::shared_ptr<msgpack::object_handle> oh) {
             PacketInfo info;
             o.via.array.ptr[0].convert(info);
 
-            const auto& object = o.via.array.ptr[1];
-
             if (info.isResponse) {
-                self->handle(info.reqId, object);
+                self->handle(info.reqId, oh);
             } else {
-                self->dispatcher.dispatch(self, info.id, info.reqId, object);
+                self->dispatcher.dispatch(self, info.id, info.reqId, oh);
             };
         } catch (msgpack::unpack_error& e) {
             self->errorHandler.onError(self, ::make_error_code(Error::UnpackError));
@@ -88,7 +86,7 @@ void Peer::receiveObject(std::shared_ptr<msgpack::object_handle> oh) {
     });
 }
 
-void Peer::handle(const uint64_t reqId, const msgpack::object& object) {
+void Peer::handle(const uint64_t reqId, ObjectHandlePtr oh) {
     Callback callback;
 
     {
@@ -104,7 +102,7 @@ void Peer::handle(const uint64_t reqId, const msgpack::object& object) {
 
     if (callback) {
         try {
-            callback(object);
+            callback(oh->get().via.array.ptr[1]);
         } catch (std::exception_ptr& e) {
             errorHandler.onUnhandledException(shared_from_this(), e);
         }

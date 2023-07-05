@@ -6,8 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulkan, RenderResources& resources,
+                                                           AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineHeightmap{
         vulkan,
         {
@@ -35,8 +37,6 @@ RenderSubpassPlanetHeightmap::RenderSubpassPlanetHeightmap(VulkanRenderer& vulka
     });
 
     addPipeline(pipelineHeightmap);
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 void RenderSubpassPlanetHeightmap::render(VulkanCommandBuffer& vkb, Rng& rng, const int index, const float resolution) {
@@ -72,5 +72,5 @@ void RenderSubpassPlanetHeightmap::render(VulkanCommandBuffer& vkb, Rng& rng, co
                                     PushConstant{"mixScale", mixScale},
                                     PushConstant{"doesRidged", doesRidged});
 
-    pipelineHeightmap.renderMesh(vkb, fullScreenQuad);
+    pipelineHeightmap.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

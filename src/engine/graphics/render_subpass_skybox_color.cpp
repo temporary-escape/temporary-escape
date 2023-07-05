@@ -6,8 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, RenderResources& resources,
+                                                   AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineNebula{
         vulkan,
         {
@@ -57,8 +59,6 @@ RenderSubpassSkyboxColor::RenderSubpassSkyboxColor(VulkanRenderer& vulkan, Asset
 
     addPipeline(pipelineNebula);
     addPipeline(pipelinePointCloud);
-
-    skyboxMesh = createSkyboxCube(vulkan);
 }
 
 void RenderSubpassSkyboxColor::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -85,7 +85,7 @@ void RenderSubpassSkyboxColor::renderNebulas(VulkanCommandBuffer& vkb, Scene& sc
 
         pipelineNebula.bindDescriptors(vkb, uniforms, {}, {});
 
-        pipelineNebula.renderMesh(vkb, skyboxMesh);
+        pipelineNebula.renderMesh(vkb, resources.getMeshSkyboxCube());
     }
 }
 

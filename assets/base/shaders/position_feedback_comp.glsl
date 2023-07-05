@@ -12,7 +12,6 @@ layout (std140, binding = 0) uniform Camera {
 } camera;
 
 layout (push_constant) uniform Uniforms {
-    mat4 modelMatrix;
     vec2 viewport;
     int count;
 } uniforms;
@@ -29,7 +28,7 @@ void main() {
     uint gID = gl_GlobalInvocationID.x;
 
     if (gID < uniforms.count) {
-        vec4 worldPos = uniforms.modelMatrix * comp_in.position[gID];
+        vec4 worldPos = vec4(comp_in.position[gID].xyz, 1.0);
         vec4 clipSpace = camera.transformationProjectionMatrix * worldPos;
         vec3 ndcSpace = clipSpace.xyz / clipSpace.w;
         ndcSpace = vec3(ndcSpace.x, -ndcSpace.y, ndcSpace.z);

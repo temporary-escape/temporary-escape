@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassFxaa::RenderPassFxaa(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                               const VulkanTexture& forward) :
-    RenderPass{vulkan, viewport}, subpassFxaa{vulkan, assetsManager, forward} {
+RenderPassFxaa::RenderPassFxaa(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                               const Vector2i& viewport, const VulkanTexture& forward) :
+    RenderPass{vulkan, viewport}, subpassFxaa{vulkan, resources, assetsManager, forward} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

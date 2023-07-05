@@ -6,14 +6,14 @@
 namespace Engine {
 class ENGINE_API RenderSubpassBrdf : public RenderSubpass {
 public:
-    explicit RenderSubpassBrdf(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassBrdf(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
     virtual ~RenderSubpassBrdf() = default;
 
     void render(VulkanCommandBuffer& vkb);
 
 private:
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderPipeline pipelineBrdf;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

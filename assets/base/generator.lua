@@ -249,8 +249,9 @@ function Generator:create_system_planets (galaxy, system)
         planet.name = string.format("%s %d", system.name, p)
         planet.galaxy_id = galaxy.id
         planet.system_id = system.id
-        planet.parent = nil
+        planet.parent_id = nil
         planet.type = pick_array(planet_types, rng)
+        planet.radius = rng:rand_real(1.0, 2.0)
 
         local moon_orbit_distance = 0
 
@@ -264,8 +265,9 @@ function Generator:create_system_planets (galaxy, system)
             moon.name = string.format("%s %d - %d", system.name, p, m)
             moon.galaxy_id = galaxy.id
             moon.system_id = system.id
-            moon.parent = planet.id
+            moon.parent_id = planet.id
             moon.type = pick_array(planet_types, rng)
+            moon.radius = rng:rand_real(0.2, 0.6)
 
             local rand_distance = rng:rand_real(self.min_moon_distance, self.max_moon_distance)
             moon_orbit_distance = moon_orbit_distance + rand_distance
@@ -295,8 +297,13 @@ end
 function Generator:create_system_sectors (rng, galaxy, system)
     local planets = db.planets:seek_all(string.format("%s/%s/", galaxy.id, system.id), 0)
 
+    local faction = nil
+    if system.faction_id ~= nil then
+        faction = db.factions:get(system.faction_id)
+    end
+
     for _, template in pairs(self.sector_templates) do
-        template:generate(rng, galaxy, system, planets)
+        template:generate(rng, galaxy, system, planets, faction)
     end
 end
 
@@ -478,7 +485,7 @@ function Generator:create_galaxy_systems (galaxy_id)
     self:find_faction_homes(galaxy_id, systems)
     self:fill_galaxy_factions(galaxy_id, positions, connections, indexes, systems)
 
-    for i, system in pairs(systems) do
+    for _, system in pairs(systems) do
         self:create_system_planets(galaxy, system)
 
         local key = string.format("%s/%s", galaxy_id, system.id);

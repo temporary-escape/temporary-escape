@@ -9,6 +9,7 @@
 #include "../utils/name_generator.hpp"
 #include "../utils/path.hpp"
 #include "../utils/random.hpp"
+#include "../utils/string_utils.hpp"
 #include "server.hpp"
 #include <sol/sol.hpp>
 
@@ -148,6 +149,23 @@ void Lua::importModule(const std::string_view& name) {
     }
 }
 
+void Lua::require(const std::string_view& name, const std::function<void(sol::table&)>& callback) {
+    logger.info("Lua require: '{}'", name);
+
+    auto res = data->state["require"](name);
+    if (!res.valid()) {
+        sol::error err = res;
+        EXCEPTION("Lua require: '{}' error: {}", name, err.what());
+    }
+
+    try {
+        auto table = res.get<sol::table>();
+        callback(table);
+    } catch (std::exception& e) {
+        EXCEPTION("Lua require: '{}' error: {}", name, e.what());
+    }
+}
+
 sol::table& Lua::root() {
     return data->engine;
 }
@@ -178,6 +196,8 @@ void Lua::setupBindings() {
     FloodFill::bind(*this);
     GalaxyDistribution::bind(*this);
     m["random_circle_positions"] = &randomCirclePositions;
+    m["radians"] = glm::radians<float>;
+    m["degrees"] = glm::degrees<float>;
 
     { // std::mt19937_64
         auto cls = m.new_usertype<std::mt19937_64>("MT19937", sol::constructors<std::mt19937_64(uint64_t)>{});
@@ -207,6 +227,13 @@ void Lua::setupBindings() {
     bindSchemas(*this);
     Server::bind(*this);
     EventHandler::bind(*this);
+
+    // Scene
+    Entity::bind(*this);
+    ComponentModel::bind(*this);
+    ComponentRigidBody::bind(*this);
+    ComponentTransform::bind(*this);
+    Scene::bind(*this);
 
     // Global functions
     m["create_logger"] = &createLogger;

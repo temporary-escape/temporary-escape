@@ -6,7 +6,8 @@ static const int viewportDivision = 4;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassBloom::Downsample::Downsample(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
+RenderPassBloom::Downsample::Downsample(VulkanRenderer& vulkan, RenderResources& resources,
+                                        AssetsManager& assetsManager, const Vector2i& viewport,
                                         const VulkanTexture& forward) :
     RenderPass{vulkan, viewport / viewportDivision}, forward{forward} {
 
@@ -104,9 +105,9 @@ void RenderPassBloom::Downsample::render(VulkanCommandBuffer& vkb, const Vector2
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
-RenderPassBloom::Extract::Extract(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                                  const VulkanTexture& forward) :
-    RenderPass{vulkan, viewport / viewportDivision}, subpassBloomExtract{vulkan, assetsManager, forward} {
+RenderPassBloom::Extract::Extract(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                  const Vector2i& viewport, const VulkanTexture& forward) :
+    RenderPass{vulkan, viewport / viewportDivision}, subpassBloomExtract{vulkan, resources, assetsManager, forward} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -138,9 +139,11 @@ void RenderPassBloom::Extract::render(VulkanCommandBuffer& vkb, const Vector2i& 
     vkb.endRenderPass();
 }
 
-RenderPassBloom::Blur::Blur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                            const VulkanTexture& dst, const VulkanTexture& color, const bool vertical) :
-    RenderPass{vulkan, viewport / viewportDivision}, subpassBloomBlur{vulkan, assetsManager, color, vertical} {
+RenderPassBloom::Blur::Blur(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                            const Vector2i& viewport, const VulkanTexture& dst, const VulkanTexture& color,
+                            const bool vertical) :
+    RenderPass{vulkan, viewport / viewportDivision},
+    subpassBloomBlur{vulkan, resources, assetsManager, color, vertical} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -174,17 +177,19 @@ void RenderPassBloom::Blur::render(VulkanCommandBuffer& vkb, const Vector2i& vie
     vkb.endRenderPass();
 }
 
-RenderPassBloom::RenderPassBloom(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport,
-                                 const VulkanTexture& forward) :
-    downsample{vulkan, assetsManager, viewport, forward},
-    extract{vulkan, assetsManager, viewport, downsample.getTexture(Downsample::Attachments::Color)},
+RenderPassBloom::RenderPassBloom(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                 const Vector2i& viewport, const VulkanTexture& forward) :
+    downsample{vulkan, resources, assetsManager, viewport, forward},
+    extract{vulkan, resources, assetsManager, viewport, downsample.getTexture(Downsample::Attachments::Color)},
     blurH{vulkan,
+          resources,
           assetsManager,
           viewport,
           downsample.getTexture(Downsample::Attachments::Color),
           extract.getTexture(Downsample::Attachments::Color),
           false},
     blurV{vulkan,
+          resources,
           assetsManager,
           viewport,
           extract.getTexture(Downsample::Attachments::Color),

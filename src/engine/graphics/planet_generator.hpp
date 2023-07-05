@@ -10,9 +10,11 @@
 namespace Engine {
 class ENGINE_API PlanetGenerator {
 public:
-    explicit PlanetGenerator(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit PlanetGenerator(const Vector2i& textureSize, VulkanRenderer& vulkan, RenderResources& resources,
+                             AssetsManager& assetsManager);
 
-    void enqueue(uint64_t seed, const PlanetTypePtr& planetType, std::function<void(PlanetTextures)> callback);
+    PlanetTextures render(uint64_t seed, const PlanetTypePtr& planetType);
+    void enqueue(uint64_t seed, const PlanetTypePtr& planetType, std::function<void(PlanetTextures)>&& callback);
     void update(Scene& scene);
     void run();
     bool isBusy() const;
@@ -23,8 +25,8 @@ private:
     void startWork();
     void prepareCubemap();
 
-    const Config& config;
     VulkanRenderer& vulkan;
+    Vector2i textureSize;
     VulkanFence fence;
     VulkanCommandBuffer vkb;
 

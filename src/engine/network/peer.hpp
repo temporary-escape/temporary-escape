@@ -13,6 +13,8 @@
 #include <unordered_map>
 
 namespace Engine::Network {
+using ObjectHandlePtr = std::shared_ptr<msgpack::object_handle>;
+
 class ENGINE_API Dispatcher;
 
 class ENGINE_API Peer : public CompressionStream,
@@ -28,6 +30,33 @@ public:
     };
 
     using Callback = std::function<void(const msgpack::object& object)>;
+
+    class Packer : public msgpack::packer<CompressionStream> {
+    public:
+        explicit Packer(Peer& peer, const std::string_view name) :
+            Packer{peer, Detail::getMessageHash(name), 0, false} {
+        }
+
+        explicit Packer(Peer& peer, const uint64_t hash, const uint64_t reqId, const bool isResponse) :
+            lock{peer.mutex}, peer{peer}, packer{peer} {
+            PacketInfo info;
+
+            info.id = hash;
+            info.reqId = reqId;
+            info.isResponse = isResponse;
+
+            pack_array(2);
+            pack(info);
+        }
+
+        ~Packer() {
+            peer.flush();
+        }
+
+    private:
+        Peer& peer;
+        std::lock_guard<std::mutex> lock;
+    };
 
     explicit Peer(ErrorHandler& errorHandler, Dispatcher& dispatcher, asio::io_service& service,
                   std::shared_ptr<Socket> socket);
@@ -73,7 +102,7 @@ public:
         }
 
         // Only one thread can write to the compression stream at the time.
-        std::lock_guard<std::mutex> lock{mutex};
+        /*std::lock_guard<std::mutex> lock{mutex};
 
         PacketInfo info;
 
@@ -85,7 +114,10 @@ public:
         packer.pack_array(2);
         packer.pack(info);
         packer.pack(message);
-        flush();
+        flush();*/
+
+        Packer packer{*this, Detail::MessageHelper<Req>::hash, reqId, isResponse};
+        packer.pack(message);
     }
 
     /**
@@ -119,15 +151,17 @@ public:
         sendInternal<Req, Res, Fn>(message, std::forward<Fn>(fn));
     }
 
+    friend class Packer;
+
 private:
     struct Handler {
         Callback callback;
     };
 
     void sendBuffer(std::shared_ptr<std::vector<char>> buffer) override;
-    void handle(uint64_t reqId, const msgpack::object& object);
+    void handle(uint64_t reqId, ObjectHandlePtr oh);
     void receive();
-    void receiveObject(std::shared_ptr<msgpack::object_handle> oh) override;
+    void receiveObject(ObjectHandlePtr oh) override;
 
     template <typename Req, typename Res, typename Fn> void sendInternal(const Req& message, Fn fn) {
         const auto reqId = requests.nextId.fetch_add(1ULL);

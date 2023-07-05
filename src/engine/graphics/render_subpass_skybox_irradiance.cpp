@@ -5,8 +5,10 @@
 
 using namespace Engine;
 
-RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vulkan, RenderResources& resources,
+                                                             AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineIrradiance{
         vulkan,
         {
@@ -34,8 +36,6 @@ RenderSubpassSkyboxIrradiance::RenderSubpassSkyboxIrradiance(VulkanRenderer& vul
     });
 
     addPipeline(pipelineIrradiance);
-
-    skyboxMesh = createSkyboxCube(vulkan);
 }
 
 void RenderSubpassSkyboxIrradiance::reset() {
@@ -54,5 +54,5 @@ void RenderSubpassSkyboxIrradiance::render(VulkanCommandBuffer& vkb, const Vulka
     const auto projectionViewMatrix = projection * view;
     pipelineIrradiance.pushConstants(vkb, PushConstant{"projectionViewMatrix", projectionViewMatrix});
 
-    pipelineIrradiance.renderMesh(vkb, skyboxMesh);
+    pipelineIrradiance.renderMesh(vkb, resources.getMeshSkyboxCube());
 }

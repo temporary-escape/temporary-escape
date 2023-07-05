@@ -1,3 +1,51 @@
 .theme-toggle-container {
   display: none;
 }
+section#member-functions > section > p {
+  margin-left: 2rem;
+}
+section#member-functions > section > ul {
+  margin-left: 2rem;
+}
+section#member-functions > section > div.highlight-lua {
+  margin-left: 2rem;
+}
+section#member-functions > section > div.admonition {
+  margin-left: 2rem;
+}
+section#static-functions > section > p {
+  margin-left: 2rem;
+}
+section#static-functions > section > ul {
+  margin-left: 2rem;
+}
+section#static-functions > section > div.highlight-lua {
+  margin-left: 2rem;
+}
+section#static-functions > section > div.admonition {
+  margin-left: 2rem;
+}
+section#constructors > section > p {
+  margin-left: 2rem;
+}
+section#constructors > section > ul {
+  margin-left: 2rem;
+}
+section#constructors > section > div.highlight-lua {
+  margin-left: 2rem;
+}
+section#constructors > section > div.admonition {
+  margin-left: 2rem;
+}
+section#fields > section > p {
+  margin-left: 2rem;
+}
+section#fields > section > ul {
+  margin-left: 2rem;
+}
+section#fields > section > div.highlight-lua {
+  margin-left: 2rem;
+}
+section#fields > section > div.admonition {
+  margin-left: 2rem;
+}

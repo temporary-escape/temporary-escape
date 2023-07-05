@@ -5,8 +5,10 @@
 
 using namespace Engine;
 
-RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderSubpassForward::RenderSubpassForward(VulkanRenderer& vulkan, RenderResources& resources,
+                                           AssetsManager& assetsManager) :
     vulkan{vulkan},
+    resources{resources},
     pipelineDebug{
         vulkan,
         {
@@ -136,7 +138,6 @@ void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);
     collectForRender<ComponentLines>(vkb, scene, jobs);
-    collectForRender<ComponentIconPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, scene, jobs);
     collectForRender<ComponentStarFlare>(vkb, scene, jobs);
@@ -230,35 +231,6 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
 }
 
 void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
-                                              ComponentTransform& transform, ComponentIconPointCloud& component) {
-    component.recalculate(vulkan);
-
-    if (currentPipeline != &pipelinePointCloud) {
-        currentPipeline = &pipelinePointCloud;
-        pipelinePointCloud.bind(vkb);
-    }
-
-    for (const auto& [image, mesh] : component.getMesges()) {
-        if (mesh.count == 0) {
-            continue;
-        }
-
-        std::array<UniformBindingRef, 1> uniforms{};
-        uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
-
-        std::array<SamplerBindingRef, 1> textures{};
-        textures[0] = {"colorTexture", *image->getAllocation().texture};
-
-        pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
-
-        const auto modelMatrix = transform.getAbsoluteTransform();
-        pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
-
-        pipelinePointCloud.renderMesh(vkb, mesh);
-    }
-}
-
-void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                               ComponentTransform& transform, ComponentPolyShape& component) {
     component.recalculate(vulkan);
 
@@ -296,7 +268,11 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     }
 
     std::array<UniformBindingRef, 1> uniforms{};
-    uniforms[0] = {"Camera", camera.getUboZeroPos().getCurrentBuffer()};
+    if (component.isBackground()) {
+        uniforms[0] = {"Camera", camera.getUboZeroPos().getCurrentBuffer()};
+    } else {
+        uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+    }
 
     std::array<SamplerBindingRef, 3> textures{};
     textures[0] = {"colorTexture", component.getTexture()->getVulkanTexture()};
@@ -306,10 +282,10 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
     pipelineStarFlare.bindDescriptors(vkb, uniforms, textures, {});
 
     const auto modelMatrix = transform.getAbsoluteTransform();
-    const Vector2 size{0.3f, 0.3f};
-    const float temp = 0.5f;
-    pipelineStarFlare.pushConstants(
-        vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"size", size}, PushConstant{"temp", temp});
+    pipelineStarFlare.pushConstants(vkb,
+                                    PushConstant{"modelMatrix", modelMatrix},
+                                    PushConstant{"size", component.getSize()},
+                                    PushConstant{"temp", component.getTemperature()});
 
     pipelineStarFlare.renderMesh(vkb, mesh);
 }

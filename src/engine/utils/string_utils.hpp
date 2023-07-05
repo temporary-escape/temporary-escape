@@ -9,11 +9,12 @@
 #include <vector>
 
 namespace Engine {
-extern std::vector<std::string> ENGINE_API splitLast(const std::string& str, const std::string& delim);
-extern std::vector<std::string> ENGINE_API split(const std::string& str, const std::string& delim);
+extern std::vector<std::string> ENGINE_API splitLast(const std::string_view& str, const std::string_view& delim);
+extern std::vector<std::string> ENGINE_API split(const std::string_view& str, const std::string_view& delim);
 extern std::string ENGINE_API intToRomanNumeral(const int value);
 extern std::string ENGINE_API toLower(const std::string_view& str);
 extern bool ENGINE_API endsWith(const std::string_view& str, const std::string_view& ending);
+extern bool ENGINE_API startsWith(const std::string_view& str, const std::string_view& start);
 
 template <typename T> extern std::string join(const std::string& joiner, const std::vector<T>& items) {
     std::stringstream ss;

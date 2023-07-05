@@ -22,6 +22,7 @@ public:
     virtual ~Lua();
 
     void importModule(const std::string_view& name);
+    void require(const std::string_view& name, const std::function<void(sol::table&)>& callback);
     sol::table& root();
 
 private:

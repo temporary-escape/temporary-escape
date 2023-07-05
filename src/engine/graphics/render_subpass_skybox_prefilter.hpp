@@ -7,7 +7,8 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkyboxPrefilter : public RenderSubpass {
 public:
-    explicit RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassSkyboxPrefilter(VulkanRenderer& vulkan, RenderResources& resources,
+                                          AssetsManager& assetsManager);
     virtual ~RenderSubpassSkyboxPrefilter() = default;
 
     void reset();
@@ -16,8 +17,7 @@ public:
 
 private:
     VulkanRenderer& vulkan;
-
+    RenderResources& resources;
     RenderPipeline pipelinePrefilter;
-    Mesh skyboxMesh;
 };
 } // namespace Engine

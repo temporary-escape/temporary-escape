@@ -182,3 +182,37 @@ Vector2 FontFace::getBounds(const std::string_view& text, const float height) co
 
     return max;
 }
+
+Vector2 FontFace::getPenOffset(const std::string_view& text, float height, const TextAlign textAlign) const {
+    const auto bounds = getBounds(text, height);
+
+    switch (textAlign) {
+    case TextAlign::Left: {
+        return {0.0f, bounds.y / 2.0f};
+    }
+    case TextAlign::Center: {
+        return {bounds.x / 2.0f, bounds.y / 2.0f};
+    }
+    case TextAlign::Right: {
+        return {bounds.x, bounds.y / 2.0f};
+    }
+    case TextAlign::LeftTop: {
+        return {0.0f, 0.0f};
+    }
+    case TextAlign::CenterTop: {
+        return {bounds.x / 2.0f, 0.0f};
+    }
+    case TextAlign::RightTop: {
+        return {bounds.x, 0.0f};
+    }
+    case TextAlign::LeftBottom: {
+        return {0.0f, bounds.y};
+    }
+    case TextAlign::CenterBottom: {
+        return {bounds.x / 2.0f, bounds.y};
+    }
+    case TextAlign::RightBottom: {
+        return {bounds.x, bounds.y};
+    }
+    }
+}

@@ -89,7 +89,7 @@ html_theme_options = {
             "class": "",
         },
     ],
-    "source_edit_link": "https://github.com/temporary-escape/temporary-escape/tree/master/docs/content/{filename}",
+    "source_edit_link": "https://github.com/temporary-escape/temporary-escape/tree/master/docs/source/{filename}",
 }
 
 html_css_files = [

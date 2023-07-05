@@ -12,7 +12,8 @@ public:
 
     static const size_t totalAttachments = 1;
 
-    explicit RenderPassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager, const Vector2i& viewport);
+    explicit RenderPassSkyboxColor(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                   const Vector2i& viewport);
     virtual ~RenderPassSkyboxColor() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

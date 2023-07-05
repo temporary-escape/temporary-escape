@@ -68,7 +68,7 @@ jobs:
         run: |
           cd ${{ matrix.vcpkgDir }}
           git fetch origin
-          git reset --hard 69efe9cc2df0015f0bb2d37d55acde4a75c9a25b
+          git reset --hard f6a5d4e8eb7476b8d7fc12a56dff300c1c986131
           if [ "$RUNNER_OS" == "Windows" ]; then
             ./bootstrap-vcpkg.bat
           else

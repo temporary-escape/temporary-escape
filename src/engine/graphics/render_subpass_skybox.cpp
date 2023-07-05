@@ -7,9 +7,10 @@
 
 using namespace Engine;
 
-RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                         const VulkanTexture& brdf) :
+RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, RenderResources& resources,
+                                         AssetsManager& assetsManager, const VulkanTexture& brdf) :
     vulkan{vulkan},
+    resources{resources},
     brdf{brdf},
     defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}},
     pipelineSkybox{
@@ -33,12 +34,12 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, AssetsManager& 
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
         },
     },
-    pipelinePlanetSurface{
+    pipelinePlanet{
         vulkan,
         {
             // List of shader modules
-            assetsManager.getShaders().find("component_planet_surface_vert"),
-            assetsManager.getShaders().find("component_planet_surface_frag"),
+            assetsManager.getShaders().find("pass_skybox_planet_vert"),
+            assetsManager.getShaders().find("pass_skybox_planet_frag"),
         },
         {
             // Vertex inputs
@@ -63,15 +64,12 @@ RenderSubpassSkybox::RenderSubpassSkybox(VulkanRenderer& vulkan, AssetsManager& 
     });
 
     addPipeline(pipelineSkybox);
-    addPipeline(pipelinePlanetSurface);
-
-    cube = createSkyboxCube(vulkan);
-    planet = createPlanetMesh(vulkan);
+    addPipeline(pipelinePlanet);
 }
 
 void RenderSubpassSkybox::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineSkybox.getDescriptorPool().reset();
-    pipelinePlanetSurface.getDescriptorPool().reset();
+    pipelinePlanet.getDescriptorPool().reset();
 
     updateDirectionalLights(scene);
 
@@ -104,11 +102,11 @@ void RenderSubpassSkybox::renderSkybox(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelineSkybox.bindDescriptors(vkb, uniforms, textures, {});
 
-    pipelineSkybox.renderMesh(vkb, cube);
+    pipelineSkybox.renderMesh(vkb, resources.getMeshSkyboxCube());
 }
 
 void RenderSubpassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) {
-    pipelinePlanetSurface.bind(vkb);
+    pipelinePlanet.bind(vkb);
 
     auto camera = scene.getPrimaryCamera();
     if (!camera) {
@@ -129,9 +127,20 @@ void RenderSubpassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) 
 void RenderSubpassSkybox::renderPlanet(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                        const SkyboxTextures& skybox, ComponentTransform& transform,
                                        ComponentPlanet& component) {
-
-    if (!component.getTextures().getColor()) {
+    if (!component.isBackground()) {
         return;
+    }
+
+    const PlanetTextures* planetTextures;
+
+    if (component.isHighRes()) {
+        if (!component.getTextures().getColor()) {
+            return;
+        }
+
+        planetTextures = &component.getTextures();
+    } else {
+        planetTextures = &component.getPlanetType()->getLowResTextures();
     }
 
     std::array<UniformBindingRef, 3> uniforms{};
@@ -140,24 +149,24 @@ void RenderSubpassSkybox::renderPlanet(VulkanCommandBuffer& vkb, const Component
     uniforms[2] = {"Atmosphere", component.getPlanetType()->getUbo()};
 
     std::array<SamplerBindingRef, 6> textures{};
-    textures[0] = {"albedoTexture", component.getTextures().getColor()};
-    textures[1] = {"normalTexture", component.getTextures().getNormal()};
-    textures[2] = {"metallicRoughnessTexture", component.getTextures().getMetallicRoughness()};
+    textures[0] = {"albedoTexture", planetTextures->getColor()};
+    textures[1] = {"normalTexture", planetTextures->getNormal()};
+    textures[2] = {"metallicRoughnessTexture", planetTextures->getMetallicRoughness()};
     textures[3] = {"irradianceTexture", skybox.getIrradiance()};
     textures[4] = {"prefilterTexture", skybox.getPrefilter()};
     textures[5] = {"brdfTexture", brdf};
 
-    pipelinePlanetSurface.bindDescriptors(vkb, uniforms, textures, {});
+    pipelinePlanet.bindDescriptors(vkb, uniforms, textures, {});
 
     const auto modelMatrix = transform.getAbsoluteTransform();
     const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
-    pipelinePlanetSurface.pushConstants(vkb,
-                                        // Constants
-                                        PushConstant{"modelMatrix", modelMatrix},
-                                        PushConstant{"normalMatrix", normalMatrix});
+    pipelinePlanet.pushConstants(vkb,
+                                 // Constants
+                                 PushConstant{"modelMatrix", modelMatrix},
+                                 PushConstant{"normalMatrix", normalMatrix});
 
-    pipelinePlanetSurface.renderMesh(vkb, planet);
+    pipelinePlanet.renderMesh(vkb, resources.getMeshPlanet());
 }
 
 void RenderSubpassSkybox::updateDirectionalLights(Scene& scene) {

@@ -15,7 +15,6 @@ public:
     // Player data functions
     std::optional<std::string> secretToId(uint64_t);
     PlayerData login(uint64_t secret, const std::string& name);
-    PlayerLocationData findStartingLocation(const std::string& playerId);
 
     // Session functions
     void createSession(const PeerPtr& peer, const std::string& playerId);

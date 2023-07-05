@@ -5,9 +5,10 @@
 
 using namespace Engine;
 
-RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, AssetsManager& assetsManager, const VulkanTexture& color,
-                                     const bool vertical) :
+RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                     const VulkanTexture& color, const bool vertical) :
     vulkan{vulkan},
+    resources{resources},
     color{color},
     vertical{vertical},
     pipelineBlur{
@@ -38,8 +39,6 @@ RenderSubpassBlur::RenderSubpassBlur(VulkanRenderer& vulkan, AssetsManager& asse
 
     addPipeline(pipelineBlur);
 
-    fullScreenQuad = createFullScreenQuad(vulkan);
-
     createGaussianKernel(15, 3.5);
 }
 
@@ -61,7 +60,7 @@ void RenderSubpassBlur::render(VulkanCommandBuffer& vkb) {
     const auto horizontal = !vertical;
     pipelineBlur.pushConstants(vkb, PushConstant{"horizontal", horizontal});
 
-    pipelineBlur.renderMesh(vkb, fullScreenQuad);
+    pipelineBlur.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }
 
 void RenderSubpassBlur::createGaussianKernel(const size_t size, double sigma) {

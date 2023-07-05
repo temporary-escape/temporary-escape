@@ -10,7 +10,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/Common.cmake)
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/AddressSanitizer.cmake)
-    target_link_libraries(${PROJECT_NAME}Common INTERFACE AddressSanitizer)
 endif ()
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Dependencies.cmake)

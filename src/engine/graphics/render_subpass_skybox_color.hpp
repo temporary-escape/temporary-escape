@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API RenderSubpassSkyboxColor : public RenderSubpass {
 public:
-    explicit RenderSubpassSkyboxColor(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderSubpassSkyboxColor(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
     virtual ~RenderSubpassSkyboxColor() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -17,9 +17,8 @@ private:
     void renderPointClouds(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
-
+    RenderResources& resources;
     RenderPipeline pipelineNebula;
     RenderPipeline pipelinePointCloud;
-    Mesh skyboxMesh;
 };
 } // namespace Engine

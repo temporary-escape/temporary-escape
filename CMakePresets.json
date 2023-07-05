@@ -27,7 +27,8 @@
         },
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CMAKE_MAKE_PROGRAM": "ninja"
       }
     },
     {

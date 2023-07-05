@@ -4,12 +4,12 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassPlanetSurface::RenderPassPlanetSurface(VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                                                 const Vector2i& viewport) :
+RenderPassPlanetSurface::RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderResources& resources,
+                                                 AssetsManager& assetsManager, const Vector2i& viewport) :
     RenderPass{vulkan, viewport},
-    subpassPlanetHeightmap{vulkan, assetsManager},
-    subpassPlanetMoisture{vulkan, assetsManager},
-    subpassPlanetColor{vulkan, assetsManager, *this} {
+    subpassPlanetHeightmap{vulkan, resources, assetsManager},
+    subpassPlanetMoisture{vulkan, resources, assetsManager},
+    subpassPlanetColor{vulkan, resources, assetsManager, *this} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 

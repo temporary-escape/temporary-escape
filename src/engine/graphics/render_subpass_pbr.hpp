@@ -15,8 +15,8 @@ public:
         int count{0};
     };
 
-    explicit RenderSubpassPbr(VulkanRenderer& vulkan, AssetsManager& assetsManager, const RenderPassOpaque& opaque,
-                              const RenderPassSsao& ssao, const VulkanTexture& brdf);
+    explicit RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                              const RenderPassOpaque& opaque, const RenderPassSsao& ssao, const VulkanTexture& brdf);
     virtual ~RenderSubpassPbr() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -25,12 +25,12 @@ private:
     void updateDirectionalLights(Scene& scene);
 
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     const RenderPassOpaque& opaque;
     const RenderPassSsao& ssao;
     const VulkanTexture& brdf;
     SkyboxTextures defaultSkybox;
     RenderPipeline pipelinePbr;
-    Mesh fullScreenQuad;
     VulkanDoubleBuffer directionalLightsUbo;
 };
 } // namespace Engine

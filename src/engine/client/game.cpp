@@ -15,17 +15,22 @@ Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGene
     assetsManager{assetsManager},
     font{font},
     client{client},
-    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}} {
+    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
+    guiGalaxy{config, assetsManager},
+    guiSystem{config, assetsManager} {
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, assetsManager, skybox, client);
-    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, assetsManager, client, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, assetsManager, client, font);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, assetsManager, client, guiGalaxy, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, assetsManager, client, guiSystem, font);
     view = viewSpace.get();
 }
 
 Game::~Game() = default;
 
 void Game::update(float deltaTime) {
+    if (const auto scene = client.getScene(); scene) {
+        scene->update(deltaTime);
+    }
     view->update(deltaTime);
 }
 
@@ -48,28 +53,18 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
         }
     }
 
-    renderer.render(vkb, viewport, view->getScene());
+    auto* scene = view->getScene();
+    if (scene) {
+        renderer.render(vkb, viewport, *scene);
+    }
 }
 
 void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
     nuklear.begin(viewport);
-    // gui.draw(nuklear, viewport);
+    guiGalaxy.modalLoading.draw(nuklear, viewport);
+    guiSystem.modalLoading.draw(nuklear, viewport);
     nuklear.end();
 }
-
-/*void Game::renderCanvas(const Vector2i& viewport) {
-    canvas.begin(viewport);
-
-    if (view) {
-        view->renderCanvas(viewport, canvas);
-
-        nuklear.begin(viewport);
-        view->renderGui(viewport, nuklear);
-        nuklear.end();
-    }
-
-    canvas.end();
-}*/
 
 void Game::eventMouseMoved(const Vector2i& pos) {
     if (view) {
@@ -81,9 +76,10 @@ void Game::switchToGalaxyMap() {
     if (view != viewGalaxy.get()) {
         logger.info("Switching to galaxy map scene...");
         view = viewGalaxy.get();
-        viewGalaxy->load();
+        viewGalaxy->onEnter();
     } else {
         logger.info("Switching to space scene...");
+        viewGalaxy->onExit();
         view = viewSpace.get();
     }
 }
@@ -92,9 +88,10 @@ void Game::switchToSystemMap() {
     if (view != viewSystem.get()) {
         logger.info("Switching to system map scene...");
         view = viewSystem.get();
-        viewSystem->load();
+        viewSystem->onEnter();
     } else {
         logger.info("Switching to system scene...");
+        viewSystem->onExit();
         view = viewSpace.get();
     }
 }
@@ -103,9 +100,10 @@ void Game::switchToSystemMap(const std::string& galaxyId, const std::string& sys
     if (view != viewSystem.get()) {
         logger.info("Switching to system map scene...");
         view = viewSystem.get();
-        viewSystem->load(galaxyId, systemId);
+        viewSystem->reset(galaxyId, systemId);
     } else {
         logger.info("Switching to system scene...");
+        viewSystem->onExit();
         view = viewSpace.get();
     }
 }

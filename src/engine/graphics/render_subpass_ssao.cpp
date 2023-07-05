@@ -6,9 +6,10 @@
 
 using namespace Engine;
 
-RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, AssetsManager& assetsManager,
+RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                      const RenderPassOpaque& previous) :
     vulkan{vulkan},
+    resources{resources},
     previous{previous},
     pipelineSsao{
         vulkan,
@@ -38,7 +39,6 @@ RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, AssetsManager& asse
 
     createSsaoNoise();
     createSsaoSamples();
-    fullScreenQuad = createFullScreenQuad(vulkan);
 
     addPipeline(pipelineSsao);
 }
@@ -67,7 +67,7 @@ void RenderSubpassSsao::render(VulkanCommandBuffer& vkb, Scene& scene) {
     const auto scale = Vector2{camera->getViewport()} / 4.0f;
     pipelineSsao.pushConstants(vkb, PushConstant{"scale", scale});
 
-    pipelineSsao.renderMesh(vkb, fullScreenQuad);
+    pipelineSsao.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }
 
 void RenderSubpassSsao::createSsaoNoise() {

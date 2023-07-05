@@ -44,6 +44,7 @@ public:
 
     void handle(MessagePlayerLocationEvent res);
     void handle(MessagePingRequest req);
+    void handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message);
 
 private:
     void doLogin();
@@ -70,8 +71,5 @@ private:
     // PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
 
     std::unique_ptr<Scene> scene;
-    std::shared_ptr<Entity> camera;
-
-    std::chrono::time_point<std::chrono::steady_clock> lastTimePoint;
 };
 } // namespace Engine

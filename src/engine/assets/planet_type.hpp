@@ -1,6 +1,8 @@
 #pragma once
 
+#include "../graphics/planet_textures.hpp"
 #include "asset.hpp"
+#include "image.hpp"
 #include "material.hpp"
 #include "texture.hpp"
 #include "voxel_shape.hpp"
@@ -43,6 +45,22 @@ public:
         return ubo;
     }
 
+    void setLowResTextures(PlanetTextures value) {
+        textures = std::move(value);
+    }
+
+    [[nodiscard]] const PlanetTextures& getLowResTextures() const {
+        return textures;
+    }
+
+    void setThumbnail(ImagePtr value) {
+        thumbnail = std::move(value);
+    }
+
+    [[nodiscard]] const ImagePtr& getThumbnail() const {
+        return thumbnail;
+    }
+
     static std::shared_ptr<PlanetType> from(const std::string& name);
 
     static void bind(Lua& lua);
@@ -51,6 +69,8 @@ private:
     Path path;
     Definition definition;
     VulkanBuffer ubo;
+    PlanetTextures textures;
+    ImagePtr thumbnail;
 };
 
 using PlanetTypePtr = std::shared_ptr<PlanetType>;
