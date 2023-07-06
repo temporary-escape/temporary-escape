@@ -144,7 +144,7 @@ private:
 
     static inline const auto padding = 4.0f;
 
-    using FontSizeMap = std::unordered_map<int, nk_user_font>;
+    using FontSizeMap = std::unordered_map<int, std::unique_ptr<nk_user_font>>;
     using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
 
     const Config& config;

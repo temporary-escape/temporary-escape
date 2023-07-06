@@ -1,18 +1,18 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_separate_shader_objects: enable
 
-layout(push_constant) uniform Uniforms {
+layout (push_constant) uniform Uniforms {
     mat4 projectionViewMatrix;
     float roughness;
 } uniforms;
 
-layout(location = 0) in VS_OUT {
+layout (location = 0) in VS_OUT {
     vec3 texcoords;
 } vs_out;
 
-layout(binding = 1) uniform samplerCube texSkybox;
+layout (binding = 1) uniform samplerCube texSkybox;
 
-layout(location = 0) out vec4 outColor;
+layout (location = 0) out vec4 outColor;
 
 const float PI = 3.14159265359;
 
@@ -55,7 +55,7 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     float a = roughness * roughness;
 
     float phi = 2.0 * PI * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
     // from spherical coordinates to cartesian coordinates - halfway vector

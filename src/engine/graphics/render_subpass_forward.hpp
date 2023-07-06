@@ -44,6 +44,7 @@ private:
                             ComponentPolyShape& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentStarFlare& component);
+    void renderSceneDynamicsWorld(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;

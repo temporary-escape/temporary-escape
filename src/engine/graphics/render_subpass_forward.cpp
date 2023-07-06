@@ -1,5 +1,6 @@
 #include "render_subpass_forward.hpp"
 #include "../assets/assets_manager.hpp"
+#include "../scene/controllers/controller_dynamics_world.hpp"
 #include "render_pass_forward.hpp"
 #include "skybox.hpp"
 
@@ -134,6 +135,8 @@ void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePointCloud.getDescriptorPool().reset();
     pipelinePolyShape.getDescriptorPool().reset();
     pipelineStarFlare.getDescriptorPool().reset();
+
+    renderSceneDynamicsWorld(vkb, *scene.getPrimaryCamera(), scene);
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);
@@ -288,4 +291,36 @@ void RenderSubpassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Co
                                     PushConstant{"temp", component.getTemperature()});
 
     pipelineStarFlare.renderMesh(vkb, mesh);
+}
+
+void RenderSubpassForward::renderSceneDynamicsWorld(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                                    Scene& scene) {
+    auto& controller = scene.getController<ControllerDynamicsWorld>();
+
+    controller.recalculate(vulkan);
+
+    if (controller.getDebugDrawCount() == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelineLines) {
+        currentPipeline = &pipelineLines;
+        pipelineLines.bind(vkb);
+    }
+
+    std::array<UniformBindingRef, 1> uniforms{};
+    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+
+    pipelineLines.bindDescriptors(vkb, uniforms, {}, {});
+
+    const auto modelMatrix = Matrix4{1.0f};
+    const auto color = Color4{1.0f};
+    pipelineLines.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix}, PushConstant{"color", color});
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+
+    vboBindings[0] = {&controller.getDebugDrawVbo(), 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(controller.getDebugDrawCount(), 1, 0, 0);
 }

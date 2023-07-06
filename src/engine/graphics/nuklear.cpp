@@ -62,14 +62,14 @@ nk_user_font& Nuklear::addFontFamily(const FontFamily& fontFamily, int size) {
     auto it = fontSizes.find(size);
 
     if (it == fontSizes.end()) {
-        it = fontSizes.insert(std::make_pair(size, nk_user_font{})).first;
+        it = fontSizes.insert(std::make_pair(size, std::make_unique<nk_user_font>())).first;
 
-        it->second.height = static_cast<float>(size);
-        it->second.width = &getTextWidth;
-        it->second.userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&fontFamily));
+        it->second->height = static_cast<float>(size);
+        it->second->width = &getTextWidth;
+        it->second->userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&fontFamily));
     }
 
-    return it->second;
+    return *it->second;
 }
 
 void Nuklear::begin(const Vector2i& viewport) {

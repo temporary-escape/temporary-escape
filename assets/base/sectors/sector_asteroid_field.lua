@@ -48,7 +48,7 @@ function SectorAsteroidField.new()
             assets_manager:find_model("model_asteroid_01_h"),
         }
 
-        for x = 0, 9 do
+        for x = 0, 5 do
             local entity = scene:create_entity()
             local transform = entity:add_component_transform()
             transform:move(engine.Vector3.new(x * 3.0, 0.0, 0.0))

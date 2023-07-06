@@ -125,8 +125,8 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
     const auto modelMatrix = Matrix4{1.0f};
     pipelinePointCloud.pushConstants(vkb, PushConstant{"modelMatrix", modelMatrix});
 
-    for (const auto& [image, vbo] : vbos) {
-        const auto count = counts.at(image);
+    for (const auto& pair : vbos) {
+        const auto count = counts.at(pair.first);
 
         if (count == 0) {
             continue;
@@ -136,12 +136,12 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
         uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
 
         std::array<SamplerBindingRef, 1> textures{};
-        textures[0] = {"colorTexture", *image->getAllocation().texture};
+        textures[0] = {"colorTexture", *pair.first->getAllocation().texture};
 
         pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
 
         std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
-        vboBindings[0] = {&vbo.getCurrentBuffer(), 0};
+        vboBindings[0] = {&pair.second.getCurrentBuffer(), 0};
         vkb.bindBuffers(vboBindings);
 
         vkb.draw(4, count, 0, 0);

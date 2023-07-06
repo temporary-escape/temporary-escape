@@ -60,6 +60,7 @@ template <typename T>
 static void unpackComponent(entt::registry& reg, const entt::entity handle, const msgpack::object& obj) {
     auto& component = reg.emplace<T>(handle);
     obj.convert(component);
+    reg.patch<T>(handle);
 }
 
 using UnpackerFunction = void (*)(entt::registry&, entt::entity, const msgpack::object&);

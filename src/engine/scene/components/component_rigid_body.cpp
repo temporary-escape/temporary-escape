@@ -5,6 +5,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 class ComponentTransformMotionState : public btMotionState {
 public:
     explicit ComponentTransformMotionState(ComponentTransform& componentTransform) :
@@ -48,6 +50,7 @@ void ComponentRigidBody::update(ComponentTransform& componentTransform) {
         EXCEPTION("ComponentRigidBody has no model to create a shape from");
     }
 
+    logger.warn("Creating shape from model: {} radius: {}", model->getName(), model->getRadius());
     shape = std::unique_ptr<btCollisionShape>(new btSphereShape(btScalar(model->getRadius())));
 
     motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(componentTransform)};

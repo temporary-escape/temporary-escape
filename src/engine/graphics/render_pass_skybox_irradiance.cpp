@@ -6,7 +6,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 RenderPassSkyboxIrradiance::RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderResources& resources,
                                                        AssetsManager& assetsManager, const Vector2i& viewport) :
-    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxIrradiance{vulkan, resources, assetsManager} {
+    RenderPass{vulkan, viewport * Vector2i{2, 1}}, subpassSkyboxIrradiance{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -28,23 +28,24 @@ void RenderPassSkyboxIrradiance::render(VulkanCommandBuffer& vkb, const Vector2i
     renderPassInfo.framebuffer = &getFbo();
     renderPassInfo.renderPass = &getRenderPass();
     renderPassInfo.offset = {0, 0};
-    renderPassInfo.size = viewport* Vector2i{2, 1};
+    renderPassInfo.size = viewport * Vector2i{2, 1};
 
     renderPassInfo.clearValues.resize(totalAttachments);
-    renderPassInfo.clearValues[Attachments::Irradiance].color = {{0.0f, 1.0f, 0.0f, 1.0f}};
+    renderPassInfo.clearValues[Attachments::Irradiance].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
     subpassSkyboxIrradiance.reset();
 
-    for (uint32_t i = 0; i < getMipMapLevels(viewport); i++) {
-        renderPassInfo.offset = mipMapOffset(viewport, i);
-        renderPassInfo.size = mipMapSize(viewport, i);
+    vkb.beginRenderPass(renderPassInfo);
 
-        vkb.beginRenderPass(renderPassInfo);
-        vkb.setViewport(renderPassInfo.offset, renderPassInfo.size);
-        vkb.setScissor(renderPassInfo.offset, renderPassInfo.size);
+    for (uint32_t i = 0; i < 1; i++) {
+        const auto offset = mipMapOffset(viewport, i);
+        const auto size = mipMapSize(viewport, i);
+
+        vkb.setViewport(offset, size);
+        vkb.setScissor(offset, size);
 
         subpassSkyboxIrradiance.render(vkb, skyboxColor, projection, view);
-
-        vkb.endRenderPass();
     }
+
+    vkb.endRenderPass();
 }

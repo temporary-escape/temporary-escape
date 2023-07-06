@@ -25,9 +25,9 @@ public:
 
 private:
     Path path;
-    Vector3 bbMin;
-    Vector3 bbMax;
-    float bbRadius;
+    Vector3 bbMin{0.0f};
+    Vector3 bbMax{0.0f};
+    float bbRadius{0.0f};
     std::list<Primitive> primitives;
     std::list<Material> materials;
 };

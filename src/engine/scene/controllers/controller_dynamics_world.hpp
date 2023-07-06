@@ -19,6 +19,9 @@ public:
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;
 
+    const VulkanBuffer& getDebugDrawVbo() const;
+    size_t getDebugDrawCount() const;
+
 private:
     void onConstruct(entt::registry& r, entt::entity handle);
     void onUpdate(entt::registry& r, entt::entity handle);

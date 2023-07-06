@@ -6,7 +6,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 RenderPassSkyboxPrefilter::RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, RenderResources& resources,
                                                      AssetsManager& assetsManager, const Vector2i& viewport) :
-    RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxPrefilter{vulkan, resources, assetsManager} {
+    RenderPass{vulkan, viewport * Vector2i{2, 1}}, subpassSkyboxPrefilter{vulkan, resources, assetsManager} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -28,24 +28,25 @@ void RenderPassSkyboxPrefilter::render(VulkanCommandBuffer& vkb, const Vector2i&
     renderPassInfo.framebuffer = &getFbo();
     renderPassInfo.renderPass = &getRenderPass();
     renderPassInfo.offset = {0, 0};
-    renderPassInfo.size = viewport* Vector2i{2, 1};
+    renderPassInfo.size = viewport * Vector2i{2, 1};
 
     renderPassInfo.clearValues.resize(totalAttachments);
-    renderPassInfo.clearValues[Attachments::Prefilter].color = {{0.0f, 1.0f, 0.0f, 1.0f}};
+    renderPassInfo.clearValues[Attachments::Prefilter].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
     subpassSkyboxPrefilter.reset();
 
-    for (uint32_t i = 0; i < getMipMapLevels(viewport); i++) {
-        renderPassInfo.offset = mipMapOffset(viewport, i);
-        renderPassInfo.size = mipMapSize(viewport, i);
+    vkb.beginRenderPass(renderPassInfo);
 
-        vkb.beginRenderPass(renderPassInfo);
-        vkb.setViewport(renderPassInfo.offset, renderPassInfo.size);
-        vkb.setScissor(renderPassInfo.offset, renderPassInfo.size);
+    for (uint32_t i = 0; i < getMipMapLevels(viewport); i++) {
+        const auto offset = mipMapOffset(viewport, i);
+        const auto size = mipMapSize(viewport, i);
+
+        vkb.setViewport(offset, size);
+        vkb.setScissor(offset, size);
 
         const auto roughness = static_cast<float>(i) / static_cast<float>((getMipMapLevels(viewport) - 1));
         subpassSkyboxPrefilter.render(vkb, skyboxColor, projection, view, roughness);
-
-        vkb.endRenderPass();
     }
+
+    vkb.endRenderPass();
 }
