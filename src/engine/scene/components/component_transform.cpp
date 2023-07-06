@@ -64,3 +64,7 @@ void ComponentTransform::bind(Lua& lua) {
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
 }
+
+void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentTransform>(handle);
+}

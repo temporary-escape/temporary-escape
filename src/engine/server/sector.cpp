@@ -77,6 +77,18 @@ void Sector::update() {
 
         const auto tickF = static_cast<float>(config.tickLengthUs.count()) / 1000000.0f;
         scene->update(tickF);
+
+        if (tickCount % 5 == 0 && tickCount != 0) {
+            auto& networkController = scene->getController<ControllerNetwork>();
+            for (const auto& player : players) {
+                if (const auto stream = player->getStream(); stream) {
+                    networkController.sendUpdate(*stream);
+                }
+            }
+            networkController.resetUpdates();
+        }
+
+        ++tickCount;
     } catch (...) {
         EXCEPTION_NESTED("Failed to update sector: {}", sectorId);
     }
@@ -84,11 +96,11 @@ void Sector::update() {
 
 void Sector::addPlayer(const SessionPtr& session) {
     worker.post([this, session]() {
-        const auto it = players.find(session);
+        const auto it = std::find_if(players.begin(), players.end(), [&](const SessionPtr& p) { return p == session; });
         if (it != players.end()) {
             EXCEPTION("Player: {} is already in sector: {}", session->getPlayerId(), sectorId);
         }
-        players.insert(std::make_pair(session, PlayerSessionData{}));
+        players.push_back(session);
 
         auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
 
@@ -111,7 +123,7 @@ void Sector::addPlayer(const SessionPtr& session) {
         worker.post([this, session]() {
             const auto peer = session->getStream();
             if (peer) {
-                scene->getController<ControllerNetwork>().sendSnapshot(*peer);
+                scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
             }
         });
     });

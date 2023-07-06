@@ -3,6 +3,7 @@
 #include "base64.hpp"
 #include "exceptions.hpp"
 #include <fstream>
+#include <unordered_set>
 
 using namespace Engine;
 
@@ -124,12 +125,15 @@ GltfMaterial::GltfMaterial(const GltfData& data, cgltf_material* material) : dat
 
     baseColorFactor = Vector4(material->pbr_metallic_roughness.base_color_factor[0],
                               material->pbr_metallic_roughness.base_color_factor[1],
-                              material->pbr_metallic_roughness.base_color_factor[2], 1.0f);
+                              material->pbr_metallic_roughness.base_color_factor[2],
+                              1.0f);
     emissiveFactor =
         Vector4(material->emissive_factor[0], material->emissive_factor[1], material->emissive_factor[2], 1.0f);
 
     metallicRoughnessFactor = Vector4(material->pbr_metallic_roughness.metallic_factor,
-                                      material->pbr_metallic_roughness.roughness_factor, 0.0f, 0.0f);
+                                      material->pbr_metallic_roughness.roughness_factor,
+                                      0.0f,
+                                      0.0f);
 
     if (material->normal_texture.texture && material->normal_texture.texture->image) {
         normalTexture = {GltfTexture(data, material->normal_texture.texture->image)};
@@ -172,8 +176,8 @@ Span<uint8_t> GltfBufferView::getSpan() const {
     return {&src[view->offset], size};
 }
 
-GltfAccessor::GltfAccessor(const GltfData& data, cgltf_accessor* accessor)
-    : bufferView(data, accessor->buffer_view), data(data) {
+GltfAccessor::GltfAccessor(const GltfData& data, cgltf_accessor* accessor) :
+    bufferView(data, accessor->buffer_view), data(data) {
 
     type = static_cast<GltfType>(accessor->type);
     componentType = static_cast<GltfComponentType>(accessor->component_type);
@@ -183,8 +187,8 @@ GltfAccessor::GltfAccessor(const GltfData& data, cgltf_accessor* accessor)
     stride = accessor->stride;
 }
 
-GltfAttribute::GltfAttribute(const GltfData& data, cgltf_attribute* attribute)
-    : accessor(data, attribute->data), data(data) {
+GltfAttribute::GltfAttribute(const GltfData& data, cgltf_attribute* attribute) :
+    accessor(data, attribute->data), data(data) {
 
     type = static_cast<GltfAttributeType>(attribute->type);
 }

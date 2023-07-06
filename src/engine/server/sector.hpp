@@ -40,19 +40,18 @@ public:
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
-    struct PlayerSessionData {};
-
     const Config& config;
     Database& db;
     AssetsManager& assetsManager;
     EventBus& eventBus;
+    uint64_t tickCount{0};
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
     bool loaded;
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Lua> lua;
-    std::unordered_map<SessionPtr, PlayerSessionData> players;
+    std::vector<SessionPtr> players;
     SynchronizedWorker worker;
 };
 

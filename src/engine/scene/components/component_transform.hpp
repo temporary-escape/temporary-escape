@@ -10,6 +10,7 @@ public:
     virtual ~ComponentTransform() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentTransform);
 
+public:
     void setParent(const ComponentTransform& value);
     void removeParent();
 
@@ -48,6 +49,9 @@ public:
     static void bind(Lua& lua);
 
     MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Component), transform);
+
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     Matrix4 transform{1.0f};

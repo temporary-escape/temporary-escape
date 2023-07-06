@@ -71,8 +71,8 @@ public:
 
 private:
     void reserve() {
-        capacity += 1024;
-        logger.info("Expanding collision debug draw buffer by {} items", capacity);
+        capacity += 1024 * 4;
+        logger.info("Expanding collision debug draw buffer to {} items", capacity);
 
         VulkanBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

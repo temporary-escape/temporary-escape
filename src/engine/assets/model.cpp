@@ -1,7 +1,9 @@
 #include "model.hpp"
 #include "../server/lua.hpp"
 #include "../utils/gltf_importer.hpp"
+#include "../utils/string_utils.hpp"
 #include "assets_manager.hpp"
+#include <btBulletDynamicsCommon.h>
 #include <sol/sol.hpp>
 
 using namespace Engine;
@@ -36,12 +38,18 @@ findOne(const Container& container, const std::function<bool(const typename Cont
 Model::Model(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
+Model::Model(Model&& other) noexcept = default;
+
+Model& Model::operator=(Model&& other) noexcept = default;
+
+Model::~Model() = default;
+
 void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
     (void)assetsManager;
 
-    const auto resolveTexture = [this, &assetsManager](const std::string& filename) -> TexturePtr {
+    const auto resolveTexture = [this, &assetsManager](const Path& filename) -> TexturePtr {
         try {
-            const auto baseName = Path(filename).stem().string();
+            const auto baseName = filename.stem().string();
             return assetsManager.getTextures().find(baseName);
         } catch (std::exception& e) {
             const auto file = path.parent_path() / Path(filename);
@@ -270,6 +278,27 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             material.ubo = vulkan.createBuffer(bufferInfo);
             vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+        }
+
+        if (collisions && endsWith(collisions->name, "_CCX")) {
+            if (!collisions->mesh) {
+                EXCEPTION("gltf has collision node '{}' with no mesh", collisions->name);
+            }
+            if (collisions->mesh->primitives.empty()) {
+                EXCEPTION("gltf has collision node '{}' with no mesh primitives", collisions->name);
+            }
+            const auto& part = collisions->mesh->primitives.front();
+            const auto positions = findOne(
+                part.attributes, [](const GltfAttribute& a) -> bool { return a.type == GltfAttributeType::Position; });
+
+            if (!positions) {
+                EXCEPTION("gltf has collision node '{}' with no vertices", collisions->name);
+            }
+
+            const auto span = positions->accessor.bufferView.getSpan();
+
+            collisionShape = std::make_unique<btConvexHullShape>(reinterpret_cast<const btScalar*>(span.data()),
+                                                                 positions->accessor.count);
         }
 
         bbRadius = std::max(std::abs(bbMin.x), bbRadius);

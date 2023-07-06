@@ -322,5 +322,5 @@ void RenderSubpassForward::renderSceneDynamicsWorld(VulkanCommandBuffer& vkb, co
     vboBindings[0] = {&controller.getDebugDrawVbo(), 0};
     vkb.bindBuffers(vboBindings);
 
-    vkb.draw(controller.getDebugDrawCount(), 1, 0, 0);
+    vkb.draw(controller.getDebugDrawCount() * 2, 1, 0, 0);
 }

@@ -48,14 +48,21 @@ function SectorAsteroidField.new()
             assets_manager:find_model("model_asteroid_01_h"),
         }
 
-        for x = 0, 5 do
+        for x = 0, 20 do
             local entity = scene:create_entity()
+
             local transform = entity:add_component_transform()
             transform:move(engine.Vector3.new(x * 3.0, 0.0, 0.0))
+
             local component_model = entity:add_component_model()
             component_model.model = asteroids[1]
+
             local component_rigid_body = entity:add_component_rigid_body()
             component_rigid_body:set_from_model(asteroids[1])
+
+            --if x == 0 then
+            --    component_rigid_body:set_linear_velocity(engine.Vector3.new(3.0, 0.1, 0.0))
+            --end
         end
     end
 

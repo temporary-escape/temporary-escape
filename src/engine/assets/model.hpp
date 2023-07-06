@@ -3,11 +3,15 @@
 #include "primitive.hpp"
 #include "texture.hpp"
 
+class btConvexShape;
+
 namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
     explicit Model(std::string name, Path path);
-    MOVEABLE(Model);
+    Model(Model&& other) noexcept;
+    Model& operator=(Model&& other) noexcept;
+    ~Model() override;
 
     void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
 
@@ -17,6 +21,10 @@ public:
 
     float getRadius() const {
         return bbRadius;
+    }
+
+    btConvexShape* getCollisionShape() const {
+        return collisionShape.get();
     }
 
     static std::shared_ptr<Model> from(const std::string& name);
@@ -30,6 +38,7 @@ private:
     float bbRadius{0.0f};
     std::list<Primitive> primitives;
     std::list<Material> materials;
+    std::unique_ptr<btConvexShape> collisionShape;
 };
 
 using ModelPtr = std::shared_ptr<Model>;

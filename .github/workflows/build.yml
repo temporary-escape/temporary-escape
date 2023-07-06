@@ -222,7 +222,6 @@ jobs:
   pages:
     name: Documentation
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
 
     needs:
       - publish
@@ -252,7 +251,7 @@ jobs:
           make html
 
       - name: Clone temporary-escape.github.io
-        if: startsWith(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/heads/master')
         uses: actions/checkout@v3
         with:
           repository: temporary-escape/temporary-escape.github.io
@@ -260,7 +259,7 @@ jobs:
           path: docs-git
 
       - name: Push
-        if: startsWith(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/heads/master')
         shell: bash
         run: |
           rm -rf ${{ github.workspace }}/docs-git/*

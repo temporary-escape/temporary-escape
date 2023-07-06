@@ -255,6 +255,9 @@ void Application::createPlanetLowResTextures(PlanetGenerator& planetGenerator) {
 void Application::createPlanetLowResTextures() {
     logger.info("Creating planet low-res textures");
 
+    status.message = "Creating planets...";
+    status.value = 0.5f;
+
     const auto planetTextureSize = Vector2i{config.graphics.planetLowResTextureSize};
     auto planetGeneratorLowRes =
         std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
@@ -295,6 +298,9 @@ void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
 void Application::createThumbnails() {
     logger.info("Creating thumbnails");
 
+    status.message = "Creating thumbnails...";
+    status.value = 0.6f;
+
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
     auto thumbnailRenderer = std::make_unique<Renderer>(
         config, viewport, *this, *renderResources, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
@@ -330,7 +336,7 @@ void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator 
             }
 
             status.message = fmt::format("Loading assets ({}/{})...", count, assetsManager->getLoadQueue().size());
-            status.value = 0.4f + progress * 0.3f;
+            status.value = 0.3f + progress * 0.2f;
 
             const auto now = std::chrono::steady_clock::now();
             const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
@@ -349,7 +355,7 @@ void Application::loadAssets() {
     this->assetsManager->init(*this);
 
     status.message = "Loading assets...";
-    status.value = 0.4f;
+    status.value = 0.3f;
 
     loadNextAssetInQueue(assetsManager->getLoadQueue().cbegin());
 }
@@ -358,7 +364,7 @@ void Application::createRegistry() {
     logger.info("Setting up assetsManager");
 
     status.message = "Loading mod packs...";
-    status.value = 0.4f;
+    status.value = 0.3f;
 
     future = std::async([this]() -> std::function<void()> {
         this->assetsManager = std::make_unique<AssetsManager>(config);
@@ -370,7 +376,7 @@ void Application::createRenderer() {
     logger.info("Creating renderer");
 
     status.message = "Creating renderer...";
-    status.value = 0.3f;
+    status.value = 0.5f;
 
     const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
     renderResources = std::make_unique<RenderResources>(*this);
@@ -389,7 +395,7 @@ void Application::createVoxelShapeCache() {
     logger.info("Creating voxel shape cache");
 
     status.message = "Creating voxel shape cache...";
-    status.value = 0.4f;
+    status.value = 0.2f;
 
     voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
@@ -400,7 +406,7 @@ void Application::compressAssets() {
     logger.info("Compressing assets");
 
     status.message = "Compressing assets (may take several minutes)...";
-    status.value = 0.3f;
+    status.value = 0.1f;
 
     future = std::async([this]() -> std::function<void()> {
         AssetsManager::compressAssets(config);

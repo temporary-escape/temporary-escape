@@ -33,7 +33,9 @@ ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, A
 
 ViewGalaxy::~ViewGalaxy() {
     try {
-        futureLoad.get();
+        if (futureLoad.valid()) {
+            futureLoad.get();
+        }
     } catch (std::exception& e) {
         BACKTRACE(e, "Failed to construct galaxy scene");
     }

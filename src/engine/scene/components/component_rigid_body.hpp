@@ -27,6 +27,8 @@ public:
 
     void setFromModel(const ModelPtr& value);
 
+    void setLinearVelocity(const Vector3& value);
+
     static void bind(Lua& lua);
 
     MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Component), model);
