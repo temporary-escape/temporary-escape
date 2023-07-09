@@ -15,6 +15,8 @@ class ENGINE_API ControllerDynamicsWorld : public Controller {
 public:
     explicit ControllerDynamicsWorld(entt::registry& reg);
     ~ControllerDynamicsWorld() override;
+    NON_COPYABLE(ControllerDynamicsWorld);
+    NON_MOVEABLE(ControllerDynamicsWorld);
 
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;

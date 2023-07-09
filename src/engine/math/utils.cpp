@@ -126,7 +126,7 @@ std::vector<Vector2> Engine::worldToScreen(const Matrix4& viewMatrix, const Matr
 }
 
 // Adapted from https://github.com/ghewgill/picomath/blob/master/javascript/erf.js
-double erf(double x) {
+static double erfCustom(double x) {
     // constants
     static const auto a1 = 0.254829592;
     static const auto a2 = -0.284496736;
@@ -143,7 +143,7 @@ double erf(double x) {
 }
 
 double defIntGaussian(double x, double mu, double sigma) {
-    return 0.5 * erf((x - mu) / (1.4142135623730951 * sigma));
+    return 0.5 * erfCustom((x - mu) / (1.4142135623730951 * sigma));
 }
 
 // Adapted from https://observablehq.com/@jobleonard/gaussian-kernel-calculater

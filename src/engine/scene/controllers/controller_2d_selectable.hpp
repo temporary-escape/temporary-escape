@@ -11,6 +11,8 @@ public:
 
     explicit Controller2DSelectable(entt::registry& reg);
     ~Controller2DSelectable() override;
+    NON_COPYABLE(Controller2DSelectable);
+    NON_MOVEABLE(Controller2DSelectable);
 
     void update(float delta) override;
 

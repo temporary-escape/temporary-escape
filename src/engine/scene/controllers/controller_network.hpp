@@ -18,6 +18,8 @@ class ENGINE_API ControllerNetwork : public Controller {
 public:
     explicit ControllerNetwork(entt::registry& reg);
     ~ControllerNetwork() override;
+    NON_COPYABLE(ControllerNetwork);
+    NON_MOVEABLE(ControllerNetwork);
 
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;

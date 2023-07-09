@@ -16,6 +16,8 @@ public:
 
     explicit ControllerModel(entt::registry& reg);
     ~ControllerModel() override;
+    NON_COPYABLE(ControllerModel);
+    NON_MOVEABLE(ControllerModel);
 
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;

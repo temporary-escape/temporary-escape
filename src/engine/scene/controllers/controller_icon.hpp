@@ -10,6 +10,8 @@ public:
 
     explicit ControllerIcon(entt::registry& reg);
     ~ControllerIcon() override;
+    NON_COPYABLE(ControllerIcon);
+    NON_MOVEABLE(ControllerIcon);
 
     void update(float delta) override;
 
