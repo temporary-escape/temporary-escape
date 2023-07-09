@@ -303,3 +303,11 @@ void Renderer::renderBrdf() {
     vulkan.dispose(std::move(vkb));
     vulkan.waitQueueIdle();
 }
+
+void Renderer::setMousePos(const Vector2i& value) {
+    renderPasses.opaque->setMousePos(value);
+}
+
+uint32_t Renderer::getMousePosEntity() {
+    return renderPasses.opaque->getMousePosEntity();
+}

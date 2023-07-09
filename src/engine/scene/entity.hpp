@@ -42,6 +42,10 @@ using EntityComponentIds =
                 ComponentIcon, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
                 ComponentStarFlare, ComponentSkybox, ComponentNebula, Component2DSelectable, ComponentRigidBody>;
 
+template <typename T> static inline constexpr uint64_t componentMaskId() {
+    return 1ULL << EntityComponentIds::value<T>;
+}
+
 class ENGINE_API Entity {
 public:
     Entity() = default;
@@ -103,6 +107,15 @@ private:
     entt::registry* reg{nullptr};
     entt::entity handle;
 };
+
+static inline Vector4 entityColor(entt::entity handle) {
+    const auto i = static_cast<uint32_t>(handle);
+    const auto r = static_cast<float>((i & 0x000000FF) >> 0);
+    const auto g = static_cast<float>((i & 0x0000FF00) >> 8);
+    const auto b = static_cast<float>((i & 0x00FF0000) >> 16);
+    const auto a = static_cast<float>((i & 0xFF000000) >> 24);
+    return Vector4{r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f};
+}
 
 /*
 // clang-format off

@@ -24,9 +24,16 @@ layout (location = 0) in VS_OUT {
     float color;
 } vs_out;
 
+layout (push_constant) uniform Uniforms {
+    mat4 modelMatrix;
+    mat3 normalMatrix;
+    vec4 entityColor;
+} uniforms;
+
 layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
+layout (location = 3) out vec4 outEntity;
 
 // Source: http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
 vec3 rgb2hsv(vec3 c) {
@@ -68,4 +75,5 @@ void main() {
     outColorAmbient = vec4(baseColor.rgb * paletteColor, ambient);
     outEmissiveRoughness = vec4(emissive * emissivePalette, metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
+    outEntity = uniforms.entityColor;
 }

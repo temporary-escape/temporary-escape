@@ -15,7 +15,7 @@ public:
 
     void recalculate(VulkanRenderer& vulkan) override;
 
-    const std::unordered_map<Image*, std::unique_ptr<VulkanDoubleBuffer>>& getVbos() const {
+    const std::unordered_map<Image*, VulkanDoubleBuffer>& getVbos() const {
         return vbos;
     }
 
@@ -25,10 +25,10 @@ public:
 
 private:
     VulkanDoubleBuffer& getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image);
-    std::unique_ptr<VulkanDoubleBuffer> createVbo(VulkanRenderer& vulkan);
+    VulkanDoubleBuffer createVbo(VulkanRenderer& vulkan);
     entt::registry& reg;
 
-    std::unordered_map<Image*, std::unique_ptr<VulkanDoubleBuffer>> vbos;
+    std::unordered_map<Image*, VulkanDoubleBuffer> vbos;
     std::unordered_map<Image*, size_t> counts;
 };
 } // namespace Engine

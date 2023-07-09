@@ -10,16 +10,12 @@ layout (std140, binding = 0) uniform Camera {
     vec3 eyesPos;
 } camera;
 
-layout (push_constant) uniform Uniforms {
-    mat4 modelMatrix;
-    mat3 normalMatrix;
-    vec4 entityColor;
-} uniforms;
-
 layout (location = 0) in vec3 in_Position;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 layout (location = 3) in vec4 in_Tangent;
+layout (location = 4) in vec4 in_EntityColor;
+layout (location = 5) in mat4 in_ModelMatrix;
 
 layout (location = 0) out VS_OUT {
     vec3 normal;
@@ -34,14 +30,14 @@ out gl_PerVertex {
 };
 
 void main() {
-    vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
-    vec3 N = normalize(uniforms.modelMatrix * vec4(in_Normal, 0.0)).xyz;
-    vec3 T = normalize(uniforms.modelMatrix * vec4(in_Tangent.xyz, 0.0)).xyz;
+    vec4 worldPos = in_ModelMatrix * vec4(in_Position, 1.0);
+    vec3 N = normalize(in_ModelMatrix * vec4(in_Normal, 0.0)).xyz;
+    vec3 T = normalize(in_ModelMatrix * vec4(in_Tangent.xyz, 0.0)).xyz;
 
     vs_out.normal = N;
     vs_out.worldpos = worldPos.xyz;
     vs_out.texCoords = in_TexCoords;
-    vs_out.entityColor = uniforms.entityColor;
+    vs_out.entityColor = in_EntityColor;
 
     vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);

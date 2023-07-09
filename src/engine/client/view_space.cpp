@@ -75,3 +75,7 @@ void ViewSpace::eventCharTyped(const uint32_t code) {
         scene->eventCharTyped(code);
     }
 }
+
+void ViewSpace::eventEntitySelected(const uint32_t id) {
+    logger.debug("Selected entity: {}", id);
+}

@@ -7,6 +7,7 @@
 #include "vulkan_device.hpp"
 #include "vulkan_framebuffer.hpp"
 #include "vulkan_pipeline.hpp"
+#include "vulkan_query_pool.hpp"
 
 using namespace Engine;
 
@@ -148,6 +149,11 @@ void VulkanCommandBuffer::dispatch(const uint32_t groupCountX, const uint32_t gr
 void VulkanCommandBuffer::copyImage(const VulkanTexture& src, const VkImageLayout srcLayout, const VulkanTexture& dst,
                                     const VkImageLayout dstLayout, const VkImageCopy& region) {
     vkCmdCopyImage(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, 1, &region);
+}
+
+void VulkanCommandBuffer::copyImageToBuffer(const VulkanTexture& src, const VkImageLayout srcLayout, VulkanBuffer& dst,
+                                            const Span<VkBufferImageCopy>& regions) {
+    vkCmdCopyImageToBuffer(commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), regions.size(), regions.data());
 }
 
 void VulkanCommandBuffer::copyBuffer(const VulkanBuffer& src, const VulkanBuffer& dst, const VkBufferCopy& region) {
@@ -292,4 +298,13 @@ void VulkanCommandBuffer::generateMipMaps(VulkanTexture& texture) {
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
+}
+
+void VulkanCommandBuffer::writeTimestamp(VulkanQueryPool& queryPool, const VkPipelineStageFlagBits stage,
+                                         const uint32_t query) {
+    vkCmdWriteTimestamp(commandBuffer, stage, queryPool.getHandle(), query);
+}
+
+void VulkanCommandBuffer::resetQueryPool(VulkanQueryPool& queryPool, const uint32_t firstQuery, const uint32_t count) {
+    vkCmdResetQueryPool(commandBuffer, queryPool.getHandle(), firstQuery, count);
 }

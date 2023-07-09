@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../assets/shader.hpp"
+#include "../math/matrix.hpp"
 #include "../utils/exceptions.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "mesh.hpp"

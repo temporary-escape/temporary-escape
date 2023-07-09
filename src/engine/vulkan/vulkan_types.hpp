@@ -39,7 +39,7 @@ struct ENGINE_API VulkanSwapChainSupportDetails {
 
 struct ENGINE_API VulkanStageInput {
     std::string name;
-    uint32_t location;
+    uint32_t location{0};
     VkFormat format;
 
     bool operator==(const VulkanStageInput& other) const {
@@ -53,8 +53,8 @@ struct ENGINE_API VulkanStageInput {
 
 struct ENGINE_API VulkanStageUniform {
     std::string name;
-    uint32_t binding;
-    uint32_t size;
+    uint32_t binding{0};
+    uint32_t size{0};
 
     bool operator==(const VulkanStageUniform& other) const {
         return name == other.name && binding == other.binding && size == other.size;
@@ -67,7 +67,7 @@ struct ENGINE_API VulkanStageUniform {
 
 struct ENGINE_API VulkanStageStorageBuffer {
     std::string name;
-    uint32_t binding;
+    uint32_t binding{0};
 
     bool operator==(const VulkanStageStorageBuffer& other) const {
         return name == other.name && binding == other.binding;
@@ -81,8 +81,8 @@ struct ENGINE_API VulkanStageStorageBuffer {
 struct ENGINE_API VulkanStagePushMember {
     std::string name;
     VkFormat format;
-    size_t offset;
-    size_t size;
+    size_t offset{0};
+    size_t size{0};
 
     bool operator==(const VulkanStagePushMember& other) const {
         return name == other.name && format == other.format && offset == other.offset && size == other.size;
@@ -118,13 +118,13 @@ struct ENGINE_API VulkanStagePushConstants {
 
 struct ENGINE_API VulkanStageSampler {
     std::string name;
-    uint32_t binding;
+    uint32_t binding{0};
 };
 
 struct ENGINE_API VulkanVertexLayout {
-    uint32_t location;
+    uint32_t location{0};
     VkFormat format;
-    size_t offset;
+    size_t offset{0};
 };
 
 using VulkanVertexLayoutMap = std::vector<VulkanVertexLayout>;

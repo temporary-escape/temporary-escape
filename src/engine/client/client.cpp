@@ -204,7 +204,7 @@ void Client::handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage messag
     (void)peer;
 
     sync.postSafe([this, msg = std::move(message)]() {
-        logger.debug("Applying scene snapshot");
+        // logger.debug("Applying scene snapshot");
         scene->getController<ControllerNetwork>().receiveUpdate(msg.get());
     });
 }

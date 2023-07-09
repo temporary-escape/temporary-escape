@@ -18,6 +18,7 @@ class ENGINE_API VulkanPipeline;
 class ENGINE_API VulkanDescriptorSetLayout;
 class ENGINE_API VulkanRenderPass;
 class ENGINE_API VulkanDescriptorPool;
+class ENGINE_API VulkanQueryPool;
 
 struct ENGINE_API VulkanRenderPassBeginInfo {
     const VulkanRenderPass* renderPass{nullptr};
@@ -69,6 +70,8 @@ public:
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     void copyImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
                    const VkImageCopy& region);
+    void copyImageToBuffer(const VulkanTexture& src, VkImageLayout srcLayout, VulkanBuffer& dst,
+                           const Span<VkBufferImageCopy>& regions);
     void copyBuffer(const VulkanBuffer& src, const VulkanBuffer& dst, const VkBufferCopy& region);
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const VkBufferImageCopy& region);
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const Span<VkBufferImageCopy>& regions);
@@ -87,6 +90,8 @@ public:
     void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);
     void generateMipMaps(VulkanTexture& texture);
+    void writeTimestamp(VulkanQueryPool& queryPool, VkPipelineStageFlagBits stage, uint32_t query);
+    void resetQueryPool(VulkanQueryPool& queryPool, uint32_t firstQuery, uint32_t count);
     void destroy() override;
 
 private:

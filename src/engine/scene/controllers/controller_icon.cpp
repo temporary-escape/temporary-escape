@@ -39,7 +39,7 @@ void ControllerIcon::recalculate(VulkanRenderer& vulkan) {
     }
 }
 
-std::unique_ptr<VulkanDoubleBuffer> ControllerIcon::createVbo(VulkanRenderer& vulkan) {
+VulkanDoubleBuffer ControllerIcon::createVbo(VulkanRenderer& vulkan) {
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sizeof(Point) * 1024;
@@ -48,7 +48,7 @@ std::unique_ptr<VulkanDoubleBuffer> ControllerIcon::createVbo(VulkanRenderer& vu
     bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
     bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    return std::make_unique<VulkanDoubleBuffer>(vulkan.createDoubleBuffer(bufferInfo));
+    return vulkan.createDoubleBuffer(bufferInfo);
 }
 
 VulkanDoubleBuffer& ControllerIcon::getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image) {
@@ -57,5 +57,5 @@ VulkanDoubleBuffer& ControllerIcon::getBufferFor(VulkanRenderer& vulkan, const I
         it = vbos.emplace(image.get(), createVbo(vulkan)).first;
     }
 
-    return *it->second;
+    return it->second;
 }

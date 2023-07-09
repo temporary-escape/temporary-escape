@@ -34,5 +34,6 @@ private:
     std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
     std::unique_ptr<btIDebugDraw> debugDraw;
     std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
+    std::vector<entt::entity> setupQueue;
 };
 } // namespace Engine

@@ -115,38 +115,58 @@ ControllerDynamicsWorld::~ControllerDynamicsWorld() {
 }
 
 void ControllerDynamicsWorld::update(const float delta) {
+    for (const auto handle : setupQueue) {
+        auto& component = reg.get<ComponentRigidBody>(handle);
+        auto rigidBody = component.getRigidBody();
+        if (rigidBody) {
+            // logger.debug("Added rigid body (queue) entity: {}", static_cast<uint32_t>(handle));
+            dynamicsWorld->addRigidBody(rigidBody);
+            component.setDynamicsWorld(*dynamicsWorld);
+        }
+    }
+    setupQueue.clear();
+
     dynamicsWorld->stepSimulation(delta, 10);
 }
 
 void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {
-    if (!debugDraw) {
+    /*if (!debugDraw) {
         debugDraw = std::make_unique<CollisionDebugDraw>(vulkan);
         dynamicsWorld->setDebugDrawer(debugDraw.get());
     }
     dynamic_cast<CollisionDebugDraw*>(debugDraw.get())->reset();
-    dynamicsWorld->debugDrawWorld();
+    dynamicsWorld->debugDrawWorld();*/
 }
 
-void ControllerDynamicsWorld::onConstruct(entt::registry& r, entt::entity handle) {
-}
-
-void ControllerDynamicsWorld::onUpdate(entt::registry& r, entt::entity handle) {
+void ControllerDynamicsWorld::onConstruct(entt::registry& r, const entt::entity handle) {
     auto& component = reg.get<ComponentRigidBody>(handle);
-    auto& transform = reg.get<ComponentTransform>(handle);
-    component.update(transform);
-
     auto rigidBody = component.getRigidBody();
     if (rigidBody) {
+        // logger.debug("Added rigid body entity: {}", static_cast<uint32_t>(handle));
         dynamicsWorld->addRigidBody(rigidBody);
+        component.setDynamicsWorld(*dynamicsWorld);
     } else {
-        logger.warn("ComponentRigidBody created with no rigid body attached");
+        setupQueue.push_back(handle);
     }
 }
 
-void ControllerDynamicsWorld::onDestroy(entt::registry& r, entt::entity handle) {
+void ControllerDynamicsWorld::onUpdate(entt::registry& r, const entt::entity handle) {
+    /*auto& component = reg.get<ComponentRigidBody>(handle);
+    auto rigidBody = component.getRigidBody();
+    if (!rigidBody) {
+        auto& transform = reg.get<ComponentTransform>(handle);
+        component.setup(transform);
+        dynamicsWorld->addRigidBody(component.getRigidBody());
+    }*/
+}
+
+void ControllerDynamicsWorld::onDestroy(entt::registry& r, const entt::entity handle) {
+    (void)std::remove(setupQueue.begin(), setupQueue.end(), handle);
+
     auto& component = reg.get<ComponentRigidBody>(handle);
     auto rigidBody = component.getRigidBody();
     if (rigidBody) {
+        // logger.debug("Removed rigid body entity: {}", static_cast<uint32_t>(handle));
         dynamicsWorld->removeRigidBody(rigidBody);
     }
 }

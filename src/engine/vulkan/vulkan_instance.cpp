@@ -51,6 +51,10 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
+
+            if (!queueFamily.timestampValidBits) {
+                EXCEPTION("Graphics queue family has no timestampValidBits");
+            }
         }
 
         if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {

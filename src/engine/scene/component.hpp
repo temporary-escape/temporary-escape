@@ -50,6 +50,12 @@ public:
     }
     virtual ~Component() = default;
 
+    // Used by msgpack
+    void postUnpack(entt::registry& r, entt::entity h) {
+        reg = &r;
+        handle = h;
+    }
+
     [[nodiscard]] bool isDirty() const {
         return dirty;
     }
@@ -61,13 +67,19 @@ public:
         }
     }
 
-    MSGPACK_DEFINE_ARRAY(handle);
+    entt::entity getHandle() const {
+        return handle;
+    }
 
 protected:
-    virtual void patch(entt::registry& reg, entt::entity handle) {
-        (void)reg;
-        (void)handle;
+    virtual void patch(entt::registry& r, entt::entity h) {
+        (void)r;
+        (void)h;
     };
+
+    template <typename T> T* tryGet() {
+        return reg ? reg->try_get<T>(handle) : nullptr;
+    }
 
 private:
     entt::registry* reg{nullptr};

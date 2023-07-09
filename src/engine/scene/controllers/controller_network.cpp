@@ -1,14 +1,22 @@
 #include "controller_network.hpp"
 #include "../../network/peer.hpp"
+#include <bitset>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
 ControllerNetwork::ControllerNetwork(entt::registry& reg) : reg{reg} {
+    registerComponent<ComponentTransform>();
+    registerComponent<ComponentRigidBody>();
+    reg.on_destroy<entt::entity>().connect<&ControllerNetwork::onDestroyEntity>(this);
 }
 
-ControllerNetwork::~ControllerNetwork() = default;
+ControllerNetwork::~ControllerNetwork() {
+    unregisterComponent<ComponentTransform>();
+    unregisterComponent<ComponentRigidBody>();
+    reg.on_destroy<entt::entity>().disconnect<&ControllerNetwork::onDestroyEntity>(this);
+}
 
 void ControllerNetwork::update(const float delta) {
     (void)delta;
@@ -18,22 +26,40 @@ void ControllerNetwork::recalculate(VulkanRenderer& vulkan) {
     (void)vulkan;
 }
 
+template <typename Type> static void postEmplaceComponent(const entt::entity handle, Type& component) {
+    (void)handle;
+    (void)component;
+}
+
+static void postEmplaceComponent(const entt::entity handle, ComponentRigidBody& component) {
+    component.setup();
+}
+
+template <typename Type> static void postPatchComponent(const entt::entity handle, Type& component) {
+    (void)handle;
+    (void)component;
+}
+
 template <typename T> using ComponentReferences = std::array<std::tuple<entt::entity, const T*>, 64>;
+
+template <typename Packer, typename Type>
+static void packComponent(Packer& packer, entt::entity handle, const Type& component, const SyncOperation op) {
+    static constexpr auto id = EntityComponentIds::value<Type>;
+    packer.pack_array(4);
+    packer.pack(id);
+    packer.pack(op);
+    packer.pack(static_cast<uint32_t>(handle));
+    packer.pack(component);
+}
 
 template <typename Type>
 static void sendComponents(Network::Peer& peer, const ComponentReferences<Type>& components, const size_t count,
                            const SyncOperation op) {
-    static const auto id = EntityComponentIds::value<Type>;
-
     Network::Peer::Packer packer{peer, "MessageComponentSnapshot"};
 
     packer.pack_array(count);
     for (size_t i = 0; i < count; i++) {
-        packer.pack_array(4);
-        packer.pack(id);
-        packer.pack(op);
-        packer.pack(static_cast<uint32_t>(std::get<0>(components.at(i))));
-        packer.pack(*std::get<1>(components.at(i)));
+        packComponent(packer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
     }
 }
 
@@ -63,14 +89,18 @@ static void unpackComponent(entt::registry& reg, const entt::entity handle, cons
                             const SyncOperation op) {
     if (op == SyncOperation::Emplace) {
         auto& component = reg.emplace<T>(handle);
+        component.postUnpack(reg, handle);
         obj.convert(component);
-        reg.patch<T>(handle);
+        postEmplaceComponent(handle, component);
     } else if (op == SyncOperation::Patch) {
         auto* component = reg.try_get<T>(handle);
         if (component) {
             obj.convert(*component);
-            component->setDirty(true);
+            // component->setDirty(true);
+            postPatchComponent(handle, *component);
         }
+    } else {
+        logger.warn("Unknown sync operation for entity id: {}", static_cast<uint32_t>(handle));
     }
 }
 
@@ -82,11 +112,14 @@ static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt
         {EntityComponentIds::value<ComponentTransform>, &unpackComponent<ComponentTransform>},
         {EntityComponentIds::value<ComponentModel>, &unpackComponent<ComponentModel>},
         {EntityComponentIds::value<ComponentRigidBody>, &unpackComponent<ComponentRigidBody>},
+        {EntityComponentIds::value<ComponentIcon>, &unpackComponent<ComponentIcon>},
     };
 
     const auto found = unpackers.find(id);
     if (found != unpackers.end()) {
         found->second(reg, handle, obj, op);
+    } else {
+        logger.warn("Unmatched component id: {} entity id: {}", id, static_cast<uint32_t>(handle));
     }
 }
 
@@ -94,13 +127,51 @@ void ControllerNetwork::sendFullSnapshot(Network::Peer& peer) {
     packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(Network::Peer& peer) {
-    packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Patch);
+    size_t count{0};
+    size_t arraySize{0};
+    auto total{updatedComponentsCount};
+
+    std::unique_ptr<Network::Peer::Packer> packer;
+    const auto prepareNext = [&]() {
+        if (count >= arraySize) {
+            packer.reset();
+            packer = std::make_unique<Network::Peer::Packer>(peer, "MessageComponentSnapshot");
+            arraySize = std::min<size_t>(total, 64);
+            count = 0;
+            packer->pack_array(arraySize);
+        }
+        ++count;
+        --total;
+    };
+
+    for (const auto& pair : updatedComponentsMap) {
+        const auto handle = pair.first;
+        if (pair.second & componentMaskId<ComponentTransform>()) {
+            const auto& component = reg.get<ComponentTransform>(handle);
+            prepareNext();
+            packComponent(*packer, handle, component, SyncOperation::Patch);
+        }
+        if (pair.second & componentMaskId<ComponentRigidBody>()) {
+            const auto& component = reg.get<ComponentRigidBody>(handle);
+            prepareNext();
+            packComponent(*packer, handle, component, SyncOperation::Patch);
+        }
+    }
+
+    packer.reset();
+
+    if (total != 0) {
+        EXCEPTION("Something went wrong while packing scene updates, error: total != 0");
+    }
 }
 
 void ControllerNetwork::resetUpdates() {
+    updatedComponentsMap.clear();
+    updatedComponentsCount = 0;
 }
 
 void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
@@ -109,7 +180,7 @@ void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
     }
 
     const auto& arr = obj.via.array;
-    logger.info("Received: {} components", arr.size);
+    // logger.debug("Received: {} components", arr.size);
 
     for (size_t i = 0; i < arr.size; i++) {
         if (arr.ptr[i].type != msgpack::type::ARRAY) {
@@ -134,9 +205,16 @@ void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
 
         if (local != remoteToLocal.end()) {
             unpackComponentId(reg, id, local->second, child.ptr[3], op);
+        } else {
+            logger.warn("Unmatched entity update id: {}", static_cast<uint32_t>(handle));
         }
     }
 }
 
-void ControllerNetwork::onUpdateTransform(entt::registry& r, entt::entity handle) {
+void ControllerNetwork::onDestroyEntity(entt::registry& r, entt::entity handle) {
+    const auto it = updatedComponentsMap.find(handle);
+    if (it != updatedComponentsMap.end()) {
+        updatedComponentsCount -= std::bitset<64>{it->second}.count();
+        updatedComponentsMap.erase(it);
+    }
 }

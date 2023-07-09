@@ -46,6 +46,9 @@ public:
 
     const VulkanTexture& getTexture() const;
 
+    void setMousePos(const Vector2i& value);
+    uint32_t getMousePosEntity();
+
 private:
     void renderOneTime(Scene& scene);
 

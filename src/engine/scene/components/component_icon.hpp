@@ -44,6 +44,8 @@ public:
         offset = value;
     }
 
+    MSGPACK_DEFINE_ARRAY(image, size, color, offset);
+
 private:
     ImagePtr image;
     Vector2 size;

@@ -39,6 +39,14 @@ Application::Application(const Config& config) :
     } else {
         gui.mainMenu.setEnabled(false);
     }
+
+    VkQueryPoolCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    createInfo.pNext = nullptr;
+    createInfo.flags = 0;
+    createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    createInfo.queryCount = MAX_FRAMES_IN_FLIGHT;
+    renderQueryPool = createQueryPool(createInfo);
 }
 
 Application::~Application() {
@@ -53,6 +61,8 @@ Application::~Application() {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
+    const auto t0 = std::chrono::steady_clock::now();
+
     if (future.valid() && future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
         auto fn = future.get();
         fn();
@@ -68,10 +78,24 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         renderer->update();
     }
 
+    const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
+    if (!queryResult.empty()) {
+        uint64_t timeDiff = queryResult[1] - queryResult[0];
+        timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
+                                         static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
+        const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
+        perf.renderTime.update(timeDiffNano);
+        // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
+    }
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
+
+    vkb.resetQueryPool(renderQueryPool, 0, 2);
+
+    vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
 
     if (game) {
         game->update(deltaTime);
@@ -98,6 +122,9 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     canvas.begin(viewport);
 
+    renderVersion(viewport);
+    renderFrameTime(viewport);
+
     if (game && game->isReady()) {
         game->renderCanvas(canvas, nuklear, viewport);
     } else if (editor) {
@@ -106,7 +133,6 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         if (!status.message.empty()) {
             renderStatus(viewport);
         }
-        renderVersion(viewport);
 
         nuklear.begin(viewport);
         nuklear.draw(gui.mainMenu);
@@ -118,17 +144,40 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     vkb.endRenderPass();
 
+    vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1);
+
     vkb.end();
 
     submitPresentCommandBuffer(vkb);
 
     dispose(std::move(vkb));
+
+    const auto t1 = std::chrono::steady_clock::now();
+    const auto frameTime = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
+    perf.frameTime.update(frameTime);
 }
 
 void Application::renderVersion(const Vector2i& viewport) {
     canvas.color(Theme::text * alpha(0.5f));
     canvas.font(font.regular, config.guiFontSize);
     canvas.text({5.0f, 5.0f + config.guiFontSize}, GAME_VERSION);
+}
+
+void Application::renderFrameTime(const Vector2i& viewport) {
+    canvas.color(Theme::text * alpha(0.5f));
+    canvas.font(font.regular, config.guiFontSize);
+
+    {
+        const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
+        const auto text = fmt::format("Render: {:.2f}ms", renderTimeMs);
+        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize}, text);
+    }
+
+    {
+        const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
+        const auto text = fmt::format("Frame: {:.2f}ms", frameTimeMs);
+        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize * 2.0}, text);
+    }
 }
 
 void Application::renderStatus(const Vector2i& viewport) {

@@ -8,6 +8,7 @@
 #include "../gui/gui_create_profile.hpp"
 #include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
+#include "../utils/performance_record.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "editor.hpp"
 #include "game.hpp"
@@ -40,6 +41,7 @@ public:
 private:
     void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
+    void renderFrameTime(const Vector2i& viewport);
     void checkForClientScene();
     void loadAssets();
     void createEditor();
@@ -67,6 +69,7 @@ private:
     Nuklear nuklear;
     Status status;
     AudioContext audio;
+    VulkanQueryPool renderQueryPool;
 
     struct {
         GuiMainMenu mainMenu;
@@ -93,5 +96,10 @@ private:
     std::atomic<bool> shouldStop{false};
     Vector2i mousePos;
     bool editorOnly{false};
+
+    struct {
+        PerformanceRecord frameTime;
+        PerformanceRecord renderTime;
+    } perf;
 };
 } // namespace Engine

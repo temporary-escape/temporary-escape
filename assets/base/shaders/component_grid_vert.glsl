@@ -13,6 +13,7 @@ layout (std140, binding = 0) uniform Camera {
 layout (push_constant) uniform Uniforms {
     mat4 modelMatrix;
     mat3 normalMatrix;
+    vec4 entityColor;
 } uniforms;
 
 layout (location = 0) in vec3 in_Position;

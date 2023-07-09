@@ -78,7 +78,7 @@ void Sector::update() {
         const auto tickF = static_cast<float>(config.tickLengthUs.count()) / 1000000.0f;
         scene->update(tickF);
 
-        if (tickCount % 5 == 0 && tickCount != 0) {
+        if (tickCount % 10 == 0 && tickCount != 0) {
             auto& networkController = scene->getController<ControllerNetwork>();
             for (const auto& player : players) {
                 if (const auto stream = player->getStream(); stream) {

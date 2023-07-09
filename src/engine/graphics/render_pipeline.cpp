@@ -488,27 +488,27 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
         descriptorTypeCounts[binding.descriptorType] += binding.descriptorCount;
     }
 
+    VulkanDescriptorPool::CreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+
+    static const size_t maxSetsPerPool = 1024;
+
+    std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
+    descriptorPoolSizes.resize(descriptorTypeCounts.size());
+    size_t idx = 0;
+    for (const auto& [type, count] : descriptorTypeCounts) {
+        descriptorPoolSizes[idx].type = type;
+        descriptorPoolSizes[idx].descriptorCount = count * maxSetsPerPool;
+
+        logger.debug("Descriptor pool type: {} size: {}", type, descriptorPoolSizes[idx].descriptorCount);
+        idx++;
+    }
+
+    poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
+    poolInfo.pPoolSizes = descriptorPoolSizes.data();
+    poolInfo.maxSets = maxSetsPerPool;
+
     for (auto& descriptorPool : descriptorPools) {
-        VulkanDescriptorPool::CreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-
-        static const size_t maxSetsPerPool = 128;
-
-        std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
-        descriptorPoolSizes.resize(descriptorTypeCounts.size());
-        size_t idx = 0;
-        for (const auto& [type, count] : descriptorTypeCounts) {
-            descriptorPoolSizes[idx].type = type;
-            descriptorPoolSizes[idx].descriptorCount = count * maxSetsPerPool;
-
-            logger.debug("Descriptor pool type: {} size: {}", type, descriptorPoolSizes[idx].descriptorCount);
-            idx++;
-        }
-
-        poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
-        poolInfo.pPoolSizes = descriptorPoolSizes.data();
-        poolInfo.maxSets = maxSetsPerPool;
-
         descriptorPool = vulkan.createDescriptorPool(poolInfo);
     }
 }

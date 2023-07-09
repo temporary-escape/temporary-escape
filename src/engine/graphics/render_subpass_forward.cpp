@@ -136,7 +136,7 @@ void RenderSubpassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePolyShape.getDescriptorPool().reset();
     pipelineStarFlare.getDescriptorPool().reset();
 
-    renderSceneDynamicsWorld(vkb, *scene.getPrimaryCamera(), scene);
+    // renderSceneDynamicsWorld(vkb, *scene.getPrimaryCamera(), scene);
 
     std::vector<ForwardRenderJob> jobs;
     collectForRender<ComponentDebug>(vkb, scene, jobs);

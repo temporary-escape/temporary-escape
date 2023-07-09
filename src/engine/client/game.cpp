@@ -35,7 +35,8 @@ void Game::update(float deltaTime) {
 }
 
 bool Game::isReady() const {
-    return !planetGenerator.isBusy() && !skyboxGenerator.isBusy();
+    return !planetGenerator.isBusy() && !skyboxGenerator.isBusy() && client.getScene() &&
+           client.getScene()->getPrimaryCamera();
 }
 
 void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
@@ -54,8 +55,15 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     }
 
     auto* scene = view->getScene();
-    if (scene) {
+    if (scene && scene->getPrimaryCamera()) {
         renderer.render(vkb, viewport, *scene);
+    }
+
+    if (const auto id = renderer.getMousePosEntity(); id != selectedEntityId) {
+        selectedEntityId = id;
+        if (view) {
+            view->eventEntitySelected(selectedEntityId);
+        }
     }
 }
 
@@ -67,6 +75,8 @@ void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewpo
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {
+    renderer.setMousePos(pos);
+
     if (view) {
         view->eventMouseMoved(pos);
     }

@@ -30,6 +30,7 @@ layout (binding = 4) uniform samplerCube metallicRoughnessTexture;
 layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
+layout (location = 3) out vec4 outEntity;
 
 // ---------------------------------------------------------------------------------------------------------------------
 vec4 atmosphereColor() {
@@ -73,4 +74,5 @@ void main() {
     outColorAmbient = vec4(albedo, 1.0);
     outEmissiveRoughness = vec4(emissive * 0.1, roughness);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallic);
+    outEntity = vec4(1.0, 1.0, 1.0, 1.0);
 }

@@ -48,7 +48,7 @@ public:
 
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Component), transform);
+    MSGPACK_DEFINE_ARRAY(transform);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;

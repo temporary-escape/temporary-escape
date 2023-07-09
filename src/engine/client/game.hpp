@@ -53,9 +53,8 @@ private:
     AssetsManager& assetsManager;
     FontFamily& font;
     Client& client;
-    Stats stats;
     Skybox skybox;
-    uint64_t skyboxSeed{0};
+    uint32_t selectedEntityId{0xFFFFFFFF};
 
     ViewGalaxy::Gui guiGalaxy;
     ViewSystem::Gui guiSystem;

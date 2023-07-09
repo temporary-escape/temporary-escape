@@ -124,6 +124,9 @@ void ViewGalaxy::eventCharTyped(const uint32_t code) {
     }
 }
 
+void ViewGalaxy::eventEntitySelected(const uint32_t id) {
+}
+
 Scene* ViewGalaxy::getScene() {
     if (loading) {
         return nullptr;

@@ -233,6 +233,9 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
     scene.eventCharTyped(code);
 }
 
+void ViewBuild::eventEntitySelected(const uint32_t id) {
+}
+
 void ViewBuild::onEnter() {
     gui.blockSelector.setEnabled(true);
     gui.blockActionBar.setEnabled(true);

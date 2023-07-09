@@ -98,6 +98,9 @@ void ViewSystem::eventCharTyped(const uint32_t code) {
     }
 }
 
+void ViewSystem::eventEntitySelected(const uint32_t id) {
+}
+
 Scene* ViewSystem::getScene() {
     if (loading) {
         return nullptr;

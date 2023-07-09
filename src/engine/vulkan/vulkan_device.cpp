@@ -52,6 +52,13 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
         createInfo.enabledLayerCount = 0;
     }
 
+    VkPhysicalDeviceHostQueryResetFeatures resetFeatures;
+    resetFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
+    resetFeatures.pNext = nullptr;
+    resetFeatures.hostQueryReset = VK_TRUE;
+
+    createInfo.pNext = &resetFeatures;
+
     if (vkCreateDevice(getPhysicalDevice(), &createInfo, nullptr, &device) != VK_SUCCESS) {
         destroy();
         EXCEPTION("Failed to create Vulkan logical device!");

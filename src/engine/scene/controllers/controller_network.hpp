@@ -28,11 +28,38 @@ public:
     void resetUpdates();
 
 private:
-    void onUpdateTransform(entt::registry& r, entt::entity handle);
+    template <typename T> void registerComponent() {
+        reg.on_update<T>().template connect<&ControllerNetwork::onUpdateComponent<T>>(this);
+        reg.on_destroy<T>().template connect<&ControllerNetwork::onDestroyComponent<T>>(this);
+    }
+    template <typename T> void unregisterComponent() {
+        reg.on_update<T>().template disconnect<&ControllerNetwork::onUpdateComponent<T>>(this);
+        reg.on_destroy<T>().template disconnect<&ControllerNetwork::onDestroyComponent<T>>(this);
+    }
+
+    template <typename T> void onUpdateComponent(entt::registry& r, entt::entity handle) {
+        auto& value = updatedComponentsMap[handle];
+        if (!(value & componentMaskId<T>())) {
+            updatedComponentsMap[handle] |= componentMaskId<T>();
+            ++updatedComponentsCount;
+        }
+    }
+
+    template <typename T> void onDestroyComponent(entt::registry& r, entt::entity handle) {
+        auto it = updatedComponentsMap.find(handle);
+        if (it != updatedComponentsMap.end()) {
+            if (it->second & componentMaskId<T>()) {
+                it->second &= ~componentMaskId<T>();
+                --updatedComponentsCount;
+            }
+        }
+    }
+    void onDestroyEntity(entt::registry& r, entt::entity handle);
 
     entt::registry& reg;
     std::unordered_map<entt::entity, entt::entity> remoteToLocal;
-    std::list<std::tuple<entt::entity, ComponentTransform*>> toSendTransforms;
+    std::unordered_map<entt::entity, uint64_t> updatedComponentsMap;
+    size_t updatedComponentsCount{0};
 };
 } // namespace Engine
 

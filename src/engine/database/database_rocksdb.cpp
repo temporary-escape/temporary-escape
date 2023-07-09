@@ -14,7 +14,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 class DefaultLogger : public rocksdb::Logger {
 public:
-    explicit DefaultLogger(rocksdb::InfoLogLevel filterLogLevel) {
+    explicit DefaultLogger(rocksdb::InfoLogLevel filterLogLevel) : filterLogLevel{filterLogLevel} {
     }
 
     void Logv(const rocksdb::InfoLogLevel logLevel, const char* format, va_list ap) override {

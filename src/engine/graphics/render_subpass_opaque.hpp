@@ -15,12 +15,14 @@ private:
     void renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scene);
     void renderSceneModels(VulkanCommandBuffer& vkb, Scene& scene);
     void renderScenePlanets(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderSceneModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;
     VoxelShapeCache& voxelShapeCache;
     RenderPipeline pipelineGrid;
     RenderPipeline pipelineModel;
+    RenderPipeline pipelineModelInstanced;
     RenderPipeline pipelinePlanet;
     TexturePtr palette;
 };

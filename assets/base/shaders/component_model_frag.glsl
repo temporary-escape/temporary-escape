@@ -20,11 +20,13 @@ layout (location = 0) in VS_OUT {
     vec2 texCoords;
     vec3 worldpos;
     mat3 TBN;
+    vec4 entityColor;
 } vs_out;
 
 layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
+layout (location = 3) out vec4 outEntity;
 
 void main() {
     vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
@@ -40,4 +42,5 @@ void main() {
     outColorAmbient = vec4(baseColor.rgb, ambient);
     outEmissiveRoughness = vec4(emissive, metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
+    outEntity = vs_out.entityColor;
 }

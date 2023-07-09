@@ -35,11 +35,20 @@ public:
         return model;
     }
 
+    void setInstanced(const bool value) {
+        instanced = value;
+    }
+
+    bool isInstanced() const {
+        return instanced;
+    }
+
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Component), model);
+    MSGPACK_DEFINE_ARRAY(model, instanced);
 
 private:
     ModelPtr model{nullptr};
+    bool instanced{false};
 };
 } // namespace Engine

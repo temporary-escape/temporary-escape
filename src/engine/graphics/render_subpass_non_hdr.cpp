@@ -141,7 +141,7 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
         pipelinePointCloud.bindDescriptors(vkb, uniforms, textures, {});
 
         std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
-        vboBindings[0] = {&pair.second->getCurrentBuffer(), 0};
+        vboBindings[0] = {&pair.second.getCurrentBuffer(), 0};
         vkb.bindBuffers(vboBindings);
 
         vkb.draw(4, count, 0, 0);
