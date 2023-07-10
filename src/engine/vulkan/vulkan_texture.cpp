@@ -8,8 +8,8 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo)
     device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
 
     VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
-    allocInfo.flags = 0;
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     VmaAllocationInfo allocationInfo;
     if (vmaCreateImage(allocator, &createInfo.image, &allocInfo, &image, &allocation, &allocationInfo) != VK_SUCCESS) {

@@ -23,7 +23,7 @@ public:
     };
 
     ComponentModel() = default;
-    explicit ComponentModel(entt::registry& reg, entt::entity handle);
+    explicit ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model);
     virtual ~ComponentModel() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentModel);
 
@@ -35,20 +35,20 @@ public:
         return model;
     }
 
-    void setInstanced(const bool value) {
-        instanced = value;
+    void setStatic(const bool value) {
+        flagStatic = value;
     }
 
-    bool isInstanced() const {
-        return instanced;
+    bool isStatic() const {
+        return flagStatic;
     }
 
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(model, instanced);
+    MSGPACK_DEFINE_ARRAY(model, flagStatic);
 
 private:
     ModelPtr model{nullptr};
-    bool instanced{false};
+    bool flagStatic{false};
 };
 } // namespace Engine

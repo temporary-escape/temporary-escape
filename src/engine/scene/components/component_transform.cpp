@@ -63,6 +63,7 @@ void ComponentTransform::bind(Lua& lua) {
     auto cls = m.new_usertype<ComponentTransform>("ComponentTransform");
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
+    cls["scale"] = &ComponentTransform::scale;
 }
 
 void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {

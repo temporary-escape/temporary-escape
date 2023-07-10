@@ -12,7 +12,7 @@ class Iterator;
 } // namespace rocksdb
 
 namespace Engine {
-class DatabaseRocksDB : public Database {
+class ENGINE_API DatabaseRocksDB : public Database {
 public:
     struct Options {
         size_t writeBufferSizeMb{64};

@@ -28,7 +28,8 @@ Mesh Engine::createFullScreenQuad(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), sizeof(FullScreenVertex) * vertices.size());
@@ -38,7 +39,8 @@ Mesh Engine::createFullScreenQuad(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.ibo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.ibo, indices.data(), sizeof(uint16_t) * indices.size());
@@ -95,7 +97,8 @@ Mesh Engine::createSkyboxCube(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), sizeof(Vector3) * vertices.size());
@@ -105,7 +108,8 @@ Mesh Engine::createSkyboxCube(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.ibo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.ibo, indices.data(), sizeof(uint16_t) * indices.size());
@@ -222,7 +226,8 @@ Mesh Engine::createPlanetMesh(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
@@ -232,7 +237,8 @@ Mesh Engine::createPlanetMesh(VulkanRenderer& vulkan) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.ibo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.ibo, indices.data(), bufferInfo.size);

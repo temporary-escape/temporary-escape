@@ -191,8 +191,8 @@ void Canvas::createVertexBuffer() {
     bufferInfo.size = sizeof(vertices[0]) * vertices.size();
     bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     vbo = vulkan.createDoubleBuffer(bufferInfo);
 }
@@ -203,8 +203,8 @@ void Canvas::createIndexBuffer() {
     bufferInfo.size = sizeof(uint16_t) * indices.size();
     bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     ibo = vulkan.createDoubleBuffer(bufferInfo);
 }
@@ -215,8 +215,8 @@ void Canvas::createUniformBuffer() {
     bufferInfo.size = sizeof(UniformBuffer);
     bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     ubo = vulkan.createDoubleBuffer(bufferInfo);
 }

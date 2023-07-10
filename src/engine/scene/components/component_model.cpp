@@ -4,7 +4,9 @@
 
 using namespace Engine;
 
-ComponentModel::ComponentModel(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentModel::ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model) :
+    Component{reg, handle} {
+    setModel(model);
 }
 
 void ComponentModel::bind(Lua& lua) {
@@ -12,5 +14,5 @@ void ComponentModel::bind(Lua& lua) {
 
     auto cls = m.new_usertype<ComponentModel>("ComponentModel");
     cls["model"] = sol::property(&ComponentModel::getModel, &ComponentModel::setModel);
-    cls["instanced"] = sol::property(&ComponentModel::isInstanced, &ComponentModel::setInstanced);
+    cls["static"] = sol::property(&ComponentModel::isStatic, &ComponentModel::setStatic);
 }

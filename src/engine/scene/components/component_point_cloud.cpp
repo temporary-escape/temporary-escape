@@ -35,7 +35,8 @@ void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
     bufferInfo.size = sizeof(Point) * points.size();
     bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     mesh.vbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(mesh.vbo, points.data(), sizeof(Point) * points.size());

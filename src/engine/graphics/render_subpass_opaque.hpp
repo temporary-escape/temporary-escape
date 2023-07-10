@@ -15,7 +15,7 @@ private:
     void renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scene);
     void renderSceneModels(VulkanCommandBuffer& vkb, Scene& scene);
     void renderScenePlanets(VulkanCommandBuffer& vkb, Scene& scene);
-    void renderSceneModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;

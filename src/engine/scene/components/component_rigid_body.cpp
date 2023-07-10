@@ -24,6 +24,7 @@ private:
     void setWorldTransform(const btTransform& worldTrans) override {
         Matrix4 mat;
         worldTrans.getOpenGLMatrix(&mat[0][0]);
+        mat = glm::scale(mat, Vector3{componentRigidBody.getScale()});
         componentTransform.updateTransform(mat);
         componentRigidBody.setDirty(true);
     }
@@ -64,14 +65,22 @@ void ComponentRigidBody::setup() {
         EXCEPTION("ComponentRigidBody setup with no model");
     }
     if (!model->getCollisionShape()) {
-        EXCEPTION("ComponentRigidBody setup with a model: '{}' that has no collision shape", model->getName());
+        EXCEPTION("ComponentRigidBody setup with model: '{}' that has no collision shape", model->getName());
     }
     auto transform = tryGet<ComponentTransform>();
     if (!transform) {
         EXCEPTION("ComponentRigidBody added on entity with no ComponentTransform");
     }
 
-    shape = std::make_unique<btUniformScalingShape>(model->getCollisionShape(), scale);
+    if (const auto convexHull = dynamic_cast<const btConvexHullShape*>(model->getCollisionShape()); convexHull) {
+        shape = std::make_unique<btConvexHullShape>(&convexHull->getPoints()->x(), convexHull->getNumPoints());
+    } else if (const auto sphere = dynamic_cast<const btSphereShape*>(model->getCollisionShape()); sphere) {
+        shape = std::make_unique<btSphereShape>(sphere->getRadius());
+    } else {
+        EXCEPTION("ComponentRigidBody setup with model: '{}' that has unknown collision shape");
+    }
+
+    // shape = std::make_unique<btUniformScalingShape>(model->getCollisionShape(), scale);
 
     motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(*this, *transform)};
 
@@ -146,7 +155,14 @@ void ComponentRigidBody::setLinearVelocity(const Vector3& value) {
 }
 
 void ComponentRigidBody::activate() {
+    if (!rigidBody) {
+        return;
+    }
     rigidBody->activate();
+}
+
+bool ComponentRigidBody::isActive() const {
+    return rigidBody && rigidBody->isActive();
 }
 
 Vector3 ComponentRigidBody::getLinearVelocity() const {
@@ -190,6 +206,20 @@ Matrix4 ComponentRigidBody::getWorldTransform() const {
     return mat;
 }
 
+int32_t ComponentRigidBody::getFlags() const {
+    if (!rigidBody) {
+        return 0;
+    }
+    return rigidBody->getFlags();
+}
+
+void ComponentRigidBody::setFlags(const int32_t value) {
+    if (!rigidBody) {
+        return;
+    }
+    rigidBody->setFlags(value);
+}
+
 void ComponentRigidBody::clearForces() {
     if (!rigidBody) {
         return;
@@ -207,6 +237,7 @@ void ComponentRigidBody::bind(Lua& lua) {
     cls["angular_velocity"] =
         sol::property(&ComponentRigidBody::getAngularVelocity, &ComponentRigidBody::setAngularVelocity);
     cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
+    cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
     cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
     cls["clear_forces"] = &ComponentRigidBody::clearForces;
     cls["activate"] = &ComponentRigidBody::activate;

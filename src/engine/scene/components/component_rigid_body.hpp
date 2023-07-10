@@ -47,10 +47,14 @@ public:
 
     void clearForces();
     void activate();
+    bool isActive() const;
 
     void setDynamicsWorld(btDynamicsWorld& world) {
         dynamicsWorld = &world;
     }
+
+    int32_t getFlags() const;
+    void setFlags(int32_t value);
 
     static void bind(Lua& lua);
 
@@ -74,7 +78,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
 
     template <> struct convert<Engine::ComponentRigidBody> {
         msgpack::object const& operator()(msgpack::object const& o, Engine::ComponentRigidBody& v) const {
-            if (o.type != msgpack::type::ARRAY || o.via.array.size != 6)
+            if (o.type != msgpack::type::ARRAY || o.via.array.size != 7)
                 throw msgpack::type_error();
             v.setModel(o.via.array.ptr[0].as<Engine::ModelPtr>());
             v.setLinearVelocity(o.via.array.ptr[1].as<Engine::Vector3>());
@@ -82,6 +86,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
             v.setWorldTransform(o.via.array.ptr[3].as<Engine::Matrix4>());
             v.setMass(o.via.array.ptr[4].as<float>());
             v.setScale(o.via.array.ptr[5].as<float>());
+            if (o.via.array.ptr[6].as<bool>()) {
+                v.activate();
+            }
             return o;
         }
     };
@@ -89,13 +96,14 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     template <> struct pack<Engine::ComponentRigidBody> {
         template <typename Stream>
         msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::ComponentRigidBody const& v) const {
-            o.pack_array(6);
+            o.pack_array(7);
             o.pack(v.getModel());
             o.pack(v.getLinearVelocity());
             o.pack(v.getAngularVelocity());
             o.pack(v.getWorldTransform());
             o.pack(v.getMass());
             o.pack(v.getScale());
+            o.pack(v.isActive());
             return o;
         }
     };

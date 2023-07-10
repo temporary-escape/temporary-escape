@@ -12,6 +12,8 @@ public:
     struct CreateInfo : VkBufferCreateInfo {
         VmaMemoryUsage memoryUsage{VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY};
         VmaAllocationCreateFlags memoryFlags{0};
+        VkMemoryPropertyFlags memoryRequiredFlags{0};
+        VkMemoryPropertyFlags memoryPreferredFlags{0};
     };
 
     VulkanBuffer() = default;

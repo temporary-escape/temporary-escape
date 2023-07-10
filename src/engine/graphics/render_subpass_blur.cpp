@@ -80,7 +80,8 @@ void RenderSubpassBlur::createGaussianKernel(const size_t size, double sigma) {
     bufferInfo.usage =
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     weightsUbo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(weightsUbo, &data, bufferInfo.size);

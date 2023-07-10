@@ -5,22 +5,27 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ControllerModel::ControllerModel(entt::registry& reg) : reg{reg} {
+    reg.on_construct<ComponentTransform>().connect<&ControllerModel::onConstruct>(this);
+    reg.on_destroy<ComponentTransform>().connect<&ControllerModel::onDestroy>(this);
 }
 
-ControllerModel::~ControllerModel() = default;
+ControllerModel::~ControllerModel() {
+    reg.on_construct<ComponentTransform>().connect<&ControllerModel::onConstruct>(this);
+    reg.on_destroy<ComponentTransform>().connect<&ControllerModel::onDestroy>(this);
+}
 
 void ControllerModel::update(const float delta) {
 }
 
 void ControllerModel::recalculate(VulkanRenderer& vulkan) {
-    const auto view = reg.view<ComponentTransform, ComponentModel>(entt::exclude<TagDisabled>);
+    /*const auto view = reg.view<ComponentTransform, ComponentModel>(entt::exclude<TagDisabled>);
 
     for (auto&& [_, buffer] : buffers) {
         buffer.count = 0;
     }
 
     for (auto&& [entity, transform, model] : view.each()) {
-        if (!model.isInstanced()) {
+        if (!model.isStatic()) {
             continue;
         }
 
@@ -39,10 +44,10 @@ void ControllerModel::recalculate(VulkanRenderer& vulkan) {
         } else {
             buffer.expand = true;
         }
-    }
+    }*/
 }
 
-ControllerModel::ModelMatrixBuffer& ControllerModel::getBufferFor(const ModelPtr& model, VulkanRenderer& vulkan) {
+/*ControllerModel::ModelMatrixBuffer& ControllerModel::getBufferFor(const ModelPtr& model, VulkanRenderer& vulkan) {
     auto& buffer = buffers[model.get()];
 
     if (buffer.expand) {
@@ -67,4 +72,12 @@ ControllerModel::ModelMatrixBuffer& ControllerModel::getBufferFor(const ModelPtr
     }
 
     return buffer;
+}*/
+
+void ControllerModel::onConstruct(entt::registry& r, const entt::entity handle) {
+    (void)r;
+}
+
+void ControllerModel::onDestroy(entt::registry& r, const entt::entity handle) {
+    (void)r;
 }

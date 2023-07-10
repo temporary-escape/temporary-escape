@@ -48,8 +48,8 @@ RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, RenderResources& reso
     bufferInfo.size = 4; // 1 pixel RGBA
     bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     entityColorBuffer = vulkan.createDoubleBuffer(bufferInfo);
 }

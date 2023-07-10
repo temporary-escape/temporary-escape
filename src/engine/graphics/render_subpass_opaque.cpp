@@ -65,22 +65,15 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, RenderResources
             // Vertex inputs
             RenderPipeline::VertexInput::of<ComponentModel::Vertex>(0),
             RenderPipeline::VertexInput{
-                1,
-                {
-                    {4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 0},
-                },
-                sizeof(Matrix4),
-                VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE,
-            },
-            RenderPipeline::VertexInput{
                 2,
                 {
-                    {5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 0},
-                    {6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 1},
-                    {7, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 2},
-                    {8, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 3},
+                    {4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 0},
+                    {5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 1},
+                    {6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 2},
+                    {7, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 3},
+                    {8, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 4},
                 },
-                sizeof(Matrix4),
+                sizeof(Vector4) + sizeof(Matrix4),
                 VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE,
             },
         },
@@ -140,7 +133,7 @@ void RenderSubpassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     renderSceneGrids(vkb, scene);
     renderSceneModels(vkb, scene);
-    renderSceneModelsInstanced(vkb, scene);
+    renderSceneModelsStatic(vkb, scene);
     renderScenePlanets(vkb, scene);
 }
 
@@ -233,7 +226,7 @@ void RenderSubpassOpaque::renderSceneModels(VulkanCommandBuffer& vkb, Scene& sce
     pipelineModel.bind(vkb);
 
     for (auto&& [entity, transform, model] : systemModels.each()) {
-        if (model.isInstanced()) {
+        if (model.isStatic()) {
             continue;
         }
 
@@ -275,7 +268,7 @@ void RenderSubpassOpaque::renderSceneModels(VulkanCommandBuffer& vkb, Scene& sce
     }
 }
 
-void RenderSubpassOpaque::renderSceneModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene) {
+void RenderSubpassOpaque::renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& controllerModel = scene.getController<ControllerModel>();
     controllerModel.recalculate(vulkan);
 
@@ -285,9 +278,9 @@ void RenderSubpassOpaque::renderSceneModelsInstanced(VulkanCommandBuffer& vkb, S
 
     std::array<UniformBindingRef, 2> uniforms;
     std::array<SamplerBindingRef, 5> textures;
-    std::array<VulkanVertexBufferBindRef, 3> vboBindings{};
+    std::array<VulkanVertexBufferBindRef, 2> vboBindings{};
 
-    for (auto&& [model, buffer] : controllerModel.getBuffers()) {
+    /*for (auto&& [model, buffer] : controllerModel.getBuffers()) {
         for (auto& primitive : model->getPrimitives()) {
             if (!primitive.material) {
                 EXCEPTION("Primitive has no material");
@@ -316,7 +309,7 @@ void RenderSubpassOpaque::renderSceneModelsInstanced(VulkanCommandBuffer& vkb, S
 
             vkb.drawIndexed(primitive.count, buffer.count, 0, 0, 0);
         }
-    }
+    }*/
 }
 
 void RenderSubpassOpaque::renderScenePlanets(VulkanCommandBuffer& vkb, Scene& scene) {

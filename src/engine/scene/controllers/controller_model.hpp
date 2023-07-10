@@ -7,11 +7,10 @@ namespace Engine {
 class ENGINE_API ControllerModel : public Controller {
 public:
     struct ModelMatrixBuffer {
-        VulkanDoubleBuffer vboModels;
-        VulkanDoubleBuffer vboEntityColors;
+        VulkanDoubleBuffer vbo;
         size_t capacity{0};
         size_t count{0};
-        bool expand{true};
+        // bool expand{true};
     };
 
     explicit ControllerModel(entt::registry& reg);
@@ -27,7 +26,10 @@ public:
     }
 
 private:
-    ModelMatrixBuffer& getBufferFor(const ModelPtr& model, VulkanRenderer& vulkan);
+    void onConstruct(entt::registry& r, entt::entity handle);
+    void onDestroy(entt::registry& r, entt::entity handle);
+
+    // ModelMatrixBuffer& getBufferFor(const ModelPtr& model, VulkanRenderer& vulkan);
 
     entt::registry& reg;
     std::unordered_map<Model*, ModelMatrixBuffer> buffers;

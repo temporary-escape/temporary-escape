@@ -18,6 +18,8 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = createInfo.memoryUsage;
     allocInfo.flags = createInfo.memoryFlags;
+    allocInfo.requiredFlags = createInfo.memoryRequiredFlags;
+    allocInfo.preferredFlags = createInfo.memoryPreferredFlags;
 
     VmaAllocationInfo allocationInfo;
     if (vmaCreateBuffer(allocator, &createInfo, &allocInfo, &buffer, &allocation, &allocationInfo) != VK_SUCCESS) {
