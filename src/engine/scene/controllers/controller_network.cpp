@@ -92,12 +92,13 @@ static void unpackComponent(entt::registry& reg, const entt::entity handle, cons
         component.postUnpack(reg, handle);
         obj.convert(component);
         postEmplaceComponent(handle, component);
+        component.setDirty(true);
     } else if (op == SyncOperation::Patch) {
         auto* component = reg.try_get<T>(handle);
         if (component) {
             obj.convert(*component);
-            // component->setDirty(true);
             postPatchComponent(handle, *component);
+            component->setDirty(true);
         }
     } else {
         logger.warn("Unknown sync operation for entity id: {}", static_cast<uint32_t>(handle));

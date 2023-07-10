@@ -5,8 +5,8 @@
 #include "controllers/controller_camera.hpp"
 #include "controllers/controller_dynamics_world.hpp"
 #include "controllers/controller_icon.hpp"
-#include "controllers/controller_model.hpp"
 #include "controllers/controller_network.hpp"
+#include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
 #include <sol/sol.hpp>
 
@@ -20,7 +20,7 @@ Scene::Scene() {
     addController<ControllerCamera>();
     addController<ControllerDynamicsWorld>();
     addController<ControllerNetwork>();
-    addController<ControllerModel>();
+    addController<ControllerStaticModel>();
     addController<ControllerText>();
 }
 

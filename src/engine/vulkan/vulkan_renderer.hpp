@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vulkan_allocator.hpp"
+#include "vulkan_array_buffer.hpp"
 #include "vulkan_buffer.hpp"
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_command_pool.hpp"

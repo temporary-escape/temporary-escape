@@ -1,7 +1,7 @@
 #include "render_subpass_opaque.hpp"
 #include "../assets/assets_manager.hpp"
 #include "../scene/components/component_grid.hpp"
-#include "../scene/controllers/controller_model.hpp"
+#include "../scene/controllers/controller_static_model.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_opaque.hpp"
 
@@ -64,18 +64,8 @@ RenderSubpassOpaque::RenderSubpassOpaque(VulkanRenderer& vulkan, RenderResources
         {
             // Vertex inputs
             RenderPipeline::VertexInput::of<ComponentModel::Vertex>(0),
-            RenderPipeline::VertexInput{
-                2,
-                {
-                    {4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 0},
-                    {5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 1},
-                    {6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 2},
-                    {7, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 3},
-                    {8, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 4},
-                },
-                sizeof(Vector4) + sizeof(Matrix4),
-                VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE,
-            },
+            RenderPipeline::VertexInput::of<ComponentModel::InstancedVertex>(
+                1, VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE),
         },
         {
             // Additional pipeline options
@@ -269,8 +259,8 @@ void RenderSubpassOpaque::renderSceneModels(VulkanCommandBuffer& vkb, Scene& sce
 }
 
 void RenderSubpassOpaque::renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scene& scene) {
-    auto& controllerModel = scene.getController<ControllerModel>();
-    controllerModel.recalculate(vulkan);
+    auto& controllerStaticModel = scene.getController<ControllerStaticModel>();
+    controllerStaticModel.recalculate(vulkan);
 
     auto camera = scene.getPrimaryCamera();
 
@@ -280,7 +270,7 @@ void RenderSubpassOpaque::renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scen
     std::array<SamplerBindingRef, 5> textures;
     std::array<VulkanVertexBufferBindRef, 2> vboBindings{};
 
-    /*for (auto&& [model, buffer] : controllerModel.getBuffers()) {
+    for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
         for (auto& primitive : model->getPrimitives()) {
             if (!primitive.material) {
                 EXCEPTION("Primitive has no material");
@@ -289,8 +279,7 @@ void RenderSubpassOpaque::renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scen
             validateMaterial(*primitive.material);
 
             vboBindings[0] = {&primitive.vbo, 0};
-            vboBindings[1] = {&buffer.vboEntityColors.getCurrentBuffer(), 0};
-            vboBindings[2] = {&buffer.vboModels.getCurrentBuffer(), 0};
+            vboBindings[1] = {&buffer.getCurrentBuffer(), 0};
             vkb.bindBuffers(vboBindings);
 
             vkb.bindIndexBuffer(primitive.ibo, 0, primitive.indexType);
@@ -307,9 +296,9 @@ void RenderSubpassOpaque::renderSceneModelsStatic(VulkanCommandBuffer& vkb, Scen
 
             pipelineModelInstanced.bindDescriptors(vkb, uniforms, textures, {});
 
-            vkb.drawIndexed(primitive.count, buffer.count, 0, 0, 0);
+            vkb.drawIndexed(primitive.count, buffer.count(), 0, 0, 0);
         }
-    }*/
+    }
 }
 
 void RenderSubpassOpaque::renderScenePlanets(VulkanCommandBuffer& vkb, Scene& scene) {

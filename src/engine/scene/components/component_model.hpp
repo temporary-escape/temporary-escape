@@ -22,6 +22,21 @@ public:
         };
     };
 
+    struct InstancedVertex {
+        Vector4 entityColor;
+        Matrix4 modelMatrix;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {4, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 0},
+                {5, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 1},
+                {6, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 2},
+                {7, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 3},
+                {8, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(Vector4) * 4},
+            };
+        };
+    };
+
     ComponentModel() = default;
     explicit ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model);
     virtual ~ComponentModel() = default; // NOLINT(modernize-use-override)
@@ -47,6 +62,9 @@ public:
 
     MSGPACK_DEFINE_ARRAY(model, flagStatic);
 
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
+    
 private:
     ModelPtr model{nullptr};
     bool flagStatic{false};

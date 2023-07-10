@@ -9,6 +9,10 @@ ComponentModel::ComponentModel(entt::registry& reg, entt::entity handle, const M
     setModel(model);
 }
 
+void ComponentModel::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentModel>(handle);
+}
+
 void ComponentModel::bind(Lua& lua) {
     auto& m = lua.root();
 
