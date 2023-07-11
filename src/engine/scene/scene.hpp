@@ -14,7 +14,7 @@ class ENGINE_API Skybox;
 
 class ENGINE_API Scene : public UserInput {
 public:
-    explicit Scene();
+    explicit Scene(const Config& config, bool isServer = false);
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
@@ -44,13 +44,13 @@ public:
         primaryCamera = entity;
     }
 
-    template <typename T> T& addController() {
+    template <typename T, typename... Args> T& addController(Args&&... args) {
         const auto& type = std::type_index{typeid(T)};
         if (controllers.find(type) != controllers.end()) {
             EXCEPTION("Controller of type: {} already added!", typeid(T).name());
         }
 
-        auto controller = std::make_unique<T>(reg);
+        auto controller = std::make_unique<T>(reg, std::forward<Args>(args)...);
         auto ptr = dynamic_cast<T*>(controller.get());
 
         controllers.emplace(type, std::move(controller));

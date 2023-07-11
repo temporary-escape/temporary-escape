@@ -14,7 +14,7 @@ void ControllerIcon::update(const float delta) {
 }
 
 void ControllerIcon::recalculate(VulkanRenderer& vulkan) {
-    for (auto& [_, count] : counts) {
+    /*for (auto& [_, count] : counts) {
         count = 0;
     }
 
@@ -36,10 +36,10 @@ void ControllerIcon::recalculate(VulkanRenderer& vulkan) {
                      image->getAllocation().uv,
                      image->getAllocation().st,
                      component.getOffset()};
-    }
+    }*/
 }
 
-VulkanDoubleBuffer ControllerIcon::createVbo(VulkanRenderer& vulkan) {
+/*VulkanDoubleBuffer ControllerIcon::createVbo(VulkanRenderer& vulkan) {
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sizeof(Point) * 1024;
@@ -49,13 +49,13 @@ VulkanDoubleBuffer ControllerIcon::createVbo(VulkanRenderer& vulkan) {
     bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     return vulkan.createDoubleBuffer(bufferInfo);
-}
+}*/
 
-VulkanDoubleBuffer& ControllerIcon::getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image) {
+/*VulkanDoubleBuffer& ControllerIcon::getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image) {
     auto it = vbos.find(image.get());
     if (it == vbos.end()) {
         it = vbos.emplace(image.get(), createVbo(vulkan)).first;
     }
 
     return it->second;
-}
+}*/

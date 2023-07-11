@@ -50,6 +50,7 @@ struct Config {
         int brdfSize = 512;
         int planetTextureSize = 2048;
         int planetLowResTextureSize = 128;
+        bool debugDraw = false;
     } graphics;
 
     // Paths of interests

@@ -9,7 +9,7 @@ ViewBuild::Gui::Gui(const Config& config, AssetsManager& assetsManager) :
 }
 
 ViewBuild::ViewBuild(const Config& config, Renderer& renderer, AssetsManager& assetsManager, Gui& gui) :
-    config{config}, renderer{renderer}, assetsManager{assetsManager}, gui{gui}, scene{} {
+    config{config}, renderer{renderer}, assetsManager{assetsManager}, gui{gui}, scene{config} {
 
     gui.blockSelector.setBlocks(assetsManager.getBlocks().findAll());
 

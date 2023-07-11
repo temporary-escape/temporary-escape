@@ -118,4 +118,14 @@ void Engine::bindMathVectors(Lua& lua) {
         metaArithemtic<Vector4, float>(cls);
         cls["distance"] = [](Vector4& self, const Vector4& other) { return glm::distance(self, other); };
     }
+
+    { // Color4
+        auto cls = m.new_usertype<Color4>("Color4", sol::constructors<Color4(), Color4(float, float, float, float)>{});
+        cls["x"] = &Color4::x;
+        cls["y"] = &Color4::y;
+        cls["z"] = &Color4::z;
+        cls["w"] = &Color4::w;
+        metaArithemtic<Color4, float>(cls);
+        cls["distance"] = [](Color4& self, const Color4& other) { return glm::distance(self, other); };
+    }
 }

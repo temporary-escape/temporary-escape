@@ -14,14 +14,17 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene() {
-    addController<Controller2DSelectable>();
-    addController<ControllerIcon>();
-    addController<ControllerCamera>();
-    addController<ControllerDynamicsWorld>();
+Scene::Scene(const Config& config, const bool isServer) {
+    addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
-    addController<ControllerStaticModel>();
-    addController<ControllerText>();
+
+    if (!isServer) {
+        addController<Controller2DSelectable>();
+        addController<ControllerIcon>();
+        addController<ControllerCamera>();
+        addController<ControllerStaticModel>();
+        addController<ControllerText>();
+    }
 }
 
 Scene::~Scene() = default;

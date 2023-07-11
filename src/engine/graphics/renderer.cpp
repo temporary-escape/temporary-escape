@@ -187,7 +187,7 @@ void Renderer::render(const PlanetTypePtr& planetType) {
         EXCEPTION("Planet type: {} has no textures generated", planetType->getName());
     }
 
-    Scene scene{};
+    Scene scene{config};
 
     { // Sun
         auto sun = scene.createEntity();
@@ -230,7 +230,7 @@ void Renderer::render(const PlanetTypePtr& planetType) {
 void Renderer::render(const BlockPtr& block, const VoxelShape::Type shape) {
     logger.info("Rendering thumbnail for block: {}", block ? block->getName() : "nullptr");
 
-    Scene scene{};
+    Scene scene{config};
 
     { // Sun
         auto sun = scene.createEntity();

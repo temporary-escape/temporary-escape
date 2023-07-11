@@ -35,11 +35,9 @@ private:
 
 ComponentRigidBody::ComponentRigidBody() = default;
 
-ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
-}
-
-ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model) :
-    Component{reg, handle}, model{model} {
+ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model,
+                                       const float scale) :
+    Component{reg, handle}, model{model}, scale{scale} {
     setup();
 }
 
@@ -79,6 +77,8 @@ void ComponentRigidBody::setup() {
     } else {
         EXCEPTION("ComponentRigidBody setup with model: '{}' that has unknown collision shape");
     }
+
+    shape->setLocalScaling(btVector3{scale, scale, scale});
 
     // shape = std::make_unique<btUniformScalingShape>(model->getCollisionShape(), scale);
 
@@ -121,6 +121,8 @@ void ComponentRigidBody::setMass(const float value) {
             flags |= btCollisionObject::CF_STATIC_OBJECT;
             rigidBody->setCollisionFlags(flags);
         }
+
+        motionState->setWorldTransform(rigidBody->getWorldTransform());
     }
 }
 
@@ -135,12 +137,12 @@ void ComponentRigidBody::setScale(float value) {
 
     scale = value;
 
-    if (rigidBody) {
+    /*if (rigidBody) {
         shape->setLocalScaling(btVector3{scale, scale, scale});
         if (dynamicsWorld) {
             dynamicsWorld->updateSingleAabb(rigidBody.get());
         }
-    }
+    }*/
 }
 
 float ComponentRigidBody::getScale() const {
@@ -237,7 +239,6 @@ void ComponentRigidBody::bind(Lua& lua) {
     cls["angular_velocity"] =
         sol::property(&ComponentRigidBody::getAngularVelocity, &ComponentRigidBody::setAngularVelocity);
     cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
-    cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
     cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
     cls["clear_forces"] = &ComponentRigidBody::clearForces;
     cls["activate"] = &ComponentRigidBody::activate;

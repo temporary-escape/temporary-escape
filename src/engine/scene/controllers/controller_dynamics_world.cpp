@@ -92,8 +92,9 @@ private:
     ComponentLines::Line* dst{nullptr};
 };
 
-ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg) :
+ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg, const Config& config) :
     reg{reg},
+    config{config},
     collisionConfiguration{std::make_unique<btDefaultCollisionConfiguration>()},
     dispatcher{std::make_unique<btCollisionDispatcher>(collisionConfiguration.get())},
     overlappingPairCache{std::make_unique<btDbvtBroadphase>()},
@@ -130,12 +131,14 @@ void ControllerDynamicsWorld::update(const float delta) {
 }
 
 void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {
-    /*if (!debugDraw) {
+    if (!debugDraw) {
         debugDraw = std::make_unique<CollisionDebugDraw>(vulkan);
         dynamicsWorld->setDebugDrawer(debugDraw.get());
     }
-    dynamic_cast<CollisionDebugDraw*>(debugDraw.get())->reset();
-    dynamicsWorld->debugDrawWorld();*/
+    if (config.graphics.debugDraw) {
+        dynamic_cast<CollisionDebugDraw*>(debugDraw.get())->reset();
+        dynamicsWorld->debugDrawWorld();
+    }
 }
 
 void ControllerDynamicsWorld::onConstruct(entt::registry& r, const entt::entity handle) {
@@ -171,9 +174,15 @@ void ControllerDynamicsWorld::onDestroy(entt::registry& r, const entt::entity ha
     }
 }
 const VulkanBuffer& ControllerDynamicsWorld::getDebugDrawVbo() const {
+    if (!debugDraw) {
+        EXCEPTION("No dynamics world debug draw setup");
+    }
     return dynamic_cast<const CollisionDebugDraw*>(debugDraw.get())->getVbo();
 }
 
 size_t ControllerDynamicsWorld::getDebugDrawCount() const {
+    if (!debugDraw) {
+        EXCEPTION("No dynamics world debug draw setup");
+    }
     return dynamic_cast<const CollisionDebugDraw*>(debugDraw.get())->getCount();
 }

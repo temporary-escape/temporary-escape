@@ -44,7 +44,12 @@ public:
         offset = value;
     }
 
+    static void bind(Lua& lua);
+
     MSGPACK_DEFINE_ARRAY(image, size, color, offset);
+
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     ImagePtr image;

@@ -38,6 +38,8 @@ public:
         return compressionType;
     }
 
+    std::optional<float> getAnisotropy() const;
+
 private:
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

@@ -60,6 +60,7 @@ private:
     void postDispatch(std::function<void()> fn) override;
 
 private:
+    const Config& config;
     AssetsManager& assetsManager;
     const PlayerLocalProfile& localProfile;
     std::string playerId;

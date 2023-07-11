@@ -12,8 +12,7 @@ namespace Engine {
 class ENGINE_API ComponentRigidBody : public Component {
 public:
     ComponentRigidBody();
-    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle);
-    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model);
+    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model, float scale);
     virtual ~ComponentRigidBody(); // NOLINT(modernize-use-override)
     ComponentRigidBody(const ComponentRigidBody& other) = delete;
     ComponentRigidBody(ComponentRigidBody&& other) noexcept;

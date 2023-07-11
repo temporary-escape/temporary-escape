@@ -125,11 +125,10 @@ void Texture::loadPng(const Options& options, VulkanRenderer& vulkan) {
     textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-    if (vulkan.getPhysicalDeviceFeatures().samplerAnisotropy) {
-        textureInfo.sampler.anisotropyEnable = VK_TRUE;
-        textureInfo.sampler.maxAnisotropy =
-            std::max(4.0f, vulkan.getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+    
+    if (const auto anisotropy = vulkan.getAnisotropy()) {
+        textureInfo.sampler.anisotropyEnable = anisotropy.has_value() ? VK_TRUE : VK_FALSE;
+        textureInfo.sampler.maxAnisotropy = anisotropy.has_value() ? *anisotropy : 1.0f;
     } else {
         textureInfo.sampler.anisotropyEnable = VK_FALSE;
         textureInfo.sampler.maxAnisotropy = 1.0f;

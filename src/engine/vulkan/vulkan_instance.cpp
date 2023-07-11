@@ -445,3 +445,13 @@ VkFormat VulkanInstance::findSupportedFormat(const std::vector<VkFormat>& candid
 
     throw std::runtime_error("failed to find supported format!");
 }
+
+std::optional<float> VulkanInstance::getAnisotropy() const {
+    if (!getPhysicalDeviceFeatures().samplerAnisotropy) {
+        return std::nullopt;
+    }
+    if (config.graphics.anisotropy == 0.0f) {
+        return std::nullopt;
+    }
+    return std::min(config.graphics.anisotropy, getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+}

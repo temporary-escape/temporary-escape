@@ -23,8 +23,7 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, A
     assetsManager{assetsManager},
     client{client},
     gui{gui},
-    font{font},
-    scene{} {
+    font{font} {
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
@@ -109,7 +108,7 @@ Scene* ViewSystem::getScene() {
 }
 
 void ViewSystem::load() {
-    scene = std::make_unique<Scene>();
+    scene = std::make_unique<Scene>(config);
 
     { // Figure out where we are
         logger.info("Fetching player location");

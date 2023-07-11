@@ -363,7 +363,7 @@ void SkyboxGenerator::startWork() {
 }
 
 void SkyboxGenerator::prepareScene() {
-    work.scene = std::make_unique<Scene>();
+    work.scene = std::make_unique<Scene>(config);
 
     auto entity = work.scene->createEntity();
     auto& transform = entity.addComponent<ComponentTransform>();

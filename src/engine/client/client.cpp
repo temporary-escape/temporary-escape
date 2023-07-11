@@ -11,7 +11,7 @@ static auto logger = createLogger(LOG_FILENAME);
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
 
 Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile) :
-    assetsManager{assetsManager}, localProfile{localProfile} {
+    config{config}, assetsManager{assetsManager}, localProfile{localProfile} {
 
     Network::Client::start();
 
@@ -189,7 +189,7 @@ void Client::handle(MessagePlayerLocationEvent res) {
 
     sync.postSafe([this]() {
         scene.reset();
-        scene = std::make_unique<Scene>();
+        scene = std::make_unique<Scene>(config);
     });
 
     send(req, [this](MessageFetchSectorResponse res) {

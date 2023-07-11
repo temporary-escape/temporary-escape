@@ -76,8 +76,7 @@ void RenderSubpassNonHdr::render(VulkanCommandBuffer& vkb, Scene& scene) {
         job.fn();
     }
 
-    auto& camera = *scene.getPrimaryCamera();
-    renderSceneForward(vkb, camera, scene.getController<ControllerIcon>());
+    renderSceneIcons(vkb, scene);
 }
 
 void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
@@ -110,7 +109,14 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
     pipelineWorldText.renderMesh(vkb, mesh);
 }
 
-void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderSubpassNonHdr::renderSceneIcons(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto& camera = *scene.getPrimaryCamera();
+    auto& controllerIcons = scene.getController<ControllerIcon>();
+
+    controllerIcons.recalculate(vulkan);
+}
+
+/*void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                              ControllerIcon& controller) {
     controller.recalculate(vulkan);
 
@@ -146,4 +152,4 @@ void RenderSubpassNonHdr::renderSceneForward(VulkanCommandBuffer& vkb, const Com
 
         vkb.draw(4, count, 0, 0);
     }
-}
+}*/

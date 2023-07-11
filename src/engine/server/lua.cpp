@@ -233,6 +233,7 @@ void Lua::setupBindings() {
     ComponentModel::bind(*this);
     ComponentRigidBody::bind(*this);
     ComponentTransform::bind(*this);
+    ComponentIcon::bind(*this);
     Scene::bind(*this);
 
     // Global functions

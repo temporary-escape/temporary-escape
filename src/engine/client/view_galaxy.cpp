@@ -135,7 +135,7 @@ Scene* ViewGalaxy::getScene() {
 }
 
 void ViewGalaxy::load() {
-    scene = std::make_unique<Scene>();
+    scene = std::make_unique<Scene>(config);
 
     { // Figure out where we are
         logger.info("Fetching player location");

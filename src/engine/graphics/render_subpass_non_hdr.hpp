@@ -38,7 +38,7 @@ private:
 
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentWorldText& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ControllerIcon& controller);
+    void renderSceneIcons(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;
