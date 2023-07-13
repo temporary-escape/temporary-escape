@@ -42,6 +42,9 @@ jobs:
             vcpkgDir: '/usr/local/share/vcpkg'
 
     env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.VCPKG_CACHE_AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.VCPKG_CACHE_AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.VCPKG_CACHE_AWS_DEFAULT_REGION }}"
       VCPKG_BINARY_SOURCES: "${{ secrets.VCPKG_BINARY_SOURCES }}"
       VCPKG_USE_SYSTEM_BINARIES: "true"
 
@@ -100,14 +103,6 @@ jobs:
           curl https://sdk.lunarg.com/sdk/download/${{ matrix.vulkanSdkVer }}/mac/vulkansdk-macos-${{ matrix.vulkanSdkVer }}.dmg --output ~/vulkansdk-macos-1.3.239.0.dmg
           sudo hdiutil attach ~/vulkansdk-macos-${{ matrix.vulkanSdkVer }}.dmg
           sudo /Volumes/vulkansdk-macos-${{ matrix.vulkanSdkVer }}/InstallVulkan.app/Contents/MacOS/InstallVulkan --root ~/VulkanSDK --accept-licenses --default-answer --confirm-command install
-
-      - name: Cache vcpkg directory
-        uses: actions/cache@v3
-        with:
-          path: |
-            build/vcpkg_installed
-            ${{ matrix.vcpkgDir }}/packages
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
 
       - name: Configure - Windows
         if: runner.os == 'Windows'
@@ -182,11 +177,11 @@ jobs:
       - build
 
     env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-      AWS_DEFAULT_REGION: "${{ secrets.AWS_DEFAULT_REGION }}"
-      AWS_ENDPOINT_URL: "${{ secrets.AWS_ENDPOINT_URL }}"
-      AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
+      AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.RELEASES_AWS_DEFAULT_REGION }}"
+      AWS_ENDPOINT_URL: "${{ secrets.RELEASES_AWS_ENDPOINT_URL }}"
+      AWS_BUCKET_NAME: "${{ secrets.RELEASES_AWS_BUCKET_NAME }}"
 
     steps:
       - name: Checkout
@@ -227,11 +222,11 @@ jobs:
       - publish
 
     env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-      AWS_DEFAULT_REGION: "${{ secrets.AWS_DEFAULT_REGION }}"
-      AWS_ENDPOINT_URL: "${{ secrets.AWS_ENDPOINT_URL }}"
-      AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
+      AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.RELEASES_AWS_DEFAULT_REGION }}"
+      AWS_ENDPOINT_URL: "${{ secrets.RELEASES_AWS_ENDPOINT_URL }}"
+      AWS_BUCKET_NAME: "${{ secrets.RELEASES_AWS_BUCKET_NAME }}"
 
     steps:
       - name: Checkout
