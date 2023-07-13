@@ -281,6 +281,10 @@ void Application::startDatabase() {
             }
             logger.info("Starting database with save: '{}'", path);
 
+            DatabaseRocksDB::Options options{};
+            options.cacheSizeMb = config.server.dbCacheSize;
+            options.debugLogging = config.server.dbDebug;
+            options.compression = config.server.dbCompression;
             db = std::make_unique<DatabaseRocksDB>(path, DatabaseRocksDB::Options{});
         } catch (...) {
             EXCEPTION_NESTED("Failed to start the database");

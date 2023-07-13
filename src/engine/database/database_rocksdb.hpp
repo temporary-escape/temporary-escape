@@ -18,6 +18,7 @@ public:
         size_t writeBufferSizeMb{64};
         size_t cacheSizeMb{256};
         bool debugLogging{false};
+        bool compression{false};
     };
 
     class ObjectIteratorRocksDB : public ObjectIterator {

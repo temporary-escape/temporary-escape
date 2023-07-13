@@ -75,7 +75,7 @@ DatabaseRocksDB::DatabaseRocksDB(const Path& path, const Options& options) {
     const auto logLevel = options.debugLogging ? rocksdb::InfoLogLevel::DEBUG_LEVEL : rocksdb::InfoLogLevel::WARN_LEVEL;
     opts.info_log = std::make_shared<DefaultLogger>(logLevel);
 
-    opts.compression = rocksdb::kNoCompression;
+    opts.compression = options.compression ? rocksdb::kLZ4Compression : rocksdb::kNoCompression;
     opts.max_open_files = -1;
     opts.write_buffer_size = options.writeBufferSizeMb * 1024 * 1024; // 64MB
     opts.max_background_compactions = 2;

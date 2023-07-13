@@ -35,6 +35,14 @@ findOne(const Container& container, const std::function<bool(const typename Cont
     return findOne(container.begin(), container.end(), fn);
 }
 
+static Path fixFileNameExt(const Path& path) {
+    const auto filename = fmt::format("{}.ktx2", path.stem().string());
+    if (path.has_parent_path()) {
+        return path.parent_path() / filename;
+    }
+    return filename;
+}
+
 Model::Model(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
@@ -52,7 +60,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             const auto baseName = filename.stem().string();
             return assetsManager.getTextures().find(baseName);
         } catch (std::exception& e) {
-            const auto file = path.parent_path() / Path(filename);
+            const auto file = path.parent_path() / fixFileNameExt(filename);
             return assetsManager.addTexture(file);
         }
     };

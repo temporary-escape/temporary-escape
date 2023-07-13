@@ -72,6 +72,12 @@ struct Config {
     int guiFontSize = 18;
     std::string guiFontName = "iosevka-aile";
 
+    struct Server {
+        size_t dbCacheSize{256};
+        bool dbDebug{false};
+        bool dbCompression{true};
+    } server;
+
     struct Gui {
         float dragAndDropSize{96.0f};
         float actionBarSize{96.0f};
