@@ -4,9 +4,9 @@
 
 using namespace Engine;
 
-// static auto logger = createLogger(LOG_FILENAME);
+static auto logger = createLogger(LOG_FILENAME);
 
-VulkanArrayBuffer::VulkanArrayBuffer(const size_t stride) : stride{stride} {
+VulkanArrayBuffer::VulkanArrayBuffer(const CreateInfo& createInfo) : createInfo{createInfo} {
 }
 
 VulkanArrayBuffer::~VulkanArrayBuffer() {
@@ -23,15 +23,11 @@ void VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
     }
 
     if (!vbo || vbo.getSize() != buffer.capacity()) {
+        logger.debug("Resizing buffer to size: {} bytes", buffer.capacity());
+
         // logger.warn("Creating buffer size: {}", buffer.capacity());
-        VulkanBuffer::CreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        VulkanBuffer::CreateInfo bufferInfo = static_cast<VulkanBuffer::CreateInfo&>(createInfo);
         bufferInfo.size = buffer.capacity();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-        bufferInfo.memoryFlags =
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
         vbo = vulkan.createDoubleBuffer(bufferInfo);
     }
@@ -45,20 +41,27 @@ void VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
 void* VulkanArrayBuffer::insert(const uint64_t id) {
     auto it = indexMap.find(id);
     if (it == indexMap.end()) {
-        if (buffer.size() + stride > buffer.capacity()) {
+        if (buffer.size() + createInfo.stride > buffer.capacity()) {
             // logger.warn("Increasing capacity to: {}", buffer.capacity() + 1024 * stride);
-            buffer.reserve(buffer.capacity() + 1024 * stride);
+            buffer.reserve(buffer.capacity() + 1024 * createInfo.stride);
         }
 
         end = buffer.size();
         // logger.warn("Inserting at: {}", end);
         it = indexMap.emplace(id, end).first;
         // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() + stride);
-        buffer.resize(buffer.size() + stride);
+        buffer.resize(buffer.size() + createInfo.stride);
     }
 
     flush = MAX_FRAMES_IN_FLIGHT;
     return &buffer.at(it->second);
+}
+
+void VulkanArrayBuffer::clear() {
+    indexMap.clear();
+    buffer.clear();
+    end = 0;
+    flush = false;
 }
 
 void VulkanArrayBuffer::remove(const uint64_t id) {
@@ -66,18 +69,32 @@ void VulkanArrayBuffer::remove(const uint64_t id) {
     if (it != indexMap.end()) {
         flush = MAX_FRAMES_IN_FLIGHT;
 
-        assert(buffer.size() >= stride);
+        assert(buffer.size() >= createInfo.stride);
 
         if (end != 0) {
             // logger.warn("Copy from: {} to: {}", end, it->second);
-            std::memcpy(&buffer.at(it->second), &buffer.at(end), stride);
+            std::memcpy(&buffer.at(it->second), &buffer.at(end), createInfo.stride);
         }
 
         // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() - stride);
-        buffer.resize(buffer.size() - stride);
+        buffer.resize(buffer.size() - createInfo.stride);
     }
 }
 
 size_t VulkanArrayBuffer::count() const {
-    return buffer.size() / stride;
+    if (createInfo.stride == 0) {
+        return 0;
+    }
+    return buffer.size() / createInfo.stride;
+}
+
+size_t VulkanArrayBuffer::capacity() const {
+    if (createInfo.stride == 0) {
+        return 0;
+    }
+    return buffer.capacity() / createInfo.stride;
+}
+
+bool VulkanArrayBuffer::empty() const {
+    return buffer.empty();
 }

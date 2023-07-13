@@ -48,6 +48,10 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             vulkan, resources, assetsManager, viewport,
             voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
+        renderPasses.outline = std::make_unique<RenderPassOutline>(
+            vulkan, resources, assetsManager, viewport,
+            renderPasses.opaque->getTexture(RenderPassOpaque::Attachments::Entity));
+
         renderPasses.ssao = std::make_unique<RenderPassSsao>(
             vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque);
@@ -80,7 +84,8 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
 
         renderPasses.nonHdr = std::make_unique<RenderPassNonHdr>(
             vulkan, resources, assetsManager, viewport,
-            *renderPasses.forward);
+            *renderPasses.forward,
+            renderPasses.outline->getTexture(RenderPassOutline::Attachments::Color));
         // clang-format on
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize render passes");
@@ -130,6 +135,7 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     renderPasses.compute->render(vkb, scene);
     renderPasses.skybox->render(vkb, viewport, scene);
     renderPasses.opaque->render(vkb, viewport, scene);
+    renderPasses.outline->render(vkb, viewport, scene);
     renderPasses.ssao->render(vkb, viewport, scene);
     renderPasses.lighting->render(vkb, viewport, scene);
     renderPasses.forward->render(vkb, viewport, scene);
@@ -139,6 +145,8 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     renderPasses.nonHdr->render(vkb, viewport, scene);
 
     blitReady = true;
+
+    scene.feedbackSelectedEntity(getMousePosEntity());
 }
 
 void Renderer::renderOneTime(Scene& scene) {

@@ -12,7 +12,7 @@ namespace Engine {
 class ENGINE_API ComponentRigidBody : public Component {
 public:
     ComponentRigidBody();
-    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model, float scale);
+    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle);
     virtual ~ComponentRigidBody(); // NOLINT(modernize-use-override)
     ComponentRigidBody(const ComponentRigidBody& other) = delete;
     ComponentRigidBody(ComponentRigidBody&& other) noexcept;
@@ -20,6 +20,7 @@ public:
     ComponentRigidBody& operator=(ComponentRigidBody&& other) noexcept;
     static constexpr auto in_place_delete = true;
 
+    void setFromModel(ModelPtr model, float scale);
     void setup();
 
     btRigidBody* getRigidBody() const {

@@ -4,7 +4,7 @@
 #include "render_subpass.hpp"
 
 namespace Engine {
-class ENGINE_API Controller2DSelectable;
+class ENGINE_API ControllerIconSelectable;
 
 class ENGINE_API RenderSubpassCompute : public RenderSubpass {
 public:
@@ -15,7 +15,7 @@ public:
 
 private:
     void renderSceneCompute(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
-                            Controller2DSelectable& controller);
+                            ControllerIconSelectable& controller);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;

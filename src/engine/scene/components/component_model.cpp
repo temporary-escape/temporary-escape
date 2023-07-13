@@ -18,5 +18,4 @@ void ComponentModel::bind(Lua& lua) {
 
     auto cls = m.new_usertype<ComponentModel>("ComponentModel");
     cls["model"] = sol::property(&ComponentModel::getModel, &ComponentModel::setModel);
-    cls["static"] = sol::property(&ComponentModel::isStatic, &ComponentModel::setStatic);
 }

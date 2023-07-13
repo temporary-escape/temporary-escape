@@ -8,7 +8,8 @@ class ENGINE_API ControllerIcon;
 
 class ENGINE_API RenderSubpassNonHdr : public RenderSubpass {
 public:
-    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager);
+    explicit RenderSubpassNonHdr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
+                                 const VulkanTexture& outlineTexture);
     virtual ~RenderSubpassNonHdr() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -39,11 +40,14 @@ private:
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentWorldText& component);
     void renderSceneIcons(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderSceneOutline(VulkanCommandBuffer& vkb, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderResources& resources;
+    const VulkanTexture& outlineTexture;
     RenderPipeline pipelineWorldText;
-    RenderPipeline pipelinePointCloud;
+    RenderPipeline pipelineIcons;
+    RenderPipeline pipelineCopy;
     RenderPipeline* currentPipeline{nullptr};
 };
 } // namespace Engine

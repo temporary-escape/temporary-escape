@@ -16,6 +16,5 @@ public:
     virtual void onEnter() = 0;
     virtual void onExit() = 0;
     virtual Scene* getScene() = 0;
-    virtual void eventEntitySelected(uint32_t id) = 0;
 };
 } // namespace Engine

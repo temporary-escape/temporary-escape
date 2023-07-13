@@ -26,7 +26,6 @@ public:
 
 private:
     void onConstruct(entt::registry& r, entt::entity handle);
-    void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
     entt::registry& reg;
@@ -37,6 +36,5 @@ private:
     std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
     std::unique_ptr<btIDebugDraw> debugDraw;
     std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
-    std::vector<entt::entity> setupQueue;
 };
 } // namespace Engine

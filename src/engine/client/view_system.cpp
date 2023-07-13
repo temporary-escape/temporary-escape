@@ -8,7 +8,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
-static const Vector2 systemBodyIconSize{48.0f, 48.0f};
+static const Vector2 systemBodyIconSize{32.0f, 32.0f};
 
 ViewSystem::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"System Map"} {
 
@@ -95,9 +95,6 @@ void ViewSystem::eventCharTyped(const uint32_t code) {
     if (!loading) {
         scene->eventCharTyped(code);
     }
-}
-
-void ViewSystem::eventEntitySelected(const uint32_t id) {
 }
 
 Scene* ViewSystem::getScene() {

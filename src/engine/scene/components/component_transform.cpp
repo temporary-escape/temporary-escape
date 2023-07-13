@@ -57,6 +57,22 @@ Vector3 ComponentTransform::getAbsolutePosition() const {
     return getPosition();
 }
 
+void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentTransform>(handle);
+}
+
+void ComponentTransform::setStatic(const bool value) {
+    if (value) {
+        flags |= static_cast<uint64_t>(TransformFlags::Static);
+    } else {
+        flags &= ~static_cast<uint64_t>(TransformFlags::Static);
+    }
+}
+
+bool ComponentTransform::isStatic() const {
+    return flags & static_cast<uint64_t>(TransformFlags::Static);
+}
+
 void ComponentTransform::bind(Lua& lua) {
     auto& m = lua.root();
 
@@ -64,8 +80,5 @@ void ComponentTransform::bind(Lua& lua) {
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
     cls["scale"] = &ComponentTransform::scale;
-}
-
-void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentTransform>(handle);
+    cls["static"] = sol::property(&ComponentTransform::isStatic, &ComponentTransform::setStatic);
 }

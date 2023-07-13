@@ -3,7 +3,6 @@
 #include "../library.hpp"
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
-#include "components/component_2d_selectable.hpp"
 #include "components/component_camera.hpp"
 #include "components/component_debug.hpp"
 #include "components/component_directional_light.hpp"
@@ -40,7 +39,7 @@ using EntityComponentIds =
     entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
                 ComponentIcon, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
-                ComponentStarFlare, ComponentSkybox, ComponentNebula, Component2DSelectable, ComponentRigidBody>;
+                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentRigidBody>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;
@@ -108,13 +107,24 @@ private:
     entt::entity handle;
 };
 
-static inline Vector4 entityColor(entt::entity handle) {
+inline Vector4 entityColor(entt::entity handle) {
     const auto i = static_cast<uint32_t>(handle);
     const auto r = static_cast<float>((i & 0x000000FF) >> 0);
     const auto g = static_cast<float>((i & 0x0000FF00) >> 8);
     const auto b = static_cast<float>((i & 0x00FF0000) >> 16);
     const auto a = static_cast<float>((i & 0xFF000000) >> 24);
     return Vector4{r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f};
+}
+
+inline bool operator==(const std::optional<Entity>& a, std::optional<Entity>& b) {
+    if (a && b) {
+        return a->getHandle() == b->getHandle();
+    }
+    return !a && !b;
+}
+
+inline bool operator!=(const std::optional<Entity>& a, std::optional<Entity>& b) {
+    return !(a == b);
 }
 
 /*

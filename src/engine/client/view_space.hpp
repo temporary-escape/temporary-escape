@@ -25,7 +25,6 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers) override;
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventCharTyped(uint32_t code) override;
-    void eventEntitySelected(uint32_t id) override;
     void onEnter() override;
     void onExit() override;
     Scene* getScene() override;
@@ -36,5 +35,6 @@ private:
     AssetsManager& assetsManager;
     Skybox& skyboxSystem;
     Client& client;
+    std::optional<Entity> selectedEntity;
 };
 } // namespace Engine

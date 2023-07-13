@@ -35,6 +35,9 @@ public:
     }
 
     size_t getSize() const {
+        if (!device) {
+            return 0;
+        }
         return getCurrentBuffer().getSize();
     }
 

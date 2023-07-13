@@ -178,6 +178,12 @@ void Application::renderFrameTime(const Vector2i& viewport) {
         const auto text = fmt::format("Frame: {:.2f}ms", frameTimeMs);
         canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize * 2.0}, text);
     }
+
+    if (server) {
+        const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
+        const auto text = fmt::format("Tick: {:.2f}ms", tickTimeMs);
+        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize * 3.0}, text);
+    }
 }
 
 void Application::renderStatus(const Vector2i& viewport) {

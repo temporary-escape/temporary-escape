@@ -104,11 +104,17 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const VulkanTexture
 
 ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const ImageAtlas::LayerAddFunc& provider) {
     Vector2i pos;
+
     Allocation allocation{};
+
+    const Vector2 atlasSize{static_cast<float>(config->graphics.imageAtlasSize)};
+    const auto onePixel = 1.0f / static_cast<float>(config->graphics.imageAtlasSize);
+    const auto halfPixel = onePixel / 2.0f;
+
     allocation.size = size;
     allocation.st = {
-        static_cast<float>(size.x) / static_cast<float>(config->graphics.imageAtlasSize),
-        static_cast<float>(size.y) / static_cast<float>(config->graphics.imageAtlasSize),
+        static_cast<float>(size.x) / atlasSize.x - onePixel,
+        static_cast<float>(size.y) / atlasSize.y - onePixel,
     };
 
     for (auto& layer : layers) {
@@ -116,8 +122,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const ImageAtlas::L
         if (res) {
             allocation.pos = *res;
             allocation.uv = {
-                static_cast<float>(res->x) / static_cast<float>(config->graphics.imageAtlasSize),
-                static_cast<float>(res->y) / static_cast<float>(config->graphics.imageAtlasSize),
+                static_cast<float>(res->x) / atlasSize.x + halfPixel,
+                static_cast<float>(res->y) / atlasSize.y + halfPixel,
             };
 
             allocation.texture = &layer->getTexture();
@@ -136,8 +142,8 @@ ImageAtlas::Allocation ImageAtlas::add(const Vector2i& size, const ImageAtlas::L
 
     allocation.pos = *res;
     allocation.uv = {
-        static_cast<float>(res->x) / static_cast<float>(config->graphics.imageAtlasSize),
-        static_cast<float>(res->y) / static_cast<float>(config->graphics.imageAtlasSize),
+        static_cast<float>(res->x) / atlasSize.x + halfPixel,
+        static_cast<float>(res->y) / atlasSize.y + halfPixel,
     };
 
     allocation.texture = &layer->getTexture();

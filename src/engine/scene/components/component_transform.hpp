@@ -3,6 +3,10 @@
 #include "../camera.hpp"
 
 namespace Engine {
+enum class TransformFlags : uint64_t {
+    Static = 1ULL << 0,
+};
+
 class ENGINE_API ComponentTransform : public Component {
 public:
     ComponentTransform() = default;
@@ -48,7 +52,10 @@ public:
 
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(transform);
+    void setStatic(const bool value);
+    bool isStatic() const;
+
+    MSGPACK_DEFINE_ARRAY(transform, flags);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -56,5 +63,6 @@ protected:
 private:
     Matrix4 transform{1.0f};
     const ComponentTransform* parent{nullptr};
+    uint64_t flags{0};
 };
 } // namespace Engine

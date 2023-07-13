@@ -6,7 +6,8 @@
 namespace Engine {
 class ENGINE_API ControllerIcon : public Controller {
 public:
-    using Point = ComponentPointCloud::Point;
+    using Point = ComponentIcon::Point;
+    using Buffers = std::unordered_map<const VulkanTexture*, VulkanArrayBuffer>;
 
     explicit ControllerIcon(entt::registry& reg);
     ~ControllerIcon() override;
@@ -17,20 +18,23 @@ public:
 
     void recalculate(VulkanRenderer& vulkan) override;
 
-    /*const std::unordered_map<Image*, VulkanDoubleBuffer>& getVbos() const {
-        return vbos;
-    }*/
-
-    /*const std::unordered_map<Image*, size_t>& getCounts() const {
-        return counts;
-    }*/
+    const Buffers& getStaticBuffers() const {
+        return staticBuffers;
+    }
+    const Buffers& getDynamicBuffers() const {
+        return dynamicBuffers;
+    }
 
 private:
-    // VulkanDoubleBuffer& getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image);
-    // VulkanDoubleBuffer createVbo(VulkanRenderer& vulkan);
-    entt::registry& reg;
+    void addOrUpdate(entt::entity handle, const ComponentTransform& transform, const ComponentIcon& icon);
+    void remove(entt::entity handle, const ComponentIcon& icon);
 
-    // std::unordered_map<Image*, VulkanDoubleBuffer> vbos;
-    // std::unordered_map<Image*, size_t> counts;
+    void onConstruct(entt::registry& r, entt::entity handle);
+    void onUpdate(entt::registry& r, entt::entity handle);
+    void onDestroy(entt::registry& r, entt::entity handle);
+
+    entt::registry& reg;
+    Buffers staticBuffers;
+    Buffers dynamicBuffers;
 };
 } // namespace Engine

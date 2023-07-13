@@ -40,8 +40,8 @@ void Entity::bind(Lua& lua) {
         static_cast<ComponentTransform& (Entity::*)()>(&Entity::addComponent<ComponentTransform>);
     cls["add_component_model"] =
         static_cast<ComponentModel& (Entity::*)(const ModelPtr&)>(&Entity::addComponent<ComponentModel>);
-    cls["add_component_rigid_body"] = static_cast<ComponentRigidBody& (Entity::*)(const ModelPtr&, const float&)>(
-        &Entity::addComponent<ComponentRigidBody>);
+    cls["add_component_rigid_body"] =
+        static_cast<ComponentRigidBody& (Entity::*)()>(&Entity::addComponent<ComponentRigidBody>);
     cls["add_component_icon"] = static_cast<ComponentIcon& (Entity::*)(const ImagePtr&, const Vector2&, const Color4&)>(
         &Entity::addComponent<ComponentIcon>);
 }

@@ -14,6 +14,8 @@ class ENGINE_API Skybox;
 
 class ENGINE_API Scene : public UserInput {
 public:
+    using SelectedEntityCallback = std::function<void(std::optional<Entity>)>;
+
     explicit Scene(const Config& config, bool isServer = false);
     virtual ~Scene();
 
@@ -31,6 +33,9 @@ public:
     template <typename... Ts, typename Exclude> auto getView(Exclude&& exclude) {
         return reg.view<Ts...>(exclude);
     }
+
+    void feedbackSelectedEntity(uint32_t id);
+    std::optional<Entity> getSelectedEntity();
 
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
@@ -82,5 +87,6 @@ private:
     std::vector<UserInput*> userInputs;
 
     Entity primaryCamera;
+    std::optional<entt::entity> selectedEntity;
 };
 } // namespace Engine

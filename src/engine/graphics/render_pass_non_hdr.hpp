@@ -16,7 +16,8 @@ public:
     static const size_t totalAttachments = 2;
 
     explicit RenderPassNonHdr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
-                              const Vector2i& viewport, const RenderPassForward& forward);
+                              const Vector2i& viewport, const RenderPassForward& forward,
+                              const VulkanTexture& outlineTexture);
     virtual ~RenderPassNonHdr() = default;
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene);

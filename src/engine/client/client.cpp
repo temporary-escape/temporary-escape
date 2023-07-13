@@ -52,7 +52,7 @@ void Client::doLogin() {
         MessageModManifestsRequest req{};
 
         auto future = send(req, useFuture<MessageModManifestsResponse>());
-        auto res = future.get(std::chrono::seconds(1));
+        auto res = future.get(std::chrono::seconds(2));
         validateManifests(res.items);
 
         logger.info("Manifest check success");
@@ -65,7 +65,7 @@ void Client::doLogin() {
         req.name = localProfile.name;
 
         auto future = send(req, useFuture<MessageLoginResponse>());
-        auto res = future.get(std::chrono::seconds(1));
+        auto res = future.get(std::chrono::seconds(2));
 
         logger.info("Login success");
         playerId = res.playerId;
@@ -144,12 +144,12 @@ void Client::createScene(SectorData sector) {
     auto planet = scene->createEntity();
     planet.addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
     planet.getComponent<ComponentTransform>().scale(Vector3{1.0f});
-    planet.addComponent<ComponentPlanet>(planetLife, 7869732137);
+    planet.addComponent<ComponentPlanet>(planetLife, 7869732137).setHighRes(true);
 
     planet = scene->createEntity();
     planet.addComponent<ComponentTransform>().translate(Vector3{0.7f, 0.0f, -1.5f} * 1.0f);
     planet.getComponent<ComponentTransform>().scale(Vector3{2.5f});
-    planet.addComponent<ComponentPlanet>(planetSulfur, 123478);
+    planet.addComponent<ComponentPlanet>(planetSulfur, 123478).setHighRes(true);
 
     auto camera = scene->createEntity();
     auto& cameraTransform = camera.addComponent<ComponentTransform>();

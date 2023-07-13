@@ -192,6 +192,8 @@ void Server::tick() {
         if (test < config.tickLengthUs) {
             std::this_thread::sleep_for(config.tickLengthUs - test);
         }
+        
+        perf.tickTime.update(std::chrono::duration_cast<std::chrono::nanoseconds>(now - start));
     }
 
     logger.info("Stopped tick");

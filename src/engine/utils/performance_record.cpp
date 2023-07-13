@@ -2,7 +2,8 @@
 
 using namespace Engine;
 
-PerformanceRecord::PerformanceRecord() : lastTimePoint{std::chrono::steady_clock::now()} {
+PerformanceRecord::PerformanceRecord() :
+    lastTimePoint{std::chrono::steady_clock::now()}, current{std::chrono::nanoseconds{0}} {
 }
 
 void PerformanceRecord::update(const std::chrono::nanoseconds value) {
@@ -13,7 +14,7 @@ void PerformanceRecord::update(const std::chrono::nanoseconds value) {
         for (const auto& rec : recorded) {
             sum += rec.count();
         }
-        current = std::chrono::nanoseconds{sum / recorded.size()};
+        current.store(std::chrono::nanoseconds{sum / recorded.size()});
         recorded.clear();
         lastTimePoint = now;
     }

@@ -6,6 +6,7 @@
 #include "../future.hpp"
 #include "../library.hpp"
 #include "../network/server.hpp"
+#include "../utils/performance_record.hpp"
 #include "../utils/worker.hpp"
 #include "messages.hpp"
 #include "peer_lobby.hpp"
@@ -47,6 +48,9 @@ public:
     }
     void setGenerator(std::function<void(uint64_t)> value) {
         generator = std::move(value);
+    }
+    std::chrono::nanoseconds getPerfTickTime() const {
+        return perf.tickTime.value();
     }
 
     static Server* instance;
@@ -93,5 +97,9 @@ private:
         std::shared_mutex mutex;
         std::unordered_map<std::string, std::shared_ptr<Sector>> map;
     } sectors;
+
+    struct {
+        PerformanceRecord tickTime;
+    } perf;
 };
 } // namespace Engine

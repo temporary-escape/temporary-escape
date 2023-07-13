@@ -24,43 +24,6 @@ layout (push_constant) uniform Uniforms {
     float temp;
 } uniforms;
 
-/*void geometrize(vec4 pos) {
-    vec2 particleSize = uniforms.size / camera.viewport;
-
-    // a: left-bottom
-    if (gl_VertexIndex == 0) {
-        vec2 va = pos.xy + vec2(-1.0, -1.0) * particleSize;
-        gl_Position = vec4(va, pos.zw);
-        vs_out.coords = vec2(0.0, 0.0);
-    }
-
-    // b: left-top
-    if (gl_VertexIndex == 1) {
-        vec2 vb = pos.xy + vec2(-1.0, 1.0) * particleSize;
-        gl_Position = vec4(vb, pos.zw);
-        vs_out.coords = vec2(0.0, 1.0);
-    }
-
-    // d: right-bottom
-    if (gl_VertexIndex == 2) {
-        vec2 vd = pos.xy + vec2(1.0, -1.0) * particleSize;
-        gl_Position = vec4(vd, pos.zw);
-        vs_out.coords = vec2(1.0, 0.0);
-    }
-
-    // c: right-top
-    if (gl_VertexIndex == 3) {
-        vec2 vc = pos.xy + vec2(1.0, 1.0) * particleSize;
-        gl_Position = vec4(vc, pos.zw);
-        vs_out.coords = vec2(1.0, 1.0);
-    }
-}
-
-void main() {
-    vec4 worldPos = uniforms.modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-    geometrize(camera.transformationProjectionMatrix * worldPos);
-}*/
-
 void geometrize(vec4 pos) {
     float dist = -pos.z;
 

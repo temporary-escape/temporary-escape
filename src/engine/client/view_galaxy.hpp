@@ -36,7 +36,6 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers) override;
     void eventKeyReleased(Key key, Modifiers modifiers) override;
     void eventCharTyped(uint32_t code) override;
-    void eventEntitySelected(uint32_t id) override;
     void onEnter() override;
     void onExit() override;
     Scene* getScene() override;
@@ -87,7 +86,6 @@ private:
         Entity cursor;
         Entity voronoi;
         Entity names;
-        std::vector<Entity> selectables;
         Entity currentPos;
     } entities;
 

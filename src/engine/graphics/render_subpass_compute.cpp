@@ -1,6 +1,6 @@
 #include "render_subpass_compute.hpp"
 #include "../assets/assets_manager.hpp"
-#include "../scene/controllers/controller_2d_selectable.hpp"
+#include "../scene/controllers/controller_icon_selectable.hpp"
 #include "skybox.hpp"
 
 using namespace Engine;
@@ -25,30 +25,44 @@ void RenderSubpassCompute::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelinePositionFeedback.getDescriptorPool().reset();
 
-    pipelinePositionFeedback.bind(vkb);
-
-    renderSceneCompute(vkb, camera, scene.getController<Controller2DSelectable>());
+    renderSceneCompute(vkb, camera, scene.getController<ControllerIconSelectable>());
 }
 
 void RenderSubpassCompute::renderSceneCompute(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
-                                              Controller2DSelectable& controller) {
+                                              ControllerIconSelectable& controller) {
     controller.recalculate(vulkan);
 
-    if (controller.getCount() == 0) {
+    std::array<const VulkanArrayBuffer*, 2> inputBuffers{};
+    inputBuffers[0] = &controller.getDynamicBufferInput();
+    inputBuffers[1] = &controller.getStaticBufferInput();
+
+    std::array<const VulkanDoubleBuffer*, 2> outputBuffers{};
+    outputBuffers[0] = &controller.getDynamicBufferOutput();
+    outputBuffers[1] = &controller.getStaticBufferOutput();
+
+    if (inputBuffers[0]->empty() && inputBuffers[1]->empty()) {
         return;
     }
 
-    std::array<UniformBindingRef, 3> uniforms{};
-    uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
-    uniforms[1] = {"InputBuffer", controller.getBufferInput()};
-    uniforms[2] = {"OutputBuffer", controller.getBufferOutput()};
+    pipelinePositionFeedback.bind(vkb);
 
-    pipelinePositionFeedback.bindDescriptors(vkb, uniforms, {}, {});
+    for (size_t i = 0; i < 2; i++) {
+        if (inputBuffers[i]->empty() || !*outputBuffers[i]) {
+            continue;
+        }
 
-    const auto viewport = Vector2{camera.getViewport()};
-    const auto count = static_cast<int>(controller.getCount());
-    pipelinePositionFeedback.pushConstants(vkb, PushConstant{"viewport", viewport}, PushConstant{"count", count});
+        std::array<UniformBindingRef, 3> uniforms{};
+        uniforms[0] = {"Camera", camera.getUbo().getCurrentBuffer()};
+        uniforms[1] = {"InputBuffer", inputBuffers[i]->getCurrentBuffer()};
+        uniforms[2] = {"OutputBuffer", outputBuffers[i]->getCurrentBuffer()};
 
-    const uint32_t workCount = (controller.getCount() / 256) + 1;
-    vkb.dispatch(workCount, 1, 1);
+        pipelinePositionFeedback.bindDescriptors(vkb, uniforms, {}, {});
+
+        const auto viewport = Vector2{camera.getViewport()};
+        const auto count = static_cast<int>(inputBuffers[i]->count());
+        pipelinePositionFeedback.pushConstants(vkb, PushConstant{"viewport", viewport}, PushConstant{"count", count});
+
+        const uint32_t workCount = (inputBuffers[i]->count() / 256) + 1;
+        vkb.dispatch(workCount, 1, 1);
+    }
 }

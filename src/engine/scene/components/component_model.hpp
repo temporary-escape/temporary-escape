@@ -50,23 +50,14 @@ public:
         return model;
     }
 
-    void setStatic(const bool value) {
-        flagStatic = value;
-    }
-
-    bool isStatic() const {
-        return flagStatic;
-    }
-
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(model, flagStatic);
+    MSGPACK_DEFINE_ARRAY(model);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
-    
+
 private:
     ModelPtr model{nullptr};
-    bool flagStatic{false};
 };
 } // namespace Engine

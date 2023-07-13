@@ -1,10 +1,10 @@
 #include "scene.hpp"
 #include "../assets/assets_manager.hpp"
 #include "../server/lua.hpp"
-#include "controllers/controller_2d_selectable.hpp"
 #include "controllers/controller_camera.hpp"
 #include "controllers/controller_dynamics_world.hpp"
 #include "controllers/controller_icon.hpp"
+#include "controllers/controller_icon_selectable.hpp"
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
@@ -19,7 +19,7 @@ Scene::Scene(const Config& config, const bool isServer) {
     addController<ControllerNetwork>();
 
     if (!isServer) {
-        addController<Controller2DSelectable>();
+        addController<ControllerIconSelectable>();
         addController<ControllerIcon>();
         addController<ControllerCamera>();
         addController<ControllerStaticModel>();
@@ -28,6 +28,26 @@ Scene::Scene(const Config& config, const bool isServer) {
 }
 
 Scene::~Scene() = default;
+
+void Scene::feedbackSelectedEntity(const uint32_t id) {
+    if (reg.valid(entt::entity{id})) {
+        selectedEntity = entt::entity{id};
+    } else {
+        selectedEntity = std::nullopt;
+    }
+}
+
+std::optional<Entity> Scene::getSelectedEntity() {
+    const auto& iconsSelectable = getController<ControllerIconSelectable>();
+
+    if (const auto selected = iconsSelectable.getSelected(); selected.has_value()) {
+        return Entity{reg, *selected};
+    }
+    if (selectedEntity) {
+        return Entity{reg, *selectedEntity};
+    }
+    return std::nullopt;
+}
 
 Entity Scene::createEntity() {
     return fromHandle(reg.create());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../library.hpp"
+#include <atomic>
 #include <chrono>
 #include <vector>
 
@@ -9,13 +10,13 @@ class ENGINE_API PerformanceRecord {
 public:
     explicit PerformanceRecord();
     void update(std::chrono::nanoseconds value);
-    const std::chrono::nanoseconds& value() const {
-        return current;
+    std::chrono::nanoseconds value() const {
+        return current.load();
     }
 
 private:
     std::vector<std::chrono::nanoseconds> recorded;
-    std::chrono::nanoseconds current{0};
+    std::atomic<std::chrono::nanoseconds> current;
     std::chrono::steady_clock::time_point lastTimePoint;
 };
 } // namespace Engine

@@ -58,13 +58,6 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     if (scene && scene->getPrimaryCamera()) {
         renderer.render(vkb, viewport, *scene);
     }
-
-    if (const auto id = renderer.getMousePosEntity(); id != selectedEntityId) {
-        selectedEntityId = id;
-        if (view) {
-            view->eventEntitySelected(selectedEntityId);
-        }
-    }
 }
 
 void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {

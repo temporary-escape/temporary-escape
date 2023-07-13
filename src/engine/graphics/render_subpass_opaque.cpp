@@ -216,7 +216,7 @@ void RenderSubpassOpaque::renderSceneModels(VulkanCommandBuffer& vkb, Scene& sce
     pipelineModel.bind(vkb);
 
     for (auto&& [entity, transform, model] : systemModels.each()) {
-        if (model.isStatic()) {
+        if (transform.isStatic()) {
             continue;
         }
 

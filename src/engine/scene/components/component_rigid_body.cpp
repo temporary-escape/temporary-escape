@@ -35,10 +35,7 @@ private:
 
 ComponentRigidBody::ComponentRigidBody() = default;
 
-ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle, const ModelPtr& model,
-                                       const float scale) :
-    Component{reg, handle}, model{model}, scale{scale} {
-    setup();
+ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
 }
 
 ComponentRigidBody::~ComponentRigidBody() = default;
@@ -56,6 +53,12 @@ void ComponentRigidBody::setModel(const ModelPtr& value) {
 
 const ModelPtr& ComponentRigidBody::getModel() const {
     return model;
+}
+
+void ComponentRigidBody::setFromModel(ModelPtr model, const float scale) {
+    this->model = std::move(model);
+    this->scale = scale;
+    setup();
 }
 
 void ComponentRigidBody::setup() {
@@ -91,6 +94,8 @@ void ComponentRigidBody::setup() {
 
     btRigidBody::btRigidBodyConstructionInfo rbInfo{mass, motionState.get(), shape.get(), localInertia};
     rigidBody = std::make_unique<btRigidBody>(rbInfo);
+
+    dynamicsWorld->addRigidBody(rigidBody.get());
 }
 
 void ComponentRigidBody::patch(entt::registry& reg, entt::entity handle) {
@@ -233,7 +238,7 @@ void ComponentRigidBody::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<ComponentRigidBody>("ComponentRigidBody");
-    cls["model"] = sol::readonly_property(&ComponentRigidBody::getModel);
+    cls["set_from_model"] = &ComponentRigidBody::setFromModel;
     cls["linear_velocity"] =
         sol::property(&ComponentRigidBody::getLinearVelocity, &ComponentRigidBody::setLinearVelocity);
     cls["angular_velocity"] =

@@ -16,24 +16,38 @@ layout (push_constant) uniform Uniforms {
     int count;
 } uniforms;
 
+struct InputData {
+    vec4 position;
+    vec2 size;
+    int id;
+};
+
+struct OutputData {
+    vec4 position;
+    vec2 size;
+    int id;
+};
+
 layout (binding = 1) readonly buffer InputBuffer {
-    vec4 position[];
+    InputData objects[];
 } comp_in;
 
 layout (binding = 2) buffer OutputBuffer {
-    vec2 position[];
+    OutputData objects[];
 } comp_out;
 
 void main() {
     uint gID = gl_GlobalInvocationID.x;
 
     if (gID < uniforms.count) {
-        vec4 worldPos = vec4(comp_in.position[gID].xyz, 1.0);
+        vec4 worldPos = vec4(comp_in.objects[gID].position.xyz, 1.0);
         vec4 clipSpace = camera.transformationProjectionMatrix * worldPos;
         vec3 ndcSpace = clipSpace.xyz / clipSpace.w;
         ndcSpace = vec3(ndcSpace.x, -ndcSpace.y, ndcSpace.z);
         vec2 result = ((ndcSpace.xy + 1.0) / 2.0) * uniforms.viewport;
 
-        comp_out.position[gID] = vec2(result.x, uniforms.viewport.y - result.y);
+        comp_out.objects[gID].position = vec4(result.x, uniforms.viewport.y - result.y, 0.0, 0.0);
+        comp_out.objects[gID].size = comp_in.objects[gID].size;
+        comp_out.objects[gID].id = comp_in.objects[gID].id;
     }
 }

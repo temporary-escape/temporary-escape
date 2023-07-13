@@ -21,4 +21,5 @@ void ComponentIcon::bind(Lua& lua) {
     cls["color"] = sol::property(&ComponentIcon::getColor, &ComponentIcon::setColor);
     cls["image"] = sol::property(&ComponentIcon::getImage, &ComponentIcon::setImage);
     cls["offset"] = sol::property(&ComponentIcon::getOffset, &ComponentIcon::setOffset);
+    cls["selectable"] = sol::property(&ComponentIcon::isSelectable, &ComponentIcon::setSelectable);
 }

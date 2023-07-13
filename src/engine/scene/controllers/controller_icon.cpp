@@ -6,56 +6,131 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ControllerIcon::ControllerIcon(entt::registry& reg) : reg{reg} {
+    reg.on_construct<ComponentIcon>().connect<&ControllerIcon::onConstruct>(this);
+    reg.on_update<ComponentIcon>().connect<&ControllerIcon::onUpdate>(this);
+    reg.on_destroy<ComponentIcon>().connect<&ControllerIcon::onDestroy>(this);
 }
 
-ControllerIcon::~ControllerIcon() = default;
+ControllerIcon::~ControllerIcon() {
+    reg.on_construct<ComponentIcon>().disconnect<&ControllerIcon::onConstruct>(this);
+    reg.on_update<ComponentIcon>().disconnect<&ControllerIcon::onUpdate>(this);
+    reg.on_destroy<ComponentIcon>().disconnect<&ControllerIcon::onDestroy>(this);
+}
 
 void ControllerIcon::update(const float delta) {
 }
 
 void ControllerIcon::recalculate(VulkanRenderer& vulkan) {
-    /*for (auto& [_, count] : counts) {
-        count = 0;
+    for (auto& pair : staticBuffers) {
+        pair.second.recalculate(vulkan);
+    }
+
+    for (auto& pair : dynamicBuffers) {
+        pair.second.clear();
     }
 
     const auto& entities = reg.view<ComponentTransform, ComponentIcon>(entt::exclude<TagDisabled>).each();
-    for (const auto&& [handle, transform, component] : entities) {
-        const auto& image = component.getImage();
-        auto& buffer = getBufferFor(vulkan, image);
-
-        if (counts[image.get()] > 1024) {
+    for (const auto&& [handle, transform, icon] : entities) {
+        if (transform.isStatic() || !icon.getImage()) {
             continue;
         }
 
-        auto& offset = counts[image.get()];
-        auto dst = reinterpret_cast<Point*>(buffer.getCurrentBuffer().getMappedPtr()) + offset++;
+        const auto* key = icon.getImage()->getAllocation().texture;
+        auto found = dynamicBuffers.find(key);
+        if (found == dynamicBuffers.end()) {
+            const auto stride = sizeof(Point);
 
-        *dst = Point{transform.getAbsolutePosition(),
-                     component.getSize(),
-                     component.getColor(),
-                     image->getAllocation().uv,
-                     image->getAllocation().st,
-                     component.getOffset()};
-    }*/
-}
+            VulkanArrayBuffer::CreateInfo bufferInfo{};
+            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.stride = stride;
+            bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+            bufferInfo.memoryFlags =
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-/*VulkanDoubleBuffer ControllerIcon::createVbo(VulkanRenderer& vulkan) {
-    VulkanBuffer::CreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(Point) * 1024;
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            found = dynamicBuffers.emplace(key, VulkanArrayBuffer{bufferInfo}).first;
+        }
 
-    return vulkan.createDoubleBuffer(bufferInfo);
-}*/
+        auto* raw = found->second.insert(static_cast<uint64_t>(handle));
+        auto* dst = reinterpret_cast<Point*>(raw);
 
-/*VulkanDoubleBuffer& ControllerIcon::getBufferFor(VulkanRenderer& vulkan, const ImagePtr& image) {
-    auto it = vbos.find(image.get());
-    if (it == vbos.end()) {
-        it = vbos.emplace(image.get(), createVbo(vulkan)).first;
+        dst->position = transform.getAbsolutePosition();
+        dst->size = icon.getSize();
+        dst->offset = icon.getOffset();
+        dst->color = icon.getColor();
+        dst->uv = icon.getImage()->getAllocation().uv;
+        dst->st = icon.getImage()->getAllocation().st;
     }
 
-    return it->second;
-}*/
+    for (auto& pair : dynamicBuffers) {
+        pair.second.recalculate(vulkan);
+    }
+}
+
+void ControllerIcon::addOrUpdate(entt::entity handle, const ComponentTransform& transform, const ComponentIcon& icon) {
+    const auto* key = icon.getImage()->getAllocation().texture;
+
+    auto found = staticBuffers.find(key);
+    if (found == staticBuffers.end()) {
+        const auto stride = sizeof(Point);
+
+        VulkanArrayBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.stride = stride;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+        bufferInfo.memoryFlags =
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        found = staticBuffers.emplace(key, VulkanArrayBuffer{bufferInfo}).first;
+    }
+
+    auto* raw = found->second.insert(static_cast<uint64_t>(handle));
+    auto* dst = reinterpret_cast<Point*>(raw);
+
+    dst->position = transform.getAbsolutePosition();
+    dst->size = icon.getSize();
+    dst->offset = icon.getOffset();
+    dst->color = icon.getColor();
+    dst->uv = icon.getImage()->getAllocation().uv;
+    dst->st = icon.getImage()->getAllocation().st;
+}
+
+void ControllerIcon::remove(entt::entity handle, const ComponentIcon& icon) {
+    const auto* key = icon.getImage()->getAllocation().texture;
+    const auto found = staticBuffers.find(key);
+    if (found != staticBuffers.end()) {
+        found->second.remove(static_cast<uint64_t>(handle));
+    }
+}
+
+void ControllerIcon::onConstruct(entt::registry& r, entt::entity handle) {
+    const auto* transform = reg.try_get<ComponentTransform>(handle);
+    if (!transform || !transform->isStatic()) {
+        return;
+    }
+    const auto& icon = reg.get<ComponentIcon>(handle);
+    if (!icon.getImage()) {
+        return;
+    }
+    addOrUpdate(handle, *transform, icon);
+}
+
+void ControllerIcon::onUpdate(entt::registry& r, entt::entity handle) {
+    const auto* transform = reg.try_get<ComponentTransform>(handle);
+    if (!transform || !transform->isStatic()) {
+        return;
+    }
+    const auto& icon = reg.get<ComponentIcon>(handle);
+    if (!icon.getImage()) {
+        return;
+    }
+    addOrUpdate(handle, *transform, icon);
+}
+
+void ControllerIcon::onDestroy(entt::registry& r, entt::entity handle) {
+    const auto& icon = reg.get<ComponentIcon>(handle);
+    remove(handle, icon);
+}

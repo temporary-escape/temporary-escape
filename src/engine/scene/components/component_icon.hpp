@@ -6,6 +6,27 @@
 namespace Engine {
 class ENGINE_API ComponentIcon : public Component {
 public:
+    struct Point {
+        Vector3 position;
+        Vector2 size;
+        Vector4 color;
+        Vector2 uv;
+        Vector2 st;
+        Vector2 offset;
+        float padding;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Point, position)},
+                {1, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, size)},
+                {2, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Point, color)},
+                {3, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, uv)},
+                {4, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, st)},
+                {5, VK_FORMAT_R32G32_SFLOAT, offsetof(Point, offset)},
+            };
+        };
+    };
+
     ComponentIcon() = default;
     explicit ComponentIcon(entt::registry& reg, entt::entity handle, ImagePtr image, const Vector2& size,
                            const Color4& color);
@@ -44,9 +65,17 @@ public:
         offset = value;
     }
 
+    bool isSelectable() const {
+        return selectable;
+    }
+
+    void setSelectable(const bool value) {
+        selectable = value;
+    }
+
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(image, size, color, offset);
+    MSGPACK_DEFINE_ARRAY(image, size, color, offset, selectable);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -56,5 +85,6 @@ private:
     Vector2 size;
     Color4 color;
     Vector2 offset{0.0f};
+    bool selectable{true};
 };
 } // namespace Engine

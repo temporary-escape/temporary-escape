@@ -8,7 +8,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-static const Vector2 systemStarSelectable{64.0f, 64.0f};
+static const Vector2 systemStarSelectable{48.0f, 48.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
 ViewGalaxy::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"Galaxy Map"} {
@@ -122,9 +122,6 @@ void ViewGalaxy::eventCharTyped(const uint32_t code) {
     if (!loading) {
         scene->eventCharTyped(code);
     }
-}
-
-void ViewGalaxy::eventEntitySelected(const uint32_t id) {
 }
 
 Scene* ViewGalaxy::getScene() {
@@ -404,7 +401,7 @@ void ViewGalaxy::load() {
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
     }
 
-    { // User Input
+    /*{ // User Input
         logger.info("Creating system user input callbacks");
         for (const auto& [systemId, system] : galaxy.systems) {
             auto entity = scene->createEntity();
@@ -419,7 +416,7 @@ void ViewGalaxy::load() {
                 logger.debug("setOnSelectCallback systemId: {}", id); //
             });
         }
-    }
+    }*/
 }
 
 void ViewGalaxy::finalize() {
