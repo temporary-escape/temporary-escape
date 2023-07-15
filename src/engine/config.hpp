@@ -36,7 +36,6 @@ struct Config {
         int windowHeight = 1080;
         bool enableValidationLayers = true;
         bool vsync = true;
-        size_t maxFramesInFlight = 2;
         float bloomStrength = 0.10f;
         float bloomPower = 1.0f;
         float exposure = 1.0f;
@@ -60,12 +59,10 @@ struct Config {
     std::filesystem::path fontsPath;
     std::filesystem::path userdataSavesPath;
     std::filesystem::path shapesPath;
-    std::filesystem::path pythonHome;
 
     std::optional<std::string> saveFolderName;
     bool saveFolderClean = false;
-    bool voxelTest = false;
-    std::string serverPassword = "";
+    std::string serverPassword;
     int serverPort = 22443;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
@@ -97,6 +94,4 @@ struct Config {
         KeyBinding systemMapToggle{Key::LetterN};
     } input;
 };
-
-static const inline Config defaultConfig{};
 } // namespace Engine

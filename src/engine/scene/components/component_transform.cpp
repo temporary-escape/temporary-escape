@@ -80,5 +80,8 @@ void ComponentTransform::bind(Lua& lua) {
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
     cls["scale"] = &ComponentTransform::scale;
+    cls["rotate"] = static_cast<void (ComponentTransform::*)(const Quaternion&)>(&ComponentTransform::rotate);
+    cls["rotate_by_axis"] =
+        static_cast<void (ComponentTransform::*)(const Vector3&, const float)>(&ComponentTransform::rotate);
     cls["static"] = sol::property(&ComponentTransform::isStatic, &ComponentTransform::setStatic);
 }

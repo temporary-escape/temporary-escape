@@ -75,7 +75,9 @@ int main(int argc, char** argv) {
             logger.warn("Vulkan validation layers requested but no env value 'VK_LAYER_PATH' provided");
             config.graphics.enableValidationLayers = false;
         }
-        
+
+        // config.graphics.debugDraw = true;
+
         if (parser.got_subcommand("compress-assets")) {
             return commandCompressAssets(config);
         } else if (parser.got_subcommand("play")) {

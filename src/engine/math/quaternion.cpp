@@ -1,4 +1,6 @@
 #include "quaternion.hpp"
+#include "../server/lua.hpp"
+#include "../server/lua_meta.hpp"
 #include <cmath>
 
 using namespace Engine;
@@ -21,4 +23,20 @@ Quaternion Engine::randomQuaternion(std::mt19937_64& rng) {
     data[3] = std::sqrt(u) * std::cos(2.0f * PI * w);
 
     return q;
+}
+
+void Engine::bindMathQuaternion(Lua& lua) {
+    auto& m = lua.root();
+
+    { // Quaternion
+        auto cls = m.new_usertype<Quaternion>(
+            "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>{});
+        cls["x"] = &Quaternion::x;
+        cls["y"] = &Quaternion::y;
+        cls["z"] = &Quaternion::z;
+        cls["w"] = &Quaternion::w;
+        cls[sol::meta_function::to_string] = &metaToString<Quaternion>;
+        cls[sol::meta_function::multiplication] = &metaMul<Quaternion, Quaternion>;
+        cls[sol::meta_function::equal_to] = &metaEq<Quaternion>;
+    }
 }

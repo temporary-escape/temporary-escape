@@ -55,7 +55,7 @@ void ControllerIconSelectable::recalculate(VulkanRenderer& vulkan) {
 
     const auto& entities = reg.view<ComponentTransform, ComponentIcon>(entt::exclude<TagDisabled>).each();
     for (const auto&& [handle, transform, icon] : entities) {
-        if (transform.isStatic() || !icon.getImage()) {
+        if (transform.isStatic() || !icon.getImage() || icon.getColor().a == 0.0f) {
             continue;
         }
 
@@ -98,7 +98,13 @@ void ControllerIconSelectable::recalculate(VulkanRenderer& vulkan) {
     for (size_t i = 0; i < count; i++) {
         if (!selected || glm::distance(Vector2{results[i].position}, mousePos) <
                              glm::distance(Vector2{selected->position}, mousePos)) {
-            selected = &results[i];
+            auto test = entt::entity{results[i].id};
+            if (reg.valid(test)) {
+                auto icon = reg.try_get<ComponentIcon>(test);
+                if (icon->getColor().a != 0.0f) {
+                    selected = &results[i];
+                }
+            }
         }
     }
 
@@ -111,6 +117,10 @@ void ControllerIconSelectable::recalculate(VulkanRenderer& vulkan) {
 
 std::optional<ControllerIconSelectable::Output> ControllerIconSelectable::findNearestPoint(VulkanBuffer& buffer,
                                                                                            const size_t count) {
+    if (count == 0) {
+        return std::nullopt;
+    }
+
     // This may look stupid, but it will save us memory access time.
     // This will make it several times orders of magnitude faster!
     std::vector<std::byte> copy;

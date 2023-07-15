@@ -1,9 +1,9 @@
 # Downloads
 
 You can download Temporary Escape game for free from the following links below.
-Simply choose your platform. Alternatively, you can download it in a portable ZIP format. You can also compile it yourself. All you need is a C++ Clang compiler, Vcpkg, Git, and CMake.
+Simply choose your platform. Alternatively, you can download it in a portable ZIP format.
 
-All releases are built automatically on GitHub Actions from the master branch in [here](https://github.com/temporary-escape/temporary-escape/actions).
+All releases are built automatically on GitHub from [here](https://github.com/temporary-escape/temporary-escape/actions).
 
 ## Choose Your Platform
 
@@ -102,7 +102,7 @@ The game may run on a lower hardware. Both Intel Mac and M1 Macs (with Rosetta) 
 
 ```{tab-item} Recommended
 * **OS:** Windows 10 64-bit or later, Ubuntu/Debian/Manjaro 64-bit, MacOS 12.6 or later
-* **Display:** 2560x1440
+* **Display:** 1920x1080
 * **Processor:** Intel Core i5 or AMD Ryzen 5
 * **Memory:** 8 GB RAM
 * **Graphics:** NVidia GTX 1050 Ti or AMD Radeon RX 5600

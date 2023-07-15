@@ -55,6 +55,9 @@ void ViewSystem::update(const float deltaTime) {
     scene->update(deltaTime);
 }
 
+void ViewSystem::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+}
+
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
     if (!loading) {
         scene->eventMouseMoved(pos);
@@ -228,7 +231,9 @@ void ViewSystem::load() {
             auto& componentPlanet = entity.addComponent<ComponentPlanet>(planet.type, 1);
             componentPlanet.setBackground(false);
             componentPlanet.setHighRes(false);
-            entity.addComponent<ComponentIcon>(images.systemPlanet, systemBodyIconSize, Color4{1.0f});
+            auto& componentIcon = entity.addComponent<ComponentIcon>(images.systemPlanet);
+            componentIcon.setSize(systemBodyIconSize);
+            componentIcon.setColor(Color4{1.0f});
         }
     }
 }

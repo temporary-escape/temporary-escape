@@ -19,7 +19,8 @@ public:
     explicit Scene(const Config& config, bool isServer = false);
     virtual ~Scene();
 
-    std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length);
+    std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length) const;
+    Vector2 worldToScreen(const Vector3& pos) const;
     void update(float delta);
 
     void removeEntity(Entity& entity);
@@ -76,7 +77,9 @@ public:
         return *dynamic_cast<T*>(it->second.get());
     }
 
-    ComponentCamera* getPrimaryCamera();
+    bool contactTestSphere(const Vector3& origin, float radius) const;
+
+    ComponentCamera* getPrimaryCamera() const;
     const SkyboxTextures* getSkybox();
 
     static void bind(Lua& lua);

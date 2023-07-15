@@ -6,8 +6,8 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                     Skybox& skybox, Client& client) :
-    parent{parent}, config{config}, assetsManager{assetsManager}, skyboxSystem{skybox}, client{client} {
+                     FontFamily& font, Skybox& skybox, Client& client) :
+    parent{parent}, config{config}, assetsManager{assetsManager}, font{font}, skyboxSystem{skybox}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {
@@ -16,8 +16,9 @@ void ViewSpace::update(const float deltaTime) {
         if (selectedEntity) {
             auto* icon = selectedEntity->tryGetComponent<ComponentIcon>();
             if (icon) {
-                icon->setColor(Vector4{0.7, 0.7, 0.7, 0.5});
-                icon->setDirty(true);
+                auto color = icon->getColor();
+                color.a = 0.0f;
+                icon->setColor(color);
             }
         }
 
@@ -28,12 +29,51 @@ void ViewSpace::update(const float deltaTime) {
             if (selectedEntity) {
                 auto* icon = selectedEntity->tryGetComponent<ComponentIcon>();
                 if (icon) {
-                    icon->setColor(Vector4{1.0, 0.0, 0.0, 1.0});
-                    icon->setDirty(true);
+                    auto color = icon->getColor();
+                    color.a = 1.0f;
+                    icon->setColor(color);
                 }
             }
         } else {
             logger.info("Selected entity: null");
+        }
+    }
+}
+
+void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+    auto scene = client.getScene();
+    auto camera = scene ? scene->getPrimaryCamera() : nullptr;
+    if (scene && camera) {
+        renderCanvasSelectedEntity(canvas, *scene, *camera);
+    }
+}
+
+void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
+    if (selectedEntity) {
+        const auto& transform = selectedEntity->getComponent<ComponentTransform>();
+        const auto worldPos = transform.getAbsolutePosition();
+        const auto screenPos = scene.worldToScreen(worldPos);
+
+        const auto dist = glm::distance(camera.getEyesPos(), worldPos) / 1000.0f;
+        const char* fmt;
+
+        if (dist < 1.0f) {
+            fmt = "{:.2f} km";
+        } else if (dist < 10.0f) {
+            fmt = "{:.1f} km";
+        } else {
+            fmt = "{:.0f} km";
+        }
+
+        const auto text = fmt::format(fmt, dist);
+
+        canvas.font(font.light, config.guiFontSize);
+        canvas.color(Color4{1.0f});
+        canvas.text(screenPos + Vector2{20.0f, 0.0f}, text);
+
+        const auto* label = selectedEntity->tryGetComponent<ComponentLabel>();
+        if (label) {
+            canvas.text(screenPos + Vector2{20.0f, config.guiFontSize}, label->getLabel());
         }
     }
 }

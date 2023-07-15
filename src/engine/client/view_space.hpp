@@ -14,10 +14,11 @@ class ENGINE_API Game;
 class ENGINE_API ViewSpace : public View {
 public:
     explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                       Skybox& skybox, Client& client);
+                       FontFamily& font, Skybox& skybox, Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
+    void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -30,9 +31,12 @@ public:
     Scene* getScene() override;
 
 private:
+    void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
+
     Game& parent;
     const Config& config;
     AssetsManager& assetsManager;
+    FontFamily& font;
     Skybox& skyboxSystem;
     Client& client;
     std::optional<Entity> selectedEntity;

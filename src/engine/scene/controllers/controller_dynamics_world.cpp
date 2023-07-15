@@ -92,6 +92,26 @@ private:
     ComponentLines::Line* dst{nullptr};
 };
 
+class SimpleContactResultCallback : public btCollisionWorld::ContactResultCallback {
+public:
+    SimpleContactResultCallback() = default;
+
+    btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, const int partId0,
+                             const int index0, const btCollisionObjectWrapper* colObj1Wrap, const int partId1,
+                             const int index1) override {
+        logger.debug("addSingleResult");
+        result = true;
+        return 0;
+    }
+
+    bool hasResult() const {
+        return result;
+    }
+
+private:
+    bool result{false};
+};
+
 ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg, const Config& config) :
     reg{reg},
     config{config},
@@ -103,7 +123,7 @@ ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg, const Conf
                                                             collisionConfiguration.get())} {
 
     dynamicsWorld->setGravity(btVector3{0, 0, 0});
-    
+
     reg.on_construct<ComponentRigidBody>().connect<&ControllerDynamicsWorld::onConstruct>(this);
     reg.on_destroy<ComponentRigidBody>().connect<&ControllerDynamicsWorld::onDestroy>(this);
 }
@@ -115,6 +135,22 @@ ControllerDynamicsWorld::~ControllerDynamicsWorld() {
 
 void ControllerDynamicsWorld::update(const float delta) {
     dynamicsWorld->stepSimulation(delta, 10);
+}
+
+bool ControllerDynamicsWorld::contactTestSphere(const Vector3& origin, const float radius) const {
+    btSphereShape shape{radius};
+    btCollisionObject object{};
+
+    object.setCollisionShape(&shape);
+    btTransform transform{};
+    transform.setOrigin({origin.x, origin.y, origin.z});
+    object.setWorldTransform(transform);
+
+    SimpleContactResultCallback callback{};
+
+    dynamicsWorld->contactTest(&object, callback);
+
+    return callback.hasResult();
 }
 
 void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {

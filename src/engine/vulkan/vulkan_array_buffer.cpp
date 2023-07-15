@@ -23,7 +23,7 @@ void VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
     }
 
     if (!vbo || vbo.getSize() != buffer.capacity()) {
-        logger.debug("Resizing buffer to size: {} bytes", buffer.capacity());
+        // logger.debug("Resizing buffer to size: {} bytes", buffer.capacity());
 
         // logger.warn("Creating buffer size: {}", buffer.capacity());
         VulkanBuffer::CreateInfo bufferInfo = static_cast<VulkanBuffer::CreateInfo&>(createInfo);
@@ -42,14 +42,14 @@ void* VulkanArrayBuffer::insert(const uint64_t id) {
     auto it = indexMap.find(id);
     if (it == indexMap.end()) {
         if (buffer.size() + createInfo.stride > buffer.capacity()) {
-            // logger.warn("Increasing capacity to: {}", buffer.capacity() + 1024 * stride);
+            // logger.warn("Increasing capacity to: {}", buffer.capacity() + 1024 * createInfo.stride);
             buffer.reserve(buffer.capacity() + 1024 * createInfo.stride);
         }
 
         end = buffer.size();
         // logger.warn("Inserting at: {}", end);
         it = indexMap.emplace(id, end).first;
-        // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() + stride);
+        // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() + createInfo.stride);
         buffer.resize(buffer.size() + createInfo.stride);
     }
 
@@ -76,8 +76,10 @@ void VulkanArrayBuffer::remove(const uint64_t id) {
             std::memcpy(&buffer.at(it->second), &buffer.at(end), createInfo.stride);
         }
 
-        // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() - stride);
+        // logger.warn("Resizing from: {} to: {}", buffer.size(), buffer.size() - createInfo.stride);
         buffer.resize(buffer.size() - createInfo.stride);
+
+        indexMap.erase(it);
     }
 }
 

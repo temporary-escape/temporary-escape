@@ -82,6 +82,9 @@ void ViewGalaxy::update(const float deltaTime) {
     }
 }
 
+void ViewGalaxy::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+}
+
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
     if (!loading) {
         scene->eventMouseMoved(pos);
@@ -387,7 +390,9 @@ void ViewGalaxy::load() {
     { // Cursor
         entities.cursor = scene->createEntity();
         entities.cursor.addComponent<ComponentTransform>();
-        entities.cursor.addComponent<ComponentIcon>(images.iconSelect, systemStarSelectable, Theme::primary);
+        auto& componentIcon = entities.cursor.addComponent<ComponentIcon>(images.iconSelect);
+        componentIcon.setSize(systemStarSelectable);
+        componentIcon.setColor(Theme::primary);
         entities.cursor.setDisabled(true);
     }
 
@@ -396,9 +401,10 @@ void ViewGalaxy::load() {
         entities.currentPos = scene->createEntity();
         auto& transform = entities.currentPos.addComponent<ComponentTransform>();
         transform.move(Vector3{currentSystem.pos.x, 0.0f, currentSystem.pos.y});
-        auto& icon =
-            entities.currentPos.addComponent<ComponentIcon>(images.iconCurrentPos, systemStarSize, Theme::primary);
+        auto& icon = entities.currentPos.addComponent<ComponentIcon>(images.iconCurrentPos);
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
+        icon.setSize(systemStarSize);
+        icon.setColor(Theme::primary);
     }
 
     /*{ // User Input

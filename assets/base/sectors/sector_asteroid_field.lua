@@ -1,5 +1,6 @@
 local engine = require("engine")
 local SectorTemplate = require("base.sectors.sector_template")
+local AsteroidCluster = require("base.utils.asteroid_cluster")
 
 local logger = engine.create_logger("base/sectors/sector_asteroid_field.lua")
 
@@ -50,6 +51,31 @@ function SectorAsteroidField.new()
 
         local icon = assets_manager:find_image("icon_target")
 
+        local seed = rng:rand_seed()
+
+        local origin = engine.Vector3.new(0.0, 0.0, 0.0)
+        local cluster = AsteroidCluster.new(seed, origin, 1500.0, 2.5, 15.0)
+        for i = 0, 1000 do
+            if cluster:next(scene) then
+                local entity = scene:create_entity()
+
+                local transform = entity:add_component_transform()
+                transform:move(cluster.pos)
+                transform:rotate(cluster.orientation)
+
+                local component_model = entity:add_component_model(asteroids[1])
+                local component_rigid_body = entity:add_component_rigid_body()
+                component_rigid_body:set_from_model(component_model.model, cluster.size)
+
+                entity:add_component_icon(icon)
+                entity:add_component_label("Asteroid (Rock)")
+
+                component_rigid_body.mass = 0.0
+                transform.static = true
+            end
+        end
+
+        --[[
         for x = 0, 44 do
             for y = 0, 44 do
                 local entity = scene:create_entity()
@@ -74,6 +100,7 @@ function SectorAsteroidField.new()
                 end
             end
         end
+        --]]
     end
 
     return inst

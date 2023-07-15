@@ -1,12 +1,15 @@
+extern "C" {
+#include <ad_mipmap.h>
+}
+
 // clang-format off
 #include <vulkan/vulkan.h>
 #include <ktx.h>
 #include <ktxvulkan.h>
 // clang-format on
 
-#include "ktx2_file.hpp"
-#include "ad_mipmap/ad_mipmap.h"
 #include "exceptions.hpp"
+#include "ktx2_file.hpp"
 #include "log.hpp"
 #include "png_importer.hpp"
 #include "string_utils.hpp"

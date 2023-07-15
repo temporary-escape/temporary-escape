@@ -21,6 +21,8 @@ public:
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;
 
+    bool contactTestSphere(const Vector3& origin, float radius) const;
+
     const VulkanBuffer& getDebugDrawVbo() const;
     size_t getDebugDrawCount() const;
 

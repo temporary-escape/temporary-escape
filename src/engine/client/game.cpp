@@ -19,7 +19,7 @@ Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGene
     guiGalaxy{config, assetsManager},
     guiSystem{config, assetsManager} {
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, assetsManager, skybox, client);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, assetsManager, font, skybox, client);
     viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, assetsManager, client, guiGalaxy, font);
     viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, assetsManager, client, guiSystem, font);
     view = viewSpace.get();
@@ -61,6 +61,9 @@ void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
 }
 
 void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
+    if (view) {
+        view->renderCanvas(canvas, viewport);
+    }
     nuklear.begin(viewport);
     guiGalaxy.modalLoading.draw(nuklear, viewport);
     guiSystem.modalLoading.draw(nuklear, viewport);

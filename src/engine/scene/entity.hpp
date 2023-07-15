@@ -38,7 +38,7 @@ class ENGINE_API Scene;
 using EntityComponentIds =
     entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
-                ComponentIcon, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
+                ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
                 ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentRigidBody>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {

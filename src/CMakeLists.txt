@@ -89,6 +89,7 @@ target_link_libraries(${PROJECT_NAME}Library
         RocksDB::rocksdb
         LuaUnofficial
         sol2
+        AdMipMap::AdMipMap
         KTX::ktx
         ${BULLET_LIBRARIES})
 

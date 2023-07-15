@@ -54,8 +54,11 @@ void RenderSubpassOutline::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     const auto selectedColor = selected ? entityColor(selected->getHandle()) : Vector4{1.0f};
     const auto finalColor = selected ? Theme::primary * alpha(0.6) : Vector4{0.0f};
-    pipelineOutline.pushConstants(
-        vkb, PushConstant{"selectedColor", selectedColor}, PushConstant{"finalColor", finalColor});
+    const auto thickness = 1.0f;
+    pipelineOutline.pushConstants(vkb,
+                                  PushConstant{"selectedColor", selectedColor},
+                                  PushConstant{"finalColor", finalColor},
+                                  PushConstant{"thickness", thickness});
 
     pipelineOutline.renderMesh(vkb, resources.getMeshFullScreenQuad());
 }

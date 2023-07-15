@@ -13,6 +13,7 @@ public:
     virtual ~View() = default;
 
     virtual void update(float deltaTime) = 0;
+    virtual void renderCanvas(Canvas& canvas, const Vector2i& viewport) = 0;
     virtual void onEnter() = 0;
     virtual void onExit() = 0;
     virtual Scene* getScene() = 0;

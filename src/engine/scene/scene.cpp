@@ -77,7 +77,7 @@ void Scene::update(const float delta) {
     }*/
 }
 
-ComponentCamera* Scene::getPrimaryCamera() {
+ComponentCamera* Scene::getPrimaryCamera() const {
     if (primaryCamera) {
         if (!primaryCamera.hasComponent<ComponentCamera>()) {
             return nullptr;
@@ -97,6 +97,11 @@ const SkyboxTextures* Scene::getSkybox() {
         return &skybox.getTextures();
     }
     return nullptr;
+}
+
+bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {
+    const auto& dynamicsWorld = getController<ControllerDynamicsWorld>();
+    return dynamicsWorld.contactTestSphere(origin, radius);
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {
@@ -141,7 +146,7 @@ void Scene::eventCharTyped(const uint32_t code) {
     }
 }
 
-std::tuple<Vector3, Vector3> Scene::screenToWorld(const Vector2& mousePos, float length) {
+std::tuple<Vector3, Vector3> Scene::screenToWorld(const Vector2& mousePos, float length) const {
     const auto camera = getPrimaryCamera();
     if (!camera) {
         EXCEPTION("Error during screenToWorld no camera in scene");
@@ -154,9 +159,19 @@ std::tuple<Vector3, Vector3> Scene::screenToWorld(const Vector2& mousePos, float
     return {eyes, eyes + ray};
 }
 
+Vector2 Scene::worldToScreen(const Vector3& pos) const {
+    const auto camera = getPrimaryCamera();
+    if (!camera) {
+        EXCEPTION("Error during worldToScreen no camera in scene");
+    }
+
+    return camera->worldToScreen(pos, true);
+}
+
 void Scene::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<Scene>("Scene");
     cls["create_entity"] = &Scene::createEntity;
+    cls["contact_test_sphere"] = &Scene::contactTestSphere;
 }

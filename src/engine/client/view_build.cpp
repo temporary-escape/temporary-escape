@@ -186,6 +186,9 @@ void ViewBuild::update(const float deltaTime) {
     }
 }
 
+void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+}
+
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 

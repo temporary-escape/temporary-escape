@@ -10,6 +10,7 @@
 #include "vulkan_allocator.hpp"
 #include "../utils/exceptions.hpp"
 #include "vulkan_device.hpp"
+#include <numeric>
 
 using namespace Engine;
 
@@ -50,4 +51,16 @@ void VulkanAllocator::destroy() {
         vmaDestroyAllocator(allocator);
         allocator = VK_NULL_HANDLE;
     }
+}
+
+size_t VulkanAllocator::getUsedBytes() const {
+    /*VmaTotalStatistics stats{};
+    vmaCalculateStatistics(allocator, &stats);
+    return stats.total.statistics.allocationBytes;*/
+
+    std::array<VmaBudget, VK_MAX_MEMORY_HEAPS> budgets{};
+    vmaGetHeapBudgets(allocator, budgets.data());
+    return std::accumulate(budgets.begin(), budgets.end(), 0ULL, [](size_t i, const VmaBudget& budget) {
+        return i + budget.statistics.allocationBytes;
+    });
 }

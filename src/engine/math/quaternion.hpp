@@ -11,6 +11,8 @@ namespace Engine {
 using Quaternion = glm::quat;
 
 ENGINE_API Quaternion randomQuaternion(std::mt19937_64& rng);
+
+ENGINE_API void bindMathQuaternion(Lua& lua);
 } // namespace Engine
 
 inline std::ostream& operator<<(std::ostream& os, Engine::Quaternion const& v) {
@@ -37,7 +39,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 4)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<float>(), o.via.array.ptr[1].as<float>(), o.via.array.ptr[2].as<float>(),
+            v = {o.via.array.ptr[0].as<float>(),
+                 o.via.array.ptr[1].as<float>(),
+                 o.via.array.ptr[2].as<float>(),
                  o.via.array.ptr[3].as<float>()};
             return o;
         }

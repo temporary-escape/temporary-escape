@@ -191,6 +191,7 @@ void Lua::setupBindings() {
 
     // Math
     bindMathVectors(*this);
+    bindMathQuaternion(*this);
     MinimumSpanningTree::bind(*this);
     DelaunayTriangulation::bind(*this);
     FloodFill::bind(*this);
@@ -208,6 +209,7 @@ void Lua::setupBindings() {
             return randomReal<float>(self, min, max);
         };
         cls["rand_seed"] = [](std::mt19937_64& self) { return randomInt<uint64_t>(self, 0, 0x1FFFFFFFFFFFFF); };
+        cls["rand_quaternion"] = [](std::mt19937_64& self) { return randomQuaternion(self); };
     }
 
     // Utils
@@ -234,6 +236,7 @@ void Lua::setupBindings() {
     ComponentRigidBody::bind(*this);
     ComponentTransform::bind(*this);
     ComponentIcon::bind(*this);
+    ComponentLabel::bind(*this);
     Scene::bind(*this);
 
     // Global functions

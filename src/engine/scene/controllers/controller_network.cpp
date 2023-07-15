@@ -114,6 +114,7 @@ static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt
         {EntityComponentIds::value<ComponentModel>, &unpackComponent<ComponentModel>},
         {EntityComponentIds::value<ComponentRigidBody>, &unpackComponent<ComponentRigidBody>},
         {EntityComponentIds::value<ComponentIcon>, &unpackComponent<ComponentIcon>},
+        {EntityComponentIds::value<ComponentLabel>, &unpackComponent<ComponentLabel>},
     };
 
     const auto found = unpackers.find(id);
@@ -129,6 +130,7 @@ void ControllerNetwork::sendFullSnapshot(Network::Peer& peer) {
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(Network::Peer& peer) {

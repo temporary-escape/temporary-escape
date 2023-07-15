@@ -28,8 +28,7 @@ public:
     };
 
     ComponentIcon() = default;
-    explicit ComponentIcon(entt::registry& reg, entt::entity handle, ImagePtr image, const Vector2& size,
-                           const Color4& color);
+    explicit ComponentIcon(entt::registry& reg, entt::entity handle, ImagePtr image);
     virtual ~ComponentIcon() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentIcon);
 
@@ -39,6 +38,7 @@ public:
 
     void setImage(const ImagePtr& value) {
         image = value;
+        setDirty(true);
     }
 
     const Vector2& getSize() const {
@@ -47,6 +47,7 @@ public:
 
     void setSize(const Vector2& value) {
         size = value;
+        setDirty(true);
     }
 
     const Color4& getColor() const {
@@ -55,6 +56,7 @@ public:
 
     void setColor(const Color4& value) {
         color = value;
+        setDirty(true);
     }
 
     const Vector2& getOffset() const {
@@ -63,6 +65,7 @@ public:
 
     void setOffset(const Vector2& value) {
         offset = value;
+        setDirty(true);
     }
 
     bool isSelectable() const {
@@ -82,8 +85,8 @@ protected:
 
 private:
     ImagePtr image;
-    Vector2 size;
-    Color4 color;
+    Vector2 size{32.0f, 32.0f};
+    Color4 color{0.7f, 0.7f, 0.7f, 0.0f};
     Vector2 offset{0.0f};
     bool selectable{true};
 };

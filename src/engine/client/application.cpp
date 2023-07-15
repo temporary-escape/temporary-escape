@@ -78,14 +78,18 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         renderer->update();
     }
 
-    const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
-    if (!queryResult.empty()) {
-        uint64_t timeDiff = queryResult[1] - queryResult[0];
-        timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
-                                         static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
-        const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
-        perf.renderTime.update(timeDiffNano);
-        // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
+    try {
+        const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
+        if (!queryResult.empty()) {
+            uint64_t timeDiff = queryResult[1] - queryResult[0];
+            timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
+                                             static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
+            const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
+            perf.renderTime.update(timeDiffNano);
+            // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
+        }
+    } catch (std::exception&) {
+        perf.renderTime.update(std::chrono::nanoseconds{0});
     }
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -170,19 +174,25 @@ void Application::renderFrameTime(const Vector2i& viewport) {
     {
         const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Render: {:.2f}ms", renderTimeMs);
-        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize}, text);
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize}, text);
     }
 
     {
         const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Frame: {:.2f}ms", frameTimeMs);
-        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize * 2.0}, text);
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 2.0}, text);
+    }
+
+    {
+        const auto vRamMB = static_cast<float>(getAllocator().getUsedBytes()) / 1048576.0f;
+        const auto text = fmt::format("VRAM: {:.2f}MB", vRamMB);
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 3.0}, text);
     }
 
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.2f}ms", tickTimeMs);
-        canvas.text({viewport.x - 140.0f, 5.0f + config.guiFontSize * 3.0}, text);
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 4.0}, text);
     }
 }
 

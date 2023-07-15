@@ -56,13 +56,13 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
     (void)assetsManager;
 
     const auto resolveTexture = [this, &assetsManager](const Path& filename) -> TexturePtr {
-        try {
-            const auto baseName = filename.stem().string();
-            return assetsManager.getTextures().find(baseName);
-        } catch (std::exception& e) {
-            const auto file = path.parent_path() / fixFileNameExt(filename);
-            return assetsManager.addTexture(file);
+        const auto baseName = filename.stem().string();
+        auto found = assetsManager.getTextures().findOrNull(baseName);
+        if (found) {
+            return found;
         }
+        const auto file = path.parent_path() / fixFileNameExt(filename);
+        return assetsManager.addTexture(file);
     };
 
     try {
@@ -289,7 +289,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
         }
 
-        if (collisions && endsWith(collisions->name, "_CCX")) {
+        /*if (collisions && endsWith(collisions->name, "_CCX")) {
             if (!collisions->mesh) {
                 EXCEPTION("gltf has collision node '{}' with no mesh", collisions->name);
             }
@@ -308,7 +308,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
 
             collisionShape = std::make_unique<btConvexHullShape>(reinterpret_cast<const btScalar*>(span.data()),
                                                                  positions->accessor.count);
-        }
+        }*/
 
         bbRadius = std::max(std::abs(bbMin.x), bbRadius);
         bbRadius = std::max(std::abs(bbMin.y), bbRadius);
@@ -316,6 +316,10 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
         bbRadius = std::max(std::abs(bbMax.x), bbRadius);
         bbRadius = std::max(std::abs(bbMax.y), bbRadius);
         bbRadius = std::max(std::abs(bbMax.z), bbRadius);
+
+        if (!collisionShape) {
+            collisionShape = std::make_unique<btSphereShape>(bbRadius);
+        }
     } catch (...) {
         EXCEPTION_NESTED("Failed to load model: '{}'", getName());
     }

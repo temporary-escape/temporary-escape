@@ -20,8 +20,14 @@ public:
         setDirty(true);
     }
 
+    static void bind(Lua& lua);
+
+    MSGPACK_DEFINE_ARRAY(label);
+
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
+
 private:
     std::string label;
-    Color4 color;
 };
 } // namespace Engine

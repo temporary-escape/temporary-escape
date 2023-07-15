@@ -113,7 +113,7 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
 // ----------------------------------------------------------------------------
 void main() {
     float depth = texture(texDepth, vs_out.texCoords).r;
-    if (depth > 0.999) {
+    if (depth > 0.99999) {
         discard;
     }
 

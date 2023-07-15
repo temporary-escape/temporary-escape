@@ -21,6 +21,8 @@ public:
         return allocator;
     }
 
+    size_t getUsedBytes() const;
+
     void destroy();
 
 private:
