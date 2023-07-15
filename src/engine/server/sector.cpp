@@ -41,6 +41,8 @@ void Sector::load() {
 
     scene = std::make_unique<Scene>(config, true);
     lua = std::make_unique<Lua>(config, eventBus);
+    lua->setScene(*scene);
+    scene->setLua(*lua);
 
     const auto galaxyData = db.get<GalaxyData>(galaxyId);
     const auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
@@ -48,6 +50,7 @@ void Sector::load() {
 
     std::mt19937_64 rng{sectorData.seed};
 
+    lua->require("base.sector");
     lua->require(sectorData.luaTemplate, [&](sol::table& table) {
         auto res = table["populate"](table, rng, galaxyData, systemData, sectorData, scene.get());
         if (!res.valid()) {

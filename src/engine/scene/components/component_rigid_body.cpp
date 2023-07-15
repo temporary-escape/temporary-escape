@@ -16,19 +16,24 @@ public:
 
     ~ComponentTransformMotionState() override = default;
 
-private:
     void getWorldTransform(btTransform& worldTrans) const override {
-        worldTrans.setFromOpenGLMatrix(&componentTransform.getAbsoluteTransform()[0][0]);
+        const auto mat = componentTransform.getAbsoluteTransform();
+        float scaleX = glm::length(glm::vec3(mat[0][0], mat[0][1], mat[0][2]));
+        float scaleY = glm::length(glm::vec3(mat[1][0], mat[1][1], mat[1][2]));
+        float scaleZ = glm::length(glm::vec3(mat[2][0], mat[2][1], mat[2][2]));
+        glm::mat4 matWithoutScale = glm::scale(mat, glm::vec3(1.0f / scaleX, 1.0f / scaleY, 1.0f / scaleZ));
+        worldTrans.setFromOpenGLMatrix(&matWithoutScale[0][0]);
     }
 
     void setWorldTransform(const btTransform& worldTrans) override {
         Matrix4 mat;
         worldTrans.getOpenGLMatrix(&mat[0][0]);
         mat = glm::scale(mat, Vector3{componentRigidBody.getScale()});
-        componentTransform.updateTransform(mat);
+        componentTransform.setTransform(mat);
         componentRigidBody.setDirty(true);
     }
 
+private:
     ComponentRigidBody& componentRigidBody;
     ComponentTransform& componentTransform;
 };
@@ -234,6 +239,15 @@ void ComponentRigidBody::clearForces() {
     rigidBody->clearForces();
 }
 
+void ComponentRigidBody::updateTransform() {
+    if (!rigidBody) {
+        return;
+    }
+    btTransform transform{};
+    motionState->getWorldTransform(transform);
+    rigidBody->setWorldTransform(transform);
+}
+
 void ComponentRigidBody::bind(Lua& lua) {
     auto& m = lua.root();
 
@@ -247,4 +261,5 @@ void ComponentRigidBody::bind(Lua& lua) {
     cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
     cls["clear_forces"] = &ComponentRigidBody::clearForces;
     cls["activate"] = &ComponentRigidBody::activate;
+    cls["update_transform"] = &ComponentRigidBody::updateTransform;
 }

@@ -84,6 +84,7 @@ protected:
 private:
     entt::registry* reg{nullptr};
     entt::entity handle{0};
+    
     bool dirty{false};
 };
 

@@ -140,12 +140,22 @@ Lua::~Lua() {
     instances.erase(data->state.lua_state());
 }
 
-void Lua::importModule(const std::string_view& name) {
-    const auto path = config.assetsPath / name / "main.lua";
+void Lua::importModule(const std::string_view& name, const std::string_view& file) {
+    const auto path = config.assetsPath / name / file;
     if (Fs::exists(path) && Fs::is_regular_file(path)) {
         data->state.script_file(path.string());
     } else {
         logger.info("No such module script: '{}'", path);
+    }
+}
+
+void Lua::require(const std::string_view& name) {
+    logger.info("Lua require: '{}'", name);
+
+    auto res = data->state["require"](name);
+    if (!res.valid()) {
+        sol::error err = res;
+        EXCEPTION("Lua require: '{}' error: {}", name, err.what());
     }
 }
 
@@ -161,13 +171,17 @@ void Lua::require(const std::string_view& name, const std::function<void(sol::ta
     try {
         auto table = res.get<sol::table>();
         callback(table);
-    } catch (std::exception& e) {
-        EXCEPTION("Lua require: '{}' error: {}", name, e.what());
+    } catch (...) {
+        EXCEPTION_NESTED("Lua require: '{}' failed", name);
     }
 }
 
 sol::table& Lua::root() {
     return data->engine;
+}
+
+void Lua::setScene(Scene& value) {
+    scene = &value;
 }
 
 static Server* getServerHelper() {
@@ -192,6 +206,7 @@ void Lua::setupBindings() {
     // Math
     bindMathVectors(*this);
     bindMathQuaternion(*this);
+    bindMathMatrices(*this);
     MinimumSpanningTree::bind(*this);
     DelaunayTriangulation::bind(*this);
     FloodFill::bind(*this);
@@ -242,6 +257,7 @@ void Lua::setupBindings() {
     // Global functions
     m["create_logger"] = &createLogger;
     m["get_server"] = &getServerHelper;
+    m["get_scene"] = [this]() -> Scene* { return this->scene; };
     m["get_event_bus"] = [this]() { return this->eventHandler.get(); };
     m["get_database"] = &getDatabase;
     m["get_assets_manager"] = &getAssetManagerHelper;

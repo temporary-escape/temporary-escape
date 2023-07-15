@@ -14,7 +14,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, const bool isServer) {
+Scene::Scene(const Config& config, const bool isServer) : isServer{isServer} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
 
@@ -66,15 +66,6 @@ void Scene::update(const float delta) {
     for (auto& [_, controller] : controllers) {
         controller->update(delta);
     }
-
-    /*auto& systemTurret = getComponentSystem<ComponentTurret>();
-    for (auto& component : systemTurret) {
-        component->update(delta);
-        if (component->shouldFire()) {
-            component->resetFire();
-            addBullet(component->getNozzlePos(), component->getNozzleDir());
-        }
-    }*/
 }
 
 ComponentCamera* Scene::getPrimaryCamera() const {
@@ -97,6 +88,10 @@ const SkyboxTextures* Scene::getSkybox() {
         return &skybox.getTextures();
     }
     return nullptr;
+}
+
+void Scene::setLua(Lua& value) {
+    lua = &value;
 }
 
 bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {

@@ -55,52 +55,37 @@ function SectorAsteroidField.new()
 
         local origin = engine.Vector3.new(0.0, 0.0, 0.0)
         local cluster = AsteroidCluster.new(seed, origin, 1500.0, 2.5, 15.0)
-        for i = 0, 1000 do
+        for _ = 1, 1000 do
             if cluster:next(scene) then
-                local entity = scene:create_entity()
-
-                local transform = entity:add_component_transform()
+                local data = {
+                    size = cluster.size,
+                    model = asteroids[rng:rand_int(1, #asteroids)],
+                    icon = icon,
+                }
+                local entity = spawn("asteroid", data)
+                
+                local transform = entity:get_component_transform()
                 transform:move(cluster.pos)
                 transform:rotate(cluster.orientation)
 
-                local component_model = entity:add_component_model(asteroids[1])
-                local component_rigid_body = entity:add_component_rigid_body()
-                component_rigid_body:set_from_model(component_model.model, cluster.size)
-
-                entity:add_component_icon(icon)
-                entity:add_component_label("Asteroid (Rock)")
-
-                component_rigid_body.mass = 0.0
-                transform.static = true
+                local rigid_body = entity:get_component_rigid_body()
+                rigid_body:update_transform()
             end
         end
 
-        --[[
-        for x = 0, 44 do
-            for y = 0, 44 do
-                local entity = scene:create_entity()
+        local entity = scene:create_entity()
 
-                local transform = entity:add_component_transform()
-                transform:move(engine.Vector3.new(x * 8.0, 0.0, y * 8.0))
+        local transform = entity:add_component_transform()
+        transform:move(engine.Vector3.new(0.0, -200.0, 0.0))
 
-                local component_model = entity:add_component_model(asteroids[1])
-                local component_rigid_body = entity:add_component_rigid_body()
-                component_rigid_body:set_from_model(asteroids[1], 2.0)
+        local component_model = entity:add_component_model(asteroids[1])
+        local component_rigid_body = entity:add_component_rigid_body()
+        component_rigid_body:set_from_model(component_model.model, cluster.size)
 
-                local component_icon = entity:add_component_icon(
-                        icon,
-                        engine.Vector2.new(32.0, 32.0),
-                        engine.Color4.new(0.7, 0.7, 0.7, 0.5))
+        component_rigid_body.linear_velocity = engine.Vector3.new(0.0, 15.0, 0.0)
 
-                if x == 0 and y == 0 then
-                    component_rigid_body.linear_velocity = engine.Vector3.new(5.0, 0.1, 0.0)
-                else
-                    component_rigid_body.mass = 0.0
-                    transform.static = true
-                end
-            end
-        end
-        --]]
+        entity:add_component_icon(icon)
+        entity:add_component_label("Dynamic")
     end
 
     return inst

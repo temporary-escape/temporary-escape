@@ -83,7 +83,7 @@ void Server::load() {
     lua = std::make_unique<Lua>(config, *eventBus);
 
     try {
-        lua->importModule("base");
+        lua->importModule("base", "server.lua");
     } catch (...) {
         EXCEPTION_NESTED("Failed to import base assets module");
     }
@@ -192,7 +192,7 @@ void Server::tick() {
         if (test < config.tickLengthUs) {
             std::this_thread::sleep_for(config.tickLengthUs - test);
         }
-        
+
         perf.tickTime.update(std::chrono::duration_cast<std::chrono::nanoseconds>(now - start));
     }
 

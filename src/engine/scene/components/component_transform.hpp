@@ -42,7 +42,7 @@ public:
 
     [[nodiscard]] Matrix4 getAbsoluteTransform() const;
 
-    void updateTransform(const Matrix4& value);
+    void setTransform(const Matrix4& value);
 
     [[nodiscard]] Vector3 getPosition() const {
         return {transform[3]};

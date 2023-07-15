@@ -289,7 +289,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
         }
 
-        /*if (collisions && endsWith(collisions->name, "_CCX")) {
+        if (collisions && endsWith(collisions->name, "_CCX")) {
             if (!collisions->mesh) {
                 EXCEPTION("gltf has collision node '{}' with no mesh", collisions->name);
             }
@@ -308,7 +308,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
 
             collisionShape = std::make_unique<btConvexHullShape>(reinterpret_cast<const btScalar*>(span.data()),
                                                                  positions->accessor.count);
-        }*/
+        }
 
         bbRadius = std::max(std::abs(bbMin.x), bbRadius);
         bbRadius = std::max(std::abs(bbMin.y), bbRadius);

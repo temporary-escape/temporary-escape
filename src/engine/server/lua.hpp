@@ -14,6 +14,8 @@ using table = table_core<false>;
 } // namespace sol
 
 namespace Engine {
+class ENGINE_API Scene;
+
 class ENGINE_API Lua {
 public:
     struct Data;
@@ -21,7 +23,9 @@ public:
     explicit Lua(const Config& config, EventBus& eventBus);
     virtual ~Lua();
 
-    void importModule(const std::string_view& name);
+    void importModule(const std::string_view& name, const std::string_view& file);
+    void setScene(Scene& value);
+    void require(const std::string_view& name);
     void require(const std::string_view& name, const std::function<void(sol::table&)>& callback);
     sol::table& root();
 
@@ -33,5 +37,6 @@ private:
     const Config& config;
     std::unique_ptr<Data> data;
     std::unique_ptr<EventHandler> eventHandler;
+    Scene* scene{nullptr};
 };
 } // namespace Engine

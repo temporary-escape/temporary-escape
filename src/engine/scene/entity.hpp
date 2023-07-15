@@ -36,7 +36,7 @@ namespace Engine {
 class ENGINE_API Scene;
 
 using EntityComponentIds =
-    entt::ident<TagDisabled, ComponentTransform, ComponentCamera, ComponentGrid, ComponentModel,
+    entt::ident<TagDisabled, ComponentTransform, ComponentScript, ComponentCamera, ComponentGrid, ComponentModel,
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
                 ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
                 ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentRigidBody>;

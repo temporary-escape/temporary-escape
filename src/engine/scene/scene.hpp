@@ -81,15 +81,18 @@ public:
 
     ComponentCamera* getPrimaryCamera() const;
     const SkyboxTextures* getSkybox();
+    void setLua(Lua& value);
 
     static void bind(Lua& lua);
 
 private:
+    bool isServer{false};
     entt::registry reg;
     std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
     std::vector<UserInput*> userInputs;
 
     Entity primaryCamera;
     std::optional<entt::entity> selectedEntity;
+    Lua* lua{nullptr};
 };
 } // namespace Engine

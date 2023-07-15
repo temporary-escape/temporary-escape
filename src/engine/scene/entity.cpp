@@ -46,4 +46,29 @@ void Entity::bind(Lua& lua) {
         static_cast<ComponentIcon& (Entity::*)(const ImagePtr&)>(&Entity::addComponent<ComponentIcon>);
     cls["add_component_label"] =
         static_cast<ComponentLabel& (Entity::*)(const std::string&)>(&Entity::addComponent<ComponentLabel>);
+    cls["add_component_script"] = [l = &lua](Entity& self, const sol::table& instance) -> ComponentScript& {
+        return self.addComponent<ComponentScript>(instance);
+    };
+
+    cls["has_component_transform"] = &Entity::hasComponent<ComponentTransform>;
+    cls["has_component_model"] = &Entity::hasComponent<ComponentModel>;
+    cls["has_component_rigid_body"] = &Entity::hasComponent<ComponentRigidBody>;
+    cls["has_component_icon"] = &Entity::hasComponent<ComponentIcon>;
+    cls["has_component_label"] = &Entity::hasComponent<ComponentLabel>;
+    cls["has_component_script"] = &Entity::hasComponent<ComponentScript>;
+
+    cls["get_component_transform"] = &Entity::tryGetComponent<ComponentTransform>;
+    cls["get_component_model"] = &Entity::tryGetComponent<ComponentModel>;
+    cls["get_component_rigid_body"] = &Entity::tryGetComponent<ComponentRigidBody>;
+    cls["get_component_icon"] = &Entity::tryGetComponent<ComponentIcon>;
+    cls["get_component_label"] = &Entity::tryGetComponent<ComponentLabel>;
+    cls["get_component_script"] = &Entity::tryGetComponent<ComponentScript>;
+
+    cls["script"] = [](Entity& self) -> sol::table {
+        auto* component = self.tryGetComponent<ComponentScript>();
+        if (component) {
+            return component->getInstance();
+        }
+        return nullptr;
+    };
 }

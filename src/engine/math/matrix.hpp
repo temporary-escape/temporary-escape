@@ -13,6 +13,8 @@
 namespace Engine {
 using Matrix4 = glm::mat4x4;
 using Matrix3 = glm::mat3x3;
+
+ENGINE_API void bindMathMatrices(Lua& lua);
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Matrix3> {

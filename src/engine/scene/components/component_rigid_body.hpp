@@ -48,6 +48,7 @@ public:
     void clearForces();
     void activate();
     bool isActive() const;
+    void updateTransform();
 
     void setDynamicsWorld(btDynamicsWorld& world) {
         dynamicsWorld = &world;
