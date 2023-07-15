@@ -55,7 +55,7 @@ const VkQueryPool& VulkanQueryPool::getHandle() const {
 template <>
 std::vector<uint64_t> VulkanQueryPool::getResult<uint64_t>(const uint32_t firstQuery, const uint32_t count,
                                                            const VkQueryResultFlags flags) {
-    if (device) {
+    if (!device) {
         EXCEPTION("Query pool not initialized");
     }
 

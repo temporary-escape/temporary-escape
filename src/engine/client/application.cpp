@@ -169,25 +169,25 @@ void Application::renderFrameTime(const Vector2i& viewport) {
 
     {
         const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
-        const auto text = fmt::format("Render: {:.2f}ms", renderTimeMs);
+        const auto text = fmt::format("Render: {:.1f}ms", renderTimeMs);
         canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize}, text);
     }
 
     {
         const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
-        const auto text = fmt::format("Frame: {:.2f}ms", frameTimeMs);
+        const auto text = fmt::format("Frame: {:.1f}ms", frameTimeMs);
         canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 2.0}, text);
     }
 
     {
         const auto vRamMB = static_cast<float>(getAllocator().getUsedBytes()) / 1048576.0f;
-        const auto text = fmt::format("VRAM: {:.2f}MB", vRamMB);
+        const auto text = fmt::format("VRAM: {:.0f}MB", vRamMB);
         canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 3.0}, text);
     }
 
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
-        const auto text = fmt::format("Tick: {:.2f}ms", tickTimeMs);
+        const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
         canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 4.0}, text);
     }
 }
