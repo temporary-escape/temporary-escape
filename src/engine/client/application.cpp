@@ -78,18 +78,14 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         renderer->update();
     }
 
-    try {
-        const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
-        if (!queryResult.empty()) {
-            uint64_t timeDiff = queryResult[1] - queryResult[0];
-            timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
-                                             static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
-            const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
-            perf.renderTime.update(timeDiffNano);
-            // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
-        }
-    } catch (std::exception&) {
-        perf.renderTime.update(std::chrono::nanoseconds{0});
+    const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
+    if (!queryResult.empty()) {
+        uint64_t timeDiff = queryResult[1] - queryResult[0];
+        timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
+                                         static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
+        const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
+        perf.renderTime.update(timeDiffNano);
+        // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
     }
 
     VkCommandBufferBeginInfo beginInfo{};
