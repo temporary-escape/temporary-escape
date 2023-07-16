@@ -16,6 +16,6 @@ materials:
     baseColor:
       texture: texture_plates_01_diff
     normal:
-      texture: texture_plates_01_norm
+      texture: texture_plates_quaters_01_norm
     metallicRoughness:
       texture: texture_plates_01_meta

@@ -189,8 +189,8 @@ static Vector3 vecToNormal(const Vector3& vec) {
 }
 
 Vector2 boxProjection(Vector3 normal, Vector3 position) {
-    const float uvScale = 0.25;
-    const float offset = 0.5;
+    const float uvScale = 0.25f;
+    const float offset = 1.0 - 1.0f / 8.0f;
 
     Vector3 absnorm = glm::abs(normal);
     Vector2 texCoords{0.0f, 0.0f};
@@ -198,33 +198,25 @@ Vector2 boxProjection(Vector3 normal, Vector3 position) {
     if (absnorm.x > absnorm.y && absnorm.x > absnorm.z) {
         // x major
         if (normal.x >= 0.0f) {
-            texCoords = Vector2{position.y, position.z} * uvScale + offset;
-            texCoords.y = 1.0f - texCoords.y;
+            texCoords = Vector2{-position.z, -position.y} * uvScale + offset;
         } else {
-            texCoords = Vector2{position.y, position.z} * uvScale + offset;
+            texCoords = Vector2{position.z + 1.0f, -position.y} * uvScale + offset;
         }
     } else if (absnorm.y > absnorm.z) {
         // y major
         if (normal.y >= 0.0f) {
-            texCoords = Vector2{position.z, position.x} * uvScale + offset;
-            // texCoords.x = 1.0 - texCoords.x;
-            texCoords.y = 1.0f - texCoords.y;
+            texCoords = Vector2{-position.x, -position.z} * uvScale + offset;
         } else {
-            texCoords = Vector2{position.x, position.z} * uvScale + offset;
-            texCoords.y = 1.0f - texCoords.y;
+            texCoords = Vector2{-position.x, position.z} * uvScale + offset;
         }
     } else {
         // z major
         if (normal.z >= 0.0f) {
-            texCoords = Vector2{position.y, position.x} * uvScale + offset;
+            texCoords = Vector2{position.x + 1.0f, -position.y} * uvScale + offset;
         } else {
-            texCoords = Vector2{position.y, position.x} * uvScale + offset;
-            texCoords.y = 1.0f - texCoords.y;
+            texCoords = Vector2{-position.x, -position.y} * uvScale + offset;
         }
     }
-
-    // TODO This function was intended for OpenGL and needs fixing for Vulkan
-    texCoords.y = 1.0f - texCoords.y;
 
     return texCoords;
 }

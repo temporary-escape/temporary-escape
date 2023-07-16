@@ -49,7 +49,7 @@ ViewBuild::ViewBuild(const Config& config, Renderer& renderer, AssetsManager& as
 void ViewBuild::createScene() {
     auto entity = scene.createEntity();
     entity.addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
-    entity.addComponent<ComponentTransform>().translate(Vector3{3.0f, 1.0f, 3.0f});
+    entity.addComponent<ComponentTransform>().translate(Vector3{3.0f, 2.0f, 3.0f});
 
     entity = scene.createEntity();
     auto& skybox = entity.addComponent<ComponentSkybox>(0);
@@ -140,11 +140,8 @@ void ViewBuild::createEntityShip() {
     auto& grid = entityShip.addComponent<ComponentGrid>();
     grid.setDirty(true);
 
-    auto block = assetsManager.getBlocks().find("block_crew_quarters_t1");
+    auto block = assetsManager.getBlocks().find("block_hull_t1");
     grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
-    grid.insert(Vector3i{1, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
-    grid.insert(Vector3i{0, 1, 0}, block, 0, 0, VoxelShape::Type::Cube);
-    // grid.insert(Vector3i{0, 0, 1}, block, 0, 0, VoxelShape::Type::Cube);
 }
 
 void ViewBuild::addBlock() {
@@ -170,6 +167,10 @@ void ViewBuild::addBlock() {
 }
 
 void ViewBuild::update(const float deltaTime) {
+    // time += deltaTime;
+    // Vector2 pos = glm::rotate(Vector2{1.0f, 0.0f}, glm::radians(time));
+    // entitySun.getComponent<ComponentTransform>().translate(Vector3{pos.x, 1.0f, pos.y} * 300.0f);
+
     scene.update(deltaTime);
 
     const auto [eyes, rayEnd] = scene.screenToWorld(raycastScreenPos, 16.0f);
