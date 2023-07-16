@@ -54,7 +54,7 @@ public:
 
     void reset();
     void setDisabled(bool value);
-    void setStatic(bool value);
+    bool isDisabled() const;
 
     template <typename T> bool hasComponent() const {
         if (!reg) {

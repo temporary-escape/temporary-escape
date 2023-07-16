@@ -93,9 +93,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
 
-    vkb.resetQueryPool(renderQueryPool, 0, 2);
-
-    vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+    if (getGraphicsQueueFamilyProperties().timestampValidBits) {
+        vkb.resetQueryPool(renderQueryPool, 0, 2);
+        vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+    }
 
     if (game) {
         game->update(deltaTime);
@@ -144,7 +145,9 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     vkb.endRenderPass();
 
-    vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1);
+    if (getGraphicsQueueFamilyProperties().timestampValidBits) {
+        vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1);
+    }
 
     vkb.end();
 

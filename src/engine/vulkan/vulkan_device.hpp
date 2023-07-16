@@ -37,11 +37,16 @@ public:
         return allocator;
     }
 
+    const VkQueueFamilyProperties& getGraphicsQueueFamilyProperties() const {
+        return graphicsQueueProperties;
+    }
+
 private:
     void destroy();
 
     const Config& config;
     VkDevice device{VK_NULL_HANDLE};
+    VkQueueFamilyProperties graphicsQueueProperties;
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
     VkQueue computeQueue{VK_NULL_HANDLE};

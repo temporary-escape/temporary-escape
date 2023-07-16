@@ -19,6 +19,8 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
         indices.computeFamily.value(),
     };
 
+    graphicsQueueProperties = indices.graphicsFamilyProperties;
+
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo{};

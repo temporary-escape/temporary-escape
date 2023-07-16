@@ -13,7 +13,7 @@ ComponentCamera::ComponentCamera(entt::registry& reg, entt::entity handle, Compo
 void ComponentCamera::update(const float delta) {
     if (!isOrthographic()) {
         auto pos = Vector3{getTransform()[3]};
-        const auto moveFactor = delta * speed * (fast ? 50.0f : 1.0f);
+        const auto moveFactor = delta * speed * (fast ? 20.0f : 1.0f);
 
         if (move[0]) {
             pos += Camera::getForward() * moveFactor;

@@ -20,16 +20,8 @@ void Entity::setDisabled(const bool value) {
     }
 }
 
-void Entity::setStatic(const bool value) {
-    if (!reg) {
-        EXCEPTION("Invalid entity");
-    }
-
-    if (value && !hasComponent<TagStatic>()) {
-        reg->emplace<TagStatic>(handle);
-    } else if (hasComponent<TagStatic>()) {
-        reg->remove<TagStatic>(handle);
-    }
+bool Entity::isDisabled() const {
+    return reg && reg->try_get<TagDisabled>(handle);
 }
 
 void Entity::bind(Lua& lua) {

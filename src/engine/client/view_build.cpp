@@ -178,12 +178,12 @@ void ViewBuild::update(const float deltaTime) {
     raycastResult = grid.rayCast(eyes, rayEnd);
 
     if (raycastResult) {
-        logger.info("setDisabled(false)");
-        entityHelperAdd.setDisabled(false);
+        if (entityHelperAdd.isDisabled()) {
+            entityHelperAdd.setDisabled(false);
+        }
         auto& transform = entityHelperAdd.getComponent<ComponentTransform>();
         transform.move(raycastResult->worldPos + raycastResult->normal);
-    } else {
-        logger.info("setDisabled(true)");
+    } else if (!entityHelperAdd.isDisabled()) {
         entityHelperAdd.setDisabled(true);
     }
 }

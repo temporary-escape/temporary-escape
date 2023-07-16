@@ -51,6 +51,7 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
+            indices.graphicsFamilyProperties = queueFamily;
 
             if (!queueFamily.timestampValidBits) {
                 EXCEPTION("Graphics queue family has no timestampValidBits");
@@ -59,6 +60,7 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
 
         if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
             indices.computeFamily = i;
+            indices.computeFamilyProperties = queueFamily;
         }
 
         VkBool32 presentSupport = false;
@@ -84,6 +86,7 @@ static VulkanQueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSur
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
             indices.computeFamily = i;
+            indices.computeFamilyProperties = queueFamily;
             break;
         }
 

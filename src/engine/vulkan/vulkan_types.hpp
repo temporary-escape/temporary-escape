@@ -25,6 +25,9 @@ struct ENGINE_API VulkanQueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
     std::optional<uint32_t> computeFamily;
+    std::optional<VkQueueFamilyProperties> graphicsFamilyProperties;
+    std::optional<VkQueueFamilyProperties> presentFamilyProperties;
+    std::optional<VkQueueFamilyProperties> computeFamilyProperties;
 
     [[nodiscard]] bool isComplete() const {
         return graphicsFamily && presentFamily;
