@@ -23,7 +23,6 @@ jobs:
             configurePreset: 'ninja-msvc'
             buildPreset: 'ninja-msvc'
             vulkanSdkVer: '1.3.239.0'
-            vcpkgDir: 'C:\vcpkg'
 
           - name: 'Build - Linux'
             os: 'ubuntu-22.04'
@@ -31,7 +30,6 @@ jobs:
             configurePreset: 'ninja-linux'
             buildPreset: 'ninja-linux'
             vulkanSdkVer: '1.3.239.0'
-            vcpkgDir: '/usr/local/share/vcpkg'
 
           - name: 'Build - macOS'
             os: 'macos-12'
@@ -39,7 +37,6 @@ jobs:
             configurePreset: 'ninja-macos'
             buildPreset: 'ninja-macos'
             vulkanSdkVer: '1.3.239.0'
-            vcpkgDir: '/usr/local/share/vcpkg'
 
     env:
       AWS_ACCESS_KEY_ID: "${{ secrets.VCPKG_CACHE_AWS_ACCESS_KEY_ID }}"
@@ -65,18 +62,6 @@ jobs:
               libglu1-mesa-dev libc6-dev linux-libc-dev liburing-dev libfuse2
           elif [ "$RUNNER_OS" == "macOS" ]; then
             brew install pkg-config llvm cmake ninja
-          fi
-
-      - name: Configure Vcpkg
-        shell: bash
-        run: |
-          cd ${{ matrix.vcpkgDir }}
-          git fetch origin
-          git reset --hard f6a5d4e8eb7476b8d7fc12a56dff300c1c986131
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            ./bootstrap-vcpkg.bat
-          else
-            ./bootstrap-vcpkg.sh
           fi
 
       - name: Setup Vulkan - Windows
@@ -111,13 +96,10 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          set VCPKG_ROOT=${{ matrix.vcpkgDir }}
           cmake --preset "${{ matrix.configurePreset }}" -DCMAKE_BUILD_TYPE=Release -DVCPKG_BUILD_TYPE=release -DTEMPORARY_ESCAPE_BUILD_TESTS=ON
 
       - name: Configure - Linux
         if: runner.os == 'Linux'
-        env:
-          VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
         shell: bash
         run: |
           source /opt/vulkan-sdk/setup-env.sh
@@ -125,8 +107,6 @@ jobs:
 
       - name: Configure - macOS
         if: runner.os == 'macOS'
-        env:
-          VCPKG_ROOT: "${{ matrix.vcpkgDir }}"
         shell: bash
         run: |
           prev=$(pwd)

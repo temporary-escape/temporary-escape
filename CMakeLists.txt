@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
-project(TemporaryEscape)
+
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
 
 set(CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
+
+project(TemporaryEscape)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GitVersion.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Options.cmake)
