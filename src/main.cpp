@@ -7,7 +7,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-static int commandPlay(const Config& config) {
+static int commandPlay(Config& config) {
     {
         Application window{config};
         window.run();
@@ -16,7 +16,7 @@ static int commandPlay(const Config& config) {
     return EXIT_SUCCESS;
 }
 
-static int commandCompressAssets(const Config& config) {
+static int commandCompressAssets(Config& config) {
     { AssetsManager::compressAssets(config); }
     logger.info("Exit success");
     return EXIT_SUCCESS;
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 #if defined(_WIN32)
     CLI11_PARSE(parser, __argc, __argv);
 #else
-    CLI11_PARSE(parser, argc, argv);
+    CLI11_PARSE(parser, argc, argv)
 #endif
 
     try {

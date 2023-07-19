@@ -25,17 +25,11 @@
 	],
 	"materials":[
 		{
-			"name":"Material.001",
+			"name":"Material.007",
 			"normalTexture":{
 				"index":0
 			},
 			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					1.0,
-					1.0,
-					1.0,
-					1
-				],
 				"baseColorTexture":{
 					"index":1
 				},
@@ -47,7 +41,7 @@
 	],
 	"meshes":[
 		{
-			"name":"model_asteroid_01_d_CCX.001",
+			"name":"model_asteroid_01_d_CCX.002",
 			"primitives":[
 				{
 					"attributes":{
@@ -59,7 +53,7 @@
 			]
 		},
 		{
-			"name":"model_asteroid_01_d.001",
+			"name":"model_asteroid_01_d.002",
 			"primitives":[
 				{
 					"attributes":{
@@ -109,7 +103,7 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":92,
+			"count":18,
 			"max":[
 				0.9229550361633301,
 				1.0067946910858154,
@@ -125,7 +119,7 @@
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":92,
+			"count":18,
 			"type":"VEC3"
 		},
 		{
@@ -178,50 +172,50 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":1104,
+			"byteLength":216,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1104,
-			"byteOffset":1104,
+			"byteLength":216,
+			"byteOffset":216,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":192,
-			"byteOffset":2208,
+			"byteOffset":432,
 			"target":34963
 		},
 		{
 			"buffer":0,
 			"byteLength":11592,
-			"byteOffset":2400,
+			"byteOffset":624,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":11592,
-			"byteOffset":13992,
+			"byteOffset":12216,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":7728,
-			"byteOffset":25584,
+			"byteOffset":23808,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":15456,
-			"byteOffset":33312,
+			"byteOffset":31536,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2028,
-			"byteOffset":48768,
+			"byteOffset":46992,
 			"target":34963
 		}
 	],
@@ -233,7 +227,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":50796,
+			"byteLength":49020,
 			"uri":"model_asteroid_01_d.bin"
 		}
 	]

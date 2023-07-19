@@ -32,8 +32,9 @@ out gl_PerVertex {
 
 void geometrize(vec4 pos) {
     vs_out.color = in_Color;
-    vec2 particleSize = in_Size / camera.viewport;
+    vec2 particleSize = in_Size;
     vec2 offset = in_Offset / camera.viewport;
+    particleSize.x /= float(camera.viewport.x) / float(camera.viewport.y);
 
     // a: left-bottom
     if (gl_VertexIndex == 0) {

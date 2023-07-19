@@ -63,7 +63,7 @@ function SectorAsteroidField.new()
                     icon = icon,
                 }
                 local entity = spawn("asteroid", data)
-                
+
                 local transform = entity:get_component_transform()
                 transform:move(cluster.pos)
                 transform:rotate(cluster.orientation)
@@ -80,7 +80,7 @@ function SectorAsteroidField.new()
 
         local component_model = entity:add_component_model(asteroids[1])
         local component_rigid_body = entity:add_component_rigid_body()
-        component_rigid_body:set_from_model(component_model.model, cluster.size)
+        component_rigid_body:set_from_model(component_model.model, 5.0)
 
         component_rigid_body.linear_velocity = engine.Vector3.new(0.0, 15.0, 0.0)
 

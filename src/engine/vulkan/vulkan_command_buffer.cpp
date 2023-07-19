@@ -121,8 +121,12 @@ void VulkanCommandBuffer::bindPipeline(const VulkanPipeline& pipeline) {
 }
 
 void VulkanCommandBuffer::bindBuffers(const Span<VulkanVertexBufferBindRef>& buffers) {
-    std::vector<VkBuffer> handles{buffers.size()};
-    std::vector<VkDeviceSize> offsets{buffers.size()};
+    std::vector<VkBuffer> handles{};
+    std::vector<VkDeviceSize> offsets{};
+
+    handles.resize(buffers.size());
+    offsets.resize(buffers.size());
+
     for (size_t i = 0; i < buffers.size(); i++) {
         handles[i] = buffers[i].buffer->getHandle();
         offsets[i] = buffers[i].offset;

@@ -10,6 +10,18 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
+static const std::vector<Vector3> boxVertices = {
+    {-1.0f, 1.0f, -1.0f}, // 0
+    {-1.0f, 1.0f, 1.0f},  // 1
+    {1.0f, 1.0f, -1.0f},  // 2
+    {1.0f, 1.0f, 1.0f},   // 3
+
+    {-1.0f, -1.0f, -1.0f}, // 4
+    {-1.0f, -1.0f, 1.0f},  // 5
+    {1.0f, -1.0f, -1.0f},  // 6
+    {1.0f, -1.0f, 1.0f},   // 7
+};
+
 static bool isCollision(const std::string& name) {
     if (name.find("_CCX") == name.size() - 4) {
         return true;
@@ -161,27 +173,14 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             }
 
             // Update the bounding box
-            const auto min = Vector3(positions->accessor.min);
-            const auto max = Vector3(positions->accessor.max);
+            bbMin = Vector3(positions->accessor.min);
+            bbMax = Vector3(positions->accessor.max);
 
-            if (min.x < bbMin.x) {
-                bbMin = Vector3{min.x, bbMin.y, bbMin.z};
-            }
-            if (min.y < bbMin.y) {
-                bbMin = Vector3{bbMin.x, min.y, bbMin.z};
-            }
-            if (min.z < bbMin.z) {
-                bbMin = Vector3{bbMin.x, bbMin.y, min.z};
-            }
-
-            if (max.x > bbMax.x) {
-                bbMax = Vector3{max.x, bbMax.y, bbMax.z};
-            }
-            if (max.y > bbMax.y) {
-                bbMax = Vector3{bbMax.x, max.y, bbMax.z};
-            }
-            if (max.z > bbMax.z) {
-                bbMax = Vector3{bbMax.x, bbMax.y, max.z};
+            // Update the bounding radius
+            const auto span = positions->accessor.bufferView.getSpan();
+            for (size_t i = 0; i < positions->accessor.count; i++) {
+                const auto* point = reinterpret_cast<const float*>(span.data()) + i;
+                bbRadius = std::max(bbRadius, glm::length(Vector3{point[0], point[1], point[2]}));
             }
 
             const auto& partMaterial = part.material.value();
@@ -305,17 +304,10 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             }
 
             const auto span = positions->accessor.bufferView.getSpan();
-
-            collisionShape = std::make_unique<btConvexHullShape>(reinterpret_cast<const btScalar*>(span.data()),
-                                                                 positions->accessor.count);
+            const auto* points = reinterpret_cast<const float*>(span.data());
+            auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
+            collisionShape = std::move(shape);
         }
-
-        bbRadius = std::max(std::abs(bbMin.x), bbRadius);
-        bbRadius = std::max(std::abs(bbMin.y), bbRadius);
-        bbRadius = std::max(std::abs(bbMin.z), bbRadius);
-        bbRadius = std::max(std::abs(bbMax.x), bbRadius);
-        bbRadius = std::max(std::abs(bbMax.y), bbRadius);
-        bbRadius = std::max(std::abs(bbMax.z), bbRadius);
 
         if (!collisionShape) {
             collisionShape = std::make_unique<btSphereShape>(bbRadius);

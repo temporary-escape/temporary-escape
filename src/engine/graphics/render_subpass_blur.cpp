@@ -57,7 +57,7 @@ void RenderSubpassBlur::render(VulkanCommandBuffer& vkb) {
 
     pipelineBlur.bindDescriptors(vkb, uniforms, textures, {});
 
-    const auto horizontal = !vertical;
+    const int horizontal = !vertical;
     pipelineBlur.pushConstants(vkb, PushConstant{"horizontal", horizontal});
 
     pipelineBlur.renderMesh(vkb, resources.getMeshFullScreenQuad());

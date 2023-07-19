@@ -79,9 +79,10 @@ void RenderSubpassSkybox::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
 void RenderSubpassSkybox::renderSkybox(VulkanCommandBuffer& vkb, Scene& scene) {
     auto camera = scene.getPrimaryCamera();
-    auto skybox = scene.getSkybox();
-    if (!skybox) {
-        skybox = &defaultSkybox;
+    const auto* skybox = scene.getSkybox();
+    const SkyboxTextures* skyboxTextures{&defaultSkybox};
+    if (skybox) {
+        skyboxTextures = &skybox->getTextures();
     }
 
     pipelineSkybox.getDescriptorPool().reset();
@@ -98,7 +99,7 @@ void RenderSubpassSkybox::renderSkybox(VulkanCommandBuffer& vkb, Scene& scene) {
     std::array<SamplerBindingRef, 1> textures;
 
     uniforms[0] = {"Camera", camera->getUboZeroPos().getCurrentBuffer()};
-    textures[0] = {"texBaseColor", skybox->getTexture()};
+    textures[0] = {"texBaseColor", skyboxTextures->getTexture()};
 
     pipelineSkybox.bindDescriptors(vkb, uniforms, textures, {});
 
@@ -113,14 +114,15 @@ void RenderSubpassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) 
         EXCEPTION("Scene has no primary camera attached");
     }
 
-    auto skybox = scene.getSkybox();
-    if (!skybox) {
-        skybox = &defaultSkybox;
+    const auto* skybox = scene.getSkybox();
+    const SkyboxTextures* skyboxTextures{&defaultSkybox};
+    if (skybox) {
+        skyboxTextures = &skybox->getTextures();
     }
 
     const auto& entities = scene.getView<ComponentTransform, ComponentPlanet>(entt::exclude<TagDisabled>).each();
     for (auto&& [_, transform, component] : entities) {
-        renderPlanet(vkb, *camera, *skybox, transform, component);
+        renderPlanet(vkb, *camera, *skyboxTextures, transform, component);
     }
 }
 

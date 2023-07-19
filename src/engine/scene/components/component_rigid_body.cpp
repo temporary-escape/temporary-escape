@@ -78,10 +78,9 @@ void ComponentRigidBody::setup() {
         EXCEPTION("ComponentRigidBody added on entity with no ComponentTransform");
     }
 
-    if (const auto convexHull = dynamic_cast<const btConvexHullShape*>(model->getCollisionShape()); convexHull) {
+    const auto* modelShape = model->getCollisionShape();
+    if (const auto convexHull = static_cast<const btConvexHullShape*>(modelShape); !!convexHull) {
         shape = std::make_unique<btConvexHullShape>(&convexHull->getPoints()->x(), convexHull->getNumPoints());
-    } else if (const auto sphere = dynamic_cast<const btSphereShape*>(model->getCollisionShape()); sphere) {
-        shape = std::make_unique<btSphereShape>(sphere->getRadius());
     } else {
         EXCEPTION("ComponentRigidBody setup with model: '{}' that has unknown collision shape");
     }

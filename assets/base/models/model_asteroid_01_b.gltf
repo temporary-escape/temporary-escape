@@ -25,17 +25,11 @@
 	],
 	"materials":[
 		{
-			"name":"Material.002",
+			"name":"Material.010",
 			"normalTexture":{
 				"index":0
 			},
 			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					1.0,
-					1.0,
-					1.0,
-					1
-				],
 				"baseColorTexture":{
 					"index":1
 				},
@@ -47,7 +41,7 @@
 	],
 	"meshes":[
 		{
-			"name":"model_asteroid_01_b_CCX",
+			"name":"model_asteroid_01_b_CCX.001",
 			"primitives":[
 				{
 					"attributes":{
@@ -59,7 +53,7 @@
 			]
 		},
 		{
-			"name":"model_asteroid_01_b",
+			"name":"model_asteroid_01_b.001",
 			"primitives":[
 				{
 					"attributes":{
@@ -109,7 +103,7 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":114,
+			"count":21,
 			"max":[
 				0.5456048846244812,
 				0.7857265472412109,
@@ -125,7 +119,7 @@
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":114,
+			"count":21,
 			"type":"VEC3"
 		},
 		{
@@ -137,7 +131,7 @@
 		{
 			"bufferView":3,
 			"componentType":5126,
-			"count":950,
+			"count":952,
 			"max":[
 				0.5465103387832642,
 				0.7447504997253418,
@@ -153,19 +147,19 @@
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":950,
+			"count":952,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":5,
 			"componentType":5126,
-			"count":950,
+			"count":952,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":950,
+			"count":952,
 			"type":"VEC4"
 		},
 		{
@@ -178,50 +172,50 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":1368,
+			"byteLength":252,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1368,
-			"byteOffset":1368,
+			"byteLength":252,
+			"byteOffset":252,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":228,
-			"byteOffset":2736,
+			"byteOffset":504,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":11400,
-			"byteOffset":2964,
+			"byteLength":11424,
+			"byteOffset":732,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":11400,
-			"byteOffset":14364,
+			"byteLength":11424,
+			"byteOffset":12156,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":7600,
-			"byteOffset":25764,
+			"byteLength":7616,
+			"byteOffset":23580,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":15200,
-			"byteOffset":33364,
+			"byteLength":15232,
+			"byteOffset":31196,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2028,
-			"byteOffset":48564,
+			"byteOffset":46428,
 			"target":34963
 		}
 	],
@@ -233,7 +227,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":50592,
+			"byteLength":48456,
 			"uri":"model_asteroid_01_b.bin"
 		}
 	]

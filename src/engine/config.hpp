@@ -50,6 +50,7 @@ struct Config {
         int planetTextureSize = 2048;
         int planetLowResTextureSize = 128;
         bool debugDraw = false;
+        bool ssao = true;
     } graphics;
 
     // Paths of interests

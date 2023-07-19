@@ -80,12 +80,12 @@ ComponentCamera* Scene::getPrimaryCamera() const {
     return nullptr;
 }
 
-const SkyboxTextures* Scene::getSkybox() {
+const ComponentSkybox* Scene::getSkybox() {
     for (auto&& [entity, skybox] : getView<ComponentSkybox>().each()) {
         if (!skybox.isGenerated() || !skybox.getTextures().getTexture()) {
             continue;
         }
-        return &skybox.getTextures();
+        return &skybox;
     }
     return nullptr;
 }

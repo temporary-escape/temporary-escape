@@ -53,7 +53,7 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             renderPasses.opaque->getTexture(RenderPassOpaque::Attachments::Entity));
 
         renderPasses.ssao = std::make_unique<RenderPassSsao>(
-            vulkan, resources, assetsManager, viewport,
+            config, vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque);
 
         renderPasses.lighting = std::make_unique<RenderPassLighting>(

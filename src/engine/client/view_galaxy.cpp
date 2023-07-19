@@ -322,7 +322,7 @@ void ViewGalaxy::load() {
                 starColor = hsvToRgb(Color4{faction->second.color, 0.9f, 1.0f, 1.0f});
             }
 
-            pointCloud.add(Vector3{system.pos.x, 0.0f, system.pos.y}, systemStarSize, starColor);
+            pointCloud.add(Vector3{system.pos.x, 0.0f, system.pos.y}, {0.03f, 0.03f}, starColor);
 
             for (const auto& otherId : system.connections) {
                 const auto other = galaxy.systems.find(otherId);

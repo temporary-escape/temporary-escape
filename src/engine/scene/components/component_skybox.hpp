@@ -29,9 +29,18 @@ public:
         return textures;
     }
 
+    void setStars(const bool value) {
+        stars = value;
+    }
+    
+    bool getStars() const {
+        return stars;
+    }
+
 private:
     SkyboxTextures textures{};
     uint64_t seed{0};
     bool generated{false};
+    bool stars{false};
 };
 } // namespace Engine

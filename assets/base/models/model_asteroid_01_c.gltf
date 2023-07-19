@@ -25,17 +25,11 @@
 	],
 	"materials":[
 		{
-			"name":"Material.002",
+			"name":"Material.011",
 			"normalTexture":{
 				"index":0
 			},
 			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					1.0,
-					1.0,
-					1.0,
-					1
-				],
 				"baseColorTexture":{
 					"index":1
 				},
@@ -47,7 +41,7 @@
 	],
 	"meshes":[
 		{
-			"name":"model_asteroid_01_c_CCX",
+			"name":"model_asteroid_01_c_CCX.001",
 			"primitives":[
 				{
 					"attributes":{
@@ -59,7 +53,7 @@
 			]
 		},
 		{
-			"name":"model_asteroid_01_c",
+			"name":"model_asteroid_01_c.001",
 			"primitives":[
 				{
 					"attributes":{
@@ -109,7 +103,7 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":72,
+			"count":21,
 			"max":[
 				0.7257899045944214,
 				0.8380843997001648,
@@ -125,7 +119,7 @@
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":72,
+			"count":21,
 			"type":"VEC3"
 		},
 		{
@@ -178,50 +172,50 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":864,
+			"byteLength":252,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":864,
-			"byteOffset":864,
+			"byteLength":252,
+			"byteOffset":252,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":228,
-			"byteOffset":1728,
+			"byteOffset":504,
 			"target":34963
 		},
 		{
 			"buffer":0,
 			"byteLength":11784,
-			"byteOffset":1956,
+			"byteOffset":732,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":11784,
-			"byteOffset":13740,
+			"byteOffset":12516,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":7856,
-			"byteOffset":25524,
+			"byteOffset":24300,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":15712,
-			"byteOffset":33380,
+			"byteOffset":32156,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2028,
-			"byteOffset":49092,
+			"byteOffset":47868,
 			"target":34963
 		}
 	],
@@ -233,7 +227,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":51120,
+			"byteLength":49896,
 			"uri":"model_asteroid_01_c.bin"
 		}
 	]

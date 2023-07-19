@@ -22,7 +22,7 @@ struct ENGINE_API Status {
 
 class ENGINE_API Application : public VulkanRenderer {
 public:
-    explicit Application(const Config& config);
+    explicit Application(Config& config);
     virtual ~Application();
 
     void render(const Vector2i& viewport, float deltaTime) override;
@@ -62,7 +62,7 @@ private:
     void createEmptyThumbnail(Renderer& thumbnailRenderer);
     void createPlanetThumbnails(Renderer& thumbnailRenderer);
 
-    const Config& config;
+    Config& config;
 
     Canvas canvas;
     FontFamily font;

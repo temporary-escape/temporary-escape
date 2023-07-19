@@ -80,7 +80,7 @@ public:
     bool contactTestSphere(const Vector3& origin, float radius) const;
 
     ComponentCamera* getPrimaryCamera() const;
-    const SkyboxTextures* getSkybox();
+    const ComponentSkybox* getSkybox();
     void setLua(Lua& value);
 
     static void bind(Lua& lua);

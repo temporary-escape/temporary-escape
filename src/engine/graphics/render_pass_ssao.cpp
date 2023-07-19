@@ -4,9 +4,10 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RenderPassSsao::RenderPassSsao(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
-                               const Vector2i& viewport, const RenderPassOpaque& previous) :
-    RenderPass{vulkan, viewport}, subpassSsao{vulkan, resources, assetsManager, previous} {
+RenderPassSsao::RenderPassSsao(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
+                               AssetsManager& assetsManager, const Vector2i& viewport,
+                               const RenderPassOpaque& previous) :
+    RenderPass{vulkan, viewport}, config{config}, subpassSsao{vulkan, resources, assetsManager, previous} {
 
     logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
 
@@ -33,7 +34,9 @@ void RenderPassSsao::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, 
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    subpassSsao.render(vkb, scene);
+    if (config.graphics.ssao) {
+        subpassSsao.render(vkb, scene);
+    }
 
     vkb.endRenderPass();
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../utils/random.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
 #include "mesh.hpp"
 

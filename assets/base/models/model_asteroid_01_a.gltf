@@ -25,17 +25,11 @@
 	],
 	"materials":[
 		{
-			"name":"Material.001",
+			"name":"Material.002",
 			"normalTexture":{
 				"index":0
 			},
 			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					1.0,
-					1.0,
-					1.0,
-					1
-				],
 				"baseColorTexture":{
 					"index":1
 				},
@@ -47,7 +41,7 @@
 	],
 	"meshes":[
 		{
-			"name":"model_asteroid_01_a_CCX.001",
+			"name":"model_asteroid_01_a_CCX.003",
 			"primitives":[
 				{
 					"attributes":{
@@ -59,7 +53,7 @@
 			]
 		},
 		{
-			"name":"model_asteroid_01_a.001",
+			"name":"model_asteroid_01_a.003",
 			"primitives":[
 				{
 					"attributes":{

@@ -374,8 +374,8 @@ void SkyboxGenerator::prepareScene() {
 
 void SkyboxGenerator::prepareProperties() {
     Rng rng{work.seed};
-    prepareStars(rng, {5.5f, 5.5f}, 50000);
-    prepareStars(rng, {11.0f, 11.0f}, 1000);
+    prepareStars(rng, {0.3f, 0.3f}, 100000);
+    prepareStars(rng, {0.5f, 0.5f}, 1000);
     prepareNebulas(rng);
 }
 
@@ -384,7 +384,7 @@ void SkyboxGenerator::prepareNebulas(SkyboxGenerator::Rng& rng) const {
 
     while (true) {
         const auto scale = dist(rng) * 0.5f + 0.25f;
-        const auto intensity = dist(rng) * 0.2f + 0.9f;
+        const auto intensity = dist(rng) * 0.5f + 0.5f;
         const auto color = Color4{dist(rng), dist(rng), dist(rng), 1.0f};
         const auto falloff = dist(rng) * 3.0f + 3.0f;
         const auto offset =
@@ -432,7 +432,7 @@ void SkyboxGenerator::prepareStars(Rng& rng, const Vector2& size, const size_t c
         };
 
         const auto color = Color4{distColor(rng), distColor(rng), distColor(rng), distBrightness(rng)};
-        pointCloud.add(position * 100.0f, size * 100.0f, color);
+        pointCloud.add(position * 100.0f, size, color);
     }
 }
 

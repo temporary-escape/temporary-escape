@@ -99,7 +99,6 @@ public:
     btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, const int partId0,
                              const int index0, const btCollisionObjectWrapper* colObj1Wrap, const int partId1,
                              const int index1) override {
-        logger.debug("addSingleResult");
         result = true;
         return 0;
     }

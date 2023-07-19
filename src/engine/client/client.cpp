@@ -47,6 +47,8 @@ void Client::connect(const std::string& address, const int port) {
 }
 
 void Client::doLogin() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     { // Fetch mod manifest
         logger.info("Doing manifest check...");
         MessageModManifestsRequest req{};
@@ -139,7 +141,7 @@ void Client::createScene(SectorData sector) {
     sun.addComponent<ComponentStarFlare>(starTexture, starTextureLow, starTextureHigh);
 
     auto skybox = scene->createEntity();
-    skybox.addComponent<ComponentSkybox>(sector.seed);
+    skybox.addComponent<ComponentSkybox>(sector.seed).setStars(true);
 
     auto planet = scene->createEntity();
     planet.addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);

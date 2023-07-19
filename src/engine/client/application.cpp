@@ -7,13 +7,20 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 static const auto profileFilename = "profile.yaml";
 
-Application::Application(const Config& config) :
+Application::Application(Config& config) :
     VulkanRenderer{config},
     config{config},
     canvas{*this},
     font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
     nuklear{config, canvas, font, config.guiFontSize},
     audio{} {
+
+    const std::string gpuName{getPhysicalDeviceProperties().deviceName};
+    if (gpuName.find("UHD Graphics")) {
+        config.graphics.planetTextureSize = 512;
+        config.graphics.skyboxSize = 1024;
+        config.graphics.ssao = false;
+    }
 
     gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},

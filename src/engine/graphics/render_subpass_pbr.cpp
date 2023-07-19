@@ -49,9 +49,10 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& reso
 void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     updateDirectionalLights(scene);
     auto camera = scene.getPrimaryCamera();
-    auto skybox = scene.getSkybox();
-    if (!skybox) {
-        skybox = &defaultSkybox;
+    const auto* skybox = scene.getSkybox();
+    const auto* skyboxTextures{&defaultSkybox};
+    if (skybox) {
+        skyboxTextures = &skybox->getTextures();
     }
 
     pipelinePbr.getDescriptorPool().reset();
@@ -70,8 +71,8 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     uniforms[0] = {"Camera", camera->getUbo().getCurrentBuffer()};
     uniforms[1] = {"DirectionalLights", directionalLightsUbo.getCurrentBuffer()};
 
-    textures[0] = {"texIrradiance", skybox->getIrradiance()};
-    textures[1] = {"texPrefilter", skybox->getPrefilter()};
+    textures[0] = {"texIrradiance", skyboxTextures->getIrradiance()};
+    textures[1] = {"texPrefilter", skyboxTextures->getPrefilter()};
     textures[2] = {"texBrdf", brdf};
     textures[3] = {"texDepth", texDepth};
     textures[4] = {"texBaseColorAmbient", texBaseColorAmbient};
