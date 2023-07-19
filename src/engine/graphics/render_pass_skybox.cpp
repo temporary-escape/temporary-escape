@@ -8,8 +8,6 @@ RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, RenderResources& reso
                                    const Vector2i& viewport, const VulkanTexture& brdf) :
     RenderPass{vulkan, viewport}, subpassSkybox{vulkan, resources, assetsManager, brdf} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Depth
     addAttachment({findDepthFormat(), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,

@@ -9,8 +9,6 @@ RenderPassCombine::RenderPassCombine(const Config& config, VulkanRenderer& vulka
                                      const VulkanTexture& color, const VulkanTexture& blured) :
     RenderPass{vulkan, viewport}, subpassCombine{config, vulkan, resources, assetsManager, color, blured} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     addAttachment(
         dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 

@@ -4,8 +4,6 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(LOG_FILENAME);
-
 static std::string idFromShaders(const std::vector<ShaderPtr>& shaders) {
     std::string id;
     for (const auto& shader : shaders) {
@@ -28,8 +26,6 @@ RenderPipeline::RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> sh
 
 void RenderPipeline::init(VulkanRenderPass& renderPass, const std::vector<uint32_t>& attachments,
                           const uint32_t subpass) {
-    logger.info("Creating graphics pipeline with shaders: '{}'", id);
-
     const auto resources = reflect();
 
     // Validate if the shader has any vertex inputs
@@ -43,8 +39,6 @@ void RenderPipeline::init(VulkanRenderPass& renderPass, const std::vector<uint32
 }
 
 void RenderPipeline::init() {
-    logger.info("Creating compute pipeline with shaders: '{}'", id);
-
     const auto resources = reflect();
 
     createDescriptorSetLayout(resources);
@@ -224,8 +218,6 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
         binding.pImmutableSamplers = nullptr;
         binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
                              VK_SHADER_STAGE_COMPUTE_BIT;
-
-        logger.debug("Adding uniform name: '{}' binding: {} size: {}", uniform.name, uniform.binding, uniform.size);
     }
 
     for (const auto& sampler : resources.samplers) {
@@ -237,8 +229,6 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
         binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         binding.pImmutableSamplers = nullptr;
         binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        logger.debug("Adding sampler name: '{}' binding: {}", sampler.name, sampler.binding);
     }
 
     for (const auto& subpassInput : resources.subpassInputs) {
@@ -250,8 +240,6 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
         binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         binding.pImmutableSamplers = nullptr;
         binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        logger.debug("Adding subpass input name: '{}' binding: {}", subpassInput.name, subpassInput.binding);
     }
 
     for (const auto& storageBuffer : resources.storageBuffers) {
@@ -263,8 +251,6 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
         binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         binding.pImmutableSamplers = nullptr;
         binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-
-        logger.debug("Adding storage buffer name: '{}' binding: {}", storageBuffer.name, storageBuffer.binding);
     }
 
     descriptorSetLayout = vulkan.createDescriptorSetLayout(layoutBindings);
@@ -290,8 +276,6 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
         binding.inputRate = input.inputRate;
         binding.stride = input.size;
 
-        logger.debug("Adding vertex input binding: {} stride: {}", input.binding, input.size);
-
         for (const auto& attribute : input.layout) {
             attributeDescriptions.emplace_back();
             auto& description = attributeDescriptions.back();
@@ -300,12 +284,6 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
             description.location = attribute.location;
             description.format = attribute.format;
             description.offset = attribute.offset;
-
-            logger.debug("Adding vertex attribute binding: {} location: {} format: {} offset: {}",
-                         input.binding,
-                         attribute.location,
-                         attribute.format,
-                         attribute.offset);
         }
     }
 
@@ -383,9 +361,6 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
             colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
             colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         }
-
-        logger.debug(
-            "Adding color blend attachment position: {} index: {}", colorBlendAttachments.size() - 1, attachmentIndex);
     }
 
     pipelineInfo.colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -415,18 +390,15 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
     pipelineInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
 
     if (pushConstantRange.size > 0) {
-        logger.debug("Enabling push constants of size: {}", pushConstantRange.size);
         pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
     }
 
     pipelineInfo.depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     if (createInfo.options.depth == DepthMode::Read || createInfo.options.depth == DepthMode::ReadWrite) {
-        logger.debug("Enabling depth test");
         pipelineInfo.depthStencilState.depthTestEnable = VK_TRUE;
     }
     if (createInfo.options.depth == DepthMode::Write || createInfo.options.depth == DepthMode::ReadWrite) {
-        logger.debug("Enabling depth write");
         pipelineInfo.depthStencilState.depthWriteEnable = VK_TRUE;
     }
     pipelineInfo.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
@@ -470,7 +442,6 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources) {
     pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
     if (pushConstantRange.size > 0) {
-        logger.debug("Enabling push constants of size: {}", pushConstantRange.size);
         pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
     }
@@ -500,7 +471,6 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
         descriptorPoolSizes[idx].type = type;
         descriptorPoolSizes[idx].descriptorCount = count * maxSetsPerPool;
 
-        logger.debug("Descriptor pool type: {} size: {}", type, descriptorPoolSizes[idx].descriptorCount);
         idx++;
     }
 

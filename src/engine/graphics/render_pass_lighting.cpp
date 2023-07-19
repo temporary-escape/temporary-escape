@@ -11,8 +11,6 @@ RenderPassLighting::RenderPassLighting(VulkanRenderer& vulkan, RenderResources& 
                                        const VulkanTexture& forward) :
     RenderPass{vulkan, viewport}, subpassPbr{vulkan, resources, assetsManager, opaque, ssao, brdf} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Forward
     addAttachment(forward,
                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,

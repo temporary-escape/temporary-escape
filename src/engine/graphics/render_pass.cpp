@@ -2,8 +2,6 @@
 
 using namespace Engine;
 
-static auto logger = createLogger(LOG_FILENAME);
-
 RenderPass::RenderPass(VulkanRenderer& vulkan, const Vector2i& viewport) : vulkan{vulkan}, viewport{viewport} {
 }
 
@@ -60,8 +58,6 @@ void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkIma
     textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     textureInfo.sampler.minLod = 0.0f;
     textureInfo.sampler.maxLod = 0.0f;
-
-    logger.info("Adding attachment index: {} format: {} of size: {}", textures.size(), format, viewport);
 
     textures.push_back(vulkan.createTexture(textureInfo));
     attachmentViews.push_back(textures.back().getImageView());
@@ -136,8 +132,6 @@ void RenderPass::createFbo() {
 }
 
 void RenderPass::addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>& inputs) {
-    logger.info("Adding new subpass index: {}", subpassDescriptions.size());
-
     subpassDescriptionData.emplace_back();
     auto& data = subpassDescriptionData.back();
 
@@ -150,13 +144,9 @@ void RenderPass::addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>&
         }
 
         if (index == depthIndex) {
-            logger.debug("Adding subpass depth reference attachment index: {}", index);
-
             data.depthReference = {index, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
             subpassDescription.pDepthStencilAttachment = &data.depthReference;
         } else {
-            logger.debug("Adding subpass color reference attachment index: {}", index);
-
             data.colorReferences.push_back({index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
         }
     }
@@ -166,7 +156,6 @@ void RenderPass::addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>&
             EXCEPTION("Subpass input index: {} out of range", index);
         }
 
-        logger.debug("Adding subpass input reference attachment index: {}", index);
         data.inputsReferences.push_back({index, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     }
 
@@ -193,7 +182,6 @@ void RenderPass::addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>&
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        logger.debug("Adding subpass dependency for depth");
         dependencies.push_back(dependency);
     }
 
@@ -219,7 +207,6 @@ void RenderPass::addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>&
         dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     }
 
-    logger.debug("Adding subpass dependency for color src: {} dst: {}", dependency.srcSubpass, dependency.dstSubpass);
     dependencies.push_back(dependency);
 
     subpassDescriptions.push_back(subpassDescription);
@@ -236,7 +223,6 @@ void RenderPass::createRenderPass() {
         dependency.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
         dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        logger.debug("Adding subpass dependency for memory read src: {}", dependency.srcSubpass);
         dependencies.push_back(dependency);
     }
 
@@ -249,8 +235,6 @@ void RenderPass::createRenderPass() {
 }
 
 void RenderPass::transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
-    // vulkan.setDebugMessengerEnabled(false);
-
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -284,13 +268,9 @@ void RenderPass::transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& t
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
     vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
-
-    // vulkan.setDebugMessengerEnabled(true);
 }
 
 void RenderPass::transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
-    // vulkan.setDebugMessengerEnabled(false);
-
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -324,6 +304,4 @@ void RenderPass::transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& 
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
     vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
-
-    // vulkan.setDebugMessengerEnabled(true);
 }

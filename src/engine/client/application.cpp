@@ -68,6 +68,11 @@ Application::~Application() {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
+    if (getSwapChain().getExtent().width != viewport.x || getSwapChain().getExtent().height != viewport.y) {
+        logger.warn("Swap chain size does not match");
+        return;
+    }
+
     const auto t0 = std::chrono::steady_clock::now();
 
     if (future.valid() && future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
@@ -581,6 +586,7 @@ void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
 }
 
 void Application::eventWindowResized(const Vector2i& size) {
+    waitDeviceIdle();
 }
 
 void Application::eventCharTyped(const uint32_t code) {

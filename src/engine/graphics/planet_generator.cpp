@@ -5,23 +5,22 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 static void copyTexture(VulkanCommandBuffer& vkb, const VulkanTexture& source, const VulkanTexture& target, int side) {
-    /*VkImageCopy imageCopy{};
-    imageCopy.srcOffset = {0, 0, 0};
-    imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageCopy.srcSubresource.baseArrayLayer = 0;
-    imageCopy.srcSubresource.layerCount = 1;
-    imageCopy.srcSubresource.mipLevel = 0;
-    imageCopy.dstOffset = {0, 0, 0};
-    imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageCopy.dstSubresource.baseArrayLayer = side;
-    imageCopy.dstSubresource.layerCount = 1;
-    imageCopy.dstSubresource.mipLevel = 0;
-    imageCopy.extent = source.getExtent();
-
-    vkb.copyImage(
-        source, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageCopy);
-
-    return;*/
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = source.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = source.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = source.getLayerCount();
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT , VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     VkOffset3D offset = {
         static_cast<int32_t>(source.getExtent().width),

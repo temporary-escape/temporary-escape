@@ -13,6 +13,7 @@ void PeerLobby::addPeerToLobby(const PeerPtr& peer) {
     logger.info("Adding to lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
     std::unique_lock<std::shared_mutex> lock{lobby.mutex};
     lobby.map.insert(peer.get());
+    logger.info("New peer in lobby id: {}", reinterpret_cast<uint64_t>(peer.get()));
 }
 
 void PeerLobby::removePeerFromLobby(const PeerPtr& peer) {

@@ -11,8 +11,6 @@ RenderPassForward::RenderPassForward(VulkanRenderer& vulkan, RenderResources& re
                                      const RenderPassLighting& lighting) :
     RenderPass{vulkan, viewport}, subpassForward{vulkan, resources, assetsManager} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Depth
     addAttachment(opaque.getTexture(RenderPassOpaque::Depth),
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

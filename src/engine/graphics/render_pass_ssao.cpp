@@ -9,8 +9,6 @@ RenderPassSsao::RenderPassSsao(const Config& config, VulkanRenderer& vulkan, Ren
                                const RenderPassOpaque& previous) :
     RenderPass{vulkan, viewport}, config{config}, subpassSsao{vulkan, resources, assetsManager, previous} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Ssao
     addAttachment({VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,

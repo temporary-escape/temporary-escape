@@ -8,8 +8,6 @@ RenderPassBrdf::RenderPassBrdf(VulkanRenderer& vulkan, RenderResources& resource
                                const Vector2i& viewport) :
     RenderPass{vulkan, viewport}, subpassBrdf{vulkan, resources, assetsManager} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     addAttachment({VK_FORMAT_R16G16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

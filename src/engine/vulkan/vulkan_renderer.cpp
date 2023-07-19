@@ -148,6 +148,10 @@ void VulkanRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
 
     // commandBuffer.start(beginInfo);
 
+    if (getSwapChain().getExtent().width != viewport.x || getSwapChain().getExtent().height != viewport.y) {
+        recreateSwapChain();
+    }
+
     try {
         render(viewport, deltaTime);
     } catch (...) {
@@ -157,12 +161,13 @@ void VulkanRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
     // commandBuffer.end();
     // submitPresentCommandBuffer(commandBuffer);
 
+    if (lastViewportSize != viewport) {
+        framebufferResized = true;
+    }
+
     submitPresentQueue();
 
     // Do we need to recreate the swap chain?
-    if (lastViewportSize != viewport) {
-        recreateSwapChain();
-    }
 
     lastViewportSize = viewport;
 }
@@ -351,7 +356,8 @@ void VulkanRenderer::submitPresentQueue() {
     const auto result = vkQueuePresentKHR(getPresentQueue(), &presentInfo);
 
     // Do we need to recreate the swap chain?
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+        framebufferResized = false;
         recreateSwapChain();
         return;
     }
@@ -365,8 +371,13 @@ void VulkanRenderer::submitPresentQueue() {
 }
 
 void VulkanRenderer::recreateSwapChain() {
+    logger.info("Waiting for valid framebuffer size...");
+
     waitUntilValidFramebufferSize();
 
+    logger.info("Recreating swap chain with size: {}", getFramebufferSize());
+
+    waitQueueIdle();
     waitDeviceIdle();
 
     swapChain.destroy();

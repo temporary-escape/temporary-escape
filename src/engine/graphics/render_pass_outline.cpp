@@ -8,8 +8,6 @@ RenderPassOutline::RenderPassOutline(VulkanRenderer& vulkan, RenderResources& re
                                      const Vector2i& viewport, const VulkanTexture& entityColor) :
     RenderPass{vulkan, viewport}, subpassOutline{vulkan, resources, assetsManager, entityColor} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Color
     addAttachment({VK_FORMAT_R8G8B8A8_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,

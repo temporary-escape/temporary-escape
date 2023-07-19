@@ -10,8 +10,6 @@ RenderPassNonHdr::RenderPassNonHdr(VulkanRenderer& vulkan, RenderResources& reso
                                    const VulkanTexture& outlineTexture) :
     RenderPass{vulkan, viewport}, subpassNonHdr{vulkan, resources, assetsManager, outlineTexture} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Depth
     addAttachment(forward.getTexture(RenderPassForward::Depth),
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

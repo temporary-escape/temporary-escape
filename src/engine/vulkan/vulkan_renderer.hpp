@@ -182,5 +182,6 @@ private:
     VulkanRenderPass renderPass;
     std::vector<VulkanFramebuffer> swapChainFramebuffers;
     Vector2i lastViewportSize;
+    bool framebufferResized{false};
 };
 } // namespace Engine

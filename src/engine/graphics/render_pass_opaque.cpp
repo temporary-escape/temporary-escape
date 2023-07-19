@@ -9,8 +9,6 @@ RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, RenderResources& reso
                                    const VulkanTexture& depth) :
     RenderPass{vulkan, viewport}, subpassOpaque{vulkan, resources, assetsManager, voxelShapeCache} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     // Depth
     addAttachment(depth,
                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -38,7 +36,7 @@ RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, RenderResources& reso
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     addSubpass(subpassOpaque);
     init();
@@ -76,6 +74,23 @@ void RenderPassOpaque::render(VulkanCommandBuffer& vkb, const Vector2i& viewport
 
     vkb.endRenderPass();
 
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = getTexture(Attachments::Entity).getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT , VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+
     if (mousePos.x >= 0 && mousePos.x < viewport.x && mousePos.y >= 0 && mousePos.y < viewport.y) {
         std::array<VkBufferImageCopy, 1> regions{};
         regions[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -93,7 +108,7 @@ void RenderPassOpaque::render(VulkanCommandBuffer& vkb, const Vector2i& viewport
                               regions);
     }
 
-    VkImageMemoryBarrier barrier{};
+    barrier = VkImageMemoryBarrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

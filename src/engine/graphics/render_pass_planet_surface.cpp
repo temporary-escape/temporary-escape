@@ -11,8 +11,6 @@ RenderPassPlanetSurface::RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderR
     subpassPlanetMoisture{vulkan, resources, assetsManager},
     subpassPlanetColor{vulkan, resources, assetsManager, *this} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     addAttachment({VK_FORMAT_R8_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
@@ -31,14 +29,14 @@ RenderPassPlanetSurface::RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderR
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                   VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     addAttachment({VK_FORMAT_R8G8_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                   VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 
     addSubpass(subpassPlanetHeightmap);

@@ -8,13 +8,11 @@ RenderPassSkyboxIrradiance::RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, R
                                                        AssetsManager& assetsManager, const Vector2i& viewport) :
     RenderPass{vulkan, viewport* Vector2i{2, 1}}, subpassSkyboxIrradiance{vulkan, resources, assetsManager} {
 
-    logger.info("Creating render pass: {} viewport: {}", typeid(*this).name(), viewport);
-
     addAttachment({VK_FORMAT_R16G16B16A16_UNORM,
                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                    VK_IMAGE_ASPECT_COLOR_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                   VK_ATTACHMENT_LOAD_OP_LOAD);
 
     addSubpass(subpassSkyboxIrradiance);

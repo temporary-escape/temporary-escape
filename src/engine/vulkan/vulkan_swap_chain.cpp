@@ -55,6 +55,7 @@ void VulkanSwapChain::destroy() {
         vkDestroyImageView(device, imageView, nullptr);
     }
     swapChainImageViews.clear();
+    swapChainImages.clear();
 
     if (swapChain) {
         vkDestroySwapchainKHR(device, swapChain, nullptr);

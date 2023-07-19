@@ -120,6 +120,7 @@ void Renderer::update() {
 
 void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene& scene) {
     if (viewport != lastViewportSize) {
+        logger.debug("Resizing from: {} to: {}", lastViewportSize, viewport);
         lastViewportSize = viewport;
         vulkan.waitQueueIdle();
         vulkan.waitDeviceIdle();
