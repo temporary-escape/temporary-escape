@@ -3,7 +3,7 @@ extern "C" {
 }
 
 // clang-format off
-#include <vulkan/vulkan.h>
+#include <volk.h>
 #include <ktx.h>
 #include <ktxvulkan.h>
 // clang-format on

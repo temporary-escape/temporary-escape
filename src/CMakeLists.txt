@@ -64,7 +64,7 @@ target_link_libraries(${PROJECT_NAME}Library
         utf8cpp
         spdlog::spdlog
         glm::glm
-        Vulkan::Vulkan
+        VulkanHeaders::VulkanHeaders
         EnTT::EnTT)
 
 target_link_libraries(${PROJECT_NAME}Library
@@ -75,6 +75,8 @@ target_link_libraries(${PROJECT_NAME}Library
         OpenSSL::Crypto
         OpenAL::OpenAL
         glfw
+        volk::volk
+        volk::volk_headers
         glslang::glslang
         glslang::SPIRV
         unofficial::vulkan-memory-allocator::vulkan-memory-allocator

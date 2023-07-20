@@ -1,5 +1,6 @@
 // clang-format off
 #include <cstdio>
+#include <volk.h>
 #define VMA_IMPLEMENTATION
 #ifdef __APPLE__
 #define VMA_STATS_STRING_ENABLED 0
@@ -15,11 +16,16 @@
 using namespace Engine;
 
 VulkanAllocator::VulkanAllocator(VulkanDevice& device) {
+    VmaVulkanFunctions vmaVulkanFunctions{};
+    vmaVulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vmaVulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
     allocatorCreateInfo.physicalDevice = device.getPhysicalDevice();
     allocatorCreateInfo.device = device.getDevice();
     allocatorCreateInfo.instance = device.getInstance();
+    allocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
 
     if (vmaCreateAllocator(&allocatorCreateInfo, &allocator) != VK_SUCCESS) {
         destroy();

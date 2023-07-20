@@ -149,6 +149,10 @@ static const char* name = "TemporaryEscape";
 VulkanWindow::VulkanWindow(const Engine::Config& config) :
     currentWindowSize{config.graphics.windowWidth, config.graphics.windowHeight}, mousePos{} {
 
+    if (volkInitialize() != VK_SUCCESS) {
+        EXCEPTION("Failed to initialize Vulkan");
+    }
+
     glfwSetErrorCallback(errorCallback);
 
     if (!glfwInit()) {

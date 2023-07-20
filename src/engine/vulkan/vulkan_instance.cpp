@@ -299,6 +299,8 @@ VulkanInstance::VulkanInstance(const Config& config) : VulkanWindow{config}, con
         EXCEPTION("Failed to create vulkan instance!");
     }
 
+    volkLoadInstance(instance);
+
     surface = createSurface(instance);
 
     if (config.graphics.enableValidationLayers) {

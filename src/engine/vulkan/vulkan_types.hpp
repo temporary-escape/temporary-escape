@@ -8,7 +8,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
-#include <vulkan/vulkan.h>
+#include <volk.h>
 #define VMA_VULKAN_VERSION 1001000
 #include <vk_mem_alloc.h>
 

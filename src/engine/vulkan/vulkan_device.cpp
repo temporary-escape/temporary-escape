@@ -66,6 +66,8 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
         EXCEPTION("Failed to create Vulkan logical device!");
     }
 
+    volkLoadDevice(device);
+
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);

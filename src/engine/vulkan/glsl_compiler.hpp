@@ -4,7 +4,7 @@
 #include "../utils/path.hpp"
 #include <string>
 #include <vector>
-#include <vulkan/vulkan.h>
+#include <volk.h>
 
 namespace Engine {
 extern ENGINE_API bool compileGLSL2SPIRV(VkShaderStageFlagBits stage, const std::string& source,
