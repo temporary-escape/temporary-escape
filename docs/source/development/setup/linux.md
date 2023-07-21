@@ -6,6 +6,7 @@
   ARM architecture is not supported at the moment.
 * To run the game you must have Vulkan available. You can check if Vulkan is in your system by looking for the
   Vulkan library: `sudo find /usr -name "libvulkan.so"`. This library is installed with your graphics drivers.
+* It is recommended to use JetBrains CLion
 
 ## 2. Install dependencies
 

@@ -2,17 +2,15 @@
 
 [![build](https://github.com/temporary-escape/temporary-escape/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/temporary-escape/temporary-escape/actions/workflows/build.yml)
 
-Website: **[https://temporary-escape.github.io/](https://temporary-escape.github.io/)**
+**Work in progress!**
 
-```
-ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer;
-LSAN_OPTIONS=suppressions=/home/mnovak/Projects/temporary-escape/src/supp:fast_unwind_on_malloc=0;
+A multiplayer space trading, building, and combat game. Acquire your own fleet to travel a procedurally generated
+galaxy. Research new technologies to customize your path. Use modules and blocks to build your own ships or space
+stations. Explore the universe of thousands of stars.
 
-VULKAN_SDK=/opt/vulkan-sdk/1.3.239.0/x86_64
-LD_LIBRARY_PATH=/opt/vulkan-sdk/1.3.239.0/x86_64/lib
-VK_LAYER_PATH=/opt/vulkan-sdk/1.3.239.0/x86_64/etc/vulkan/explicit_layer.d
-```
-
-```
--DTEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
-```
+<h3 align="center">
+<b><a href="https://temporary-escape.github.io/">Introduction</a></b> |
+<b><a href="https://temporary-escape.github.io/download.html">Download</a></b> |
+<b><a href="https://temporary-escape.github.io/modding/index.html">Modding</a></b> |
+<b>Windows - Linux - MacOS</b>
+</h3>

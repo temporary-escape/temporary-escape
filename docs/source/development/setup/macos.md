@@ -7,6 +7,7 @@
   have [Rosetta installed](https://support.apple.com/en-us/HT211861) if you have M1 Mac!
 * [Homebrew](https://brew.sh/) to install dependencies.
 * XCode is not needed.
+* It is recommended to use JetBrains CLion
 
 ## 2. Install dependencies
 
@@ -58,7 +59,8 @@ generating a new universe. It may take up to 10x longer. Prefer to use `Release`
 ```shell
 # This may take up to 1 hour to complete!
 cmake --preset ninja-macos \
-  -DCMAKE_BUILD_TYPE=Debug
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_INSTALL_PREFIX=./install
 ```
 
 At the end you should see something as "Build files have been written to: bla bla bla".
