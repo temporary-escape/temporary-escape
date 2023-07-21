@@ -43,3 +43,6 @@ __pycache__
 # Generated assets
 *.ktx2
 *.spirv
+
+# MacOS files
+.DS_Store

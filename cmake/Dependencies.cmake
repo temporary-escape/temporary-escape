@@ -45,3 +45,15 @@ find_package(zstd CONFIG REQUIRED)
 find_package(SimplexNoise REQUIRED)
 find_package(Voronoi REQUIRED)
 find_package(Bullet CONFIG REQUIRED)
+
+if (APPLE)
+    file(GLOB LIB_VULKAN_DYLIBS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libvulkan*.dylib")
+    file(COPY
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libMoltenVK.dylib"
+            ${LIB_VULKAN_DYLIBS}
+            DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+    file(COPY
+            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/MoltenVK_icd.json
+            DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/vulkan/icd.d/")
+endif ()

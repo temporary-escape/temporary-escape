@@ -40,9 +40,9 @@ if (APPLE)
     # Copy the Vulkan and MotelVK library to the install directory.
     # Without this the user won't be able to run the app.
     # Vulkan library is not distributed in the MacOS, only in the SDK!
-    file(GLOB LIB_VULKAN_DYLIBS "$ENV{VULKAN_SDK}/lib/libvulkan.1*.dylib")
+    file(GLOB LIB_VULKAN_DYLIBS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libvulkan*.dylib")
     install(FILES
-            "$ENV{VULKAN_SDK}/lib/libMoltenVK.dylib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libMoltenVK.dylib"
             ${LIB_VULKAN_DYLIBS}
             DESTINATION ".")
 
