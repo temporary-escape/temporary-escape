@@ -1,4 +1,5 @@
 furo
 boto3
 myst-parser
+sphinx
 sphinx-design
