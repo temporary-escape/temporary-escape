@@ -208,7 +208,7 @@
     {
       "name": "spdlog",
       "version": "1.11.0",
-      "port-version": 0
+      "port-version": 1
     },
     {
       "name": "cli11",
