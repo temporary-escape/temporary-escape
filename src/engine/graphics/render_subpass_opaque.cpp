@@ -151,6 +151,10 @@ static void validateMaterial(const Material& material) {
     if (!material.metallicRoughnessTexture || !material.metallicRoughnessTexture->getVulkanTexture()) {
         EXCEPTION("Primitive has no metallic roughness texture");
     }
+
+    if (!material.maskTexture || !material.maskTexture->getVulkanTexture()) {
+        EXCEPTION("Primitive has no mask texture");
+    }
 }
 
 void RenderSubpassOpaque::renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -158,7 +162,7 @@ void RenderSubpassOpaque::renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scen
     auto camera = scene.getPrimaryCamera();
 
     std::array<UniformBindingRef, 2> uniforms;
-    std::array<SamplerBindingRef, 6> textures;
+    std::array<SamplerBindingRef, 7> textures;
     std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
 
     pipelineGrid.bind(vkb);
@@ -196,7 +200,8 @@ void RenderSubpassOpaque::renderSceneGrids(VulkanCommandBuffer& vkb, Scene& scen
             textures[3] = {"ambientOcclusionTexture", primitive.material->ambientOcclusionTexture->getVulkanTexture()};
             textures[4] = {"metallicRoughnessTexture",
                            primitive.material->metallicRoughnessTexture->getVulkanTexture()};
-            textures[5] = {"paletteTexture", palette->getVulkanTexture()};
+            textures[5] = {"maskTexture", primitive.material->maskTexture->getVulkanTexture()};
+            textures[6] = {"paletteTexture", palette->getVulkanTexture()};
 
             pipelineGrid.bindDescriptors(vkb, uniforms, textures, {});
 

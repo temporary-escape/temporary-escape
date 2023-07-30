@@ -126,7 +126,7 @@ public:
         Bitfield<uint16_t, 32, 10> type;
         Bitfield<uint8_t, 42, 5> rotation;
         Bitfield<uint8_t, 47, 3> index;
-        Bitfield<uint8_t, 50, 4> shape;
+        Bitfield<uint8_t, 50, 5> shape;
 
         operator bool() const {
             return bool(data);
@@ -138,8 +138,13 @@ public:
         }
 
         [[nodiscard]] std::string string() const {
-            return fmt::format("<index: {}, next: {}, color: {}, type: {}, rotation: {} shape: {}>", int(index),
-                               int(next), int(color), int(type), int(rotation), int(shape));
+            return fmt::format("<index: {}, next: {}, color: {}, type: {}, rotation: {} shape: {}>",
+                               int(index),
+                               int(next),
+                               int(color),
+                               int(type),
+                               int(rotation),
+                               int(shape));
         }
     };
 
@@ -161,7 +166,10 @@ public:
         }
 
         [[nodiscard]] std::string string() const {
-            return fmt::format("<index: {}, next: {}, child: {}, compressed: {}>", int(index), int(next), int(child),
+            return fmt::format("<index: {}, next: {}, child: {}, compressed: {}>",
+                               int(index),
+                               int(next),
+                               int(child),
                                bool(compressed));
         }
     };

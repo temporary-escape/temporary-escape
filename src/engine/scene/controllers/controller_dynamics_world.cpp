@@ -177,6 +177,7 @@ void ControllerDynamicsWorld::onDestroy(entt::registry& r, const entt::entity ha
         dynamicsWorld->removeRigidBody(rigidBody);
     }
 }
+
 const VulkanBuffer& ControllerDynamicsWorld::getDebugDrawVbo() const {
     if (!debugDraw) {
         EXCEPTION("No dynamics world debug draw setup");

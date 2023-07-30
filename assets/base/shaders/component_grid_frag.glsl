@@ -14,7 +14,8 @@ layout (binding = 3) uniform sampler2D emissiveTexture;
 layout (binding = 4) uniform sampler2D normalTexture;
 layout (binding = 5) uniform sampler2D ambientOcclusionTexture;
 layout (binding = 6) uniform sampler2D metallicRoughnessTexture;
-layout (binding = 7) uniform sampler1D paletteTexture;
+layout (binding = 7) uniform sampler2D maskTexture;
+layout (binding = 8) uniform sampler1D paletteTexture;
 
 layout (location = 0) in VS_OUT {
     vec3 normal;
@@ -59,7 +60,9 @@ vec3 paletteColorForEmissive(vec3 c) {
 }
 
 void main() {
-    vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
+    float mask = texture(maskTexture, vs_out.texCoords).r;
+    vec4 baseColorRaw = texture(baseColorTexture, vs_out.texCoords);
+    vec3 baseColor = pow(baseColorRaw.rgb * material.baseColorFactor.rgb, vec3(2.2));
     vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
     normalRaw = vec3(normalRaw.x, normalRaw.y, 0.0) * 2.0 - 1.0;
 
@@ -74,8 +77,8 @@ void main() {
 
     vec3 emissivePalette = paletteColorForEmissive(paletteColor);
 
-    outColorAmbient = vec4(baseColor.rgb * paletteColor, ambient);
-    outEmissiveRoughness = vec4(emissive * emissivePalette, metallicRoughness.g);
+    outColorAmbient = vec4(mix(baseColor.rgb, baseColor.rgb * paletteColor, mask), ambient);
+    outEmissiveRoughness = vec4(mix(emissive, emissive * emissivePalette, mask), metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
     outEntity = uniforms.entityColor;
 }

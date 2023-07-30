@@ -5,6 +5,7 @@
 #include "controllers/controller_dynamics_world.hpp"
 #include "controllers/controller_icon.hpp"
 #include "controllers/controller_icon_selectable.hpp"
+#include "controllers/controller_lights.hpp"
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
@@ -22,6 +23,7 @@ Scene::Scene(const Config& config, const bool isServer) : isServer{isServer} {
         addController<ControllerIconSelectable>();
         addController<ControllerIcon>();
         addController<ControllerCamera>();
+        addController<ControllerLights>(*this);
         addController<ControllerStaticModel>();
         addController<ControllerText>();
     }

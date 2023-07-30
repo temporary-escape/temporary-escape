@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 #include "../assets/assets_manager.hpp"
+#include "../scene/controllers/controller_lights.hpp"
 #include "../utils/exceptions.hpp"
 #include "mesh_utils.hpp"
 
@@ -8,22 +9,16 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Renderer::Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan, RenderResources& resources,
-                   Canvas& canvas, Nuklear& nuklear, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager,
-                   FontFamily& font) :
+                   VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager) :
     config{config},
     vulkan{vulkan},
     resources{resources},
-    canvas{canvas},
-    nuklear{nuklear},
     voxelShapeCache{voxelShapeCache},
     assetsManager{assetsManager},
-    font{font},
     lastViewportSize{viewport} {
 
     createRenderPasses(viewport);
     renderBrdf();
-
-    fullScreenQuad = createFullScreenQuad(vulkan);
 }
 
 Renderer::~Renderer() = default;
@@ -48,6 +43,9 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             vulkan, resources, assetsManager, viewport,
             voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
+        //renderPasses.shadows = std::make_unique<RenderPassShadows>(
+        //    vulkan, resources, assetsManager, Vector2i{config.graphics.shadowsSize});
+
         renderPasses.outline = std::make_unique<RenderPassOutline>(
             vulkan, resources, assetsManager, viewport,
             renderPasses.opaque->getTexture(RenderPassOpaque::Attachments::Entity));
@@ -60,6 +58,7 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             vulkan, resources, assetsManager, viewport,
             *renderPasses.opaque,
             *renderPasses.ssao,
+            *renderPasses.shadows,
             renderPasses.brdf->getTexture(RenderPassBrdf::Attachments::Color),
             renderPasses.skybox->getTexture(RenderPassSkybox::Forward));
 
@@ -133,9 +132,13 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     }
     camera->recalculate(vulkan, viewport);
 
+    auto& controllerLights = scene.getController<ControllerLights>();
+    controllerLights.recalculate(vulkan);
+
     renderPasses.compute->render(vkb, scene);
     renderPasses.skybox->render(vkb, viewport, scene);
     renderPasses.opaque->render(vkb, viewport, scene);
+    // renderPasses.shadows->render(vkb, Vector2i{config.graphics.shadowsSize}, scene);
     renderPasses.outline->render(vkb, viewport, scene);
     renderPasses.ssao->render(vkb, viewport, scene);
     renderPasses.lighting->render(vkb, viewport, scene);
@@ -293,7 +296,7 @@ void Renderer::blit(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     textures[0] = {"colorTexture", texture};
     pipelineBlit->bindDescriptors(vkb, {}, textures, {});
 
-    pipelineBlit->renderMesh(vkb, fullScreenQuad);
+    pipelineBlit->renderMesh(vkb, resources.getMeshFullScreenQuad());
 }
 
 void Renderer::renderBrdf() {

@@ -1,0 +1,22 @@
+category: Blocks
+label: Battery
+shapes:
+  - Cube
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveZ
+      - NegativeZ
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_battery_diff
+    normal:
+      texture: texture_battery_norm
+    metallicRoughness:
+      texture: texture_battery_meta
+    emissive:
+      texture: texture_battery_emis
+    mask:
+      texture: texture_battery_mask

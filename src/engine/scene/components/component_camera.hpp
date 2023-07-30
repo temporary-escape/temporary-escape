@@ -6,17 +6,6 @@
 namespace Engine {
 class ENGINE_API ComponentCamera : public Component, public Camera, public UserInput {
 public:
-    struct Uniform {
-        Matrix4 transformationProjectionMatrix;
-        Matrix4 viewProjectionInverseMatrix;
-        Matrix4 viewMatrix;
-        Matrix4 projectionMatrix;
-        Vector2i viewport;
-        float padding0[2];
-        Vector3 eyesPos;
-        float padding1[1];
-    };
-
     ComponentCamera() = default;
     explicit ComponentCamera(entt::registry& reg, entt::entity handle, ComponentTransform& transform);
     virtual ~ComponentCamera() = default; // NOLINT(modernize-use-override)

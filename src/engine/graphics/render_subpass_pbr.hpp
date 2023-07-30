@@ -6,6 +6,7 @@
 namespace Engine {
 class ENGINE_API RenderPassOpaque;
 class ENGINE_API RenderPassSsao;
+class ENGINE_API RenderPassShadows;
 
 class ENGINE_API RenderSubpassPbr : public RenderSubpass {
 public:
@@ -16,7 +17,8 @@ public:
     };
 
     explicit RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
-                              const RenderPassOpaque& opaque, const RenderPassSsao& ssao, const VulkanTexture& brdf);
+                              const RenderPassOpaque& opaque, const RenderPassSsao& ssao,
+                              const RenderPassShadows& shadows, const VulkanTexture& brdf);
     virtual ~RenderSubpassPbr() = default;
 
     void render(VulkanCommandBuffer& vkb, Scene& scene);
@@ -28,6 +30,7 @@ private:
     RenderResources& resources;
     const RenderPassOpaque& opaque;
     const RenderPassSsao& ssao;
+    const RenderPassShadows& shadows;
     const VulkanTexture& brdf;
     SkyboxTextures defaultSkybox;
     RenderPipeline pipelinePbr;

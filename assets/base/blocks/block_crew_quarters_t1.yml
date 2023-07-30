@@ -1,27 +1,34 @@
-category: Hull
-label: Basic crew quarters
+category: Blocks
+label: Crew Quarters
 shapes:
   - Cube
+  - Wedge
+  - Corner
+  - Penta
 materials:
-  - faces:
-      - PositiveY
-      - NegativeY
-    baseColor:
-      texture: texture_plates_01_diff
-    normal:
-      texture: texture_plates_01_norm
-    metallicRoughness:
-      texture: texture_plates_01_meta
   - faces:
       - PositiveX
       - NegativeX
       - PositiveZ
       - NegativeZ
     baseColor:
-      texture: texture_plates_quaters_01_diff
+      texture: texture_hull_windows_diff
     normal:
-      texture: texture_plates_quaters_01_norm
+      texture: texture_hull_windows_norm
     metallicRoughness:
-      texture: texture_plates_quaters_01_meta
+      texture: texture_hull_windows_meta
     emissive:
-      texture: texture_plates_quaters_01_emis
+      texture: texture_hull_windows_emis
+    mask:
+      texture: texture_hull_windows_mask
+  - faces:
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_hull_diff
+    normal:
+      texture: texture_hull_norm
+    metallicRoughness:
+      texture: texture_hull_meta
+    mask:
+      texture: texture_hull_mask

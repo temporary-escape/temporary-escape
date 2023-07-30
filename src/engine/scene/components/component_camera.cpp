@@ -42,28 +42,8 @@ void ComponentCamera::update(const float delta) {
 }
 
 void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewport) {
-    const auto makeUniform = [this, viewport](const bool zero) {
-        auto viewMatrix = getViewMatrix();
-        if (zero) {
-            viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
-        }
-        const auto transformationProjectionMatrix = getProjectionMatrix() * viewMatrix;
-        const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
-        const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
-
-        Uniform uniform{};
-        uniform.transformationProjectionMatrix = transformationProjectionMatrix;
-        uniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
-        uniform.viewMatrix = viewMatrix;
-        uniform.projectionMatrix = getProjectionMatrix();
-        uniform.viewport = viewport;
-        uniform.eyesPos = eyesPos;
-
-        return uniform;
-    };
-
     setViewport(viewport);
-    auto uniform = makeUniform(false);
+    auto uniform = createUniform(false);
 
     if (!ubo) {
         VulkanBuffer::CreateInfo bufferInfo{};
@@ -79,7 +59,7 @@ void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewpo
 
     ubo.subDataLocal(&uniform, 0, sizeof(Uniform));
 
-    uniform = makeUniform(true);
+    uniform = createUniform(true);
 
     if (!uboZeroPos) {
         VulkanBuffer::CreateInfo bufferInfo{};

@@ -451,6 +451,16 @@ VkFormat VulkanInstance::findSupportedFormat(const std::vector<VkFormat>& candid
     throw std::runtime_error("failed to find supported format!");
 }
 
+VkFormat VulkanInstance::findDepthFormat() const {
+    return findSupportedFormat(
+        {
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+        },
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
 std::optional<float> VulkanInstance::getAnisotropy() const {
     if (!getPhysicalDeviceFeatures().samplerAnisotropy) {
         return std::nullopt;

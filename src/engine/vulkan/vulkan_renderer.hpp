@@ -12,6 +12,7 @@
 #include "vulkan_double_buffer.hpp"
 #include "vulkan_fence.hpp"
 #include "vulkan_framebuffer.hpp"
+#include "vulkan_image_view.hpp"
 #include "vulkan_pipeline.hpp"
 #include "vulkan_query_pool.hpp"
 #include "vulkan_render_pass.hpp"
@@ -52,6 +53,7 @@ public:
     VulkanDescriptorSetLayout createDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
     VulkanDoubleBuffer createDoubleBuffer(const VulkanBuffer::CreateInfo& createInfo);
     VulkanTexture createTexture(const VulkanTexture::CreateInfo& createInfo);
+    VulkanImageView createImageView(const VulkanImageView::CreateInfo& createInfo);
     VulkanQueryPool createQueryPool(const VulkanQueryPool::CreateInfo& createInfo);
 
     void waitDeviceIdle();

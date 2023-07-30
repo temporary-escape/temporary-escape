@@ -30,6 +30,7 @@ public:
 
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
                                  VkFormatFeatureFlags features) const;
+    VkFormat findDepthFormat() const;
     void setDebugMessengerEnabled(const bool value) {
         debugMessengerEnabled = value;
     }

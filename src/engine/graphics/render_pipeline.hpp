@@ -17,11 +17,18 @@ template <typename T> struct ENGINE_API PushConstant {
 
 struct ENGINE_API UniformBindingRef {
     UniformBindingRef() = default;
-    UniformBindingRef(std::string_view name, const VulkanBuffer& uniform) : name{name}, uniform{&uniform} {
+    UniformBindingRef(std::string_view name, const VulkanBuffer& uniform) :
+        name{name}, uniform{&uniform}, range{uniform.getSize()} {
+    }
+    UniformBindingRef(std::string_view name, const VulkanBuffer& uniform, const VkDeviceSize offset,
+                      const VkDeviceSize range) :
+        name{name}, uniform{&uniform}, offset{offset}, range{range} {
     }
 
     std::string_view name;
-    const VulkanBuffer* uniform;
+    const VulkanBuffer* uniform{nullptr};
+    VkDeviceSize offset{0};
+    VkDeviceSize range{0};
 };
 
 struct ENGINE_API SamplerBindingRef {
@@ -30,7 +37,7 @@ struct ENGINE_API SamplerBindingRef {
     }
 
     std::string_view name;
-    const VulkanTexture* texture;
+    const VulkanTexture* texture{nullptr};
 };
 
 struct ENGINE_API SubpassInputBindingRef {
@@ -39,7 +46,7 @@ struct ENGINE_API SubpassInputBindingRef {
     }
 
     std::string_view name;
-    const VulkanTexture* texture;
+    const VulkanTexture* texture{nullptr};
 };
 
 class ENGINE_API RenderPipeline : public NonCopyable {

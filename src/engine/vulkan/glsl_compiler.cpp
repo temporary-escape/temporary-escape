@@ -343,7 +343,7 @@ void Engine::compileGLSLFile(const Path& src, const Path& dst) {
     std::string infoLog;
 
     if (!compileGLSL2SPIRV(flags, glsl, "main", spirv, infoLog)) {
-        EXCEPTION("Failed to compile shader error: {}", infoLog);
+        EXCEPTION("Failed to compile shader: '{}' error: {}", src, infoLog);
     }
 
     writeFileBinary(dst, spirv.data(), spirv.size() * sizeof(uint32_t));

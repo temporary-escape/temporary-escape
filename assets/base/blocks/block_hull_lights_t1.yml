@@ -1,0 +1,25 @@
+category: Hull
+label: Hull Lights
+shapes:
+  - Cube
+  - Wedge
+  - Corner
+  - Penta
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveY
+      - NegativeY
+      - PositiveZ
+      - NegativeZ
+    baseColor:
+      texture: texture_hull_diff
+    normal:
+      texture: texture_hull_norm
+    metallicRoughness:
+      texture: texture_hull_meta
+    emissive:
+      texture: texture_hull_emis
+    mask:
+      texture: texture_hull_mask

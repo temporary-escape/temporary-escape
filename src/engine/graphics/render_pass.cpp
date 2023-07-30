@@ -5,16 +5,6 @@ using namespace Engine;
 RenderPass::RenderPass(VulkanRenderer& vulkan, const Vector2i& viewport) : vulkan{vulkan}, viewport{viewport} {
 }
 
-VkFormat RenderPass::findDepthFormat() {
-    return vulkan.findSupportedFormat(
-        {
-            VK_FORMAT_D32_SFLOAT_S8_UINT,
-            VK_FORMAT_D24_UNORM_S8_UINT,
-        },
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
-
 void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkImageLayout initialLayout,
                                const VkImageLayout finalLayout, const VkAttachmentLoadOp loadOp) {
     auto format = attachmentInfo.format;
@@ -46,9 +36,15 @@ void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkIma
     textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
     textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
-    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    if (attachmentInfo.borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK) {
+        textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    } else {
+        textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    }
     textureInfo.sampler.anisotropyEnable = VK_FALSE;
     textureInfo.sampler.maxAnisotropy = 1.0f;
     textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -58,6 +54,7 @@ void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkIma
     textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     textureInfo.sampler.minLod = 0.0f;
     textureInfo.sampler.maxLod = 0.0f;
+    textureInfo.sampler.borderColor = attachmentInfo.borderColor;
 
     textures.push_back(vulkan.createTexture(textureInfo));
     attachmentViews.push_back(textures.back().getImageView());
@@ -71,6 +68,30 @@ void RenderPass::addAttachment(const AttachmentInfo& attachmentInfo, const VkIma
     attachmentDescription.stencilLoadOp = loadOp;
     attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentDescription.initialLayout = initialLayout; // VK_IMAGE_LAYOUT_UNDEFINED
+    attachmentDescription.finalLayout = finalLayout;
+    attachmentDescriptions.push_back(attachmentDescription);
+}
+
+void RenderPass::addAttachment(const VulkanTexture& texture, const VulkanImageView& imageView,
+                               const VkImageLayout initialLayout, const VkImageLayout finalLayout,
+                               const VkAttachmentLoadOp loadOp, const VkAttachmentLoadOp stencilOp) {
+    attachmentViews.push_back(imageView.getHandle());
+    attachments.push_back(&texture);
+
+    if (isDepthFormat(texture.getFormat())) {
+        depthIndex = attachmentDescriptions.size();
+    }
+
+    VkAttachmentDescription attachmentDescription{};
+    attachmentDescription.format = texture.getFormat();
+    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescription.loadOp = loadOp;
+    attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentDescription.stencilLoadOp = stencilOp;
+    attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    attachmentDescription.initialLayout = initialLayout;
     attachmentDescription.finalLayout = finalLayout;
     attachmentDescriptions.push_back(attachmentDescription);
 }
@@ -234,7 +255,7 @@ void RenderPass::createRenderPass() {
     renderPass = vulkan.createRenderPass(renderPassInfo);
 }
 
-void RenderPass::transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
+/*void RenderPass::transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -268,9 +289,9 @@ void RenderPass::transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& t
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
     vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
-}
+}*/
 
-void RenderPass::transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
+/*void RenderPass::transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& texture) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -304,4 +325,4 @@ void RenderPass::transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& 
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
     vkb.pipelineBarrier(sourceStage, destinationStage, barrier);
-}
+}*/

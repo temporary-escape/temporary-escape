@@ -49,6 +49,8 @@ void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
         material->ambientOcclusionTexture = def.ambientOcclusion ? def.ambientOcclusion->texture : defaults.ambient;
         material->uniform.ambientOcclusionFactor = Color4{1.0f};
 
+        material->maskTexture = def.mask ? def.mask->texture : defaults.mask;
+
         map.insert(std::make_pair(&def, materials.size() - 1));
     }
 

@@ -9,7 +9,7 @@ RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, RenderResources& reso
     RenderPass{vulkan, viewport}, subpassSkybox{vulkan, resources, assetsManager, brdf} {
 
     // Depth
-    addAttachment({findDepthFormat(), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT},
+    addAttachment({vulkan.findDepthFormat(), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT},
                   VK_IMAGE_LAYOUT_UNDEFINED,
                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 

@@ -108,8 +108,8 @@ void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<Unifor
 
         descriptors.buffers[b] = VkDescriptorBufferInfo{};
         descriptors.buffers[b].buffer = uniform.uniform->getHandle();
-        descriptors.buffers[b].offset = 0;
-        descriptors.buffers[b].range = uniform.uniform->getSize();
+        descriptors.buffers[b].offset = uniform.offset;
+        descriptors.buffers[b].range = uniform.range;
 
         descriptors.writes[w] = VkWriteDescriptorSet{};
         descriptors.writes[w].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

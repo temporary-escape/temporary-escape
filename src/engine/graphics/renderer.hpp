@@ -16,6 +16,7 @@
 #include "render_pass_non_hdr.hpp"
 #include "render_pass_opaque.hpp"
 #include "render_pass_outline.hpp"
+#include "render_pass_shadows.hpp"
 #include "render_pass_skybox.hpp"
 #include "render_pass_ssao.hpp"
 #include "skybox.hpp"
@@ -26,8 +27,7 @@ class ENGINE_API VoxelShapeCache;
 class ENGINE_API Renderer {
 public:
     explicit Renderer(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
-                      RenderResources& resources, Canvas& canvas, Nuklear& nuklear, VoxelShapeCache& voxelShapeCache,
-                      AssetsManager& assetsManager, FontFamily& font);
+                      RenderResources& resources, VoxelShapeCache& voxelShapeCache, AssetsManager& assetsManager);
     virtual ~Renderer();
 
     void update();
@@ -60,11 +60,8 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     RenderResources& resources;
-    Canvas& canvas;
-    Nuklear& nuklear;
     VoxelShapeCache& voxelShapeCache;
     AssetsManager& assetsManager;
-    FontFamily& font;
     Vector2i lastViewportSize;
     bool blitReady{false};
 
@@ -74,6 +71,7 @@ private:
         std::unique_ptr<RenderPassSkybox> skybox;
         std::unique_ptr<RenderPassOutline> outline;
         std::unique_ptr<RenderPassOpaque> opaque;
+        std::unique_ptr<RenderPassShadows> shadows;
         std::unique_ptr<RenderPassSsao> ssao;
         std::unique_ptr<RenderPassLighting> lighting;
         std::unique_ptr<RenderPassForward> forward;
@@ -84,6 +82,5 @@ private:
     } renderPasses;
 
     std::unique_ptr<RenderPipeline> pipelineBlit;
-    Mesh fullScreenQuad;
 };
 } // namespace Engine

@@ -9,6 +9,16 @@ class Renderer;
 
 class ENGINE_API Camera {
 public:
+    struct Uniform {
+        Matrix4 transformationProjectionMatrix;
+        Matrix4 viewProjectionInverseMatrix;
+        Matrix4 viewMatrix;
+        Matrix4 projectionMatrix;
+        Vector2i viewport;
+        float padding0[2];
+        Vector3 eyesPos;
+    };
+
     Camera() = default;
     explicit Camera(Matrix4& transform);
 
@@ -21,6 +31,8 @@ public:
     virtual void setOrthographic(float zoom);
 
     void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up = Vector3{0.0f, -1.0f, 0.0f});
+
+    Uniform createUniform(bool zeroPos) const;
 
     Vector3 getForward() const {
         return glm::normalize(Vector3{glm::row(getViewMatrix(), 2)});
@@ -79,11 +91,21 @@ public:
         return *transform;
     }
 
+    float getZNear() const {
+        return zNear;
+    }
+
+    float getZFar() const {
+        return zFar;
+    }
+
 private:
     Matrix4* transform{nullptr};
     Matrix4 projectionMatrix{1.0f};
     Vector2i viewport;
     float fovOrZoom{1.0f};
+    float zNear{0.0f};
+    float zFar{0.0f};
     bool isOrtho{false};
 };
 } // namespace Engine

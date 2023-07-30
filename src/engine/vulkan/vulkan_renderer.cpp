@@ -256,6 +256,10 @@ VulkanTexture VulkanRenderer::createTexture(const VulkanTexture::CreateInfo& cre
     return VulkanTexture{*this, createInfo};
 }
 
+VulkanImageView VulkanRenderer::createImageView(const VulkanImageView::CreateInfo& createInfo) {
+    return VulkanImageView{*this, createInfo};
+}
+
 VulkanQueryPool VulkanRenderer::createQueryPool(const VulkanQueryPool::CreateInfo& createInfo) {
     return VulkanQueryPool{*this, createInfo};
 }

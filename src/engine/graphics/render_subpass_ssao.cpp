@@ -6,6 +6,8 @@
 
 using namespace Engine;
 
+static const size_t ssaoKernelSize = 16;
+
 RenderSubpassSsao::RenderSubpassSsao(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                      const RenderPassOpaque& previous) :
     vulkan{vulkan},
@@ -134,14 +136,14 @@ void RenderSubpassSsao::createSsaoSamples() {
     std::random_device rd;
     std::default_random_engine generator{rd()};
 
-    std::array<Vector4, 64> weights{};
+    std::array<Vector4, ssaoKernelSize> weights{};
 
     for (unsigned int i = 0; i < sizeof(weights) / sizeof(Vector4); ++i) {
         Vector3 sample(
             randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
         sample = glm::normalize(sample);
         sample *= randomFloats(generator);
-        float scale = float(i) / 64.0f;
+        float scale = float(i) / static_cast<float>(ssaoKernelSize);
 
         // scale samples s.t. they're more aligned to center of kernel
         scale = ::lerp(0.1f, 1.0f, scale * scale);

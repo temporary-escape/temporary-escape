@@ -125,7 +125,7 @@ void Texture::loadPng(const Options& options, VulkanRenderer& vulkan) {
     textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    
+
     if (const auto anisotropy = vulkan.getAnisotropy()) {
         textureInfo.sampler.anisotropyEnable = anisotropy.has_value() ? VK_TRUE : VK_FALSE;
         textureInfo.sampler.maxAnisotropy = anisotropy.has_value() ? *anisotropy : 1.0f;
@@ -196,7 +196,7 @@ static Ktx2CompressionTarget getCompressionTarget(const std::string& filename) {
     } else if (endsWith(filename, "_norm")) {
         return Ktx2CompressionTarget::RG;
 
-    } else if (endsWith(filename, "_ao")) {
+    } else if (endsWith(filename, "_ao") || endsWith(filename, "_mask")) {
         return Ktx2CompressionTarget::R;
 
     } else {

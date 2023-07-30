@@ -1,0 +1,32 @@
+category: Blocks
+label: Crew Quarters (Dark)
+shapes:
+  - Cube
+  - Wedge
+  - Corner
+  - Penta
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveZ
+      - NegativeZ
+    baseColor:
+      texture: texture_hull_windows_diff
+    normal:
+      texture: texture_hull_windows_norm
+    metallicRoughness:
+      texture: texture_hull_windows_meta
+    mask:
+      texture: texture_hull_windows_mask
+  - faces:
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_hull_diff
+    normal:
+      texture: texture_hull_norm
+    metallicRoughness:
+      texture: texture_hull_meta
+    mask:
+      texture: texture_hull_mask

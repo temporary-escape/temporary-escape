@@ -29,8 +29,9 @@ public:
             std::optional<TextureDefinition> normal{};
             std::optional<TextureDefinition> ambientOcclusion{};
             std::optional<TextureDefinition> metallicRoughness{};
+            std::optional<TextureDefinition> mask{};
 
-            YAML_DEFINE(faces, baseColor, emissive, normal, ambientOcclusion, metallicRoughness);
+            YAML_DEFINE(faces, baseColor, emissive, normal, ambientOcclusion, metallicRoughness, mask);
         };
 
         std::vector<MaterialDefinition> materials;

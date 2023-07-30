@@ -78,7 +78,7 @@ void VulkanCommandBuffer::beginRenderPass(const VulkanRenderPassBeginInfo& rende
     info.renderArea.offset = {renderPassInfo.offset.x, renderPassInfo.offset.y};
     info.renderArea.extent =
         VkExtent2D{static_cast<uint32_t>(renderPassInfo.size.x), static_cast<uint32_t>(renderPassInfo.size.y)};
-
+    
     info.clearValueCount = static_cast<uint32_t>(renderPassInfo.clearValues.size());
     info.pClearValues = renderPassInfo.clearValues.data();
 

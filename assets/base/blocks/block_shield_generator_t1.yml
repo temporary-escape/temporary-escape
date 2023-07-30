@@ -1,0 +1,22 @@
+category: Blocks
+label: Shield Generator
+shapes:
+  - Cube
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveZ
+      - NegativeZ
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_shield_diff
+    normal:
+      texture: texture_shield_norm
+    metallicRoughness:
+      texture: texture_shield_meta
+    emissive:
+      texture: texture_shield_emis
+    mask:
+      texture: texture_shield_mask

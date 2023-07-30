@@ -70,6 +70,7 @@ void AssetsManager::init(VulkanRenderer& vulkan) {
             defaultTextures = std::make_unique<DefaultTextures>();
             defaultTextures->baseColor =
                 createTextureOfColor(vulkan, Color4{1.0f, 0.0f, 1.0f, 1.0f}, "default_baseColor");
+            defaultTextures->mask = createTextureOfColor(vulkan, Color4{1.0f, 0.0f, 0.0f, 1.0f}, "default_mask");
             defaultTextures->ambient = createTextureOfColor(vulkan, Color4{1.0f, 0.0f, 0.0f, 1.0f}, "default_ambient");
             defaultTextures->emissive =
                 createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, "default_emissive");

@@ -1,5 +1,5 @@
 category: Hull
-label: Basic hull with panels
+label: Hull
 shapes:
   - Cube
   - Wedge
@@ -14,8 +14,10 @@ materials:
       - PositiveZ
       - NegativeZ
     baseColor:
-      texture: texture_plates_01_diff
+      texture: texture_hull_diff
     normal:
-      texture: texture_plates_quaters_01_norm
+      texture: texture_hull_norm
     metallicRoughness:
-      texture: texture_plates_01_meta
+      texture: texture_hull_meta
+    mask:
+      texture: texture_hull_mask

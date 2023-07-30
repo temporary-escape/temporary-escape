@@ -228,6 +228,8 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
                 material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
             }
 
+            material.maskTexture = assetsManager.getDefaultTextures().mask;
+
             switch (part.indices.value().componentType) {
             case GltfComponentType::R8: {
                 primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;

@@ -9,6 +9,7 @@ struct Material {
     TexturePtr normalTexture;
     TexturePtr ambientOcclusionTexture;
     TexturePtr metallicRoughnessTexture;
+    TexturePtr maskTexture;
 
     struct Uniform {
         Vector4 baseColorFactor;

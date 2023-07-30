@@ -1,5 +1,5 @@
-category: Engine
-label: Basic engine
+category: Blocks
+label: Engine
 shapes:
   - Cube
 materials:
@@ -9,10 +9,23 @@ materials:
       - PositiveY
       - NegativeY
       - PositiveZ
+    baseColor:
+      texture: texture_hull_diff
+    normal:
+      texture: texture_hull_norm
+    metallicRoughness:
+      texture: texture_hull_meta
+    mask:
+      texture: texture_hull_mask
+  - faces:
       - NegativeZ
     baseColor:
-      texture: texture_plates_01_diff
+      texture: texture_engine_diff
     normal:
-      texture: texture_plates_01_norm
+      texture: texture_engine_norm
     metallicRoughness:
-      texture: texture_plates_01_meta
+      texture: texture_engine_meta
+    emissive:
+      texture: texture_engine_emis
+    mask:
+      texture: texture_engine_mask

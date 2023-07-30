@@ -6,9 +6,10 @@ namespace Engine {
 class ENGINE_API RenderPass : public NonCopyable {
 public:
     struct AttachmentInfo {
-        VkFormat format;
-        VkImageUsageFlags usage;
-        VkImageAspectFlags aspectMask;
+        VkFormat format{VK_FORMAT_UNDEFINED};
+        VkImageUsageFlags usage{0};
+        VkImageAspectFlags aspectMask{0};
+        VkBorderColor borderColor{VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK};
     };
 
     explicit RenderPass(VulkanRenderer& vulkan, const Vector2i& viewport);
@@ -35,9 +36,12 @@ protected:
     VulkanRenderer& vulkan;
     Vector2i viewport;
 
-    VkFormat findDepthFormat();
     void addAttachment(const AttachmentInfo& attachmentInfo, const VkImageLayout initialLayout,
                        VkImageLayout finalLayout, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
+    void addAttachment(const VulkanTexture& texture, const VulkanImageView& imageView,
+                       const VkImageLayout initialLayout, VkImageLayout finalLayout,
+                       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                       VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE);
     void addAttachment(const VulkanTexture& texture, const VkImageLayout initialLayout, VkImageLayout finalLayout,
                        VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                        VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE);
@@ -45,8 +49,6 @@ protected:
         subpasses.push_back(&subpass);
     }
     void init(bool compute = false);
-    void transitionRead(VulkanCommandBuffer& vkb, const VulkanTexture& texture);
-    void transitionWrite(VulkanCommandBuffer& vkb, const VulkanTexture& texture);
 
 private:
     struct SubpassDescriptionData {

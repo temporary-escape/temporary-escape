@@ -53,7 +53,7 @@ void ViewBuild::createScene() {
 
     entity = scene.createEntity();
     auto& skybox = entity.addComponent<ComponentSkybox>(0);
-    auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.05f, 0.05f, 0.05f, 1.0f}};
+    auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
     skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
 
     entity = scene.createEntity();
@@ -141,7 +141,11 @@ void ViewBuild::createEntityShip() {
     grid.setDirty(true);
 
     auto block = assetsManager.getBlocks().find("block_hull_t1");
-    grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
+    for (int z = -10; z <= 10; z++) {
+        for (int x = -10; x <= 10; x++) {
+            grid.insert(Vector3i{x, 0, z}, block, 0, 0, VoxelShape::Type::Cube);
+        }
+    }
 }
 
 void ViewBuild::addBlock() {

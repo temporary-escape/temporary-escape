@@ -15,7 +15,7 @@ layout (std140, binding = 0) uniform Camera {
 } camera;
 
 layout (std140, binding = 1) uniform Samples {
-    vec4 weights[64];
+    vec4 weights[16];
 } samples;
 
 layout (push_constant) uniform Uniforms {
@@ -28,9 +28,9 @@ layout (binding = 2) uniform sampler2D depthTexture;
 layout (binding = 3) uniform sampler2D normalTexture;
 layout (binding = 4) uniform sampler2D noiseTexture;
 
-int kernelSize = 64;
-float radius = 0.5;
-float bias = 0.025;
+const int kernelSize = 16;
+const float radius = 0.5;
+const float bias = 0.025;
 
 // ----------------------------------------------------------------------------
 float getLinearDepth(float depth) {
@@ -64,6 +64,7 @@ vec3 getViewPos(float depth, vec2 texCoords) {
     return viewPos;
 }
 
+// ----------------------------------------------------------------------------
 void main() {
     float depth = texture(depthTexture, vs_out.texCoords).r;
     vec3 fragPos = getViewPos(depth, vs_out.texCoords);
@@ -73,9 +74,6 @@ void main() {
         outColor = vec4(1.0);
         discard;
     }
-    // fragPos.z = depth;
-    // screenSpaceNormal = mix(screenSpaceNormal, vec4(0.0, 0.0, 1.0, 1.0), depth);
-    // o_color = vec4(normal.rgb, 1.0);
 
     vec3 randomVec = normalize(texture(noiseTexture, vs_out.texCoords * uniforms.scale).xyz);
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
@@ -83,12 +81,10 @@ void main() {
     mat3 TBN = mat3(tangent, bitangent, normal);
 
     float occlusion = 0.0;
-    // int i = 8;
 
     float ldepth = getLinearDepth(depth);
 
-    for (int i = 0; i < kernelSize; ++i)
-    {
+    for (int i = 0; i < kernelSize; ++i) {
         // get sample position
         vec3 samplePos = TBN * samples.weights[i].rgb;// from tangent to view-space
         samplePos = fragPos + samplePos * radius;
@@ -98,9 +94,6 @@ void main() {
         offset = camera.projectionMatrix * offset;// from view to clip-space
         offset.xyz /= offset.w;// perspective divide
         offset.xyz = offset.xyz * 0.5 + 0.5;// transform to range 0.0 - 1.0
-
-        //offset.x = 1.0 - offset.x;
-        //offset.y = 1.0 - offset.y;
 
         // get sample depth
         float sampleDepth = texture(depthTexture, offset.xy).r;// get depth value of kernel sample

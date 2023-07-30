@@ -382,8 +382,8 @@ void Application::createThumbnails() {
     status.value = 0.6f;
 
     const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    auto thumbnailRenderer = std::make_unique<Renderer>(
-        config, viewport, *this, *renderResources, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
+    auto thumbnailRenderer =
+        std::make_unique<Renderer>(config, viewport, *this, *renderResources, *voxelShapeCache, *assetsManager);
 
     createBlockThumbnails(*thumbnailRenderer);
     createEmptyThumbnail(*thumbnailRenderer);
@@ -460,8 +460,7 @@ void Application::createRenderer() {
 
     const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
     renderResources = std::make_unique<RenderResources>(*this);
-    renderer = std::make_unique<Renderer>(
-        config, viewport, *this, *renderResources, canvas, nuklear, *voxelShapeCache, *assetsManager, font);
+    renderer = std::make_unique<Renderer>(config, viewport, *this, *renderResources, *voxelShapeCache, *assetsManager);
 
     skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *renderResources, *assetsManager);
 

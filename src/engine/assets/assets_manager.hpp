@@ -23,6 +23,7 @@ public:
         TexturePtr emissive;
         TexturePtr ambient;
         TexturePtr metallicRoughness;
+        TexturePtr mask;
     };
 
     template <typename T> class Category {

@@ -9,13 +9,39 @@ void Camera::setViewport(const Vector2i& viewport) {
     this->viewport = viewport;
 
     if (isOrtho) {
+        zNear = -1000.0f;
+        zFar = 1000.0f;
+
         const auto zoom = fovOrZoom;
         const float ratio = static_cast<float>(viewport.x) / static_cast<float>(viewport.y);
-        projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, -1000.0f, 1000.0f);
+        projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, zNear, zFar);
     } else {
+        zNear = 0.1f;
+        zFar = 10000.0f;
+
         projectionMatrix =
-            glm::perspective(glm::radians(fovOrZoom), viewport.x / static_cast<float>(viewport.y), 0.1f, 20000.0f);
+            glm::perspective(glm::radians(fovOrZoom), viewport.x / static_cast<float>(viewport.y), zNear, zFar);
     }
+}
+
+Camera::Uniform Camera::createUniform(bool zeroPos) const {
+    auto viewMatrix = getViewMatrix();
+    if (zeroPos) {
+        viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+    }
+    const auto transformationProjectionMatrix = getProjectionMatrix() * viewMatrix;
+    const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
+    const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
+
+    Uniform uniform{};
+    uniform.transformationProjectionMatrix = transformationProjectionMatrix;
+    uniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
+    uniform.viewMatrix = viewMatrix;
+    uniform.projectionMatrix = getProjectionMatrix();
+    uniform.viewport = viewport;
+    uniform.eyesPos = eyesPos;
+
+    return uniform;
 }
 
 void Camera::setProjection(const float fov) {

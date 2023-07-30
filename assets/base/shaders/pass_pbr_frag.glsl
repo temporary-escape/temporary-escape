@@ -20,14 +20,20 @@ layout (std140, binding = 1) uniform DirectionalLights {
     int count;
 } directionalLights;
 
-layout (binding = 2) uniform sampler2D texDepth;
-layout (binding = 3) uniform sampler2D texBaseColorAmbient;
-layout (binding = 4) uniform sampler2D texEmissiveRoughness;
-layout (binding = 5) uniform sampler2D texNormalMetallic;
-layout (binding = 6) uniform samplerCube texIrradiance;
-layout (binding = 7) uniform samplerCube texPrefilter;
-layout (binding = 8) uniform sampler2D texBrdf;
-layout (binding = 9) uniform sampler2D texSsao;
+layout (std140, binding = 2) uniform ShadowsViewProj {
+    mat4 lightMat[4];
+    vec4 cascadeSplits;
+} shadowsViewProj;
+
+layout (binding = 3) uniform sampler2D texDepth;
+layout (binding = 4) uniform sampler2D texBaseColorAmbient;
+layout (binding = 5) uniform sampler2D texEmissiveRoughness;
+layout (binding = 6) uniform sampler2D texNormalMetallic;
+layout (binding = 7) uniform samplerCube texIrradiance;
+layout (binding = 8) uniform samplerCube texPrefilter;
+layout (binding = 9) uniform sampler2D texBrdf;
+layout (binding = 10) uniform sampler2D texSsao;
+//layout (binding = 11) uniform sampler2DArray texShadows;
 
 layout (location = 0) out vec4 outColor;
 
@@ -111,6 +117,60 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
 }
 
 // ----------------------------------------------------------------------------
+/*uint getShadowCascade(vec3 viewPos) {
+    uint cascadeIndex = 0;
+    for (uint i = 0; i < 4 - 1; i++) {
+        if (viewPos.z > shadowsViewProj.cascadeSplits[i]) {
+            cascadeIndex = i + 1;
+        }
+    }
+    return cascadeIndex;
+}*/
+
+// ----------------------------------------------------------------------------
+/*float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex) {
+    float shadow = 1.0;
+    float bias = 0.0005;
+
+    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
+        float dist = texture(texShadows, vec3(shadowCoord.st * 0.5 + 0.5 + offset, cascadeIndex)).r;
+        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
+            shadow = 0.0;
+        }
+    }
+    return shadow;
+}*/
+
+// ----------------------------------------------------------------------------
+/*float filterPCF(vec4 sc, uint cascadeIndex) {
+    ivec2 texDim = textureSize(texShadows, 0).xy;
+    float scale = 0.75;
+    float dx = scale * 1.0 / float(texDim.x);
+    float dy = scale * 1.0 / float(texDim.y);
+
+    float shadowFactor = 0.0;
+    int count = 0;
+    int range = 2;
+
+    for (int x = -range; x <= range; x++) {
+        for (int y = -range; y <= range; y++) {
+            shadowFactor += textureProj(sc, vec2(dx * x, dy * y), cascadeIndex);
+            count++;
+        }
+    }
+    return shadowFactor / count;
+}*/
+
+// ----------------------------------------------------------------------------
+/*vec3 getShadowValue(vec3 viewPos, vec3 worldPos) {
+    uint cascadeIndex = getShadowCascade(viewPos);
+
+    vec4 shadowMapPosition = shadowsViewProj.lightMat[cascadeIndex] * vec4(worldPos, 1.0);
+
+    return vec3(filterPCF(shadowMapPosition / shadowMapPosition.w, cascadeIndex));
+}*/
+
+// ----------------------------------------------------------------------------
 void main() {
     float depth = texture(texDepth, vs_out.texCoords).r;
     if (depth > 0.99999) {
@@ -140,6 +200,9 @@ void main() {
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
+
+/*vec3 viewPos = (camera.viewMatrix * vec4(worldpos, 1.0)).xyz;
+    vec3 shadowValue = getShadowValue(viewPos, worldpos);*/
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -206,7 +269,7 @@ void main() {
 
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
-    vec3 color = (ambient + Lo) * ssao + emissive;
+    vec3 color = (ambient + Lo/* * shadowValue*/) * ssao + emissive;
 
     outColor = vec4(color, 1.0);
 }

@@ -1,8 +1,10 @@
 #include "render_subpass_pbr.hpp"
 #include "../assets/assets_manager.hpp"
+#include "../scene/controllers/controller_lights.hpp"
 #include "mesh_utils.hpp"
 #include "render_pass_lighting.hpp"
 #include "render_pass_opaque.hpp"
+#include "render_pass_shadows.hpp"
 #include "render_pass_ssao.hpp"
 #include "skybox.hpp"
 
@@ -10,12 +12,13 @@ using namespace Engine;
 
 RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& resources, AssetsManager& assetsManager,
                                    const RenderPassOpaque& opaque, const RenderPassSsao& ssao,
-                                   const VulkanTexture& brdf) :
+                                   const RenderPassShadows& shadows, const VulkanTexture& brdf) :
     vulkan{vulkan},
     resources{resources},
     opaque{opaque},
     ssao{ssao},
     brdf{brdf},
+    shadows{shadows},
     defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}},
     pipelinePbr{
         vulkan,
@@ -48,6 +51,9 @@ RenderSubpassPbr::RenderSubpassPbr(VulkanRenderer& vulkan, RenderResources& reso
 
 void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     updateDirectionalLights(scene);
+
+    auto& controllerLights = scene.getController<ControllerLights>();
+
     auto camera = scene.getPrimaryCamera();
     const auto* skybox = scene.getSkybox();
     const auto* skyboxTextures{&defaultSkybox};
@@ -59,17 +65,19 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelinePbr.bind(vkb);
 
-    std::array<UniformBindingRef, 2> uniforms;
+    std::array<UniformBindingRef, 3> uniforms;
     std::array<SamplerBindingRef, 8> textures;
 
     const auto& texSsao = ssao.getTexture(RenderPassSsao::Attachments::Ssao);
     const auto& texDepth = opaque.getTexture(RenderPassOpaque::Attachments::Depth);
+    // const auto& texShadows = shadows.getShadowMapArray();
     const auto& texBaseColorAmbient = opaque.getTexture(RenderPassOpaque::Attachments::AlbedoAmbient);
     const auto& texEmissiveRoughness = opaque.getTexture(RenderPassOpaque::Attachments::EmissiveRoughness);
     const auto& texNormalMetallic = opaque.getTexture(RenderPassOpaque::Attachments::NormalMetallic);
 
     uniforms[0] = {"Camera", camera->getUbo().getCurrentBuffer()};
     uniforms[1] = {"DirectionalLights", directionalLightsUbo.getCurrentBuffer()};
+    uniforms[2] = {"ShadowsViewProj", controllerLights.getUboShadowsViewProj().getCurrentBuffer()};
 
     textures[0] = {"texIrradiance", skyboxTextures->getIrradiance()};
     textures[1] = {"texPrefilter", skyboxTextures->getPrefilter()};
@@ -79,6 +87,7 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     textures[5] = {"texEmissiveRoughness", texEmissiveRoughness};
     textures[6] = {"texNormalMetallic", texNormalMetallic};
     textures[7] = {"texSsao", texSsao};
+    // textures[8] = {"texShadows", texShadows};
 
     pipelinePbr.bindDescriptors(vkb, uniforms, textures, {});
 

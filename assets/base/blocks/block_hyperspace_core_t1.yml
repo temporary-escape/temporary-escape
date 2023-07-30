@@ -1,0 +1,22 @@
+category: Blocks
+label: Hyperspace Core
+shapes:
+  - Cube
+materials:
+  - faces:
+      - PositiveX
+      - NegativeX
+      - PositiveZ
+      - NegativeZ
+      - PositiveY
+      - NegativeY
+    baseColor:
+      texture: texture_hyperspace_core_diff
+    normal:
+      texture: texture_hyperspace_core_norm
+    metallicRoughness:
+      texture: texture_hyperspace_core_meta
+    emissive:
+      texture: texture_hyperspace_core_emis
+    mask:
+      texture: texture_hyperspace_core_mask
