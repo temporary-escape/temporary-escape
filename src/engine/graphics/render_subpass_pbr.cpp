@@ -66,11 +66,11 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePbr.bind(vkb);
 
     std::array<UniformBindingRef, 3> uniforms;
-    std::array<SamplerBindingRef, 8> textures;
+    std::array<SamplerBindingRef, 9> textures;
 
     const auto& texSsao = ssao.getTexture(RenderPassSsao::Attachments::Ssao);
     const auto& texDepth = opaque.getTexture(RenderPassOpaque::Attachments::Depth);
-    // const auto& texShadows = shadows.getShadowMapArray();
+    const auto& texShadows = shadows.getShadowMapArray();
     const auto& texBaseColorAmbient = opaque.getTexture(RenderPassOpaque::Attachments::AlbedoAmbient);
     const auto& texEmissiveRoughness = opaque.getTexture(RenderPassOpaque::Attachments::EmissiveRoughness);
     const auto& texNormalMetallic = opaque.getTexture(RenderPassOpaque::Attachments::NormalMetallic);
@@ -87,7 +87,7 @@ void RenderSubpassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     textures[5] = {"texEmissiveRoughness", texEmissiveRoughness};
     textures[6] = {"texNormalMetallic", texNormalMetallic};
     textures[7] = {"texSsao", texSsao};
-    // textures[8] = {"texShadows", texShadows};
+    textures[8] = {"texShadows", texShadows};
 
     pipelinePbr.bindDescriptors(vkb, uniforms, textures, {});
 

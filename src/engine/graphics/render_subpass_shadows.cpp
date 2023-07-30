@@ -32,6 +32,9 @@ RenderSubpassShadows::RenderSubpassShadows(VulkanRenderer& vulkan, RenderResourc
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            RenderPipeline::Stencil::None,
+            0xff,
+            true,
         },
     },
     pipelineModel{
@@ -53,6 +56,9 @@ RenderSubpassShadows::RenderSubpassShadows(VulkanRenderer& vulkan, RenderResourc
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            RenderPipeline::Stencil::None,
+            0xff,
+            true,
         },
     },
     pipelineModelInstanced{
@@ -76,6 +82,9 @@ RenderSubpassShadows::RenderSubpassShadows(VulkanRenderer& vulkan, RenderResourc
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_BACK_BIT,
             VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            RenderPipeline::Stencil::None,
+            0xff,
+            true,
         },
     } {
 

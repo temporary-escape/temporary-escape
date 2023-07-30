@@ -92,6 +92,7 @@ public:
         VkFrontFace frontFace{VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE};
         Stencil stencil{Stencil::None};
         int stencilValue{0xff};
+        bool depthClamp{false};
     };
 
     explicit RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> shaders, std::vector<VertexInput> inputs,

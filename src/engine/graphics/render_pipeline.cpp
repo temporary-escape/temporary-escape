@@ -428,6 +428,10 @@ void RenderPipeline::createPipeline(const ReflectInfo& resources, VulkanRenderPa
         pipelineInfo.depthStencilState.front = pipelineInfo.depthStencilState.back;
     }
 
+    if (createInfo.options.depthClamp && vulkan.getPhysicalDeviceFeatures().depthClamp) {
+        pipelineInfo.rasterizer.depthClampEnable = VK_TRUE;
+    }
+
     pipeline = vulkan.createPipeline(renderPass, pipelineInfo);
 }
 

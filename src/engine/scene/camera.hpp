@@ -83,6 +83,10 @@ public:
         return fovOrZoom;
     }
 
+    float getFov() const {
+        return fovOrZoom;
+    }
+
     Matrix4& getTransform() {
         return *transform;
     }

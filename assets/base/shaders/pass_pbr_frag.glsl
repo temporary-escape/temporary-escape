@@ -33,7 +33,7 @@ layout (binding = 7) uniform samplerCube texIrradiance;
 layout (binding = 8) uniform samplerCube texPrefilter;
 layout (binding = 9) uniform sampler2D texBrdf;
 layout (binding = 10) uniform sampler2D texSsao;
-//layout (binding = 11) uniform sampler2DArray texShadows;
+layout (binding = 11) uniform sampler2DArray texShadows;
 
 layout (location = 0) out vec4 outColor;
 
@@ -117,7 +117,7 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
 }
 
 // ----------------------------------------------------------------------------
-/*uint getShadowCascade(vec3 viewPos) {
+uint getShadowCascade(vec3 viewPos) {
     uint cascadeIndex = 0;
     for (uint i = 0; i < 4 - 1; i++) {
         if (viewPos.z > shadowsViewProj.cascadeSplits[i]) {
@@ -125,12 +125,12 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
         }
     }
     return cascadeIndex;
-}*/
+}
 
 // ----------------------------------------------------------------------------
-/*float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex) {
+float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex) {
     float shadow = 1.0;
-    float bias = 0.0005;
+    float bias = 0.0002;
 
     if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
         float dist = texture(texShadows, vec3(shadowCoord.st * 0.5 + 0.5 + offset, cascadeIndex)).r;
@@ -139,10 +139,10 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
         }
     }
     return shadow;
-}*/
+}
 
 // ----------------------------------------------------------------------------
-/*float filterPCF(vec4 sc, uint cascadeIndex) {
+float filterPCF(vec4 sc, uint cascadeIndex) {
     ivec2 texDim = textureSize(texShadows, 0).xy;
     float scale = 0.75;
     float dx = scale * 1.0 / float(texDim.x);
@@ -150,7 +150,7 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
 
     float shadowFactor = 0.0;
     int count = 0;
-    int range = 2;
+    int range = 1;
 
     for (int x = -range; x <= range; x++) {
         for (int y = -range; y <= range; y++) {
@@ -159,16 +159,16 @@ vec3 getWorldPos(float depth, vec2 texCoords) {
         }
     }
     return shadowFactor / count;
-}*/
+}
 
 // ----------------------------------------------------------------------------
-/*vec3 getShadowValue(vec3 viewPos, vec3 worldPos) {
+vec3 getShadowValue(vec3 viewPos, vec3 worldPos) {
     uint cascadeIndex = getShadowCascade(viewPos);
 
     vec4 shadowMapPosition = shadowsViewProj.lightMat[cascadeIndex] * vec4(worldPos, 1.0);
 
     return vec3(filterPCF(shadowMapPosition / shadowMapPosition.w, cascadeIndex));
-}*/
+}
 
 // ----------------------------------------------------------------------------
 void main() {
@@ -201,8 +201,8 @@ void main() {
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
-/*vec3 viewPos = (camera.viewMatrix * vec4(worldpos, 1.0)).xyz;
-    vec3 shadowValue = getShadowValue(viewPos, worldpos);*/
+    vec3 viewPos = (camera.viewMatrix * vec4(worldpos, 1.0)).xyz;
+    vec3 shadowValue = getShadowValue(viewPos, worldpos);
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -269,7 +269,7 @@ void main() {
 
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
 
-    vec3 color = (ambient + Lo/* * shadowValue*/) * ssao + emissive;
+    vec3 color = (ambient + Lo * shadowValue) * ssao + emissive;
 
     outColor = vec4(color, 1.0);
 }

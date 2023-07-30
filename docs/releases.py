@@ -200,7 +200,6 @@ def get_macos_zip(release: Release) -> Content:
     )
 
 
-
 def convert_size(size_bytes: int) -> str:
     """
     Source: https://stackoverflow.com/a/14822210
@@ -249,7 +248,7 @@ def replace_content(path: str, releases: List[Release]):
         "DOWNLOAD_WINDOWS_LATEST_EXE_SIZE": convert_size(get_windows_exe(latest).size),
         "DOWNLOAD_LINUX_LATEST_EXE_SIZE": convert_size(get_linux_exe(latest).size),
         "DOWNLOAD_MACOS_LATEST_EXE_SIZE": convert_size(get_macos_exe(latest).size),
-        "DOWNLOAD_WINDOWS_LATEST_ZIP_URL": get_windows_exe(latest).url,
+        "DOWNLOAD_WINDOWS_LATEST_ZIP_URL": get_windows_zip(latest).url,
         "DOWNLOAD_LINUX_LATEST_ZIP_URL": get_linux_zip(latest).url,
         "DOWNLOAD_MACOS_LATEST_ZIP_URL": get_macos_zip(latest).url,
         "DOWNLOAD_WINDOWS_LATEST_ZIP_SIZE": convert_size(get_windows_zip(latest).size),

@@ -43,8 +43,8 @@ void Renderer::createRenderPasses(const Vector2i& viewport) {
             vulkan, resources, assetsManager, viewport,
             voxelShapeCache, renderPasses.skybox->getTexture(RenderPassSkybox::Depth));
 
-        //renderPasses.shadows = std::make_unique<RenderPassShadows>(
-        //    vulkan, resources, assetsManager, Vector2i{config.graphics.shadowsSize});
+        renderPasses.shadows = std::make_unique<RenderPassShadows>(
+            vulkan, resources, assetsManager, Vector2i{config.graphics.shadowsSize});
 
         renderPasses.outline = std::make_unique<RenderPassOutline>(
             vulkan, resources, assetsManager, viewport,
@@ -138,7 +138,7 @@ void Renderer::render(VulkanCommandBuffer& vkb, const Vector2i& viewport, Scene&
     renderPasses.compute->render(vkb, scene);
     renderPasses.skybox->render(vkb, viewport, scene);
     renderPasses.opaque->render(vkb, viewport, scene);
-    // renderPasses.shadows->render(vkb, Vector2i{config.graphics.shadowsSize}, scene);
+    renderPasses.shadows->render(vkb, Vector2i{config.graphics.shadowsSize}, scene);
     renderPasses.outline->render(vkb, viewport, scene);
     renderPasses.ssao->render(vkb, viewport, scene);
     renderPasses.lighting->render(vkb, viewport, scene);

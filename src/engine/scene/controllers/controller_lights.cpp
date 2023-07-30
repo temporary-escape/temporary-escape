@@ -31,10 +31,17 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     std::array<Camera::Uniform, 4> uniforms{};
     ShadowsViewProj shadowsViewProj{};
 
+    const auto& viewport = camera->getViewport();
     const auto nearClip = camera->getZNear();
-    const auto farClip = camera->getZFar();
+    const auto farClip = 5000.0f;
     const auto clipRange = farClip - nearClip;
-    const auto cascadeSplitLambda = 0.98f;
+    const auto cascadeSplitLambda = 0.96f;
+    const auto nearFarMul = 4.0f;
+
+    const auto projectionMatrix = glm::perspective(glm::radians(camera->getFov()),
+                                                   static_cast<float>(viewport.x) / static_cast<float>(viewport.y),
+                                                   nearClip,
+                                                   farClip);
 
     const auto minZ = nearClip;
     const auto maxZ = nearClip + clipRange;
@@ -80,7 +87,7 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
         };
 
         // Project frustum corners into world space
-        const auto invCam = glm::inverse(camera->getProjectionMatrix() * camera->getViewMatrix());
+        const auto invCam = glm::inverse(projectionMatrix * camera->getViewMatrix());
         for (size_t i = 0; i < 8; i++) {
             const auto invCorner = invCam * Vector4(frustumCorners[i], 1.0f);
             frustumCorners[i] = invCorner / invCorner.w;
@@ -112,10 +119,10 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
         Matrix4 cameraModel{1.0f};
         Camera shadowCamera{cameraModel};
 
-        shadowCamera.lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, {0.0f, 1.0f, 0.0f});
+        shadowCamera.lookAt(frustumCenter - lightDir * -minExtents.z * nearFarMul, frustumCenter, {0.0f, 1.0f, 0.0f});
 
-        shadowCamera.setProjectionMatrix(
-            glm::orthoLH_ZO(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z));
+        shadowCamera.setProjectionMatrix(glm::orthoLH_ZO(
+            minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, (maxExtents.z - minExtents.z) * nearFarMul));
 
         shadowsViewProj.lightMat[c] = shadowCamera.getProjectionMatrix() * shadowCamera.getViewMatrix();
         shadowsViewProj.cascadeSplits[c] = nearClip + splitDist * clipRange;
