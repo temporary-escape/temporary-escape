@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ViewSpace::ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                     FontFamily& font, Skybox& skybox, Client& client) :
-    parent{parent}, config{config}, assetsManager{assetsManager}, font{font}, skyboxSystem{skybox}, client{client} {
+ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                     FontFamily& font, Client& client) :
+    parent{parent}, config{config}, vulkan{vulkan}, assetsManager{assetsManager}, font{font}, client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {

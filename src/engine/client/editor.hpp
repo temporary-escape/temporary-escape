@@ -18,11 +18,11 @@ class ENGINE_API Database;
 
 class ENGINE_API Editor : public UserInput {
 public:
-    explicit Editor(const Config& config, Renderer& renderer, AssetsManager& assetsManager, FontFamily& font);
+    explicit Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, FontFamily& font);
     virtual ~Editor();
 
     void update(float deltaTime);
-    void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport);
     void renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;
@@ -35,7 +35,6 @@ public:
 
 private:
     const Config& config;
-    Renderer& renderer;
     AssetsManager& assetsManager;
     FontFamily& font;
     ViewBuild::Gui guiBuild;

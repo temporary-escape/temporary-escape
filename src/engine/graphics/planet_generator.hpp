@@ -4,8 +4,7 @@
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_device.hpp"
 #include "planet_textures.hpp"
-#include "render_pass_planet_normal.hpp"
-#include "render_pass_planet_surface.hpp"
+#include "render_resources.hpp"
 
 namespace Engine {
 class ENGINE_API PlanetGenerator {
@@ -39,8 +38,8 @@ private:
     } work;
 
     struct {
-        std::unique_ptr<RenderPassPlanetSurface> planetSurface;
-        std::unique_ptr<RenderPassPlanetNormal> planetNormal;
+        // std::unique_ptr<RenderPassPlanetSurface> planetSurface;
+        // std::unique_ptr<RenderPassPlanetNormal> planetNormal;
     } renderPasses;
 
     PlanetTextures planetTextures{};

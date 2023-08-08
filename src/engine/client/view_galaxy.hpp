@@ -4,7 +4,6 @@
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
-#include "../graphics/skybox.hpp"
 #include "../gui/gui_modal_loading.hpp"
 #include "../math/voronoi_diagram.hpp"
 #include "../scene/scene.hpp"
@@ -24,7 +23,7 @@ public:
         GuiModalLoading modalLoading;
     };
 
-    explicit ViewGalaxy(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+    explicit ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                         Client& client, Gui& gui, FontFamily& font);
     ~ViewGalaxy();
 
@@ -58,7 +57,7 @@ private:
 
     Game& parent;
     const Config& config;
-    Renderer& renderer;
+    VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     Client& client;
     Gui& gui;

@@ -8,8 +8,8 @@ ViewBuild::Gui::Gui(const Config& config, AssetsManager& assetsManager) :
     blockActionBar{config, assetsManager}, blockSelector{config}, blockSideMenu{config} {
 }
 
-ViewBuild::ViewBuild(const Config& config, Renderer& renderer, AssetsManager& assetsManager, Gui& gui) :
-    config{config}, renderer{renderer}, assetsManager{assetsManager}, gui{gui}, scene{config} {
+ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, Gui& gui) :
+    config{config}, vulkan{vulkan}, assetsManager{assetsManager}, gui{gui}, scene{config} {
 
     gui.blockSelector.setBlocks(assetsManager.getBlocks().findAll());
 
@@ -53,8 +53,8 @@ void ViewBuild::createScene() {
 
     entity = scene.createEntity();
     auto& skybox = entity.addComponent<ComponentSkybox>(0);
-    auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
-    skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
+    auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+    skybox.setTextures(vulkan, std::move(skyboxTextures));
 
     entity = scene.createEntity();
     auto& cameraTransform = entity.addComponent<ComponentTransform>();

@@ -1,76 +1,83 @@
 #pragma once
 
-#include "render_subpass.hpp"
+#include "../vulkan/vulkan_renderer.hpp"
+#include "render_buffer.hpp"
+#include "render_resources.hpp"
 
 namespace Engine {
-class ENGINE_API RenderPass : public NonCopyable {
+class ENGINE_API RenderPipeline;
+class ENGINE_API Scene;
+
+class ENGINE_API RenderPass {
 public:
     struct AttachmentInfo {
-        VkFormat format{VK_FORMAT_UNDEFINED};
-        VkImageUsageFlags usage{0};
-        VkImageAspectFlags aspectMask{0};
-        VkBorderColor borderColor{VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK};
+        VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkImageLayout finalLayout;
+        VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        VkClearValue clearColor;
     };
 
-    explicit RenderPass(VulkanRenderer& vulkan, const Vector2i& viewport);
+    explicit RenderPass(VulkanRenderer& vulkan, RenderBuffer& renderBuffer, std::string name);
     virtual ~RenderPass() = default;
     NON_MOVEABLE(RenderPass);
+    NON_COPYABLE(RenderPass);
 
-    VulkanFramebuffer& getFbo() {
+    virtual void beforeRender(VulkanCommandBuffer& vkb);
+    virtual void afterRender(VulkanCommandBuffer& vkb);
+    virtual void render(VulkanCommandBuffer& vkb, Scene& scene) = 0;
+    void create();
+    void begin(VulkanCommandBuffer& vkb);
+    void end(VulkanCommandBuffer& vkb);
+    const std::string& getName() const {
+        return name;
+    }
+    const VulkanFramebuffer& getFbo() const {
         return fbo;
     }
-
     const VulkanRenderPass& getRenderPass() const {
         return renderPass;
     }
-
-    const VulkanTexture& getTexture(const uint32_t index) const {
-        return *attachments[index];
-    }
-
-    const std::vector<VkAttachmentDescription>& getAttachmentDescriptions() const {
-        return attachmentDescriptions;
+    Vector2i getViewport() const {
+        return {viewport.width, viewport.height};
     }
 
 protected:
-    VulkanRenderer& vulkan;
-    Vector2i viewport;
-
-    void addAttachment(const AttachmentInfo& attachmentInfo, const VkImageLayout initialLayout,
-                       VkImageLayout finalLayout, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
-    void addAttachment(const VulkanTexture& texture, const VulkanImageView& imageView,
-                       const VkImageLayout initialLayout, VkImageLayout finalLayout,
-                       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                       VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-    void addAttachment(const VulkanTexture& texture, const VkImageLayout initialLayout, VkImageLayout finalLayout,
-                       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                       VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-    void addSubpass(RenderSubpass& subpass) {
-        subpasses.push_back(&subpass);
-    }
-    void init(bool compute = false);
+    void addPipeline(RenderPipeline& pipeline, uint32_t subpass);
+    void addAttachment(uint32_t attachment, const AttachmentInfo& info);
+    void addSubpass(const std::vector<uint32_t>& attachments, const std::vector<uint32_t>& inputs);
 
 private:
     struct SubpassDescriptionData {
         std::vector<VkAttachmentReference> colorReferences;
         std::vector<VkAttachmentReference> inputsReferences;
         VkAttachmentReference depthReference{};
+        std::vector<uint32_t> attachments;
+        std::vector<uint32_t> inputs;
     };
 
-    void createFbo();
     void createRenderPass();
-    void addSubpass(const Span<uint32_t>& indexes, const Span<uint32_t>& inputs);
+    void createFbo();
+    uint32_t getAttachmentIndex(uint32_t attachment) const;
 
+    VulkanRenderer& vulkan;
+    RenderBuffer& renderBuffer;
+    const std::string name;
     VulkanFramebuffer fbo;
     VulkanRenderPass renderPass;
-    std::vector<RenderSubpass*> subpasses;
-    std::list<VulkanTexture> textures;
-    std::vector<const VulkanTexture*> attachments;
-    size_t depthIndex{UINT64_MAX};
+    VulkanRenderPassBeginInfo renderPassBeginInfo;
+    std::vector<std::tuple<RenderPipeline*, uint32_t>> pipelines;
+    VkExtent2D viewport{0, 0};
+
+    // Used only during creation
     std::vector<VkImageView> attachmentViews;
+    std::vector<uint32_t> attachmentIndexes;
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     std::vector<VkSubpassDescription> subpassDescriptions;
-    std::vector<VkSubpassDependency> dependencies;
     std::list<SubpassDescriptionData> subpassDescriptionData;
+    std::vector<VkSubpassDependency> dependencies;
+    uint32_t depthAttachment{UINT32_MAX};
 };
 } // namespace Engine

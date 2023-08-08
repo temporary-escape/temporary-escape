@@ -20,7 +20,7 @@ static void copyTexture(VulkanCommandBuffer& vkb, const VulkanTexture& source, c
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT , VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     VkOffset3D offset = {
         static_cast<int32_t>(source.getExtent().width),
@@ -93,10 +93,10 @@ PlanetGenerator::PlanetGenerator(const Vector2i& textureSize, VulkanRenderer& vu
     vulkan{vulkan}, textureSize{textureSize} {
 
     // clang-format off
-    renderPasses.planetSurface = std::make_unique<RenderPassPlanetSurface>(
-        vulkan, resources, assetsManager, textureSize);
-    renderPasses.planetNormal = std::make_unique<RenderPassPlanetNormal>(
-        vulkan, resources, assetsManager, textureSize);
+    //renderPasses.planetSurface = std::make_unique<RenderPassPlanetSurface>(
+    //    vulkan, resources, assetsManager, textureSize);
+    //renderPasses.planetNormal = std::make_unique<RenderPassPlanetNormal>(
+    //    vulkan, resources, assetsManager, textureSize);
     // clang-format on
 }
 
@@ -197,7 +197,7 @@ void PlanetGenerator::startWork() {
 
     Rng rng{work.seed};
 
-    renderPasses.planetSurface->render(vkb, textureSize, rng, work.side, work.planetType);
+    /*renderPasses.planetSurface->render(vkb, textureSize, rng, work.side, work.planetType);
 
     const auto& heightmap = renderPasses.planetSurface->getTexture(RenderPassPlanetSurface::Attachments::Heightmap);
     renderPasses.planetNormal->render(vkb, textureSize, heightmap, work.planetType);
@@ -209,7 +209,7 @@ void PlanetGenerator::startWork() {
 
     copyTexture(vkb, color, planetTextures.getColor(), work.side);
     copyTexture(vkb, metallicRoughness, planetTextures.getMetallicRoughness(), work.side);
-    copyTexture(vkb, normal, planetTextures.getNormal(), work.side);
+    copyTexture(vkb, normal, planetTextures.getNormal(), work.side);*/
 
     if (work.side == 5) {
         vkb.generateMipMaps(planetTextures.getColor());

@@ -11,19 +11,12 @@ static const Vector2 systemBodySelectable{32.0f, 32.0f};
 static const Vector2 systemBodyIconSize{32.0f, 32.0f};
 
 ViewSystem::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"System Map"} {
-
     modalLoading.setEnabled(false);
 }
 
-ViewSystem::ViewSystem(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
+ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                        Client& client, Gui& gui, FontFamily& font) :
-    parent{parent},
-    config{config},
-    renderer{renderer},
-    assetsManager{assetsManager},
-    client{client},
-    gui{gui},
-    font{font} {
+    parent{parent}, config{config}, vulkan{vulkan}, assetsManager{assetsManager}, client{client}, gui{gui}, font{font} {
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
@@ -248,8 +241,8 @@ void ViewSystem::finalize() {
     { // Skybox
         auto entity = scene->createEntity();
         auto& skybox = entity.addComponent<ComponentSkybox>(0);
-        auto skyboxTextures = SkyboxTextures{renderer.getVulkan(), Color4{0.02f, 0.02f, 0.02f, 1.0f}};
-        skybox.setTextures(renderer.getVulkan(), std::move(skyboxTextures));
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(vulkan, std::move(skyboxTextures));
     }
 
     { // Sun

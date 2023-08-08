@@ -20,7 +20,7 @@ public:
         GuiSideMenu blockSideMenu;
     };
 
-    explicit ViewBuild(const Config& config, Renderer& renderer, AssetsManager& assetsManager, Gui& gui);
+    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, Gui& gui);
     ~ViewBuild() = default;
 
     void update(float deltaTime) override;
@@ -45,7 +45,7 @@ private:
     void addBlock();
 
     const Config& config;
-    Renderer& renderer;
+    VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     Gui& gui;
 

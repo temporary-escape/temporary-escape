@@ -18,6 +18,36 @@ void ControllerLights::recalculate(VulkanRenderer& vulkan) {
     uboShadowReady = false;
     prepareUboShadow(vulkan);
     calculateShadowCamera(vulkan);
+    updateDirectionalLights(vulkan);
+}
+
+void ControllerLights::updateDirectionalLights(VulkanRenderer& vulkan) {
+    DirectionalLightsUniform uniform{};
+
+    auto system = scene.getView<ComponentTransform, ComponentDirectionalLight>();
+    for (auto&& [entity, transform, light] : system.each()) {
+        uniform.colors[uniform.count] = light.getColor();
+        uniform.directions[uniform.count] = Vector4{transform.getPosition(), 0.0f};
+
+        uniform.count++;
+        if (uniform.count >= sizeof(DirectionalLightsUniform::colors) / sizeof(Vector4)) {
+            break;
+        }
+    }
+
+    if (!uboDirectionalLights) {
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(DirectionalLightsUniform);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        uboDirectionalLights = vulkan.createDoubleBuffer(bufferInfo);
+    }
+
+    uboDirectionalLights.subDataLocal(&uniform, 0, sizeof(uniform));
 }
 
 // Based on:

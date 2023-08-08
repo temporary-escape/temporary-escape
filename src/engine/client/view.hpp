@@ -2,7 +2,6 @@
 
 #include "../graphics/nuklear.hpp"
 #include "../graphics/renderer.hpp"
-#include "../graphics/skybox.hpp"
 #include "../window.hpp"
 
 namespace Engine {

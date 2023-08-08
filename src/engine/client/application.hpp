@@ -2,9 +2,7 @@
 
 #include "../audio/audio_context.hpp"
 #include "../database/database.hpp"
-#include "../graphics/planet_generator.hpp"
 #include "../graphics/renderer.hpp"
-#include "../graphics/skybox_generator.hpp"
 #include "../gui/gui_create_profile.hpp"
 #include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
@@ -49,14 +47,15 @@ private:
     void createRegistry();
     void createVoxelShapeCache();
     void compressAssets();
-    void createRenderer();
+    void createSceneRenderer(const Vector2i& viewport);
+    void createRenderers();
     void loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next);
     void startDatabase();
     void startServer();
     void startClient();
     void startSinglePlayer();
     void startEditor();
-    void createPlanetLowResTextures(PlanetGenerator& planetGenerator);
+    void createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface);
     void createPlanetLowResTextures();
     void createBlockThumbnails(Renderer& thumbnailRenderer);
     void createEmptyThumbnail(Renderer& thumbnailRenderer);
@@ -81,8 +80,8 @@ private:
     std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::thread serverThread;
-    std::unique_ptr<SkyboxGenerator> skyboxGenerator;
-    std::unique_ptr<PlanetGenerator> planetGenerator;
+    std::unique_ptr<RendererSkybox> rendererSkybox;
+    std::unique_ptr<RendererPlanetSurface> rendererPlanetSurface;
     std::unique_ptr<RenderResources> renderResources;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;

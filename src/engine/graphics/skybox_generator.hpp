@@ -3,9 +3,7 @@
 #include "../config.hpp"
 #include "../scene/scene.hpp"
 #include "../vulkan/vulkan_device.hpp"
-#include "render_pass_skybox_color.hpp"
-#include "render_pass_skybox_irradiance.hpp"
-#include "render_pass_skybox_prefilter.hpp"
+#include "render_resources.hpp"
 #include "skybox_textures.hpp"
 
 namespace Engine {
@@ -45,9 +43,9 @@ private:
     } work;
 
     struct {
-        std::unique_ptr<RenderPassSkyboxColor> skyboxColor;
-        std::unique_ptr<RenderPassSkyboxIrradiance> skyboxIrradiance;
-        std::unique_ptr<RenderPassSkyboxPrefilter> skyboxPrefilter;
+        // std::unique_ptr<RenderPassSkyboxColor> skyboxColor;
+        // std::unique_ptr<RenderPassSkyboxIrradiance> skyboxIrradiance;
+        // std::unique_ptr<RenderPassSkyboxPrefilter> skyboxPrefilter;
     } renderPasses;
 
     struct {

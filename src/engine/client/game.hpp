@@ -8,9 +8,9 @@
 #include "../future.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
-#include "../graphics/planet_generator.hpp"
 #include "../graphics/renderer.hpp"
-#include "../graphics/skybox_generator.hpp"
+#include "../graphics/renderer_planet_surface.hpp"
+#include "../graphics/renderer_skybox.hpp"
 #include "../server/server.hpp"
 #include "client.hpp"
 #include "stats.hpp"
@@ -24,13 +24,14 @@ class ENGINE_API Database;
 
 class ENGINE_API Game : public UserInput {
 public:
-    explicit Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator,
-                  PlanetGenerator& planetGenerator, AssetsManager& assetsManager, FontFamily& font, Client& client);
+    explicit Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendererSkybox,
+                  RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, FontFamily& font,
+                  Client& client);
     virtual ~Game();
 
     bool isReady() const;
     void update(float deltaTime);
-    void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport);
     void renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;
@@ -47,13 +48,11 @@ public:
 
 private:
     const Config& config;
-    Renderer& renderer;
-    SkyboxGenerator& skyboxGenerator;
-    PlanetGenerator& planetGenerator;
+    RendererSkybox& rendererSkybox;
+    RendererPlanetSurface& rendererPlanetSurface;
     AssetsManager& assetsManager;
     FontFamily& font;
     Client& client;
-    Skybox skybox;
     uint32_t selectedEntityId{0xFFFFFFFF};
 
     ViewGalaxy::Gui guiGalaxy;

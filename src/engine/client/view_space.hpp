@@ -3,7 +3,6 @@
 #include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
-#include "../graphics/skybox.hpp"
 #include "../scene/scene.hpp"
 #include "view.hpp"
 
@@ -13,8 +12,8 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSpace : public View {
 public:
-    explicit ViewSpace(Game& parent, const Config& config, Renderer& renderer, AssetsManager& assetsManager,
-                       FontFamily& font, Skybox& skybox, Client& client);
+    explicit ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                       FontFamily& font, Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -35,9 +34,9 @@ private:
 
     Game& parent;
     const Config& config;
+    VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     FontFamily& font;
-    Skybox& skyboxSystem;
     Client& client;
     std::optional<Entity> selectedEntity;
 };

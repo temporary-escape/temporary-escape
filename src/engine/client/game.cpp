@@ -6,22 +6,21 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Game::Game(const Config& config, Renderer& renderer, SkyboxGenerator& skyboxGenerator, PlanetGenerator& planetGenerator,
-           AssetsManager& assetsManager, FontFamily& font, Client& client) :
+Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendererSkybox,
+           RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, FontFamily& font,
+           Client& client) :
     config{config},
-    renderer{renderer},
-    skyboxGenerator{skyboxGenerator},
-    planetGenerator{planetGenerator},
+    rendererSkybox{rendererSkybox},
+    rendererPlanetSurface{rendererPlanetSurface},
     assetsManager{assetsManager},
     font{font},
     client{client},
-    skybox{renderer.getVulkan(), Color4{0.1f, 0.1f, 0.1f, 1.0f}},
     guiGalaxy{config, assetsManager},
     guiSystem{config, assetsManager} {
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, renderer, assetsManager, font, skybox, client);
-    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, renderer, assetsManager, client, guiGalaxy, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, renderer, assetsManager, client, guiSystem, font);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, font, client);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, client, guiGalaxy, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, client, guiSystem, font);
     view = viewSpace.get();
 }
 
@@ -35,28 +34,28 @@ void Game::update(float deltaTime) {
 }
 
 bool Game::isReady() const {
-    return !planetGenerator.isBusy() && !skyboxGenerator.isBusy() && client.getScene() &&
+    return rendererPlanetSurface.isBusy() && !rendererSkybox.isBusy() && client.getScene() &&
            client.getScene()->getPrimaryCamera();
 }
 
-void Game::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
-    if (!planetGenerator.isBusy()) {
-        skyboxGenerator.run();
+void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport) {
+    rendererSkybox.render();
+    if (!rendererPlanetSurface.isBusy()) {
         if (auto scene = client.getScene(); scene != nullptr) {
-            skyboxGenerator.update(*scene);
+            rendererSkybox.update(*scene);
         }
     }
 
-    if (!skyboxGenerator.isBusy()) {
-        planetGenerator.run();
+    rendererPlanetSurface.render();
+    if (!rendererSkybox.isBusy()) {
         if (auto scene = client.getScene(); scene != nullptr) {
-            planetGenerator.update(*scene);
+            rendererPlanetSurface.update(*scene);
         }
     }
 
     auto* scene = view->getScene();
     if (scene && scene->getPrimaryCamera()) {
-        renderer.render(vkb, viewport, *scene);
+        renderer.render(vkb, *scene, viewport);
     }
 }
 
@@ -71,8 +70,6 @@ void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewpo
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {
-    renderer.setMousePos(pos);
-
     if (view) {
         view->eventMouseMoved(pos);
     }

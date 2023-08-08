@@ -1,4 +1,5 @@
 #include "application.hpp"
+#include "../graphics/renderer_scene_pbr.hpp"
 #include "../graphics/theme.hpp"
 #include "../utils/random.hpp"
 
@@ -73,6 +74,18 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         return;
     }
 
+    // Create the renderer if it does not exist.
+    // Or re-create it if the viewport size does not match.
+    if (renderer && renderer->getOptions().viewport != viewport) {
+        logger.info("Resizing renderer to: {}", viewport);
+
+        waitQueueIdle();
+        waitDeviceIdle();
+        renderer.reset();
+
+        createSceneRenderer(viewport);
+    }
+
     const auto t0 = std::chrono::steady_clock::now();
 
     if (future.valid() && future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {
@@ -85,10 +98,6 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }
 
     auto vkb = createCommandBuffer();
-
-    if (renderer) {
-        renderer->update();
-    }
 
     const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
     if (!queryResult.empty()) {
@@ -112,10 +121,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     if (game) {
         game->update(deltaTime);
-        game->render(vkb, viewport);
+        game->render(vkb, *renderer, viewport);
     } else if (editor) {
         editor->update(deltaTime);
-        editor->render(vkb, viewport);
+        editor->render(vkb, *renderer, viewport);
     }
 
     VulkanRenderPassBeginInfo renderPassInfo{};
@@ -130,7 +139,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.beginRenderPass(renderPassInfo);
 
     if ((game && game->isReady()) || editor) {
-        renderer->blit(vkb, viewport);
+        renderer->blit(vkb);
     }
 
     canvas.begin(viewport);
@@ -230,7 +239,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *renderer, *assetsManager, font);
+    editor = std::make_unique<Editor>(config, *this, *assetsManager, font);
 }
 
 void Application::checkForClientScene() {
@@ -241,7 +250,7 @@ void Application::checkForClientScene() {
         logger.info("Client has a scene, creating Game instance");
 
         game = std::make_unique<Game>(
-            config, *renderer, *skyboxGenerator, *planetGenerator, *assetsManager, font, *client);
+            config, *this, *rendererSkybox, *rendererPlanetSurface, *assetsManager, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -318,18 +327,18 @@ void Application::startDatabase() {
 void Application::createEmptyThumbnail(Renderer& thumbnailRenderer) {
     logger.info("Creating empty thumbnail");
 
-    thumbnailRenderer.render(nullptr, VoxelShape::Cube);
+    /*thumbnailRenderer.render(nullptr, VoxelShape::Cube);
     const auto alloc =
         assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
-    assetsManager->addImage("block_empty_image", alloc);
+    assetsManager->addImage("block_empty_image", alloc);*/
 }
 
-void Application::createPlanetLowResTextures(PlanetGenerator& planetGenerator) {
-    uint64_t seed = 1;
+void Application::createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface) {
+    /*uint64_t seed = 1;
     for (auto& planet : assetsManager->getPlanetTypes().findAll()) {
         auto textures = planetGenerator.render(seed++ * 100, planet);
         planet->setLowResTextures(std::move(textures));
-    }
+    }*/
 }
 
 void Application::createPlanetLowResTextures() {
@@ -338,11 +347,11 @@ void Application::createPlanetLowResTextures() {
     status.message = "Creating planets...";
     status.value = 0.5f;
 
-    const auto planetTextureSize = Vector2i{config.graphics.planetLowResTextureSize};
+    /*const auto planetTextureSize = Vector2i{config.graphics.planetLowResTextureSize};
     auto planetGeneratorLowRes =
         std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
 
-    createPlanetLowResTextures(*planetGeneratorLowRes);
+    createPlanetLowResTextures(*planetGeneratorLowRes);*/
 
     NEXT(createThumbnails());
 }
@@ -351,12 +360,12 @@ void Application::createPlanetThumbnails(Renderer& thumbnailRenderer) {
     logger.info("Creating planet thumbnails");
 
     for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
-        thumbnailRenderer.render(planet);
+        /*thumbnailRenderer.render(planet);
         const auto alloc =
             assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
 
         const auto name = fmt::format("{}_image", planet->getName());
-        planet->setThumbnail(assetsManager->addImage(name, alloc));
+        planet->setThumbnail(assetsManager->addImage(name, alloc));*/
     }
 }
 
@@ -365,12 +374,12 @@ void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
 
     for (const auto& block : assetsManager->getBlocks().findAll()) {
         for (const auto shape : block->getShapes()) {
-            thumbnailRenderer.render(block, shape);
+            /*thumbnailRenderer.render(block, shape);
             const auto alloc =
                 assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
 
             const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
-            block->setThumbnail(shape, assetsManager->addImage(name, alloc));
+            block->setThumbnail(shape, assetsManager->addImage(name, alloc));*/
         }
     }
 }
@@ -381,13 +390,13 @@ void Application::createThumbnails() {
     status.message = "Creating thumbnails...";
     status.value = 0.6f;
 
-    const auto viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    auto thumbnailRenderer =
-        std::make_unique<Renderer>(config, viewport, *this, *renderResources, *voxelShapeCache, *assetsManager);
+    /*RenderOptions renderOptions{};
+    renderOptions.viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
+    auto thumbnailRenderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
 
     createBlockThumbnails(*thumbnailRenderer);
     createEmptyThumbnail(*thumbnailRenderer);
-    createPlanetThumbnails(*thumbnailRenderer);
+    createPlanetThumbnails(*thumbnailRenderer);*/
 
     assetsManager->finalize();
 
@@ -400,7 +409,7 @@ void Application::createThumbnails() {
 
 void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next) {
     if (next == assetsManager->getLoadQueue().cend()) {
-        NEXT(createRenderer());
+        NEXT(createRenderers());
     } else {
         const auto start = std::chrono::steady_clock::now();
 
@@ -452,20 +461,28 @@ void Application::createRegistry() {
     });
 }
 
-void Application::createRenderer() {
+void Application::createSceneRenderer(const Vector2i& viewport) {
+    RenderOptions renderOptions{};
+    renderOptions.viewport = viewport;
+    renderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
+}
+
+void Application::createRenderers() {
     logger.info("Creating renderer");
 
     status.message = "Creating renderer...";
     status.value = 0.5f;
 
-    const auto viewport = Vector2i{config.graphics.windowWidth, config.graphics.windowHeight};
     renderResources = std::make_unique<RenderResources>(*this);
-    renderer = std::make_unique<Renderer>(config, viewport, *this, *renderResources, *voxelShapeCache, *assetsManager);
 
-    skyboxGenerator = std::make_unique<SkyboxGenerator>(config, *this, *renderResources, *assetsManager);
+    createSceneRenderer({config.graphics.windowWidth, config.graphics.windowHeight});
 
-    const Vector2i planetTextureSize{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-    planetGenerator = std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
+    rendererSkybox = std::make_unique<RendererSkybox>(config, *this, *renderResources, *assetsManager);
+
+    RenderOptions renderOptions{};
+    renderOptions.viewport = {config.graphics.planetTextureSize, config.graphics.planetTextureSize};
+    rendererPlanetSurface =
+        std::make_unique<RendererPlanetSurface>(config, renderOptions, *this, *renderResources, *assetsManager);
 
     NEXT(createPlanetLowResTextures());
 }
@@ -476,7 +493,7 @@ void Application::createVoxelShapeCache() {
     status.message = "Creating voxel shape cache...";
     status.value = 0.2f;
 
-    voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
+    // voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
     NEXT(createRegistry());
 }

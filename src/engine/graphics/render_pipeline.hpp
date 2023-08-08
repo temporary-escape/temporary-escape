@@ -2,9 +2,11 @@
 
 #include "../assets/shader.hpp"
 #include "../math/matrix.hpp"
+#include "../math/vector.hpp"
 #include "../utils/exceptions.hpp"
-#include "../vulkan/vulkan_renderer.hpp"
+#include "../vulkan/spirv_reflection.hpp"
 #include "mesh.hpp"
+#include "render_buffer.hpp"
 
 namespace Engine {
 template <typename T> struct ENGINE_API PushConstant {
@@ -49,7 +51,7 @@ struct ENGINE_API SubpassInputBindingRef {
     const VulkanTexture* texture{nullptr};
 };
 
-class ENGINE_API RenderPipeline : public NonCopyable {
+class ENGINE_API RenderPipeline {
 public:
     enum class DepthMode {
         Ignore,
@@ -70,6 +72,11 @@ public:
         Read,
     };
 
+    enum class DepthClamp {
+        Disabled,
+        Enabled,
+    };
+
     struct VertexInput {
         uint32_t binding;
         VulkanVertexLayoutMap layout;
@@ -83,55 +90,44 @@ public:
         }
     };
 
-    struct Options {
-        VkPrimitiveTopology topology{VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-        DepthMode depth{0};
-        Blending blending{0};
-        VkPolygonMode polygonMode{VkPolygonMode::VK_POLYGON_MODE_FILL};
-        VkCullModeFlags cullMode{VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT};
-        VkFrontFace frontFace{VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE};
-        Stencil stencil{Stencil::None};
-        int stencilValue{0xff};
-        bool depthClamp{false};
-    };
-
-    explicit RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> shaders, std::vector<VertexInput> inputs,
-                            Options options);
-    explicit RenderPipeline(VulkanRenderer& vulkan, std::vector<ShaderPtr> shaders);
+    explicit RenderPipeline(VulkanRenderer& vulkan, std::string name);
     virtual ~RenderPipeline() = default;
     NON_MOVEABLE(RenderPipeline);
+    NON_COPYABLE(RenderPipeline);
 
-    void init(VulkanRenderPass& renderPass, const std::vector<uint32_t>& attachments, uint32_t subpass = 0);
-    void init();
-
-    const VulkanPipeline& getPipeline() const {
-        return pipeline;
+    void create(VulkanRenderPass& renderPass, uint32_t subpass, const std::vector<uint32_t>& attachments);
+    bool isCompute() const {
+        return compute;
     }
-
-    const VulkanDescriptorSetLayout& getDescriptorSetLayout() const {
-        return descriptorSetLayout;
+    const std::string& getName() const {
+        return name;
     }
-
-    const VulkanDescriptorPool& getDescriptorPool() const {
-        return descriptorPools[vulkan.getCurrentFrameNum()];
-    }
-
-    VulkanDescriptorPool& getDescriptorPool() {
-        return descriptorPools[vulkan.getCurrentFrameNum()];
-    }
-
-    template <typename... Constants> void pushConstants(VulkanCommandBuffer& vkb, Constants&&... constants) {
-        char buffer[128];
-        pushConstantsInternal(buffer, std::forward<Constants>(constants)...);
-        pushConstantsBuffer(vkb, buffer);
-    }
-
+    VulkanDescriptorPool& getDescriptionPool();
     void bind(VulkanCommandBuffer& vkb);
+    void flushConstants(VulkanCommandBuffer& vkb) {
+        pushConstantsBuffer(vkb, constantsBuffer);
+    }
+    void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) const;
+
+protected:
+    void addShader(const ShaderPtr& shader);
+    void addVertexInput(const VertexInput& vertexInput);
+    void setTopology(VkPrimitiveTopology topology);
+    void setPolygonMode(VkPolygonMode polygonMode);
+    void setCullMode(VkCullModeFlags cullMode);
+    void setFrontFace(VkFrontFace frontFace);
+    void setDepthMode(DepthMode depthMode);
+    void setStencil(Stencil stencil, int stencilValue);
+    void setDepthClamp(DepthClamp depthClamp);
+    void setCompute(bool value);
+    void setBlending(Blending blending);
+
+    template <typename... Constants> void pushConstants(Constants&&... constants) {
+        pushConstantsInternal(constantsBuffer, std::forward<Constants>(constants)...);
+    }
 
     void bindDescriptors(VulkanCommandBuffer& vkb, const Span<UniformBindingRef>& uniforms,
                          const Span<SamplerBindingRef>& textures, const Span<SubpassInputBindingRef>& inputs);
-
-    void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh);
 
 private:
     struct ReflectInfo {
@@ -142,14 +138,6 @@ private:
         std::vector<VulkanStageStorageBuffer> storageBuffers;
         VulkanStagePushConstants pushConstants{};
     };
-
-    ReflectInfo reflect();
-    void processPushConstants(const ReflectInfo& resources);
-    void createDescriptorSetLayout(const ReflectInfo& resources);
-    void createPipeline(const ReflectInfo& resources, VulkanRenderPass& renderPass,
-                        const std::vector<uint32_t>& attachments, uint32_t subpass);
-    void createPipeline(const ReflectInfo& resources);
-    void createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
 
     template <typename Constant> void pushConstantsInternal(char* dst, const Constant& constant) {
         const auto it = pushConstantsMap.find(constant.name);
@@ -164,26 +152,32 @@ private:
         pushConstantsInternal(dst, constant);
         pushConstantsInternal(dst, std::forward<Constants>(constants)...);
     }
+
+    ReflectInfo reflect() const;
+    void createGraphicsPipeline(VulkanRenderPass& renderPass, const ReflectInfo& resources, uint32_t subpass,
+                                const std::vector<uint32_t>& attachments);
+    void createComputePipeline(const ReflectInfo& resources);
+    void createDescriptorSetLayout(const ReflectInfo& resources);
+    void createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
+    void processPushConstants(const ReflectInfo& resources);
     void pushConstantsBuffer(VulkanCommandBuffer& vkb, const char* src);
     uint32_t findBinding(const std::string_view& name);
 
     VulkanRenderer& vulkan;
-    std::string id;
-
-    struct CreateInfo {
-        std::vector<ShaderPtr> shaders;
-        std::vector<VertexInput> inputs;
-        Options options;
-    } createInfo;
-
+    const std::string name;
+    bool compute{false};
+    std::vector<ShaderPtr> shaders;
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+    VulkanPipeline::CreateInfo pipelineInfo;
     VulkanPipeline pipeline;
     VulkanDescriptorSetLayout descriptorSetLayout;
-
+    std::array<VulkanDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
+    char constantsBuffer[128];
+    Blending attachmentBlending;
     std::map<std::string, VulkanStagePushMember, std::less<>> pushConstantsMap;
     std::map<std::string, uint32_t, std::less<>> bindingsMap;
     size_t pushConstantsSize{0};
-
-    std::array<VulkanDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
 
     struct {
         std::array<VkWriteDescriptorSet, 32> writes;

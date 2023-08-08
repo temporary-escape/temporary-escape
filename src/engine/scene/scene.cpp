@@ -70,6 +70,12 @@ void Scene::update(const float delta) {
     }
 }
 
+void Scene::recalculate(VulkanRenderer& vulkan) {
+    for (auto& [_, controller] : controllers) {
+        controller->recalculate(vulkan);
+    }
+}
+
 ComponentCamera* Scene::getPrimaryCamera() const {
     if (primaryCamera) {
         if (!primaryCamera.hasComponent<ComponentCamera>()) {

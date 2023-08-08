@@ -76,7 +76,7 @@ static void copyTexture2(VulkanCommandBuffer& vkb, const VulkanTexture& source, 
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT , VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+    vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     VkOffset3D extend = {
         size.x,
@@ -215,12 +215,12 @@ SkyboxGenerator::SkyboxGenerator(const Config& config, VulkanRenderer& vulkan, R
     config{config}, vulkan{vulkan} {
 
     // clang-format off
-    renderPasses.skyboxColor = std::make_unique<RenderPassSkyboxColor>(
-        vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
-    renderPasses.skyboxIrradiance = std::make_unique<RenderPassSkyboxIrradiance>(
-            vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
-    renderPasses.skyboxPrefilter = std::make_unique<RenderPassSkyboxPrefilter>(
-            vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
+    //renderPasses.skyboxColor = std::make_unique<RenderPassSkyboxColor>(
+    //    vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize});
+    //renderPasses.skyboxIrradiance = std::make_unique<RenderPassSkyboxIrradiance>(
+    //        vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize});
+    //renderPasses.skyboxPrefilter = std::make_unique<RenderPassSkyboxPrefilter>(
+    //        vulkan, resources, assetsManager, Vector2i{config.graphics.skyboxPrefilterSize, config.graphics.skyboxPrefilterSize});
     // clang-format on
 
     textures.star = assetsManager.getTextures().find("system_map_sun");
@@ -327,7 +327,7 @@ void SkyboxGenerator::startWork() {
     // First stage is to render the skybox color texture
     if (!work.postProcess) {
         // Render the skybox color first
-        const auto viewport = Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize};
+        /*const auto viewport = Vector2i{config.graphics.skyboxSize, config.graphics.skyboxSize};
         renderPasses.skyboxColor->render(vkb, viewport, *work.scene);
 
         // Grab the framebuffer texture representing the color
@@ -335,7 +335,7 @@ void SkyboxGenerator::startWork() {
 
         // Copy the color texture
         transitionTextureSrc(vkb, color);
-        copyTexture(vkb, color, skyboxTextures.getTexture(), work.side);
+        copyTexture(vkb, color, skyboxTextures.getTexture(), work.side);*/
 
         if (work.side == 5) {
             vkb.generateMipMaps(skyboxTextures.getTexture());
@@ -344,7 +344,7 @@ void SkyboxGenerator::startWork() {
     // Second stage is to create prefilter and irradiance textures
     else {
         // Render the irradiance texture
-        auto viewport = Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize};
+        /*auto viewport = Vector2i{config.graphics.skyboxIrradianceSize, config.graphics.skyboxIrradianceSize};
         const auto view = glm::lookAt(Vector3{0, 0, 0}, captureViewCenter[work.side], captureViewUp[work.side]);
         renderPasses.skyboxIrradiance->render(
             vkb, viewport, skyboxTextures.getTexture(), captureProjectionMatrix, view);
@@ -365,7 +365,7 @@ void SkyboxGenerator::startWork() {
 
         // Copy the prefilter texture
         copyTexture2(vkb, prefilter, skyboxTextures.getPrefilter(), viewport, work.side);
-        copyMipMaps(vkb, prefilter, skyboxTextures.getPrefilter(), viewport, work.side);
+        copyMipMaps(vkb, prefilter, skyboxTextures.getPrefilter(), viewport, work.side);*/
 
         if (work.side == 5) {
             // vkb.generateMipMaps(skyboxTextures.getIrradiance());
