@@ -725,6 +725,8 @@ void Nuklear::applyTheme() {
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
     window.min_row_height_padding = 0;
+    window.combo_border_color = ACTIVE_COLOR;
+    window.combo_border = 1.0f;
 
     combo.border = 1.0f;
     combo.border_color = BORDER_GREY;

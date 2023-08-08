@@ -18,12 +18,13 @@ RenderPassHDRMapping::RenderPassHDRMapping(const RenderOptions& options, VulkanR
         attachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.initialLayout = VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
         attachment.finalLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        addAttachment(RenderBufferPbr::Attachment::Final, attachment);
+        addAttachment(options.fxaa ? RenderBufferPbr::Attachment::Forward : RenderBufferPbr::Attachment::FXAA,
+                      attachment);
     }
 
     addSubpass(
         {
-            RenderBufferPbr::Attachment::Final,
+            options.fxaa ? RenderBufferPbr::Attachment::Forward : RenderBufferPbr::Attachment::FXAA,
         },
         {});
 

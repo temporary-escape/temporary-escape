@@ -241,7 +241,7 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
     VulkanDescriptorPool::CreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
-    static const size_t maxSetsPerPool = 1024;
+    static const size_t maxSetsPerPool = 128;
 
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
     descriptorPoolSizes.resize(descriptorTypeCounts.size());

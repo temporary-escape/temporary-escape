@@ -6,6 +6,7 @@
 #include "passes/render_pass_forward.hpp"
 #include "passes/render_pass_fxaa.hpp"
 #include "passes/render_pass_hdr_mapping.hpp"
+#include "passes/render_pass_non_hdr.hpp"
 #include "passes/render_pass_opaque.hpp"
 #include "passes/render_pass_pbr.hpp"
 #include "passes/render_pass_shadow.hpp"
@@ -72,10 +73,17 @@ RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer&
 
         addRenderPass(
             std::make_unique<RenderPassHDRMapping>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+
+        addRenderPass(
+            std::make_unique<RenderPassNonHDR>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }
     create();
+}
+
+void RendererScenePbr::setMousePos(const Vector2i& mousePos) {
+    getRenderPass<RenderPassOpaque>().setMousePos(mousePos);
 }
 
 void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -87,10 +95,18 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     camera->recalculate(vulkan, getViewport());
 
     Renderer::render(vkb, scene);
+
+    const auto selectedEntityId = getRenderPass<RenderPassOpaque>().getMousePosEntity();
+    scene.feedbackSelectedEntity(selectedEntityId);
+}
+
+const VulkanTexture& RendererScenePbr::getFinalBuffer() const {
+    return renderBufferPbr.getAttachmentTexture(options.fxaa ? RenderBufferPbr::Attachment::Forward
+                                                             : RenderBufferPbr::Attachment::FXAA);
 }
 
 void RendererScenePbr::transitionForBlit(VulkanCommandBuffer& vkb) {
-    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
+    const auto& src = getFinalBuffer();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -114,7 +130,7 @@ void RendererScenePbr::transitionForBlit(VulkanCommandBuffer& vkb) {
 }
 
 void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
-    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
+    const auto& src = getFinalBuffer();
     pipelineBlit.getDescriptionPool().reset();
     pipelineBlit.bind(vkb);
     pipelineBlit.setTexture(src);
@@ -123,6 +139,6 @@ void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
 }
 
 Vector2i RendererScenePbr::getViewport() const {
-    const auto& texture = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
+    const auto& texture = getFinalBuffer();
     return {texture.getExtent().width, texture.getExtent().height};
 }

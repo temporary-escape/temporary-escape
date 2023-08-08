@@ -150,6 +150,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
     }
 
+    if (renderer) {
+        renderer->setMousePos(mousePos);
+    }
+
     if (game) {
         game->update(deltaTime);
         game->render(vkb, *renderer, viewport);

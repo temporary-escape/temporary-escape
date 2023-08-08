@@ -15,6 +15,11 @@ public:
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
+    void afterRender(VulkanCommandBuffer& vkb) override;
+    void setMousePos(const Vector2i& value) {
+        mousePos = value;
+    }
+    uint32_t getMousePosEntity() const;
 
 private:
     void renderGrids(VulkanCommandBuffer& vkb, Scene& scene);
@@ -27,5 +32,7 @@ private:
     RenderPipelineModel pipelineModel;
     RenderPipelineModelInstanced pipelineModelInstanced;
     TexturePtr palette;
+    Vector2i mousePos;
+    VulkanDoubleBuffer entityColorBuffer;
 };
 } // namespace Engine

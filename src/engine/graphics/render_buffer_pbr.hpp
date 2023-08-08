@@ -25,7 +25,6 @@ public:
         BloomL2,
         BloomL3,
         BloomL4,
-        Final,
         Max = UINT32_MAX,
     };
 

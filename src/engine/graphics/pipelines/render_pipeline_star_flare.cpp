@@ -10,12 +10,12 @@ RenderPipelineStarFlare::RenderPipelineStarFlare(VulkanRenderer& vulkan, AssetsM
     addShader(assetsManager.getShaders().find("component_star_flare_vert"));
     addShader(assetsManager.getShaders().find("component_star_flare_frag"));
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
-    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    setDepthMode(DepthMode::Ignore);
+    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    setDepthMode(DepthMode::Read);
     setPolygonMode(VkPolygonMode::VK_POLYGON_MODE_FILL);
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
-    setFrontFace(VkFrontFace::VK_FRONT_FACE_CLOCKWISE);
-    setBlending(Blending::None);
+    setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    setBlending(Blending::Additive);
     setStencil(Stencil::Read, 0x00);
 }
 

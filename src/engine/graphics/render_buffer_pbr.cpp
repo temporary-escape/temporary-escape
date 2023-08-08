@@ -3,7 +3,7 @@
 using namespace Engine;
 
 RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
-    setAttachments(13 + bloomMipMaps);
+    setAttachments(12 + bloomMipMaps);
 
     { // Depth
         TextureInfo info{};
@@ -72,7 +72,8 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         TextureInfo info{};
         info.size = options.viewport;
         info.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
-        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                     VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         auto& texture = createTexture(info);
 
         ViewInfo view{};
@@ -111,7 +112,7 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         createAttachment(Attachment::SSAO, texture, view);
     }
 
-    if (options.fxaa) { // FXAA
+    { // FXAA
         TextureInfo info{};
         info.size = options.viewport;
         info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -121,18 +122,6 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         ViewInfo view{};
         view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
         createAttachment(Attachment::FXAA, texture, view);
-    }
-
-    { // Final
-        TextureInfo info{};
-        info.size = options.viewport;
-        info.format = VkFormat::VK_FORMAT_R16G16B16A16_UNORM;
-        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        auto& texture = createTexture(info);
-
-        ViewInfo view{};
-        view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
-        createAttachment(Attachment::Final, texture, view);
     }
 
     if (options.bloom) { // Bloom
