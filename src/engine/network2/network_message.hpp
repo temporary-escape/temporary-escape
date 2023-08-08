@@ -42,9 +42,8 @@ class ENGINE_API NetworkPeer;
 
 class ENGINE_API BaseRequest {
 public:
-    explicit BaseRequest(NetworkPeerPtr peer, ObjectHandlePtr object) :
-        peer{std::move(peer)}, object{std::move(object)} {
-        const auto& o = this->object->get();
+    explicit BaseRequest(NetworkPeerPtr peer, ObjectHandlePtr oh) : peer{std::move(peer)}, oh{std::move(oh)} {
+        const auto& o = this->oh->get();
         o.via.array.ptr[1].convert(xid);
     }
     virtual ~BaseRequest() = default;
@@ -56,12 +55,18 @@ public:
     void respondError(const std::string& msg);
 
     [[nodiscard]] bool isError() const {
-        const auto& o = this->object->get();
-        return o.via.array.ptr[2].type == msgpack::type::STR;
+        return object().type == msgpack::type::STR;
+    }
+
+    [[nodiscard]] const msgpack::object& object() const {
+        const auto& o = this->oh->get();
+        return o.via.array.ptr[2];
     }
 
     NetworkPeerPtr peer;
-    ObjectHandlePtr object;
+
+protected:
+    ObjectHandlePtr oh;
     uint64_t xid;
 };
 
@@ -69,37 +74,20 @@ template <typename T> class ENGINE_API Request : public BaseRequest {
 public:
     using Type = T;
 
-    explicit Request(NetworkPeerPtr peer, ObjectHandlePtr object) : BaseRequest{std::move(peer), std::move(object)} {
+    explicit Request(NetworkPeerPtr peer, ObjectHandlePtr oh) : BaseRequest{std::move(peer), std::move(oh)} {
     }
 
-    T get() {
-        const auto& o = this->object->get();
+    [[nodiscard]] T get() const {
         if (isError()) {
-            throw std::runtime_error(o.via.array.ptr[2].template as<std::string>());
+            throw std::runtime_error(object().template as<std::string>());
         }
 
-        return o.via.array.ptr[2].template as<T>();
+        return object().template as<T>();
     }
 
     NON_COPYABLE(Request);
     MOVEABLE(Request);
 };
-
-/*class ENGINE_API RawMessage {
-public:
-    explicit RawMessage(std::shared_ptr<msgpack::object_handle> oh) : oh{std::move(oh)} {
-    }
-
-    [[nodiscard]] const msgpack::object& get() const {
-        if (!oh) {
-            throw std::bad_cast();
-        }
-        return oh->get().via.array.ptr[1];
-    }
-
-private:
-    std::shared_ptr<msgpack::object_handle> oh;
-};*/
 } // namespace Engine
 
 #define MESSAGE_DEFINE(Type)                                                                                           \

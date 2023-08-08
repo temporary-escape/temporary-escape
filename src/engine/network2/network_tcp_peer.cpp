@@ -1,12 +1,14 @@
 #include "network_tcp_peer.hpp"
 #include "../utils/exceptions.hpp"
+#include "network_tcp_server.hpp"
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkTcpPeer::NetworkTcpPeer(asio::io_service& service, Socket socket, NetworkDispatcher& dispatcher) :
-    service{service}, strand{service}, socket{std::move(socket)}, dispatcher{dispatcher} {
+NetworkTcpPeer::NetworkTcpPeer(asio::io_service& service, NetworkTcpServer& server, Socket socket,
+                               NetworkDispatcher& dispatcher) :
+    service{service}, strand{service}, server{server}, socket{std::move(socket)}, dispatcher{dispatcher} {
 
     this->socket.lowest_layer().set_option(asio::ip::tcp::no_delay{true});
     address = fmt::format("{}", this->socket.lowest_layer().remote_endpoint());
@@ -20,7 +22,14 @@ void NetworkTcpPeer::close() {
     if (!closed && socket.lowest_layer().is_open()) {
         closed = true;
         logger.info("Closing peer endpoint: {}", address);
-        socket.lowest_layer().close();
+
+        auto self = shared_from_this();
+        server.disconnect(self);
+        self->socket.async_shutdown(self->strand.wrap([self](const std::error_code ec) {
+            if (ec) {
+                logger.error("Error while closing peer endpoint: {} error: {}", self->address, ec.message());
+            }
+        }));
     }
 }
 

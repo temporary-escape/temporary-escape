@@ -33,7 +33,13 @@ void NetworkTcpClient::close() {
 void NetworkTcpClient::Internal::close() {
     if (socket.lowest_layer().is_open()) {
         logger.info("Closing connection to: {}", address);
-        socket.lowest_layer().close();
+
+        auto self = shared_from_this();
+        self->socket.async_shutdown(self->strand.wrap([self](const std::error_code ec) {
+            if (ec) {
+                logger.error("Error while closing connection to: {} error: {}", self->address, ec.message());
+            }
+        }));
     }
 }
 

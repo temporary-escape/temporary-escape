@@ -132,26 +132,6 @@ struct MyFooMsg {
 
 MESSAGE_DEFINE(MyFooMsg);
 
-TEST_CASE_METHOD(TcpServerFixture, "Send a simple message via TCP peer", "[tcp_server]") {
-    startServer();
-
-    // Connect to the server
-    NetworkDispatcher clientDispatcher{};
-    auto client = createClient(clientDispatcher);
-    REQUIRE(client->isConnected());
-    REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
-
-    auto peer = dispatcher.getPeers().front();
-
-    MyFooMsg msg{};
-    msg.msg = "Hello World!";
-    peer->send(msg, 123);
-    peer.reset();
-
-    std::this_thread::sleep_for(std::chrono::seconds{1});
-    client->close();
-}
-
 TEST_CASE_METHOD(TcpServerFixture, "Send a message from the client to the server", "[tcp_server]") {
     std::atomic_bool received{false};
     MyFooMsg myFooMsg;

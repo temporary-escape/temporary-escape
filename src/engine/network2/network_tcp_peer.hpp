@@ -7,9 +7,12 @@
 namespace Engine {
 using Socket = asio::ssl::stream<asio::ip::tcp::socket>;
 
+class ENGINE_API NetworkTcpServer;
+
 class ENGINE_API NetworkTcpPeer : public NetworkPeer, public std::enable_shared_from_this<NetworkTcpPeer> {
 public:
-    explicit NetworkTcpPeer(asio::io_service& service, Socket socket, NetworkDispatcher& dispatcher);
+    explicit NetworkTcpPeer(asio::io_service& service, NetworkTcpServer& server, Socket socket,
+                            NetworkDispatcher& dispatcher);
     virtual ~NetworkTcpPeer();
 
     void handshake();
@@ -28,6 +31,7 @@ private:
 
     asio::io_service& service;
     asio::io_service::strand strand;
+    NetworkTcpServer& server;
     Socket socket;
     NetworkDispatcher& dispatcher;
     std::string address;

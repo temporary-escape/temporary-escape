@@ -13,10 +13,13 @@ public:
     void accept();
     void stop();
 
+    void disconnect(const std::shared_ptr<NetworkTcpPeer>& peer);
+
 private:
     static asio::ip::tcp::endpoint endpoint(uint32_t port, bool ipv6);
 
     asio::io_service& service;
+    asio::io_service::strand strand;
     NetworkSslContext& ssl;
     NetworkDispatcher& dispatcher;
     asio::ip::tcp::acceptor acceptor;
