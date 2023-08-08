@@ -102,7 +102,7 @@ void RenderResources::createSsaoSamples() {
 
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = weights.size();
+    bufferInfo.size = sizeof(Vector4) * weights.size();
     bufferInfo.usage =
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

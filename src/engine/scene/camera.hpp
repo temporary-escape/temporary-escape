@@ -17,7 +17,10 @@ public:
         Vector2i viewport;
         float padding0[2];
         Vector3 eyesPos;
+        float padding1[9];
     };
+
+    static_assert(sizeof(Uniform) % 64 == 0);
 
     Camera() = default;
     explicit Camera(Matrix4& transform);
