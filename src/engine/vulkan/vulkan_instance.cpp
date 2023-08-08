@@ -30,8 +30,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanInstance::debugCallback(VkDebugUtilsMessage
                                                              void* pUserData) {
     std::string msg{pCallbackData->pMessage};
     auto& self = *reinterpret_cast<VulkanInstance*>(pUserData);
-    // if (msg.find("VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
-    if (self.debugMessengerEnabled) {
+    if (self.debugMessengerEnabled && msg.find("vertex shader writes to output location") == std::string::npos) {
         logger.warn(msg);
     }
 

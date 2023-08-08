@@ -525,3 +525,18 @@ void RenderPipeline::renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) cons
         vkb.draw(mesh.count, mesh.instances, 0, 0);
     }
 }
+
+void RenderPipeline::renderMeshInstanced(VulkanCommandBuffer& vkb, const Mesh& mesh, const VulkanBuffer& vbo,
+                                         const uint32_t count) const {
+    std::array<VulkanVertexBufferBindRef, 2> vboBindings{};
+
+    vboBindings[0] = {&mesh.vbo, 0};
+    vboBindings[1] = {&vbo, 0};
+    vkb.bindBuffers(vboBindings);
+
+    if (mesh.ibo) {
+        vkb.bindIndexBuffer(mesh.ibo, 0, mesh.indexType);
+    }
+
+    vkb.drawIndexed(mesh.count, count, 0, 0, 0);
+}

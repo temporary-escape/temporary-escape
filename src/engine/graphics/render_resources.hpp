@@ -26,12 +26,27 @@ public:
     const SkyboxTextures& getDefaultSkybox() const {
         return defaultSkybox;
     }
+    
+    const VulkanBuffer& getSSAOKernel() const {
+        return ssaoSamples.ubo;
+    }
+
+    const VulkanTexture& getSSAONoise() const {
+        return ssaoSamples.noise;
+    }
 
 private:
+    void createSsaoNoise();
+    void createSsaoSamples();
+
     VulkanRenderer& vulkan;
     Mesh meshFullScreenQuad;
     Mesh meshPlanet;
     Mesh meshSkyboxCube;
     SkyboxTextures defaultSkybox;
+    struct {
+        VulkanBuffer ubo;
+        VulkanTexture noise;
+    } ssaoSamples;
 };
 } // namespace Engine

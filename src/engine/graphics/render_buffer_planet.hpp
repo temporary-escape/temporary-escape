@@ -14,7 +14,7 @@ public:
         Max = UINT32_MAX,
     };
 
-    explicit RenderBufferPlanet(const RenderOptions& options, VulkanRenderer& vulkan);
+    explicit RenderBufferPlanet(const Vector2i& viewport, VulkanRenderer& vulkan);
     NON_MOVEABLE(RenderBufferPlanet);
     NON_COPYABLE(RenderBufferPlanet);
 };

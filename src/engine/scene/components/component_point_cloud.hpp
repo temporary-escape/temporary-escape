@@ -33,6 +33,7 @@ public:
     virtual ~ComponentPointCloud() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentPointCloud);
 
+    void reserve(size_t count);
     void add(const Vector3& pos, const Vector2& size, const Color4& color);
 
     void clear();

@@ -15,11 +15,12 @@ layout (std140, binding = 0) uniform Camera {
 } camera;
 
 layout (std140, binding = 1) uniform Samples {
-    vec4 weights[16];
+    vec4 weights[64];
 } samples;
 
 layout (push_constant) uniform Uniforms {
     vec2 scale;
+    int kernelSize;
 } uniforms;
 
 layout (location = 0) out vec4 outColor;
@@ -28,7 +29,6 @@ layout (binding = 2) uniform sampler2D depthTexture;
 layout (binding = 3) uniform sampler2D normalTexture;
 layout (binding = 4) uniform sampler2D noiseTexture;
 
-const int kernelSize = 16;
 const float radius = 0.5;
 const float bias = 0.025;
 
@@ -84,7 +84,7 @@ void main() {
 
     float ldepth = getLinearDepth(depth);
 
-    for (int i = 0; i < kernelSize; ++i) {
+    for (int i = 0; i < uniforms.kernelSize; ++i) {
         // get sample position
         vec3 samplePos = TBN * samples.weights[i].rgb;// from tangent to view-space
         samplePos = fragPos + samplePos * radius;
@@ -103,6 +103,6 @@ void main() {
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(ldepth - sampleDepth));
         occlusion += (ldepth >= sampleDepth + bias ? 1.0 : 0.0) * rangeCheck;
     }
-    occlusion = 1.0 - (occlusion / kernelSize);
+    occlusion = 1.0 - (occlusion / uniforms.kernelSize);
     outColor = vec4(vec3(occlusion), 1.0);
 }

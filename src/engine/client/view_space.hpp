@@ -13,7 +13,7 @@ class ENGINE_API Game;
 class ENGINE_API ViewSpace : public View {
 public:
     explicit ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       FontFamily& font, Client& client);
+                       VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client);
     ~ViewSpace() = default;
 
     void update(float deltaTime) override;
@@ -36,6 +36,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
+    VoxelShapeCache& voxelShapeCache;
     FontFamily& font;
     Client& client;
     std::optional<Entity> selectedEntity;

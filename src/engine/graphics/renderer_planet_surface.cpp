@@ -8,9 +8,13 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-RendererPlanetSurface::RendererPlanetSurface(const Config& config, const RenderOptions& options, VulkanRenderer& vulkan,
-                                             RenderResources& resources, AssetsManager& assetsManager) :
-    RendererWork{config, options, vulkan}, vulkan{vulkan}, renderBufferPlanet{options, vulkan} {
+RendererPlanetSurface::RendererPlanetSurface(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
+                                             RenderResources& resources, AssetsManager& assetsManager,
+                                             VoxelShapeCache& voxelShapeCache) :
+    RendererWork{config, vulkan, voxelShapeCache},
+    vulkan{vulkan},
+    viewport{viewport},
+    renderBufferPlanet{viewport, vulkan} {
 
     try {
         addRenderPass(std::make_unique<RenderPassPlanetSurface>(vulkan, renderBufferPlanet, resources, assetsManager));
@@ -52,6 +56,12 @@ void RendererPlanetSurface::beforeRender(VulkanCommandBuffer& vkb, Scene& scene,
         prepareCubemap(vkb);
     }
 
+    auto camera = scene.getPrimaryCamera();
+    if (!camera) {
+        EXCEPTION("Scene has no camera");
+    }
+    camera->setViewport(viewport);
+
     auto& passPlanetSurface = getRenderPass<RenderPassPlanetSurface>();
     passPlanetSurface.setSeed(work.seed);
     passPlanetSurface.setIndex(static_cast<int>(job));
@@ -75,13 +85,32 @@ void RendererPlanetSurface::postRender(VulkanCommandBuffer& vkb, Scene& scene, c
 
 void RendererPlanetSurface::copyTexture(VulkanCommandBuffer& vkb, const uint32_t attachment,
                                         const VulkanTexture& target, int side) {
-    renderBufferPlanet.transitionLayout(vkb,
+    /*renderBufferPlanet.transitionLayout(vkb,
                                         attachment,
                                         VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                         VkAccessFlagBits::VK_ACCESS_TRANSFER_READ_BIT,
-                                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT);
+                                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT);*/
 
     const auto& source = renderBufferPlanet.getAttachmentTexture(attachment);
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = source.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = source.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = source.getLayerCount();
+    barrier.oldLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcAccessMask =
+        VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VkAccessFlagBits::VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkb.pipelineBarrier(VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        barrier);
 
     VkOffset3D offset = {
         static_cast<int32_t>(source.getExtent().width),

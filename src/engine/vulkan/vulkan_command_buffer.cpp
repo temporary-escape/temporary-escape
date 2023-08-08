@@ -78,7 +78,7 @@ void VulkanCommandBuffer::beginRenderPass(const VulkanRenderPassBeginInfo& rende
     info.renderArea.offset = {renderPassInfo.offset.x, renderPassInfo.offset.y};
     info.renderArea.extent =
         VkExtent2D{static_cast<uint32_t>(renderPassInfo.size.x), static_cast<uint32_t>(renderPassInfo.size.y)};
-    
+
     info.clearValueCount = static_cast<uint32_t>(renderPassInfo.clearValues.size());
     info.pClearValues = renderPassInfo.clearValues.data();
 
@@ -203,6 +203,14 @@ void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, co
     vkCmdPipelineBarrier(commandBuffer, source, destination, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
+void VulkanCommandBuffer::pipelineBarrier2(const VkImageMemoryBarrier2& barrier) {
+    VkDependencyInfo dependencyInfo{};
+    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dependencyInfo.pImageMemoryBarriers = &barrier;
+    dependencyInfo.imageMemoryBarrierCount = 1;
+    vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+}
+
 void VulkanCommandBuffer::bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
                                           const Span<VulkanBufferBinding>& uniforms,
                                           const Span<VulkanTextureBinding>& textures,
@@ -234,6 +242,12 @@ void VulkanCommandBuffer::blitImage(const VulkanTexture& src, VkImageLayout srcL
                                     const VkFilter filter) {
     vkCmdBlitImage(
         commandBuffer, src.getHandle(), srcLayout, dst.getHandle(), dstLayout, regions.size(), regions.data(), filter);
+}
+
+void VulkanCommandBuffer::blitImage(const VkImage& src, VkImageLayout srcLayout, const VkImage& dst,
+                                    const VkImageLayout dstLayout, const Span<VkImageBlit>& regions,
+                                    const VkFilter filter) {
+    vkCmdBlitImage(commandBuffer, src, srcLayout, dst, dstLayout, regions.size(), regions.data(), filter);
 }
 
 void VulkanCommandBuffer::generateMipMaps(VulkanTexture& texture) {

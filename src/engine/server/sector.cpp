@@ -39,7 +39,7 @@ void Sector::load() {
         EXCEPTION("Sector was already loaded id: '{}'", sectorId);
     }
 
-    scene = std::make_unique<Scene>(config, true);
+    scene = std::make_unique<Scene>(config);
     lua = std::make_unique<Lua>(config, eventBus);
     lua->setScene(*scene);
     scene->setLua(*lua);

@@ -8,8 +8,9 @@ ViewBuild::Gui::Gui(const Config& config, AssetsManager& assetsManager) :
     blockActionBar{config, assetsManager}, blockSelector{config}, blockSideMenu{config} {
 }
 
-ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, Gui& gui) :
-    config{config}, vulkan{vulkan}, assetsManager{assetsManager}, gui{gui}, scene{config} {
+ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                     VoxelShapeCache& voxelShapeCache, Gui& gui) :
+    config{config}, vulkan{vulkan}, assetsManager{assetsManager}, gui{gui}, scene{config, voxelShapeCache} {
 
     gui.blockSelector.setBlocks(assetsManager.getBlocks().findAll());
 

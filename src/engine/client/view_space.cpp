@@ -6,8 +6,14 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                     FontFamily& font, Client& client) :
-    parent{parent}, config{config}, vulkan{vulkan}, assetsManager{assetsManager}, font{font}, client{client} {
+                     VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client) :
+    parent{parent},
+    config{config},
+    vulkan{vulkan},
+    assetsManager{assetsManager},
+    voxelShapeCache{voxelShapeCache},
+    font{font},
+    client{client} {
 }
 
 void ViewSpace::update(const float deltaTime) {

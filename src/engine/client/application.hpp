@@ -2,7 +2,7 @@
 
 #include "../audio/audio_context.hpp"
 #include "../database/database.hpp"
-#include "../graphics/renderer.hpp"
+#include "../graphics/renderer_scene_pbr.hpp"
 #include "../gui/gui_create_profile.hpp"
 #include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
@@ -60,6 +60,7 @@ private:
     void createBlockThumbnails(Renderer& thumbnailRenderer);
     void createEmptyThumbnail(Renderer& thumbnailRenderer);
     void createPlanetThumbnails(Renderer& thumbnailRenderer);
+    bool shouldBlit() const;
 
     Config& config;
 
@@ -83,7 +84,7 @@ private:
     std::unique_ptr<RendererSkybox> rendererSkybox;
     std::unique_ptr<RendererPlanetSurface> rendererPlanetSurface;
     std::unique_ptr<RenderResources> renderResources;
-    std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<RendererScenePbr> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;
     PlayerLocalProfile playerLocalProfile;
@@ -95,6 +96,7 @@ private:
     std::atomic<bool> shouldStop{false};
     Vector2i mousePos;
     bool editorOnly{false};
+    int shouldBlitCount{0};
 
     struct {
         PerformanceRecord frameTime;

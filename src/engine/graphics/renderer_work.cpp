@@ -3,8 +3,8 @@
 
 using namespace Engine;
 
-RendererWork::RendererWork(const Config& config, const RenderOptions& options, VulkanRenderer& vulkan) :
-    Renderer{options, vulkan}, config{config}, vulkan{vulkan} {
+RendererWork::RendererWork(const Config& config, VulkanRenderer& vulkan, VoxelShapeCache& voxelShapeCache) :
+    Renderer{vulkan}, config{config}, vulkan{vulkan}, voxelShapeCache{voxelShapeCache} {
 }
 
 void RendererWork::render() {
@@ -35,7 +35,7 @@ void RendererWork::render() {
 
         beforeRender(vkb, *scene, jobsCurrent);
 
-        Renderer::render(vkb, *scene, getOptions().viewport);
+        Renderer::render(vkb, *scene);
 
         postRender(vkb, *scene, jobsCurrent);
 
@@ -54,7 +54,7 @@ void RendererWork::startJobs(const size_t count) {
 }
 
 void RendererWork::prepareScene() {
-    scene = std::make_unique<Scene>(config, false);
+    scene = std::make_unique<Scene>(config, voxelShapeCache);
 
     auto entity = scene->createEntity();
     auto& transform = entity.addComponent<ComponentTransform>();

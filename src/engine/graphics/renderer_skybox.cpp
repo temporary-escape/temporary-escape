@@ -2,6 +2,8 @@
 #include "../scene/scene.hpp"
 #include "../utils/exceptions.hpp"
 #include "passes/render_pass_skybox_color.hpp"
+#include "passes/render_pass_skybox_irradiance.hpp"
+#include "passes/render_pass_skybox_prefilter.hpp"
 
 using namespace Engine;
 
@@ -31,21 +33,16 @@ static const std::array<Vector3, 6> captureViewUp = {
     Vector3{0.0f, -1.0f, 0.0f},
 };
 
-static RenderOptions getRenderOptions(const Config& config) {
-    RenderOptions options{};
-    options.viewport = {config.graphics.skyboxSize, config.graphics.skyboxSize};
-    return options;
-}
-
 RendererSkybox::RendererSkybox(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
-                               AssetsManager& assetsManager) :
-    RendererWork{config, getRenderOptions(config), vulkan},
-    config{config},
-    vulkan{vulkan},
-    renderBufferSkybox{getRenderOptions(config), vulkan} {
+                               AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache) :
+    RendererWork{config, vulkan, voxelShapeCache}, config{config}, vulkan{vulkan}, renderBufferSkybox{config, vulkan} {
 
     try {
         addRenderPass(std::make_unique<RenderPassSkyboxColor>(vulkan, renderBufferSkybox, resources, assetsManager));
+        addRenderPass(
+            std::make_unique<RenderPassSkyboxIrradiance>(vulkan, renderBufferSkybox, resources, assetsManager));
+        addRenderPass(
+            std::make_unique<RenderPassSkyboxPrefilter>(vulkan, renderBufferSkybox, resources, assetsManager));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }
@@ -66,7 +63,7 @@ void RendererSkybox::update(Scene& scene) {
 
             work.entity = scene.fromHandle(handle);
             work.seed = skybox.getSeed();
-            startJobs(6);
+            startJobs(12);
             break;
         }
     }
@@ -80,24 +77,69 @@ void RendererSkybox::finished() {
 }
 
 void RendererSkybox::beforeRender(VulkanCommandBuffer& vkb, Scene& scene, const size_t job) {
-    if (job == 0) {
-        prepareCubemap(vkb);
-        prepareProperties(scene);
-    }
+    auto& passSkyboxColor = getRenderPass<RenderPassSkyboxIrradiance>();
+    auto& passSkyboxIrradiance = getRenderPass<RenderPassSkyboxIrradiance>();
+    auto& passSkyboxPrefilter = getRenderPass<RenderPassSkyboxPrefilter>();
 
     auto camera = scene.getPrimaryCamera();
     if (!camera) {
         EXCEPTION("Scene has no camera");
     }
-    camera->lookAt({0.0f, 0.0f, 0.0f}, captureViewCenter[job], captureViewUp[job]);
-    camera->setProjection(90.0f);
+
+    // Color render step
+    if (job < 6) {
+        passSkyboxColor.setExcluded(false);
+        passSkyboxIrradiance.setExcluded(true);
+        passSkyboxPrefilter.setExcluded(true);
+
+        if (job == 0) {
+            prepareCubemap(vkb);
+        }
+
+        prepareProperties(scene);
+
+        camera->setViewport({1.0f, 1.0f});
+        camera->lookAt({0.0f, 0.0f, 0.0f}, captureViewCenter[job % 6], captureViewUp[job % 6]);
+        camera->setProjection(90.0f);
+        camera->recalculate(vulkan, {1.0f, 1.0f});
+    }
+    // Post process
+    else {
+        passSkyboxColor.setExcluded(true);
+        passSkyboxIrradiance.setExcluded(false);
+        passSkyboxPrefilter.setExcluded(false);
+
+        camera->setViewport({1.0f, 1.0f});
+        camera->lookAt({0.0f, 0.0f, 0.0f}, captureViewCenter[job % 6], captureViewUp[job % 6]);
+        camera->setProjectionMatrix(captureProjectionMatrix);
+        camera->recalculate(vulkan, {1.0f, 1.0f});
+
+        passSkyboxIrradiance.setTextureSkybox(skyboxTextures.getTexture());
+        passSkyboxPrefilter.setTextureSkybox(skyboxTextures.getTexture());
+    }
 }
 
 void RendererSkybox::postRender(VulkanCommandBuffer& vkb, Scene& scene, const size_t job) {
-    copyTexture(vkb, RenderBufferSkybox::Attachment::Color, skyboxTextures.getTexture(), job);
+    // Color render step
+    if (job < 6) {
+        copyTexture(vkb, RenderBufferSkybox::Attachment::Color, skyboxTextures.getTexture(), job % 6);
 
-    if (job == 5) {
-        vkb.generateMipMaps(skyboxTextures.getTexture());
+        if (job == 5) {
+            vkb.generateMipMaps(skyboxTextures.getTexture());
+        }
+    }
+    // Post process
+    else {
+        copyTexture(vkb, RenderBufferSkybox::Attachment::Irradiance, skyboxTextures.getIrradiance(), job % 6);
+        copyMipMaps(vkb, RenderBufferSkybox::Attachment::Irradiance, skyboxTextures.getIrradiance(), job % 6);
+
+        copyTexture(vkb, RenderBufferSkybox::Attachment::Prefilter, skyboxTextures.getPrefilter(), job % 6);
+        copyMipMaps(vkb, RenderBufferSkybox::Attachment::Prefilter, skyboxTextures.getPrefilter(), job % 6);
+
+        if (job == 11) {
+            transitionTextureRead(vkb, skyboxTextures.getIrradiance());
+            transitionTextureRead(vkb, skyboxTextures.getPrefilter());
+        }
     }
 }
 
@@ -145,6 +187,7 @@ void RendererSkybox::prepareStars(Scene& scene, Rng& rng, const Vector2& size, c
     auto entity = scene.createEntity();
     entity.addComponent<ComponentTransform>();
     auto& pointCloud = entity.addComponent<ComponentPointCloud>(textures.star);
+    pointCloud.reserve(count);
 
     for (size_t i = 0; i < count; i++) {
         const auto u = distUV(rng);
@@ -166,17 +209,36 @@ void RendererSkybox::prepareStars(Scene& scene, Rng& rng, const Vector2& size, c
 }
 
 void RendererSkybox::copyTexture(VulkanCommandBuffer& vkb, const uint32_t attachment, const VulkanTexture& target,
-                                 int side) {
-    renderBufferSkybox.transitionLayout(vkb,
+                                 const int side) {
+    /*renderBufferSkybox.transitionLayout(vkb,
                                         attachment,
                                         VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                         VkAccessFlagBits::VK_ACCESS_TRANSFER_READ_BIT,
-                                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT);
+                                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT);*/
 
     const auto& source = renderBufferSkybox.getAttachmentTexture(attachment);
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = source.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = source.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = source.getLayerCount();
+    barrier.oldLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcAccessMask =
+        VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VkAccessFlagBits::VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkb.pipelineBarrier(VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        barrier);
 
     VkOffset3D offset = {
-        static_cast<int32_t>(source.getExtent().width),
+        static_cast<int32_t>(source.getExtent().height), // This is on purpose!
         static_cast<int32_t>(source.getExtent().height),
         1,
     };
@@ -187,13 +249,13 @@ void RendererSkybox::copyTexture(VulkanCommandBuffer& vkb, const uint32_t attach
     blit[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit[0].srcSubresource.mipLevel = 0;
     blit[0].srcSubresource.baseArrayLayer = 0;
-    blit[0].srcSubresource.layerCount = 1;
+    blit[0].srcSubresource.layerCount = source.getLayerCount();
     blit[0].dstOffsets[0] = {0, 0, 0};
     blit[0].dstOffsets[1] = offset;
     blit[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit[0].dstSubresource.mipLevel = 0;
     blit[0].dstSubresource.baseArrayLayer = side;
-    blit[0].dstSubresource.layerCount = 1;
+    blit[0].dstSubresource.layerCount = source.getLayerCount();
 
     vkb.blitImage(source,
                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -201,6 +263,79 @@ void RendererSkybox::copyTexture(VulkanCommandBuffer& vkb, const uint32_t attach
                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                   blit,
                   VK_FILTER_NEAREST);
+}
+
+void RendererSkybox::copyMipMaps(VulkanCommandBuffer& vkb, uint32_t attachment, const VulkanTexture& target,
+                                 const int side) const {
+    const auto& source = renderBufferSkybox.getAttachmentTexture(attachment);
+
+    Vector2i size = {
+        source.getExtent().height, // This is on purpose!
+        source.getExtent().height,
+    };
+
+    const auto levels = getMipMapLevels(size) - 1;
+
+    for (auto i = 1; i <= levels; i++) {
+        const auto levelSize = mipMapSize(size, i);
+        const auto levelOffset = mipMapOffset(size, i);
+
+        std::array<VkImageBlit, 1> blit{};
+        blit[0].srcOffsets[0] = {
+            levelOffset.x,
+            levelOffset.y,
+            0,
+        };
+        blit[0].srcOffsets[1] = {
+            levelOffset.x + levelSize.x,
+            levelOffset.y + levelSize.y,
+            1,
+        };
+        blit[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit[0].srcSubresource.mipLevel = 0;
+        blit[0].srcSubresource.baseArrayLayer = 0;
+        blit[0].srcSubresource.layerCount = 1;
+        blit[0].dstOffsets[0] = {
+            0,
+            0,
+            0,
+        };
+        blit[0].dstOffsets[1] = {
+            levelSize.x,
+            levelSize.y,
+            1,
+        };
+        blit[0].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit[0].dstSubresource.mipLevel = i;
+        blit[0].dstSubresource.baseArrayLayer = side;
+        blit[0].dstSubresource.layerCount = 1;
+
+        vkb.blitImage(source,
+                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                      target,
+                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                      blit,
+                      VK_FILTER_NEAREST);
+    }
+}
+
+void RendererSkybox::transitionTextureRead(VulkanCommandBuffer& vkb, const VulkanTexture& texture) const {
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.getHandle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = texture.getMipMaps();
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = texture.getLayerCount();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkb.pipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier);
 }
 
 void RendererSkybox::prepareTexture(VulkanCommandBuffer& vkb, const VulkanTexture& target) {

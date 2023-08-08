@@ -10,8 +10,9 @@ class ENGINE_API Scene;
 
 class ENGINE_API RendererPlanetSurface : public RendererWork {
 public:
-    explicit RendererPlanetSurface(const Config& config, const RenderOptions& options, VulkanRenderer& vulkan,
-                                   RenderResources& resources, AssetsManager& assetsManager);
+    explicit RendererPlanetSurface(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
+                                   RenderResources& resources, AssetsManager& assetsManager,
+                                   VoxelShapeCache& voxelShapeCache);
 
     void update(Scene& scene);
 
@@ -25,6 +26,7 @@ protected:
 
 private:
     VulkanRenderer& vulkan;
+    Vector2i viewport;
     RenderBufferPlanet renderBufferPlanet;
 
     struct {

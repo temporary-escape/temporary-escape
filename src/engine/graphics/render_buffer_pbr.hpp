@@ -8,6 +8,15 @@ public:
     enum Attachment : uint32_t {
         Depth = 0,
         Forward,
+        AlbedoAmbient,
+        EmissiveRoughness,
+        NormalMetallic,
+        ShadowL0,
+        ShadowL1,
+        ShadowL2,
+        ShadowL3,
+        Entity,
+        SSAO,
         Max = UINT32_MAX,
     };
 

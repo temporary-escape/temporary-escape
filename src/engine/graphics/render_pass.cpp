@@ -47,16 +47,21 @@ void RenderPass::begin(VulkanCommandBuffer& vkb) {
 void RenderPass::end(VulkanCommandBuffer& vkb) {
     vkb.endRenderPass();
 
-    for (size_t i = 0; i < attachmentIndexes.size(); i++) {
+    /*for (size_t i = 0; i < attachmentIndexes.size(); i++) {
         const auto& description = attachmentDescriptions.at(i);
-        auto access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         if (isDepthFormat(description.format)) {
-            access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            renderBuffer.updateLayout(attachmentIndexes.at(i),
+                                      description.finalLayout,
+                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+        } else {
+            renderBuffer.updateLayout(attachmentIndexes.at(i),
+                                      description.finalLayout,
+                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
         }
-
-        renderBuffer.updateLayout(
-            attachmentIndexes.at(i), description.finalLayout, access, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-    }
+    }*/
 
     afterRender(vkb);
 }
@@ -156,32 +161,7 @@ void RenderPass::addSubpass(const std::vector<uint32_t>& attachments, const std:
         subpassDescription.pInputAttachments = data.inputsReferences.data();
     }
 
-    /*if (subpassDescriptions.empty() && depthAttachment != RenderBuffer::Attachment::Max) {
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask =
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependency.dstStageMask =
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependency.dstAccessMask =
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        dependencies.push_back(dependency);
-    }*/
-
-    if (subpassDescriptions.empty()) {
-        // First subpass
-        /*dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;*/
-    } else {
+    if (!subpassDescriptions.empty()) {
         // Additional subpasses
         VkSubpassDependency dependency{};
         dependency.srcSubpass = subpassDescriptions.size() - 1;
@@ -197,20 +177,19 @@ void RenderPass::addSubpass(const std::vector<uint32_t>& attachments, const std:
     subpassDescriptions.push_back(subpassDescription);
 }
 
+void RenderPass::addSubpassDependency(const RenderPass::DependencyInfo& dependency) {
+    dependencies.emplace_back();
+    auto& dep = dependencies.back();
+    dep.dependencyFlags = 0;
+    dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dep.dstSubpass = 0;
+    dep.srcStageMask = dependency.srcStageMask;
+    dep.dstStageMask = dependency.dstStageMask;
+    dep.srcAccessMask = dependency.srcAccessMask;
+    dep.dstAccessMask = dependency.dstAccessMask;
+}
+
 void RenderPass::createRenderPass() {
-    /*if (!subpassDescriptions.empty()) {
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = subpassDescriptions.size() - 1;
-        dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependency.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        dependencies.push_back(dependency);
-    }*/
-
     if (subpassDescriptions.empty()) {
         EXCEPTION("Can not create render pass with no subpass descriptions");
     }

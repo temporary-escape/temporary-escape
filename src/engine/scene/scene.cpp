@@ -3,6 +3,7 @@
 #include "../server/lua.hpp"
 #include "controllers/controller_camera.hpp"
 #include "controllers/controller_dynamics_world.hpp"
+#include "controllers/controller_grid.hpp"
 #include "controllers/controller_icon.hpp"
 #include "controllers/controller_icon_selectable.hpp"
 #include "controllers/controller_lights.hpp"
@@ -15,18 +16,22 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, const bool isServer) : isServer{isServer} {
+Scene::Scene(const Config& config, VoxelShapeCache& voxelShapeCache) : isServer{false} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
 
-    if (!isServer) {
-        addController<ControllerIconSelectable>();
-        addController<ControllerIcon>();
-        addController<ControllerCamera>();
-        addController<ControllerLights>(*this);
-        addController<ControllerStaticModel>();
-        addController<ControllerText>();
-    }
+    addController<ControllerIconSelectable>();
+    addController<ControllerIcon>();
+    addController<ControllerCamera>();
+    addController<ControllerGrid>(voxelShapeCache);
+    addController<ControllerLights>(*this);
+    addController<ControllerStaticModel>();
+    addController<ControllerText>();
+}
+
+Scene::Scene(const Config& config) : isServer{true} {
+    addController<ControllerDynamicsWorld>(config);
+    addController<ControllerNetwork>();
 }
 
 Scene::~Scene() = default;

@@ -9,7 +9,7 @@ class ENGINE_API Scene;
 
 class ENGINE_API RendererWork : protected Renderer {
 public:
-    explicit RendererWork(const Config& config, const RenderOptions& options, VulkanRenderer& vulkan);
+    explicit RendererWork(const Config& config, VulkanRenderer& vulkan, VoxelShapeCache& voxelShapeCache);
 
     void render();
     bool isBusy() const;
@@ -25,6 +25,7 @@ private:
 
     const Config& config;
     VulkanRenderer& vulkan;
+    VoxelShapeCache& voxelShapeCache;
     VulkanFence fence;
     VulkanCommandBuffer vkb;
     bool running{false};

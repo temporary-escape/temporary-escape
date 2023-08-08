@@ -79,6 +79,7 @@ public:
                            bool isCompute = false);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                          VkImageMemoryBarrier& barrier);
+    void pipelineBarrier2(const VkImageMemoryBarrier2& barrier);
     void bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
                          const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures,
                          const Span<VulkanTextureBinding>& inputs);
@@ -88,6 +89,8 @@ public:
     void pushConstants(const VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
     void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
+                   const Span<VkImageBlit>& regions, VkFilter filter);
+    void blitImage(const VkImage& src, VkImageLayout srcLayout, const VkImage& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);
     void generateMipMaps(VulkanTexture& texture);
     void writeTimestamp(VulkanQueryPool& queryPool, VkPipelineStageFlagBits stage, uint32_t query);

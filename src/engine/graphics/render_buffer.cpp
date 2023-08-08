@@ -27,7 +27,7 @@ VulkanTexture& RenderBuffer::createTexture(const TextureInfo& info) {
 
     textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     textureInfo.view.format = info.format;
-    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.viewType = info.viewType;
     textureInfo.view.subresourceRange.aspectMask = info.aspectMask; // VK_IMAGE_ASPECT_COLOR_BIT;
     textureInfo.view.subresourceRange.baseMipLevel = 0;
     textureInfo.view.subresourceRange.levelCount = 1;
@@ -80,15 +80,15 @@ const VulkanTexture& RenderBuffer::getAttachmentTexture(const uint32_t attachmen
     return *found.texture;
 }
 
-void RenderBuffer::updateLayout(const uint32_t attachment, const VkImageLayout layout, const VkAccessFlags access,
+/*void RenderBuffer::updateLayout(const uint32_t attachment, const VkImageLayout layout, const VkAccessFlags access,
                                 const VkPipelineStageFlags stage) {
     auto& found = attachments.at(attachment);
     found.layout = layout;
     found.access = access;
     found.stage = stage;
-}
+}*/
 
-void RenderBuffer::transitionLayout(VulkanCommandBuffer& vkb, const uint32_t attachment, const VkImageLayout layout,
+/*void RenderBuffer::transitionLayout(VulkanCommandBuffer& vkb, const uint32_t attachment, const VkImageLayout layout,
                                     const VkAccessFlags access, const VkPipelineStageFlags stage) {
     auto& found = attachments.at(attachment);
 
@@ -110,10 +110,9 @@ void RenderBuffer::transitionLayout(VulkanCommandBuffer& vkb, const uint32_t att
     barrier.subresourceRange.layerCount = 1;
     barrier.srcAccessMask = found.access;
     barrier.dstAccessMask = access;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vkb.pipelineBarrier(found.stage, stage, barrier);
 
     found.layout = layout;
     found.access = access;
     found.stage = stage;
-}
+}*/

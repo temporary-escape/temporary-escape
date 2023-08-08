@@ -8,6 +8,10 @@ ComponentPointCloud::ComponentPointCloud(entt::registry& reg, entt::entity handl
     Component{reg, handle}, texture{std::move(texture)} {
 }
 
+void ComponentPointCloud::reserve(const size_t count) {
+    points.reserve(count);
+}
+
 void ComponentPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color) {
     setDirty(true);
     points.push_back({pos, size, color, {0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}});

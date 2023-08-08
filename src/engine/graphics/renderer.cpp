@@ -4,20 +4,17 @@
 
 using namespace Engine;
 
-Renderer::Renderer(const RenderOptions& options, VulkanRenderer& vulkan) : options{options}, vulkan{vulkan} {
+Renderer::Renderer(VulkanRenderer& vulkan) : vulkan{vulkan} {
 }
 
-void Renderer::render(VulkanCommandBuffer& vkb, Scene& scene, const Vector2i& viewport) {
-    const auto camera = scene.getPrimaryCamera();
-    if (!camera) {
-        EXCEPTION("Failed to render scene error: no primary camera");
-    }
-
-    camera->recalculate(vulkan, viewport);
-
+void Renderer::render(VulkanCommandBuffer& vkb, Scene& scene) {
     scene.recalculate(vulkan);
 
     for (auto& pass : passes) {
+        if (pass->isExcluded()) {
+            continue;
+        }
+
         try {
             pass->begin(vkb);
             pass->render(vkb, scene);
@@ -26,9 +23,6 @@ void Renderer::render(VulkanCommandBuffer& vkb, Scene& scene, const Vector2i& vi
             EXCEPTION_NESTED("Failed to render scene pass: {}", pass->getName());
         }
     }
-}
-
-void Renderer::blit(VulkanCommandBuffer& vkb) {
 }
 
 void Renderer::addRenderPass(std::unique_ptr<RenderPass> pass) {

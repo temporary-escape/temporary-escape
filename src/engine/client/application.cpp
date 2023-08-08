@@ -68,6 +68,10 @@ Application::~Application() {
     }
 }
 
+bool Application::shouldBlit() const {
+    return shouldBlitCount <= 0;
+}
+
 void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (getSwapChain().getExtent().width != viewport.x || getSwapChain().getExtent().height != viewport.y) {
         logger.warn("Swap chain size does not match");
@@ -76,7 +80,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     // Create the renderer if it does not exist.
     // Or re-create it if the viewport size does not match.
-    if (renderer && renderer->getOptions().viewport != viewport) {
+    if (renderer && renderer->getViewport() != viewport) {
         logger.info("Resizing renderer to: {}", viewport);
 
         waitQueueIdle();
@@ -127,6 +131,12 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         editor->render(vkb, *renderer, viewport);
     }
 
+    if ((!game || !game->isReady()) && !editor) {
+        shouldBlitCount = 2;
+    } else {
+        --shouldBlitCount;
+    }
+
     VulkanRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.framebuffer = &getSwapChainFramebuffer();
     renderPassInfo.renderPass = &getRenderPass();
@@ -136,9 +146,15 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValues = {clearColor};
 
-    vkb.beginRenderPass(renderPassInfo);
+    if (shouldBlit()) {
+        renderer->transitionForBlit(vkb);
+    }
 
-    if ((game && game->isReady()) || editor) {
+    vkb.beginRenderPass(renderPassInfo);
+    vkb.setViewport({0, 0}, viewport);
+    vkb.setScissor({0, 0}, viewport);
+
+    if (shouldBlit()) {
         renderer->blit(vkb);
     }
 
@@ -147,11 +163,15 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     renderVersion(viewport);
     renderFrameTime(viewport);
 
-    if (game && game->isReady()) {
-        game->renderCanvas(canvas, nuklear, viewport);
-    } else if (editor) {
-        editor->renderCanvas(canvas, nuklear, viewport);
-    } else {
+    if (shouldBlit()) {
+        if (game && game->isReady()) {
+            game->renderCanvas(canvas, nuklear, viewport);
+        } else if (editor) {
+            editor->renderCanvas(canvas, nuklear, viewport);
+        }
+    }
+
+    if (!shouldBlit()) {
         if (!status.message.empty()) {
             renderStatus(viewport);
         }
@@ -209,10 +229,15 @@ void Application::renderFrameTime(const Vector2i& viewport) {
         canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 3.0}, text);
     }
 
+    {
+        const auto text = fmt::format("render: {}", shouldBlit());
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 4.0}, text);
+    }
+
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 4.0}, text);
+        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 5.0}, text);
     }
 }
 
@@ -239,7 +264,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *this, *assetsManager, font);
+    editor = std::make_unique<Editor>(config, *this, *assetsManager, *voxelShapeCache, font);
 }
 
 void Application::checkForClientScene() {
@@ -250,7 +275,7 @@ void Application::checkForClientScene() {
         logger.info("Client has a scene, creating Game instance");
 
         game = std::make_unique<Game>(
-            config, *this, *rendererSkybox, *rendererPlanetSurface, *assetsManager, font, *client);
+            config, *this, *rendererSkybox, *rendererPlanetSurface, *assetsManager, *voxelShapeCache, font, *client);
     } else {
         NEXT(checkForClientScene());
     }
@@ -262,7 +287,7 @@ void Application::startClient() {
     status.message = "Connecting...";
     status.value = 0.9f;
 
-    client = std::make_unique<Client>(config, *assetsManager, playerLocalProfile);
+    client = std::make_unique<Client>(config, *assetsManager, *voxelShapeCache, playerLocalProfile);
 
     logger.info("Connecting to the server");
 
@@ -464,6 +489,7 @@ void Application::createRegistry() {
 void Application::createSceneRenderer(const Vector2i& viewport) {
     RenderOptions renderOptions{};
     renderOptions.viewport = viewport;
+    renderOptions.shadowsSize = {config.graphics.shadowsSize, config.graphics.shadowsSize};
     renderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
 }
 
@@ -477,12 +503,12 @@ void Application::createRenderers() {
 
     createSceneRenderer({config.graphics.windowWidth, config.graphics.windowHeight});
 
-    rendererSkybox = std::make_unique<RendererSkybox>(config, *this, *renderResources, *assetsManager);
+    rendererSkybox =
+        std::make_unique<RendererSkybox>(config, *this, *renderResources, *assetsManager, *voxelShapeCache);
 
-    RenderOptions renderOptions{};
-    renderOptions.viewport = {config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-    rendererPlanetSurface =
-        std::make_unique<RendererPlanetSurface>(config, renderOptions, *this, *renderResources, *assetsManager);
+    const Vector2i viewport{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
+    rendererPlanetSurface = std::make_unique<RendererPlanetSurface>(
+        config, viewport, *this, *renderResources, *assetsManager, *voxelShapeCache);
 
     NEXT(createPlanetLowResTextures());
 }
@@ -493,7 +519,7 @@ void Application::createVoxelShapeCache() {
     status.message = "Creating voxel shape cache...";
     status.value = 0.2f;
 
-    // voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
+    voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
     NEXT(createRegistry());
 }

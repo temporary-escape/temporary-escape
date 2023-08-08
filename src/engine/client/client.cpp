@@ -10,8 +10,9 @@ static auto logger = createLogger(LOG_FILENAME);
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
 
-Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile) :
-    config{config}, assetsManager{assetsManager}, localProfile{localProfile} {
+Client::Client(const Config& config, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
+               const PlayerLocalProfile& localProfile) :
+    config{config}, assetsManager{assetsManager}, voxelShapeCache{voxelShapeCache}, localProfile{localProfile} {
 
     Network::Client::start();
 
@@ -191,7 +192,7 @@ void Client::handle(MessagePlayerLocationEvent res) {
 
     sync.postSafe([this]() {
         scene.reset();
-        scene = std::make_unique<Scene>(config);
+        scene = std::make_unique<Scene>(config, voxelShapeCache);
     });
 
     send(req, [this](MessageFetchSectorResponse res) {

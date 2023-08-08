@@ -10,15 +10,10 @@ class ENGINE_API Scene;
 
 class ENGINE_API Renderer {
 public:
-    explicit Renderer(const RenderOptions& options, VulkanRenderer& vulkan);
+    explicit Renderer(VulkanRenderer& vulkan);
     virtual ~Renderer() = default;
 
-    void render(VulkanCommandBuffer& vkb, Scene& scene, const Vector2i& viewport);
-    void blit(VulkanCommandBuffer& vkb);
-
-    const RenderOptions& getOptions() const {
-        return options;
-    }
+    virtual void render(VulkanCommandBuffer& vkb, Scene& scene);
 
 protected:
     void addRenderPass(std::unique_ptr<RenderPass> pass);
@@ -34,7 +29,6 @@ protected:
     void create();
 
 private:
-    RenderOptions options;
     VulkanRenderer& vulkan;
     std::vector<std::unique_ptr<RenderPass>> passes;
 };

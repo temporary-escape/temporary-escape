@@ -15,10 +15,10 @@ public:
         return attachments.at(attachment).view;
     }
 
-    void updateLayout(const uint32_t attachment, VkImageLayout layout, VkAccessFlags access,
+    /*void updateLayout(const uint32_t attachment, VkImageLayout layout, VkAccessFlags access,
                       VkPipelineStageFlags stage);
     void transitionLayout(VulkanCommandBuffer& vkb, const uint32_t attachment, VkImageLayout layout,
-                          VkAccessFlags access, VkPipelineStageFlags stage);
+                          VkAccessFlags access, VkPipelineStageFlags stage);*/
 
     [[nodiscard]] const VulkanTexture& getAttachmentTexture(uint32_t attachment) const;
 
@@ -27,6 +27,7 @@ protected:
         Vector2i size;
         VkFormat format{VK_FORMAT_UNDEFINED};
         VkImageType type{VK_IMAGE_TYPE_2D};
+        VkImageViewType viewType{VK_IMAGE_VIEW_TYPE_2D};
         VkImageUsageFlags usage{0};
         uint32_t layers{1};
         VkImageAspectFlags aspectMask{VK_IMAGE_ASPECT_COLOR_BIT};
@@ -50,9 +51,9 @@ private:
     struct AttachmentData {
         VulkanTexture* texture{nullptr};
         VulkanImageView view{};
-        VkImageLayout layout{VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED};
+        /*VkImageLayout layout{VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED};
         VkAccessFlags access{VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT};
-        VkPipelineStageFlags stage{VkPipelineStageFlagBits::VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
+        VkPipelineStageFlags stage{VkPipelineStageFlagBits::VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};*/
     };
 
     VulkanRenderer& vulkan;

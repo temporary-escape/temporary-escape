@@ -15,8 +15,15 @@ ViewSystem::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modal
 }
 
 ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       Client& client, Gui& gui, FontFamily& font) :
-    parent{parent}, config{config}, vulkan{vulkan}, assetsManager{assetsManager}, client{client}, gui{gui}, font{font} {
+                       VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font) :
+    parent{parent},
+    config{config},
+    vulkan{vulkan},
+    assetsManager{assetsManager},
+    voxelShapeCache{voxelShapeCache},
+    client{client},
+    gui{gui},
+    font{font} {
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
@@ -101,7 +108,7 @@ Scene* ViewSystem::getScene() {
 }
 
 void ViewSystem::load() {
-    scene = std::make_unique<Scene>(config);
+    scene = std::make_unique<Scene>(config, voxelShapeCache);
 
     { // Figure out where we are
         logger.info("Fetching player location");

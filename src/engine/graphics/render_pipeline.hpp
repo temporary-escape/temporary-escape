@@ -108,6 +108,7 @@ public:
         pushConstantsBuffer(vkb, constantsBuffer);
     }
     void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) const;
+    void renderMeshInstanced(VulkanCommandBuffer& vkb, const Mesh& mesh, const VulkanBuffer& vbo, uint32_t count) const;
 
 protected:
     void addShader(const ShaderPtr& shader);

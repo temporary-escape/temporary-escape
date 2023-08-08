@@ -7,8 +7,8 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendererSkybox,
-           RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, FontFamily& font,
-           Client& client) :
+           RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
+           FontFamily& font, Client& client) :
     config{config},
     rendererSkybox{rendererSkybox},
     rendererPlanetSurface{rendererPlanetSurface},
@@ -18,9 +18,11 @@ Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendere
     guiGalaxy{config, assetsManager},
     guiSystem{config, assetsManager} {
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, font, client);
-    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, client, guiGalaxy, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, client, guiSystem, font);
+    viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, voxelShapeCache, font, client);
+    viewGalaxy =
+        std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, voxelShapeCache, client, guiGalaxy, font);
+    viewSystem =
+        std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, voxelShapeCache, client, guiSystem, font);
     view = viewSpace.get();
 }
 
@@ -34,7 +36,7 @@ void Game::update(float deltaTime) {
 }
 
 bool Game::isReady() const {
-    return rendererPlanetSurface.isBusy() && !rendererSkybox.isBusy() && client.getScene() &&
+    return !rendererPlanetSurface.isBusy() && !rendererSkybox.isBusy() && client.getScene() &&
            client.getScene()->getPrimaryCamera();
 }
 
@@ -55,7 +57,7 @@ void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& 
 
     auto* scene = view->getScene();
     if (scene && scene->getPrimaryCamera()) {
-        renderer.render(vkb, *scene, viewport);
+        renderer.render(vkb, *scene);
     }
 }
 

@@ -17,8 +17,15 @@ ViewGalaxy::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modal
 }
 
 ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       Client& client, Gui& gui, FontFamily& font) :
-    parent{parent}, config{config}, vulkan{vulkan}, assetsManager{assetsManager}, client{client}, gui{gui}, font{font} {
+                       VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font) :
+    parent{parent},
+    config{config},
+    vulkan{vulkan},
+    assetsManager{assetsManager},
+    voxelShapeCache{voxelShapeCache},
+    client{client},
+    gui{gui},
+    font{font} {
 
     textures.systemStar = assetsManager.getTextures().find("star_flare");
     images.iconSelect = assetsManager.getImages().find("icon_target");
@@ -129,7 +136,7 @@ Scene* ViewGalaxy::getScene() {
 }
 
 void ViewGalaxy::load() {
-    scene = std::make_unique<Scene>(config);
+    scene = std::make_unique<Scene>(config, voxelShapeCache);
 
     { // Figure out where we are
         logger.info("Fetching player location");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../assets/assets_manager.hpp"
+#include "pipelines/render_pipeline_blit.hpp"
 #include "render_buffer_pbr.hpp"
 #include "renderer.hpp"
 
@@ -12,10 +13,15 @@ public:
     explicit RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources,
                               AssetsManager& assetsManager);
 
-    void render(VulkanCommandBuffer& vkb, Scene& scene);
+    void render(VulkanCommandBuffer& vkb, Scene& scene) override;
+    void transitionForBlit(VulkanCommandBuffer& vkb);
     void blit(VulkanCommandBuffer& vkb);
+    Vector2i getViewport() const;
 
 private:
+    VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderBufferPbr renderBufferPbr;
+    RenderPipelineBlit pipelineBlit;
 };
 } // namespace Engine

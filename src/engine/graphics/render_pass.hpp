@@ -20,6 +20,13 @@ public:
         VkClearValue clearColor;
     };
 
+    struct DependencyInfo {
+        VkPipelineStageFlags srcStageMask;
+        VkPipelineStageFlags dstStageMask;
+        VkAccessFlags srcAccessMask;
+        VkAccessFlags dstAccessMask;
+    };
+
     explicit RenderPass(VulkanRenderer& vulkan, RenderBuffer& renderBuffer, std::string name);
     virtual ~RenderPass() = default;
     NON_MOVEABLE(RenderPass);
@@ -43,11 +50,18 @@ public:
     Vector2i getViewport() const {
         return {viewport.width, viewport.height};
     }
+    void setExcluded(const bool value) {
+        excluded = value;
+    }
+    bool isExcluded() const {
+        return excluded;
+    }
 
 protected:
     void addPipeline(RenderPipeline& pipeline, uint32_t subpass);
     void addAttachment(uint32_t attachment, const AttachmentInfo& info);
     void addSubpass(const std::vector<uint32_t>& attachments, const std::vector<uint32_t>& inputs);
+    void addSubpassDependency(const DependencyInfo& dependency);
 
 private:
     struct SubpassDescriptionData {
@@ -70,6 +84,7 @@ private:
     VulkanRenderPassBeginInfo renderPassBeginInfo;
     std::vector<std::tuple<RenderPipeline*, uint32_t>> pipelines;
     VkExtent2D viewport{0, 0};
+    bool excluded{false};
 
     // Used only during creation
     std::vector<VkImageView> attachmentViews;

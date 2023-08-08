@@ -18,7 +18,8 @@ class ENGINE_API Database;
 
 class ENGINE_API Editor : public UserInput {
 public:
-    explicit Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, FontFamily& font);
+    explicit Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+                    VoxelShapeCache& voxelShapeCache, FontFamily& font);
     virtual ~Editor();
 
     void update(float deltaTime);

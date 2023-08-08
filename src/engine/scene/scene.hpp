@@ -16,7 +16,8 @@ class ENGINE_API Scene : public UserInput {
 public:
     using SelectedEntityCallback = std::function<void(std::optional<Entity>)>;
 
-    explicit Scene(const Config& config, bool isServer = false);
+    explicit Scene(const Config& config, VoxelShapeCache& voxelShapeCache);
+    explicit Scene(const Config& config);
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length) const;

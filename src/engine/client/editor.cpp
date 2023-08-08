@@ -6,12 +6,13 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Editor::Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, FontFamily& font) :
+Editor::Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+               VoxelShapeCache& voxelShapeCache, FontFamily& font) :
     config{config},
     assetsManager{assetsManager},
     font{font},
     guiBuild{config, assetsManager},
-    view{config, vulkan, assetsManager, guiBuild} {
+    view{config, vulkan, assetsManager, voxelShapeCache, guiBuild} {
 
     view.onEnter();
 }
@@ -27,7 +28,7 @@ void Editor::update(float deltaTime) {
 void Editor::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport) {
     auto* scene = view.getScene();
     if (scene) {
-        renderer.render(vkb, *scene, viewport);
+        renderer.render(vkb, *scene);
     }
 }
 

@@ -41,8 +41,8 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     generateMesh(voxelShapeCache, map);
 
     for (auto& primitive : primitives) {
-        vulkan.dispose(std::move(primitive.ibo));
-        vulkan.dispose(std::move(primitive.vbo));
+        vulkan.dispose(std::move(primitive.mesh.ibo));
+        vulkan.dispose(std::move(primitive.mesh.vbo));
     }
     primitives.clear();
 
@@ -68,16 +68,16 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
         bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-        primitive.vbo = vulkan.createBuffer(bufferInfo);
-        vulkan.copyDataToBuffer(primitive.vbo, data.vertices.data(), bufferInfo.size);
+        primitive.mesh.vbo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(primitive.mesh.vbo, data.vertices.data(), bufferInfo.size);
 
         bufferInfo.size = data.indices.size() * sizeof(uint32_t);
         bufferInfo.usage =
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        primitive.ibo = vulkan.createBuffer(bufferInfo);
-        vulkan.copyDataToBuffer(primitive.ibo, data.indices.data(), bufferInfo.size);
+        primitive.mesh.ibo = vulkan.createBuffer(bufferInfo);
+        vulkan.copyDataToBuffer(primitive.mesh.ibo, data.indices.data(), bufferInfo.size);
 
-        primitive.count = data.indices.size();
-        primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
+        primitive.mesh.count = data.indices.size();
+        primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
     }
 }

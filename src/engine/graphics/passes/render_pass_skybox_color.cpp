@@ -16,7 +16,7 @@ RenderPassSkyboxColor::RenderPassSkyboxColor(VulkanRenderer& vulkan, RenderBuffe
         AttachmentInfo attachment{};
         attachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachment.finalLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachment.clearColor.color = {0.5f, 0.5f, 0.5f, 1.0f};
+        attachment.clearColor.color = {0.0f, 0.0f, 0.0f, 1.0f};
         addAttachment(RenderBufferSkybox::Attachment::Color, attachment);
     }
 

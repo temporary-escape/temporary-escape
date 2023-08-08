@@ -2,12 +2,12 @@
 
 using namespace Engine;
 
-RenderBufferPlanet::RenderBufferPlanet(const RenderOptions& options, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
+RenderBufferPlanet::RenderBufferPlanet(const Vector2i& viewport, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
     setAttachments(5);
 
     { // Heightmap
         TextureInfo info{};
-        info.size = options.viewport;
+        info.size = viewport;
         info.format = VK_FORMAT_R8_UNORM;
         info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         auto& texture = createTexture(info);
@@ -20,7 +20,7 @@ RenderBufferPlanet::RenderBufferPlanet(const RenderOptions& options, VulkanRende
 
     { // Moisture
         TextureInfo info{};
-        info.size = options.viewport;
+        info.size = viewport;
         info.format = VK_FORMAT_R8_UNORM;
         info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         auto& texture = createTexture(info);
@@ -33,7 +33,7 @@ RenderBufferPlanet::RenderBufferPlanet(const RenderOptions& options, VulkanRende
 
     { // Color
         TextureInfo info{};
-        info.size = options.viewport;
+        info.size = viewport;
         info.format = VK_FORMAT_R8G8B8A8_UNORM;
         info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         auto& texture = createTexture(info);
@@ -46,7 +46,7 @@ RenderBufferPlanet::RenderBufferPlanet(const RenderOptions& options, VulkanRende
 
     { // Metallic Roughness
         TextureInfo info{};
-        info.size = options.viewport;
+        info.size = viewport;
         info.format = VK_FORMAT_R8G8_UNORM;
         info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         auto& texture = createTexture(info);
@@ -59,7 +59,7 @@ RenderBufferPlanet::RenderBufferPlanet(const RenderOptions& options, VulkanRende
 
     { // Normal
         TextureInfo info{};
-        info.size = options.viewport;
+        info.size = viewport;
         info.format = VK_FORMAT_R8G8B8A8_UNORM;
         info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         auto& texture = createTexture(info);

@@ -24,7 +24,7 @@ public:
     };
 
     explicit ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                        Client& client, Gui& gui, FontFamily& font);
+                        VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font);
     ~ViewGalaxy();
 
     void update(float deltaTime) override;
@@ -59,6 +59,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
+    VoxelShapeCache& voxelShapeCache;
     Client& client;
     Gui& gui;
     FontFamily& font;

@@ -23,7 +23,7 @@ public:
     };
 
     explicit ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                        Client& client, Gui& gui, FontFamily& font);
+                        VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
@@ -51,6 +51,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
+    VoxelShapeCache& voxelShapeCache;
     Client& client;
     FontFamily& font;
     Gui& gui;

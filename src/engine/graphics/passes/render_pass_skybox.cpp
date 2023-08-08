@@ -52,9 +52,9 @@ void RenderPassSkybox::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     const auto* skybox = scene.getSkybox();
     const auto* skyboxTextures = &resources.getDefaultSkybox();
-    /*if (skybox) {
+    if (skybox && skybox->isGenerated() && skybox->getTextures().getTexture()) {
         skyboxTextures = &skybox->getTextures();
-    }*/
+    }
 
     renderSkybox(vkb, scene, *skyboxTextures);
     renderPlanets(vkb, scene, *skyboxTextures);

@@ -232,23 +232,23 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
 
             switch (part.indices.value().componentType) {
             case GltfComponentType::R8: {
-                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
+                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
                 break;
             }
             case GltfComponentType::R8u: {
-                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
+                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
                 break;
             }
             case GltfComponentType::R16: {
-                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
+                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
                 break;
             }
             case GltfComponentType::R16u: {
-                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
+                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
                 break;
             }
             case GltfComponentType::R32u: {
-                primitive.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
+                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
                 break;
             }
             default: {
@@ -272,16 +272,16 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
             bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
             bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-            primitive.vbo = vulkan.createBuffer(bufferInfo);
-            vulkan.copyDataToBuffer(primitive.vbo, vboData.data(), bufferInfo.size);
+            primitive.mesh.vbo = vulkan.createBuffer(bufferInfo);
+            vulkan.copyDataToBuffer(primitive.mesh.vbo, vboData.data(), bufferInfo.size);
 
             bufferInfo.size = iboData.size() * sizeof(uint8_t);
             bufferInfo.usage =
                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            primitive.ibo = vulkan.createBuffer(bufferInfo);
-            vulkan.copyDataToBuffer(primitive.ibo, iboData.data(), bufferInfo.size);
+            primitive.mesh.ibo = vulkan.createBuffer(bufferInfo);
+            vulkan.copyDataToBuffer(primitive.mesh.ibo, iboData.data(), bufferInfo.size);
 
-            primitive.count = static_cast<uint32_t>(part.indices->count);
+            primitive.mesh.count = static_cast<uint32_t>(part.indices->count);
 
             bufferInfo.size = iboData.size() * sizeof(uint8_t);
             bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
