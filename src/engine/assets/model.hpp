@@ -13,7 +13,7 @@ public:
     Model& operator=(Model&& other) noexcept;
     ~Model() override;
 
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
 
     const std::list<Primitive>& getPrimitives() const {
         return primitives;

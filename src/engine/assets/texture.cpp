@@ -78,8 +78,9 @@ Texture::Options Texture::loadOptions(const Path& path) {
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Texture::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+void Texture::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
     (void)assetsManager;
+    (void)audio;
 
     const auto options = loadOptions(path);
 

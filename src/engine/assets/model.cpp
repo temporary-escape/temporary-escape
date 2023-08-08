@@ -64,8 +64,8 @@ Model& Model::operator=(Model&& other) noexcept = default;
 
 Model::~Model() = default;
 
-void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
-    (void)assetsManager;
+void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+    (void)audio;
 
     const auto resolveTexture = [this, &assetsManager](const Path& filename) -> TexturePtr {
         const auto baseName = filename.stem().string();

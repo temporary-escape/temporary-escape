@@ -8,6 +8,7 @@
 #include "model.hpp"
 #include "planet_type.hpp"
 #include "shader.hpp"
+#include "sound.hpp"
 #include "texture.hpp"
 #include "voxel_shape_cache.hpp"
 #include <mutex>
@@ -15,7 +16,7 @@
 namespace Engine {
 class AssetsManager {
 public:
-    using LoadQueue = std::list<std::function<void(VulkanRenderer&)>>;
+    using LoadQueue = std::list<std::function<void(VulkanRenderer&, AudioContext&)>>;
 
     struct DefaultTextures {
         TexturePtr baseColor;
@@ -96,6 +97,10 @@ public:
         return shaders;
     }
 
+    const Category<Sound>& getSounds() const {
+        return sounds;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -142,6 +147,7 @@ private:
     Category<Model> models;
     Category<PlanetType> planetTypes;
     Category<Shader> shaders;
+    Category<Sound> sounds;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

@@ -46,7 +46,14 @@ public:
         RightBottom = 0x04 | 0x20,
     };
 
-    explicit Nuklear(const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily, int defaultFontSize);
+    class EventCallback {
+    public:
+        virtual ~EventCallback() = default;
+        virtual void nuklearOnClick(bool push) = 0;
+    };
+
+    explicit Nuklear(EventCallback& events, const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily,
+                     int defaultFontSize);
     ~Nuklear();
 
     void begin(const Vector2i& viewport);
@@ -138,6 +145,7 @@ public:
 private:
     struct CustomStyle;
 
+    void triggerEventClick();
     void applyTheme();
     void inputPoll();
     void drawDragAndDrop();
@@ -150,6 +158,7 @@ private:
     using FontSizeMap = std::unordered_map<int, std::unique_ptr<nk_user_font>>;
     using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
 
+    EventCallback& events;
     const Config& config;
     Canvas& canvas;
     const FontFamily& defaultFontFamily;
@@ -163,6 +172,7 @@ private:
     nk_user_font* defaultFont;
     std::vector<char> editBuffer;
     bool activeInput;
+    bool hovered{false};
 
     struct {
         std::any value;

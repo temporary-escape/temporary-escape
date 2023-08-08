@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "../graphics/theme.hpp"
+#include "../utils/ogg_file.hpp"
 #include "../utils/random.hpp"
 
 using namespace Engine;
@@ -10,10 +11,13 @@ static const auto profileFilename = "profile.yaml";
 Application::Application(Config& config) :
     VulkanRenderer{config},
     config{config},
+    audio{},
+    audioSource{audio.createSource()},
     canvas{*this},
     font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
-    nuklear{config, canvas, font, config.guiFontSize},
-    audio{} {
+    nuklear{*this, config, canvas, font, config.guiFontSize} {
+
+    loadSounds();
 
     const std::string gpuName{getPhysicalDeviceProperties().deviceName};
     if (gpuName.find("UHD Graphics") != std::string::npos) {
@@ -479,7 +483,7 @@ void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator 
             const auto progress = static_cast<float>(count) / static_cast<float>(assetsManager->getLoadQueue().size());
 
             try {
-                (*next)(*this);
+                (*next)(*this, audio);
                 ++next;
             } catch (...) {
                 EXCEPTION_NESTED("Failed to load asset");
@@ -680,4 +684,25 @@ void Application::eventWindowBlur() {
 }
 
 void Application::eventWindowFocus() {
+}
+
+void Application::loadSounds() {
+    const auto load = [this](AudioBuffer& buffer, const Path& path) {
+        try {
+            OggFileReader file{path};
+            const auto freq = file.getFrequency();
+            const auto format = file.getFormat();
+            const auto data = file.readData();
+            buffer = audio.createBuffer(data.data(), data.size(), format, freq);
+        } catch (...) {
+            EXCEPTION_NESTED("Failed to load sound: {}", path);
+        }
+    };
+
+    load(sounds.uiClick, config.assetsPath / "base" / "sounds" / "bong_001.ogg");
+}
+
+void Application::nuklearOnClick(const bool push) {
+    audioSource.bind(sounds.uiClick);
+    audioSource.play();
 }

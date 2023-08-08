@@ -9,7 +9,10 @@ static auto logger = createLogger(LOG_FILENAME);
 Shader::Shader(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Shader::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+void Shader::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+    (void)assetsManager;
+    (void)audio;
+
     try {
         stage = getGLSLFileFlags(path.filename().string());
         shader = vulkan.createShaderModule(path, stage);

@@ -15,7 +15,10 @@ Image::Image(std::string name, const ImageAtlas::Allocation& allocation) :
     Asset{std::move(name)}, allocation{allocation} {
 }
 
-void Image::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+void Image::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+    (void)audio;
+    (void)assetsManager;
+
     if (path.empty()) {
         return;
     }

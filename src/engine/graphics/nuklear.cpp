@@ -30,7 +30,9 @@ struct Nuklear::CustomStyle {
     nk_style_button image{};
 };
 
-Nuklear::Nuklear(const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily, const int defaultFontSize) :
+Nuklear::Nuklear(EventCallback& events, const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily,
+                 const int defaultFontSize) :
+    events{events},
     config{config},
     canvas{canvas},
     defaultFontFamily{defaultFontFamily},
@@ -349,15 +351,28 @@ bool Engine::Nuklear::isMouseDown(MouseButton button) {
     return nk_input_has_mouse_click_down_in_rect(&ctx->input, nb, bounds, nk_true) == nk_true;
 }
 
+void Engine::Nuklear::triggerEventClick() {
+    events.nuklearOnClick(true);
+}
+
 bool Nuklear::button(const std::string& text, const TextAlign align) {
     nk_style_button& style = ctx->style.button;
     style.text_alignment = static_cast<nk_flags>(align);
 
-    return nk_button_label(ctx.get(), text.c_str()) == nk_true;
+    if (nk_button_label(ctx.get(), text.c_str()) == nk_true) {
+        triggerEventClick();
+        return true;
+    }
+    return false;
 }
 
 void Nuklear::buttonToggle(const std::string& text, bool& value, Nuklear::TextAlign align) {
     nk_bool v = value ? nk_true : nk_false;
+
+    if (nk_widget_is_mouse_clicked(ctx.get(), nk_buttons::NK_BUTTON_LEFT)) {
+        triggerEventClick();
+    }
+
     nk_selectable_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align), &v);
     value = v == nk_true;
 }
@@ -369,12 +384,21 @@ bool Nuklear::buttonImage(const ImagePtr& img) {
     nk_style_button& style = ctx->style.button;
     style.text_alignment = NK_TEXT_ALIGN_LEFT;
 
-    return nk_button_image(ctx.get(), ni) == nk_true;
+    if (nk_button_image(ctx.get(), ni) == nk_true) {
+        triggerEventClick();
+        return true;
+    }
+    return false;
 }
 
 bool Engine::Nuklear::button(const Color4& color) {
     const auto nc = fromColor(color);
-    return nk_button_color(ctx.get(), nc) == nk_true;
+
+    if (nk_button_color(ctx.get(), nc) == nk_true) {
+        triggerEventClick();
+        return true;
+    }
+    return false;
 }
 
 bool Nuklear::image(const ImagePtr& img) {
@@ -393,7 +417,11 @@ bool Nuklear::image(const ImagePtr& img) {
 
     customStyle->image.text_background.a = 0.0f;
 
-    return nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true;
+    if (nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true) {
+        triggerEventClick();
+        return true;
+    }
+    return false;
 }
 
 void Engine::Nuklear::setStyleImageToggle(const bool value) {
@@ -419,6 +447,7 @@ void Nuklear::imageToggle(const ImagePtr& img, bool& value) {
     setStyleImageToggle(value);
 
     if (nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true) {
+        triggerEventClick();
         value = true;
     }
 }
@@ -431,6 +460,7 @@ void Nuklear::imageToggle(const ImagePtr& img, bool& value, const std::string& t
 
     const auto flags = static_cast<nk_flags>(align);
     if (nk_button_image_label_styled(ctx.get(), &customStyle->image, ni, text.c_str(), flags) == nk_true) {
+        triggerEventClick();
         value = true;
     }
 }
@@ -473,6 +503,10 @@ void Engine::Nuklear::tooltip(const std::string& text) {
 }
 
 void Engine::Nuklear::checkbox(const std::string& text, bool& value) {
+    if (nk_widget_is_mouse_clicked(ctx.get(), nk_buttons::NK_BUTTON_LEFT)) {
+        triggerEventClick();
+    }
+
     value = nk_check_label(ctx.get(), text.c_str(), value ? nk_true : nk_false) == nk_true;
 }
 
@@ -481,6 +515,7 @@ bool Engine::Nuklear::comboBegin(const Color4& color, const Vector2& size) {
     struct nk_vec2 s {
         size.x, size.y,
     };
+
     return nk_combo_begin_color(ctx.get(), nc, s) == nk_true;
 }
 
@@ -494,7 +529,9 @@ void Engine::Nuklear::combo(const Vector2& size, size_t& choice, const std::vect
     if (nk_combo_begin_label(ctx.get(), c, s)) {
         for (size_t i = 0; i < items.size(); i++) {
             nk_layout_row_dynamic(ctx.get(), height, 1);
+
             if (nk_combo_item_label(ctx.get(), items.at(i).c_str(), NK_TEXT_ALIGN_LEFT)) {
+                triggerEventClick();
                 choice = i;
             }
         }

@@ -118,6 +118,10 @@ void AssetsManager::findAssets() {
         for (const auto& path : paths) {
             init(planetTypes, path / "planets", {".yml", ".yaml"});
         }
+
+        for (const auto& path : paths) {
+            init(sounds, path / "sounds", {".ogg"});
+        }
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize assetsManager");
     }
@@ -218,9 +222,9 @@ template <typename T> std::shared_ptr<T> AssetsManager::addAsset(Category<T>& as
     logger.info("Adding asset: '{}'", path);
     auto asset = std::make_shared<T>(path.stem().string(), path);
     assets.insert(asset->getName(), asset);
-    loadQueue.emplace_back([=](VulkanRenderer& vulkan) {
+    loadQueue.emplace_back([=](VulkanRenderer& vulkan, AudioContext& audio) {
         logger.info("Loading asset: '{}'", path);
-        asset->load(*this, vulkan);
+        asset->load(*this, vulkan, audio);
     });
     return asset;
 }

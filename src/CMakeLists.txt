@@ -93,7 +93,9 @@ target_link_libraries(${PROJECT_NAME}Library
         sol2
         AdMipMap::AdMipMap
         KTX::ktx
-        ${BULLET_LIBRARIES})
+        ${BULLET_LIBRARIES}
+        Vorbis::vorbis
+        Vorbis::vorbisfile)
 
 # The main target
 if (MSVC)

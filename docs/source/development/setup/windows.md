@@ -202,7 +202,7 @@ Once built, you should see something like this:
 
 ![](images/windows-vscode-builddone.png)
 
-To launch the game with debugger through Visual Studio, you must create a new launch configuration `launch.json`
+To launch the game with debugger through Visual Studio Code, you must create a new launch configuration `launch.json`
 in the `.vscode` folder. If the folder does not exist, create it. Use the following contents below for the
 `launch.json` file:
 
@@ -499,7 +499,7 @@ set VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation
 The game will pick up the `VK_LAYER_PATH` and will enable the validation layers when the game starts.
 The game will stop and exit immediately if the validation layers can not be setup. This may
 happen if your Vulkan SDK folder is wrong or the environment variables are wrong. Look into
-the log file in your `~/.temporary-escape/` folder.
+the log file in your `C:\Users\Username\AppData\Roaming\TemporaryEscape` folder.
 ```
 
 If you are using JetBrains CLion, you can modify the "Run Configuration" for the "TemporaryEscapeMain" target

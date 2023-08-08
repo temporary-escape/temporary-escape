@@ -15,7 +15,10 @@ PlanetType::PlanetType(std::string name, Path path) : Asset{std::move(name)}, pa
     }
 }
 
-void PlanetType::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+void PlanetType::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+    (void)assetsManager;
+    (void)audio;
+
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sizeof(Definition::Amotsphere);

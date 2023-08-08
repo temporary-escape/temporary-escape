@@ -21,7 +21,7 @@ struct ENGINE_API Status {
     float value{0.0f};
 };
 
-class ENGINE_API Application : public VulkanRenderer {
+class ENGINE_API Application : public VulkanRenderer, public Nuklear::EventCallback {
 public:
     explicit Application(Config& config);
     virtual ~Application();
@@ -40,6 +40,7 @@ public:
     void eventWindowFocus() override;
 
 private:
+    void loadSounds();
     void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
     void renderFrameTime(const Vector2i& viewport);
@@ -65,13 +66,16 @@ private:
     void createPlanetThumbnails(Renderer& thumbnailRenderer);
     bool shouldBlit() const;
 
+    void nuklearOnClick(bool push) override;
+
     Config& config;
 
+    AudioContext audio;
+    AudioSource audioSource;
     Canvas canvas;
     FontFamily font;
     Nuklear nuklear;
     Status status;
-    AudioContext audio;
     VulkanQueryPool renderQueryPool;
 
     struct {
@@ -107,5 +111,9 @@ private:
         PerformanceRecord frameTime;
         PerformanceRecord renderTime;
     } perf;
+
+    struct {
+        AudioBuffer uiClick;
+    } sounds;
 };
 } // namespace Engine

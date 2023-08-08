@@ -23,7 +23,9 @@ Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::mo
     }
 }
 
-void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan) {
+void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+    (void)audio;
+
     auto& defaults = assetsManager.getDefaultTextures();
 
     std::unordered_map<const Definition::MaterialDefinition*, size_t> map;

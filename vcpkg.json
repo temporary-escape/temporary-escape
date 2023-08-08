@@ -112,6 +112,9 @@
     },
     {
       "name": "bullet3"
+    },
+    {
+      "name": "libvorbis"
     }
   ],
   "overrides": [
@@ -284,6 +287,11 @@
       "name": "bullet3",
       "version": "3.25",
       "port-version": 0
+    },
+    {
+      "name": "libvorbis",
+      "version": "1.3.7",
+      "port-version": 2
     }
   ],
   "builtin-baseline": "f6a5d4e8eb7476b8d7fc12a56dff300c1c986131"

@@ -45,6 +45,7 @@ find_package(zstd CONFIG REQUIRED)
 find_package(SimplexNoise REQUIRED)
 find_package(Voronoi REQUIRED)
 find_package(Bullet CONFIG REQUIRED)
+find_package(Vorbis CONFIG REQUIRED)
 
 if (APPLE)
     file(GLOB LIB_VULKAN_DYLIBS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libvulkan*.dylib")

@@ -55,3 +55,12 @@ AudioContext::AudioContext() : data(std::make_unique<Data>()) {
 }
 
 AudioContext::~AudioContext() = default;
+
+AudioBuffer Engine::AudioContext::createBuffer(const void* src, const size_t size, const AudioFormat format,
+                                               const int frequency) {
+    return AudioBuffer{*this, src, size, format, frequency};
+}
+
+AudioSource Engine::AudioContext::createSource() {
+    return AudioSource{*this};
+}

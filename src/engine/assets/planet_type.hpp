@@ -27,7 +27,7 @@ public:
     };
 
     explicit PlanetType(std::string name, Path path);
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
 
     [[nodiscard]] const TexturePtr& getBiomeTexture() const {
         return definition.biome;
