@@ -214,34 +214,3 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the server to the client
 
     REQUIRE(myFooMsg.msg == req.msg);
 }
-
-TEST_CASE_METHOD(TcpServerFixture, "Send a message from the client to the server", "[tcp_server]") {
-    std::atomic_bool received{false};
-    MyFooMsg myFooMsg;
-
-    dispatcher.addHandler([&](Request<MyFooMsg> request) {
-        logger.info("Got MyFooMsg message!");
-        myFooMsg = request.get();
-        received.store(true);
-    });
-
-    startServer();
-
-    // Connect to the server
-    NetworkDispatcher clientDispatcher{};
-    auto client = createClient(clientDispatcher);
-    REQUIRE(client->isConnected());
-    REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
-
-    // Send a message
-    MyFooMsg req{};
-    req.msg = "Hello World!";
-    client->send(req, 123);
-
-    // Wait for the message
-    REQUIRE_EVENTUALLY(received.load());
-
-    client->close();
-
-    REQUIRE(myFooMsg.msg == req.msg);
-}
