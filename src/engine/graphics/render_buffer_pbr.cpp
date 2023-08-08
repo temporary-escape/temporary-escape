@@ -3,7 +3,7 @@
 using namespace Engine;
 
 RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
-    setAttachments(11);
+    setAttachments(12 + bloomMipMaps);
 
     { // Depth
         TextureInfo info{};
@@ -109,5 +109,31 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         ViewInfo view{};
         view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
         createAttachment(Attachment::SSAO, texture, view);
+    }
+
+    { // FXAA
+        TextureInfo info{};
+        info.size = options.viewport;
+        info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
+        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        auto& texture = createTexture(info);
+
+        ViewInfo view{};
+        view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+        createAttachment(Attachment::FXAA, texture, view);
+    }
+
+    { // Bloom
+        for (auto i = 0; i < bloomMipMaps; i++) {
+            TextureInfo info{};
+            info.size = options.viewport / (2 << i);
+            info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
+            info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            auto& texture = createTexture(info);
+
+            ViewInfo view{};
+            view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+            createAttachment(Attachment::BloomL0 + i, texture, view);
+        }
     }
 }

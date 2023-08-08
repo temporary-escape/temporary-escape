@@ -17,6 +17,7 @@ RenderPipelineShadowsModel::RenderPipelineShadowsModel(VulkanRenderer& vulkan, A
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::None);
+    setDepthClamp(DepthClamp::Enabled);
 }
 
 void RenderPipelineShadowsModel::setModelMatrix(const Matrix4& value) {

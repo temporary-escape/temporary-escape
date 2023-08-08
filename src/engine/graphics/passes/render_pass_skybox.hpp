@@ -3,6 +3,7 @@
 #include "../../assets/texture.hpp"
 #include "../pipelines/render_pipeline_planet.hpp"
 #include "../pipelines/render_pipeline_skybox.hpp"
+#include "../pipelines/render_pipeline_star_flare.hpp"
 #include "../render_buffer_pbr.hpp"
 #include "../render_pass.hpp"
 
@@ -18,10 +19,12 @@ public:
 private:
     void renderSkybox(VulkanCommandBuffer& vkb, Scene& scene, const SkyboxTextures& skyboxTextures);
     void renderPlanets(VulkanCommandBuffer& vkb, Scene& scene, const SkyboxTextures& skyboxTextures);
+    void renderStarFlare(VulkanCommandBuffer& vkb, Scene& scene);
 
     RenderResources& resources;
     RenderPipelineSkybox pipelineSkybox;
     RenderPipelinePlanet pipelinePlanet;
+    RenderPipelineStarFlare pipelineStarFlare;
     TexturePtr textureBrdf;
 };
 } // namespace Engine

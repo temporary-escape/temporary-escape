@@ -5,6 +5,8 @@
 namespace Engine {
 class ENGINE_API RenderBufferPbr : public RenderBuffer {
 public:
+    static constexpr size_t bloomMipMaps = 5;
+
     enum Attachment : uint32_t {
         Depth = 0,
         Forward,
@@ -17,6 +19,12 @@ public:
         ShadowL3,
         Entity,
         SSAO,
+        FXAA,
+        BloomL0,
+        BloomL1,
+        BloomL2,
+        BloomL3,
+        BloomL4,
         Max = UINT32_MAX,
     };
 

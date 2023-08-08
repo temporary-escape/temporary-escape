@@ -10,7 +10,8 @@ RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, RenderBufferPbr& buff
     RenderPass{vulkan, buffer, "RenderPassSkybox"},
     resources{resources},
     pipelinePlanet{vulkan, assetsManager},
-    pipelineSkybox{vulkan, assetsManager} {
+    pipelineSkybox{vulkan, assetsManager},
+    pipelineStarFlare{vulkan, assetsManager} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -38,6 +39,7 @@ RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, RenderBufferPbr& buff
 
     addPipeline(pipelinePlanet, 0);
     addPipeline(pipelineSkybox, 0);
+    addPipeline(pipelineStarFlare, 0);
 
     textureBrdf = assetsManager.getTextures().find("brdf");
 }
@@ -58,6 +60,7 @@ void RenderPassSkybox::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     renderSkybox(vkb, scene, *skyboxTextures);
     renderPlanets(vkb, scene, *skyboxTextures);
+    renderStarFlare(vkb, scene);
 }
 
 void RenderPassSkybox::renderSkybox(VulkanCommandBuffer& vkb, Scene& scene, const SkyboxTextures& skyboxTextures) {
@@ -116,5 +119,33 @@ void RenderPassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene, con
         pipelinePlanet.flushDescriptors(vkb);
 
         pipelinePlanet.renderMesh(vkb, resources.getMeshPlanet());
+    }
+}
+
+void RenderPassSkybox::renderStarFlare(VulkanCommandBuffer& vkb, Scene& scene) {
+    const auto& camera = *scene.getPrimaryCamera();
+
+    pipelineStarFlare.bind(vkb);
+
+    const auto& entities = scene.getView<ComponentTransform, ComponentStarFlare>(entt::exclude<TagDisabled>).each();
+    for (auto&& [_, transform, component] : entities) {
+        const auto& mesh = component.getMesh();
+        if (mesh.count == 0) {
+            return;
+        }
+
+        const auto modelMatrix = transform.getAbsoluteTransform();
+        pipelineStarFlare.setModelMatrix(modelMatrix);
+        pipelineStarFlare.setSize(component.getSize());
+        pipelineStarFlare.setTemp(component.getTemperature());
+        pipelineStarFlare.flushConstants(vkb);
+
+        pipelineStarFlare.setUniformCamera(camera.getUboZeroPos().getCurrentBuffer());
+        pipelineStarFlare.setTextureColor(component.getTexture()->getVulkanTexture());
+        pipelineStarFlare.setTextureSpectrumLow(component.getTextureLow()->getVulkanTexture());
+        pipelineStarFlare.setTextureSpectrumHigh(component.getTextureHigh()->getVulkanTexture());
+        pipelineStarFlare.flushDescriptors(vkb);
+
+        pipelineStarFlare.renderMesh(vkb, mesh);
     }
 }

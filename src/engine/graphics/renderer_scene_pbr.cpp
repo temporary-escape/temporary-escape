@@ -1,6 +1,11 @@
 #include "renderer_scene_pbr.hpp"
 #include "../scene/scene.hpp"
 #include "../utils/exceptions.hpp"
+#include "passes/render_pass_bloom_downsample.hpp"
+#include "passes/render_pass_bloom_upsample.hpp"
+#include "passes/render_pass_forward.hpp"
+#include "passes/render_pass_fxaa.hpp"
+#include "passes/render_pass_hdr_mapping.hpp"
 #include "passes/render_pass_opaque.hpp"
 #include "passes/render_pass_pbr.hpp"
 #include "passes/render_pass_shadow.hpp"
@@ -31,6 +36,17 @@ RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer&
         }
         addRenderPass(std::make_unique<RenderPassSSAO>(vulkan, renderBufferPbr, resources, assetsManager));
         addRenderPass(std::make_unique<RenderPassPbr>(vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassForward>(vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassFXAA>(vulkan, renderBufferPbr, resources, assetsManager));
+        for (auto i = 0; i < RenderBufferPbr::bloomMipMaps; i++) {
+            addRenderPass(
+                std::make_unique<RenderPassBloomDownsample>(vulkan, renderBufferPbr, resources, assetsManager, i));
+        }
+        for (int i = RenderBufferPbr::bloomMipMaps - 2; i >= 0; i--) {
+            addRenderPass(
+                std::make_unique<RenderPassBloomUpsample>(vulkan, renderBufferPbr, resources, assetsManager, i));
+        }
+        addRenderPass(std::make_unique<RenderPassHDRMapping>(vulkan, renderBufferPbr, resources, assetsManager));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }
