@@ -1,40 +1,172 @@
 #include "../common.hpp"
-#include <cstring>
 #include <engine/stream/msgpack_acceptor.hpp>
 #include <engine/stream/msgpack_stream.hpp>
-#include <iostream>
-#include <lz4.h>
-#include <lz4frame.h>
+#include <engine/utils/md5.hpp>
 #include <msgpack.hpp>
 
 using namespace Engine;
 
-static const size_t maxMessageSize = 1024 * 16;
+class TestCompressionStream : public CompressionStream {
+public:
+    explicit TestCompressionStream() : CompressionStream{} {
+    }
+
+    void writeCompressed(const char* data, const size_t length) override {
+        const auto offset = buffer.size();
+        buffer.resize(buffer.size() + length);
+        std::memcpy(buffer.data() + offset, data, length);
+    }
+
+    std::vector<char> buffer;
+};
+
+class TestDecompressionAcceptor : public DecompressionAcceptor {
+public:
+    TestDecompressionAcceptor() : DecompressionAcceptor{} {
+    }
+
+    void writeDecompressed(const char* data, size_t length) override {
+        const auto offset = buffer.size();
+        buffer.resize(buffer.size() + length);
+        std::memcpy(buffer.data() + offset, data, length);
+    }
+
+    std::vector<char> buffer;
+};
+
+TEST_CASE("Compress and decompress small data", "[stream]") {
+    TestCompressionStream compress{};
+    std::string msg{"Hello World!"};
+
+    compress.write(msg.data(), msg.size());
+    compress.flush();
+
+    REQUIRE(!compress.buffer.empty());
+
+    TestDecompressionAcceptor decompress{};
+
+    decompress.accept(compress.buffer.data(), compress.buffer.size());
+
+    REQUIRE(!decompress.buffer.empty());
+    REQUIRE(decompress.buffer.size() == msg.size());
+
+    std::string received{decompress.buffer.data(), decompress.buffer.size()};
+    REQUIRE(msg == received);
+}
+
+TEST_CASE("Compress and decompress large data", "[stream]") {
+    std::vector<char> data;
+    data.resize(1024 * 1024 * 16);
+
+    std::mt19937_64 rng{5678};
+    std::uniform_int_distribution<char> dist{};
+
+    // Generate random data
+    for (char& i : data) {
+        i = dist(rng);
+    }
+
+    // Calculate MD5 of the generated data
+    const auto sum = md5sum(data.data(), data.size());
+    REQUIRE(!sum.empty());
+
+    // Compress it
+    TestCompressionStream compress{};
+    compress.write(data.data(), data.size());
+
+    compress.flush();
+    REQUIRE(!compress.buffer.empty());
+
+    // Decompress it
+    TestDecompressionAcceptor decompress{};
+    decompress.accept(compress.buffer.data(), compress.buffer.size());
+
+    // There should be some decompressed data
+    REQUIRE(!decompress.buffer.empty());
+    REQUIRE(decompress.buffer.size() == data.size());
+
+    // Get MD5 out of the decompressed data
+    const auto sumDec = md5sum(decompress.buffer.data(), decompress.buffer.size());
+
+    // Validate that the decompressed data matches compressed
+    REQUIRE(sum == sumDec);
+}
+
+TEST_CASE("Compress and decompress large data with small chunks", "[stream]") {
+    std::vector<char> data;
+    data.resize(1024 * 1024 * 16);
+
+    std::mt19937_64 rng{1234};
+    std::uniform_int_distribution<char> dist{};
+    std::uniform_int_distribution<size_t> distSize{16, 1024};
+
+    // Generate random data
+    for (char& i : data) {
+        i = dist(rng);
+    }
+
+    // Calculate MD5 of the generated data
+    const auto sum = md5sum(data.data(), data.size());
+    REQUIRE(!sum.empty());
+
+    // Compress it with small chunks at the time
+    TestCompressionStream compress{};
+    auto src = data.data();
+    auto end = data.data() + data.size();
+    while (src < end) {
+        const auto randSize = std::min<size_t>(distSize(rng), end - src);
+        compress.write(src, randSize);
+        src += randSize;
+    }
+
+    compress.flush();
+    REQUIRE(!compress.buffer.empty());
+
+    // Decompress it with small chunks at the time
+    TestDecompressionAcceptor decompress{};
+    src = compress.buffer.data();
+    end = compress.buffer.data() + compress.buffer.size();
+    while (src < end) {
+        const auto randSize = std::min<size_t>(distSize(rng), end - src);
+        decompress.accept(src, randSize);
+        src += randSize;
+    }
+
+    // There should be some decompressed data
+    REQUIRE(!decompress.buffer.empty());
+    REQUIRE(decompress.buffer.size() == data.size());
+
+    // Get MD5 out of the decompressed data
+    const auto sumDec = md5sum(decompress.buffer.data(), decompress.buffer.size());
+
+    // Validate that the decompressed data matches compressed
+    REQUIRE(sum == sumDec);
+}
 
 class TestMsgpackStream : public MsgpackStream {
 public:
-    explicit TestMsgpackStream() : MsgpackStream{maxMessageSize} {
+    explicit TestMsgpackStream() : MsgpackStream{} {
     }
 
-    void writeCompressed(std::shared_ptr<std::vector<char>> buffer) override {
-        REQUIRE(!!buffer);
-        REQUIRE(buffer->size() <= LZ4_COMPRESSBOUND(maxMessageSize));
-        buffers.push_back(buffer);
+    void writeCompressed(const char* data, const size_t length) override {
+        const auto offset = buffer.size();
+        buffer.resize(buffer.size() + length);
+        std::memcpy(buffer.data() + offset, data, length);
     }
 
-    std::vector<std::shared_ptr<std::vector<char>>> buffers;
+    std::vector<char> buffer;
 };
 
 class TestMsgpackAcceptor : public MsgpackAcceptor {
 public:
-    TestMsgpackAcceptor() : MsgpackAcceptor{maxMessageSize} {
+    TestMsgpackAcceptor() : MsgpackAcceptor{} {
     }
 
-    void receiveObject(std::shared_ptr<msgpack::object_handle> oh) override {
+    void receiveObject(msgpack::object_handle oh) override {
         objects.push_back(std::move(oh));
     }
 
-    std::vector<std::shared_ptr<msgpack::object_handle>> objects;
+    std::vector<msgpack::object_handle> objects;
 };
 
 TEST_CASE("Compress and decompress stream of bytes with msgpack stream", "[stream]") {
@@ -59,25 +191,8 @@ TEST_CASE("Compress and decompress stream of bytes with msgpack stream", "[strea
     msgpack::pack(compress, baz);
     compress.flush();
 
-    REQUIRE(compress.buffers.empty() == false);
-    // REQUIRE(compress.cmpBuffers.size() > 1);
-
-    const auto& buff = *compress.buffers.front();
-    REQUIRE(buff.size() > 15);
-
-    decompress.accept(buff.data(), 1);
-    decompress.accept(buff.data() + 1, 2);
-    decompress.accept(buff.data() + 3, 10);
-    decompress.accept(buff.data() + 13, 1);
-    decompress.accept(buff.data() + 14, buff.size() - 14);
-
-    for (const auto& b : compress.buffers) {
-        if (&b == &compress.buffers.front()) {
-            continue;
-        }
-
-        decompress.accept(b->data(), b->size());
-    }
+    REQUIRE(compress.buffer.empty() == false);
+    decompress.accept(compress.buffer.data(), compress.buffer.size());
 
     REQUIRE(decompress.objects.empty() == false);
     REQUIRE(decompress.objects.size() == 4);
@@ -87,10 +202,10 @@ TEST_CASE("Compress and decompress stream of bytes with msgpack stream", "[strea
     bool barDec;
     std::vector<uint64_t> bazDec;
 
-    decompress.objects[0]->get().convert(msgDec);
-    decompress.objects[1]->get().convert(fooDec);
-    decompress.objects[2]->get().convert(barDec);
-    decompress.objects[3]->get().convert(bazDec);
+    decompress.objects[0].get().convert(msgDec);
+    decompress.objects[1].get().convert(fooDec);
+    decompress.objects[2].get().convert(barDec);
+    decompress.objects[3].get().convert(bazDec);
 
     REQUIRE(msgDec == msg);
     REQUIRE(fooDec == foo);
@@ -132,24 +247,16 @@ TEST_CASE("Compress and decompress random chunks with msgpack stream", "[stream]
         compress.flush();
     }
 
-    REQUIRE(compress.buffers.empty() == false);
-
-    // Decompress
-    size_t totalCompressed = 0;
-    for (const auto& b : compress.buffers) {
-        totalCompressed += b->size();
-        decompress.accept(b->data(), b->size());
-    }
+    REQUIRE(compress.buffer.empty() == false);
+    decompress.accept(compress.buffer.data(), compress.buffer.size());
 
     REQUIRE(decompress.objects.empty() == false);
     REQUIRE(decompress.objects.size() == originals.size());
 
     for (size_t i = 0; i < originals.size(); i++) {
         std::vector<char> data;
-        decompress.objects[i]->get().convert(data);
+        decompress.objects[i].get().convert(data);
 
         REQUIRE(data == originals[i]);
     }
-
-    std::cout << "Original: " << maxTotal << " bytes, compressed: " << totalCompressed << " bytes" << std::endl;
 }

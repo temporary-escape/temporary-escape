@@ -2,6 +2,5 @@
 
 using namespace Engine;
 
-MsgpackStream::MsgpackStream(const size_t blockBytes) :
-    CompressionStream{blockBytes}, packer{static_cast<CompressionStream&>(*this)} {
+MsgpackStream::MsgpackStream() : CompressionStream{}, packer{static_cast<CompressionStream&>(*this)} {
 }

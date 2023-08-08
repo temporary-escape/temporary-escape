@@ -4,6 +4,8 @@
 
 using namespace Engine;
 
+static_assert(CompressionStream::blockBytesCompressed == LZ4_COMPRESSBOUND(CompressionStream::blockBytes));
+
 struct CompressionStream::LZ4 {
     LZ4() {
         LZ4_initStream(lz4Stream, sizeof(*lz4Stream));
@@ -13,9 +15,7 @@ struct CompressionStream::LZ4 {
     LZ4_stream_t* lz4Stream = &lz4StreamBody;
 };
 
-CompressionStream::CompressionStream(const size_t blockBytes) :
-    lz4{std::make_unique<LZ4>()}, idx{0}, offset{0}, buffers{nullptr, nullptr} {
-    raw.resize(blockBytes * 2);
+CompressionStream::CompressionStream() : lz4{std::make_unique<LZ4>()}, idx{0}, offset{0}, buffers{nullptr, nullptr} {
     buffers[0] = raw.data();
     buffers[1] = raw.data() + blockBytes;
 }
@@ -26,38 +26,35 @@ CompressionStream::CompressionStream(CompressionStream&& other) = default;
 
 CompressionStream& CompressionStream::operator=(CompressionStream&& other) = default;
 
-void CompressionStream::write(const char* src, size_t length) {
+void CompressionStream::write(const char* data, size_t length) {
     while (length > 0) {
-        if (offset + length > raw.size() / 2) {
+        if (offset + length > blockBytes) {
             flush();
         }
 
-        const auto toWrite = std::min(raw.size() / 2 - offset, length);
+        const auto toWrite = std::min(blockBytes - offset, length);
         if (toWrite == 1) {
-            buffers[idx][offset] = *src;
+            buffers[idx][offset] = *data;
         } else {
-            std::memcpy(buffers[idx] + offset, src, toWrite);
+            std::memcpy(buffers[idx] + offset, data, toWrite);
         }
 
         offset += toWrite;
         length -= toWrite;
-        src += toWrite;
+        data += toWrite;
     }
 }
 
 void CompressionStream::flush() {
-    auto compressed = std::make_shared<std::vector<char>>();
-    const auto compressBound = LZ4_COMPRESSBOUND(raw.size() / 2);
+    const auto cmpBuf = compressed.data() + sizeof(uint32_t);
 
-    compressed->resize(sizeof(uint32_t) + compressBound);
-    const auto cmpBuf = compressed->data() + sizeof(uint32_t);
-
-    const uint32_t cmpBytes = LZ4_compress_fast_continue(lz4->lz4Stream,                  // Stream
-                                                         buffers[idx],                    // Source uncompressed data
-                                                         cmpBuf,                          // Destination compressed data
-                                                         static_cast<int>(offset),        // Source data length
-                                                         static_cast<int>(compressBound), // Destination buffer length
-                                                         1);
+    const uint32_t cmpBytes =
+        LZ4_compress_fast_continue(lz4->lz4Stream,                         // Stream
+                                   buffers[idx],                           // Source uncompressed data
+                                   cmpBuf,                                 // Destination compressed data
+                                   static_cast<int>(offset),               // Source data length
+                                   static_cast<int>(blockBytesCompressed), // Destination buffer length
+                                   1);
 
     // Reset for the next iteration
     offset = 0;
@@ -67,12 +64,9 @@ void CompressionStream::flush() {
         return;
     }
 
-    // Resize the target buffer
-    compressed->resize(cmpBytes + sizeof(uint32_t));
-
     // Write the data length (needed for decompression)
-    std::memcpy(compressed->data(), &cmpBytes, sizeof(cmpBytes));
+    std::memcpy(compressed.data(), &cmpBytes, sizeof(uint32_t));
 
     // Send out the buffer
-    writeCompressed(std::move(compressed));
+    writeCompressed(compressed.data(), cmpBytes + sizeof(uint32_t));
 }

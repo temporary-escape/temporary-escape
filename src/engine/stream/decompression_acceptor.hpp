@@ -2,8 +2,8 @@
 
 #include "../library.hpp"
 #include "../utils/moveable_copyable.hpp"
+#include <array>
 #include <memory>
-#include <vector>
 
 namespace Engine {
 /**
@@ -11,11 +11,14 @@ namespace Engine {
  */
 class ENGINE_API DecompressionAcceptor {
 public:
+    static constexpr size_t blockBytes = 1024 * 8;
+    static constexpr size_t blockBytesCompressed = 8240;
+
     /**
      * @param blockBytes Maximum number of bytes per each compressed block.
      * @warning The blockBytes must match the compression stream's blockBytes!
      */
-    explicit DecompressionAcceptor(size_t blockBytes = 1024 * 8);
+    explicit DecompressionAcceptor();
     ~DecompressionAcceptor();
     NON_COPYABLE(DecompressionAcceptor);
     DecompressionAcceptor(DecompressionAcceptor&& other);
@@ -23,26 +26,25 @@ public:
 
     /**
      * Accept arbitrary number of bytes.
-     * @param src The compressed source data.
+     * @param data The compressed source data.
      * @param length The length of the source data.
      */
-    void accept(const char* src, size_t length);
+    void accept(const char* data, size_t length);
 
 protected:
     /**
      * Called each time there is some data in the decompressed stream.
      */
-    virtual void writeDecompressed(const void* data, size_t length) = 0;
+    virtual void writeDecompressed(const char* data, size_t length) = 0;
 
 private:
     void decompress();
 
     struct LZ4;
     std::unique_ptr<LZ4> lz4;
-    std::vector<char> raw;
+    std::array<char, blockBytes * 2> raw;
     char* decBuf[2];
-    std::vector<char> cmpBuf;
-    // msgpack::unpacker unp;
+    std::array<char, blockBytesCompressed> cmpBuf;
     size_t idx;
     size_t offset;
     uint32_t readCount;

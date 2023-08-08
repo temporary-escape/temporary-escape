@@ -2,8 +2,8 @@
 
 #include "../library.hpp"
 #include "../utils/moveable_copyable.hpp"
+#include <array>
 #include <memory>
-#include <vector>
 
 namespace Engine {
 
@@ -14,10 +14,13 @@ namespace Engine {
  */
 class ENGINE_API CompressionStream {
 public:
+    static constexpr size_t blockBytes = 1024 * 8;
+    static constexpr size_t blockBytesCompressed = 8240;
+
     /**
      * @param blockBytes Maximum number of bytes per each compressed block.
      */
-    explicit CompressionStream(size_t blockBytes = 1024 * 8);
+    CompressionStream();
     virtual ~CompressionStream();
     NON_COPYABLE(CompressionStream);
     CompressionStream(CompressionStream&& other);
@@ -26,10 +29,10 @@ public:
     /**
      * Write arbitrary number of bytes into the stream.
      *
-     * @param src The source data.
+     * @param data The source data.
      * @param length Length of the source data.
      */
-    void write(const char* src, size_t length);
+    void write(const char* data, size_t length);
 
     /**
      * Flush the compressed buffer out. Must be called
@@ -45,12 +48,13 @@ protected:
      *
      * @param buffer
      */
-    virtual void writeCompressed(std::shared_ptr<std::vector<char>> buffer) = 0;
+    virtual void writeCompressed(const char* data, size_t length) = 0;
 
 private:
     struct LZ4;
     std::unique_ptr<LZ4> lz4;
-    std::vector<char> raw;
+    std::array<char, blockBytes * 2> raw;
+    std::array<char, blockBytesCompressed + sizeof(uint32_t)> compressed;
     char* buffers[2];
     size_t idx;
     size_t offset;

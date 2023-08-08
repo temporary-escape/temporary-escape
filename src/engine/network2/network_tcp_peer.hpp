@@ -1,23 +1,27 @@
 #pragma once
 
-#include "../library.hpp"
 #include "network_dispatcher.hpp"
+#include "network_peer.hpp"
 #include "network_utils.hpp"
 
 namespace Engine {
 using Socket = asio::ssl::stream<asio::ip::tcp::socket>;
 
-class ENGINE_API NetworkTcpPeer : public std::enable_shared_from_this<NetworkTcpPeer> {
+class ENGINE_API NetworkTcpPeer : public NetworkPeer, public std::enable_shared_from_this<NetworkTcpPeer> {
 public:
     explicit NetworkTcpPeer(asio::io_service& service, Socket socket, NetworkDispatcher& dispatcher);
     virtual ~NetworkTcpPeer();
 
     void handshake();
     void close();
-    bool isConnected() const;
-    const std::string& getAddress() const {
+    bool isConnected() const override;
+    const std::string& getAddress() const override {
         return address;
     }
+
+protected:
+    void receiveObject(msgpack::object_handle oh) override;
+    void writeCompressed(const char* data, size_t length) override;
 
 private:
     void receive();

@@ -20,7 +20,7 @@ void NetworkTcpPeer::close() {
     if (!closed && socket.lowest_layer().is_open()) {
         closed = true;
         logger.info("Closing peer endpoint: {}", address);
-        // socket.lowest_layer().close();
+        socket.lowest_layer().close();
     }
 }
 
@@ -51,7 +51,7 @@ void NetworkTcpPeer::receive() {
             self->service.post([self]() { self->dispatcher.onDisconnect(self); });
         } else {
             try {
-                // Receive
+                self->DecompressionAcceptor::accept(self->buffer.data(), length);
             } catch (std::exception& e) {
                 BACKTRACE(e, "Failed to consume data");
             }
@@ -63,4 +63,33 @@ void NetworkTcpPeer::receive() {
 
 bool NetworkTcpPeer::isConnected() const {
     return socket.lowest_layer().is_open();
+}
+
+void NetworkTcpPeer::receiveObject(msgpack::object_handle oh) {
+    if (!Detail::validateMessageObject(oh)) {
+        logger.error("Received malformed message from: {}", address);
+    } else {
+        auto o = std::make_shared<decltype(oh)>(std::move(oh));
+        auto self = this->shared_from_this();
+        service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
+    }
+}
+
+void NetworkTcpPeer::writeCompressed(const char* data, size_t length) {
+    if (!isConnected()) {
+        return;
+    }
+
+    auto self = shared_from_this();
+    auto temp = std::make_shared<std::vector<char>>(length);
+    std::memcpy(temp->data(), data, length);
+    auto b = asio::buffer(temp->data(), temp->size());
+
+    socket.async_write_some(b, strand.wrap([self](const asio::error_code ec, const size_t length) {
+        if (ec) {
+            logger.error("Failed to write data to: {} error: {}", self->address, ec.message());
+            self->close();
+            self->service.post([self]() { self->dispatcher.onDisconnect(self); });
+        }
+    }));
 }

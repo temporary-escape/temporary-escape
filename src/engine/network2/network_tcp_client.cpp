@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkTcpClient::NetworkTcpClient(asio::io_service& service, NetworkSslContext& ssl, const std::string& host,
-                                   const uint32_t port) :
-    internal{std::make_shared<Internal>(service, ssl)} {
+NetworkTcpClient::NetworkTcpClient(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher,
+                                   const std::string& host, const uint32_t port) :
+    internal{std::make_shared<Internal>(service, ssl, dispatcher)} {
 
     logger.info("Connecting to host: {} port: {}", host, port);
     internal->connect(host, port, std::chrono::milliseconds{5000});
@@ -19,8 +19,8 @@ NetworkTcpClient::~NetworkTcpClient() {
     close();
 }
 
-NetworkTcpClient::Internal::Internal(asio::io_service& service, NetworkSslContext& ssl) :
-    service{service}, strand{service}, socket{service, ssl.get()} {
+NetworkTcpClient::Internal::Internal(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher) :
+    service{service}, dispatcher{dispatcher}, strand{service}, socket{service, ssl.get()} {
 }
 
 void NetworkTcpClient::close() {
@@ -37,7 +37,8 @@ void NetworkTcpClient::Internal::close() {
     }
 }
 
-void NetworkTcpClient::Internal::connect(const std::string& host, const uint32_t port, const std::chrono::milliseconds timeout) {
+void NetworkTcpClient::Internal::connect(const std::string& host, const uint32_t port,
+                                         const std::chrono::milliseconds timeout) {
     const auto tp = std::chrono::system_clock::now() + timeout;
 
     const asio::ip::tcp::resolver::query query(host, std::to_string(port));
@@ -76,7 +77,7 @@ void NetworkTcpClient::Internal::receive() {
             self->close();
         } else {
             try {
-                // Receive
+                self->DecompressionAcceptor::accept(self->buffer.data(), length);
             } catch (std::exception& e) {
                 BACKTRACE(e, "Failed to consume data");
             }
@@ -88,4 +89,32 @@ void NetworkTcpClient::Internal::receive() {
 
 bool NetworkTcpClient::Internal::isConnected() const {
     return socket.lowest_layer().is_open();
+}
+
+void NetworkTcpClient::Internal::receiveObject(msgpack::object_handle oh) {
+    if (!Detail::validateMessageObject(oh)) {
+        logger.error("Received malformed message from: {}", address);
+    } else {
+        auto o = std::make_shared<decltype(oh)>(std::move(oh));
+        auto self = this->shared_from_this();
+        service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
+    }
+}
+
+void NetworkTcpClient::Internal::writeCompressed(const char* data, size_t length) {
+    if (!isConnected()) {
+        return;
+    }
+
+    auto self = shared_from_this();
+    auto temp = std::make_shared<std::vector<char>>(length);
+    std::memcpy(temp->data(), data, length);
+    auto b = asio::buffer(temp->data(), temp->size());
+
+    socket.async_write_some(b, strand.wrap([self](const asio::error_code ec, const size_t length) {
+        if (ec) {
+            logger.error("Failed to write data to: {} error: {}", self->address, ec.message());
+            self->close();
+        }
+    }));
 }

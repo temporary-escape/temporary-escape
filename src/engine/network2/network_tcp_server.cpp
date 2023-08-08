@@ -25,6 +25,7 @@ void NetworkTcpServer::stop() {
     if (acceptor.is_open()) {
         logger.info("Stopping listening on endpoint: {}", acceptor.local_endpoint());
         acceptor.close();
+        logger.info("Server stopped");
     }
 }
 

@@ -7,12 +7,12 @@
 namespace Engine {
 class ENGINE_API NetworkTcpClient {
 public:
-    explicit NetworkTcpClient(asio::io_service& service, NetworkSslContext& ssl, const std::string& host,
-                              uint32_t port);
+    explicit NetworkTcpClient(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher,
+                              const std::string& host, uint32_t port);
     virtual ~NetworkTcpClient();
 
     void close();
-    
+
     bool isConnected() const {
         return internal && internal->isConnected();
     }
@@ -20,20 +20,29 @@ public:
         return internal->getAddress();
     }
 
+    template <typename T> void send(const T& msg, const uint64_t xid) {
+        internal->send(msg, xid);
+    }
+
 private:
-    class Internal : public std::enable_shared_from_this<Internal> {
+    class Internal : public NetworkPeer, public std::enable_shared_from_this<Internal> {
     public:
-        Internal(asio::io_service& service, NetworkSslContext& ssl);
+        Internal(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher);
         void close();
         void connect(const std::string& host, uint32_t port, std::chrono::milliseconds timeout);
         void receive();
-        bool isConnected() const;
-        const std::string& getAddress() {
+        bool isConnected() const override;
+        const std::string& getAddress() const override {
             return address;
         }
 
+    protected:
+        void receiveObject(msgpack::object_handle oh) override;
+        void writeCompressed(const char* data, size_t length) override;
+
     private:
         asio::io_service& service;
+        NetworkDispatcher& dispatcher;
         asio::io_service::strand strand;
         Socket socket;
         std::string address;
