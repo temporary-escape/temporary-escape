@@ -156,6 +156,10 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineGrid.flushConstants(vkb);
 
         for (auto& primitive : grid.getPrimitives()) {
+            if (!primitive.mesh) {
+                continue;
+            }
+
             if (!primitive.material) {
                 EXCEPTION("Primitive has no material");
             }

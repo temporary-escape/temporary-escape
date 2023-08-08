@@ -13,7 +13,7 @@ void ControllerLines::update(const float delta) {
 }
 
 void ControllerLines::recalculate(VulkanRenderer& vulkan) {
-    for (auto&& [_, worldText] : reg.view<ComponentLines>().each()) {
-        worldText.recalculate(vulkan);
+    for (auto&& [_, lines] : reg.view<ComponentLines>().each()) {
+        lines.recalculate(vulkan);
     }
 }

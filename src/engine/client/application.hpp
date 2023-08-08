@@ -3,6 +3,7 @@
 #include "../audio/audio_context.hpp"
 #include "../database/database.hpp"
 #include "../graphics/renderer_scene_pbr.hpp"
+#include "../graphics/renderer_thumbnail.hpp"
 #include "../gui/gui_create_profile.hpp"
 #include "../gui/gui_keep_settings.hpp"
 #include "../gui/gui_main_menu.hpp"
@@ -59,8 +60,8 @@ private:
     void startEditor();
     void createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface);
     void createPlanetLowResTextures();
-    void createBlockThumbnails(Renderer& thumbnailRenderer);
-    void createEmptyThumbnail(Renderer& thumbnailRenderer);
+    void createBlockThumbnails(RendererThumbnail& thumbnailRenderer);
+    void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
     void createPlanetThumbnails(Renderer& thumbnailRenderer);
     bool shouldBlit() const;
 

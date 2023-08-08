@@ -13,7 +13,7 @@ void ControllerPointCloud::update(const float delta) {
 }
 
 void ControllerPointCloud::recalculate(VulkanRenderer& vulkan) {
-    for (auto&& [_, worldText] : reg.view<ComponentPointCloud>().each()) {
-        worldText.recalculate(vulkan);
+    for (auto&& [_, pointCloud] : reg.view<ComponentPointCloud>().each()) {
+        pointCloud.recalculate(vulkan);
     }
 }

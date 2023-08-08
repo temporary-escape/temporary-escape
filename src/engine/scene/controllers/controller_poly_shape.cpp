@@ -13,7 +13,7 @@ void ControllerPolyShape::update(const float delta) {
 }
 
 void ControllerPolyShape::recalculate(VulkanRenderer& vulkan) {
-    for (auto&& [_, worldText] : reg.view<ComponentPolyShape>().each()) {
-        worldText.recalculate(vulkan);
+    for (auto&& [_, polyShape] : reg.view<ComponentPolyShape>().each()) {
+        polyShape.recalculate(vulkan);
     }
 }

@@ -18,9 +18,9 @@ public:
     void transitionForBlit(VulkanCommandBuffer& vkb);
     void blit(VulkanCommandBuffer& vkb);
     Vector2i getViewport() const;
+    const VulkanTexture& getFinalBuffer() const;
 
 private:
-    const VulkanTexture& getFinalBuffer() const;
     const RenderOptions options;
     VulkanRenderer& vulkan;
     RenderResources& resources;

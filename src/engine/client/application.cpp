@@ -1,5 +1,4 @@
 #include "application.hpp"
-#include "../graphics/renderer_scene_pbr.hpp"
 #include "../graphics/theme.hpp"
 #include "../utils/random.hpp"
 
@@ -382,13 +381,13 @@ void Application::startDatabase() {
     });
 }
 
-void Application::createEmptyThumbnail(Renderer& thumbnailRenderer) {
+void Application::createEmptyThumbnail(RendererThumbnail& thumbnailRenderer) {
     logger.info("Creating empty thumbnail");
 
-    /*thumbnailRenderer.render(nullptr, VoxelShape::Cube);
+    thumbnailRenderer.render(nullptr, VoxelShape::Cube);
     const auto alloc =
-        assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
-    assetsManager->addImage("block_empty_image", alloc);*/
+        assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getFinalBuffer());
+    assetsManager->addImage("block_empty_image", alloc);
 }
 
 void Application::createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface) {
@@ -417,27 +416,27 @@ void Application::createPlanetLowResTextures() {
 void Application::createPlanetThumbnails(Renderer& thumbnailRenderer) {
     logger.info("Creating planet thumbnails");
 
-    for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
-        /*thumbnailRenderer.render(planet);
+    /*for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
+        thumbnailRenderer.render(planet);
         const auto alloc =
             assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
 
         const auto name = fmt::format("{}_image", planet->getName());
-        planet->setThumbnail(assetsManager->addImage(name, alloc));*/
-    }
+        planet->setThumbnail(assetsManager->addImage(name, alloc));
+    }*/
 }
 
-void Application::createBlockThumbnails(Renderer& thumbnailRenderer) {
+void Application::createBlockThumbnails(RendererThumbnail& thumbnailRenderer) {
     logger.info("Creating block thumbnails");
 
     for (const auto& block : assetsManager->getBlocks().findAll()) {
         for (const auto shape : block->getShapes()) {
-            /*thumbnailRenderer.render(block, shape);
+            thumbnailRenderer.render(block, shape);
             const auto alloc =
-                assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+                assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getFinalBuffer());
 
             const auto name = fmt::format("{}_{}_image", block->getName(), VoxelShape::typeNames[shape]);
-            block->setThumbnail(shape, assetsManager->addImage(name, alloc));*/
+            block->setThumbnail(shape, assetsManager->addImage(name, alloc));
         }
     }
 }
@@ -448,13 +447,17 @@ void Application::createThumbnails() {
     status.message = "Creating thumbnails...";
     status.value = 0.6f;
 
+    auto rendererThumbnail =
+        std::make_unique<RendererThumbnail>(config, *this, *renderResources, *assetsManager, *voxelShapeCache);
+
     /*RenderOptions renderOptions{};
     renderOptions.viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    auto thumbnailRenderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
+    auto thumbnailRenderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources,
+    *assetsManager);*/
 
-    createBlockThumbnails(*thumbnailRenderer);
-    createEmptyThumbnail(*thumbnailRenderer);
-    createPlanetThumbnails(*thumbnailRenderer);*/
+    createBlockThumbnails(*rendererThumbnail);
+    createEmptyThumbnail(*rendererThumbnail);
+    // createPlanetThumbnails(*thumbnailRenderer);
 
     assetsManager->finalize();
 
@@ -581,11 +584,6 @@ void Application::startSinglePlayer() {
     gui.mainMenu.setEnabled(false);
 
     NEXT(compressAssets());
-
-    // game = std::make_unique<Game>(config, *this, canvas, font, nuklear, skyboxGenerator);
-    /*future = std::async([]() {
-        assetsManager = std::make_unique<Registry>(config);
-    });*/
 }
 
 void Application::startEditor() {

@@ -23,7 +23,12 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         TextureInfo info{};
         info.size = options.viewport;
         info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        if (options.enableSrc) {
+            info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT +
+                         VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        } else {
+            info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
         auto& texture = createTexture(info);
 
         ViewInfo view{};
@@ -118,7 +123,12 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         TextureInfo info{};
         info.size = options.viewport;
         info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
-        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        if (options.enableSrc) {
+            info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT +
+                         VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        } else {
+            info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
         auto& texture = createTexture(info);
 
         ViewInfo view{};

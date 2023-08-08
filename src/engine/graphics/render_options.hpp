@@ -9,5 +9,6 @@ struct ENGINE_API RenderOptions {
     int ssao{0};
     bool fxaa{true};
     bool bloom{false};
+    bool enableSrc{false};
 };
 } // namespace Engine
