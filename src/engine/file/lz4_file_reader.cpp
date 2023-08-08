@@ -70,6 +70,10 @@ Lz4FileReader::Lz4FileReader(const Path& path) : lz4{std::make_unique<LZ4>()} {
 
 Lz4FileReader::~Lz4FileReader() = default;
 
+Lz4FileReader::Lz4FileReader(Engine::Lz4FileReader&& other) = default;
+
+Lz4FileReader& Lz4FileReader::operator=(Engine::Lz4FileReader&& other) = default;
+
 size_t Lz4FileReader::read(char* dst, size_t length) {
     auto data = dst;
 

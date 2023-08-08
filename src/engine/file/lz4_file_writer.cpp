@@ -59,6 +59,10 @@ Lz4FileWriter::~Lz4FileWriter() {
     close();
 }
 
+Lz4FileWriter::Lz4FileWriter(Engine::Lz4FileWriter&& other) = default;
+
+Lz4FileWriter& Lz4FileWriter::operator=(Engine::Lz4FileWriter&& other) = default;
+
 void Lz4FileWriter::write(const char* src, size_t length) {
     while (length > 0) {
         if (offset >= temp.size()) {

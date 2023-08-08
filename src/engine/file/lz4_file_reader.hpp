@@ -7,8 +7,8 @@ namespace Engine {
 class ENGINE_API Lz4FileReader {
 public:
     explicit Lz4FileReader(const Path& path);
-    Lz4FileReader(const Lz4FileReader& other) = delete;
-    Lz4FileReader(Lz4FileReader&& other) = default;
+    Lz4FileReader(const Lz4FileReader& other);
+    Lz4FileReader(Lz4FileReader&& other);
     virtual ~Lz4FileReader();
     Lz4FileReader& operator=(const Lz4FileReader& other) = delete;
     Lz4FileReader& operator=(Lz4FileReader&& other) = default;
