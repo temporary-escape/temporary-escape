@@ -59,11 +59,11 @@ TEST_CASE("Compress and decompress large data", "[stream]") {
     data.resize(1024 * 1024 * 16);
 
     std::mt19937_64 rng{5678};
-    std::uniform_int_distribution<char> dist{};
+    std::uniform_int_distribution<int> dist{0, 255};
 
     // Generate random data
     for (char& i : data) {
-        i = dist(rng);
+        i = static_cast<char>(dist(rng));
     }
 
     // Calculate MD5 of the generated data
@@ -97,12 +97,12 @@ TEST_CASE("Compress and decompress large data with small chunks", "[stream]") {
     data.resize(1024 * 1024 * 16);
 
     std::mt19937_64 rng{1234};
-    std::uniform_int_distribution<char> dist{};
+    std::uniform_int_distribution<int> dist{0, 255};
     std::uniform_int_distribution<size_t> distSize{16, 1024};
 
     // Generate random data
     for (char& i : data) {
-        i = dist(rng);
+        i = static_cast<char>(dist(rng));
     }
 
     // Calculate MD5 of the generated data

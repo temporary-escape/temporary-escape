@@ -23,6 +23,7 @@ private:
     NetworkSslContext& ssl;
     NetworkDispatcher& dispatcher;
     asio::ip::tcp::acceptor acceptor;
+    std::mutex mutex;
     std::vector<std::shared_ptr<NetworkTcpPeer>> peers;
 };
 } // namespace Engine

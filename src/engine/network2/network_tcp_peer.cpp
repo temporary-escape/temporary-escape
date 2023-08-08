@@ -26,9 +26,8 @@ void NetworkTcpPeer::close() {
         auto self = shared_from_this();
         server.disconnect(self);
         self->socket.async_shutdown(self->strand.wrap([self](const std::error_code ec) {
-            if (ec) {
-                logger.error("Error while closing peer endpoint: {} error: {}", self->address, ec.message());
-            }
+            (void)ec;
+            self->socket.lowest_layer().close();
         }));
     }
 }

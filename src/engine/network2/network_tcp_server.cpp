@@ -17,10 +17,16 @@ NetworkTcpServer::~NetworkTcpServer() {
 }
 
 void NetworkTcpServer::stop() {
-    for (const auto& peer : peers) {
+    decltype(peers) temp;
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+        temp = peers;
+        peers.clear();
+    }
+    
+    for (const auto& peer : temp) {
         peer->close();
     }
-    peers.clear();
 
     if (acceptor.is_open()) {
         logger.info("Stopping listening on endpoint: {}", acceptor.local_endpoint());
@@ -30,10 +36,8 @@ void NetworkTcpServer::stop() {
 }
 
 void NetworkTcpServer::disconnect(const std::shared_ptr<NetworkTcpPeer>& peer) {
-    strand.post([this, peer]() {
-        // Remove peer from the list of peers.
-        peers.erase(std::remove(peers.begin(), peers.end(), peer), peers.end());
-    });
+    std::lock_guard<std::mutex> lock{mutex};
+    peers.erase(std::remove(peers.begin(), peers.end(), peer), peers.end());
 }
 
 asio::ip::tcp::endpoint NetworkTcpServer::endpoint(const uint32_t port, const bool ipv6) {
@@ -50,7 +54,10 @@ void NetworkTcpServer::accept() {
             logger.info("Accepting new connection from: {}", socket->lowest_layer().remote_endpoint());
             auto peer = std::make_shared<NetworkTcpPeer>(service, *this, std::move(*socket), dispatcher);
             peer->handshake();
-            peers.push_back(peer);
+            {
+                std::lock_guard<std::mutex> lock{mutex};
+                peers.push_back(peer);
+            }
             accept();
         }
     }));

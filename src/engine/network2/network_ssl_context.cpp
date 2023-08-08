@@ -5,7 +5,7 @@ using namespace Engine;
 NetworkSslContext::NetworkSslContext() : ssl{asio::ssl::context::tlsv13} {
     ssl.set_options(asio::ssl::context::default_workarounds | asio::ssl::context::no_sslv2 |
                     asio::ssl::context::no_sslv3 | asio::ssl::context::no_tlsv1_1 | asio::ssl::context::no_tlsv1_2 |
-                    asio::ssl::context::single_dh_use);
+                    asio::ssl::context::single_dh_use | asio::ssl::context::no_compression);
 }
 
 NetworkSslContext::~NetworkSslContext() = default;

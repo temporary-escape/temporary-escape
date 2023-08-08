@@ -43,20 +43,30 @@ public:
     }
 
     ~TcpServerFixture() {
+        stopAll();
+    }
+
+    void stopAll() {
         if (server) {
             logger.info("Closing server");
             server->stop();
             server.reset();
         }
-        logger.info("Stopping io_service");
-        work.reset();
-        logger.info("Joining threads");
-        for (auto& thread : threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
+
+        if (work) {
+            logger.info("Stopping io_service");
+            work.reset();
         }
-        logger.info("Done");
+
+        if (!threads.empty()) {
+            logger.info("Joining threads");
+            for (auto& thread : threads) {
+                if (thread.joinable()) {
+                    thread.join();
+                }
+            }
+            threads.clear();
+        }
     }
 
     void startServer() {
@@ -193,4 +203,147 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the server to the client
     client->close();
 
     REQUIRE(myFooMsg.msg == req.msg);
+}
+
+TEST_CASE_METHOD(TcpServerFixture, "Connect many clients to the server", "[tcp_server]") {
+    std::mutex mutex;
+    std::vector<MyFooMsg> received;
+
+    dispatcher.addHandler([&](Request<MyFooMsg> request) {
+        std::lock_guard<std::mutex> lock{mutex};
+        received.push_back(request.get());
+    });
+
+    startServer();
+
+    std::list<std::future<void>> threads;
+    for (auto i = 0; i < 16; i++) {
+        threads.push_back(std::async([=]() {
+            NetworkDispatcher clientDispatcher{};
+            auto client = createClient(clientDispatcher);
+            REQUIRE(client->isConnected());
+
+            std::this_thread::sleep_for(std::chrono::milliseconds{500});
+
+            MyFooMsg msg;
+            msg.msg = fmt::format("Hello World from: {}", i);
+            client->send(msg, 0);
+
+            client->close();
+        }));
+    }
+
+    for (auto& thread : threads) {
+        REQUIRE_NOTHROW(thread.get());
+    }
+
+    stopAll();
+
+    REQUIRE(received.size() == 16);
+    for (auto i = 0; i < 16; i++) {
+        const auto it = std::find_if(received.begin(), received.end(), [i](const MyFooMsg& e) {
+            return e.msg == fmt::format("Hello World from: {}", i);
+        });
+        REQUIRE(it != received.end());
+    }
+}
+
+struct DataRequest {
+    uint8_t foo{0};
+
+    MSGPACK_DEFINE(foo);
+};
+
+MESSAGE_DEFINE(DataRequest);
+
+struct DataResponse {
+    static constexpr size_t size = 1024 * 16;
+    std::array<uint8_t, 1024 * 16> data;
+};
+
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+    namespace adaptor {
+
+    template <> struct convert<DataResponse> {
+        msgpack::object const& operator()(msgpack::object const& o, DataResponse& v) const {
+            if (o.type != msgpack::type::BIN)
+                throw msgpack::type_error();
+            if (o.via.bin.size != v.data.size())
+                throw msgpack::type_error();
+            std::memcpy(v.data.data(), o.via.bin.ptr, v.data.size());
+            return o;
+        }
+    };
+
+    template <> struct pack<DataResponse> {
+        template <typename Stream>
+        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, DataResponse const& v) const {
+            o.pack_bin(v.data.size());
+            o.pack_bin_body(reinterpret_cast<const char*>(v.data.data()), v.data.size());
+            return o;
+        }
+    };
+    } // namespace adaptor
+}
+} // namespace msgpack
+
+MESSAGE_DEFINE(DataResponse);
+
+TEST_CASE_METHOD(TcpServerFixture, "Test for server throughput", "[tcp_server]") {
+    std::array<uint8_t, DataResponse::size> randomData{};
+    std::mt19937_64 rng{123456};
+    std::uniform_int_distribution<int> dist{0, 255};
+    for (auto& d : randomData) {
+        d = dist(rng);
+    }
+
+    dispatcher.addHandler([&](Request<DataRequest> request) {
+        (void)request.get();
+        DataResponse res{};
+        std::memcpy(res.data.data(), randomData.data(), randomData.size());
+        request.respond(res);
+    });
+
+    startServer();
+
+    size_t total{0};
+    std::atomic_bool done{false};
+    std::chrono::time_point<std::chrono::steady_clock> end{};
+
+    NetworkDispatcher clientDispatcher{};
+    clientDispatcher.addHandler([&](Request<DataResponse> request) {
+        const auto r = request.get();
+        total += r.data.size();
+        if (total > 1024 * 1024 * 128) {
+            done.store(true);
+            end = std::chrono::steady_clock::now();
+            return;
+        }
+        DataRequest res{};
+        request.respond(res);
+    });
+
+    // Connect to the server
+    auto client = createClient(clientDispatcher);
+    REQUIRE(client->isConnected());
+    REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
+
+    const auto start = std::chrono::steady_clock::now();
+    client->send(DataRequest{}, 123);
+
+    const auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+    while (timeout > std::chrono::steady_clock::now()) {
+        if (done.load()) {
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds{30});
+    }
+
+    REQUIRE(done.load());
+    client->close();
+
+    const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    logger.info("Time took: {} ms bytes: {}", diff, total);
 }
