@@ -699,7 +699,7 @@ void Application::loadSounds() {
         }
     };
 
-    load(sounds.uiClick, config.assetsPath / "base" / "sounds" / "bong_001.ogg");
+    load(sounds.uiClick, config.assetsPath / "base" / "sounds" / "ui_bong_01.ogg");
 }
 
 void Application::nuklearOnClick(const bool push) {
