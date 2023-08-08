@@ -313,18 +313,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
             const auto span = positions->accessor.bufferView.getSpan();
             auto* points = reinterpret_cast<const float*>(span.data());
-            // auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
-            auto shape = std::make_unique<btConvexHullShape>();
-            for (size_t i = 0; i < positions->accessor.count; i++) {
-                Vector3 point{points[0], points[1], points[2]};
-                logger.debug("Adding point: {}", point);
-                if (glm::length(point) <= 0.0f || glm::length(point) > 100.0f) {
-                    EXCEPTION("Invalid collision mesh point: {}", point);
-                }
-                shape->addPoint(btVector3{point.x, point.y, point.z});
-                points += 3;
-            }
-            shape->recalcLocalAabb();
+            auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
             collisionShape = std::move(shape);
         }
 

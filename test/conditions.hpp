@@ -22,4 +22,6 @@ static inline bool waitForCondition(const std::function<bool()>& fn) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
+
+#define REQUIRE_EVENTUALLY(expr) REQUIRE(waitForCondition([&]() { return (expr); }))
 } // namespace Engine

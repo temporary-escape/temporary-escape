@@ -32,10 +32,7 @@ void Peer::start() {
 void Peer::close() {
     runFlag.store(false);
     if (socket && socket->lowest_layer().is_open()) {
-        socket->async_shutdown([s = socket](const asio::error_code ec) {
-            s->lowest_layer().cancel();
-            s->lowest_layer().close();
-        });
+        socket->async_shutdown([s = socket](const asio::error_code ec) { s->lowest_layer().close(); });
     }
     socket.reset();
 }
