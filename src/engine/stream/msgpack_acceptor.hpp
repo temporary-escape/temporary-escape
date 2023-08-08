@@ -4,7 +4,7 @@
 #include <msgpack.hpp>
 
 namespace Engine {
-class MsgpackAcceptor : public DecompressionAcceptor {
+class ENGINE_API MsgpackAcceptor : public DecompressionAcceptor {
 public:
     explicit MsgpackAcceptor(size_t blockBytes = 1024 * 8);
     NON_COPYABLE(MsgpackAcceptor);
