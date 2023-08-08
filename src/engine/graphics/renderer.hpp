@@ -32,6 +32,6 @@ protected:
 
 private:
     VulkanRenderer& vulkan;
-    std::list<std::unique_ptr<RenderPass>> passes;
+    std::vector<std::unique_ptr<RenderPass>> passes;
 };
 } // namespace Engine
