@@ -10,9 +10,9 @@ static auto logger = createLogger(LOG_FILENAME);
 #undef HANDLE_REQUEST
 #define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
 
-Client::Client(const Config& config, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
-               const PlayerLocalProfile& localProfile) :
-    config{config}, assetsManager{assetsManager}, voxelShapeCache{voxelShapeCache}, localProfile{localProfile} {
+Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+               VoxelShapeCache* voxelShapeCache) :
+    config{config}, assetsManager{assetsManager}, localProfile{localProfile}, voxelShapeCache{voxelShapeCache} {
 
     Network::Client::start();
 
@@ -22,11 +22,13 @@ Client::Client(const Config& config, AssetsManager& assetsManager, VoxelShapeCac
 }
 
 Client::~Client() {
-    stop();
+    logger.info("Stopping client");
+    Network::Client::stop();
 }
 
-void Client::stop() {
-    Network::Client::stop();
+void Client::disconnect() {
+    logger.info("Disconnecting client");
+    hasNetworkError = true;
 }
 
 void Client::connect(const std::string& address, const int port) {
@@ -121,11 +123,15 @@ void Client::validateManifests(const std::vector<ModManifest>& serverManifests) 
 }
 
 void Client::update() {
+    if (hasNetworkError && isConnected()) {
+        logger.info("Forcing network client to stop");
+        Network::Client::stop();
+    }
     sync.poll();
 }
 
 void Client::createScene(SectorData sector) {
-    logger.info("Sector has changed, creating new scene");
+    logger.info("Sector info retrieved, creating basic entities");
 
     const auto starTexture = assetsManager.getTextures().find("space_sun_flare");
     const auto starTextureLow = assetsManager.getTextures().find("star_spectrum_low");
@@ -159,7 +165,6 @@ void Client::createScene(SectorData sector) {
     auto& cameraCamera = camera.addComponent<ComponentCamera>(cameraTransform);
     cameraCamera.setProjection(80.0f);
     cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
-    logger.info("Setting scene primary camera");
     scene->setPrimaryCamera(camera);
 
     /*auto entity = scene->createEntity();
@@ -191,6 +196,7 @@ void Client::handle(MessagePlayerLocationEvent res) {
     req.sectorId = res.location.sectorId;
 
     sync.postSafe([this]() {
+        logger.info("Sector has changed, creating new scene");
         scene.reset();
         scene = std::make_unique<Scene>(config, voxelShapeCache);
     });
@@ -220,11 +226,13 @@ void Client::handle(MessagePingRequest req) {
 
 void Client::onError(std::error_code ec) {
     logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
+    hasNetworkError = true;
 }
 
 void Client::onError(const PeerPtr& peer, std::error_code ec) {
     logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
     peer->close();
+    hasNetworkError = true;
 }
 
 void Client::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) {
@@ -234,6 +242,7 @@ void Client::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr)
         BACKTRACE(e, "Server network error");
     }
     peer->close();
+    hasNetworkError = true;
 }
 
 void Client::postDispatch(std::function<void()> fn) {

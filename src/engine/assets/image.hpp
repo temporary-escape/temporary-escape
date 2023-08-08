@@ -11,7 +11,7 @@ public:
     explicit Image(std::string name, Path path);
     explicit Image(std::string name, const ImageAtlas::Allocation& allocation);
     MOVEABLE(Image);
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
 
     [[nodiscard]] const ImageAtlas::Allocation& getAllocation() const {
         return allocation;

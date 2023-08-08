@@ -31,11 +31,17 @@ void Peer::start() {
 
 void Peer::close() {
     runFlag.store(false);
+    if (socket && socket->lowest_layer().is_open()) {
+        socket->async_shutdown([s = socket](const asio::error_code ec) {
+            s->lowest_layer().cancel();
+            s->lowest_layer().close();
+        });
+    }
     socket.reset();
 }
 
 void Peer::receive() {
-    if (!runFlag.load()) {
+    if (!runFlag.load() || !socket) {
         return;
     }
 
@@ -77,7 +83,7 @@ void Peer::receiveObject(std::shared_ptr<msgpack::object_handle> oh) {
                 self->handle(info.reqId, oh);
             } else {
                 self->dispatcher.dispatch(self, info.id, info.reqId, oh);
-            };
+            }
         } catch (msgpack::unpack_error& e) {
             self->errorHandler.onError(self, ::make_error_code(Error::UnpackError));
         } catch (std::exception_ptr& e) {
@@ -110,7 +116,7 @@ void Peer::handle(const uint64_t reqId, ObjectHandlePtr oh) {
 }
 
 void Peer::sendBuffer(std::shared_ptr<std::vector<char>> buffer) {
-    if (!runFlag.load()) {
+    if (!runFlag.load() || !socket) {
         return;
     }
 

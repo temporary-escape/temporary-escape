@@ -68,8 +68,8 @@ function SectorAsteroidField.new()
                 transform:move(cluster.pos)
                 transform:rotate(cluster.orientation)
 
-                local rigid_body = entity:get_component_rigid_body()
-                rigid_body:update_transform()
+                --local rigid_body = entity:get_component_rigid_body()
+                --rigid_body:update_transform()
             end
         end
 

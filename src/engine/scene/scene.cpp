@@ -20,26 +20,23 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, VoxelShapeCache& voxelShapeCache) : isServer{false} {
+Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache) : isServer{false} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
 
-    addController<ControllerIconSelectable>();
-    addController<ControllerIcon>();
-    addController<ControllerCamera>();
-    addController<ControllerGrid>(voxelShapeCache);
-    addController<ControllerLights>(*this);
-    addController<ControllerStaticModel>();
-    addController<ControllerText>();
-    addController<ControllerWorldText>();
-    addController<ControllerPointCloud>();
-    addController<ControllerPolyShape>();
-    addController<ControllerLines>();
-}
-
-Scene::Scene(const Config& config) : isServer{true} {
-    addController<ControllerDynamicsWorld>(config);
-    addController<ControllerNetwork>();
+    if (voxelShapeCache) {
+        addController<ControllerIconSelectable>();
+        addController<ControllerIcon>();
+        addController<ControllerCamera>();
+        addController<ControllerGrid>(*voxelShapeCache);
+        addController<ControllerLights>(*this);
+        addController<ControllerStaticModel>();
+        addController<ControllerText>();
+        addController<ControllerWorldText>();
+        addController<ControllerPointCloud>();
+        addController<ControllerPolyShape>();
+        addController<ControllerLines>();
+    }
 }
 
 Scene::~Scene() = default;

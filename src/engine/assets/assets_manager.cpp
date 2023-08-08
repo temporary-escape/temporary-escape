@@ -222,7 +222,7 @@ template <typename T> std::shared_ptr<T> AssetsManager::addAsset(Category<T>& as
     logger.info("Adding asset: '{}'", path);
     auto asset = std::make_shared<T>(path.stem().string(), path);
     assets.insert(asset->getName(), asset);
-    loadQueue.emplace_back([=](VulkanRenderer& vulkan, AudioContext& audio) {
+    loadQueue.emplace_back([=](VulkanRenderer* vulkan, AudioContext* audio) {
         logger.info("Loading asset: '{}'", path);
         asset->load(*this, vulkan, audio);
     });
@@ -250,10 +250,12 @@ void AssetsManager::bind(Lua& lua) {
     cls["find_texture"] = [](AssetsManager& self, const std::string& name) { return self.getTextures().find(name); };
     cls["find_block"] = [](AssetsManager& self, const std::string& name) { return self.getBlocks().find(name); };
     cls["find_model"] = [](AssetsManager& self, const std::string& name) { return self.getModels().find(name); };
+    cls["find_sound"] = [](AssetsManager& self, const std::string& name) { return self.getSounds().find(name); };
 
     cls["find_all_planet_types"] = [](AssetsManager& self) { return sol::as_table(self.getPlanetTypes().findAll()); };
     cls["find_all_images"] = [](AssetsManager& self) { return sol::as_table(self.getImages().findAll()); };
     cls["find_all_textures"] = [](AssetsManager& self) { return sol::as_table(self.getTextures().findAll()); };
     cls["find_all_blocks"] = [](AssetsManager& self) { return sol::as_table(self.getBlocks().findAll()); };
     cls["find_all_models"] = [](AssetsManager& self) { return sol::as_table(self.getModels().findAll()); };
+    cls["find_all_sounds"] = [](AssetsManager& self) { return sol::as_table(self.getSounds().findAll()); };
 }

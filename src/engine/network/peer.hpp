@@ -2,6 +2,7 @@
 
 #define ASIO_STANDALONE
 
+#include "../utils/log.hpp"
 #include "error.hpp"
 #include "message.hpp"
 #include "stream.hpp"

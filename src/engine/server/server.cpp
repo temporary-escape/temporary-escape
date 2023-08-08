@@ -26,7 +26,8 @@ Server::Server(const Config& config, const Certs& certs, AssetsManager& assetsMa
     config{config},
     assetsManager{assetsManager},
     db{db},
-    playerSessions{config, assetsManager, db},
+    generator{Generator::Options{}, assetsManager, db},
+    playerSessions{config, db},
     world{config, assetsManager, db, playerSessions},
     lobby{config},
     tickFlag{true},
@@ -90,7 +91,7 @@ void Server::load() {
 
     try {
         const auto t0 = std::chrono::high_resolution_clock::now();
-        generator(123456789LL);
+        generator.generate(123456789LL);
         const auto t1 = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<float> duration = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
         logger.info("Universe has been generated in {} seconds and is ready", duration.count());
@@ -138,7 +139,6 @@ void Server::cleanup() {
     eventBus.reset();
 
     logger.info("Stopping lua");
-    generator = nullptr;
     lua.reset();
 
     logger.info("Stop done");
@@ -201,7 +201,7 @@ void Server::tick() {
 
 void Server::onAcceptSuccess(PeerPtr peer) {
     logger.info("New connection peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
-    lobby.addPeerToLobby(peer);
+    lobby.addPeer(peer);
 }
 
 void Server::movePlayerToSector(const std::string& playerId, const std::string& sectorId) {
@@ -267,6 +267,16 @@ void Server::addPlayerToSector(const SessionPtr& session, const std::string& sec
     it->second->addPlayer(session);
 }
 
+void Server::disconnectPlayer(const std::string& playerId) {
+    logger.info("Disconnecting player: {}", playerId);
+    
+    auto session = playerSessions.getSession(playerId);
+    if (session) {
+        playerSessions.removeSession(session->getStream());
+        session->close();
+    }
+}
+
 void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res) {
     logger.info("New login peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
 
@@ -288,7 +298,7 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
     }
 
     // Remove peer from lobby
-    lobby.removePeerFromLobby(peer);
+    lobby.removePeer(peer);
 
     // Login
     logger.info("Logging in player name: '{}'", req.name);
@@ -332,6 +342,8 @@ void Server::handle(const PeerPtr& peer, MessageModManifestsRequest req, Message
     (void)peer;
     (void)req;
 
+    logger.info("Peer {} has requested mod manifest", peer->getAddress());
+
     const auto& manifests = assetsManager.getManifests();
     res.items.reserve(manifests.size());
     for (const auto& manifest : manifests) {
@@ -365,8 +377,10 @@ void Server::onError(std::error_code ec) {
 }
 
 void Server::onError(const PeerPtr& peer, std::error_code ec) {
-    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
+    logger.error("Server network peer error: {} ({})", ec.message(), ec.category().name());
     peer->close();
+    lobby.removePeer(peer);
+    playerSessions.removeSession(peer);
 }
 
 void Server::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) {
@@ -398,7 +412,7 @@ void Server::bind(Lua& lua) {
      * Sets the function to be called when generating the universe.
      * @param fn function A callback function that accepts a seed as a number
      */
-    cls["set_generator"] = [](Server& self, sol::function fn) {
+    /*cls["set_generator"] = [](Server& self, sol::function fn) {
         self.setGenerator([fn](uint64_t seed) {
             sol::protected_function_result result = fn(seed);
             if (!result.valid()) {
@@ -406,7 +420,7 @@ void Server::bind(Lua& lua) {
                 EXCEPTION("{}", err.what());
             }
         });
-    };
+    };*/
     /**
      * @function Server:start_sector
      * Starts a sector. The function won't do anything if the server is already started.

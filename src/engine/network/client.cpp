@@ -77,6 +77,12 @@ void Client::stop() {
     }
 }
 
+void Client::disconnect() {
+    if (peer && peer->isConnected()) {
+        peer->close();
+    }
+}
+
 bool Client::isConnected() {
     return peer && peer->isConnected();
 }

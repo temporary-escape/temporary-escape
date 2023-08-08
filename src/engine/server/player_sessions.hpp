@@ -9,7 +9,7 @@
 namespace Engine {
 class ENGINE_API PlayerSessions {
 public:
-    explicit PlayerSessions(const Config& config, AssetsManager& assetsManager, Database& db);
+    explicit PlayerSessions(const Config& config, Database& db);
     virtual ~PlayerSessions() = default;
 
     // Player data functions
@@ -28,7 +28,6 @@ public:
 
 private:
     const Config& config;
-    AssetsManager& assetsManager;
     Database& db;
 
     struct {

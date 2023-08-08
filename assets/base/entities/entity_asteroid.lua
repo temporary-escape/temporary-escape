@@ -12,9 +12,9 @@ function EntityAsteroid:create (data)
     transform.static = true
 
     local component_model = self.entity:add_component_model(data.model)
-    local component_rigid_body = self.entity:add_component_rigid_body()
-    component_rigid_body:set_from_model(component_model.model, data.size)
-    component_rigid_body.mass = 0.0
+    --local component_rigid_body = self.entity:add_component_rigid_body()
+    --component_rigid_body:set_from_model(component_model.model, data.size)
+    --component_rigid_body.mass = 0.0
 
     self.entity:add_component_icon(data.icon)
     self.entity:add_component_label("Asteroid (Rock)")

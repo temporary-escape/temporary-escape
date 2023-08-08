@@ -62,7 +62,7 @@ void RendererThumbnail::renderOneTime(Scene& scene) {
 void RendererThumbnail::render(const Engine::BlockPtr& block, const Engine::VoxelShape::Type shape) {
     logger.info("Rendering thumbnail for block: {}", block ? block->getName() : "nullptr");
 
-    Scene scene{config, voxelShapeCache};
+    Scene scene{config, &voxelShapeCache};
 
     { // Sun
         auto sun = scene.createEntity();

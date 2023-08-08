@@ -42,7 +42,7 @@ public:
     explicit Block(std::string name, Path path);
     MOVEABLE(Block);
 
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
 
     [[nodiscard]] const Material& getMaterialForSide(const VoxelShape::Face side) const {
         const auto* ptr = shapeSideToMaterial.at(side);

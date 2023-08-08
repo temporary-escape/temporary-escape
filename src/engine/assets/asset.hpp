@@ -14,7 +14,7 @@ public:
     virtual ~Asset() = default;
     MOVEABLE(Asset);
 
-    virtual void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) = 0;
+    virtual void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) = 0;
 
     [[nodiscard]] const std::string& getName() const {
         return name;

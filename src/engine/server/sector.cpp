@@ -132,6 +132,15 @@ void Sector::addPlayer(const SessionPtr& session) {
     });
 }
 
+void Sector::removePlayer(const SessionPtr& session) {
+    worker.post([this, session]() {
+        const auto it = std::find_if(players.begin(), players.end(), [&](const SessionPtr& p) { return p == session; });
+        if (it != players.end()) {
+            players.erase(it);
+        }
+    });
+}
+
 /*void Sector::handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res) {
     sync.post([this, session, req = std::move(req)]() {
         auto& systemPlayers = scene.getComponentSystem<ComponentPlayer>();

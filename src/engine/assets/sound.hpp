@@ -11,13 +11,15 @@ public:
     explicit Sound(std::string name, Path path);
     MOVEABLE(Sound);
 
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
 
     static std::shared_ptr<Sound> from(const std::string& name);
 
     const AudioBuffer& getAudioBuffer() const {
         return buffer;
     }
+
+    static void bind(Lua& lua);
 
 private:
     Path path;

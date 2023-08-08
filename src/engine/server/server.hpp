@@ -8,6 +8,7 @@
 #include "../network/server.hpp"
 #include "../utils/performance_record.hpp"
 #include "../utils/worker.hpp"
+#include "generator.hpp"
 #include "messages.hpp"
 #include "peer_lobby.hpp"
 #include "player_sessions.hpp"
@@ -46,12 +47,16 @@ public:
     Database& getDatabase() {
         return db;
     }
-    void setGenerator(std::function<void(uint64_t)> value) {
-        generator = std::move(value);
+    PlayerSessions& getPlayerSessions() {
+        return playerSessions;
+    }
+    PeerLobby& getPeerLobby() {
+        return lobby;
     }
     std::chrono::nanoseconds getPerfTickTime() const {
         return perf.tickTime.value();
     }
+    void disconnectPlayer(const std::string& playerId);
 
     static Server* instance;
 
@@ -80,11 +85,11 @@ private:
     const Config& config;
     AssetsManager& assetsManager;
     Database& db;
+    Generator generator;
     PlayerSessions playerSessions;
     PeerLobby lobby;
     World world;
     std::unique_ptr<EventBus> eventBus;
-    std::function<void(uint64_t)> generator;
 
     std::thread tickThread;
     std::atomic_bool tickFlag;

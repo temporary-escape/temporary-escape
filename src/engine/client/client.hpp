@@ -23,13 +23,13 @@ struct PlayerLocalProfile {
 
 class ENGINE_API Client : public Network::Client {
 public:
-    explicit Client(const Config& config, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
-                    const PlayerLocalProfile& localProfile);
+    explicit Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+                    VoxelShapeCache* voxelShapeCache);
     virtual ~Client();
 
     void connect(const std::string& address, int port);
     void update();
-    void stop();
+    void disconnect();
 
     Scene* getScene() const {
         return scene.get();
@@ -63,8 +63,8 @@ private:
 private:
     const Config& config;
     AssetsManager& assetsManager;
-    VoxelShapeCache& voxelShapeCache;
     const PlayerLocalProfile& localProfile;
+    VoxelShapeCache* voxelShapeCache{nullptr};
     std::string playerId;
     PlayerLocationData playerLocation;
 
@@ -74,5 +74,7 @@ private:
     // PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
 
     std::unique_ptr<Scene> scene;
+
+    bool hasNetworkError{false};
 };
 } // namespace Engine

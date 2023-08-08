@@ -9,13 +9,18 @@ static auto logger = createLogger(LOG_FILENAME);
 Shader::Shader(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Shader::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+void Shader::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
     (void)assetsManager;
     (void)audio;
 
+    // Do not load unless Vulkan is present (client mode)
+    if (!vulkan) {
+        return;
+    }
+
     try {
         stage = getGLSLFileFlags(path.filename().string());
-        shader = vulkan.createShaderModule(path, stage);
+        shader = vulkan->createShaderModule(path, stage);
     } catch (...) {
         EXCEPTION_NESTED("Failed to load shader: '{}'", getName());
     }

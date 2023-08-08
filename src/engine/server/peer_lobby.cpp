@@ -9,26 +9,26 @@ static auto logger = createLogger(LOG_FILENAME);
 PeerLobby::PeerLobby(const Config& config) : config{config} {
 }
 
-void PeerLobby::addPeerToLobby(const PeerPtr& peer) {
-    logger.info("Adding to lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+void PeerLobby::addPeer(const PeerPtr& peer) {
+    logger.info("Adding to lobby peer: {}", peer->getAddress());
     std::unique_lock<std::shared_mutex> lock{lobby.mutex};
-    lobby.map.insert(peer.get());
-    logger.info("New peer in lobby id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    lobby.map.insert(peer);
+    logger.info("New peer in lobby: {}", peer->getAddress());
 }
 
-void PeerLobby::removePeerFromLobby(const PeerPtr& peer) {
+void PeerLobby::removePeer(const PeerPtr& peer) {
     std::unique_lock<std::shared_mutex> lock{lobby.mutex};
 
-    const auto it = lobby.map.find(peer.get());
+    const auto it = lobby.map.find(peer);
     if (it != lobby.map.end()) {
-        logger.info("Removing from lobby peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+        logger.info("Removing from lobby peer: {}", peer->getAddress());
         lobby.map.erase(it);
     }
 }
 
 void PeerLobby::disconnectPeer(const PeerPtr& peer) {
-    removePeerFromLobby(peer);
-    logger.info("Disconnecting peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+    removePeer(peer);
+    logger.info("Disconnecting peer: {}", peer->getAddress());
     peer->close();
 }
 
@@ -38,4 +38,14 @@ void PeerLobby::clear() {
         peer->close();
     }
     lobby.map.clear();
+}
+
+std::vector<PeerPtr> PeerLobby::getAllPeers() {
+    std::shared_lock<std::shared_mutex> lock{lobby.mutex};
+    std::vector<PeerPtr> peers;
+    peers.resize(lobby.map.size());
+    for (auto& peer : lobby.map) {
+        peers.push_back(peer);
+    }
+    return peers;
 }

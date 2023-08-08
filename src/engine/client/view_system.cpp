@@ -108,7 +108,7 @@ Scene* ViewSystem::getScene() {
 }
 
 void ViewSystem::load() {
-    scene = std::make_unique<Scene>(config, voxelShapeCache);
+    scene = std::make_unique<Scene>(config, &voxelShapeCache);
 
     { // Figure out where we are
         logger.info("Fetching player location");

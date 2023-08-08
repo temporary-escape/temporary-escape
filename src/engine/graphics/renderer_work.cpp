@@ -54,7 +54,7 @@ void RendererWork::startJobs(const size_t count) {
 }
 
 void RendererWork::prepareScene() {
-    scene = std::make_unique<Scene>(config, voxelShapeCache);
+    scene = std::make_unique<Scene>(config, &voxelShapeCache);
 
     auto entity = scene->createEntity();
     auto& transform = entity.addComponent<ComponentTransform>();

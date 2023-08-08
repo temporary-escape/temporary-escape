@@ -78,17 +78,22 @@ Texture::Options Texture::loadOptions(const Path& path) {
 Texture::Texture(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
-void Texture::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+void Texture::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
     (void)assetsManager;
     (void)audio;
+
+    // Do not load unless Vulkan is present (client mode)
+    if (!vulkan) {
+        return;
+    }
 
     const auto options = loadOptions(path);
 
     try {
         if (path.extension().string() == ".png") {
-            loadPng(options, vulkan);
+            loadPng(options, *vulkan);
         } else if (path.extension().string() == ".ktx2") {
-            loadKtx2(options, vulkan);
+            loadKtx2(options, *vulkan);
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to load texture: '{}'", getName());

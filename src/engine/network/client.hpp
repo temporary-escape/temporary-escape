@@ -75,6 +75,7 @@ public:
      * @return True if connected.
      */
     bool isConnected();
+    void disconnect();
 
     /**
      * Send some message to the server.

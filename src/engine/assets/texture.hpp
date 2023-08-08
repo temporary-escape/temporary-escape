@@ -55,7 +55,7 @@ public:
     explicit Texture(std::string name, Path path);
     MOVEABLE(Texture);
 
-    void load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) override;
+    void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
 
     VulkanTexture& getVulkanTexture() {
         return texture;

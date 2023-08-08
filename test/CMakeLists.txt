@@ -4,7 +4,7 @@ file(GLOB_RECURSE SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
 
 add_executable(${PROJECT_NAME}UnitTests ${SOURCES})
-target_compile_definitions(${PROJECT_NAME}UnitTests PRIVATE ROOT_DIR= "${ROOT_DIR}" ENGINE_TESTS=1)
+target_compile_definitions(${PROJECT_NAME}UnitTests PRIVATE ROOT_DIR="${CMAKE_SOURCE_DIR}" ENGINE_TESTS=1)
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
     target_link_options(${PROJECT_NAME}UnitTests PRIVATE -lasan)

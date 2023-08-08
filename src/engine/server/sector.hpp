@@ -20,6 +20,7 @@ public:
     void update();
 
     void addPlayer(const SessionPtr& session);
+    void removePlayer(const SessionPtr& session);
 
     bool isLoaded() const {
         return loaded;

@@ -8,6 +8,11 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
+}
+
+void Block::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
+    (void)audio;
+    
     try {
         definition.fromYaml(this->path);
     } catch (...) {
@@ -21,10 +26,11 @@ Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::mo
     if (definition.shapes.empty()) {
         EXCEPTION_NESTED("Block must allow at least one type of shape, the property 'shapes: []' can not be empty");
     }
-}
 
-void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
-    (void)audio;
+    // Do not load unless Vulkan is present (client mode)
+    if (!vulkan) {
+        return;
+    }
 
     auto& defaults = assetsManager.getDefaultTextures();
 
@@ -71,8 +77,8 @@ void Block::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioCont
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
         bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-        material->ubo = vulkan.createBuffer(bufferInfo);
-        vulkan.copyDataToBuffer(material->ubo, &material->uniform, sizeof(Material::Uniform));
+        material->ubo = vulkan->createBuffer(bufferInfo);
+        vulkan->copyDataToBuffer(material->ubo, &material->uniform, sizeof(Material::Uniform));
     }
 }
 

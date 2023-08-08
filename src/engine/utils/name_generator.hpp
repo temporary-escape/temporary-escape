@@ -12,7 +12,7 @@ public:
     explicit NameGenerator(const std::vector<std::string>& words);
     virtual ~NameGenerator() = default;
 
-    std::string operator()(std::mt19937_64& rng);
+    std::string operator()(std::mt19937_64& rng) const;
 
     static void bind(Lua& lua);
 
@@ -21,6 +21,6 @@ private:
 
     std::unordered_map<std::string, std::vector<char>> sequences;
     std::vector<std::string> sequencesKeys;
-    std::uniform_int_distribution<size_t> distLength;
+    mutable std::uniform_int_distribution<size_t> distLength;
 };
 } // namespace Engine

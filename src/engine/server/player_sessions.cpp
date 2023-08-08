@@ -5,8 +5,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-PlayerSessions::PlayerSessions(const Config& config, AssetsManager& assetsManager, Database& db) :
-    config{config}, assetsManager{assetsManager}, db{db} {
+PlayerSessions::PlayerSessions(const Config& config, Database& db) : config{config}, db{db} {
 }
 
 std::optional<std::string> PlayerSessions::secretToId(const uint64_t secret) {

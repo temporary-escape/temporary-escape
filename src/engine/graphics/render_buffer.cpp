@@ -42,7 +42,7 @@ VulkanTexture& RenderBuffer::createTexture(const TextureInfo& info) {
     textureInfo.sampler.addressModeW = info.addressMode;
     textureInfo.sampler.anisotropyEnable = VK_FALSE;
     textureInfo.sampler.maxAnisotropy = 1.0f;
-    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.borderColor = info.borderColor;
     textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
     textureInfo.sampler.compareEnable = VK_FALSE;
     textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;

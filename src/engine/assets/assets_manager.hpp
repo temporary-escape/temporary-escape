@@ -14,9 +14,9 @@
 #include <mutex>
 
 namespace Engine {
-class AssetsManager {
+class ENGINE_API AssetsManager {
 public:
-    using LoadQueue = std::list<std::function<void(VulkanRenderer&, AudioContext&)>>;
+    using LoadQueue = std::list<std::function<void(VulkanRenderer*, AudioContext*)>>;
 
     struct DefaultTextures {
         TexturePtr baseColor;

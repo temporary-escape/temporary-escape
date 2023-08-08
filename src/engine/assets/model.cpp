@@ -64,7 +64,7 @@ Model& Model::operator=(Model&& other) noexcept = default;
 
 Model::~Model() = default;
 
-void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioContext& audio) {
+void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
     (void)audio;
 
     const auto resolveTexture = [this, &assetsManager](const Path& filename) -> TexturePtr {
@@ -196,39 +196,42 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioCont
             material.uniform.normalFactor = Vector4{1.0f};
             material.uniform.ambientOcclusionFactor = Vector4{1.0f};
 
-            if (partMaterial.baseColorTexture) {
-                material.baseColorTexture = resolveTexture(partMaterial.baseColorTexture.value().getUri());
-            } else {
-                material.baseColorTexture = assetsManager.getDefaultTextures().baseColor;
-            }
+            // Only initialize textures if the Vulkan is present (client mode)
+            if (vulkan) {
+                if (partMaterial.baseColorTexture) {
+                    material.baseColorTexture = resolveTexture(partMaterial.baseColorTexture.value().getUri());
+                } else {
+                    material.baseColorTexture = assetsManager.getDefaultTextures().baseColor;
+                }
 
-            if (partMaterial.normalTexture) {
-                material.normalTexture = resolveTexture(partMaterial.normalTexture.value().getUri());
-            } else {
-                material.normalTexture = assetsManager.getDefaultTextures().normal;
-            }
+                if (partMaterial.normalTexture) {
+                    material.normalTexture = resolveTexture(partMaterial.normalTexture.value().getUri());
+                } else {
+                    material.normalTexture = assetsManager.getDefaultTextures().normal;
+                }
 
-            if (partMaterial.emissiveTexture) {
-                material.emissiveTexture = resolveTexture(partMaterial.emissiveTexture.value().getUri());
-            } else {
-                material.emissiveTexture = assetsManager.getDefaultTextures().emissive;
-            }
+                if (partMaterial.emissiveTexture) {
+                    material.emissiveTexture = resolveTexture(partMaterial.emissiveTexture.value().getUri());
+                } else {
+                    material.emissiveTexture = assetsManager.getDefaultTextures().emissive;
+                }
 
-            if (partMaterial.metallicRoughnessTexture) {
-                material.metallicRoughnessTexture =
-                    resolveTexture(partMaterial.metallicRoughnessTexture.value().getUri());
-            } else {
-                material.metallicRoughnessTexture = assetsManager.getDefaultTextures().metallicRoughness;
-            }
+                if (partMaterial.metallicRoughnessTexture) {
+                    material.metallicRoughnessTexture =
+                        resolveTexture(partMaterial.metallicRoughnessTexture.value().getUri());
+                } else {
+                    material.metallicRoughnessTexture = assetsManager.getDefaultTextures().metallicRoughness;
+                }
 
-            if (partMaterial.ambientOcclusionTexture) {
-                material.ambientOcclusionTexture =
-                    resolveTexture(partMaterial.ambientOcclusionTexture.value().getUri());
-            } else {
-                material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
-            }
+                if (partMaterial.ambientOcclusionTexture) {
+                    material.ambientOcclusionTexture =
+                        resolveTexture(partMaterial.ambientOcclusionTexture.value().getUri());
+                } else {
+                    material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
+                }
 
-            material.maskTexture = assetsManager.getDefaultTextures().mask;
+                material.maskTexture = assetsManager.getDefaultTextures().mask;
+            }
 
             switch (part.indices.value().componentType) {
             case GltfComponentType::R8: {
@@ -260,34 +263,37 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioCont
                 EXCEPTION("Invalid primitive type");
             }
 
-            const auto vboData =
-                GltfUtils::combine(positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
-            const auto& iboData = part.indices->bufferView.getBuffer();
+            // Only initialize buffers if the Vulkan is present (client mode)
+            if (vulkan) {
+                const auto vboData =
+                    GltfUtils::combine(positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
+                const auto& iboData = part.indices->bufferView.getBuffer();
 
-            VulkanBuffer::CreateInfo bufferInfo{};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.size = vboData.size() * sizeof(float);
-            bufferInfo.usage =
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-            bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-            primitive.mesh.vbo = vulkan.createBuffer(bufferInfo);
-            vulkan.copyDataToBuffer(primitive.mesh.vbo, vboData.data(), bufferInfo.size);
+                VulkanBuffer::CreateInfo bufferInfo{};
+                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                bufferInfo.size = vboData.size() * sizeof(float);
+                bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+                bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+                primitive.mesh.vbo = vulkan->createBuffer(bufferInfo);
+                vulkan->copyDataToBuffer(primitive.mesh.vbo, vboData.data(), bufferInfo.size);
 
-            bufferInfo.size = iboData.size() * sizeof(uint8_t);
-            bufferInfo.usage =
-                VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            primitive.mesh.ibo = vulkan.createBuffer(bufferInfo);
-            vulkan.copyDataToBuffer(primitive.mesh.ibo, iboData.data(), bufferInfo.size);
+                bufferInfo.size = iboData.size() * sizeof(uint8_t);
+                bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                primitive.mesh.ibo = vulkan->createBuffer(bufferInfo);
+                vulkan->copyDataToBuffer(primitive.mesh.ibo, iboData.data(), bufferInfo.size);
 
-            primitive.mesh.count = static_cast<uint32_t>(part.indices->count);
+                primitive.mesh.count = static_cast<uint32_t>(part.indices->count);
 
-            bufferInfo.size = iboData.size() * sizeof(uint8_t);
-            bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            material.ubo = vulkan.createBuffer(bufferInfo);
-            vulkan.copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+                bufferInfo.size = iboData.size() * sizeof(uint8_t);
+                bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                material.ubo = vulkan->createBuffer(bufferInfo);
+                vulkan->copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+            }
         }
 
         if (collisions && endsWith(collisions->name, "_CCX")) {
@@ -306,8 +312,19 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer& vulkan, AudioCont
             }
 
             const auto span = positions->accessor.bufferView.getSpan();
-            const auto* points = reinterpret_cast<const float*>(span.data());
-            auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
+            auto* points = reinterpret_cast<const float*>(span.data());
+            // auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
+            auto shape = std::make_unique<btConvexHullShape>();
+            for (size_t i = 0; i < positions->accessor.count; i++) {
+                Vector3 point{points[0], points[1], points[2]};
+                logger.debug("Adding point: {}", point);
+                if (glm::length(point) <= 0.0f || glm::length(point) > 100.0f) {
+                    EXCEPTION("Invalid collision mesh point: {}", point);
+                }
+                shape->addPoint(btVector3{point.x, point.y, point.z});
+                points += 3;
+            }
+            shape->recalcLocalAabb();
             collisionShape = std::move(shape);
         }
 

@@ -323,7 +323,7 @@ void Application::startClient() {
     status.message = "Connecting...";
     status.value = 0.9f;
 
-    client = std::make_unique<Client>(config, *assetsManager, *voxelShapeCache, playerLocalProfile);
+    client = std::make_unique<Client>(config, *assetsManager, playerLocalProfile, voxelShapeCache.get());
 
     logger.info("Connecting to the server");
 
@@ -483,7 +483,7 @@ void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator 
             const auto progress = static_cast<float>(count) / static_cast<float>(assetsManager->getLoadQueue().size());
 
             try {
-                (*next)(*this, audio);
+                (*next)(this, &audio);
                 ++next;
             } catch (...) {
                 EXCEPTION_NESTED("Failed to load asset");
