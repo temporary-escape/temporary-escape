@@ -2,8 +2,8 @@
 
 #include "../library.hpp"
 #include "../math/vector.hpp"
+#include "../utils/path.hpp"
 #include "../vulkan/vulkan_types.hpp"
-#include "path.hpp"
 
 #ifndef PNG_H
 typedef void* png_structp;
@@ -11,10 +11,10 @@ typedef void* png_infop;
 #endif
 
 namespace Engine {
-class ENGINE_API PngImporter {
+class ENGINE_API PngFileReader {
 public:
-    explicit PngImporter(const Path& path);
-    virtual ~PngImporter();
+    explicit PngFileReader(const Path& path);
+    virtual ~PngFileReader();
 
     [[nodiscard]] VkFormat getFormat() const {
         return format;

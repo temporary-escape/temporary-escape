@@ -1,7 +1,7 @@
 #define CGLTF_IMPLEMENTATION
-#include "gltf_importer.hpp"
-#include "base64.hpp"
-#include "exceptions.hpp"
+#include "gltf_file_reader.hpp"
+#include "../utils/base64.hpp"
+#include "../utils/exceptions.hpp"
 #include <fstream>
 #include <unordered_set>
 
@@ -224,7 +224,7 @@ GltfNode::GltfNode(const GltfData& data, cgltf_node* node) : data(data) {
     }
 }
 
-GltfImporter::GltfImporter(const Path& path) {
+GltfFileReader::GltfFileReader(const Path& path) {
     cgltf_options options;
     std::memset(&options, 0, sizeof(options));
     cgltf_data* data = nullptr;
@@ -254,7 +254,7 @@ GltfImporter::GltfImporter(const Path& path) {
     }
 }
 
-GltfImporter::~GltfImporter() = default;
+GltfFileReader::~GltfFileReader() = default;
 
 std::vector<float> GltfUtils::combine(const GltfAccessor& position, const GltfAccessor& normals,
                                       const GltfAccessor& texCoords, const GltfAccessor& tangents) {

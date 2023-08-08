@@ -1,22 +1,22 @@
 #include "../common.hpp"
 #include <cstring>
-#include <engine/network/stream.hpp>
+#include <engine/stream/msgpack_acceptor.hpp>
+#include <engine/stream/msgpack_stream.hpp>
 #include <iostream>
 #include <lz4.h>
 #include <lz4frame.h>
 #include <msgpack.hpp>
 
 using namespace Engine;
-using namespace Engine::Network;
 
 static const size_t maxMessageSize = 1024 * 16;
 
-class TestCompressionStream : public CompressionStream {
+class TestMsgpackStream : public MsgpackStream {
 public:
-    explicit TestCompressionStream() : CompressionStream{maxMessageSize} {
+    explicit TestMsgpackStream() : MsgpackStream{maxMessageSize} {
     }
 
-    void sendBuffer(std::shared_ptr<std::vector<char>> buffer) override {
+    void writeCompressed(std::shared_ptr<std::vector<char>> buffer) override {
         REQUIRE(!!buffer);
         REQUIRE(buffer->size() <= LZ4_COMPRESSBOUND(maxMessageSize));
         buffers.push_back(buffer);
@@ -25,9 +25,9 @@ public:
     std::vector<std::shared_ptr<std::vector<char>>> buffers;
 };
 
-class TestDecompressionStream : public DecompressionStream {
+class TestMsgpackAcceptor : public MsgpackAcceptor {
 public:
-    TestDecompressionStream() : DecompressionStream{maxMessageSize} {
+    TestMsgpackAcceptor() : MsgpackAcceptor{maxMessageSize} {
     }
 
     void receiveObject(std::shared_ptr<msgpack::object_handle> oh) override {
@@ -37,9 +37,9 @@ public:
     std::vector<std::shared_ptr<msgpack::object_handle>> objects;
 };
 
-TEST_CASE("Compress and decompress stream of bytes") {
-    TestCompressionStream compress{};
-    TestDecompressionStream decompress{};
+TEST_CASE("Compress and decompress stream of bytes with msgpack stream", "[stream]") {
+    TestMsgpackStream compress{};
+    TestMsgpackAcceptor decompress{};
 
     std::string msg = "Hello World!";
     int foo = 42;
@@ -98,9 +98,9 @@ TEST_CASE("Compress and decompress stream of bytes") {
     REQUIRE(bazDec == baz);
 }
 
-TEST_CASE("Compress and decompress random chunks") {
-    TestCompressionStream compress{};
-    TestDecompressionStream decompress{};
+TEST_CASE("Compress and decompress random chunks with msgpack stream", "[stream]") {
+    TestMsgpackStream compress{};
+    TestMsgpackAcceptor decompress{};
 
     std::mt19937_64 rng{9725674ULL};
     std::uniform_int_distribution<uint64_t> dist{};

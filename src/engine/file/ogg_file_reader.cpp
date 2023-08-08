@@ -1,5 +1,5 @@
-#include "ogg_file.hpp"
-#include "exceptions.hpp"
+#include "ogg_file_reader.hpp"
+#include "../utils/exceptions.hpp"
 #include <fstream>
 #include <vorbis/vorbisfile.h>
 

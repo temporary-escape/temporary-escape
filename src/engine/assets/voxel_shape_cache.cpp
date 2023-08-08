@@ -1,6 +1,6 @@
 #include "voxel_shape_cache.hpp"
+#include "../file/gltf_file_reader.hpp"
 #include "../math/matrix.hpp"
-#include "../utils/gltf_importer.hpp"
 
 using namespace Engine;
 
@@ -93,7 +93,7 @@ static VoxelShape load(const Path& path) {
     try {
         VoxelShape shape{};
 
-        const GltfImporter gltf(path);
+        const GltfFileReader gltf{path};
 
         for (const auto& node : gltf.getNodes()) {
             VoxelShape::Face side = VoxelShape::Face::Default;
@@ -268,8 +268,8 @@ void VoxelShapeCache::precompute() {
                 }
 
                 for (auto& v : shape.vertices) {
-                    v.position = Vector3{rotationMatrix* Vector4{v.position, 1.0f}};
-                    v.normal = Vector3{transformInverted* Vector4{v.normal, 0.0f}};
+                    v.position = Vector3{rotationMatrix * Vector4{v.position, 1.0f}};
+                    v.normal = Vector3{transformInverted * Vector4{v.normal, 0.0f}};
                     // v.tangent = Vector4{transformInverted * v.tangent, 0.0f};
                     // v.tangent = v.tangent;
                 }

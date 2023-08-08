@@ -1,7 +1,7 @@
 #include "texture.hpp"
+#include "../file/ktx2_file_reader.hpp"
+#include "../file/png_file_reader.hpp"
 #include "../server/lua.hpp"
-#include "../utils/ktx2_file.hpp"
-#include "../utils/png_importer.hpp"
 #include "../utils/string_utils.hpp"
 #include "assets_manager.hpp"
 #include <sol/sol.hpp>
@@ -101,7 +101,7 @@ void Texture::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCo
 }
 
 void Texture::loadPng(const Options& options, VulkanRenderer& vulkan) {
-    PngImporter image(path);
+    PngFileReader image{path};
 
     VkExtent3D extent{static_cast<uint32_t>(image.getSize().x), static_cast<uint32_t>(image.getSize().y), 1};
 

@@ -2,8 +2,8 @@
 
 #include "../audio/audio_buffer.hpp"
 #include "../library.hpp"
-#include "moveable_copyable.hpp"
-#include "path.hpp"
+#include "../utils/moveable_copyable.hpp"
+#include "../utils/path.hpp"
 
 namespace Engine {
 class ENGINE_API OggFileReader {

@@ -8,11 +8,11 @@ extern "C" {
 #include <ktxvulkan.h>
 // clang-format on
 
-#include "exceptions.hpp"
-#include "ktx2_file.hpp"
-#include "log.hpp"
-#include "png_importer.hpp"
-#include "string_utils.hpp"
+#include "../utils/exceptions.hpp"
+#include "../utils/log.hpp"
+#include "../utils/string_utils.hpp"
+#include "ktx2_file_reader.hpp"
+#include "png_file_reader.hpp"
 
 using namespace Engine;
 
@@ -387,7 +387,7 @@ void Engine::ktxCompressFile(const Path& src, const Path& dst, const bool basis)
             EXCEPTION("only PNG files are supported", src);
         }
 
-        PngImporter image{src};
+        PngFileReader image{src};
 
         if (image.getFormat() != VK_FORMAT_R8G8B8A8_UNORM && image.getFormat() != VK_FORMAT_R8G8B8_UNORM) {
             EXCEPTION("Only RGBA8 and RGB8 textures are supported for compression");

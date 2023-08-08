@@ -1,6 +1,6 @@
 #include "image.hpp"
+#include "../file/ktx2_file_reader.hpp"
 #include "../server/lua.hpp"
-#include "../utils/ktx2_file.hpp"
 #include "assets_manager.hpp"
 #include <sol/sol.hpp>
 

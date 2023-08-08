@@ -2,8 +2,8 @@
 
 #include "../library.hpp"
 #include "../math/vector.hpp"
-#include "path.hpp"
-#include "span.hpp"
+#include "../utils/path.hpp"
+#include "../utils/span.hpp"
 
 #include <optional>
 #include <string>
@@ -172,10 +172,10 @@ private:
     GltfData data;
 };
 
-class ENGINE_API GltfImporter {
+class ENGINE_API GltfFileReader {
 public:
-    explicit GltfImporter(const Path& path);
-    virtual ~GltfImporter();
+    explicit GltfFileReader(const Path& path);
+    virtual ~GltfFileReader();
 
     const std::vector<GltfMaterial>& getMaterials() const {
         return materials;

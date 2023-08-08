@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../math/vector.hpp"
+#include "../utils/path.hpp"
 #include "../vulkan/vulkan_types.hpp"
-#include "path.hpp"
 #include <fstream>
 
 struct ktxTexture;

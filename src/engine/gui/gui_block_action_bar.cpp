@@ -1,7 +1,7 @@
 #include "gui_block_action_bar.hpp"
 #include "../assets/assets_manager.hpp"
+#include "../file/ktx2_file_reader.hpp"
 #include "../math/utils.hpp"
-#include "../utils/ktx2_file.hpp"
 
 using namespace Engine;
 

@@ -1,7 +1,7 @@
 // clang-format off
 #include <png.h>
-#include "png_importer.hpp"
-#include "exceptions.hpp"
+#include "png_file_reader.hpp"
+#include "../utils/exceptions.hpp"
 // clang-format on
 
 using namespace Engine;
@@ -16,7 +16,7 @@ static void user_warning_fn(png_structp png_ptr, png_const_charp warning_msg) {
     (void)warning_msg;
 }
 
-PngImporter::PngImporter(const Path& path) : png{nullptr}, info{nullptr}, file{nullptr} {
+PngFileReader::PngFileReader(const Path& path) : png{nullptr}, info{nullptr}, file{nullptr} {
     const auto pathStr = path.string();
     file = fopen(pathStr.c_str(), "rb");
 
@@ -113,7 +113,7 @@ PngImporter::PngImporter(const Path& path) : png{nullptr}, info{nullptr}, file{n
     }
 }
 
-PngImporter::~PngImporter() {
+PngFileReader::~PngFileReader() {
     if (png) {
         png_destroy_read_struct(&png, &info, nullptr);
     }
@@ -122,6 +122,6 @@ PngImporter::~PngImporter() {
     }
 }
 
-const void* PngImporter::getData() const {
+const void* PngFileReader::getData() const {
     return pixels.get();
 }

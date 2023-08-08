@@ -1,14 +1,13 @@
 #include "../common.hpp"
-#include <engine/network/cert.hpp>
-#include <engine/network/dh.hpp>
-#include <engine/network/pkey.hpp>
+#include <engine/crypto/diffie_hellman_key.hpp>
+#include <engine/crypto/private_key.hpp>
+#include <engine/crypto/x509_cert.hpp>
 #include <iostream>
 
 using namespace Engine;
-using namespace Engine::Network;
 
-TEST_CASE("Generate random DH params and then load it back") {
-    Dh ec{};
+TEST_CASE("Generate random DH params and then load it back", "[crypto]") {
+    DiffieHellmanKey ec{};
     const auto& pem = ec.pem();
     REQUIRE(pem.empty() == false);
     REQUIRE(pem.find("BEGIN DH PARAMETERS") != std::string::npos);
@@ -16,13 +15,13 @@ TEST_CASE("Generate random DH params and then load it back") {
     REQUIRE(pem.at(pem.size() - 2) == '-');
     REQUIRE(pem.back() == '\n');
 
-    REQUIRE_NOTHROW(Dh{pem});
+    REQUIRE_NOTHROW(DiffieHellmanKey{pem});
 
-    REQUIRE(Dh{pem}.pem() == pem);
+    REQUIRE(DiffieHellmanKey{pem}.pem() == pem);
 }
 
-TEST_CASE("Generate random private key and then load it back") {
-    Pkey key{};
+TEST_CASE("Generate random private key and then load it back", "[crypto]") {
+    PrivateKey key{};
     const auto& pem = key.pem();
     REQUIRE(pem.empty() == false);
     REQUIRE(pem.find("BEGIN RSA PRIVATE KEY") != std::string::npos);
@@ -30,14 +29,14 @@ TEST_CASE("Generate random private key and then load it back") {
     REQUIRE(pem.at(pem.size() - 2) == '-');
     REQUIRE(pem.back() == '\n');
 
-    REQUIRE_NOTHROW(Pkey{pem});
+    REQUIRE_NOTHROW(PrivateKey{pem});
 
-    REQUIRE(Pkey{pem}.pem() == pem);
+    REQUIRE(PrivateKey{pem}.pem() == pem);
 }
 
-TEST_CASE("Generate random certificate and then load it back") {
-    Pkey key{};
-    Cert cert{key};
+TEST_CASE("Generate random certificate and then load it back", "[crypto]") {
+    PrivateKey key{};
+    X509Cert cert{key};
 
     const auto& pem = cert.pem();
     REQUIRE(pem.empty() == false);
@@ -46,7 +45,7 @@ TEST_CASE("Generate random certificate and then load it back") {
     REQUIRE(pem.at(pem.size() - 2) == '-');
     REQUIRE(pem.back() == '\n');
 
-    REQUIRE_NOTHROW(Cert{pem});
+    REQUIRE_NOTHROW(X509Cert{pem});
 
-    REQUIRE(Cert{pem}.pem() == pem);
+    REQUIRE(X509Cert{pem}.pem() == pem);
 }

@@ -1,6 +1,6 @@
 #include "model.hpp"
+#include "../file/gltf_file_reader.hpp"
 #include "../server/lua.hpp"
-#include "../utils/gltf_importer.hpp"
 #include "../utils/string_utils.hpp"
 #include "assets_manager.hpp"
 #include <btBulletDynamicsCommon.h>
@@ -78,7 +78,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
     };
 
     try {
-        const GltfImporter gltf(path);
+        const GltfFileReader gltf{path};
 
         if (gltf.getMaterials().empty()) {
             EXCEPTION("gltf file has no materials");
