@@ -24,6 +24,10 @@ DecompressionAcceptor::DecompressionAcceptor(const size_t blockBytes) :
 
 DecompressionAcceptor::~DecompressionAcceptor() = default;
 
+DecompressionAcceptor::DecompressionAcceptor(DecompressionAcceptor&& other) = default;
+
+DecompressionAcceptor& DecompressionAcceptor::operator=(DecompressionAcceptor&& other) = default;
+
 void DecompressionAcceptor::accept(const char* src, size_t length) {
     while (length > 0) {
         if (offset < sizeof(uint32_t)) {

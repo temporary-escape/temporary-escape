@@ -22,6 +22,10 @@ CompressionStream::CompressionStream(const size_t blockBytes) :
 
 CompressionStream::~CompressionStream() = default;
 
+CompressionStream::CompressionStream(CompressionStream&& other) = default;
+
+CompressionStream& CompressionStream::operator=(CompressionStream&& other) = default;
+
 void CompressionStream::write(const char* src, size_t length) {
     while (length > 0) {
         if (offset + length > raw.size() / 2) {

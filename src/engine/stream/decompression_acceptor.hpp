@@ -18,7 +18,8 @@ public:
     explicit DecompressionAcceptor(size_t blockBytes = 1024 * 8);
     ~DecompressionAcceptor();
     NON_COPYABLE(DecompressionAcceptor);
-    MOVEABLE(DecompressionAcceptor);
+    DecompressionAcceptor(DecompressionAcceptor&& other);
+    DecompressionAcceptor& operator=(DecompressionAcceptor&& other);
 
     /**
      * Accept arbitrary number of bytes.

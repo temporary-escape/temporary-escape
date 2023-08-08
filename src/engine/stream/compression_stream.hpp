@@ -20,7 +20,8 @@ public:
     explicit CompressionStream(size_t blockBytes = 1024 * 8);
     virtual ~CompressionStream();
     NON_COPYABLE(CompressionStream);
-    MOVEABLE(CompressionStream);
+    CompressionStream(CompressionStream&& other);
+    CompressionStream& operator=(CompressionStream&& other);
 
     /**
      * Write arbitrary number of bytes into the stream.
