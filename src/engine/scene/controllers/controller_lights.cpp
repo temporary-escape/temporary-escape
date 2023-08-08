@@ -33,7 +33,7 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
 
     const auto& viewport = camera->getViewport();
     const auto nearClip = camera->getZNear();
-    const auto farClip = 5000.0f;
+    const auto farClip = 2000.0f;
     const auto clipRange = farClip - nearClip;
     const auto cascadeSplitLambda = 0.96f;
     const auto nearFarMul = 4.0f;
