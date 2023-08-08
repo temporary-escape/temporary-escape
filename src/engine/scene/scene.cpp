@@ -7,9 +7,13 @@
 #include "controllers/controller_icon.hpp"
 #include "controllers/controller_icon_selectable.hpp"
 #include "controllers/controller_lights.hpp"
+#include "controllers/controller_lines.hpp"
 #include "controllers/controller_network.hpp"
+#include "controllers/controller_point_cloud.hpp"
+#include "controllers/controller_poly_shape.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
+#include "controllers/controller_world_text.hpp"
 #include <sol/sol.hpp>
 
 using namespace Engine;
@@ -27,6 +31,10 @@ Scene::Scene(const Config& config, VoxelShapeCache& voxelShapeCache) : isServer{
     addController<ControllerLights>(*this);
     addController<ControllerStaticModel>();
     addController<ControllerText>();
+    addController<ControllerWorldText>();
+    addController<ControllerPointCloud>();
+    addController<ControllerPolyShape>();
+    addController<ControllerLines>();
 }
 
 Scene::Scene(const Config& config) : isServer{true} {

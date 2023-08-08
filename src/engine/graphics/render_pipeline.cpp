@@ -63,6 +63,10 @@ void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<Unifor
     size_t i{0};
 
     for (const auto& uniform : uniforms) {
+        if (!uniform.uniform) {
+            EXCEPTION("Unable to bind null uniform buffer");
+        }
+
         if (uniform.uniform->getDescriptorType() == VK_DESCRIPTOR_TYPE_MAX_ENUM) {
             EXCEPTION("Unable to use this buffer for descriptor set");
         }
@@ -86,6 +90,10 @@ void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<Unifor
     }
 
     for (const auto& texture : textures) {
+        if (!texture.texture) {
+            EXCEPTION("Unable to bind null uniform buffer");
+        }
+
         descriptors.images[i] = VkDescriptorImageInfo{};
         descriptors.images[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         descriptors.images[i].imageView = texture.texture->getImageView();
@@ -105,6 +113,10 @@ void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<Unifor
     }
 
     for (const auto& input : inputs) {
+        if (!input.texture) {
+            EXCEPTION("Unable to bind null uniform buffer");
+        }
+
         descriptors.images[i] = VkDescriptorImageInfo{};
         descriptors.images[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         descriptors.images[i].imageView = input.texture->getImageView();

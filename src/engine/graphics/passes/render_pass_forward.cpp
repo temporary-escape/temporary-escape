@@ -6,7 +6,12 @@ using namespace Engine;
 
 RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
                                      RenderResources& resources, AssetsManager& assetsManager) :
-    RenderPass{vulkan, buffer, "RenderPassForward"}, buffer{buffer}, resources{resources} {
+    RenderPass{vulkan, buffer, "RenderPassForward"},
+    buffer{buffer},
+    resources{resources},
+    pipelinePointCloud{vulkan, assetsManager},
+    pipelineLines{vulkan, assetsManager},
+    pipelinePolyShape{vulkan, assetsManager} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -50,32 +55,93 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
                                    VkAccessFlagBits::VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         addSubpassDependency(dependency);
     }
-}
 
-void RenderPassForward::beforeRender(VulkanCommandBuffer& vkb) {
-    /*const auto& texture = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::Depth);
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image = texture.getHandle();
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = texture.getMipMaps();
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = texture.getLayerCount();
-    barrier.oldLayout = VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    barrier.newLayout = VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    barrier.srcAccessMask = VkAccessFlagBits::VK_ACCESS_SHADER_READ_BIT;
-    barrier.dstAccessMask = VkAccessFlagBits::VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    vkb.pipelineBarrier(VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                        VkPipelineStageFlagBits::VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VkPipelineStageFlagBits::VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                        barrier);*/
+    addPipeline(pipelinePointCloud, 0);
+    addPipeline(pipelineLines, 0);
+    addPipeline(pipelinePolyShape, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     vkb.setViewport({0, 0}, getViewport());
     vkb.setScissor({0, 0}, getViewport());
+
+    std::vector<ForwardRenderJob> jobs;
+    collectForRender<ComponentPointCloud>(vkb, scene, jobs);
+    collectForRender<ComponentPolyShape>(vkb, scene, jobs);
+    collectForRender<ComponentLines>(vkb, scene, jobs);
+
+    std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
+
+    currentPipeline = nullptr;
+    for (auto& job : jobs) {
+        job.fn();
+    }
+}
+
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                           ComponentTransform& transform, ComponentPointCloud& component) {
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelinePointCloud) {
+        pipelinePointCloud.bind(vkb);
+        currentPipeline = &pipelinePointCloud;
+    }
+
+    pipelinePointCloud.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelinePointCloud.setTextureColor(component.getTexture()->getVulkanTexture());
+    pipelinePointCloud.flushDescriptors(vkb);
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelinePointCloud.setModelMatrix(modelMatrix);
+    pipelinePointCloud.flushConstants(vkb);
+
+    pipelinePointCloud.renderMesh(vkb, mesh);
+}
+
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                           ComponentTransform& transform, ComponentPolyShape& component) {
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelinePolyShape) {
+        pipelinePolyShape.bind(vkb);
+        currentPipeline = &pipelinePolyShape;
+    }
+
+    pipelinePolyShape.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelinePolyShape.flushDescriptors(vkb);
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelinePolyShape.setModelMatrix(modelMatrix);
+    pipelinePolyShape.flushConstants(vkb);
+
+    pipelinePolyShape.renderMesh(vkb, mesh);
+}
+
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                           ComponentTransform& transform, ComponentLines& component) {
+    const auto& mesh = component.getMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelineLines) {
+        pipelineLines.bind(vkb);
+        currentPipeline = &pipelineLines;
+    }
+
+    pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineLines.flushDescriptors(vkb);
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelineLines.setModelMatrix(modelMatrix);
+    pipelineLines.setColor(component.getColor());
+    pipelineLines.flushConstants(vkb);
+
+    pipelineLines.renderMesh(vkb, mesh);
 }

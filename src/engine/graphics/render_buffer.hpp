@@ -15,11 +15,6 @@ public:
         return attachments.at(attachment).view;
     }
 
-    /*void updateLayout(const uint32_t attachment, VkImageLayout layout, VkAccessFlags access,
-                      VkPipelineStageFlags stage);
-    void transitionLayout(VulkanCommandBuffer& vkb, const uint32_t attachment, VkImageLayout layout,
-                          VkAccessFlags access, VkPipelineStageFlags stage);*/
-
     [[nodiscard]] const VulkanTexture& getAttachmentTexture(uint32_t attachment) const;
 
 protected:

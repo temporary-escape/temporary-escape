@@ -3,6 +3,7 @@
 #include "../utils/exceptions.hpp"
 #include "passes/render_pass_bloom_downsample.hpp"
 #include "passes/render_pass_bloom_upsample.hpp"
+#include "passes/render_pass_compute.hpp"
 #include "passes/render_pass_forward.hpp"
 #include "passes/render_pass_fxaa.hpp"
 #include "passes/render_pass_hdr_mapping.hpp"
@@ -31,6 +32,7 @@ RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer&
     }
 
     try {
+        addRenderPass(std::make_unique<RenderPassCompute>(this->options, vulkan, renderBufferPbr, assetsManager));
         addRenderPass(
             std::make_unique<RenderPassSkybox>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
         addRenderPass(

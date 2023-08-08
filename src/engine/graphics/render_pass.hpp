@@ -85,6 +85,7 @@ private:
     std::vector<std::tuple<RenderPipeline*, uint32_t>> pipelines;
     VkExtent2D viewport{0, 0};
     bool excluded{false};
+    bool isCompute{false};
 
     // Used only during creation
     std::vector<VkImageView> attachmentViews;

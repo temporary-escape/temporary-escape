@@ -9,7 +9,6 @@ RenderPass::RenderPass(VulkanRenderer& vulkan, RenderBuffer& renderBuffer, std::
 }
 
 void RenderPass::create() {
-    bool isCompute{false};
     for (const auto& [pipeline, _] : pipelines) {
         isCompute |= pipeline->isCompute();
     }
@@ -36,32 +35,20 @@ void RenderPass::begin(VulkanCommandBuffer& vkb) {
         pipeline->getDescriptionPool().reset();
     }
 
-    renderPassBeginInfo.framebuffer = &getFbo();
-    renderPassBeginInfo.renderPass = &getRenderPass();
-    renderPassBeginInfo.offset = {0, 0};
-    renderPassBeginInfo.size = {viewport.width, viewport.height};
+    if (!isCompute) {
+        renderPassBeginInfo.framebuffer = &getFbo();
+        renderPassBeginInfo.renderPass = &getRenderPass();
+        renderPassBeginInfo.offset = {0, 0};
+        renderPassBeginInfo.size = {viewport.width, viewport.height};
 
-    vkb.beginRenderPass(renderPassBeginInfo);
+        vkb.beginRenderPass(renderPassBeginInfo);
+    }
 }
 
 void RenderPass::end(VulkanCommandBuffer& vkb) {
-    vkb.endRenderPass();
-
-    /*for (size_t i = 0; i < attachmentIndexes.size(); i++) {
-        const auto& description = attachmentDescriptions.at(i);
-        if (isDepthFormat(description.format)) {
-            renderBuffer.updateLayout(attachmentIndexes.at(i),
-                                      description.finalLayout,
-                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
-        } else {
-            renderBuffer.updateLayout(attachmentIndexes.at(i),
-                                      description.finalLayout,
-                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-        }
-    }*/
+    if (!isCompute) {
+        vkb.endRenderPass();
+    }
 
     afterRender(vkb);
 }

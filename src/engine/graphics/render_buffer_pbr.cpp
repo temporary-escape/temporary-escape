@@ -74,6 +74,8 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         info.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
         info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                      VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        info.borderColor = VkBorderColor::VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+        info.addressMode = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         auto& texture = createTexture(info);
 
         ViewInfo view{};
