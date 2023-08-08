@@ -1,6 +1,7 @@
 #pragma once
 
 #include "enums.hpp"
+#include "utils/yaml.hpp"
 #include <chrono>
 #include <filesystem>
 #include <optional>
@@ -34,6 +35,7 @@ struct Config {
     struct Graphics {
         int windowWidth = 1920;
         int windowHeight = 1080;
+        bool fullscreen = false;
         bool enableValidationLayers = true;
         bool vsync = true;
         float bloomStrength = 0.10f;
@@ -41,7 +43,7 @@ struct Config {
         float exposure = 1.0f;
         float gamma = 2.2f;
         float contrast = 1.0f;
-        float anisotropy = 4.0f;
+        int anisotropy = 4;
         int skyboxIrradianceSize = 32;
         int skyboxPrefilterSize = 128;
         int skyboxSize = 2048;
@@ -49,9 +51,14 @@ struct Config {
         int brdfSize = 512;
         int planetTextureSize = 2048;
         int planetLowResTextureSize = 128;
+        bool fxaa = true;
+        bool bloom = true;
         bool debugDraw = false;
-        bool ssao = true;
+        int ssao = 32;
         int shadowsSize = 2048;
+
+        YAML_DEFINE(windowWidth, windowHeight, fullscreen, vsync, anisotropy, skyboxSize, planetTextureSize, fxaa,
+                    bloom, ssao, shadowsSize);
     } graphics;
 
     // Paths of interests
@@ -95,5 +102,7 @@ struct Config {
         KeyBinding galaxyMapToggle{Key::LetterM};
         KeyBinding systemMapToggle{Key::LetterN};
     } input;
+
+    YAML_DEFINE(graphics);
 };
 } // namespace Engine

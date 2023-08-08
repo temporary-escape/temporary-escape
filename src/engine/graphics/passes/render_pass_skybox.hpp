@@ -10,8 +10,8 @@
 namespace Engine {
 class ENGINE_API RenderPassSkybox : public RenderPass {
 public:
-    explicit RenderPassSkybox(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                              AssetsManager& assetsManager);
+    explicit RenderPassSkybox(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                              RenderResources& resources, AssetsManager& assetsManager);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

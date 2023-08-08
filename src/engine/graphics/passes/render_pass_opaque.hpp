@@ -10,8 +10,8 @@
 namespace Engine {
 class ENGINE_API RenderPassOpaque : public RenderPass {
 public:
-    explicit RenderPassOpaque(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                              AssetsManager& assetsManager);
+    explicit RenderPassOpaque(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                              RenderResources& resources, AssetsManager& assetsManager);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

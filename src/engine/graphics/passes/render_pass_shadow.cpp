@@ -6,8 +6,8 @@
 
 using namespace Engine;
 
-RenderPassShadow::RenderPassShadow(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                   AssetsManager& assetsManager, const uint32_t index) :
+RenderPassShadow::RenderPassShadow(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                   RenderResources& resources, AssetsManager& assetsManager, const uint32_t index) :
     RenderPass{vulkan, buffer, "RenderPassShadow"},
     resources{resources},
     index{index},

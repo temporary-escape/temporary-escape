@@ -19,6 +19,7 @@ public:
     Vector2i getViewport() const;
 
 private:
+    const RenderOptions options;
     VulkanRenderer& vulkan;
     RenderResources& resources;
     RenderBufferPbr renderBufferPbr;

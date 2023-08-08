@@ -65,7 +65,7 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     const auto nearClip = camera->getZNear();
     const auto farClip = 2000.0f;
     const auto clipRange = farClip - nearClip;
-    const auto cascadeSplitLambda = 0.96f;
+    const auto cascadeSplitLambda = 0.95f;
     const auto nearFarMul = 4.0f;
 
     const auto projectionMatrix = glm::perspective(glm::radians(camera->getFov()),

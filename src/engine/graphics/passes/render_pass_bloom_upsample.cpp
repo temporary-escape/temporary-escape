@@ -4,9 +4,9 @@
 
 using namespace Engine;
 
-RenderPassBloomUpsample::RenderPassBloomUpsample(VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                                 RenderResources& resources, AssetsManager& assetsManager,
-                                                 const uint32_t level) :
+RenderPassBloomUpsample::RenderPassBloomUpsample(const RenderOptions& options, VulkanRenderer& vulkan,
+                                                 RenderBufferPbr& buffer, RenderResources& resources,
+                                                 AssetsManager& assetsManager, const uint32_t level) :
     RenderPass{vulkan, buffer, "RenderPassBloomUpsample"},
     buffer{buffer},
     resources{resources},

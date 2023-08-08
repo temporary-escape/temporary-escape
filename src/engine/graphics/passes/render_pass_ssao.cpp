@@ -5,9 +5,10 @@
 
 using namespace Engine;
 
-RenderPassSSAO::RenderPassSSAO(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                               AssetsManager& assetsManager) :
+RenderPassSSAO::RenderPassSSAO(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                               RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassSSAO"},
+    options{options},
     buffer{buffer},
     resources{resources},
     pipelineSSAO{vulkan, assetsManager} {
@@ -97,7 +98,7 @@ void RenderPassSSAO::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineSSAO.bind(vkb);
 
     const auto scale = Vector2{getViewport()} / 4.0f;
-    pipelineSSAO.setKernelSize(16);
+    pipelineSSAO.setKernelSize(options.ssao);
     pipelineSSAO.setScale(scale);
     pipelineSSAO.flushConstants(vkb);
 

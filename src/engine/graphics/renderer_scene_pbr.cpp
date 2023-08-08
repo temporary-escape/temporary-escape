@@ -17,6 +17,7 @@ using namespace Engine;
 RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources,
                                    AssetsManager& assetsManager) :
     Renderer{vulkan},
+    options{options},
     vulkan{vulkan},
     resources{resources},
     renderBufferPbr{options, vulkan},
@@ -29,24 +30,48 @@ RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer&
     }
 
     try {
-        addRenderPass(std::make_unique<RenderPassSkybox>(vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(std::make_unique<RenderPassOpaque>(vulkan, renderBufferPbr, resources, assetsManager));
-        for (auto i = 0; i < 4; i++) {
-            addRenderPass(std::make_unique<RenderPassShadow>(vulkan, renderBufferPbr, resources, assetsManager, i));
+        addRenderPass(
+            std::make_unique<RenderPassSkybox>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(
+            std::make_unique<RenderPassOpaque>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+
+        if (this->options.shadowsSize) {
+            for (auto i = 0; i < 4; i++) {
+                addRenderPass(std::make_unique<RenderPassShadow>(
+                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+            }
         }
-        addRenderPass(std::make_unique<RenderPassSSAO>(vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(std::make_unique<RenderPassPbr>(vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(std::make_unique<RenderPassForward>(vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(std::make_unique<RenderPassFXAA>(vulkan, renderBufferPbr, resources, assetsManager));
-        for (auto i = 0; i < RenderBufferPbr::bloomMipMaps; i++) {
+
+        if (this->options.ssao) {
             addRenderPass(
-                std::make_unique<RenderPassBloomDownsample>(vulkan, renderBufferPbr, resources, assetsManager, i));
+                std::make_unique<RenderPassSSAO>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
         }
-        for (int i = RenderBufferPbr::bloomMipMaps - 2; i >= 0; i--) {
+
+        addRenderPass(
+            std::make_unique<RenderPassPbr>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(
+            std::make_unique<RenderPassForward>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+
+        if (this->options.fxaa) {
             addRenderPass(
-                std::make_unique<RenderPassBloomUpsample>(vulkan, renderBufferPbr, resources, assetsManager, i));
+                std::make_unique<RenderPassFXAA>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
         }
-        addRenderPass(std::make_unique<RenderPassHDRMapping>(vulkan, renderBufferPbr, resources, assetsManager));
+
+        if (this->options.bloom) {
+            // Physical bloom is implemented based on the following tutorial:
+            // https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
+            for (auto i = 0; i < RenderBufferPbr::bloomMipMaps; i++) {
+                addRenderPass(std::make_unique<RenderPassBloomDownsample>(
+                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+            }
+            for (int i = RenderBufferPbr::bloomMipMaps - 2; i >= 0; i--) {
+                addRenderPass(std::make_unique<RenderPassBloomUpsample>(
+                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+            }
+        }
+
+        addRenderPass(
+            std::make_unique<RenderPassHDRMapping>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }
@@ -65,7 +90,7 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
 }
 
 void RendererScenePbr::transitionForBlit(VulkanCommandBuffer& vkb) {
-    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Forward);
+    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -89,7 +114,7 @@ void RendererScenePbr::transitionForBlit(VulkanCommandBuffer& vkb) {
 }
 
 void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
-    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Forward);
+    const auto& src = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
     pipelineBlit.getDescriptionPool().reset();
     pipelineBlit.bind(vkb);
     pipelineBlit.setTexture(src);
@@ -98,6 +123,6 @@ void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
 }
 
 Vector2i RendererScenePbr::getViewport() const {
-    const auto& texture = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Forward);
+    const auto& texture = renderBufferPbr.getAttachmentTexture(RenderBufferPbr::Attachment::Final);
     return {texture.getExtent().width, texture.getExtent().height};
 }

@@ -4,8 +4,8 @@
 
 using namespace Engine;
 
-RenderPassForward::RenderPassForward(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                     AssetsManager& assetsManager) :
+RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                     RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassForward"}, buffer{buffer}, resources{resources} {
 
     { // Depth

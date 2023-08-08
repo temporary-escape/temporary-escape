@@ -4,24 +4,26 @@
 
 using namespace Engine;
 
-RenderPassHDRMapping::RenderPassHDRMapping(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
+RenderPassHDRMapping::RenderPassHDRMapping(const RenderOptions& options, VulkanRenderer& vulkan,
+                                           RenderBufferPbr& buffer, RenderResources& resources,
                                            AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassHDRMapping"},
+    options{options},
     buffer{buffer},
     resources{resources},
     pipelineHDRMapping{vulkan, assetsManager} {
 
-    { // FXAA
+    { // Forward
         AttachmentInfo attachment{};
         attachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.initialLayout = VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
         attachment.finalLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        addAttachment(RenderBufferPbr::Attachment::Forward, attachment);
+        addAttachment(RenderBufferPbr::Attachment::Final, attachment);
     }
 
     addSubpass(
         {
-            RenderBufferPbr::Attachment::Forward,
+            RenderBufferPbr::Attachment::Final,
         },
         {});
 
@@ -29,7 +31,7 @@ RenderPassHDRMapping::RenderPassHDRMapping(VulkanRenderer& vulkan, RenderBufferP
 }
 
 void RenderPassHDRMapping::beforeRender(VulkanCommandBuffer& vkb) {
-    { // Bloom color
+    if (options.bloom) { // Bloom color
         const auto& texture = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::BloomL0);
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -52,8 +54,9 @@ void RenderPassHDRMapping::beforeRender(VulkanCommandBuffer& vkb) {
                             barrier);
     }
 
-    { // FXAA
-        const auto& texture = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::FXAA);
+    if (options.fxaa || !options.bloom) { // FXAA
+        const auto& texture = buffer.getAttachmentTexture(options.fxaa ? RenderBufferPbr::Attachment::FXAA
+                                                                       : RenderBufferPbr::Attachment::Forward);
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -82,15 +85,19 @@ void RenderPassHDRMapping::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelineHDRMapping.bind(vkb);
 
-    const auto& texColor = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::FXAA);
-    const auto& texBloom = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::BloomL0);
+    const auto* texBloom = &resources.getDefaultBloom();
+    if (options.bloom) {
+        texBloom = &buffer.getAttachmentTexture(RenderBufferPbr::Attachment::BloomL0);
+    }
+    const auto& texColor = buffer.getAttachmentTexture(options.fxaa ? RenderBufferPbr::Attachment::FXAA
+                                                                    : RenderBufferPbr::Attachment::Forward);
 
     pipelineHDRMapping.setBloomStrength(0.08f);
     pipelineHDRMapping.setExposure(1.0f);
     pipelineHDRMapping.setGamma(2.2f);
     pipelineHDRMapping.flushConstants(vkb);
     pipelineHDRMapping.setTextureColor(texColor);
-    pipelineHDRMapping.setTextureBloom(texBloom);
+    pipelineHDRMapping.setTextureBloom(*texBloom);
     pipelineHDRMapping.flushDescriptors(vkb);
 
     pipelineHDRMapping.renderMesh(vkb, resources.getMeshFullScreenQuad());

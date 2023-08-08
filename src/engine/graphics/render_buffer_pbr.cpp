@@ -3,7 +3,7 @@
 using namespace Engine;
 
 RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
-    setAttachments(12 + bloomMipMaps);
+    setAttachments(13 + bloomMipMaps);
 
     { // Depth
         TextureInfo info{};
@@ -80,9 +80,9 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         createAttachment(Attachment::Entity, texture, view);
     }
 
-    { // Shadows
+    if (options.shadowsSize) { // Shadows
         TextureInfo info{};
-        info.size = options.shadowsSize;
+        info.size = {options.shadowsSize, options.shadowsSize};
         info.viewType = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         info.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
         info.format = vulkan.findDepthFormat();
@@ -99,7 +99,7 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         }
     }
 
-    { // SSAO
+    if (options.ssao) { // SSAO
         TextureInfo info{};
         info.size = options.viewport / 2;
         info.format = VkFormat::VK_FORMAT_R8_UNORM;
@@ -111,7 +111,7 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         createAttachment(Attachment::SSAO, texture, view);
     }
 
-    { // FXAA
+    if (options.fxaa) { // FXAA
         TextureInfo info{};
         info.size = options.viewport;
         info.format = VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -123,7 +123,19 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         createAttachment(Attachment::FXAA, texture, view);
     }
 
-    { // Bloom
+    { // Final
+        TextureInfo info{};
+        info.size = options.viewport;
+        info.format = VkFormat::VK_FORMAT_R16G16B16A16_UNORM;
+        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        auto& texture = createTexture(info);
+
+        ViewInfo view{};
+        view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+        createAttachment(Attachment::Final, texture, view);
+    }
+
+    if (options.bloom) { // Bloom
         for (auto i = 0; i < bloomMipMaps; i++) {
             TextureInfo info{};
             info.size = options.viewport / (2 << i);

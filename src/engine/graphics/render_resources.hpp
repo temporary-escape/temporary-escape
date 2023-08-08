@@ -26,13 +26,25 @@ public:
     const SkyboxTextures& getDefaultSkybox() const {
         return defaultSkybox;
     }
-    
+
     const VulkanBuffer& getSSAOKernel() const {
         return ssaoSamples.ubo;
     }
 
     const VulkanTexture& getSSAONoise() const {
         return ssaoSamples.noise;
+    }
+
+    const VulkanTexture& getDefaultSSAO() const {
+        return defaultSSAO;
+    }
+
+    const VulkanTexture& getDefaultShadow() const {
+        return defaultShadow;
+    }
+
+    const VulkanTexture& getDefaultBloom() const {
+        return defaultBloom;
     }
 
 private:
@@ -48,5 +60,8 @@ private:
         VulkanBuffer ubo;
         VulkanTexture noise;
     } ssaoSamples;
+    VulkanTexture defaultSSAO;
+    VulkanTexture defaultShadow;
+    VulkanTexture defaultBloom;
 };
 } // namespace Engine

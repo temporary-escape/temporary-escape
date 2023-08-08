@@ -4,8 +4,8 @@
 
 using namespace Engine;
 
-RenderPassFXAA::RenderPassFXAA(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                               AssetsManager& assetsManager) :
+RenderPassFXAA::RenderPassFXAA(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                               RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassFXAA"},
     buffer{buffer},
     resources{resources},

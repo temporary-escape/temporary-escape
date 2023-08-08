@@ -15,6 +15,9 @@ public:
     Vector2i getFramebufferSize();
     void waitUntilValidFramebufferSize();
     void closeWindow();
+    void setWindowFullScreen(bool value);
+    void setWindowResolution(const Vector2i& size);
+    std::vector<Vector2i> getSupportedResolutionModes();
 
 protected:
     virtual void onNextFrame() = 0;
@@ -34,5 +37,6 @@ private:
     std::shared_ptr<GLFWwindow> window;
     Vector2i mousePos{};
     Vector2i currentWindowSize;
+    bool isFullScreen{false};
 };
 } // namespace Engine

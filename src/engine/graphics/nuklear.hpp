@@ -60,6 +60,7 @@ public:
     void resetFont();
     void layoutDynamic(float height, int count);
     void layoutStatic(float height, float width, int count);
+    void layoutBottom(float height, int count);
     void layoutSkip();
     void layoutBeginDynamic(float height, int count);
     void layoutEnd();
@@ -101,6 +102,7 @@ public:
     void tooltip(const std::string& text);
     void checkbox(const std::string& text, bool& value);
     bool comboBegin(const Color4& color, const Vector2& size);
+    void combo(const Vector2& size, size_t& choice, const std::vector<std::string>& items);
     void comboEnd();
     void comboClose();
     bool popupBegin(const std::string& name, const Vector2& pos, const Vector2& size);
@@ -130,6 +132,7 @@ public:
     Vector2 getPadding() const;
     Vector2 getMousePos() const;
     Vector2 getWindowPos() const;
+    Vector2 getWidgetSize() const;
     bool inputHasMouseDown(MouseButton button = MouseButton::Left);
 
 private:

@@ -4,7 +4,9 @@
 #include "../database/database.hpp"
 #include "../graphics/renderer_scene_pbr.hpp"
 #include "../gui/gui_create_profile.hpp"
+#include "../gui/gui_keep_settings.hpp"
 #include "../gui/gui_main_menu.hpp"
+#include "../gui/gui_main_settings.hpp"
 #include "../server/server.hpp"
 #include "../utils/performance_record.hpp"
 #include "../vulkan/vulkan_renderer.hpp"
@@ -74,6 +76,8 @@ private:
     struct {
         GuiMainMenu mainMenu;
         GuiCreateProfile createProfile;
+        GuiMainSettings mainSettings;
+        GuiKeepSettings keepSettings;
     } gui;
 
     std::unique_ptr<AssetsManager> assetsManager;

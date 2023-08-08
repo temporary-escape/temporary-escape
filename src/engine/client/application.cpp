@@ -17,7 +17,7 @@ Application::Application(Config& config) :
     audio{} {
 
     const std::string gpuName{getPhysicalDeviceProperties().deviceName};
-    if (gpuName.find("UHD Graphics")) {
+    if (gpuName.find("UHD Graphics") != std::string::npos) {
         config.graphics.planetTextureSize = 512;
         config.graphics.skyboxSize = 1024;
         config.graphics.ssao = false;
@@ -26,7 +26,12 @@ Application::Application(Config& config) :
     gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},
         {"Multiplayer", []() {}},
-        {"Settings", []() {}},
+        {"Settings",
+         [this]() {
+             gui.mainSettings.setSettings(this->config);
+             gui.mainSettings.setVideoModes(getSupportedResolutionModes());
+             gui.mainSettings.setEnabled(true);
+         }},
         {"Editor", [this]() { startEditor(); }},
         {"Mods", []() {}},
         {"Exit", [this]() { closeWindow(); }},
@@ -47,6 +52,25 @@ Application::Application(Config& config) :
     } else {
         gui.mainMenu.setEnabled(false);
     }
+
+    gui.keepSettings.setEnabled(false);
+    gui.mainSettings.setEnabled(false);
+    gui.mainSettings.setOnApply([this](const Config& updated) {
+        logger.info("Updated config");
+        this->setWindowFullScreen(updated.graphics.fullscreen);
+        this->setWindowResolution({updated.graphics.windowWidth, updated.graphics.windowHeight});
+        this->gui.keepSettings.setEnabled(true);
+        this->gui.keepSettings.reset();
+        this->gui.keepSettings.setOnResult([this, updated](bool result) {
+            if (result) {
+                this->config = updated;
+                this->config.toYaml(this->config.userdataPath / "settings.yaml");
+            } else {
+                this->setWindowFullScreen(this->config.graphics.fullscreen);
+                this->setWindowResolution({this->config.graphics.windowWidth, this->config.graphics.windowHeight});
+            }
+        });
+    });
 
     VkQueryPoolCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -73,6 +97,9 @@ bool Application::shouldBlit() const {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
+    gui.keepSettings.updateProgress(deltaTime);
+    gui.mainMenu.setEnabled(!gui.keepSettings.isEnabled() && !gui.mainSettings.isEnabled() && status.value <= 0.0f);
+
     if (getSwapChain().getExtent().width != viewport.x || getSwapChain().getExtent().height != viewport.y) {
         logger.warn("Swap chain size does not match");
         return;
@@ -179,6 +206,8 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         nuklear.begin(viewport);
         nuklear.draw(gui.mainMenu);
         nuklear.draw(gui.createProfile);
+        nuklear.draw(gui.mainSettings);
+        nuklear.draw(gui.keepSettings);
         nuklear.end();
     }
 
@@ -489,7 +518,10 @@ void Application::createRegistry() {
 void Application::createSceneRenderer(const Vector2i& viewport) {
     RenderOptions renderOptions{};
     renderOptions.viewport = viewport;
-    renderOptions.shadowsSize = {config.graphics.shadowsSize, config.graphics.shadowsSize};
+    renderOptions.shadowsSize = config.graphics.shadowsSize;
+    renderOptions.ssao = config.graphics.ssao;
+    renderOptions.bloom = config.graphics.bloom;
+    renderOptions.fxaa = config.graphics.fxaa;
     renderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
 }
 

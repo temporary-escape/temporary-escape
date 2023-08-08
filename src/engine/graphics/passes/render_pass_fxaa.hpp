@@ -8,8 +8,8 @@
 namespace Engine {
 class ENGINE_API RenderPassFXAA : public RenderPass {
 public:
-    explicit RenderPassFXAA(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                            AssetsManager& assetsManager);
+    explicit RenderPassFXAA(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                            RenderResources& resources, AssetsManager& assetsManager);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

@@ -237,11 +237,11 @@ void Nuklear::endWindow() {
     nk_end(ctx.get());
 }
 
-void Nuklear::layoutDynamic(float height, int count) {
+void Nuklear::layoutDynamic(const float height, const int count) {
     nk_layout_row_dynamic(ctx.get(), height, count);
 }
 
-void Nuklear::layoutStatic(float height, float width, int count) {
+void Nuklear::layoutStatic(const float height, const float width, const int count) {
     nk_layout_row_static(ctx.get(), height, width, count);
 }
 
@@ -250,7 +250,7 @@ void Nuklear::layoutSkip() {
     nk_widget(&bounds, ctx.get());
 }
 
-void Engine::Nuklear::layoutTemplateBegin(float height) {
+void Engine::Nuklear::layoutTemplateBegin(const float height) {
     nk_layout_row_template_begin(ctx.get(), height);
 }
 
@@ -258,11 +258,11 @@ void Engine::Nuklear::layoutTemplateDynamic() {
     nk_layout_row_template_push_dynamic(ctx.get());
 }
 
-void Engine::Nuklear::layoutTemplateVariable(float value) {
+void Engine::Nuklear::layoutTemplateVariable(const float value) {
     nk_layout_row_template_push_variable(ctx.get(), value);
 }
 
-void Engine::Nuklear::layoutTemplateStatic(float value) {
+void Engine::Nuklear::layoutTemplateStatic(const float value) {
     nk_layout_row_template_push_static(ctx.get(), value);
 }
 
@@ -270,7 +270,7 @@ void Engine::Nuklear::layoutTemplateEnd() {
     nk_layout_row_template_end(ctx.get());
 }
 
-void Nuklear::layoutBeginDynamic(float height, int count) {
+void Nuklear::layoutBeginDynamic(const float height, const int count) {
     nk_layout_row_begin(ctx.get(), NK_DYNAMIC, height, count);
 }
 
@@ -484,6 +484,24 @@ bool Engine::Nuklear::comboBegin(const Color4& color, const Vector2& size) {
     return nk_combo_begin_color(ctx.get(), nc, s) == nk_true;
 }
 
+void Engine::Nuklear::combo(const Vector2& size, size_t& choice, const std::vector<std::string>& items) {
+    struct nk_vec2 s {
+        size.x, size.y,
+    };
+    const auto height = nk_widget_height(ctx.get());
+    auto* c = items.at(choice < items.size() ? choice : 0).data();
+
+    if (nk_combo_begin_label(ctx.get(), c, s)) {
+        for (size_t i = 0; i < items.size(); i++) {
+            nk_layout_row_dynamic(ctx.get(), height, 1);
+            if (nk_combo_item_label(ctx.get(), items.at(i).c_str(), NK_TEXT_ALIGN_LEFT)) {
+                choice = i;
+            }
+        }
+        nk_combo_end(ctx.get());
+    }
+}
+
 void Engine::Nuklear::comboEnd() {
     nk_combo_end(ctx.get());
 }
@@ -628,6 +646,13 @@ Vector2 Engine::Nuklear::getWindowPos() const {
         EXCEPTION("No active gui window");
     }
     return {ctx->active->bounds.x, ctx->active->bounds.y};
+}
+
+Vector2 Engine::Nuklear::getWidgetSize() const {
+    return {
+        nk_widget_width(ctx.get()),
+        nk_widget_height(ctx.get()),
+    };
 }
 
 bool Engine::Nuklear::inputHasMouseDown(MouseButton button) {

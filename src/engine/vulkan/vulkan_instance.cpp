@@ -464,8 +464,9 @@ std::optional<float> VulkanInstance::getAnisotropy() const {
     if (!getPhysicalDeviceFeatures().samplerAnisotropy) {
         return std::nullopt;
     }
-    if (config.graphics.anisotropy == 0.0f) {
+    if (config.graphics.anisotropy == 1) {
         return std::nullopt;
     }
-    return std::min(config.graphics.anisotropy, getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+    return std::min(static_cast<float>(config.graphics.anisotropy),
+                    getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
 }

@@ -8,13 +8,14 @@
 namespace Engine {
 class ENGINE_API RenderPassBloomDownsample : public RenderPass {
 public:
-    explicit RenderPassBloomDownsample(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                       AssetsManager& assetsManager, uint32_t level);
+    explicit RenderPassBloomDownsample(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                       RenderResources& resources, AssetsManager& assetsManager, uint32_t level);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
 
 private:
+    const RenderOptions& options;
     RenderBufferPbr& buffer;
     RenderResources& resources;
     RenderPipelineBloomDownsample pipelineBloomDownsample;

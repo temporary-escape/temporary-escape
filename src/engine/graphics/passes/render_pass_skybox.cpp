@@ -5,8 +5,8 @@
 
 using namespace Engine;
 
-RenderPassSkybox::RenderPassSkybox(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                   AssetsManager& assetsManager) :
+RenderPassSkybox::RenderPassSkybox(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                   RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassSkybox"},
     resources{resources},
     pipelinePlanet{vulkan, assetsManager},

@@ -76,6 +76,10 @@ int main(int argc, char** argv) {
             config.graphics.enableValidationLayers = false;
         }
 
+        if (std::filesystem::is_regular_file(config.userdataPath / "settings.yaml")) {
+            config.fromYaml(config.userdataPath / "settings.yaml");
+        }
+
         // config.graphics.debugDraw = true;
 
         if (parser.got_subcommand("compress-assets")) {

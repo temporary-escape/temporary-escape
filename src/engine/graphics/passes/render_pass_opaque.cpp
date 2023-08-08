@@ -35,8 +35,8 @@ static void validateMaterial(const Material& material) {
     }
 }
 
-RenderPassOpaque::RenderPassOpaque(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                   AssetsManager& assetsManager) :
+RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                   RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassOpaque"},
     buffer{buffer},
     resources{resources},

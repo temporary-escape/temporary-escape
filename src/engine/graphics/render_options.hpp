@@ -5,6 +5,9 @@
 namespace Engine {
 struct ENGINE_API RenderOptions {
     Vector2i viewport;
-    Vector2i shadowsSize;
+    int shadowsSize;
+    int ssao{0};
+    bool fxaa{true};
+    bool bloom{false};
 };
 } // namespace Engine

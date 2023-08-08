@@ -282,7 +282,6 @@ void RenderPipeline::createGraphicsPipeline(VulkanRenderPass& renderPass, const 
     pipelineInfo.viewportState.scissorCount = 1;
 
     pipelineInfo.rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    pipelineInfo.rasterizer.depthClampEnable = VK_FALSE;
     pipelineInfo.rasterizer.rasterizerDiscardEnable = VK_FALSE;
     pipelineInfo.rasterizer.lineWidth = 1.0f;
     pipelineInfo.rasterizer.depthBiasEnable = VK_FALSE;

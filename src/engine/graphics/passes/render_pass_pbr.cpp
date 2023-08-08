@@ -5,9 +5,10 @@
 
 using namespace Engine;
 
-RenderPassPbr::RenderPassPbr(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                             AssetsManager& assetsManager) :
+RenderPassPbr::RenderPassPbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                             RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassPbr"},
+    options{options},
     buffer{buffer},
     resources{resources},
     pipelinePbr{vulkan, assetsManager} {
@@ -93,8 +94,14 @@ void RenderPassPbr::beforeRender(VulkanCommandBuffer& vkb) {
 
     transitionRead(RenderBufferPbr::Attachment::AlbedoAmbient);
     transitionRead(RenderBufferPbr::Attachment::EmissiveRoughness);
-    transitionRead(RenderBufferPbr::Attachment::SSAO);
-    transitionDepth(RenderBufferPbr::Attachment::ShadowL0);
+    if (options.ssao) {
+        transitionRead(RenderBufferPbr::Attachment::SSAO);
+    } else {
+        transitionRead(RenderBufferPbr::Attachment::NormalMetallic);
+    }
+    if (options.shadowsSize) {
+        transitionDepth(RenderBufferPbr::Attachment::ShadowL0);
+    }
 }
 
 void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -112,9 +119,15 @@ void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     pipelinePbr.bind(vkb);
 
-    const auto& texSsao = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::SSAO);
+    const auto* texSsao = &resources.getDefaultSSAO();
+    if (options.ssao) {
+        texSsao = &buffer.getAttachmentTexture(RenderBufferPbr::Attachment::SSAO);
+    }
+    const auto* texShadows = &resources.getDefaultShadow();
+    if (options.shadowsSize) {
+        texShadows = &buffer.getAttachmentTexture(RenderBufferPbr::Attachment::ShadowL0);
+    }
     const auto& texDepth = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::Depth);
-    const auto& texShadows = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::ShadowL0);
     const auto& texBaseColorAmbient = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::AlbedoAmbient);
     const auto& texEmissiveRoughness = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::EmissiveRoughness);
     const auto& texNormalMetallic = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::NormalMetallic);
@@ -129,8 +142,8 @@ void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePbr.setTextureBaseColorAmbient(texBaseColorAmbient);
     pipelinePbr.setTextureEmissiveRoughness(texEmissiveRoughness);
     pipelinePbr.setTextureNormalMetallic(texNormalMetallic);
-    pipelinePbr.setTextureSSAO(texSsao);
-    pipelinePbr.setTextureShadows(texShadows);
+    pipelinePbr.setTextureSSAO(*texSsao);
+    pipelinePbr.setTextureShadows(*texShadows);
     pipelinePbr.flushDescriptors(vkb);
 
     pipelinePbr.renderMesh(vkb, resources.getMeshFullScreenQuad());

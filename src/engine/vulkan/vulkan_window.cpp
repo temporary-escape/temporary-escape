@@ -147,7 +147,9 @@ static void errorCallback(const int error, const char* description) {
 static const char* name = "TemporaryEscape";
 
 VulkanWindow::VulkanWindow(const Engine::Config& config) :
-    currentWindowSize{config.graphics.windowWidth, config.graphics.windowHeight}, mousePos{} {
+    currentWindowSize{config.graphics.windowWidth, config.graphics.windowHeight},
+    mousePos{},
+    isFullScreen{config.graphics.fullscreen} {
 
     if (volkInitialize() != VK_SUCCESS) {
         EXCEPTION("Failed to initialize Vulkan");
@@ -165,9 +167,16 @@ VulkanWindow::VulkanWindow(const Engine::Config& config) :
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
-    auto windowPtr = glfwCreateWindow(currentWindowSize.x, currentWindowSize.y, name, nullptr, nullptr);
+
+    GLFWmonitor* monitor{nullptr};
+    if (isFullScreen) {
+        monitor = glfwGetPrimaryMonitor();
+        const auto* mode = glfwGetVideoMode(monitor);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    }
+
+    auto windowPtr = glfwCreateWindow(currentWindowSize.x, currentWindowSize.y, name, monitor, nullptr);
     if (!windowPtr) {
         EXCEPTION("Failed to create GLFW window");
     }
@@ -317,4 +326,54 @@ void VulkanWindow::windowSizeCallback(GLFWwindow* window, int width, int height)
 void VulkanWindow::charCallback(GLFWwindow* window, unsigned int codepoint) {
     auto& self = *static_cast<VulkanWindow*>(glfwGetWindowUserPointer(window));
     self.eventCharTyped(codepoint);
+}
+
+std::vector<Vector2i> VulkanWindow::getSupportedResolutionModes() {
+    auto* primary = glfwGetPrimaryMonitor();
+
+    std::vector<Vector2i> result;
+
+    int count;
+    auto* modes = glfwGetVideoModes(primary, &count);
+    result.reserve(count);
+
+    for (auto i = 0; i < count; i++) {
+        const auto contains = std::any_of(result.begin(), result.end(), [&](const Vector2i& v) {
+            return v.x == modes[i].width && v.y == modes[i].height;
+        });
+        if (!contains) {
+            result.emplace_back(modes[i].width, modes[i].height);
+        }
+    }
+
+    return result;
+}
+
+void VulkanWindow::setWindowFullScreen(const bool value) {
+    if (value) {
+        logger.info("Setting window to fullscreen");
+        if (!isFullScreen) {
+            isFullScreen = true;
+            auto* primary = glfwGetPrimaryMonitor();
+            const auto* mode = glfwGetVideoMode(primary);
+
+            glfwSetWindowMonitor(
+                window.get(), primary, 0, 0, currentWindowSize.x, currentWindowSize.y, mode->refreshRate);
+        }
+    } else {
+        logger.info("Setting window to windowed");
+        if (isFullScreen) {
+            isFullScreen = false;
+            auto* primary = glfwGetPrimaryMonitor();
+            const auto* mode = glfwGetVideoMode(primary);
+            const auto pos = Vector2i{mode->width, mode->height} / 2 - currentWindowSize / 2;
+
+            glfwSetWindowMonitor(window.get(), nullptr, pos.x, pos.y, currentWindowSize.x, currentWindowSize.y, 0);
+        }
+    }
+}
+
+void VulkanWindow::setWindowResolution(const Vector2i& size) {
+    currentWindowSize = size;
+    glfwSetWindowSize(window.get(), currentWindowSize.x, currentWindowSize.y);
 }

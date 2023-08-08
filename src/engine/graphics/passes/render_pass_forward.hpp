@@ -7,8 +7,8 @@
 namespace Engine {
 class ENGINE_API RenderPassForward : public RenderPass {
 public:
-    explicit RenderPassForward(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                               AssetsManager& assetsManager);
+    explicit RenderPassForward(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                               RenderResources& resources, AssetsManager& assetsManager);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

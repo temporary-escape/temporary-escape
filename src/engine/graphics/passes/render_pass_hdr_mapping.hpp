@@ -8,13 +8,14 @@
 namespace Engine {
 class ENGINE_API RenderPassHDRMapping : public RenderPass {
 public:
-    explicit RenderPassHDRMapping(VulkanRenderer& vulkan, RenderBufferPbr& buffer, RenderResources& resources,
-                                  AssetsManager& assetsManager);
+    explicit RenderPassHDRMapping(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
+                                  RenderResources& resources, AssetsManager& assetsManager);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
 
 private:
+    const RenderOptions& options;
     RenderBufferPbr& buffer;
     RenderResources& resources;
     RenderPipelineHDRMapping pipelineHDRMapping;
