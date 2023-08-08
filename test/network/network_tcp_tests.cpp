@@ -84,7 +84,11 @@ TEST_CASE_METHOD(TcpServerFixture, "Start and do nothing TCP server", "[tcp_serv
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Try to connect to no TCP server", "[tcp_server]") {
+#ifdef _WIN32
+    REQUIRE_THROWS_WITH(createClient(), "No connection could be made because the target machine actively refused it.");
+#else
     REQUIRE_THROWS_WITH(createClient(), "Connection refused");
+#endif
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client", "[tcp_server]") {

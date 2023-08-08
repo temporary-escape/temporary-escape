@@ -20,7 +20,7 @@ void NetworkTcpPeer::close() {
     if (!closed && socket.lowest_layer().is_open()) {
         closed = true;
         logger.info("Closing peer endpoint: {}", address);
-        socket.lowest_layer().close();
+        // socket.lowest_layer().close();
     }
 }
 
