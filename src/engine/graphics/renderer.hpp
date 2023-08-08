@@ -12,6 +12,8 @@ class ENGINE_API Renderer {
 public:
     explicit Renderer(VulkanRenderer& vulkan);
     virtual ~Renderer() = default;
+    NON_MOVEABLE(Renderer);
+    NON_COPYABLE(Renderer);
 
     virtual void render(VulkanCommandBuffer& vkb, Scene& scene);
 
@@ -30,6 +32,6 @@ protected:
 
 private:
     VulkanRenderer& vulkan;
-    std::vector<std::unique_ptr<RenderPass>> passes;
+    std::list<std::unique_ptr<RenderPass>> passes;
 };
 } // namespace Engine
