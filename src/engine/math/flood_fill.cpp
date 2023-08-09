@@ -75,14 +75,20 @@ void FloodFill::calculate() {
     }
 }
 
+void FloodFill::Result::bind(Lua& lua) {
+    auto& m = lua.root();
+
+     {
+        auto cls = m.new_usertype<Result>("FloodFillResult", sol::constructors<Result()>{});
+        cls["index"] = &Result::index;
+        cls["point"] = &Result::point;
+    }
+}
+
 void FloodFill::bind(Lua& lua) {
     auto& m = lua.root();
 
-    {
-        auto cls = m.new_usertype<FloodFill::Result>("FloodFillResult", sol::constructors<FloodFill::Result()>{});
-        cls["index"] = &FloodFill::Result::index;
-        cls["point"] = &FloodFill::Result::point;
-    }
+    Result::bind(lua);
     
     { // FloodFill
         auto cls = m.new_usertype<FloodFill>("FloodFill", sol::constructors<FloodFill()>{});

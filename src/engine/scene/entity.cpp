@@ -28,17 +28,18 @@ void Entity::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<Entity>("Entity");
-    cls["add_component_transform"] =
-        static_cast<ComponentTransform& (Entity::*)()>(&Entity::addComponent<ComponentTransform>);
-    cls["add_component_model"] =
-        static_cast<ComponentModel& (Entity::*)(const ModelPtr&)>(&Entity::addComponent<ComponentModel>);
-    cls["add_component_rigid_body"] =
-        static_cast<ComponentRigidBody& (Entity::*)()>(&Entity::addComponent<ComponentRigidBody>);
-    cls["add_component_icon"] =
-        static_cast<ComponentIcon& (Entity::*)(const ImagePtr&)>(&Entity::addComponent<ComponentIcon>);
-    cls["add_component_label"] =
-        static_cast<ComponentLabel& (Entity::*)(const std::string&)>(&Entity::addComponent<ComponentLabel>);
-    cls["add_component_script"] = [l = &lua](Entity& self, const sol::table& instance) -> ComponentScript& {
+    cls["add_component_transform"] = &Entity::addComponent<ComponentTransform>;
+    cls["add_component_model"] = [](Entity& self, const ModelPtr& model) -> ComponentModel& {
+        return self.addComponent<ComponentModel>(model);
+    };
+    cls["add_component_rigid_body"] = &Entity::addComponent<ComponentRigidBody>;
+    cls["add_component_icon"] = [](Entity& self, const ImagePtr& image) -> ComponentIcon& {
+        return self.addComponent<ComponentIcon>(image);
+    };
+    cls["add_component_label"] = [](Entity& self, const std::string& label) -> ComponentLabel& {
+        return self.addComponent<ComponentLabel>(label);
+    };
+    cls["add_component_script"] = [](Entity& self, const sol::table& instance) -> ComponentScript& {
         return self.addComponent<ComponentScript>(instance);
     };
 

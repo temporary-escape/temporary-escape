@@ -40,7 +40,7 @@ void ComponentShipControl::setMovement(bool left, bool right, bool up, bool down
 
 std::tuple<float, float, float> ComponentShipControl::getAngles() const {
     if (!componentTransform) {
-        return {0, 0, 0};
+        return {0.0f, 0.0f, 0.0f};
     }
     auto& transform = componentTransform->getTransform();
 

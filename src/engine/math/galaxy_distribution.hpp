@@ -4,6 +4,7 @@
 #include "vector.hpp"
 #include <random>
 #include <unordered_set>
+#include <optional>
 
 namespace Engine {
 class ENGINE_API GalaxyDistribution {

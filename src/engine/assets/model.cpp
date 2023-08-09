@@ -313,7 +313,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
             const auto span = positions->accessor.bufferView.getSpan();
             auto* points = reinterpret_cast<const float*>(span.data());
-            auto shape = std::make_unique<btConvexHullShape>(points, positions->accessor.count, sizeof(float) * 3);
+            auto shape = std::make_unique<btConvexHullShape>(points, static_cast<int>(positions->accessor.count), sizeof(float) * 3);
             collisionShape = std::move(shape);
         }
 

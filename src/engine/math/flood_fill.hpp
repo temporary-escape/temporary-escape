@@ -12,6 +12,8 @@ public:
     struct Result {
         size_t index{0};
         size_t point{0};
+
+        static void bind(Lua& lua);
     };
 
     FloodFill() = default;
