@@ -34,7 +34,7 @@ public:
     }
 
 private:
-    class Internal : public NetworkPeer, public std::enable_shared_from_this<Internal> {
+    class ENGINE_API Internal : public NetworkPeer, public std::enable_shared_from_this<Internal> {
     public:
         Internal(asio::io_service& service, NetworkDispatcher& dispatcher);
         void close() override;

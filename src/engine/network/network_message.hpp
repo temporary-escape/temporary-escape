@@ -70,7 +70,7 @@ protected:
     uint64_t xid;
 };
 
-template <typename T> class ENGINE_API Request : public BaseRequest {
+template <typename T> class Request : public BaseRequest {
 public:
     using Type = T;
 
