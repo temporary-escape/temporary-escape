@@ -2,6 +2,8 @@
 #include "../network/network_tcp_server.hpp"
 #include "../utils/random.hpp"
 #include "lua.hpp"
+#include "services/service_galaxy.hpp"
+#include "services/service_players.hpp"
 #include <memory>
 #include <sol/sol.hpp>
 
@@ -17,7 +19,6 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     db{db},
     generator{Generator::Options{}, assetsManager, db},
     playerSessions{config, db},
-    world{config, assetsManager, db, playerSessions},
     lobby{config},
     tickFlag{true},
     worker{4},
@@ -29,36 +30,18 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessageModManifestsRequest);
     HANDLE_REQUEST(MessagePlayerLocationRequest);
     HANDLE_REQUEST(MessagePingResponse);
-    // world.registerHandlers(*this);
 
-    auto promise = std::make_shared<Promise<void>>();
-    tickThread = std::thread([this, promise]() {
-        try {
-            load();
-        } catch (std::exception& e) {
-            BACKTRACE(e, "Server load thread error");
-            cleanup();
-            promise->reject<std::runtime_error>("Server failed to start");
-            return;
-        }
-
-        promise->resolve();
-
-        try {
-            tick();
-        } catch (std::exception& e) {
-            BACKTRACE(e, "Server tick thread error");
-        }
-        cleanup();
-    });
+    addService<ServicePlayers>();
+    addService<ServiceGalaxy>();
 
     try {
-        auto future = promise->future();
-        future.get();
+        load();
     } catch (...) {
-        tickThread.join();
-        throw;
+        cleanup();
+        EXCEPTION_NESTED("Failed to load server");
     }
+
+    startTick();
 }
 
 EventBus& Server::getEventBus() const {
@@ -141,6 +124,17 @@ Server::~Server() {
     if (tickThread.joinable()) {
         tickThread.join();
     }
+}
+
+void Server::startTick() {
+    tickThread = std::thread([this]() {
+        try {
+            tick();
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Server tick thread error");
+        }
+        cleanup();
+    });
 }
 
 void Server::pollEvents() {
@@ -285,8 +279,10 @@ void Server::handle(Request<MessageLoginRequest> req) {
         return;
     }
 
+    auto& servicePlayers = getService<ServicePlayers>();
+
     // Check if the player is already logged in
-    const auto playerIdFound = playerSessions.secretToId(data.secret);
+    const auto playerIdFound = servicePlayers.secretToId(data.secret);
     if (playerIdFound) {
         if (playerSessions.isLoggedIn(*playerIdFound)) {
             req.respondError("Already logged in");
@@ -303,7 +299,7 @@ void Server::handle(Request<MessageLoginRequest> req) {
 
     PlayerData player;
     try {
-        player = playerSessions.login(data.secret, data.name);
+        player = servicePlayers.login(data.secret, data.name);
     } catch (...) {
         req.respondError("Failed logging in");
         lobby.disconnectPeer(req.peer);

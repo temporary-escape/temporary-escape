@@ -6,7 +6,7 @@
 #include "../graphics/nuklear.hpp"
 #include "../gui/gui_modal_loading.hpp"
 #include "../scene/scene.hpp"
-#include "../server/world.hpp"
+#include "../server/schemas.hpp"
 #include "../utils/stop_token.hpp"
 #include "view.hpp"
 

@@ -4,6 +4,7 @@
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
 #include "../scene/scene.hpp"
+#include "../server/schemas.hpp"
 #include "view.hpp"
 
 namespace Engine {

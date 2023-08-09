@@ -5,7 +5,6 @@
 #include "lua.hpp"
 #include "messages.hpp"
 #include "session.hpp"
-#include "world.hpp"
 
 namespace Engine {
 class ENGINE_API Server;

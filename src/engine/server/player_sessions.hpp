@@ -12,10 +12,6 @@ public:
     explicit PlayerSessions(const Config& config, Database& db);
     virtual ~PlayerSessions() = default;
 
-    // Player data functions
-    std::optional<std::string> secretToId(uint64_t);
-    PlayerData login(uint64_t secret, const std::string& name);
-
     // Session functions
     void createSession(const NetworkPeerPtr& peer, const std::string& playerId);
     void removeSession(const NetworkPeerPtr& peer);
@@ -24,15 +20,13 @@ public:
     bool isLoggedIn(const std::string& playerId);
     std::vector<SessionPtr> getAllSessions();
     void clear();
-    void updateSessionsPing();
+    // void updateSessionsPing();
 
 private:
     const Config& config;
     Database& db;
 
-    struct {
-        std::shared_mutex mutex;
-        std::unordered_map<NetworkPeer*, SessionPtr> map;
-    } sessions;
+    std::shared_mutex mutex;
+    std::unordered_map<NetworkPeer*, SessionPtr> map;
 };
 } // namespace Engine

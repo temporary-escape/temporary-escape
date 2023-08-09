@@ -19,9 +19,7 @@ public:
 private:
     const Config& config;
 
-    struct {
-        std::shared_mutex mutex;
-        std::unordered_set<NetworkPeerPtr> map;
-    } lobby;
+    std::shared_mutex mutex;
+    std::unordered_set<NetworkPeerPtr> map;
 };
 } // namespace Engine

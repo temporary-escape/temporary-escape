@@ -7,6 +7,7 @@
 #include "../gui/gui_block_selector.hpp"
 #include "../gui/gui_side_menu.hpp"
 #include "../scene/scene.hpp"
+#include "../server/schemas.hpp"
 #include "view.hpp"
 
 namespace Engine {
