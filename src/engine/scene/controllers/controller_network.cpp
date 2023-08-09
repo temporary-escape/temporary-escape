@@ -1,5 +1,5 @@
 #include "controller_network.hpp"
-#include "../../network/peer.hpp"
+#include "../../network/network_peer.hpp"
 #include <bitset>
 
 using namespace Engine;
@@ -53,17 +53,17 @@ static void packComponent(Packer& packer, entt::entity handle, const Type& compo
 }
 
 template <typename Type>
-static void sendComponents(Network::Peer& peer, const ComponentReferences<Type>& components, const size_t count,
+static void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components, const size_t count,
                            const SyncOperation op) {
-    Network::Peer::Packer packer{peer, "MessageComponentSnapshot"};
 
-    packer.pack_array(count);
+    peer.pack_array(count);
     for (size_t i = 0; i < count; i++) {
-        packComponent(packer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
+        packComponent(peer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
     }
+    peer.flush();
 }
 
-template <typename View> static void packComponents(Network::Peer& peer, const View& view, const SyncOperation op) {
+template <typename View> static void packComponents(NetworkPeer& peer, const View& view, const SyncOperation op) {
     using Iterable = typename View::iterable::value_type;
     using Type = typename std::remove_reference<typename std::tuple_element<1, Iterable>::type>::type;
 
@@ -125,7 +125,7 @@ static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt
     }
 }
 
-void ControllerNetwork::sendFullSnapshot(Network::Peer& peer) {
+void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
@@ -133,19 +133,18 @@ void ControllerNetwork::sendFullSnapshot(Network::Peer& peer) {
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
 }
 
-void ControllerNetwork::sendUpdate(Network::Peer& peer) {
+void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
     size_t count{0};
     size_t arraySize{0};
     auto total{updatedComponentsCount};
 
-    std::unique_ptr<Network::Peer::Packer> packer;
     const auto prepareNext = [&]() {
         if (count >= arraySize) {
-            packer.reset();
+            /*peer.reset();
             packer = std::make_unique<Network::Peer::Packer>(peer, "MessageComponentSnapshot");
             arraySize = std::min<size_t>(total, 64);
             count = 0;
-            packer->pack_array(arraySize);
+            packer->pack_array(arraySize);*/
         }
         ++count;
         --total;
@@ -156,16 +155,16 @@ void ControllerNetwork::sendUpdate(Network::Peer& peer) {
         if (pair.second & componentMaskId<ComponentTransform>()) {
             const auto& component = reg.get<ComponentTransform>(handle);
             prepareNext();
-            packComponent(*packer, handle, component, SyncOperation::Patch);
+            packComponent(peer, handle, component, SyncOperation::Patch);
         }
         if (pair.second & componentMaskId<ComponentRigidBody>()) {
             const auto& component = reg.get<ComponentRigidBody>(handle);
             prepareNext();
-            packComponent(*packer, handle, component, SyncOperation::Patch);
+            packComponent(peer, handle, component, SyncOperation::Patch);
         }
     }
 
-    packer.reset();
+    peer.flush();
 
     if (total != 0) {
         EXCEPTION("Something went wrong while packing scene updates, error: total != 0");

@@ -1,17 +1,15 @@
 #pragma once
 
-#include "../network/peer.hpp"
+#include "../network/network_peer.hpp"
 
 namespace Engine {
-using PeerPtr = std::shared_ptr<Network::Peer>;
-
 class ENGINE_API Session {
 public:
     enum Flags : uint64_t {
         PingSent,
     };
 
-    explicit Session(std::string playerId, const PeerPtr& stream) :
+    explicit Session(std::string playerId, const NetworkPeerPtr& stream) :
         playerId{std::move(playerId)}, stream{stream}, lastPingTime{}, flags{0} {
     }
 
@@ -21,7 +19,7 @@ public:
 
     template <typename T> void send(T& msg) {
         if (auto ptr = stream.lock(); ptr != nullptr) {
-            ptr->send(msg);
+            ptr->send(msg, 0);
         } else {
             connected = false;
         }
@@ -54,7 +52,7 @@ public:
         connected = false;
     }
 
-    [[nodiscard]] std::shared_ptr<Network::Peer> getStream() const {
+    [[nodiscard]] std::shared_ptr<NetworkPeer> getStream() const {
         return stream.lock();
     }
 
@@ -62,7 +60,7 @@ public:
 
 private:
     std::string playerId;
-    std::weak_ptr<Network::Peer> stream;
+    std::weak_ptr<NetworkPeer> stream;
     std::chrono::steady_clock::time_point lastPingTime;
     uint64_t flags;
     bool connected{true};

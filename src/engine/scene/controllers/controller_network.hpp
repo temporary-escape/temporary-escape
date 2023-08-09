@@ -4,9 +4,7 @@
 #include "../entity.hpp"
 
 namespace Engine {
-namespace Network {
-class ENGINE_API Peer;
-}
+class ENGINE_API NetworkPeer;
 
 enum class SyncOperation {
     Patch,
@@ -24,8 +22,8 @@ public:
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;
 
-    void sendFullSnapshot(Network::Peer& peer);
-    void sendUpdate(Network::Peer& peer);
+    void sendFullSnapshot(NetworkPeer& peer);
+    void sendUpdate(NetworkPeer& peer);
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
 

@@ -110,7 +110,7 @@ Scene* ViewSystem::getScene() {
 void ViewSystem::load() {
     scene = std::make_unique<Scene>(config, &voxelShapeCache);
 
-    { // Figure out where we are
+    /*{ // Figure out where we are
         logger.info("Fetching player location");
         MessagePlayerLocationRequest req{};
 
@@ -235,7 +235,7 @@ void ViewSystem::load() {
             componentIcon.setSize(systemBodyIconSize);
             componentIcon.setColor(Color4{1.0f});
         }
-    }
+    }*/
 }
 
 void ViewSystem::finalize() {

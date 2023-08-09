@@ -13,7 +13,7 @@ public:
 
     virtual ~NetworkDispatcher() = default;
 
-    template <typename C, typename T> void addHandler(C* instance, void (C::*fn)(Request<T>)) {
+    template <typename C, typename T> void addHandlerC(C* instance, void (C::*fn)(Request<T>)) {
         HandlerData data;
         data.fn = [instance, fn](NetworkPeerPtr peer, ObjectHandlePtr oh) {
             // Construct a request and call a handler function
@@ -40,10 +40,10 @@ public:
 
     void onObjectReceived(NetworkPeerPtr peer, ObjectHandlePtr oh);
 
-    virtual void onAcceptSuccess(const std::shared_ptr<NetworkTcpPeer>& peer) {
+    virtual void onAcceptSuccess(const NetworkPeerPtr& peer) {
         (void)peer;
     };
-    virtual void onDisconnect(const std::shared_ptr<NetworkTcpPeer>& peer) {
+    virtual void onDisconnect(const NetworkPeerPtr& peer) {
         (void)peer;
     };
 
@@ -63,3 +63,10 @@ private:
     std::unordered_map<uint64_t, HandlerData> handlers;
 };
 } // namespace Engine
+
+#define HANDLE_REQUEST(Type)                                                                                           \
+    addHandler([this](Request<Type> req) {                                                                             \
+        using Self = std::remove_pointer<decltype(this)>::type;                                                        \
+        using Handler = void (Self::*)(Request<Type>);                                                                 \
+        (this->*static_cast<Handler>(&Self::handle))(std::move(req));                                                  \
+    })

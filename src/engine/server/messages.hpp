@@ -1,15 +1,15 @@
 #pragma once
 
 #include "../assets/assets_manager.hpp"
-#include "../network/message.hpp"
+#include "../network/network_message.hpp"
 #include "../scene/entity.hpp"
 #include "schemas.hpp"
 
 #include <chrono>
 
 namespace Engine {
-template <typename T> inline Network::UseFuture<T> useFuture() {
-    return Network::UseFuture<T>{};
+template <typename T> inline UseFuture<T> useFuture() {
+    return UseFuture<T>{};
 }
 
 struct PageInfo {
@@ -21,40 +21,36 @@ struct PageInfo {
 };
 
 template <typename T> struct MessagePage {
-    std::string error;
     PageInfo page;
     std::vector<T> items;
 
-    MSGPACK_DEFINE(error, page, items);
-};
-
-struct Message {
-    std::string error;
-    MSGPACK_DEFINE(error);
+    MSGPACK_DEFINE(page, items);
 };
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageLoginRequest : Message {
+struct MessageLoginRequest {
     uint64_t secret{0};
     std::string name;
     std::string password;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), secret, name, password);
+    MSGPACK_DEFINE(secret, name, password);
 };
 
 MESSAGE_DEFINE(MessageLoginRequest);
 
-struct MessageLoginResponse : Message {
+struct MessageLoginResponse {
     std::string playerId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), playerId);
+    MSGPACK_DEFINE(playerId);
 };
 
 MESSAGE_DEFINE(MessageLoginResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageModManifestsRequest : Message {
-    MSGPACK_DEFINE(MSGPACK_BASE(Message));
+struct MessageModManifestsRequest {
+    bool dummy{false};
+
+    MSGPACK_DEFINE(dummy);
 };
 
 MESSAGE_DEFINE(MessageModManifestsRequest);
@@ -66,69 +62,71 @@ struct MessageModManifestsResponse : MessagePage<ModManifest> {
 MESSAGE_DEFINE(MessageModManifestsResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessagePingRequest : Message {
+struct MessagePingRequest {
     std::chrono::steady_clock::time_point time{};
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), time);
+    MSGPACK_DEFINE(time);
 };
 
 MESSAGE_DEFINE(MessagePingRequest);
 
-struct MessagePingResponse : Message {
+struct MessagePingResponse {
     std::chrono::steady_clock::time_point time{};
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), time);
+    MSGPACK_DEFINE(time);
 };
 
 MESSAGE_DEFINE(MessagePingResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessagePlayerLocationRequest : Message {
-    MSGPACK_DEFINE(MSGPACK_BASE(Message));
+struct MessagePlayerLocationRequest {
+    bool dummy{false};
+
+    MSGPACK_DEFINE(dummy);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationRequest);
 
-struct MessagePlayerLocationResponse : Message {
+struct MessagePlayerLocationResponse {
     std::optional<PlayerLocationData> location;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), location);
+    MSGPACK_DEFINE(location);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessagePlayerLocationEvent : Message {
+struct MessagePlayerLocationEvent {
     PlayerLocationData location;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), location);
+    MSGPACK_DEFINE(location);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchFactionRequest : Message {
+struct MessageFetchFactionRequest {
     std::string factionId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), factionId);
+    MSGPACK_DEFINE(factionId);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionRequest);
 
-struct MessageFetchFactionResponse : Message {
+struct MessageFetchFactionResponse {
     FactionData faction;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), faction);
+    MSGPACK_DEFINE(faction);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchFactionsRequest : Message {
+struct MessageFetchFactionsRequest {
     std::string galaxyId;
     std::string token;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, token);
+    MSGPACK_DEFINE(galaxyId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionsRequest);
@@ -140,46 +138,46 @@ struct MessageFetchFactionsResponse : MessagePage<FactionData> {
 MESSAGE_DEFINE(MessageFetchFactionsResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchGalaxyRequest : Message {
+struct MessageFetchGalaxyRequest {
     std::string galaxyId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId);
+    MSGPACK_DEFINE(galaxyId);
 };
 
 MESSAGE_DEFINE(MessageFetchGalaxyRequest);
 
-struct MessageFetchGalaxyResponse : Message {
+struct MessageFetchGalaxyResponse {
     std::string name;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), name);
+    MSGPACK_DEFINE(name);
 };
 
 MESSAGE_DEFINE(MessageFetchGalaxyResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchRegionRequest : Message {
+struct MessageFetchRegionRequest {
     std::string galaxyId;
     std::string regionId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, regionId);
+    MSGPACK_DEFINE(galaxyId, regionId);
 };
 
 MESSAGE_DEFINE(MessageFetchRegionRequest);
 
-struct MessageFetchRegionResponse : Message {
+struct MessageFetchRegionResponse {
     RegionData region;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), region);
+    MSGPACK_DEFINE(region);
 };
 
 MESSAGE_DEFINE(MessageFetchRegionResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchRegionsRequest : Message {
+struct MessageFetchRegionsRequest {
     std::string galaxyId;
     std::string token;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, token);
+    MSGPACK_DEFINE(galaxyId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchRegionsRequest);
@@ -191,31 +189,31 @@ struct MessageFetchRegionsResponse : MessagePage<RegionData> {
 MESSAGE_DEFINE(MessageFetchRegionsResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchSectorRequest : Message {
+struct MessageFetchSectorRequest {
     std::string galaxyId;
     std::string systemId;
     std::string sectorId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, systemId, sectorId);
+    MSGPACK_DEFINE(galaxyId, systemId, sectorId);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorRequest);
 
-struct MessageFetchSectorResponse : Message {
+struct MessageFetchSectorResponse {
     SectorData sector;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), sector);
+    MSGPACK_DEFINE(sector);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchSectorsRequest : Message {
+struct MessageFetchSectorsRequest {
     std::string galaxyId;
     std::string systemId;
     std::string token;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, systemId, token);
+    MSGPACK_DEFINE(galaxyId, systemId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorsRequest);
@@ -227,29 +225,29 @@ struct MessageFetchSectorsResponse : MessagePage<SectorData> {
 MESSAGE_DEFINE(MessageFetchSectorsResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchSystemRequest : Message {
+struct MessageFetchSystemRequest {
     std::string galaxyId;
     std::string systemId;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, systemId);
+    MSGPACK_DEFINE(galaxyId, systemId);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemRequest);
 
-struct MessageFetchSystemResponse : Message {
+struct MessageFetchSystemResponse {
     SystemData system;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), system);
+    MSGPACK_DEFINE(system);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchSystemsRequest : Message {
+struct MessageFetchSystemsRequest {
     std::string galaxyId;
     std::string token;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, token);
+    MSGPACK_DEFINE(galaxyId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemsRequest);
@@ -261,12 +259,12 @@ struct MessageFetchSystemsResponse : MessagePage<SystemData> {
 MESSAGE_DEFINE(MessageFetchSystemsResponse);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageFetchPlanetsRequest : Message {
+struct MessageFetchPlanetsRequest {
     std::string galaxyId;
     std::string systemId;
     std::string token;
 
-    MSGPACK_DEFINE(MSGPACK_BASE(Message), galaxyId, systemId, token);
+    MSGPACK_DEFINE(galaxyId, systemId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchPlanetsRequest);

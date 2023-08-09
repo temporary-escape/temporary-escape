@@ -219,7 +219,7 @@ void AssetsManager::init(Category<T>& assets, const Path& path, const std::set<s
 }
 
 template <typename T> std::shared_ptr<T> AssetsManager::addAsset(Category<T>& assets, const Path& path) {
-    logger.info("Adding asset: '{}'", path);
+    // logger.info("Adding asset: '{}'", path);
     auto asset = std::make_shared<T>(path.stem().string(), path);
     assets.insert(asset->getName(), asset);
     loadQueue.emplace_back([=](VulkanRenderer* vulkan, AudioContext* audio) {

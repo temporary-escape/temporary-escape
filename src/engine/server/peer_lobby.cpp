@@ -9,14 +9,14 @@ static auto logger = createLogger(LOG_FILENAME);
 PeerLobby::PeerLobby(const Config& config) : config{config} {
 }
 
-void PeerLobby::addPeer(const PeerPtr& peer) {
+void PeerLobby::addPeer(const NetworkPeerPtr& peer) {
     logger.info("Adding to lobby peer: {}", peer->getAddress());
     std::unique_lock<std::shared_mutex> lock{lobby.mutex};
     lobby.map.insert(peer);
     logger.info("New peer in lobby: {}", peer->getAddress());
 }
 
-void PeerLobby::removePeer(const PeerPtr& peer) {
+void PeerLobby::removePeer(const NetworkPeerPtr& peer) {
     std::unique_lock<std::shared_mutex> lock{lobby.mutex};
 
     const auto it = lobby.map.find(peer);
@@ -26,7 +26,7 @@ void PeerLobby::removePeer(const PeerPtr& peer) {
     }
 }
 
-void PeerLobby::disconnectPeer(const PeerPtr& peer) {
+void PeerLobby::disconnectPeer(const NetworkPeerPtr& peer) {
     removePeer(peer);
     logger.info("Disconnecting peer: {}", peer->getAddress());
     peer->close();
@@ -40,9 +40,9 @@ void PeerLobby::clear() {
     lobby.map.clear();
 }
 
-std::vector<PeerPtr> PeerLobby::getAllPeers() {
+std::vector<NetworkPeerPtr> PeerLobby::getAllPeers() {
     std::shared_lock<std::shared_mutex> lock{lobby.mutex};
-    std::vector<PeerPtr> peers;
+    std::vector<NetworkPeerPtr> peers;
     peers.resize(lobby.map.size());
     for (auto& peer : lobby.map) {
         peers.push_back(peer);

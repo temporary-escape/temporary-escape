@@ -15,7 +15,7 @@ NetworkTcpPeer::NetworkTcpPeer(asio::io_service& service, NetworkTcpServer& serv
 }
 
 NetworkTcpPeer::~NetworkTcpPeer() {
-    close();
+    NetworkTcpPeer::close();
 }
 
 void NetworkTcpPeer::close() {

@@ -10,10 +10,10 @@ public:
     explicit PeerLobby(const Config& config);
     virtual ~PeerLobby() = default;
 
-    void addPeer(const PeerPtr& peer);
-    void removePeer(const PeerPtr& peer);
-    void disconnectPeer(const PeerPtr& peer);
-    std::vector<PeerPtr> getAllPeers();
+    void addPeer(const NetworkPeerPtr& peer);
+    void removePeer(const NetworkPeerPtr& peer);
+    void disconnectPeer(const NetworkPeerPtr& peer);
+    std::vector<NetworkPeerPtr> getAllPeers();
     void clear();
 
 private:
@@ -21,7 +21,7 @@ private:
 
     struct {
         std::shared_mutex mutex;
-        std::unordered_set<PeerPtr> map;
+        std::unordered_set<NetworkPeerPtr> map;
     } lobby;
 };
 } // namespace Engine

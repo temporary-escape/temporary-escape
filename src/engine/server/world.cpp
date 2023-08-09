@@ -4,20 +4,11 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-#define HANDLE_REQUEST(Req, Res)                                                                                       \
-    server.addHandler([this](const PeerPtr& peer, Req req) -> Res {                                                    \
-        Res res{};                                                                                                     \
-        this->handle(peer, std::move(req), res);                                                                       \
-        return res;                                                                                                    \
-    })
-#define HANDLE_REQUEST_VOID(Req)                                                                                       \
-    server.addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); })
-
 World::World(const Config& config, AssetsManager& assetsManager, Database& db, PlayerSessions& playerSessions) :
     db{db}, playerSessions{playerSessions} {
 }
 
-void World::registerHandlers(Network::Server& server) {
+/*void World::registerHandlers(Network::Server& server) {
     HANDLE_REQUEST(MessageFetchFactionRequest, MessageFetchFactionResponse);
     HANDLE_REQUEST(MessageFetchFactionsRequest, MessageFetchFactionsResponse);
     HANDLE_REQUEST(MessageFetchGalaxyRequest, MessageFetchGalaxyResponse);
@@ -28,9 +19,9 @@ void World::registerHandlers(Network::Server& server) {
     HANDLE_REQUEST(MessageFetchSystemRequest, MessageFetchSystemResponse);
     HANDLE_REQUEST(MessageFetchSystemsRequest, MessageFetchSystemsResponse);
     HANDLE_REQUEST(MessageFetchPlanetsRequest, MessageFetchPlanetsResponse);
-}
+}*/
 
-void World::handle(const PeerPtr& peer, MessageFetchFactionRequest req, MessageFetchFactionResponse& res) {
+/*void World::handle(const PeerPtr& peer, MessageFetchFactionRequest req, MessageFetchFactionResponse& res) {
     (void)playerSessions.getSession(peer);
 
     const auto found = db.find<FactionData>(fmt::format("{}", req.factionId));
@@ -118,4 +109,4 @@ void World::handle(const PeerPtr& peer, MessageFetchPlanetsRequest req, MessageF
 
     res.items = db.next<PlanetData>(fmt::format("{}/{}/", req.galaxyId, req.systemId), req.token, 64, &res.page.token);
     res.page.hasNext = res.items.size() == 64;
-}
+}*/

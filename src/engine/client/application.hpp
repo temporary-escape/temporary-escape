@@ -87,7 +87,6 @@ private:
 
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;
-    std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::thread serverThread;
     std::unique_ptr<RendererSkybox> rendererSkybox;

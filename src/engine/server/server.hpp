@@ -5,7 +5,7 @@
 #include "../database/database.hpp"
 #include "../future.hpp"
 #include "../library.hpp"
-#include "../network/server.hpp"
+#include "../network/network_dispatcher.hpp"
 #include "../utils/performance_record.hpp"
 #include "../utils/worker.hpp"
 #include "generator.hpp"
@@ -17,28 +17,21 @@
 
 namespace Engine {
 class ENGINE_API Lua;
+class ENGINE_API NetworkTcpServer;
 
-class ENGINE_API Server : public Network::Server {
+class ENGINE_API Server : public NetworkDispatcher {
 public:
-    struct Certs {
-        Certs() : key{}, cert{key}, dh{} {
-        }
-
-        Network::Pkey key;
-        Network::Cert cert;
-        Network::Dh dh;
-    };
-
-    explicit Server(const Config& config, const Certs& certs, AssetsManager& assetsManager, Database& db);
+    explicit Server(const Config& config, AssetsManager& assetsManager, Database& db);
     virtual ~Server();
 
-    void onAcceptSuccess(PeerPtr peer) override;
+    void onAcceptSuccess(const NetworkPeerPtr& peer) override;
+    void onDisconnect(const NetworkPeerPtr& peer) override;
 
     // Player specific requests
-    void handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res);
-    void handle(const PeerPtr& peer, MessageModManifestsRequest req, MessageModManifestsResponse& res);
-    void handle(const PeerPtr& peer, MessagePlayerLocationRequest req, MessagePlayerLocationResponse& res);
-    void handle(const PeerPtr& peer, MessagePingResponse res);
+    void handle(Request<MessageLoginRequest> req);
+    void handle(Request<MessageModManifestsRequest> req);
+    void handle(Request<MessagePlayerLocationRequest> req);
+    void handle(Request<MessagePingResponse> req);
 
     EventBus& getEventBus() const;
     AssetsManager& getAssetManager() const {
@@ -75,12 +68,6 @@ private:
     SectorPtr startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
 
-    // Network overrides
-    void onError(std::error_code ec) override;
-    void onError(const PeerPtr& peer, std::error_code ec) override;
-    void onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) override;
-    void postDispatch(std::function<void()> fn) override;
-
 private:
     const Config& config;
     AssetsManager& assetsManager;
@@ -97,6 +84,7 @@ private:
     std::unique_ptr<Lua> lua;
     BackgroundWorker worker;
     BackgroundWorker loadQueue;
+    std::unique_ptr<NetworkTcpServer> networkServer;
 
     struct {
         std::shared_mutex mutex;

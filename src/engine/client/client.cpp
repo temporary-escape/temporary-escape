@@ -7,57 +7,51 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-#undef HANDLE_REQUEST
-#define HANDLE_REQUEST(Req) addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(std::move(req)); });
-
 Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
-               VoxelShapeCache* voxelShapeCache) :
-    config{config}, assetsManager{assetsManager}, localProfile{localProfile}, voxelShapeCache{voxelShapeCache} {
-
-    Network::Client::start();
+               VoxelShapeCache* voxelShapeCache, const std::string& address, int port) :
+    config{config},
+    assetsManager{assetsManager},
+    localProfile{localProfile},
+    voxelShapeCache{voxelShapeCache},
+    worker{1} {
 
     HANDLE_REQUEST(MessagePlayerLocationEvent);
     HANDLE_REQUEST(MessagePingRequest);
-    addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
+    // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
+
+    networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
+
+    try {
+        doLogin();
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to connect to the server");
+    }
 }
 
 Client::~Client() {
     logger.info("Stopping client");
-    Network::Client::stop();
+    networkClient->close();
+    worker.stop();
+    networkClient.reset();
 }
 
 void Client::disconnect() {
     logger.info("Disconnecting client");
-    hasNetworkError = true;
-}
-
-void Client::connect(const std::string& address, const int port) {
-    logger.info("Connecting to: {} port: {}", address, port);
-    Network::Client::connect(address, port);
-
-    logger.info("Connected!");
-
-    Future<void> future = std::async([this]() { doLogin(); });
-    if (future.waitFor(std::chrono::milliseconds(3000)) != std::future_status::ready) {
-        EXCEPTION("Login timeout");
-    }
-
-    try {
-        future.get();
-    } catch (...) {
-        EXCEPTION_NESTED("Login failed");
+    if (networkClient) {
+        networkClient->close();
     }
 }
 
 void Client::doLogin() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    static const std::chrono::seconds timeout{2};
 
     { // Fetch mod manifest
         logger.info("Doing manifest check...");
         MessageModManifestsRequest req{};
 
-        auto future = send(req, useFuture<MessageModManifestsResponse>());
-        auto res = future.get(std::chrono::seconds(2));
+        auto promise = networkClient->request<MessageModManifestsResponse>(req);
+        auto future = promise->future();
+        auto res = future.get(timeout);
         validateManifests(res.items);
 
         logger.info("Manifest check success");
@@ -69,14 +63,15 @@ void Client::doLogin() {
         req.secret = localProfile.secret;
         req.name = localProfile.name;
 
-        auto future = send(req, useFuture<MessageLoginResponse>());
-        auto res = future.get(std::chrono::seconds(2));
+        auto promise = networkClient->request<MessageLoginResponse>(req);
+        auto future = promise->future();
+        auto res = future.get(timeout);
 
         logger.info("Login success");
         playerId = res.playerId;
     }
 
-    { // Wait until we know where we are
+    /*{ // Wait until we know where we are
         logger.info("Waiting for player location...");
         auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(10);
         while (timeout > std::chrono::system_clock::now()) {
@@ -96,7 +91,7 @@ void Client::doLogin() {
         if (playerLocation.sectorId.empty()) {
             EXCEPTION("Timeout while waiting for spawn location");
         }
-    }
+    }*/
 }
 
 void Client::validateManifests(const std::vector<ModManifest>& serverManifests) {
@@ -123,10 +118,6 @@ void Client::validateManifests(const std::vector<ModManifest>& serverManifests) 
 }
 
 void Client::update() {
-    if (hasNetworkError && isConnected()) {
-        logger.info("Forcing network client to stop");
-        Network::Client::stop();
-    }
     sync.poll();
 }
 
@@ -186,14 +177,16 @@ void Client::createScene(SectorData sector) {
     grid.insert(Vector3i{2, 1, 2}, block, 0, 1, VoxelShape::Type::Cube);*/
 }
 
-void Client::handle(MessagePlayerLocationEvent res) {
-    logger.info("Player location has changed");
-    playerLocation = res.location;
+void Client::handle(Request<MessagePlayerLocationEvent> req) {
+    auto data = req.get();
+
+    /*logger.info("Player location has changed");
+    playerLocation = data.location;
 
     MessageFetchSectorRequest req{};
-    req.galaxyId = res.location.galaxyId;
-    req.systemId = res.location.systemId;
-    req.sectorId = res.location.sectorId;
+    req.galaxyId = data.location.galaxyId;
+    req.systemId = data.location.systemId;
+    req.sectorId = data.location.sectorId;
 
     sync.postSafe([this]() {
         logger.info("Sector has changed, creating new scene");
@@ -206,45 +199,21 @@ void Client::handle(MessagePlayerLocationEvent res) {
             EXCEPTION("Unable to fetch sector at player's location");
         }
         createScene(std::move(res.sector));
-    });
+    });*/
 }
 
-void Client::handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message) {
+/*void Client::handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message) {
     (void)peer;
 
     sync.postSafe([this, msg = std::move(message)]() {
         // logger.debug("Applying scene snapshot");
         scene->getController<ControllerNetwork>().receiveUpdate(msg.get());
     });
-}
+}*/
 
-void Client::handle(MessagePingRequest req) {
+void Client::handle(Request<MessagePingRequest> req) {
+    auto data = req.get();
     MessagePingResponse res;
-    res.time = req.time;
-    send(res);
-}
-
-void Client::onError(std::error_code ec) {
-    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
-    hasNetworkError = true;
-}
-
-void Client::onError(const PeerPtr& peer, std::error_code ec) {
-    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
-    peer->close();
-    hasNetworkError = true;
-}
-
-void Client::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) {
-    try {
-        std::rethrow_exception(eptr);
-    } catch (std::exception& e) {
-        BACKTRACE(e, "Server network error");
-    }
-    peer->close();
-    hasNetworkError = true;
-}
-
-void Client::postDispatch(std::function<void()> fn) {
-    sync.postSafe(std::forward<decltype(fn)>(fn));
+    res.time = data.time;
+    req.respond(res);
 }

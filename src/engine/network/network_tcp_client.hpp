@@ -37,7 +37,7 @@ private:
     class Internal : public NetworkPeer, public std::enable_shared_from_this<Internal> {
     public:
         Internal(asio::io_service& service, NetworkDispatcher& dispatcher);
-        void close();
+        void close() override;
         void connect(const std::string& host, uint32_t port, std::chrono::milliseconds timeout);
         void receive();
         bool isConnected() const override;

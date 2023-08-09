@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../math/matrix.hpp"
-#include "../network/message.hpp"
+#include "../network/network_message.hpp"
 #include "../utils/aligned.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
@@ -84,7 +84,7 @@ protected:
 private:
     entt::registry* reg{nullptr};
     entt::entity handle{0};
-    
+
     bool dirty{false};
 };
 

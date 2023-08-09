@@ -16,7 +16,7 @@ public:
     virtual ~NetworkTcpPeer();
 
     void receive();
-    void close();
+    void close() override;
     bool isConnected() const override;
     const std::string& getAddress() const override {
         return address;

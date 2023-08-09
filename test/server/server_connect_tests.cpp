@@ -24,8 +24,7 @@ public:
         options.compression = config.server.dbCompression;
         db = std::make_unique<DatabaseRocksDB>(tmpDir.value(), DatabaseRocksDB::Options{});
 
-        serverCerts = std::make_unique<Server::Certs>();
-        server = std::make_unique<Server>(config, *serverCerts, *assetsManager, *db);
+        server = std::make_unique<Server>(config, *assetsManager, *db);
 
         playerLocalProfile.name = "Test Player";
         playerLocalProfile.secret = 112233445566ULL;
@@ -36,7 +35,8 @@ public:
     }
 
     void clientConnect() {
-        client = std::make_unique<Client>(config, *assetsManager, playerLocalProfile, nullptr);
+        client = std::make_unique<Client>(
+            config, *assetsManager, playerLocalProfile, nullptr, "localhost", config.serverPort);
         clientFlag.store(true);
         clientThread = std::thread([this]() {
             while (clientFlag.load()) {
@@ -44,7 +44,6 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds{16});
             }
         });
-        client->connect("localhost", config.serverPort);
     }
 
     void clientDisconnect() {
@@ -60,7 +59,6 @@ public:
     PlayerLocalProfile playerLocalProfile{};
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;
-    std::unique_ptr<Server::Certs> serverCerts;
     std::unique_ptr<Server> server;
     std::unique_ptr<Client> client;
     std::atomic_bool clientFlag;

@@ -46,7 +46,7 @@ PlayerData PlayerSessions::login(const uint64_t secret, const std::string& name)
     return result;
 }
 
-void PlayerSessions::createSession(const PeerPtr& peer, const std::string& playerId) {
+void PlayerSessions::createSession(const NetworkPeerPtr& peer, const std::string& playerId) {
     logger.info("Creating session peer id: {} player: {}", reinterpret_cast<uint64_t>(peer.get()), playerId);
     std::unique_lock<std::shared_mutex> lock{sessions.mutex};
     auto session = std::make_shared<Session>(playerId, peer);
@@ -63,7 +63,7 @@ SessionPtr PlayerSessions::getSession(const std::string& playerId) {
     return nullptr;
 }
 
-SessionPtr PlayerSessions::getSession(const PeerPtr& peer) {
+SessionPtr PlayerSessions::getSession(const NetworkPeerPtr& peer) {
     std::shared_lock<std::shared_mutex> lock{sessions.mutex};
     const auto it = sessions.map.find(peer.get());
     if (it == sessions.map.end()) {
@@ -96,7 +96,7 @@ void PlayerSessions::updateSessionsPing() {
     }
 }
 
-void PlayerSessions::removeSession(const PeerPtr& peer) {
+void PlayerSessions::removeSession(const NetworkPeerPtr& peer) {
     std::unique_lock<std::shared_mutex> lock{sessions.mutex};
     const auto it = sessions.map.find(peer.get());
     if (it != sessions.map.end()) {

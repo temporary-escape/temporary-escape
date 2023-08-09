@@ -1,6 +1,6 @@
 #include "../common.hpp"
-#include <engine/network2/network_tcp_client.hpp>
-#include <engine/network2/network_tcp_server.hpp>
+#include <engine/network/network_tcp_client.hpp>
+#include <engine/network/network_tcp_server.hpp>
 
 using namespace Engine;
 
@@ -8,24 +8,24 @@ static auto logger = createLogger(LOG_FILENAME);
 
 class TestNetworkDispatcher : public NetworkDispatcher {
 public:
-    void onAcceptSuccess(const std::shared_ptr<NetworkTcpPeer>& peer) override {
+    void onAcceptSuccess(const NetworkPeerPtr& peer) override {
         std::lock_guard<std::mutex> lock{mutex};
         peers.push_back(peer);
     }
 
-    void onDisconnect(const std::shared_ptr<NetworkTcpPeer>& peer) override {
+    void onDisconnect(const NetworkPeerPtr& peer) override {
         std::lock_guard<std::mutex> lock{mutex};
         peers.erase(std::remove(peers.begin(), peers.end(), peer), peers.end());
     }
 
-    std::vector<std::shared_ptr<NetworkTcpPeer>> getPeers() {
+    std::vector<NetworkPeerPtr> getPeers() {
         std::lock_guard<std::mutex> lock{mutex};
         return peers;
     }
 
 private:
     std::mutex mutex;
-    std::vector<std::shared_ptr<NetworkTcpPeer>> peers;
+    std::vector<NetworkPeerPtr> peers;
 };
 
 class TcpServerFixture {
@@ -188,7 +188,7 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the server to the client
     // Send a message
     MyFooMsg req{};
     req.msg = "Hello World!";
-    dispatcher.getPeers().front()->send(req, 123);
+    dispatcher.getPeers().front()->send(req, 0);
 
     // Wait for the message
     REQUIRE_EVENTUALLY(received.load());

@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include "../network/network_tcp_server.hpp"
 #include "../utils/random.hpp"
 #include "lua.hpp"
 #include <memory>
@@ -8,21 +9,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-#undef HANDLE_REQUEST
-#define HANDLE_REQUEST(Req, Res)                                                                                       \
-    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> Res {                                          \
-        Res res{};                                                                                                     \
-        this->handle(peer, std::move(req), res);                                                                       \
-        return res;                                                                                                    \
-    })
-#undef HANDLE_REQUEST_VOID
-#define HANDLE_REQUEST_VOID(Req)                                                                                       \
-    Network::Server::addHandler([this](const PeerPtr& peer, Req req) -> void { this->handle(peer, std::move(req)); })
-
 Server* Server::instance;
 
-Server::Server(const Config& config, const Certs& certs, AssetsManager& assetsManager, Database& db) :
-    Network::Server{static_cast<unsigned int>(config.serverPort), certs.key, certs.dh, certs.cert},
+Server::Server(const Config& config, AssetsManager& assetsManager, Database& db) :
     config{config},
     assetsManager{assetsManager},
     db{db},
@@ -36,11 +25,11 @@ Server::Server(const Config& config, const Certs& certs, AssetsManager& assetsMa
 
     instance = this;
 
-    HANDLE_REQUEST(MessageLoginRequest, MessageLoginResponse);
-    HANDLE_REQUEST(MessageModManifestsRequest, MessageModManifestsResponse);
-    HANDLE_REQUEST(MessagePlayerLocationRequest, MessagePlayerLocationResponse);
-    HANDLE_REQUEST_VOID(MessagePingResponse);
-    world.registerHandlers(*this);
+    HANDLE_REQUEST(MessageLoginRequest);
+    HANDLE_REQUEST(MessageModManifestsRequest);
+    HANDLE_REQUEST(MessagePlayerLocationRequest);
+    HANDLE_REQUEST(MessagePingResponse);
+    // world.registerHandlers(*this);
 
     auto promise = std::make_shared<Promise<void>>();
     tickThread = std::thread([this, promise]() {
@@ -100,7 +89,7 @@ void Server::load() {
     }
 
     try {
-        Network::Server::start();
+        networkServer = std::make_unique<NetworkTcpServer>(worker.getService(), *this, config.serverPort, true);
         logger.info("TCP server started");
     } catch (...) {
         EXCEPTION_NESTED("Failed to start the server");
@@ -121,13 +110,14 @@ void Server::cleanup() {
     playerSessions.clear();
 
     logger.info("Waiting for network to stop");
-    Network::Server::stop();
+    networkServer->stop();
 
     logger.info("Waiting for load queue to stop");
     loadQueue.stop();
 
     logger.info("Waiting for workers to stop");
     worker.stop();
+    networkServer.reset();
 
     logger.info("Clearing sectors");
     {
@@ -183,7 +173,7 @@ void Server::tick() {
     while (tickFlag.load()) {
         const auto start = std::chrono::steady_clock::now();
 
-        playerSessions.updateSessionsPing();
+        // playerSessions.updateSessionsPing();
         pollEvents();
         updateSectors();
 
@@ -199,9 +189,15 @@ void Server::tick() {
     logger.info("Stopped tick");
 }
 
-void Server::onAcceptSuccess(PeerPtr peer) {
-    logger.info("New connection peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+void Server::onAcceptSuccess(const NetworkPeerPtr& peer) {
+    logger.info("New connection peer: {}", peer->getAddress());
     lobby.addPeer(peer);
+}
+
+void Server::onDisconnect(const NetworkPeerPtr& peer) {
+    logger.info("Disconnected connection peer: {}", peer->getAddress());
+    lobby.removePeer(peer);
+    playerSessions.removeSession(peer);
 }
 
 void Server::movePlayerToSector(const std::string& playerId, const std::string& sectorId) {
@@ -269,7 +265,7 @@ void Server::addPlayerToSector(const SessionPtr& session, const std::string& sec
 
 void Server::disconnectPlayer(const std::string& playerId) {
     logger.info("Disconnecting player: {}", playerId);
-    
+
     auto session = playerSessions.getSession(playerId);
     if (session) {
         playerSessions.removeSession(session->getStream());
@@ -277,50 +273,56 @@ void Server::disconnectPlayer(const std::string& playerId) {
     }
 }
 
-void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginResponse& res) {
-    logger.info("New login peer id: {}", reinterpret_cast<uint64_t>(peer.get()));
+void Server::handle(Request<MessageLoginRequest> req) {
+    logger.info("New login peer: {}", req.peer->getAddress());
+
+    auto data = req.get();
 
     // Check for server password
-    if (!config.serverPassword.empty() && config.serverPassword != req.password) {
-        res.error = "Bad server password";
-        lobby.disconnectPeer(peer);
+    if (!config.serverPassword.empty() && config.serverPassword != data.password) {
+        req.respondError("Bad server password");
+        lobby.disconnectPeer(req.peer);
         return;
     }
 
     // Check if the player is already logged in
-    const auto playerIdFound = playerSessions.secretToId(req.secret);
+    const auto playerIdFound = playerSessions.secretToId(data.secret);
     if (playerIdFound) {
         if (playerSessions.isLoggedIn(*playerIdFound)) {
-            res.error = "Already logged in";
-            lobby.disconnectPeer(peer);
+            req.respondError("Already logged in");
+            lobby.disconnectPeer(req.peer);
             return;
         }
     }
 
     // Remove peer from lobby
-    lobby.removePeer(peer);
+    lobby.removePeer(req.peer);
 
     // Login
-    logger.info("Logging in player name: '{}'", req.name);
+    logger.info("Logging in player name: '{}'", data.name);
 
     PlayerData player;
     try {
-        player = playerSessions.login(req.secret, req.name);
+        player = playerSessions.login(data.secret, data.name);
     } catch (...) {
-        res.error = "Failed logging in";
-        lobby.disconnectPeer(peer);
-        EXCEPTION_NESTED("Failed to log in player: '{}'", req.name);
+        req.respondError("Failed logging in");
+        lobby.disconnectPeer(req.peer);
+        EXCEPTION_NESTED("Failed to log in player: '{}'", data.name);
     }
 
-    logger.info("Logged in player: {} name: '{}'", player.id, req.name);
+    logger.info("Logged in player: {} name: '{}'", player.id, data.name);
 
-    playerSessions.createSession(peer, player.id);
+    playerSessions.createSession(req.peer, player.id);
+
+    MessageLoginResponse res{};
+    res.playerId = player.id;
+    req.respond(res);
 
     // Publish an event
-    EventData event{};
+    /*EventData event{};
     event["player_id"] = player.id;
     event["player_name"] = player.name;
-    eventBus->enqueue("player_logged_in", event);
+    eventBus->enqueue("player_logged_in", event);*/
 }
 
 /*void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res) {
@@ -338,11 +340,10 @@ void Server::handle(const PeerPtr& peer, MessageLoginRequest req, MessageLoginRe
     }
 }*/
 
-void Server::handle(const PeerPtr& peer, MessageModManifestsRequest req, MessageModManifestsResponse& res) {
-    (void)peer;
-    (void)req;
+void Server::handle(Request<MessageModManifestsRequest> req) {
+    logger.info("Peer {} has requested mod manifest", req.peer->getAddress());
 
-    logger.info("Peer {} has requested mod manifest", peer->getAddress());
+    MessageModManifestsResponse res{};
 
     const auto& manifests = assetsManager.getManifests();
     res.items.reserve(manifests.size());
@@ -350,50 +351,28 @@ void Server::handle(const PeerPtr& peer, MessageModManifestsRequest req, Message
         res.items.push_back(manifest);
     }
     res.page.hasNext = false;
+
+    req.respond(res);
 }
 
-void Server::handle(const PeerPtr& peer, MessagePlayerLocationRequest req, MessagePlayerLocationResponse& res) {
-    (void)req;
+void Server::handle(Request<MessagePlayerLocationRequest> req) {
+    MessagePlayerLocationResponse res{};
 
-    const auto session = playerSessions.getSession(peer);
+    const auto session = playerSessions.getSession(req.peer);
     const auto location = db.find<PlayerLocationData>(session->getPlayerId());
     if (location) {
         res.location = *location;
     } else {
         logger.warn("Player location requested for: '{}' but player has no location", session->getPlayerId());
     }
+
+    req.respond(res);
 }
 
-void Server::handle(const PeerPtr& peer, MessagePingResponse res) {
-    (void)res;
-
-    auto session = playerSessions.getSession(peer);
+void Server::handle(Request<MessagePingResponse> req) {
+    auto session = playerSessions.getSession(req.peer);
     session->setLastPingTime(std::chrono::steady_clock::now());
     session->clearFlag(Session::Flags::PingSent);
-}
-
-void Server::onError(std::error_code ec) {
-    logger.error("Server network error: {} ({})", ec.message(), ec.category().name());
-}
-
-void Server::onError(const PeerPtr& peer, std::error_code ec) {
-    logger.error("Server network peer error: {} ({})", ec.message(), ec.category().name());
-    peer->close();
-    lobby.removePeer(peer);
-    playerSessions.removeSession(peer);
-}
-
-void Server::onUnhandledException(const PeerPtr& peer, std::exception_ptr& eptr) {
-    try {
-        std::rethrow_exception(eptr);
-    } catch (std::exception& e) {
-        BACKTRACE(e, "Server network error");
-    }
-    peer->close();
-}
-
-void Server::postDispatch(std::function<void()> fn) {
-    worker.postSafe(std::forward<decltype(fn)>(fn));
 }
 
 void Server::bind(Lua& lua) {

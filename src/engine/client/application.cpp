@@ -323,12 +323,9 @@ void Application::startClient() {
     status.message = "Connecting...";
     status.value = 0.9f;
 
-    client = std::make_unique<Client>(config, *assetsManager, playerLocalProfile, voxelShapeCache.get());
-
-    logger.info("Connecting to the server");
-
     future = std::async([this]() -> std::function<void()> {
-        client->connect("localhost", config.serverPort);
+        client = std::make_unique<Client>(
+            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), "localhost", config.serverPort);
 
         return [this]() { checkForClientScene(); };
     });
@@ -341,8 +338,7 @@ void Application::startServer() {
     status.value = 0.8f;
 
     future = std::async([this]() -> std::function<void()> {
-        serverCerts = std::make_unique<Server::Certs>();
-        server = std::make_unique<Server>(config, *serverCerts, *assetsManager, *db);
+        server = std::make_unique<Server>(config, *assetsManager, *db);
 
         return [this]() { startClient(); };
     });

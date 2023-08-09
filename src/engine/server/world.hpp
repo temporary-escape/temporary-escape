@@ -9,7 +9,7 @@
 
 #include "../assets/assets_manager.hpp"
 #include "../database/database.hpp"
-#include "../network/server.hpp"
+#include "../network/network_dispatcher.hpp"
 #include "../utils/event_bus.hpp"
 #include "player_sessions.hpp"
 #include "schemas.hpp"
@@ -20,11 +20,11 @@ public:
     explicit World(const Config& config, AssetsManager& assetsManager, Database& db, PlayerSessions& playerSessions);
     ~World() = default;
 
-    void registerHandlers(Network::Server& server);
+    // void registerHandlers(Network::Server& server);
 
 private:
     // Faction requests
-    void handle(const PeerPtr& peer, MessageFetchFactionRequest req, MessageFetchFactionResponse& res);
+    /*void handle(const PeerPtr& peer, MessageFetchFactionRequest req, MessageFetchFactionResponse& res);
     void handle(const PeerPtr& peer, MessageFetchFactionsRequest req, MessageFetchFactionsResponse& res);
 
     // Galaxy requests
@@ -43,7 +43,7 @@ private:
     void handle(const PeerPtr& peer, MessageFetchSystemsRequest req, MessageFetchSystemsResponse& res);
 
     // Planet requests
-    void handle(const PeerPtr& peer, MessageFetchPlanetsRequest req, MessageFetchPlanetsResponse& res);
+    void handle(const PeerPtr& peer, MessageFetchPlanetsRequest req, MessageFetchPlanetsResponse& res);*/
 
     Database& db;
     PlayerSessions& playerSessions;

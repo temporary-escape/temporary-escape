@@ -17,10 +17,10 @@ public:
     PlayerData login(uint64_t secret, const std::string& name);
 
     // Session functions
-    void createSession(const PeerPtr& peer, const std::string& playerId);
-    void removeSession(const PeerPtr& peer);
+    void createSession(const NetworkPeerPtr& peer, const std::string& playerId);
+    void removeSession(const NetworkPeerPtr& peer);
     SessionPtr getSession(const std::string& playerId);
-    SessionPtr getSession(const PeerPtr& peer);
+    SessionPtr getSession(const NetworkPeerPtr& peer);
     bool isLoggedIn(const std::string& playerId);
     std::vector<SessionPtr> getAllSessions();
     void clear();
@@ -32,7 +32,7 @@ private:
 
     struct {
         std::shared_mutex mutex;
-        std::unordered_map<Network::Peer*, SessionPtr> map;
+        std::unordered_map<NetworkPeer*, SessionPtr> map;
     } sessions;
 };
 } // namespace Engine

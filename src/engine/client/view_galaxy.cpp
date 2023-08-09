@@ -138,7 +138,7 @@ Scene* ViewGalaxy::getScene() {
 void ViewGalaxy::load() {
     scene = std::make_unique<Scene>(config, &voxelShapeCache);
 
-    { // Figure out where we are
+    /*{ // Figure out where we are
         logger.info("Fetching player location");
         MessagePlayerLocationRequest req{};
 
@@ -406,7 +406,7 @@ void ViewGalaxy::load() {
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
         icon.setColor(Theme::primary);
-    }
+    }*/
 
     /*{ // User Input
         logger.info("Creating system user input callbacks");
