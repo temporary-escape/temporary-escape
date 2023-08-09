@@ -325,18 +325,20 @@ TEST_CASE_METHOD(TcpServerFixture, "Test for server throughput", "[tcp_server]")
     const auto start = std::chrono::steady_clock::now();
     client->send(DataRequest{}, 123);
 
-    const auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+    const auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds{30};
     while (timeout > std::chrono::steady_clock::now()) {
         if (done.load()) {
             break;
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds{30});
+        std::this_thread::sleep_for(std::chrono::seconds{1});
     }
+
+    REQUIRE_EVENTUALLY_S(done.load(), 30);
 
     REQUIRE(done.load());
     client->close();
 
     const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    logger.info("Time took: {} ms bytes: {}", diff, total);
+    logger.info("Throughput: {} MB/s", (static_cast<float>(total) / static_cast<float>(diff)) / 1000.0f);
 }
