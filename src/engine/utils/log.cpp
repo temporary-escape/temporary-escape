@@ -26,10 +26,9 @@ static std::unique_ptr<spdlog::logger> createLogger(const Path& path) {
     return logger;
 }
 
-std::shared_ptr<spdlog::logger> root = createLogger(getAppDataPath() / "TemporaryEscape.log");
-
 Logger Engine::createLogger(const std::string_view& name) {
-    return Logger{std::string{name}, root};
+    static auto root = ::createLogger(getAppDataPath() / "TemporaryEscape.log");
+    return Logger{std::string{name}, *root};
 }
 
 void Logger::bind(Lua& lua) {

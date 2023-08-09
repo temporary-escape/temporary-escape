@@ -7,8 +7,7 @@
 namespace Engine {
 class ENGINE_API NetworkTcpServer {
 public:
-    explicit NetworkTcpServer(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher,
-                              uint32_t port, bool ipv6);
+    explicit NetworkTcpServer(asio::io_service& service, NetworkDispatcher& dispatcher, uint32_t port, bool ipv6);
     virtual ~NetworkTcpServer();
     void accept();
     void stop();
@@ -20,7 +19,6 @@ private:
 
     asio::io_service& service;
     asio::io_service::strand strand;
-    NetworkSslContext& ssl;
     NetworkDispatcher& dispatcher;
     asio::ip::tcp::acceptor acceptor;
     std::mutex mutex;

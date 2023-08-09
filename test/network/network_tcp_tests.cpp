@@ -31,11 +31,6 @@ private:
 class TcpServerFixture {
 public:
     TcpServerFixture() {
-        sslClient.setVerifyNone();
-        sslServer.setPrivateKey(pkey);
-        sslServer.setCertificate(cert);
-        sslServer.setDiffieHellmanKey(dh);
-
         work = std::make_unique<asio::io_service::work>(service);
         for (auto i = 0; i < 4; i++) {
             threads.emplace_back([this]() { service.run(); });
@@ -70,18 +65,16 @@ public:
     }
 
     void startServer() {
-        server = std::make_unique<NetworkTcpServer>(service, sslServer, dispatcher, 22334, true);
+        server = std::make_unique<NetworkTcpServer>(service, dispatcher, 22334, true);
     }
 
     std::shared_ptr<NetworkTcpClient> createClient(NetworkDispatcher& d) {
-        return std::make_shared<NetworkTcpClient>(service, sslClient, d, "localhost", 22334);
+        return std::make_shared<NetworkTcpClient>(service, d, "localhost", 22334);
     }
 
     PrivateKey pkey{};
     DiffieHellmanKey dh{};
     X509Cert cert{pkey};
-    NetworkSslContext sslClient{};
-    NetworkSslContext sslServer{};
     TestNetworkDispatcher dispatcher{};
     asio::io_service service;
     std::unique_ptr<asio::io_service::work> work;

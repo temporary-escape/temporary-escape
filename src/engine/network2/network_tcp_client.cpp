@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkTcpClient::NetworkTcpClient(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher,
-                                   const std::string& host, const uint32_t port) :
-    internal{std::make_shared<Internal>(service, ssl, dispatcher)} {
+NetworkTcpClient::NetworkTcpClient(asio::io_service& service, NetworkDispatcher& dispatcher, const std::string& host,
+                                   const uint32_t port) :
+    internal{std::make_shared<Internal>(service, dispatcher)} {
 
     logger.info("Connecting to host: {} port: {}", host, port);
     internal->connect(host, port, std::chrono::milliseconds{5000});
@@ -19,8 +19,8 @@ NetworkTcpClient::~NetworkTcpClient() {
     close();
 }
 
-NetworkTcpClient::Internal::Internal(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher) :
-    service{service}, dispatcher{dispatcher}, strand{service}, socket{service, ssl.get()} {
+NetworkTcpClient::Internal::Internal(asio::io_service& service, NetworkDispatcher& dispatcher) :
+    service{service}, dispatcher{dispatcher}, strand{service}, socket{service} {
 }
 
 void NetworkTcpClient::close() {
@@ -31,14 +31,9 @@ void NetworkTcpClient::close() {
 }
 
 void NetworkTcpClient::Internal::close() {
-    if (socket.lowest_layer().is_open()) {
+    if (socket.is_open()) {
         logger.info("Closing connection to: {}", address);
-
-        auto self = shared_from_this();
-        self->socket.async_shutdown(self->strand.wrap([self](const std::error_code ec) {
-            (void)ec;
-            self->socket.lowest_layer().close();
-        }));
+        socket.close();
     }
 }
 
@@ -61,12 +56,6 @@ void NetworkTcpClient::Internal::connect(const std::string& host, const uint32_t
         EXCEPTION("Timeout connecting to the address");
     }
     connect.get();
-
-    auto handshake = socket.async_handshake(asio::ssl::stream_base::client, asio::use_future);
-    if (handshake.wait_until(tp) != std::future_status::ready) {
-        EXCEPTION("Timeout TLS handshake");
-    }
-    handshake.get();
 
     address = fmt::format("{}", socket.lowest_layer().remote_endpoint());
     receive();

@@ -19,33 +19,14 @@ NetworkTcpPeer::~NetworkTcpPeer() {
 }
 
 void NetworkTcpPeer::close() {
-    if (!closed && socket.lowest_layer().is_open()) {
+    if (!closed && socket.is_open()) {
         closed = true;
         logger.info("Closing peer endpoint: {}", address);
 
         auto self = shared_from_this();
         server.disconnect(self);
-        self->socket.async_shutdown(self->strand.wrap([self](const std::error_code ec) {
-            (void)ec;
-            self->socket.lowest_layer().close();
-        }));
+        self->socket.close();
     }
-}
-
-void NetworkTcpPeer::handshake() {
-    auto self = shared_from_this();
-
-    socket.async_handshake(asio::ssl::stream_base::server, strand.wrap([self](const std::error_code ec) {
-        if (ec) {
-            logger.error("Failed to perform handshake from: {} error: {}", self->address, ec.message());
-            self->close();
-            self->service.post([self]() { self->dispatcher.onDisconnect(self); });
-        } else {
-            logger.info("Handshake success connection from: {}", self->address);
-            self->service.post([self]() { self->dispatcher.onAcceptSuccess(self); });
-            self->receive();
-        }
-    }));
 }
 
 void NetworkTcpPeer::receive() {

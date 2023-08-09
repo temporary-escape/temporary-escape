@@ -4,9 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkTcpServer::NetworkTcpServer(asio::io_service& service, NetworkSslContext& ssl, NetworkDispatcher& dispatcher,
-                                   const uint32_t port, const bool ipv6) :
-    service{service}, strand{service}, ssl{ssl}, dispatcher{dispatcher}, acceptor{service, endpoint(port, ipv6)} {
+NetworkTcpServer::NetworkTcpServer(asio::io_service& service, NetworkDispatcher& dispatcher, const uint32_t port,
+                                   const bool ipv6) :
+    service{service}, strand{service}, dispatcher{dispatcher}, acceptor{service, endpoint(port, ipv6)} {
 
     logger.info("Starting listening on endpoint: {}", acceptor.local_endpoint());
     accept();
@@ -23,7 +23,7 @@ void NetworkTcpServer::stop() {
         temp = peers;
         peers.clear();
     }
-    
+
     for (const auto& peer : temp) {
         peer->close();
     }
@@ -45,7 +45,7 @@ asio::ip::tcp::endpoint NetworkTcpServer::endpoint(const uint32_t port, const bo
 }
 
 void NetworkTcpServer::accept() {
-    auto socket = std::make_shared<Socket>(service, ssl.get());
+    auto socket = std::make_shared<Socket>(service);
 
     acceptor.async_accept(socket->lowest_layer(), strand.wrap([this, socket](const std::error_code ec) {
         if (ec) {
@@ -53,11 +53,13 @@ void NetworkTcpServer::accept() {
         } else if (acceptor.is_open()) {
             logger.info("Accepting new connection from: {}", socket->lowest_layer().remote_endpoint());
             auto peer = std::make_shared<NetworkTcpPeer>(service, *this, std::move(*socket), dispatcher);
-            peer->handshake();
+            peer->receive();
             {
                 std::lock_guard<std::mutex> lock{mutex};
                 peers.push_back(peer);
             }
+
+            service.post([this, peer]() { dispatcher.onAcceptSuccess(peer); });
             accept();
         }
     }));
