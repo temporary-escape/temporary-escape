@@ -10,8 +10,8 @@ NetworkTcpPeer::NetworkTcpPeer(asio::io_service& service, NetworkTcpServer& serv
                                NetworkDispatcher& dispatcher) :
     service{service}, strand{service}, server{server}, socket{std::move(socket)}, dispatcher{dispatcher} {
 
-    this->socket.lowest_layer().set_option(asio::ip::tcp::no_delay{true});
-    address = fmt::format("{}", this->socket.lowest_layer().remote_endpoint());
+    this->socket.set_option(asio::ip::tcp::no_delay{true});
+    address = fmt::format("{}", this->socket.remote_endpoint());
 }
 
 NetworkTcpPeer::~NetworkTcpPeer() {
@@ -25,7 +25,8 @@ void NetworkTcpPeer::close() {
 
         auto self = shared_from_this();
         server.disconnect(self);
-        self->socket.close();
+        asio::error_code ec;
+        (void)socket.close(ec);
     }
 }
 
@@ -51,7 +52,7 @@ void NetworkTcpPeer::receive() {
 }
 
 bool NetworkTcpPeer::isConnected() const {
-    return socket.lowest_layer().is_open();
+    return socket.is_open();
 }
 
 void NetworkTcpPeer::receiveObject(msgpack::object_handle oh) {

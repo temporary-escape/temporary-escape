@@ -209,25 +209,32 @@ TEST_CASE_METHOD(TcpServerFixture, "Connect many clients to the server", "[tcp_s
 
     startServer();
 
-    std::list<std::future<void>> threads;
+    std::array<std::thread, 16> threads{};
+    std::array<NetworkDispatcher, 16> clientDispatchers{};
+    std::array<std::shared_ptr<NetworkTcpClient>, 16> clients{};
+
     for (auto i = 0; i < 16; i++) {
-        threads.push_back(std::async([=]() {
-            NetworkDispatcher clientDispatcher{};
-            auto client = createClient(clientDispatcher);
-            REQUIRE(client->isConnected());
+        threads[i] = std::thread([this, i, &clientDispatchers, &clients]() {
+            clients[i] = createClient(clientDispatchers[i]);
+            REQUIRE(clients[i]->isConnected());
 
             std::this_thread::sleep_for(std::chrono::milliseconds{500});
 
             MyFooMsg msg;
             msg.msg = fmt::format("Hello World from: {}", i);
-            client->send(msg, 0);
+            clients[i]->send(msg, 0);
 
-            client->close();
-        }));
+            clients[i]->close();
+        });
     }
 
     for (auto& thread : threads) {
-        REQUIRE_NOTHROW(thread.get());
+        try {
+            thread.join();
+        } catch (std::exception& e) {
+            logger.error(e.what());
+            CHECK(false);
+        }
     }
 
     stopAll();

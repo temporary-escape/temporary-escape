@@ -33,7 +33,8 @@ void NetworkTcpClient::close() {
 void NetworkTcpClient::Internal::close() {
     if (socket.is_open()) {
         logger.info("Closing connection to: {}", address);
-        socket.close();
+        asio::error_code ec;
+        (void)socket.close(ec);
     }
 }
 
@@ -51,13 +52,13 @@ void NetworkTcpClient::Internal::connect(const std::string& host, const uint32_t
 
     const auto endpoints = endpointsFuture.get();
 
-    auto connect = asio::async_connect(socket.lowest_layer(), endpoints, asio::use_future);
+    auto connect = asio::async_connect(socket, endpoints, asio::use_future);
     if (connect.wait_until(tp) != std::future_status::ready) {
         EXCEPTION("Timeout connecting to the address");
     }
     connect.get();
 
-    address = fmt::format("{}", socket.lowest_layer().remote_endpoint());
+    address = fmt::format("{}", socket.remote_endpoint());
     receive();
 }
 
@@ -82,7 +83,7 @@ void NetworkTcpClient::Internal::receive() {
 }
 
 bool NetworkTcpClient::Internal::isConnected() const {
-    return socket.lowest_layer().is_open();
+    return socket.is_open();
 }
 
 void NetworkTcpClient::Internal::receiveObject(msgpack::object_handle oh) {
