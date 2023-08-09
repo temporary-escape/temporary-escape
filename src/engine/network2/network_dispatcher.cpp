@@ -12,7 +12,7 @@ void NetworkDispatcher::onObjectReceived(NetworkPeerPtr peer, ObjectHandlePtr oh
 
     auto it = handlers.find(id);
     if (it == handlers.end()) {
-        EXCEPTION("No such handler for message id: {}", id);
+        logger.error("No such handler for message id: {}", id);
     }
 
     try {

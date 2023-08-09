@@ -91,8 +91,17 @@ void NetworkTcpClient::Internal::receiveObject(msgpack::object_handle oh) {
         logger.error("Received malformed message from: {}", address);
     } else {
         auto o = std::make_shared<decltype(oh)>(std::move(oh));
+
+        uint64_t xid;
+        o->get().via.array.ptr[1].convert(xid);
+
         auto self = this->shared_from_this();
-        service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
+
+        if (xid > 0 && xid <= requests.map.size()) {
+            service.post([self, o, xid]() { self->handleRequestSlot(xid - 1, o); });
+        } else {
+            service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
+        }
     }
 }
 
@@ -112,4 +121,43 @@ void NetworkTcpClient::Internal::writeCompressed(const char* data, size_t length
             self->close();
         }
     }));
+}
+
+uint64_t NetworkTcpClient::Internal::getNextRequestSlot() {
+    std::lock_guard<std::mutex> lock{requests.mutex};
+    for (uint64_t i = 0; i < requests.map.size(); i++) {
+        if (!requests.map.at(i).used) {
+            requests.map.at(i).used = true;
+            return i;
+        }
+    }
+    EXCEPTION("Too many active requests at the same time");
+}
+
+void NetworkTcpClient::Internal::resetRequestSlot(const uint64_t value) {
+    if (value < requests.map.size()) {
+        std::lock_guard<std::mutex> lock{requests.mutex};
+        auto& handler = requests.map.at(value);
+        handler.used = false;
+        handler.fn = nullptr;
+    }
+}
+
+void NetworkTcpClient::Internal::handleRequestSlot(const uint64_t value, ObjectHandlePtr oh) {
+    RequestHandler* handler;
+    {
+        std::lock_guard<std::mutex> lock{requests.mutex};
+        handler = &requests.map.at(value);
+        if (!handler->used) {
+            EXCEPTION("Bad response xid: {} slot not used", value);
+        }
+    }
+
+    try {
+        handler->fn(std::move(oh));
+    } catch (std::exception& e) {
+        BACKTRACE(e, "Failed to handle request");
+    }
+
+    resetRequestSlot(value);
 }

@@ -21,4 +21,5 @@ static inline bool waitForCondition(const std::function<bool()>& fn, int wait = 
 
 #define REQUIRE_EVENTUALLY(expr) REQUIRE(waitForCondition([&]() { return (expr); }))
 #define REQUIRE_EVENTUALLY_S(expr, sec) REQUIRE(waitForCondition([&]() { return (expr); }, sec))
+#define REQUIRE_WAIT_FOR(future, sec) REQUIRE(future.wait_for(std::chrono::seconds{sec}) == std::future_status::ready)
 } // namespace Engine

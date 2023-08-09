@@ -78,9 +78,10 @@ void DecompressionAcceptor::decompress() {
                                                       static_cast<int>(raw.size() / 2) // Max size of the destination
     );
 
-    if (decBytes > 0) {
-        writeDecompressed(decBuf[idx], decBytes);
-    }
-
+    const auto* res = decBuf[idx];
     idx = (idx + 1) % 2;
+
+    if (decBytes > 0) {
+        writeDecompressed(res, decBytes);
+    }
 }

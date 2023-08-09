@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <future>
+#include <memory>
 
 namespace Engine {
 template <typename T> class Future {
@@ -29,6 +30,11 @@ public:
 
     template <class Rep, class Period>
     std::future_status waitFor(const std::chrono::duration<Rep, Period>& duration) const {
+        return f.template wait_for<Rep, Period>(duration);
+    }
+
+    template <class Rep, class Period>
+    std::future_status wait_for(const std::chrono::duration<Rep, Period>& duration) const {
         return f.template wait_for<Rep, Period>(duration);
     }
 

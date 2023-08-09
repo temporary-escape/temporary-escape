@@ -156,7 +156,7 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the client to the server
     // Send a message
     MyFooMsg req{};
     req.msg = "Hello World!";
-    client->send(req, 123);
+    client->send(req);
 
     // Wait for the message
     REQUIRE_EVENTUALLY(received.load());
@@ -222,7 +222,7 @@ TEST_CASE_METHOD(TcpServerFixture, "Connect many clients to the server", "[tcp_s
 
             MyFooMsg msg;
             msg.msg = fmt::format("Hello World from: {}", i);
-            clients[i]->send(msg, 0);
+            clients[i]->send(msg);
 
             clients[i]->close();
         });
@@ -330,7 +330,7 @@ TEST_CASE_METHOD(TcpServerFixture, "Test for server throughput", "[tcp_server]")
     REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
 
     const auto start = std::chrono::steady_clock::now();
-    client->send(DataRequest{}, 123);
+    client->send(DataRequest{});
 
     const auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds{30};
     while (timeout > std::chrono::steady_clock::now()) {
@@ -348,4 +348,120 @@ TEST_CASE_METHOD(TcpServerFixture, "Test for server throughput", "[tcp_server]")
 
     const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     logger.info("Throughput: {} MB/s", (static_cast<float>(total) / static_cast<float>(diff)) / 1000.0f);
+}
+
+struct MyFooRequest {
+    int a{0};
+    int b{0};
+
+    MSGPACK_DEFINE(a, b);
+};
+
+MESSAGE_DEFINE(MyFooRequest);
+
+struct MyFooResponse {
+    int res{0};
+
+    MSGPACK_DEFINE(res);
+};
+
+MESSAGE_DEFINE(MyFooResponse);
+
+TEST_CASE_METHOD(TcpServerFixture, "Send a request to the server", "[tcp_server]") {
+    dispatcher.addHandler([&](Request<MyFooRequest> request) {
+        const auto data = request.get();
+        MyFooResponse res;
+        res.res = data.a * data.b;
+        request.respond(res);
+    });
+
+    startServer();
+
+    // Connect to the server
+    NetworkDispatcher clientDispatcher{};
+    auto client = createClient(clientDispatcher);
+    REQUIRE(client->isConnected());
+    REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
+
+    MyFooRequest req{};
+    req.a = 5;
+    req.b = 10;
+    auto promise = client->request<MyFooResponse>(req);
+    auto future = promise->future();
+    REQUIRE_WAIT_FOR(future, 2);
+
+    auto res = future.get();
+    REQUIRE(res.res == 50);
+}
+
+TEST_CASE_METHOD(TcpServerFixture, "Send many requests to the server from many clients", "[tcp_server]") {
+    dispatcher.addHandler([&](Request<MyFooRequest> request) {
+        const auto data = request.get();
+        MyFooResponse res;
+        res.res = data.a * data.b;
+        request.respond(res);
+    });
+
+    startServer();
+
+    std::array<std::thread, 16> threads{};
+    std::array<NetworkDispatcher, 16> clientDispatchers{};
+    std::array<std::shared_ptr<NetworkTcpClient>, 16> clients{};
+
+    for (auto i = 0; i < 16; i++) {
+        threads[i] = std::thread([this, i, &clientDispatchers, &clients]() {
+            clients[i] = createClient(clientDispatchers[i]);
+            REQUIRE(clients[i]->isConnected());
+
+            std::this_thread::sleep_for(std::chrono::milliseconds{500});
+
+            std::array<PromisePtr<MyFooResponse>, 32> promises{};
+            for (auto x = 0; x < promises.size(); x++) {
+                MyFooRequest req{};
+                req.a = i;
+                req.b = x;
+                promises[x] = clients[i]->request<MyFooResponse>(req);
+            }
+
+            for (auto x = 0; x < promises.size(); x++) {
+                auto future = promises[x]->future();
+                REQUIRE_WAIT_FOR(future, 2);
+
+                auto res = future.get();
+                REQUIRE(res.res == i * x);
+            }
+        });
+    }
+
+    for (auto& thread : threads) {
+        try {
+            thread.join();
+        } catch (std::exception& e) {
+            logger.error(e.what());
+            CHECK(false);
+        }
+    }
+}
+
+TEST_CASE_METHOD(TcpServerFixture, "Send a request to the server and receive error", "[tcp_server]") {
+    dispatcher.addHandler([&](Request<MyFooRequest> request) {
+        (void)request.get();
+        request.respondError("This is some error");
+    });
+
+    startServer();
+
+    // Connect to the server
+    NetworkDispatcher clientDispatcher{};
+    auto client = createClient(clientDispatcher);
+    REQUIRE(client->isConnected());
+    REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
+
+    MyFooRequest req{};
+    req.a = 5;
+    req.b = 10;
+    auto promise = client->request<MyFooResponse>(req);
+    auto future = promise->future();
+    REQUIRE_WAIT_FOR(future, 2);
+    REQUIRE_THROWS_WITH(future.get(), "This is some error");
 }

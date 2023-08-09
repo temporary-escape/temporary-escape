@@ -3,6 +3,7 @@
 #include "../stream/msgpack_acceptor.hpp"
 #include "../stream/msgpack_stream.hpp"
 #include "network_dispatcher.hpp"
+#include <mutex>
 
 namespace Engine {
 class ENGINE_API NetworkPeer : public MsgpackAcceptor, public MsgpackStream {
@@ -13,16 +14,12 @@ public:
     virtual const std::string& getAddress() const = 0;
 
     template <typename T> void send(const T& msg, const uint64_t xid) {
-        Detail::packMessage(*this, msg, xid);
-    }
-
-    template <typename T> void send(const T& msg) {
-        const auto xid = nextId.fetch_add(1ULL);
+        std::lock_guard<std::mutex> lock{sendMutex};
         Detail::packMessage(*this, msg, xid);
     }
 
 private:
-    std::atomic_uint64_t nextId{0};
+    std::mutex sendMutex;
 };
 
 template <typename T> inline void BaseRequest::respond(const T& msg) {
