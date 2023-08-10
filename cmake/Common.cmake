@@ -15,7 +15,7 @@ target_compile_definitions(${PROJECT_NAME}Common
 if (UNIX)
     target_compile_options(${PROJECT_NAME}Common INTERFACE -ftemplate-backtrace-limit=0)
 elseif (MSVC)
-    target_compile_options(${PROJECT_NAME}Common INTERFACE /wd4251 /bigobj)
+    target_compile_options(${PROJECT_NAME}Common INTERFACE /EHsc /wd4251 /bigobj)
     target_link_libraries(${PROJECT_NAME}Common INTERFACE rpcrt4.lib)
     target_compile_definitions(${PROJECT_NAME}Common INTERFACE _WIN32_WINNT=0x0501)
 endif ()
