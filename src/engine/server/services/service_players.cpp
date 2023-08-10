@@ -48,3 +48,32 @@ PlayerData ServicePlayers::login(const uint64_t secret, const std::string& name)
 
     return result;
 }
+
+PlayerLocationData ServicePlayers::getSpawnLocation(const std::string& id) {
+    const auto found = db.find<PlayerData>(id);
+    if (!found) {
+        EXCEPTION("No such player id: {}", id);
+    }
+
+    // Does the player already have a spawn location?
+    auto location = db.find<PlayerLocationData>(id);
+    if (location) {
+        return *location;
+    }
+
+    // Find the available spawn locations
+    // TODO: Choose the right location for the player
+    const auto startingLocations = db.seekAll<StartingLocationData>("", 1);
+    if (startingLocations.empty()) {
+        EXCEPTION("No starting locations found for player id: {}", id);
+    }
+
+    location = PlayerLocationData{};
+    location->galaxyId = startingLocations.front().galaxyId;
+    location->systemId = startingLocations.front().systemId;
+    location->sectorId = startingLocations.front().sectorId;
+
+    db.put<PlayerLocationData>(id, *location);
+
+    return *location;
+}

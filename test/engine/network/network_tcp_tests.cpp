@@ -84,6 +84,8 @@ public:
 
 TEST_CASE_METHOD(TcpServerFixture, "Start and do nothing TCP server", "[tcp_server]") {
     startServer();
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Try to connect to no TCP server", "[tcp_server]") {
@@ -94,6 +96,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Try to connect to no TCP server", "[tcp_serv
 #else
     REQUIRE_THROWS_WITH(createClient(clientDispatcher), "Connection refused");
 #endif
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client", "[tcp_server]") {
@@ -105,6 +109,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client", "[tcp_serve
     REQUIRE(client->isConnected());
     REQUIRE(client->getAddress() == "[::1]:22334");
     REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client many times", "[tcp_server]") {
@@ -125,6 +131,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client many times", 
         REQUIRE(!client->isConnected());
         REQUIRE_EVENTUALLY(dispatcher.getPeers().empty());
     }
+
+    stopAll();
 }
 
 struct MyFooMsg {
@@ -164,6 +172,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the client to the server
     client->close();
 
     REQUIRE(myFooMsg.msg == req.msg);
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Send a message from the server to the client", "[tcp_server]") {
@@ -196,6 +206,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a message from the server to the client
     client->close();
 
     REQUIRE(myFooMsg.msg == req.msg);
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Connect many clients to the server", "[tcp_server]") {
@@ -350,6 +362,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Test for server throughput", "[tcp_server]")
 
     const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     logger.info("Throughput: {} MB/s", (static_cast<float>(total) / static_cast<float>(diff)) / 1000.0f);
+
+    stopAll();
 }
 
 struct MyFooRequest {
@@ -394,6 +408,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a request to the server", "[tcp_server]
 
     auto res = future.get();
     REQUIRE(res.res == 50);
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Send many requests to the server from many clients", "[tcp_server]") {
@@ -443,6 +459,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Send many requests to the server from many c
             CHECK(false);
         }
     }
+
+    stopAll();
 }
 
 TEST_CASE_METHOD(TcpServerFixture, "Send a request to the server and receive error", "[tcp_server]") {
@@ -466,4 +484,6 @@ TEST_CASE_METHOD(TcpServerFixture, "Send a request to the server and receive err
     auto future = promise->future();
     REQUIRE_WAIT_FOR(future, 2);
     REQUIRE_THROWS_WITH(future.get(), "This is some error");
+
+    stopAll();
 }

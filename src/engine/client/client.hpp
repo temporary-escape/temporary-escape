@@ -53,11 +53,7 @@ public:
 private:
     void doLogin();
     void validateManifests(const std::vector<ModManifest>& serverManifests);
-    void createScene(SectorData sector);
-    /*void fetchModInfo(std::shared_ptr<Promise<void>> promise);
-    void fetchLogin(std::shared_ptr<Promise<void>> promise);
-    void fetchSpawnRequest(std::shared_ptr<Promise<void>> promise);
-    void fetchSystemInfo();*/
+    void createScene(const SectorData& sector);
 
 private:
     const Config& config;

@@ -13,7 +13,7 @@ public:
     virtual ~PlayerSessions() = default;
 
     // Session functions
-    void createSession(const NetworkPeerPtr& peer, const std::string& playerId);
+    SessionPtr createSession(const NetworkPeerPtr& peer, const std::string& playerId);
     void removeSession(const NetworkPeerPtr& peer);
     SessionPtr getSession(const std::string& playerId);
     SessionPtr getSession(const NetworkPeerPtr& peer);

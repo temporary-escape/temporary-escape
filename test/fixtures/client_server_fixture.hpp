@@ -11,8 +11,8 @@ public:
 
     ~ClientServerFixture();
 
+    void startServer();
     void clientConnect();
-
     void clientDisconnect();
 
     Config config;

@@ -8,11 +8,12 @@ static auto logger = createLogger(LOG_FILENAME);
 PlayerSessions::PlayerSessions(const Config& config, Database& db) : config{config}, db{db} {
 }
 
-void PlayerSessions::createSession(const NetworkPeerPtr& peer, const std::string& playerId) {
+SessionPtr PlayerSessions::createSession(const NetworkPeerPtr& peer, const std::string& playerId) {
     logger.info("Creating session peer: {} player: {}", peer->getAddress(), playerId);
     std::unique_lock<std::shared_mutex> lock{mutex};
     auto session = std::make_shared<Session>(playerId, peer);
     map.insert(std::make_pair(peer.get(), session));
+    return session;
 }
 
 SessionPtr PlayerSessions::getSession(const std::string& playerId) {

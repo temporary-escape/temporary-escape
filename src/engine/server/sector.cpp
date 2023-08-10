@@ -85,7 +85,7 @@ void Sector::update() {
             auto& networkController = scene->getController<ControllerNetwork>();
             for (const auto& player : players) {
                 if (const auto stream = player->getStream(); stream) {
-                    networkController.sendUpdate(*stream);
+                    // networkController.sendUpdate(*stream);
                 }
             }
             networkController.resetUpdates();
@@ -106,27 +106,29 @@ void Sector::addPlayer(const SessionPtr& session) {
         players.push_back(session);
 
         auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
+        auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
 
         // Send a message to the player that their location has changed
         MessagePlayerLocationEvent msg{};
         msg.location.galaxyId = getGalaxyId();
         msg.location.systemId = getSystemId();
         msg.location.sectorId = getSectorId();
+        msg.sector = sectorData;
         session->send(msg);
 
-        // Send an event that a new player has entered the sector
-        // EventPlayer event{};
-        // event.playerId = session->getPlayerId();
-        // TODO:
-        // eventBus.enqueue("sector_player_added", event);
-
         logger.info("Player: '{}' added to sector: '{}'", session->getPlayerId(), sectorId);
+
+        // Publish an event
+        EventData event{};
+        event["player_id"] = session->getPlayerId();
+        event["sector_id"] = sectorData.id;
+        eventBus.enqueue("sector_player_added", event);
 
         // Send all entities to the player
         worker.post([this, session]() {
             const auto peer = session->getStream();
             if (peer) {
-                scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
+                // scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
             }
         });
     });

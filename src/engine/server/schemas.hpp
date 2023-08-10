@@ -88,7 +88,7 @@ struct SectorData {
 };
 
 SCHEMA_DEFINE(SectorData);
-SCHEMA_INDEXES(SectorData, name);
+SCHEMA_INDEXES(SectorData, name, id);
 
 struct StartingLocationData {
     std::string galaxyId;

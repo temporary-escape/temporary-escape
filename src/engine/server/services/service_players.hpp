@@ -12,6 +12,7 @@ public:
 
     std::optional<std::string> secretToId(const uint64_t secret);
     PlayerData login(uint64_t secret, const std::string& name);
+    PlayerLocationData getSpawnLocation(const std::string& id);
 
 private:
     Database& db;

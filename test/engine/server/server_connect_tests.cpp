@@ -10,6 +10,9 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", "[server]") {
+    // Start the server
+    startServer();
+
     // There should be no player data present
     auto players = db->seekAll<PlayerData>("");
     REQUIRE(players.empty());
@@ -46,7 +49,7 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
     clientDisconnect();
 
     // There should be no player logged in
-    REQUIRE(waitForCondition([&]() { return server->getPlayerSessions().getAllSessions().empty(); }));
+    REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().empty());
 
     // There should be no one in the lobby
     peers = server->getPeerLobby().getAllPeers();
@@ -57,6 +60,9 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
 }
 
 TEST_CASE_METHOD(ClientServerFixture, "Force disconnect client from the server", "[server]") {
+    // Start the server
+    startServer();
+
     // Connect to the server
     clientConnect();
 
@@ -65,13 +71,16 @@ TEST_CASE_METHOD(ClientServerFixture, "Force disconnect client from the server",
     server->disconnectPlayer(playerId);
 
     // There should be no player logged in
-    REQUIRE(waitForCondition([&]() { return server->getPlayerSessions().getAllSessions().empty(); }));
+    REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().empty());
 
     // Client should now be disconnected
-    REQUIRE(waitForCondition([&]() { return !client->isConnected(); }));
+    REQUIRE_EVENTUALLY(!client->isConnected());
 }
 
 TEST_CASE_METHOD(ClientServerFixture, "Force disconnect client from the client", "[server]") {
+    // Start the server
+    startServer();
+
     // Connect to the server
     clientConnect();
 
@@ -79,8 +88,19 @@ TEST_CASE_METHOD(ClientServerFixture, "Force disconnect client from the client",
     client->disconnect();
 
     // There should be no player logged in
-    REQUIRE(waitForCondition([&]() { return server->getPlayerSessions().getAllSessions().empty(); }));
+    REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().empty());
 
     // Client should now be disconnected
-    REQUIRE(waitForCondition([&]() { return !client->isConnected(); }));
+    REQUIRE_EVENTUALLY(!client->isConnected());
+}
+
+TEST_CASE_METHOD(ClientServerFixture, "Connect and get client scene", "[server]") {
+    // Start the server
+    startServer();
+
+    // Connect to the server
+    clientConnect();
+
+    // Client should construct scene eventually
+    REQUIRE_EVENTUALLY(client->getScene() != nullptr);
 }

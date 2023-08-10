@@ -98,8 +98,9 @@ MESSAGE_DEFINE(MessagePlayerLocationResponse);
 // --------------------------------------------------------------------------------------------------------------------
 struct MessagePlayerLocationEvent {
     PlayerLocationData location;
+    SectorData sector;
 
-    MSGPACK_DEFINE(location);
+    MSGPACK_DEFINE(location, sector);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationEvent);

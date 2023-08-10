@@ -79,7 +79,7 @@ private:
     // Sector functions
     void movePlayerToSector(const std::string& playerId, const std::string& sectorId);
     SessionPtr getPlayerSession(const std::string& playerId);
-    SectorPtr startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId);
+    SectorPtr startSector(const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
 
     const Config& config;

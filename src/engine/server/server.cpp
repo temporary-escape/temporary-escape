@@ -197,9 +197,10 @@ void Server::onDisconnect(const NetworkPeerPtr& peer) {
 void Server::movePlayerToSector(const std::string& playerId, const std::string& sectorId) {
     auto session = getPlayerSession(playerId);
     if (!session) {
-        EXCEPTION("Can not move player: '{}' to sector: '{}', error: player is not logged in", playerId, sectorId);
+        EXCEPTION("Can not move player id: '{}' to sector: '{}', player is not logged in", playerId, sectorId);
     }
 
+    startSector(sectorId);
     addPlayerToSector(session, sectorId);
 }
 
@@ -207,31 +208,31 @@ SessionPtr Server::getPlayerSession(const std::string& playerId) {
     return playerSessions.getSession(playerId);
 }
 
-SectorPtr Server::startSector(const std::string& galaxyId, const std::string& systemId, const std::string& sectorId) {
-    logger.info("Starting sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
+SectorPtr Server::startSector(const std::string& sectorId) {
+    logger.info("Starting sector: '{}'", sectorId);
 
-    auto sectorOpt = db.find<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
-    if (!sectorOpt) {
-        EXCEPTION_NESTED("Can not start sector: '{}/{}/{}' not found", galaxyId, systemId, sectorId);
+    auto sectorOpt = db.getByIndex<&SectorData::id>(sectorId);
+    if (sectorOpt.empty()) {
+        EXCEPTION("Can not start sector: '{}' not found", sectorId);
     }
-    auto& sector = sectorOpt.value();
+    auto& sector = sectorOpt.front();
 
     std::unique_lock<std::shared_mutex> lock{sectors.mutex};
 
     auto it = sectors.map.find(sector.id);
     if (it != sectors.map.end()) {
-        logger.info("Starting sector: '{}/{}/{}' skipped, already started", galaxyId, systemId, sectorId);
+        logger.info("Starting sector: '{}' skipped, already started", sectorId);
         return it->second;
     }
 
     try {
-        logger.info("Creating sector: '{}/{}/{}'", galaxyId, systemId, sectorId);
+        logger.info("Creating sector: '{}'", sectorId);
         auto sectorPtr =
             std::make_shared<Sector>(config, db, assetsManager, *eventBus, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, sectorPtr));
 
         // Load the sector in a separate thread
-        loadQueue.post([this, sectorPtr]() {
+        loadQueue.post([sectorPtr]() {
             try {
                 sectorPtr->load();
             } catch (std::exception& e) {
@@ -308,33 +309,25 @@ void Server::handle(Request<MessageLoginRequest> req) {
 
     logger.info("Logged in player: {} name: '{}'", player.id, data.name);
 
-    playerSessions.createSession(req.peer, player.id);
+    auto session = playerSessions.createSession(req.peer, player.id);
 
     MessageLoginResponse res{};
     res.playerId = player.id;
     req.respond(res);
 
     // Publish an event
-    /*EventData event{};
+    EventData event{};
     event["player_id"] = player.id;
     event["player_name"] = player.name;
-    eventBus->enqueue("player_logged_in", event);*/
+    eventBus->enqueue("player_logged_in", event);
+
+    // Find the spawn location for the player
+    const auto location = servicePlayers.getSpawnLocation(player.id);
+
+    // Start the sector and add the player to it
+    startSector(location.sectorId);
+    addPlayerToSector(session, location.sectorId);
 }
-
-/*void Server::handle(const PeerPtr& peer, MessageSpawnRequest req, MessageSpawnResponse& res) {
-    (void)req;
-
-    auto session = playerSessions.getSession(peer);
-    try {
-        const auto location = playerSessions.findStartingLocation(session->getPlayerId());
-        res.location = location;
-
-        startSector(location.galaxyId, location.systemId, location.sectorId);
-        addPlayerToSector(session, location.sectorId);
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to find starting location for player: '{}'", session->getPlayerId());
-    }
-}*/
 
 void Server::handle(Request<MessageModManifestsRequest> req) {
     logger.info("Peer {} has requested mod manifest", req.peer->getAddress());
@@ -383,31 +376,10 @@ void Server::bind(Lua& lua) {
      */
     auto cls = m.new_usertype<Server>("Server");
     /**
-     * @function Server:set_generator
-     * Sets the function to be called when generating the universe.
-     * @param fn function A callback function that accepts a seed as a number
-     */
-    /*cls["set_generator"] = [](Server& self, sol::function fn) {
-        self.setGenerator([fn](uint64_t seed) {
-            sol::protected_function_result result = fn(seed);
-            if (!result.valid()) {
-                sol::error err = result;
-                EXCEPTION("{}", err.what());
-            }
-        });
-    };*/
-    /**
-     * @function Server:start_sector
-     * Starts a sector. The function won't do anything if the server is already started.
-     * @param galaxy_id string The galaxy ID
-     * @param system_id string The system ID
-     * @param sector_id string The sector ID
-     */
-    cls["start_sector"] = &Server::startSector;
-    /**
      * @function Server:move_player_to_sector
-     * Starts a sector. The function won't do anything if the server is already started.
-     * @param server engine.Server The other server
+     * Moves a player to sector and starts the sector if it is not running
+     * @param player_id The ID of the player to move
+     * @praam sector_id The ID of the sector
      */
     cls["move_player_to_sector"] = &Server::movePlayerToSector;
 }

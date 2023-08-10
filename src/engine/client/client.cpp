@@ -121,8 +121,9 @@ void Client::update() {
     sync.poll();
 }
 
-void Client::createScene(SectorData sector) {
-    logger.info("Sector info retrieved, creating basic entities");
+void Client::createScene(const SectorData& sector) {
+    scene.reset();
+    scene = std::make_unique<Scene>(config, voxelShapeCache);
 
     const auto starTexture = assetsManager.getTextures().find("space_sun_flare");
     const auto starTextureLow = assetsManager.getTextures().find("star_spectrum_low");
@@ -180,26 +181,13 @@ void Client::createScene(SectorData sector) {
 void Client::handle(Request<MessagePlayerLocationEvent> req) {
     auto data = req.get();
 
-    /*logger.info("Player location has changed");
+    logger.info("Player location has changed");
     playerLocation = data.location;
 
-    MessageFetchSectorRequest req{};
-    req.galaxyId = data.location.galaxyId;
-    req.systemId = data.location.systemId;
-    req.sectorId = data.location.sectorId;
-
-    sync.postSafe([this]() {
-        logger.info("Sector has changed, creating new scene");
-        scene.reset();
-        scene = std::make_unique<Scene>(config, voxelShapeCache);
+    sync.postSafe([this, data]() {
+        logger.info("Sector has changed, creating a new scene");
+        createScene(data.sector);
     });
-
-    send(req, [this](MessageFetchSectorResponse res) {
-        if (!res.error.empty()) {
-            EXCEPTION("Unable to fetch sector at player's location");
-        }
-        createScene(std::move(res.sector));
-    });*/
 }
 
 /*void Client::handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message) {

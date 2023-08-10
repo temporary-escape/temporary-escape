@@ -7,6 +7,15 @@ static auto logger = createLogger(LOG_FILENAME);
 ClientServerFixture::ClientServerFixture() {
     config.assetsPath = Path{ROOT_DIR} / "assets";
 
+    playerLocalProfile.name = "Test Player";
+    playerLocalProfile.secret = 112233445566ULL;
+}
+
+ClientServerFixture::~ClientServerFixture() {
+    clientDisconnect();
+}
+
+void ClientServerFixture::startServer() {
     assetsManager = std::make_unique<AssetsManager>(config);
     for (auto& loadFn : assetsManager->getLoadQueue()) {
         loadFn(nullptr, nullptr);
@@ -19,13 +28,6 @@ ClientServerFixture::ClientServerFixture() {
     db = std::make_unique<DatabaseRocksDB>(tmpDir.value(), DatabaseRocksDB::Options{});
 
     server = std::make_unique<Server>(config, *assetsManager, *db);
-
-    playerLocalProfile.name = "Test Player";
-    playerLocalProfile.secret = 112233445566ULL;
-}
-
-ClientServerFixture::~ClientServerFixture() {
-    clientDisconnect();
 }
 
 void ClientServerFixture::clientConnect() {
