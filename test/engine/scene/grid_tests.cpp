@@ -1,4 +1,4 @@
-#include "../common.hpp"
+#include "../../common.hpp"
 #include <engine/scene/grid.hpp>
 
 #define TAG "[Grid]"

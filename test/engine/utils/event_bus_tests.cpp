@@ -1,4 +1,4 @@
-#include "../common.hpp"
+#include "../../common.hpp"
 #include <engine/utils/event_bus.hpp>
 
 #define TEST_TAG "[event_bus_tests]"

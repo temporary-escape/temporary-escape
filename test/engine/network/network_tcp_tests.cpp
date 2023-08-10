@@ -1,4 +1,4 @@
-#include "../common.hpp"
+#include "../../common.hpp"
 #include <engine/network/network_tcp_client.hpp>
 #include <engine/network/network_tcp_server.hpp>
 
@@ -223,6 +223,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Connect many clients to the server", "[tcp_s
             MyFooMsg msg;
             msg.msg = fmt::format("Hello World from: {}", i);
             clients[i]->send(msg);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds{500});
 
             clients[i]->close();
         });

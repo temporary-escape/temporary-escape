@@ -1,4 +1,4 @@
-#include "../common.hpp"
+#include "../../common.hpp"
 #include <engine/scene/scene.hpp>
 
 #define TEST_TAG "[entity_tests]"
