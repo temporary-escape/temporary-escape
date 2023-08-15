@@ -101,6 +101,15 @@ void ViewGalaxy::eventMousePressed(const Vector2i& pos, const MouseButton button
 void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     if (!loading) {
         scene->eventMouseReleased(pos, button);
+
+        /*const auto& camera = *scene->getPrimaryCamera();
+        if (const auto selected = scene->getSelectedEntity();
+            selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
+            const auto it = entities.icons.find(selected->getHandle());
+            if (it != entities.icons.end()) {
+                logger.info("Selected system: {}", );
+            }
+        }*/
     }
 }
 
@@ -246,15 +255,6 @@ void ViewGalaxy::load() {
         }
     }
 
-    { // Cursor
-        entities.cursor = scene->createEntity();
-        entities.cursor.addComponent<ComponentTransform>();
-        auto& componentIcon = entities.cursor.addComponent<ComponentIcon>(images.iconSelect);
-        componentIcon.setSize(systemStarSelectable);
-        componentIcon.setColor(Theme::primary);
-        entities.cursor.setDisabled(true);
-    }
-
     { // Current Position
         const auto currentSystem = cache.galaxy.systems.at(cache.location.systemId);
         entities.currentPos = scene->createEntity();
@@ -264,24 +264,24 @@ void ViewGalaxy::load() {
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
         icon.setColor(Theme::primary);
+        icon.setSelectable(false);
     }
 
-    /*{ // User Input
-        logger.info("Creating system user input callbacks");
-        for (const auto& [systemId, system] : galaxy.systems) {
+    { // Icons for user input
+        for (const auto& [systemId, system] : cache.galaxy.systems) {
             auto entity = scene->createEntity();
-            entity.addComponent<ComponentTransform>().translate({system.pos.x, 0.0f, system.pos.y});
-            auto& selectable = entity.addComponent<Component2DSelectable>(systemStarSize);
-            selectable.setOnHoverCallback([this, id = systemId](const bool enter) {
-                entities.cursor.setDisabled(!enter);
-                auto& found = galaxy.systems.at(id);
-                entities.cursor.getComponent<ComponentTransform>().move({found.pos.x, 1.0f, found.pos.y});
-            });
-            selectable.setOnSelectCallback([this, id = systemId](const MouseButton button) {
-                logger.debug("setOnSelectCallback systemId: {}", id); //
-            });
+
+            auto& transform = entity.addComponent<ComponentTransform>();
+            transform.translate({system.pos.x, 0.0f, system.pos.y});
+            transform.setStatic(true);
+            auto& icon = entity.addComponent<ComponentIcon>(images.iconSelect);
+            icon.setSelectable(true);
+            icon.setSize(systemStarSelectable);
+            icon.setColor(Color4{1.0f, 1.0f, 1.0f, 0.0f});
+
+            entities.icons.emplace(entity.getHandle(), systemId);
         }
-    }*/
+    }
 }
 
 void ViewGalaxy::finalize() {
@@ -315,9 +315,9 @@ void ViewGalaxy::clearEntities() {
     entities.camera.reset();
     entities.regions.reset();
     entities.systems.reset();
-    entities.cursor.reset();
     entities.voronoi.reset();
     entities.names.reset();
+    entities.icons.clear();
 }
 
 void ViewGalaxy::onEnter() {

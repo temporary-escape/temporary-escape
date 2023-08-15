@@ -55,7 +55,7 @@ void ControllerIconSelectable::recalculate(VulkanRenderer& vulkan) {
 
     const auto& entities = reg.view<ComponentTransform, ComponentIcon>(entt::exclude<TagDisabled>).each();
     for (const auto&& [handle, transform, icon] : entities) {
-        if (transform.isStatic() || !icon.getImage() || icon.getColor().a == 0.0f) {
+        if (transform.isStatic() || !icon.getImage() || !icon.isSelectable()) {
             continue;
         }
 
@@ -100,10 +100,11 @@ void ControllerIconSelectable::recalculate(VulkanRenderer& vulkan) {
                              glm::distance(Vector2{selected->position}, mousePos)) {
             auto test = entt::entity{results[i].id};
             if (reg.valid(test)) {
-                auto icon = reg.try_get<ComponentIcon>(test);
+                /*auto icon = reg.try_get<ComponentIcon>(test);
                 if (icon->getColor().a != 0.0f) {
                     selected = &results[i];
-                }
+                }*/
+                selected = &results[i];
             }
         }
     }
@@ -187,7 +188,7 @@ void ControllerIconSelectable::onConstruct(entt::registry& r, entt::entity handl
         return;
     }
     const auto& icon = reg.get<ComponentIcon>(handle);
-    if (!icon.getImage()) {
+    if (!icon.getImage() || !icon.isSelectable()) {
         return;
     }
     addOrUpdate(handle, *transform, icon);
@@ -199,7 +200,7 @@ void ControllerIconSelectable::onUpdate(entt::registry& r, entt::entity handle) 
         return;
     }
     const auto& icon = reg.get<ComponentIcon>(handle);
-    if (!icon.getImage()) {
+    if (!icon.getImage() || !icon.isSelectable()) {
         return;
     }
     addOrUpdate(handle, *transform, icon);

@@ -64,15 +64,16 @@ private:
     Gui& gui;
     FontFamily& font;
     std::unique_ptr<Scene> scene;
+    std::optional<Entity> selectedEntity;
 
     struct {
         Entity camera;
         Entity regions;
         Entity systems;
-        Entity cursor;
         Entity voronoi;
         Entity names;
         Entity currentPos;
+        std::unordered_map<Entity::Handle, std::string> icons;
     } entities;
 
     struct {

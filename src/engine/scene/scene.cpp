@@ -43,13 +43,13 @@ Scene::~Scene() = default;
 
 void Scene::feedbackSelectedEntity(const uint32_t id) {
     if (reg.valid(entt::entity{id})) {
-        selectedEntity = entt::entity{id};
+        selectedEntityOpaque = Entity{reg, entt::entity{id}};
     } else {
-        selectedEntity = std::nullopt;
+        selectedEntityOpaque = std::nullopt;
     }
 }
 
-std::optional<Entity> Scene::getSelectedEntity() {
+/*std::optional<Entity> Scene::getSelectedEntity() {
     const auto& iconsSelectable = getController<ControllerIconSelectable>();
 
     if (const auto selected = iconsSelectable.getSelected(); selected.has_value()) {
@@ -59,7 +59,7 @@ std::optional<Entity> Scene::getSelectedEntity() {
         return Entity{reg, *selectedEntity};
     }
     return std::nullopt;
-}
+}*/
 
 Entity Scene::createEntity() {
     return fromHandle(reg.create());
@@ -78,11 +78,51 @@ void Scene::update(const float delta) {
     for (auto& [_, controller] : controllers) {
         controller->update(delta);
     }
+
+    if (selectedEntityOpaque) {
+        selectedEntity = selectedEntityOpaque;
+    } else if (selectedEntityIcon) {
+        selectedEntity = selectedEntityIcon;
+    } else {
+        selectedEntity = std::nullopt;
+    }
+
+    if (selectedEntityLast != selectedEntity) {
+        if (selectedEntityLast) {
+            auto* icon = selectedEntityLast->tryGetComponent<ComponentIcon>();
+            if (icon) {
+                auto color = icon->getColor();
+                color.a = 0.0f;
+                icon->setColor(color);
+            }
+        }
+
+        selectedEntityLast = selectedEntity;
+
+        if (selectedEntityLast) {
+            auto* icon = selectedEntityLast->tryGetComponent<ComponentIcon>();
+            if (icon) {
+                auto color = icon->getColor();
+                color.a = 1.0f;
+                icon->setColor(color);
+            }
+        }
+    }
 }
 
 void Scene::recalculate(VulkanRenderer& vulkan) {
     for (auto& [_, controller] : controllers) {
         controller->recalculate(vulkan);
+    }
+
+    if (hasController<ControllerIconSelectable>()) {
+        const auto& iconsSelectable = getController<ControllerIconSelectable>();
+        const auto selected = iconsSelectable.getSelected();
+        if (selected) {
+            selectedEntityIcon = Entity{reg, *selected};
+        } else {
+            selectedEntityIcon = std::nullopt;
+        }
     }
 }
 
@@ -96,6 +136,22 @@ ComponentCamera* Scene::getPrimaryCamera() const {
     }
 
     return nullptr;
+}
+
+bool Scene::checkSelectedEntityClick() const {
+    const auto camera = getPrimaryCamera();
+    if (!camera) {
+        return false;
+    }
+
+    if (const auto selected = getSelectedEntity(); selected.has_value() && !camera->isPanning()) {
+        /*const auto it = entities.icons.find(selected->getHandle());
+        if (it != entities.icons.end()) {
+            logger.info("Selected system: {}", );
+        }*/
+    }
+
+    return false;
 }
 
 const ComponentSkybox* Scene::getSkybox() {

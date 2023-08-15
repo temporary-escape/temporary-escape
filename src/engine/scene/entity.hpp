@@ -47,6 +47,8 @@ template <typename T> static inline constexpr uint64_t componentMaskId() {
 
 class ENGINE_API Entity {
 public:
+    using Handle = entt::entity;
+
     Entity() = default;
     explicit Entity(entt::registry& reg, entt::entity handle) : reg{&reg}, handle{handle} {
     }

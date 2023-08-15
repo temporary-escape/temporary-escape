@@ -18,19 +18,16 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
     REQUIRE(players.empty());
 
     // There should be no player logged in
-    auto sessions = server->getPlayerSessions().getAllSessions();
-    REQUIRE(sessions.empty());
+    REQUIRE(server->getPlayerSessions().getAllSessions().empty());
 
     // Connect to the server
     clientConnect();
 
-    // Server should contain exactly one session
-    sessions = server->getPlayerSessions().getAllSessions();
-    REQUIRE(sessions.size() == 1);
-
     // There should be no one in the lobby (client is fully connected)
-    auto peers = server->getPeerLobby().getAllPeers();
-    REQUIRE(peers.empty());
+    REQUIRE_EVENTUALLY(server->getPeerLobby().getAllPeers().empty());
+
+    // Server should contain exactly one session
+    REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().size() == 1);
 
     // The player data should be stored in the database
     players = db->seekAll<PlayerData>("");
@@ -52,8 +49,7 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
     REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().empty());
 
     // There should be no one in the lobby
-    peers = server->getPeerLobby().getAllPeers();
-    REQUIRE(peers.empty());
+    REQUIRE(server->getPeerLobby().getAllPeers().empty());
 
     // Player should not be logged in
     REQUIRE(!server->getPlayerSessions().isLoggedIn(playerId));

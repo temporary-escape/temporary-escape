@@ -37,7 +37,9 @@ public:
     }
 
     void feedbackSelectedEntity(uint32_t id);
-    std::optional<Entity> getSelectedEntity();
+    const std::optional<Entity>& getSelectedEntity() const {
+        return selectedEntity;
+    }
 
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
@@ -78,7 +80,16 @@ public:
         return *dynamic_cast<T*>(it->second.get());
     }
 
+    template <typename T> bool hasController() const {
+        const auto& type = std::type_index{typeid(T)};
+        if (const auto it = controllers.find(type); it != controllers.end()) {
+            return true;
+        }
+        return false;
+    }
+
     bool contactTestSphere(const Vector3& origin, float radius) const;
+    bool checkSelectedEntityClick() const;
 
     ComponentCamera* getPrimaryCamera() const;
     const ComponentSkybox* getSkybox();
@@ -93,7 +104,10 @@ private:
     std::vector<UserInput*> userInputs;
 
     Entity primaryCamera;
-    std::optional<entt::entity> selectedEntity;
+    std::optional<Entity> selectedEntity{std::nullopt};
+    std::optional<Entity> selectedEntityOpaque{std::nullopt};
+    std::optional<Entity> selectedEntityIcon{std::nullopt};
+    std::optional<Entity> selectedEntityLast{std::nullopt};
     Lua* lua{nullptr};
 };
 } // namespace Engine

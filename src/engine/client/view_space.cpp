@@ -17,7 +17,7 @@ ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan,
 }
 
 void ViewSpace::update(const float deltaTime) {
-    auto scene = client.getScene();
+    /*auto scene = client.getScene();
     if (const auto selected = scene->getSelectedEntity(); selected != selectedEntity) {
         if (selectedEntity) {
             auto* icon = selectedEntity->tryGetComponent<ComponentIcon>();
@@ -43,7 +43,7 @@ void ViewSpace::update(const float deltaTime) {
         } else {
             logger.info("Selected entity: null");
         }
-    }
+    }*/
 }
 
 void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {

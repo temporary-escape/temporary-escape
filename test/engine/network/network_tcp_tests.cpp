@@ -33,7 +33,13 @@ public:
     TcpServerFixture() {
         work = std::make_unique<asio::io_service::work>(service);
         for (auto i = 0; i < 4; i++) {
-            threads.emplace_back([this]() { service.run(); });
+            threads.emplace_back([this]() {
+                try {
+                    service.run();
+                } catch (std::exception& e) {
+                    BACKTRACE(e, "Exception caught in TcpServerFixture thread");
+                }
+            });
         }
     }
 
@@ -51,6 +57,7 @@ public:
         if (work) {
             logger.info("Stopping io_service");
             work.reset();
+            service.stop();
         }
 
         if (!threads.empty()) {
