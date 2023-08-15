@@ -20,6 +20,6 @@ private:
     const Config& config;
 
     std::shared_mutex mutex;
-    std::unordered_set<NetworkPeerPtr> map;
+    std::vector<NetworkPeerPtr> peers;
 };
 } // namespace Engine
