@@ -95,10 +95,6 @@ void Nuklear::end() {
     nk_clear(ctx.get());
 }
 
-void Nuklear::draw(NuklearWindow& window) {
-    window.draw(*this, getViewport());
-}
-
 void Engine::Nuklear::drawDragAndDrop() {
     const auto pad = Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y} * 2.0f;
     const auto size = Vector2{config.gui.dragAndDropSize} + pad;

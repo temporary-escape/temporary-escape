@@ -38,7 +38,6 @@ private:
     const Config& config;
     AssetsManager& assetsManager;
     FontFamily& font;
-    ViewBuild::Gui guiBuild;
     ViewBuild view;
 };
 } // namespace Engine

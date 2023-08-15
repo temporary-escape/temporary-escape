@@ -11,21 +11,18 @@ static auto logger = createLogger(LOG_FILENAME);
 static const Vector2 systemStarSelectable{48.0f, 48.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
-ViewGalaxy::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"Galaxy Map"} {
-
-    modalLoading.setEnabled(false);
-}
-
 ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font) :
+                       VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font) :
     parent{parent},
     config{config},
     vulkan{vulkan},
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     client{client},
-    gui{gui},
+    guiModalLoading{"Galaxy Map"},
     font{font} {
+
+    guiModalLoading.setEnabled(false);
 
     textures.systemStar = assetsManager.getTextures().find("star_flare");
     images.iconSelect = assetsManager.getImages().find("icon_target");
@@ -43,14 +40,14 @@ ViewGalaxy::~ViewGalaxy() {
 }
 
 void ViewGalaxy::update(const float deltaTime) {
-    gui.modalLoading.setProgress(0.5f);
+    guiModalLoading.setProgress(0.5f);
 
     if (futureLoad.valid() && futureLoad.ready()) {
         try {
             futureLoad.get();
             finalize();
             loading = false;
-            gui.modalLoading.setEnabled(false);
+            guiModalLoading.setEnabled(false);
         } catch (...) {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
@@ -86,6 +83,10 @@ void ViewGalaxy::update(const float deltaTime) {
 void ViewGalaxy::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
+void ViewGalaxy::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
+    guiModalLoading.draw(nuklear, viewport);
+}
+
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
     if (!loading) {
         scene->eventMouseMoved(pos);
@@ -102,14 +103,14 @@ void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton butto
     if (!loading) {
         scene->eventMouseReleased(pos, button);
 
-        /*const auto& camera = *scene->getPrimaryCamera();
+        const auto& camera = *scene->getPrimaryCamera();
         if (const auto selected = scene->getSelectedEntity();
             selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
             const auto it = entities.icons.find(selected->getHandle());
             if (it != entities.icons.end()) {
-                logger.info("Selected system: {}", );
+                logger.info("Selected system: {}", it->second);
             }
-        }*/
+        }
     }
 }
 
@@ -325,7 +326,7 @@ void ViewGalaxy::onEnter() {
     scene.reset();
 
     loading = true;
-    gui.modalLoading.setEnabled(true);
+    guiModalLoading.setEnabled(true);
     futureLoad = std::async([this]() { return load(); });
 }
 
@@ -338,5 +339,5 @@ void ViewGalaxy::onExit() {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
     }
-    gui.modalLoading.setEnabled(false);
+    guiModalLoading.setEnabled(false);
 }

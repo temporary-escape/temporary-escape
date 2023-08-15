@@ -89,7 +89,6 @@ public:
     }
 
     bool contactTestSphere(const Vector3& origin, float radius) const;
-    bool checkSelectedEntityClick() const;
 
     ComponentCamera* getPrimaryCamera() const;
     const ComponentSkybox* getSkybox();

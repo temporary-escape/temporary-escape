@@ -16,18 +16,13 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSystem : public View {
 public:
-    struct Gui {
-        explicit Gui(const Config& config, AssetsManager& assetsManager);
-
-        GuiModalLoading modalLoading;
-    };
-
     explicit ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                        VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font);
+                        VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font);
     ~ViewSystem() = default;
 
     void update(float deltaTime) override;
     void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
+    void renderNuklear(Nuklear& nuklear, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -54,7 +49,7 @@ private:
     VoxelShapeCache& voxelShapeCache;
     Client& client;
     FontFamily& font;
-    Gui& gui;
+    GuiModalLoading guiModalLoading;
     std::unique_ptr<Scene> scene;
 
     struct {

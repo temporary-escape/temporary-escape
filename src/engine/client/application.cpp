@@ -211,10 +211,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         }
 
         nuklear.begin(viewport);
-        nuklear.draw(gui.mainMenu);
-        nuklear.draw(gui.createProfile);
-        nuklear.draw(gui.mainSettings);
-        nuklear.draw(gui.keepSettings);
+        gui.mainMenu.draw(nuklear, viewport);
+        gui.createProfile.draw(nuklear, viewport);
+        gui.mainSettings.draw(nuklear, viewport);
+        gui.keepSettings.draw(nuklear, viewport);
         nuklear.end();
     }
 

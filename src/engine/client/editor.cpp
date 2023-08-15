@@ -8,11 +8,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 Editor::Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                VoxelShapeCache& voxelShapeCache, FontFamily& font) :
-    config{config},
-    assetsManager{assetsManager},
-    font{font},
-    guiBuild{config, assetsManager},
-    view{config, vulkan, assetsManager, voxelShapeCache, guiBuild} {
+    config{config}, assetsManager{assetsManager}, font{font}, view{config, vulkan, assetsManager, voxelShapeCache} {
 
     view.onEnter();
 }
@@ -33,10 +29,9 @@ void Editor::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i
 }
 
 void Editor::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
+    view.renderCanvas(canvas, viewport);
     nuklear.begin(viewport);
-    guiBuild.blockActionBar.draw(nuklear, viewport);
-    guiBuild.blockSelector.draw(nuklear, viewport);
-    guiBuild.blockSideMenu.draw(nuklear, viewport);
+    view.renderNuklear(nuklear, viewport);
     nuklear.end();
 }
 

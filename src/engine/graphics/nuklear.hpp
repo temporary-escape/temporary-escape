@@ -11,8 +11,6 @@ struct nk_context;
 struct nk_user_font;
 
 namespace Engine {
-class ENGINE_API NuklearWindow;
-
 class ENGINE_API Nuklear {
 public:
     using Flags = uint32_t;
@@ -57,7 +55,6 @@ public:
     ~Nuklear();
 
     void begin(const Vector2i& viewport);
-    void draw(NuklearWindow& window);
     void end();
 
     bool beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
@@ -187,11 +184,4 @@ inline Nuklear::Flags operator|(const Nuklear::WindowFlags a, const Nuklear::Win
 inline Nuklear::Flags operator|(const Nuklear::Flags a, const Nuklear::WindowFlags b) {
     return a | static_cast<Nuklear::Flags>(b);
 }
-
-class ENGINE_API NuklearWindow {
-public:
-    virtual ~NuklearWindow() = default;
-
-    virtual void draw(Nuklear& nuklear, const Vector2& viewport) = 0;
-};
 } // namespace Engine

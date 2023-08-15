@@ -10,20 +10,18 @@ static auto logger = createLogger(LOG_FILENAME);
 static const Vector2 systemBodySelectable{32.0f, 32.0f};
 static const Vector2 systemBodyIconSize{32.0f, 32.0f};
 
-ViewSystem::Gui::Gui(const Config& config, AssetsManager& assetsManager) : modalLoading{"System Map"} {
-    modalLoading.setEnabled(false);
-}
-
 ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache, Client& client, Gui& gui, FontFamily& font) :
+                       VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font) :
     parent{parent},
     config{config},
     vulkan{vulkan},
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     client{client},
-    gui{gui},
-    font{font} {
+    font{font},
+    guiModalLoading{"System Map"} {
+
+    guiModalLoading.setEnabled(false);
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
@@ -35,14 +33,14 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulka
 }
 
 void ViewSystem::update(const float deltaTime) {
-    gui.modalLoading.setProgress(loadingValue);
+    guiModalLoading.setProgress(loadingValue);
 
     if (futureLoad.valid() && futureLoad.ready()) {
         try {
             futureLoad.get();
             finalize();
             loading = false;
-            gui.modalLoading.setEnabled(false);
+            guiModalLoading.setEnabled(false);
         } catch (...) {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
@@ -56,6 +54,9 @@ void ViewSystem::update(const float deltaTime) {
 }
 
 void ViewSystem::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+}
+
+void ViewSystem::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
 }
 
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
@@ -300,7 +301,7 @@ void ViewSystem::onEnter() {
 
     loading = true;
     loadingValue = 0.0f;
-    gui.modalLoading.setEnabled(true);
+    guiModalLoading.setEnabled(true);
 
     stopToken.stop();
     stopToken = StopToken{};
@@ -311,5 +312,5 @@ void ViewSystem::onEnter() {
 void ViewSystem::onExit() {
     // Stop loading if we have exited
     stopToken.stop();
-    gui.modalLoading.setEnabled(false);
+    guiModalLoading.setEnabled(false);
 }

@@ -19,6 +19,7 @@ public:
 
     void update(float deltaTime) override;
     void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
+    void renderNuklear(Nuklear& nuklear, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;

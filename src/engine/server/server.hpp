@@ -97,6 +97,7 @@ private:
     std::unique_ptr<Lua> lua;
     BackgroundWorker worker;
     BackgroundWorker loadQueue;
+    Worker::Strand strand;
     std::unique_ptr<NetworkTcpServer> networkServer;
 
     struct {

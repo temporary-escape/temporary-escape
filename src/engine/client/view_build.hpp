@@ -13,20 +13,13 @@
 namespace Engine {
 class ENGINE_API ViewBuild : public View {
 public:
-    struct Gui {
-        explicit Gui(const Config& config, AssetsManager& assetsManager);
-
-        GuiBlockActionBar blockActionBar;
-        GuiBlockSelector blockSelector;
-        GuiSideMenu blockSideMenu;
-    };
-
     explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache, Gui& gui);
+                       VoxelShapeCache& voxelShapeCache);
     ~ViewBuild() = default;
 
     void update(float deltaTime) override;
     void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
+    void renderNuklear(Nuklear& nuklear, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -49,7 +42,9 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
-    Gui& gui;
+    GuiBlockActionBar guiBlockActionBar;
+    GuiBlockSelector guiBlockSelector;
+    GuiSideMenu guiBlockSideMenu;
 
     Vector2 raycastScreenPos;
     std::optional<Grid::RayCastResult> raycastResult;

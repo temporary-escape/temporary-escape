@@ -4,17 +4,19 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ViewBuild::Gui::Gui(const Config& config, AssetsManager& assetsManager) :
-    blockActionBar{config, assetsManager}, blockSelector{config}, blockSideMenu{config} {
-}
-
 ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                     VoxelShapeCache& voxelShapeCache, Gui& gui) :
-    config{config}, vulkan{vulkan}, assetsManager{assetsManager}, gui{gui}, scene{config, &voxelShapeCache} {
+                     VoxelShapeCache& voxelShapeCache) :
+    config{config},
+    vulkan{vulkan},
+    assetsManager{assetsManager},
+    guiBlockActionBar{config, assetsManager},
+    guiBlockSelector{config},
+    guiBlockSideMenu{config},
+    scene{config, &voxelShapeCache} {
 
-    gui.blockSelector.setBlocks(assetsManager.getBlocks().findAll());
+    guiBlockSelector.setBlocks(assetsManager.getBlocks().findAll());
 
-    gui.blockSideMenu.setItems({
+    guiBlockSideMenu.setItems({
         GuiSideMenu::Item{
             assetsManager.getImages().find("icon_save"),
             "Save current ship",
@@ -154,8 +156,8 @@ void ViewBuild::addBlock() {
         return;
     }
 
-    const auto actionBarItem = gui.blockActionBar.getActiveBlock();
-    const auto actionBarColor = gui.blockActionBar.getActiveColor();
+    const auto actionBarItem = guiBlockActionBar.getActiveBlock();
+    const auto actionBarColor = guiBlockActionBar.getActiveColor();
     if (!actionBarItem.block) {
         return;
     }
@@ -197,6 +199,12 @@ void ViewBuild::update(const float deltaTime) {
 void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
+void ViewBuild::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
+    guiBlockActionBar.draw(nuklear, viewport);
+    guiBlockSelector.draw(nuklear, viewport);
+    guiBlockSideMenu.draw(nuklear, viewport);
+}
+
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 
@@ -221,14 +229,14 @@ void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button
 
 void ViewBuild::eventMouseScroll(const int xscroll, const int yscroll) {
     if (yscroll > 0) {
-        const auto nextIndex = (gui.blockActionBar.getActiveIndex() + 1) % gui.blockActionBar.getMaxItems();
-        gui.blockActionBar.setActiveIndex(nextIndex);
+        const auto nextIndex = (guiBlockActionBar.getActiveIndex() + 1) % guiBlockActionBar.getMaxItems();
+        guiBlockActionBar.setActiveIndex(nextIndex);
     } else if (yscroll < 0) {
-        auto nextIndex = static_cast<int>(gui.blockActionBar.getActiveIndex()) - 1;
+        auto nextIndex = static_cast<int>(guiBlockActionBar.getActiveIndex()) - 1;
         if (nextIndex < 0) {
-            nextIndex = static_cast<int>(gui.blockActionBar.getMaxItems()) - 1;
+            nextIndex = static_cast<int>(guiBlockActionBar.getMaxItems()) - 1;
         }
-        gui.blockActionBar.setActiveIndex(nextIndex);
+        guiBlockActionBar.setActiveIndex(nextIndex);
     }
 }
 
@@ -245,15 +253,15 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 }
 
 void ViewBuild::onEnter() {
-    gui.blockSelector.setEnabled(true);
-    gui.blockActionBar.setEnabled(true);
-    gui.blockSideMenu.setEnabled(true);
+    guiBlockSelector.setEnabled(true);
+    guiBlockActionBar.setEnabled(true);
+    guiBlockSideMenu.setEnabled(true);
 }
 
 void ViewBuild::onExit() {
-    gui.blockSelector.setEnabled(false);
-    gui.blockActionBar.setEnabled(false);
-    gui.blockSideMenu.setEnabled(false);
+    guiBlockSelector.setEnabled(false);
+    guiBlockActionBar.setEnabled(false);
+    guiBlockSideMenu.setEnabled(false);
 }
 
 Scene* ViewBuild::getScene() {

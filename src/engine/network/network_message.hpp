@@ -48,14 +48,14 @@ public:
         o.via.array.ptr[1].convert(xid);
     }
     virtual ~BaseRequest() = default;
-    NON_COPYABLE(BaseRequest);
+    COPYABLE(BaseRequest);
     MOVEABLE(BaseRequest);
 
-    template <typename T> void respond(const T& msg);
+    template <typename T> void respond(const T& msg) const;
 
-    void respondError(const std::string& msg);
+    void respondError(const std::string& msg) const;
 
-    template <typename... Args> void respondError(const std::string& msg, Args&&... args) {
+    template <typename... Args> void respondError(const std::string& msg, Args&&... args) const {
         respondError(fmt::format(msg, std::forward<Args>(args)...));
     }
 
@@ -94,7 +94,7 @@ public:
         return object().template as<T>();
     }
 
-    NON_COPYABLE(Request);
+    COPYABLE(Request);
     MOVEABLE(Request);
 };
 } // namespace Engine

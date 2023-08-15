@@ -54,6 +54,9 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     }
 }
 
+void ViewSpace::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
+}
+
 void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
     if (selectedEntity) {
         const auto& transform = selectedEntity->getComponent<ComponentTransform>();

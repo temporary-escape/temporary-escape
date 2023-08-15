@@ -138,22 +138,6 @@ ComponentCamera* Scene::getPrimaryCamera() const {
     return nullptr;
 }
 
-bool Scene::checkSelectedEntityClick() const {
-    const auto camera = getPrimaryCamera();
-    if (!camera) {
-        return false;
-    }
-
-    if (const auto selected = getSelectedEntity(); selected.has_value() && !camera->isPanning()) {
-        /*const auto it = entities.icons.find(selected->getHandle());
-        if (it != entities.icons.end()) {
-            logger.info("Selected system: {}", );
-        }*/
-    }
-
-    return false;
-}
-
 const ComponentSkybox* Scene::getSkybox() {
     for (auto&& [entity, skybox] : getView<ComponentSkybox>().each()) {
         if (!skybox.isGenerated() || !skybox.getTextures().getTexture()) {

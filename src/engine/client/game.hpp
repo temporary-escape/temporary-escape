@@ -55,9 +55,6 @@ private:
     Client& client;
     uint32_t selectedEntityId{0xFFFFFFFF};
 
-    ViewGalaxy::Gui guiGalaxy;
-    ViewSystem::Gui guiSystem;
-
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;
     std::unique_ptr<ViewGalaxy> viewGalaxy;

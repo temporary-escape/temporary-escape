@@ -24,11 +24,11 @@ private:
     std::mutex sendMutex;
 };
 
-template <typename T> inline void BaseRequest::respond(const T& msg) {
+template <typename T> inline void BaseRequest::respond(const T& msg) const {
     peer->send(msg, xid);
 }
 
-inline void BaseRequest::respondError(const std::string& msg) {
+inline void BaseRequest::respondError(const std::string& msg) const {
     peer->send(msg, xid);
 }
 

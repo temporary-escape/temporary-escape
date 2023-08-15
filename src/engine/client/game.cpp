@@ -14,15 +14,11 @@ Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendere
     rendererPlanetSurface{rendererPlanetSurface},
     assetsManager{assetsManager},
     font{font},
-    client{client},
-    guiGalaxy{config, assetsManager},
-    guiSystem{config, assetsManager} {
+    client{client} {
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, voxelShapeCache, font, client);
-    viewGalaxy =
-        std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, voxelShapeCache, client, guiGalaxy, font);
-    viewSystem =
-        std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, voxelShapeCache, client, guiSystem, font);
+    viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);
     view = viewSpace.get();
 }
 
@@ -64,11 +60,10 @@ void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& 
 void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
     if (view) {
         view->renderCanvas(canvas, viewport);
+        nuklear.begin(viewport);
+        view->renderNuklear(nuklear, viewport);
+        nuklear.end();
     }
-    nuklear.begin(viewport);
-    guiGalaxy.modalLoading.draw(nuklear, viewport);
-    guiSystem.modalLoading.draw(nuklear, viewport);
-    nuklear.end();
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {

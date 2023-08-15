@@ -3,12 +3,12 @@
 #include "../graphics/nuklear.hpp"
 
 namespace Engine {
-class ENGINE_API GuiWindow : public NuklearWindow {
+class ENGINE_API GuiWindow {
 public:
     GuiWindow();
     virtual ~GuiWindow() = default;
 
-    void draw(Nuklear& nuklear, const Vector2& viewport) override;
+    void draw(Nuklear& nuklear, const Vector2& viewport);
 
     const Vector2& getSize() const;
     const Vector2& getPos() const;
