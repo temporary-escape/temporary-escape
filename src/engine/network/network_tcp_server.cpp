@@ -49,7 +49,9 @@ void NetworkTcpServer::accept() {
 
     acceptor.async_accept(socket->lowest_layer(), strand.wrap([this, socket](const std::error_code ec) {
         if (ec) {
-            logger.error("Failed to accept new connection, error: {}", ec.message());
+            if (!isAsioEofError(ec)) {
+                logger.error("Failed to accept new connection, error: {}", ec.message());
+            }
         } else if (acceptor.is_open()) {
             logger.info("Accepting new connection from: {}", socket->lowest_layer().remote_endpoint());
             auto peer = std::make_shared<NetworkTcpPeer>(service, *this, std::move(*socket), dispatcher);

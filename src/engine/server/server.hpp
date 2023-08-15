@@ -30,8 +30,8 @@ public:
 
     // Player specific requests
     void handle(Request<MessageLoginRequest> req);
+    void handle(Request<MessagePlayerSpawnRequest> req);
     void handle(Request<MessageModManifestsRequest> req);
-    void handle(Request<MessagePlayerLocationRequest> req);
     void handle(Request<MessagePingResponse> req);
 
     EventBus& getEventBus() const;

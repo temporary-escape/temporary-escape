@@ -13,17 +13,6 @@ public:
 
     virtual ~NetworkDispatcher() = default;
 
-    template <typename C, typename T> void addHandlerC(C* instance, void (C::*fn)(Request<T>)) {
-        HandlerData data;
-        data.fn = [instance, fn](NetworkPeerPtr peer, ObjectHandlePtr oh) {
-            // Construct a request and call a handler function
-            instance->*fn(Request<T>{std::move(peer), std::move(oh)});
-        };
-        data.name = Detail::MessageHelper<T>::name;
-
-        handlers.emplace(Detail::MessageHelper<T>::hash, std::move(data));
-    }
-
     template <typename Fn> void addHandler(Fn&& fn) {
         using Req = typename Traits<decltype(&Fn::operator())>::Arg;
         using T = Req;
@@ -65,7 +54,7 @@ private:
 } // namespace Engine
 
 #define HANDLE_REQUEST(Type)                                                                                           \
-    addHandler([this](Request<Type> req) {                                                                             \
+    dispatcher.addHandler([this](Request<Type> req) {                                                                  \
         using Self = std::remove_pointer<decltype(this)>::type;                                                        \
         using Handler = void (Self::*)(Request<Type>);                                                                 \
         (this->*static_cast<Handler>(&Self::handle))(std::move(req));                                                  \

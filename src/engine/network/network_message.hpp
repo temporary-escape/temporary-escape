@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../stream/msgpack_stream.hpp"
+#include <fmt/format.h>
 #include <typeindex>
 #include <unordered_map>
 
@@ -54,8 +55,16 @@ public:
 
     void respondError(const std::string& msg);
 
+    template <typename... Args> void respondError(const std::string& msg, Args&&... args) {
+        respondError(fmt::format(msg, std::forward<Args>(args)...));
+    }
+
     [[nodiscard]] bool isError() const {
         return object().type == msgpack::type::STR;
+    }
+
+    [[nodiscard]] std::string getError() const {
+        return object().as<std::string>();
     }
 
     [[nodiscard]] const msgpack::object& object() const {

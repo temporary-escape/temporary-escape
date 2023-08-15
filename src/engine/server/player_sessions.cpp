@@ -61,10 +61,12 @@ std::vector<SessionPtr> PlayerSessions::getAllSessions() {
 
 void PlayerSessions::removeSession(const NetworkPeerPtr& peer) {
     std::unique_lock<std::shared_mutex> lock{mutex};
-    const auto it = map.find(peer.get());
-    if (it != map.end()) {
+    if (const auto it = map.find(peer.get()); it != map.end()) {
         logger.info("Removing session peer: {} player: {}", peer->getAddress(), it->second->getPlayerId());
         map.erase(it);
+    }
+    if (const auto it = locations.find(peer.get()); it != locations.end()) {
+        locations.erase(it);
     }
 }
 
@@ -85,4 +87,22 @@ void PlayerSessions::clear() {
         session->close();
     }
     map.clear();
+    locations.clear();
+}
+
+std::optional<std::string> PlayerSessions::getLocation(const SessionPtr& session) {
+    std::shared_lock<std::shared_mutex> lock{mutex};
+    if (const auto it = locations.find(session->getStream().get()); it != locations.end()) {
+        return it->second;
+    }
+    return std::nullopt;
+}
+
+void PlayerSessions::setLocation(const SessionPtr& session, const std::optional<std::string>& sectorId) {
+    std::unique_lock<std::shared_mutex> lock{mutex};
+    if (sectorId) {
+        locations.emplace(session->getStream().get(), *sectorId);
+    } else if (const auto it = locations.find(session->getStream().get()); it != locations.end()) {
+        locations.erase(it);
+    }
 }

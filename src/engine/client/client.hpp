@@ -6,11 +6,11 @@
 #include "../library.hpp"
 #include "../network/network_tcp_client.hpp"
 #include "../scene/scene.hpp"
-#include "../server/messages.hpp"
 #include "../server/sector.hpp"
 #include "../utils/return_type.hpp"
 #include "../utils/worker.hpp"
 #include "../utils/yaml.hpp"
+#include "local_cache.hpp"
 #include "stats.hpp"
 
 namespace Engine {
@@ -34,12 +34,16 @@ public:
         return scene.get();
     }
 
-    const std::string& getPlayerId() const {
-        return playerId;
+    bool isReady() const {
+        return getScene() != nullptr && flagCacheSync.load();
     }
 
-    const PlayerLocationData& getPlayerLocation() const {
-        return playerLocation;
+    LocalCache& getCache() {
+        return cache;
+    }
+
+    const LocalCache& getCache() const {
+        return cache;
     }
 
     bool isConnected() const {
@@ -48,29 +52,39 @@ public:
 
     void handle(Request<MessagePlayerLocationEvent> req);
     void handle(Request<MessagePingRequest> req);
+    void handle(Request<MessageModManifestsResponse> req);
+    void handle(Request<MessageLoginResponse> req);
+    void handle(Request<MessageFetchGalaxyResponse> req);
+    void handle(Request<MessageFetchSystemsResponse> req);
+    void handle(Request<MessageFetchFactionsResponse> req);
+    void handle(Request<MessageFetchRegionsResponse> req);
     // void handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message);
 
-private:
-    void doLogin();
-    void validateManifests(const std::vector<ModManifest>& serverManifests);
-    void createScene(const SectorData& sector);
+    // Used by unit tests for synchronized assertions
+    template <typename Fn> bool check(Fn&& fn) {
+        auto promise = std::make_shared<Promise<bool>>();
+        sync.post([promise, f = std::forward<Fn>(fn)]() { promise->resolve(f()); });
+        return promise->future().get(std::chrono::seconds{1});
+    }
 
 private:
+    void startCacheSync();
+    void createScene(const SectorData& sector);
+
     const Config& config;
     AssetsManager& assetsManager;
     const PlayerLocalProfile& localProfile;
     VoxelShapeCache* voxelShapeCache{nullptr};
-    std::string playerId;
-    PlayerLocationData playerLocation;
+    LocalCache cache{};
+    std::atomic_bool flagCacheSync{false};
 
     // Promise<void> loggedIn;
     BackgroundWorker worker;
     SynchronizedWorker sync;
     std::unique_ptr<NetworkTcpClient> networkClient;
-    // PeriodicWorker worker1s{std::chrono::milliseconds(1000)};
 
     std::unique_ptr<Scene> scene;
 
-    bool hasNetworkError{false};
+    Promise<void> promiseLogin;
 };
 } // namespace Engine

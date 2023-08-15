@@ -3,6 +3,7 @@
 #include "../stream/msgpack_acceptor.hpp"
 #include "../stream/msgpack_stream.hpp"
 #include "network_dispatcher.hpp"
+#include <asio.hpp>
 #include <mutex>
 
 namespace Engine {
@@ -31,4 +32,7 @@ inline void BaseRequest::respondError(const std::string& msg) {
     peer->send(msg, xid);
 }
 
+inline bool isAsioEofError(const asio::error_code& ec) {
+    return ec == asio::error::eof || ec == asio::error::operation_aborted || ec == asio::error::connection_reset;
+}
 } // namespace Engine

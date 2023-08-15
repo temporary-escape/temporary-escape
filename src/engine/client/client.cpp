@@ -15,16 +15,28 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     voxelShapeCache{voxelShapeCache},
     worker{1} {
 
+    auto& dispatcher = static_cast<NetworkDispatcher&>(*this);
     HANDLE_REQUEST(MessagePlayerLocationEvent);
     HANDLE_REQUEST(MessagePingRequest);
+    HANDLE_REQUEST(MessageModManifestsResponse);
+    HANDLE_REQUEST(MessageLoginResponse);
+    HANDLE_REQUEST(MessageFetchGalaxyResponse);
+    HANDLE_REQUEST(MessageFetchRegionsResponse);
+    HANDLE_REQUEST(MessageFetchFactionsResponse);
+    HANDLE_REQUEST(MessageFetchSystemsResponse);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
 
+    // Start login sequence by sending manifest request
+    MessageModManifestsRequest req{};
+    networkClient->send(req);
+
     try {
-        doLogin();
+        auto future = promiseLogin.future();
+        future.get(std::chrono::seconds{2});
     } catch (...) {
-        EXCEPTION_NESTED("Failed to connect to the server");
+        EXCEPTION_NESTED("Failed to login");
     }
 }
 
@@ -42,83 +54,13 @@ void Client::disconnect() {
     }
 }
 
-void Client::doLogin() {
-    static const std::chrono::seconds timeout{2};
-
-    { // Fetch mod manifest
-        logger.info("Doing manifest check...");
-        MessageModManifestsRequest req{};
-
-        auto promise = networkClient->request<MessageModManifestsResponse>(req);
-        auto future = promise->future();
-        auto res = future.get(timeout);
-        validateManifests(res.items);
-
-        logger.info("Manifest check success");
-    }
-
-    { // Log in
-        logger.info("Doing player login...");
-        MessageLoginRequest req{};
-        req.secret = localProfile.secret;
-        req.name = localProfile.name;
-
-        auto promise = networkClient->request<MessageLoginResponse>(req);
-        auto future = promise->future();
-        auto res = future.get(timeout);
-
-        logger.info("Login success");
-        playerId = res.playerId;
-    }
-
-    /*{ // Wait until we know where we are
-        logger.info("Waiting for player location...");
-        auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(10);
-        while (timeout > std::chrono::system_clock::now()) {
-            MessagePlayerLocationRequest req{};
-
-            auto future = send(req, useFuture<MessagePlayerLocationResponse>());
-            auto res = future.get(std::chrono::seconds(1));
-
-            if (res.location) {
-                playerLocation = *res.location;
-                break;
-            }
-
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-
-        if (playerLocation.sectorId.empty()) {
-            EXCEPTION("Timeout while waiting for spawn location");
-        }
-    }*/
-}
-
-void Client::validateManifests(const std::vector<ModManifest>& serverManifests) {
-    const auto& ourManifests = assetsManager.getManifests();
-    for (const auto& manifest : serverManifests) {
-        logger.info("Checking for server mod: '{}' @{}", manifest.name, manifest.version);
-
-        const auto it = std::find_if(
-            ourManifests.begin(), ourManifests.end(), [&](const auto& m) { return m.name == manifest.name; });
-
-        if (it == ourManifests.end()) {
-            EXCEPTION("Client is missing mod pack: '{}'", manifest.name);
-        }
-
-        const auto& found = *it;
-
-        if (found.version != manifest.version) {
-            EXCEPTION("Client has mod pack: '{}' of version: {} but server has: {}",
-                      manifest.name,
-                      found.version,
-                      manifest.version);
-        }
-    }
-}
-
 void Client::update() {
     sync.poll();
+}
+
+void Client::startCacheSync() {
+    MessageFetchGalaxyRequest msg{};
+    networkClient->send(msg);
 }
 
 void Client::createScene(const SectorData& sector) {
@@ -182,7 +124,7 @@ void Client::handle(Request<MessagePlayerLocationEvent> req) {
     auto data = req.get();
 
     logger.info("Player location has changed");
-    playerLocation = data.location;
+    cache.playerLocation = data.location;
 
     sync.postSafe([this, data]() {
         logger.info("Sector has changed, creating a new scene");
@@ -204,4 +146,143 @@ void Client::handle(Request<MessagePingRequest> req) {
     MessagePingResponse res;
     res.time = data.time;
     req.respond(res);
+}
+
+void Client::handle(Request<MessageModManifestsResponse> req) {
+    if (req.isError()) {
+        promiseLogin.reject<std::runtime_error>(req.getError());
+        return;
+    }
+
+    auto data = req.get();
+
+    const auto& ourManifests = assetsManager.getManifests();
+    for (const auto& manifest : data.items) {
+        logger.info("Checking for server mod: '{}' @{}", manifest.name, manifest.version);
+
+        const auto it = std::find_if(
+            ourManifests.begin(), ourManifests.end(), [&](const auto& m) { return m.name == manifest.name; });
+
+        if (it == ourManifests.end()) {
+            promiseLogin.reject<std::runtime_error>(fmt::format("Missing mod pack: {}", manifest.name));
+            return;
+        }
+
+        const auto& found = *it;
+
+        if (found.version != manifest.version) {
+            promiseLogin.reject<std::runtime_error>(
+                fmt::format("Missing mod pack: {} expected version: {} but got version: {}",
+                            manifest.name,
+                            found.version,
+                            manifest.version));
+            return;
+        }
+    }
+
+    MessageLoginRequest msg{};
+    msg.secret = localProfile.secret;
+    msg.name = localProfile.name;
+    networkClient->send(msg);
+}
+
+void Client::handle(Request<MessageLoginResponse> req) {
+    if (req.isError()) {
+        promiseLogin.reject<std::runtime_error>(req.getError());
+        return;
+    }
+
+    auto data = req.get();
+    cache.playerId = data.playerId;
+
+    // Player login sequence is complete
+    promiseLogin.resolve();
+
+    // Start the sync sequence
+    startCacheSync();
+}
+
+void Client::handle(Request<MessageFetchGalaxyResponse> req) {
+    auto data = req.get();
+
+    logger.info("Received galaxy data");
+
+    cache.galaxy.name = data.name;
+    cache.galaxy.id = data.galaxyId;
+
+    // Fetch galaxy regions
+    MessageFetchRegionsRequest msg{};
+    msg.galaxyId = cache.galaxy.id;
+    networkClient->send(msg);
+}
+
+void Client::handle(Request<MessageFetchRegionsResponse> req) {
+    auto data = req.get();
+
+    logger.info("Received region data count: {}", data.items.size());
+
+    for (auto& item : data.items) {
+        cache.galaxy.regions.emplace(item.id, std::move(item));
+    }
+
+    if (data.page.hasNext && !data.page.token.empty()) {
+        // Continue fetching the next page
+        MessageFetchRegionsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        msg.token = data.page.token;
+        networkClient->send(msg);
+    } else {
+        // Fetch galaxy factions
+        MessageFetchFactionsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        networkClient->send(msg);
+    }
+}
+
+void Client::handle(Request<MessageFetchFactionsResponse> req) {
+    auto data = req.get();
+
+    logger.info("Received faction data count: {}", data.items.size());
+
+    for (auto& item : data.items) {
+        cache.galaxy.factions.emplace(item.id, std::move(item));
+    }
+
+    if (data.page.hasNext && !data.page.token.empty()) {
+        // Continue fetching the next page
+        MessageFetchFactionsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        msg.token = data.page.token;
+        networkClient->send(msg);
+    } else {
+        // Fetch galaxy factions
+        MessageFetchSystemsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        networkClient->send(msg);
+    }
+}
+
+void Client::handle(Request<MessageFetchSystemsResponse> req) {
+    auto data = req.get();
+
+    logger.info("Received system data count: {}", data.items.size());
+
+    for (auto& item : data.items) {
+        cache.galaxy.systems.emplace(item.id, std::move(item));
+    }
+
+    if (data.page.hasNext && !data.page.token.empty()) {
+        // Continue fetching the next page
+        MessageFetchSystemsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        msg.token = data.page.token;
+        networkClient->send(msg);
+    } else {
+        // Mark that the cache has been synced
+        flagCacheSync.store(true);
+
+        // Request spawn location
+        MessagePlayerSpawnRequest msg{};
+        networkClient->send(msg);
+    }
 }

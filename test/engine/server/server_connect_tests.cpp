@@ -102,5 +102,12 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and get client scene", "[server]"
     clientConnect();
 
     // Client should construct scene eventually
-    REQUIRE_EVENTUALLY(client->getScene() != nullptr);
+    REQUIRE_EVENTUALLY(client->isReady());
+
+    // There should be skybox entity in the scene.
+    // This indicates that the client has received sector information.
+    REQUIRE_EVENTUALLY(client->check([this]() {
+        auto view = client->getScene()->getView<ComponentSkybox>().each();
+        return view.begin() != view.end();
+    }));
 }

@@ -7,6 +7,8 @@ static auto logger = createLogger(LOG_FILENAME);
 
 ServicePlayers::ServicePlayers(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions) :
     db{db}, sessions{sessions} {
+
+    HANDLE_REQUEST(MessagePlayerLocationRequest);
 }
 
 ServicePlayers::~ServicePlayers() = default;
@@ -76,4 +78,18 @@ PlayerLocationData ServicePlayers::getSpawnLocation(const std::string& id) {
     db.put<PlayerLocationData>(id, *location);
 
     return *location;
+}
+
+void ServicePlayers::handle(Request<MessagePlayerLocationRequest> req) {
+    MessagePlayerLocationResponse res{};
+
+    const auto session = sessions.getSession(req.peer);
+    const auto location = db.find<PlayerLocationData>(session->getPlayerId());
+    if (location) {
+        res.location = *location;
+    } else {
+        logger.warn("Player location requested for: '{}' but player has no location", session->getPlayerId());
+    }
+
+    req.respond(res);
 }

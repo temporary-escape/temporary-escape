@@ -36,7 +36,7 @@ void Game::update(float deltaTime) {
 }
 
 bool Game::isReady() const {
-    return !rendererPlanetSurface.isBusy() && !rendererSkybox.isBusy() && client.getScene() &&
+    return !rendererPlanetSurface.isBusy() && !rendererSkybox.isBusy() && client.isReady() &&
            client.getScene()->getPrimaryCamera();
 }
 

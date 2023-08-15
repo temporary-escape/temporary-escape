@@ -36,7 +36,9 @@ void NetworkTcpPeer::receive() {
 
     socket.async_read_some(b, strand.wrap([self](const asio::error_code ec, const size_t length) {
         if (ec) {
-            logger.error("Failed to read data from: {} error: {}", self->address, ec.message());
+            if (!isAsioEofError(ec)) {
+                logger.error("Failed to read data from: {} error: {}", self->address, ec.message());
+            }
             self->close();
             self->service.post([self]() { self->dispatcher.onDisconnect(self); });
         } else {
@@ -77,7 +79,9 @@ void NetworkTcpPeer::writeCompressed(const char* data, size_t length) {
 
     socket.async_write_some(b, strand.wrap([self](const asio::error_code ec, const size_t length) {
         if (ec) {
-            logger.error("Failed to write data to: {} error: {}", self->address, ec.message());
+            if (!isAsioEofError(ec)) {
+                logger.error("Failed to write data to: {} error: {}", self->address, ec.message());
+            }
             self->close();
             self->service.post([self]() { self->dispatcher.onDisconnect(self); });
         }

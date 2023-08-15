@@ -2,8 +2,13 @@
 #include "../network/network_tcp_server.hpp"
 #include "../utils/random.hpp"
 #include "lua.hpp"
+#include "services/service_factions.hpp"
 #include "services/service_galaxy.hpp"
+#include "services/service_planets.hpp"
 #include "services/service_players.hpp"
+#include "services/service_regions.hpp"
+#include "services/service_sectors.hpp"
+#include "services/service_systems.hpp"
 #include <memory>
 #include <sol/sol.hpp>
 
@@ -26,13 +31,19 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
 
     instance = this;
 
+    auto& dispatcher = static_cast<NetworkDispatcher&>(*this);
     HANDLE_REQUEST(MessageLoginRequest);
     HANDLE_REQUEST(MessageModManifestsRequest);
-    HANDLE_REQUEST(MessagePlayerLocationRequest);
     HANDLE_REQUEST(MessagePingResponse);
+    HANDLE_REQUEST(MessagePlayerSpawnRequest);
 
     addService<ServicePlayers>();
     addService<ServiceGalaxy>();
+    addService<ServiceFactions>();
+    addService<ServiceRegions>();
+    addService<ServiceSystems>();
+    addService<ServiceSectors>();
+    addService<ServicePlanets>();
 
     try {
         load();
@@ -320,9 +331,28 @@ void Server::handle(Request<MessageLoginRequest> req) {
     event["player_id"] = player.id;
     event["player_name"] = player.name;
     eventBus->enqueue("player_logged_in", event);
+}
+
+void Server::handle(Request<MessagePlayerSpawnRequest> req) {
+    auto session = playerSessions.getSession(req.peer);
+
+    if (const auto location = playerSessions.getLocation(session); location.has_value()) {
+        // Player already has location
+        logger.warn("Player {} has requested spawn but the player is already spawned in sector: {}",
+                    session->getPlayerId(),
+                    *location);
+        return;
+    }
+
+    logger.info("Player {} has requested spawn", session->getPlayerId());
+
+    auto& servicePlayers = getService<ServicePlayers>();
 
     // Find the spawn location for the player
-    const auto location = servicePlayers.getSpawnLocation(player.id);
+    const auto location = servicePlayers.getSpawnLocation(session->getPlayerId());
+
+    // Remember the player location
+    playerSessions.setLocation(session, location.sectorId);
 
     // Start the sector and add the player to it
     startSector(location.sectorId);
@@ -340,20 +370,6 @@ void Server::handle(Request<MessageModManifestsRequest> req) {
         res.items.push_back(manifest);
     }
     res.page.hasNext = false;
-
-    req.respond(res);
-}
-
-void Server::handle(Request<MessagePlayerLocationRequest> req) {
-    MessagePlayerLocationResponse res{};
-
-    const auto session = playerSessions.getSession(req.peer);
-    const auto location = db.find<PlayerLocationData>(session->getPlayerId());
-    if (location) {
-        res.location = *location;
-    } else {
-        logger.warn("Player location requested for: '{}' but player has no location", session->getPlayerId());
-    }
 
     req.respond(res);
 }

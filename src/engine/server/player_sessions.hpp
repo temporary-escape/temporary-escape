@@ -18,6 +18,8 @@ public:
     SessionPtr getSession(const std::string& playerId);
     SessionPtr getSession(const NetworkPeerPtr& peer);
     bool isLoggedIn(const std::string& playerId);
+    std::optional<std::string> getLocation(const SessionPtr& session);
+    void setLocation(const SessionPtr& session, const std::optional<std::string>& sectorId);
     std::vector<SessionPtr> getAllSessions();
     void clear();
     // void updateSessionsPing();
@@ -28,5 +30,6 @@ private:
 
     std::shared_mutex mutex;
     std::unordered_map<NetworkPeer*, SessionPtr> map;
+    std::unordered_map<NetworkPeer*, std::string> locations;
 };
 } // namespace Engine
