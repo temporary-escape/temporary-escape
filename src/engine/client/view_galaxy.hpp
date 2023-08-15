@@ -66,21 +66,6 @@ private:
     std::unique_ptr<Scene> scene;
 
     struct {
-        std::string galaxyId;
-        std::string systemId;
-        std::string sectorId;
-    } location;
-
-    struct {
-        std::string name;
-        std::unordered_map<std::string, SystemData> systems;
-        std::unordered_map<std::string, RegionData> regions;
-        std::vector<const SystemData*> systemsOrdered;
-    } galaxy;
-
-    std::unordered_map<std::string, FactionData> factions;
-
-    struct {
         Entity camera;
         Entity regions;
         Entity systems;
@@ -100,8 +85,6 @@ private:
     } images;
 
     bool loading{false};
-    std::atomic<float> loadingValue{0.0f};
-    StopToken stopToken;
     Future<void> futureLoad;
 };
 } // namespace Engine

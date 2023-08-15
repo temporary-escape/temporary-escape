@@ -23,7 +23,9 @@ public:
     }
 
     template <typename T> void send(const T& msg) {
-        internal->send(msg, 0);
+        if (internal) {
+            internal->send(msg, 0);
+        }
     }
 
 private:

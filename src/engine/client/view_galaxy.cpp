@@ -43,7 +43,7 @@ ViewGalaxy::~ViewGalaxy() {
 }
 
 void ViewGalaxy::update(const float deltaTime) {
-    gui.modalLoading.setProgress(loadingValue);
+    gui.modalLoading.setProgress(0.5f);
 
     if (futureLoad.valid() && futureLoad.ready()) {
         try {
@@ -136,145 +136,8 @@ Scene* ViewGalaxy::getScene() {
 }
 
 void ViewGalaxy::load() {
+    const auto& cache = client.getCache();
     scene = std::make_unique<Scene>(config, &voxelShapeCache);
-
-    /*{ // Figure out where we are
-        logger.info("Fetching player location");
-        MessagePlayerLocationRequest req{};
-
-        auto future = client.send(req, useFuture<MessagePlayerLocationResponse>());
-        auto res = future.get(std::chrono::seconds(1));
-
-        if (!res.location) {
-            EXCEPTION("Player has no location");
-        }
-
-        location.galaxyId = res.location->galaxyId;
-        location.systemId = res.location->systemId;
-        location.sectorId = res.location->sectorId;
-    }
-
-    loadingValue = 0.1f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
-    { // Get the galaxy
-        logger.info("Fetching galaxy data");
-        MessageFetchGalaxyRequest req{};
-        req.galaxyId = location.galaxyId;
-
-        auto future = client.send(req, useFuture<MessageFetchGalaxyResponse>());
-        auto res = future.get(std::chrono::seconds(1));
-
-        galaxy.name = res.name;
-    }
-
-    loadingValue = 0.2f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
-    { // Get the regions
-        logger.info("Fetching regions data");
-        galaxy.regions.clear();
-
-        MessageFetchRegionsRequest req{};
-        req.galaxyId = location.galaxyId;
-
-        while (!stopToken.shouldStop()) {
-            auto future = client.send(req, useFuture<MessageFetchRegionsResponse>());
-            auto res = future.get(std::chrono::seconds(1));
-
-            logger.info("Got regions page with {} items", res.items.size());
-            for (auto& region : res.items) {
-                galaxy.regions.insert(std::make_pair(region.id, std::move(region)));
-            }
-
-            if (res.page.hasNext && !req.token.empty()) {
-                req.token = res.page.token;
-            } else {
-                break;
-            }
-        }
-    }
-
-    loadingValue = 0.3f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
-    { // Get the factions
-        logger.info("Fetching factions data");
-        factions.clear();
-
-        MessageFetchFactionsRequest req{};
-        req.galaxyId = location.galaxyId;
-
-        while (!stopToken.shouldStop()) {
-            auto future = client.send(req, useFuture<MessageFetchFactionsResponse>());
-            auto res = future.get(std::chrono::seconds(1));
-
-            logger.info("Got factions page with {} items", res.items.size());
-            for (auto& faction : res.items) {
-                factions.insert(std::make_pair(faction.id, std::move(faction)));
-            }
-
-            if (res.page.hasNext && !res.page.token.empty()) {
-                req.token = res.page.token;
-            } else {
-                break;
-            }
-        }
-    }
-
-    loadingValue = 0.4f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
-    { // Get the systems
-        logger.info("Fetching systems data");
-        galaxy.systems.clear();
-
-        MessageFetchSystemsRequest req{};
-        req.galaxyId = location.galaxyId;
-
-        while (!stopToken.shouldStop()) {
-            auto future = client.send(req, useFuture<MessageFetchSystemsResponse>());
-            auto res = future.get(std::chrono::seconds(1));
-
-            logger.info("Got systems page with {} items", res.items.size());
-            for (auto& system : res.items) {
-                galaxy.systems.insert(std::make_pair(system.id, std::move(system)));
-            }
-
-            if (res.page.hasNext && !res.page.token.empty()) {
-                req.token = res.page.token;
-            } else {
-                break;
-            }
-        }
-    }
-
-    loadingValue = 0.6f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
-    { // Ordered systems list needed for creating shapes
-        galaxy.systemsOrdered.clear();
-        galaxy.systemsOrdered.reserve(galaxy.systems.size());
-
-        for (const auto& [_, system] : galaxy.systems) {
-            galaxy.systemsOrdered.push_back(&system);
-        }
-    }
-
-    loadingValue = 0.8f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
 
     logger.info("Creating entities");
 
@@ -297,7 +160,7 @@ void ViewGalaxy::load() {
     { // Create entities for regions
         logger.info("Creating regions");
 
-        for (const auto& [_, region] : galaxy.regions) {
+        for (const auto& [_, region] : cache.galaxy.regions) {
             regionsNames.add(Vector3{region.pos.x, 0.0f, region.pos.y}, region.name);
         }
     }
@@ -305,18 +168,18 @@ void ViewGalaxy::load() {
     { // System lines and point cloud
         logger.info("Creating systems and connections");
 
-        for (const auto& [systemId, system] : galaxy.systems) {
+        for (const auto& [systemId, system] : cache.galaxy.systems) {
             auto starColor = Color4{0.8f, 0.8f, 0.8f, 1.0f};
             auto connectionColor = Color4{0.7f, 0.7f, 0.7f, 0.3f};
 
-            const auto region = galaxy.regions.find(system.regionId);
-            if (region == galaxy.regions.end()) {
+            const auto region = cache.galaxy.regions.find(system.regionId);
+            if (region == cache.galaxy.regions.end()) {
                 EXCEPTION("No such region: '{}' for system: '{}'", system.regionId);
             }
 
             if (system.factionId) {
-                const auto faction = factions.find(*system.factionId);
-                if (faction == factions.end()) {
+                const auto faction = cache.galaxy.factions.find(*system.factionId);
+                if (faction == cache.galaxy.factions.end()) {
                     EXCEPTION("No such faction: '{}' for system: '{}'", *system.factionId);
                 }
 
@@ -326,8 +189,8 @@ void ViewGalaxy::load() {
             pointCloud.add(Vector3{system.pos.x, 0.0f, system.pos.y}, {0.03f, 0.03f}, starColor);
 
             for (const auto& otherId : system.connections) {
-                const auto other = galaxy.systems.find(otherId);
-                if (other == galaxy.systems.end()) {
+                const auto other = cache.galaxy.systems.find(otherId);
+                if (other == cache.galaxy.systems.end()) {
                     EXCEPTION("No such connection found: '{}' for system: '{}'", otherId, system.id);
                 }
 
@@ -338,18 +201,13 @@ void ViewGalaxy::load() {
         }
     }
 
-    loadingValue = 0.9f;
-    if (stopToken.shouldStop()) {
-        return;
-    }
-
     { // Calculate background
         logger.info("Creating background");
 
         std::vector<Vector2> positions;
-        positions.reserve(galaxy.systemsOrdered.size());
+        positions.reserve(cache.galaxy.systemsOrdered.size());
 
-        for (const auto* system : galaxy.systemsOrdered) {
+        for (const auto* system : cache.galaxy.systemsOrdered) {
             positions.push_back(system->pos);
         }
 
@@ -361,7 +219,7 @@ void ViewGalaxy::load() {
 
         const auto voronoi = computeVoronoiDiagram(positions, clip);
 
-        if (voronoi.cells.size() != galaxy.systemsOrdered.size()) {
+        if (voronoi.cells.size() != cache.galaxy.systemsOrdered.size()) {
             EXCEPTION("Voronoi incorrect number of cells");
         }
 
@@ -369,14 +227,14 @@ void ViewGalaxy::load() {
         entities.voronoi.addComponent<ComponentTransform>().move(Vector3{0.0f, -0.1f, 0.0f});
         auto& polyShape = entities.voronoi.addComponent<ComponentPolyShape>();
 
-        for (size_t i = 0; i < galaxy.systemsOrdered.size(); i++) {
+        for (size_t i = 0; i < cache.galaxy.systemsOrdered.size(); i++) {
             const auto& cell = voronoi.cells[i];
-            const auto* system = galaxy.systemsOrdered[i];
+            const auto* system = cache.galaxy.systemsOrdered[i];
 
             Color4 cellColor = hsvToRgb(Vector4{0.0f, 0.0f, 0.2f, 0.2f});
 
             if (system->factionId) {
-                const auto& faction = factions[system->factionId.value()];
+                const auto& faction = cache.galaxy.factions.at(system->factionId.value());
                 cellColor = hsvToRgb(Vector4{faction.color, 0.6f, 0.2f, 0.2f});
             }
 
@@ -398,7 +256,7 @@ void ViewGalaxy::load() {
     }
 
     { // Current Position
-        const auto currentSystem = galaxy.systems.at(location.systemId);
+        const auto currentSystem = cache.galaxy.systems.at(cache.location.systemId);
         entities.currentPos = scene->createEntity();
         auto& transform = entities.currentPos.addComponent<ComponentTransform>();
         transform.move(Vector3{currentSystem.pos.x, 0.0f, currentSystem.pos.y});
@@ -406,7 +264,7 @@ void ViewGalaxy::load() {
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
         icon.setColor(Theme::primary);
-    }*/
+    }
 
     /*{ // User Input
         logger.info("Creating system user input callbacks");
@@ -451,8 +309,6 @@ void ViewGalaxy::finalize() {
 
         entities.camera = entity;
     }
-
-    loadingValue = 1.0f;
 }
 
 void ViewGalaxy::clearEntities() {
@@ -469,17 +325,18 @@ void ViewGalaxy::onEnter() {
     scene.reset();
 
     loading = true;
-    loadingValue = 0.0f;
     gui.modalLoading.setEnabled(true);
-
-    stopToken.stop();
-    stopToken = StopToken{};
-
     futureLoad = std::async([this]() { return load(); });
 }
 
 void ViewGalaxy::onExit() {
     // Stop loading if we have exited
-    stopToken.stop();
+    if (futureLoad.valid()) {
+        try {
+            futureLoad.get();
+        } catch (...) {
+            EXCEPTION_NESTED("Failed to construct galaxy scene");
+        }
+    }
     gui.modalLoading.setEnabled(false);
 }

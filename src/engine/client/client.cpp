@@ -124,7 +124,7 @@ void Client::handle(Request<MessagePlayerLocationEvent> req) {
     auto data = req.get();
 
     logger.info("Player location has changed");
-    cache.playerLocation = data.location;
+    cache.location = data.location;
 
     sync.postSafe([this, data]() {
         logger.info("Sector has changed, creating a new scene");
@@ -278,6 +278,11 @@ void Client::handle(Request<MessageFetchSystemsResponse> req) {
         msg.token = data.page.token;
         networkClient->send(msg);
     } else {
+        // Construct an ordered list of systems
+        for (auto& [_, system] : cache.galaxy.systems) {
+            cache.galaxy.systemsOrdered.push_back(&system);
+        }
+
         // Mark that the cache has been synced
         flagCacheSync.store(true);
 

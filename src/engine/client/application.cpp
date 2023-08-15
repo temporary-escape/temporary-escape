@@ -180,7 +180,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValues = {clearColor};
 
-    if (shouldBlit()) {
+    if (shouldBlit() && renderer->isBlitReady()) {
         renderer->transitionForBlit(vkb);
     }
 
@@ -188,7 +188,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    if (shouldBlit()) {
+    if (shouldBlit() && renderer->isBlitReady()) {
         renderer->blit(vkb);
     }
 

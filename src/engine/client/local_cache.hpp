@@ -11,7 +11,7 @@ namespace Engine {
 struct LocalCache {
     // Player information
     std::string playerId;
-    PlayerLocationData playerLocation;
+    PlayerLocationData location;
 
     // World map information
     struct {
@@ -21,6 +21,7 @@ struct LocalCache {
         std::unordered_map<std::string, RegionData> regions;
         std::unordered_map<std::string, SystemData> systems;
         std::unordered_map<std::string, FactionData> factions;
+        std::vector<const SystemData*> systemsOrdered;
     } galaxy;
 };
 } // namespace Engine

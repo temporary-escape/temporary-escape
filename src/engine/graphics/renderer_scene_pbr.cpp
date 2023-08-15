@@ -100,6 +100,8 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     const auto selectedEntityId = getRenderPass<RenderPassOpaque>().getMousePosEntity();
     scene.feedbackSelectedEntity(selectedEntityId);
+
+    blitReady = true;
 }
 
 const VulkanTexture& RendererScenePbr::getFinalBuffer() const {
@@ -138,6 +140,8 @@ void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
     pipelineBlit.setTexture(src);
     pipelineBlit.flushDescriptors(vkb);
     pipelineBlit.renderMesh(vkb, resources.getMeshFullScreenQuad());
+
+    blitReady = false;
 }
 
 Vector2i RendererScenePbr::getViewport() const {

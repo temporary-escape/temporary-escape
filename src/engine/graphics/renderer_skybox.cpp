@@ -168,7 +168,7 @@ void RendererSkybox::prepareNebulas(Scene& scene, Rng& rng) const {
         nebula.setColor(color);
         nebula.setOffset({offset, 1.0f});
         nebula.setScale(scale);
-        nebula.setIntensity(intensity * 0.8f);
+        nebula.setIntensity(intensity * 0.95f);
         nebula.setFalloff(falloff);
 
         if (dist(rng) < 0.5f) {

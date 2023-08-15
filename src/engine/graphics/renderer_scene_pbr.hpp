@@ -19,6 +19,9 @@ public:
     void blit(VulkanCommandBuffer& vkb);
     Vector2i getViewport() const;
     const VulkanTexture& getFinalBuffer() const;
+    bool isBlitReady() const {
+        return blitReady;
+    }
 
 private:
     const RenderOptions options;
@@ -26,5 +29,6 @@ private:
     RenderResources& resources;
     RenderBufferPbr renderBufferPbr;
     RenderPipelineBlit pipelineBlit;
+    bool blitReady{false};
 };
 } // namespace Engine
