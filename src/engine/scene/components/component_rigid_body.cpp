@@ -28,7 +28,7 @@ public:
     void setWorldTransform(const btTransform& worldTrans) override {
         Matrix4 mat;
         worldTrans.getOpenGLMatrix(&mat[0][0]);
-        // mat = glm::scale(mat, Vector3{componentRigidBody.getScale()});
+        mat = glm::scale(mat, Vector3{componentRigidBody.getScale()});
         componentTransform.setTransform(mat);
         componentRigidBody.setDirty(true);
     }
@@ -238,13 +238,22 @@ void ComponentRigidBody::clearForces() {
     rigidBody->clearForces();
 }
 
+void ComponentRigidBody::resetTransform(const Vector3& pos, const Quaternion& rot) {
+    if (!rigidBody) {
+        return;
+    }
+    Matrix4 mat{1.0f};
+    mat = mat * glm::toMat4(rot);
+    mat[3] = Vector4(pos, mat[3].w);
+    setWorldTransform(mat);
+    updateTransform();
+}
+
 void ComponentRigidBody::updateTransform() {
     if (!rigidBody) {
         return;
     }
-    btTransform transform{};
-    motionState->getWorldTransform(transform);
-    rigidBody->setWorldTransform(transform);
+    motionState->setWorldTransform(rigidBody->getWorldTransform());
 }
 
 void ComponentRigidBody::bind(Lua& lua) {
@@ -257,8 +266,9 @@ void ComponentRigidBody::bind(Lua& lua) {
     cls["angular_velocity"] =
         sol::property(&ComponentRigidBody::getAngularVelocity, &ComponentRigidBody::setAngularVelocity);
     cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
+    cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
     cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
     cls["clear_forces"] = &ComponentRigidBody::clearForces;
     cls["activate"] = &ComponentRigidBody::activate;
-    cls["update_transform"] = &ComponentRigidBody::updateTransform;
+    cls["reset_transform"] = &ComponentRigidBody::resetTransform;
 }

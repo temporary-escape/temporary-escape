@@ -1,5 +1,6 @@
 #include "controller_network.hpp"
 #include "../../network/network_peer.hpp"
+#include "../../server/messages.hpp"
 #include <bitset>
 
 using namespace Engine;
@@ -32,6 +33,7 @@ template <typename Type> static void postEmplaceComponent(const entt::entity han
 }
 
 static void postEmplaceComponent(const entt::entity handle, ComponentRigidBody& component) {
+    (void)handle;
     component.setup();
 }
 
@@ -56,6 +58,8 @@ template <typename Type>
 static void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components, const size_t count,
                            const SyncOperation op) {
 
+    NetworkPeer::LockGuard lock{peer};
+    peer.prepareSend<MessageSceneUpdateEvent>(0);
     peer.pack_array(count);
     for (size_t i = 0; i < count; i++) {
         packComponent(peer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
@@ -138,13 +142,21 @@ void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
     size_t arraySize{0};
     auto total{updatedComponentsCount};
 
+    std::unique_ptr<NetworkPeer::LockGuard> lock;
+
     const auto prepareNext = [&]() {
         if (count >= arraySize) {
-            /*peer.reset();
-            packer = std::make_unique<Network::Peer::Packer>(peer, "MessageComponentSnapshot");
+            if (lock) {
+                peer.flush();
+                lock.reset();
+            }
+
+            lock = std::make_unique<NetworkPeer::LockGuard>(peer);
+
             arraySize = std::min<size_t>(total, 64);
             count = 0;
-            packer->pack_array(arraySize);*/
+            peer.prepareSend<MessageSceneUpdateEvent>(0);
+            peer.pack_array(arraySize);
         }
         ++count;
         --total;

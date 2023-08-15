@@ -48,6 +48,8 @@ public:
     void clearForces();
     void activate();
     bool isActive() const;
+
+    void resetTransform(const Vector3& pos, const Quaternion& rot);
     void updateTransform();
 
     void setDynamicsWorld(btDynamicsWorld& world) {

@@ -20,15 +20,21 @@ ENGINE_API uint64_t getMessageHash(const std::string_view& name);
 
 template <typename T> struct MessageHelper {};
 
-template <typename T> inline void packMessage(MsgpackStream& stream, const T& msg, uint64_t xid) {
+template <typename T> inline void prepareMessage(MsgpackStream& stream, const uint64_t xid) {
     stream.pack_array(3);
-    stream.pack_uint64(Detail::MessageHelper<T>::hash);
+    stream.pack_uint64(MessageHelper<T>::hash);
+    stream.pack_uint64(xid);
+}
+
+template <typename T> inline void packMessage(MsgpackStream& stream, const T& msg, const uint64_t xid) {
+    stream.pack_array(3);
+    stream.pack_uint64(MessageHelper<T>::hash);
     stream.pack_uint64(xid);
     stream.pack(msg);
     stream.flush();
 }
 
-template <> inline void packMessage<std::string>(MsgpackStream& stream, const std::string& msg, uint64_t xid) {
+template <> inline void packMessage<std::string>(MsgpackStream& stream, const std::string& msg, const uint64_t xid) {
     stream.pack_array(3);
     stream.pack_uint64(0);
     stream.pack_uint64(xid);

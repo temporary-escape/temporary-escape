@@ -179,7 +179,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
             // Update the bounding radius
             const auto span = positions->accessor.bufferView.getSpan();
             for (size_t i = 0; i < positions->accessor.count; i++) {
-                const auto* point = reinterpret_cast<const float*>(span.data()) + i;
+                const auto* point = reinterpret_cast<const float*>(span.data()) + i * 3;
                 bbRadius = std::max(bbRadius, glm::length(Vector3{point[0], point[1], point[2]}));
             }
 
@@ -313,8 +313,20 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
             const auto span = positions->accessor.bufferView.getSpan();
             auto* points = reinterpret_cast<const float*>(span.data());
-            auto shape = std::make_unique<btConvexHullShape>(points, static_cast<int>(positions->accessor.count), sizeof(float) * 3);
+            auto shape = std::make_unique<btConvexHullShape>(
+                points, static_cast<int>(positions->accessor.count), sizeof(float) * 3);
             collisionShape = std::move(shape);
+
+            // Update the bounding box
+            bbMin = Vector3(positions->accessor.min);
+            bbMax = Vector3(positions->accessor.max);
+
+            // Update the bounding radius
+            bbRadius = 0.0f;
+            for (size_t i = 0; i < positions->accessor.count; i++) {
+                const auto* point = reinterpret_cast<const float*>(span.data()) + i * 3;
+                bbRadius = std::max(bbRadius, glm::length(Vector3{point[0], point[1], point[2]}));
+            }
         }
 
         if (!collisionShape) {
@@ -333,5 +345,6 @@ void Model::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<Model>("Model");
-    cls["name"] = sol::property(&Model::getName);
+    cls["name"] = sol::readonly_property(&Model::getName);
+    cls["radius"] = sol::readonly_property(&Model::getRadius);
 }

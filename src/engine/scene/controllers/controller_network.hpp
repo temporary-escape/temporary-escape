@@ -14,6 +14,8 @@ enum class SyncOperation {
 
 class ENGINE_API ControllerNetwork : public Controller {
 public:
+    static constexpr const char* messageComponentSnapshotName = "MessageComponentSnapshot";
+
     explicit ControllerNetwork(entt::registry& reg);
     ~ControllerNetwork() override;
     NON_COPYABLE(ControllerNetwork);

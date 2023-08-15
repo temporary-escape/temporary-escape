@@ -96,4 +96,11 @@ struct MessagePlayerLocationEvent {
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationEvent);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageSceneUpdateEvent {
+    // void
+};
+
+MESSAGE_DEFINE(MessageSceneUpdateEvent);
 } // namespace Engine

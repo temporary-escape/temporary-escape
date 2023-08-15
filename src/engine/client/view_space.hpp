@@ -41,6 +41,5 @@ private:
     VoxelShapeCache& voxelShapeCache;
     FontFamily& font;
     Client& client;
-    std::optional<Entity> selectedEntity;
 };
 } // namespace Engine

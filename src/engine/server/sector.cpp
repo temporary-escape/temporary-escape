@@ -85,7 +85,7 @@ void Sector::update() {
             auto& networkController = scene->getController<ControllerNetwork>();
             for (const auto& player : players) {
                 if (const auto stream = player->getStream(); stream) {
-                    // networkController.sendUpdate(*stream);
+                    networkController.sendUpdate(*stream);
                 }
             }
             networkController.resetUpdates();
@@ -128,7 +128,7 @@ void Sector::addPlayer(const SessionPtr& session) {
         worker.post([this, session]() {
             const auto peer = session->getStream();
             if (peer) {
-                // scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
+                scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
             }
         });
     });

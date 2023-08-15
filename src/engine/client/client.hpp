@@ -58,7 +58,7 @@ public:
     void handle(Request<MessageFetchSystemsResponse> req);
     void handle(Request<MessageFetchFactionsResponse> req);
     void handle(Request<MessageFetchRegionsResponse> req);
-    // void handleSceneSnapshot(const PeerPtr& peer, Network::RawMessage message);
+    void handle(Request<MessageSceneUpdateEvent> req);
 
     // Used by unit tests for synchronized assertions
     template <typename Fn> bool check(Fn&& fn) {

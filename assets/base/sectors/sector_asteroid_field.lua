@@ -55,7 +55,7 @@ function SectorAsteroidField.new()
 
         local origin = engine.Vector3.new(0.0, 0.0, 0.0)
         local cluster = AsteroidCluster.new(seed, origin, 1500.0, 2.5, 15.0)
-        for _ = 1, 1000 do
+        for i = 1, 1000 do
             if cluster:next(scene) then
                 local data = {
                     size = cluster.size,
@@ -64,25 +64,24 @@ function SectorAsteroidField.new()
                 }
                 local entity = spawn("asteroid", data)
 
-                local transform = entity:get_component_transform()
-                transform:move(cluster.pos)
-                transform:rotate(cluster.orientation)
+                local offset = i * 100.0
+                local pos = engine.Vector3.new(offset - 500 * 100.0, 0.0, 0.0)
 
-                --local rigid_body = entity:get_component_rigid_body()
-                --rigid_body:update_transform()
+                local rigid_body = entity:get_component_rigid_body()
+                rigid_body:reset_transform(pos, cluster.orientation)
             end
         end
 
         local entity = scene:create_entity()
 
         local transform = entity:add_component_transform()
-        transform:move(engine.Vector3.new(0.0, -200.0, 0.0))
+        transform:move(engine.Vector3.new(0.0, -100.0, 0.0))
 
         local component_model = entity:add_component_model(asteroids[1])
         local component_rigid_body = entity:add_component_rigid_body()
         component_rigid_body:set_from_model(component_model.model, 5.0)
 
-        component_rigid_body.linear_velocity = engine.Vector3.new(0.0, 15.0, 0.0)
+        component_rigid_body.linear_velocity = engine.Vector3.new(0.0, 10.0, 0.0)
 
         entity:add_component_icon(icon)
         entity:add_component_label("Dynamic")

@@ -58,6 +58,7 @@ void ViewSpace::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
 }
 
 void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
+    const auto selectedEntity = scene.getSelectedEntity();
     if (selectedEntity) {
         const auto& transform = selectedEntity->getComponent<ComponentTransform>();
         const auto worldPos = transform.getAbsolutePosition();

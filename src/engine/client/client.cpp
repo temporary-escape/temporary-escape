@@ -24,6 +24,7 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST(MessageFetchRegionsResponse);
     HANDLE_REQUEST(MessageFetchFactionsResponse);
     HANDLE_REQUEST(MessageFetchSystemsResponse);
+    HANDLE_REQUEST(MessageSceneUpdateEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
@@ -205,7 +206,7 @@ void Client::handle(Request<MessageLoginResponse> req) {
 void Client::handle(Request<MessageFetchGalaxyResponse> req) {
     auto data = req.get();
 
-    logger.info("Received galaxy data");
+    logger.debug("Received galaxy data");
 
     cache.galaxy.name = data.name;
     cache.galaxy.id = data.galaxyId;
@@ -219,7 +220,7 @@ void Client::handle(Request<MessageFetchGalaxyResponse> req) {
 void Client::handle(Request<MessageFetchRegionsResponse> req) {
     auto data = req.get();
 
-    logger.info("Received region data count: {}", data.items.size());
+    logger.debug("Received region data count: {}", data.items.size());
 
     for (auto& item : data.items) {
         cache.galaxy.regions.emplace(item.id, std::move(item));
@@ -242,7 +243,7 @@ void Client::handle(Request<MessageFetchRegionsResponse> req) {
 void Client::handle(Request<MessageFetchFactionsResponse> req) {
     auto data = req.get();
 
-    logger.info("Received faction data count: {}", data.items.size());
+    logger.debug("Received faction data count: {}", data.items.size());
 
     for (auto& item : data.items) {
         cache.galaxy.factions.emplace(item.id, std::move(item));
@@ -265,7 +266,7 @@ void Client::handle(Request<MessageFetchFactionsResponse> req) {
 void Client::handle(Request<MessageFetchSystemsResponse> req) {
     auto data = req.get();
 
-    logger.info("Received system data count: {}", data.items.size());
+    logger.debug("Received system data count: {}", data.items.size());
 
     for (auto& item : data.items) {
         cache.galaxy.systems.emplace(item.id, std::move(item));
@@ -290,4 +291,11 @@ void Client::handle(Request<MessageFetchSystemsResponse> req) {
         MessagePlayerSpawnRequest msg{};
         networkClient->send(msg);
     }
+}
+
+void Client::handle(Request<MessageSceneUpdateEvent> req) {
+    sync.postSafe([=]() {
+        // Update, create, or delete entities in a scene
+        scene->getController<ControllerNetwork>().receiveUpdate(req.object());
+    });
 }
