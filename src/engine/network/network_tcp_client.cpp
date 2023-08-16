@@ -31,10 +31,16 @@ void NetworkTcpClient::close() {
 }
 
 void NetworkTcpClient::Internal::close() {
-    if (socket.is_open()) {
-        logger.info("Closing connection to: {}", address);
-        asio::error_code ec;
-        (void)socket.close(ec);
+    if (!closing && socket.is_open()) {
+        closing = true;
+        auto self = shared_from_this();
+        strand.post([self] {
+            if (self->socket.is_open()) {
+                logger.info("Closing connection to: {}", self->address);
+                asio::error_code ec;
+                (void)self->socket.close(ec);
+            }
+        });
     }
 }
 

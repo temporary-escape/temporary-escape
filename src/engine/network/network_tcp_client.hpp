@@ -49,6 +49,7 @@ private:
         NetworkDispatcher& dispatcher;
         asio::io_service::strand strand;
         Socket socket;
+        bool closing{false};
         std::string address;
         std::array<char, 4096> buffer{};
     };
