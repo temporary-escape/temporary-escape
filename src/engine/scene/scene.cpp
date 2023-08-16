@@ -20,7 +20,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache) : isServer{false} {
+Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : isServer{false}, lua{lua} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
 
@@ -63,6 +63,31 @@ void Scene::feedbackSelectedEntity(const uint32_t id) {
 
 Entity Scene::createEntity() {
     return fromHandle(reg.create());
+}
+
+Entity Scene::createEntityFrom(const std::string& name, const sol::table& data) {
+    const auto it = entityTemplates.find(name);
+    if (it == entityTemplates.end()) {
+        throw std::runtime_error(fmt::format("No such entity template named: '{}'", name));
+    }
+
+    auto entity = createEntity();
+
+    auto res = (*it->second)["new"](entity, data);
+    if (!res.valid()) {
+        sol::error err = res;
+        throw std::runtime_error(fmt::format("Entity failed to create error: {}", err.what()));
+    }
+
+    auto inst = res.get<sol::table>();
+
+    entity.addComponent<ComponentScript>(inst);
+
+    return entity;
+}
+
+void Scene::addEntityTemplate(const std::string& name, const sol::table& klass) {
+    entityTemplates.emplace(name, std::make_unique<sol::table>(klass));
 }
 
 void Scene::removeEntity(Entity& entity) {
@@ -148,10 +173,6 @@ const ComponentSkybox* Scene::getSkybox() {
     return nullptr;
 }
 
-void Scene::setLua(Lua& value) {
-    lua = &value;
-}
-
 bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {
     const auto& dynamicsWorld = getController<ControllerDynamicsWorld>();
     return dynamicsWorld.contactTestSphere(origin, radius);
@@ -227,4 +248,6 @@ void Scene::bind(Lua& lua) {
     auto cls = m.new_usertype<Scene>("Scene");
     cls["create_entity"] = &Scene::createEntity;
     cls["contact_test_sphere"] = &Scene::contactTestSphere;
+    cls["add_entity_template"] = &Scene::addEntityTemplate;
+    cls["create_entity_template"] = &Scene::createEntityFrom;
 }

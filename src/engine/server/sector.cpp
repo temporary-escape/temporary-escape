@@ -39,10 +39,10 @@ void Sector::load() {
         EXCEPTION("Sector was already loaded id: '{}'", sectorId);
     }
 
-    scene = std::make_unique<Scene>(config);
     lua = std::make_unique<Lua>(config, eventBus);
-    lua->setScene(*scene);
-    scene->setLua(*lua);
+    scene = std::make_unique<Scene>(config, nullptr, lua.get());
+
+    lua->root()["get_scene"] = [this]() { return scene.get(); };
 
     const auto galaxyData = db.get<GalaxyData>(galaxyId);
     const auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));

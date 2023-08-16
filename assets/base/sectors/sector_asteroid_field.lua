@@ -38,40 +38,31 @@ function SectorAsteroidField.new()
         local key = string.format("%s/%s/%s", galaxy.id, system.id, sector.id);
         logger:info(string.format("Populating sector: %s", key))
 
-        local asteroids = {
-            assets_manager:find_model("model_asteroid_01_a"),
-            assets_manager:find_model("model_asteroid_01_b"),
-            assets_manager:find_model("model_asteroid_01_c"),
-            assets_manager:find_model("model_asteroid_01_d"),
-            assets_manager:find_model("model_asteroid_01_e"),
-            assets_manager:find_model("model_asteroid_01_f"),
-            assets_manager:find_model("model_asteroid_01_g"),
-            assets_manager:find_model("model_asteroid_01_h"),
-        }
-
-        local icon = assets_manager:find_image("icon_target")
-
         local seed = rng:rand_seed()
 
         local origin = engine.Vector3.new(0.0, 0.0, 0.0)
-        local cluster = AsteroidCluster.new(seed, origin, 1500.0, 2.5, 15.0)
-        for i = 1, 1000 do
-            if cluster:next(scene) then
-                local data = {
-                    size = cluster.size,
-                    model = asteroids[rng:rand_int(1, #asteroids)],
-                    icon = icon,
-                }
-                local entity = spawn("asteroid", data)
+        local cluster = AsteroidCluster.new(seed, origin, 1500.0)
 
-                local offset = i * 100.0
-                local pos = engine.Vector3.new(offset - 500 * 100.0, 0.0, 0.0)
+        for _ = 1, 1000 do
+            local size = rng:rand_real(2.0, 15.0)
 
-                local rigid_body = entity:get_component_rigid_body()
-                rigid_body:reset_transform(pos, cluster.orientation)
+            local data = {
+                size = size,
+                seed = rng:rand_seed(),
+                mass = 0.0, -- Static
+            }
+
+            local entity = scene:create_entity_template("asteroid", data)
+            local rigid_body = entity:get_component_rigid_body()
+            local model = entity:get_component_model()
+            local radius = model.model.radius * size
+
+            if cluster:next(radius) then
+                rigid_body:reset_transform(cluster.pos, cluster.orientation)
             end
         end
 
+        --[[
         local entity = scene:create_entity()
 
         local transform = entity:add_component_transform()
@@ -84,7 +75,7 @@ function SectorAsteroidField.new()
         component_rigid_body.linear_velocity = engine.Vector3.new(0.0, 10.0, 0.0)
 
         entity:add_component_icon(icon)
-        entity:add_component_label("Dynamic")
+        entity:add_component_label("Dynamic")]]--
     end
 
     return inst

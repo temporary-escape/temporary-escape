@@ -11,12 +11,13 @@
 
 namespace Engine {
 class ENGINE_API Skybox;
+class ENGINE_API Lua;
 
 class ENGINE_API Scene : public UserInput {
 public:
     using SelectedEntityCallback = std::function<void(std::optional<Entity>)>;
 
-    explicit Scene(const Config& config, VoxelShapeCache* voxelShapeCache = nullptr);
+    explicit Scene(const Config& config, VoxelShapeCache* voxelShapeCache = nullptr, Lua* lua = nullptr);
     virtual ~Scene();
 
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length) const;
@@ -26,6 +27,8 @@ public:
 
     void removeEntity(Entity& entity);
     Entity createEntity();
+    Entity createEntityFrom(const std::string& name, const sol::table& data);
+    void addEntityTemplate(const std::string& name, const sol::table& klass);
     Entity fromHandle(entt::entity handle);
 
     template <typename... Ts> auto getView() {
@@ -92,7 +95,6 @@ public:
 
     ComponentCamera* getPrimaryCamera() const;
     const ComponentSkybox* getSkybox();
-    void setLua(Lua& value);
 
     static void bind(Lua& lua);
 
@@ -108,5 +110,6 @@ private:
     std::optional<Entity> selectedEntityIcon{std::nullopt};
     std::optional<Entity> selectedEntityLast{std::nullopt};
     Lua* lua{nullptr};
+    std::unordered_map<std::string, std::unique_ptr<sol::table>> entityTemplates;
 };
 } // namespace Engine

@@ -22,7 +22,7 @@ public:
     ComponentScript& operator=(ComponentScript&& other) noexcept;
     static constexpr auto in_place_delete = true;
 
-    sol::table& getInstance() const;
+    [[nodiscard]] sol::table& getInstance() const;
 
     static void bind(Lua& lua);
 

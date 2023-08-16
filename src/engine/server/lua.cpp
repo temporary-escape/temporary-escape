@@ -4,6 +4,7 @@
 #include "../math/galaxy_distribution.hpp"
 #include "../math/minimum_spanning_tree.hpp"
 #include "../math/random.hpp"
+#include "../math/volume_occupancy_tester.hpp"
 #include "../utils/exceptions.hpp"
 #include "../utils/log.hpp"
 #include "../utils/name_generator.hpp"
@@ -211,6 +212,7 @@ void Lua::setupBindings() {
     DelaunayTriangulation::bind(*this);
     FloodFill::bind(*this);
     GalaxyDistribution::bind(*this);
+    VolumeOccupancyTester::bind(*this);
     m["random_circle_positions"] = &randomCirclePositions;
     m["radians"] = glm::radians<float>;
     m["degrees"] = glm::degrees<float>;

@@ -1,23 +1,40 @@
+local engine = require("engine")
+local assets_manager = engine.get_assets_manager()
+
+local asteroid_models = {
+    assets_manager:find_model("model_asteroid_01_a"),
+    assets_manager:find_model("model_asteroid_01_b"),
+    assets_manager:find_model("model_asteroid_01_c"),
+    assets_manager:find_model("model_asteroid_01_d"),
+    assets_manager:find_model("model_asteroid_01_e"),
+    assets_manager:find_model("model_asteroid_01_f"),
+    assets_manager:find_model("model_asteroid_01_g"),
+    assets_manager:find_model("model_asteroid_01_h"),
+}
+
+local icon = assets_manager:find_image("icon_target")
+
 local EntityAsteroid = {}
 
-function EntityAsteroid.new (entity)
+function EntityAsteroid.new (entity, data)
     local inst = {}
     setmetatable(inst, { __index = EntityAsteroid })
     inst.entity = entity
-    return inst
-end
 
-function EntityAsteroid:create (data)
-    local transform = self.entity:add_component_transform()
+    local transform = entity:add_component_transform()
     transform.static = true
 
-    local component_model = self.entity:add_component_model(data.model)
-    local component_rigid_body = self.entity:add_component_rigid_body()
-    component_rigid_body:set_from_model(component_model.model, data.size)
-    component_rigid_body.mass = 0.0
+    local model_index = (data.seed % #asteroid_models) + 1
 
-    self.entity:add_component_icon(data.icon)
-    self.entity:add_component_label("Asteroid (Rock)")
+    local component_model = entity:add_component_model(asteroid_models[model_index])
+    local component_rigid_body = entity:add_component_rigid_body()
+    component_rigid_body:set_from_model(component_model.model, data.size)
+    component_rigid_body.mass = data.mass
+
+    entity:add_component_icon(icon)
+    entity:add_component_label("Asteroid (Rock)")
+
+    return inst
 end
 
 return EntityAsteroid

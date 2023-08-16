@@ -2,26 +2,23 @@ local engine = require("engine")
 
 local AsteroidCluster = {}
 
-function AsteroidCluster.new (seed, origin, radius, min_size, max_size)
+function AsteroidCluster.new (seed, origin, radius)
     local inst = {}
     setmetatable(inst, { __index = AsteroidCluster })
     inst.rng = engine.MT19937.new(seed)
     inst.origin = origin
     inst.radius = radius
-    inst.min_size = min_size
-    inst.max_size = max_size
     inst.pos = nil
     inst.size = nil
     inst.orientation = nil
+    inst.tester = engine.VolumeOccupancyTester.new()
     return inst
 end
 
-function AsteroidCluster.next (self, scene)
+function AsteroidCluster.next (self, size)
     local tries = 25
     while tries > 0 do
         tries = tries - 1
-
-        local size = self.rng:rand_real(self.min_size, self.max_size)
 
         local x = self.rng:rand_real(0.0, 1.0) - 0.5
         local y = self.rng:rand_real(0.0, 1.0) - 0.5
@@ -41,7 +38,8 @@ function AsteroidCluster.next (self, scene)
         self.size = size
         self.orientation = self.rng:rand_quaternion()
 
-        if scene:contact_test_sphere(self.pos, size / 2.0 + 1.0) == false then
+        if self.tester:contact_test(self.pos, size + 1.0) == false then
+            self.tester:add(self.pos, size + 1.0)
             return true
         end
     end
