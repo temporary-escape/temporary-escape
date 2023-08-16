@@ -8,7 +8,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 NetworkTcpPeer::NetworkTcpPeer(asio::io_service& service, NetworkTcpServer& server, Socket socket,
                                NetworkDispatcher& dispatcher) :
-    service{service}, strand{service}, server{server}, socket{std::move(socket)}, dispatcher{dispatcher} {
+    service{service}, strand{service}, server{&server}, socket{std::move(socket)}, dispatcher{dispatcher} {
 
     this->socket.set_option(asio::ip::tcp::no_delay{true});
     address = fmt::format("{}", this->socket.remote_endpoint());
@@ -24,10 +24,14 @@ void NetworkTcpPeer::close() {
         logger.info("Closing peer endpoint: {}", address);
 
         auto self = shared_from_this();
-        server.disconnect(self);
+        if (server) {
+            server->disconnect(self);
+            server = nullptr;
+        }
         asio::error_code ec;
         (void)socket.close(ec);
     }
+    server = nullptr;
 }
 
 void NetworkTcpPeer::receive() {

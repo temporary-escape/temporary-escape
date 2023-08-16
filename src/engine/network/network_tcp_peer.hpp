@@ -29,7 +29,7 @@ protected:
 private:
     asio::io_service& service;
     asio::io_service::strand strand;
-    NetworkTcpServer& server;
+    NetworkTcpServer* server;
     Socket socket;
     NetworkDispatcher& dispatcher;
     std::string address;
