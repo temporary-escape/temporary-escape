@@ -123,10 +123,11 @@ TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client", "[tcp_serve
 TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client many times", "[tcp_server]") {
     startServer();
 
+    NetworkDispatcher clientDispatcher{};
+
     // Do the operation many times
     for (auto i = 0; i < 50; i++) {
         // Connect to the server
-        NetworkDispatcher clientDispatcher{};
         auto client = createClient(clientDispatcher);
         REQUIRE(client->isConnected());
         REQUIRE(client->getAddress() == "[::1]:22334");
