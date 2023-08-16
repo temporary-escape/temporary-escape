@@ -55,13 +55,14 @@ void NetworkTcpServer::accept() {
         } else if (acceptor.is_open()) {
             logger.info("Accepting new connection from: {}", socket->lowest_layer().remote_endpoint());
             auto peer = std::make_shared<NetworkTcpPeer>(service, *this, std::move(*socket), dispatcher);
-            peer->receive();
+
             {
                 std::lock_guard<std::mutex> lock{mutex};
                 peers.push_back(peer);
             }
 
-            service.post([this, peer]() { dispatcher.onAcceptSuccess(peer); });
+            dispatcher.onAcceptSuccess(peer);
+            peer->receive();
             accept();
         }
     }));

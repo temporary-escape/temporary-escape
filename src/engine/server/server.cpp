@@ -196,18 +196,14 @@ void Server::tick() {
 }
 
 void Server::onAcceptSuccess(const NetworkPeerPtr& peer) {
-    strand.postSafe([=]() {
-        logger.info("New connection peer: {}", peer->getAddress());
-        lobby.addPeer(peer);
-    });
+    logger.info("New connection peer: {}", peer->getAddress());
+    lobby.addPeer(peer);
 }
 
 void Server::onDisconnect(const NetworkPeerPtr& peer) {
-    strand.postSafe([=]() {
-        logger.info("Disconnected connection peer: {}", peer->getAddress());
-        lobby.removePeer(peer);
-        playerSessions.removeSession(peer);
-    });
+    logger.info("Disconnected connection peer: {}", peer->getAddress());
+    lobby.removePeer(peer);
+    playerSessions.removeSession(peer);
 }
 
 void Server::movePlayerToSector(const std::string& playerId, const std::string& sectorId) {
@@ -275,71 +271,67 @@ void Server::addPlayerToSector(const SessionPtr& session, const std::string& sec
 }
 
 void Server::disconnectPlayer(const std::string& playerId) {
-    strand.postSafe([=]() {
-        logger.info("Disconnecting player: {}", playerId);
+    logger.info("Disconnecting player: {}", playerId);
 
-        auto session = playerSessions.getSession(playerId);
-        if (session) {
-            playerSessions.removeSession(session->getStream());
-            session->close();
-        }
-    });
+    auto session = playerSessions.getSession(playerId);
+    if (session) {
+        playerSessions.removeSession(session->getStream());
+        session->close();
+    }
 }
 
 void Server::handle(Request<MessageLoginRequest> req) {
-    strand.postSafe([=]() {
-        logger.info("New login peer: {}", req.peer->getAddress());
+    logger.info("New login peer: {}", req.peer->getAddress());
 
-        auto data = req.get();
+    auto data = req.get();
 
-        // Check for server password
-        if (!config.serverPassword.empty() && config.serverPassword != data.password) {
-            req.respondError("Bad server password");
+    // Check for server password
+    if (!config.serverPassword.empty() && config.serverPassword != data.password) {
+        req.respondError("Bad server password");
+        lobby.disconnectPeer(req.peer);
+        return;
+    }
+
+    auto& servicePlayers = getService<ServicePlayers>();
+
+    // Check if the player is already logged in
+    const auto playerIdFound = servicePlayers.secretToId(data.secret);
+    if (playerIdFound) {
+        if (playerSessions.isLoggedIn(*playerIdFound)) {
+            req.respondError("Already logged in");
             lobby.disconnectPeer(req.peer);
             return;
         }
+    }
 
-        auto& servicePlayers = getService<ServicePlayers>();
+    // Remove peer from lobby
+    lobby.removePeer(req.peer);
 
-        // Check if the player is already logged in
-        const auto playerIdFound = servicePlayers.secretToId(data.secret);
-        if (playerIdFound) {
-            if (playerSessions.isLoggedIn(*playerIdFound)) {
-                req.respondError("Already logged in");
-                lobby.disconnectPeer(req.peer);
-                return;
-            }
-        }
+    // Login
+    logger.info("Logging in player name: '{}'", data.name);
 
-        // Remove peer from lobby
-        lobby.removePeer(req.peer);
+    PlayerData player;
+    try {
+        player = servicePlayers.login(data.secret, data.name);
+    } catch (...) {
+        req.respondError("Failed logging in");
+        lobby.disconnectPeer(req.peer);
+        EXCEPTION_NESTED("Failed to log in player: '{}'", data.name);
+    }
 
-        // Login
-        logger.info("Logging in player name: '{}'", data.name);
+    logger.info("Logged in player: {} name: '{}'", player.id, data.name);
 
-        PlayerData player;
-        try {
-            player = servicePlayers.login(data.secret, data.name);
-        } catch (...) {
-            req.respondError("Failed logging in");
-            lobby.disconnectPeer(req.peer);
-            EXCEPTION_NESTED("Failed to log in player: '{}'", data.name);
-        }
+    auto session = playerSessions.createSession(req.peer, player.id);
 
-        logger.info("Logged in player: {} name: '{}'", player.id, data.name);
+    MessageLoginResponse res{};
+    res.playerId = player.id;
+    req.respond(res);
 
-        auto session = playerSessions.createSession(req.peer, player.id);
-
-        MessageLoginResponse res{};
-        res.playerId = player.id;
-        req.respond(res);
-
-        // Publish an event
-        EventData event{};
-        event["player_id"] = player.id;
-        event["player_name"] = player.name;
-        eventBus->enqueue("player_logged_in", event);
-    });
+    // Publish an event
+    EventData event{};
+    event["player_id"] = player.id;
+    event["player_name"] = player.name;
+    eventBus->enqueue("player_logged_in", event);
 }
 
 void Server::handle(Request<MessagePlayerSpawnRequest> req) {

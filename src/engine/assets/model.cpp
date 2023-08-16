@@ -84,7 +84,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
             EXCEPTION("gltf file has no materials");
         }
 
-        const auto nodes = gltf.getNodes();
+        const auto& nodes = gltf.getNodes();
         if (nodes.empty()) {
             EXCEPTION("gltf file has no nodes");
         }
