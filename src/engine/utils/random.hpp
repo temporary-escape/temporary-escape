@@ -20,7 +20,7 @@ template <typename T> inline T randomReal(std::mt19937_64& rng, const T min, con
     return dist(rng);
 }
 inline uint64_t randomSeed(std::mt19937_64& rng) {
-    return randomInt<uint64_t>(rng);
+    return randomInt<uint64_t>(rng, 0, std::numeric_limits<long long>::max());
 }
 template <typename Container, typename T = typename Container::value_type>
 inline const T& randomPick(std::mt19937_64& rng, const Container& container) {

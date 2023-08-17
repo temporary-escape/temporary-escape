@@ -181,6 +181,10 @@ sol::table& Lua::root() {
     return data->engine;
 }
 
+sol::state& Engine::Lua::getState() {
+    return data->state;
+}
+
 void Lua::setScene(Scene& value) {
     scene = &value;
 }
@@ -246,6 +250,9 @@ void Lua::setupBindings() {
     bindSchemas(*this);
     Server::bind(*this);
     EventHandler::bind(*this);
+    Spawner::bind(*this);
+    SectorCondition::bind(*this);
+    SectorType::bind(*this);
 
     // Scene
     Entity::bind(*this);

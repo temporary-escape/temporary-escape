@@ -11,6 +11,7 @@ using reference = basic_reference<false>;
 template <bool, typename> class basic_table_core;
 template <bool b> using table_core = basic_table_core<b, reference>;
 using table = table_core<false>;
+class state;
 } // namespace sol
 
 namespace Engine {
@@ -28,6 +29,7 @@ public:
     void require(const std::string_view& name);
     void require(const std::string_view& name, const std::function<void(sol::table&)>& callback);
     sol::table& root();
+    sol::state& getState();
 
 private:
     class EventHandler;

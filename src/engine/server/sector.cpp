@@ -9,11 +9,12 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Sector::Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
-               std::string galaxyId, std::string systemId, std::string sectorId) :
+               Generator& generator, std::string galaxyId, std::string systemId, std::string sectorId) :
     config{config},
     db{db},
     assetsManager{assetsManager},
     eventBus{eventBus},
+    generator{generator},
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
     sectorId{std::move(sectorId)},
@@ -48,27 +49,19 @@ void Sector::load() {
     const auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
     const auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
 
-    std::mt19937_64 rng{sectorData.seed};
+    lua->root()["get_sector_data"] = [this]() {
+        return db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
+    };
 
     lua->require("base.sector");
-    lua->require(sectorData.luaTemplate, [&](sol::table& table) {
+    generator.populate(sectorData, *scene);
+    /*lua->require(sectorData.luaTemplate, [&](sol::table& table) {
         auto res = table["populate"](table, rng, galaxyData, systemData, sectorData, scene.get());
         if (!res.valid()) {
             sol::error err = res;
             EXCEPTION("Failed to call sector template: '{}' error: {}", sectorData.luaTemplate, err.what());
         }
-    });
-    /*try {
-        auto found = world.sectors.find(galaxyId, systemId, sectorId);
-        if (!found) {
-            EXCEPTION("Unable to load sector: '{}' not found", sectorId);
-        }
-
-        const auto& sector = found.value();
-
-    } catch (...) {
-        EXCEPTION_NESTED("Failed to load sector");
-    }*/
+    });*/
 
     loaded = true;
     logger.info("Sector is loaded: '{}'", sectorId);

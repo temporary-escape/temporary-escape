@@ -60,6 +60,10 @@ public:
         return *dynamic_cast<T*>(it->second.get());
     }
 
+    void addSectorType(std::string name, SectorType type) {
+        generator.addSectorType(std::move(name), std::move(type));
+    }
+
     static Server* instance;
 
     static void bind(Lua& lua);

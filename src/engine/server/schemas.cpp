@@ -408,7 +408,7 @@ void Engine::bindSchemas(Lua& lua) {
         cls["seed"] = &SectorData::seed;
         cls["pos"] = &SectorData::pos;
         cls["icon"] = &SectorData::icon;
-        cls["template"] = &SectorData::luaTemplate;
+        cls["type"] = &SectorData::type;
     }
 
     {

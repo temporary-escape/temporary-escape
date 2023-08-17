@@ -105,7 +105,9 @@ void Server::cleanup() {
     playerSessions.clear();
 
     logger.info("Waiting for network to stop");
-    networkServer->stop();
+    if (networkServer) {
+        networkServer->stop();
+    }
 
     logger.info("Waiting for load queue to stop");
     loadQueue.stop();
@@ -239,8 +241,8 @@ SectorPtr Server::startSector(const std::string& sectorId) {
 
     try {
         logger.info("Creating sector: '{}'", sectorId);
-        auto sectorPtr =
-            std::make_shared<Sector>(config, db, assetsManager, *eventBus, sector.galaxyId, sector.systemId, sector.id);
+        auto sectorPtr = std::make_shared<Sector>(
+            config, db, assetsManager, *eventBus, generator, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, sectorPtr));
 
         // Load the sector in a separate thread
@@ -399,4 +401,11 @@ void Server::bind(Lua& lua) {
      * @praam sector_id The ID of the sector
      */
     cls["move_player_to_sector"] = &Server::movePlayerToSector;
+    /**
+     * @function Server:add_sector_type
+     * Adds a new sector type, or overwrites an existing sector type, for the galaxy generator.
+     * @param name Name of the sector type
+     * @param type An instance of SectorType
+     */
+    cls["add_sector_type"] = &Server::addSectorType;
 }

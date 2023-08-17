@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../database/database.hpp"
+#include "../scene/scene.hpp"
 #include "schemas.hpp"
+#include "sector_type.hpp"
 
 namespace Engine {
 class Generator {
@@ -27,6 +29,8 @@ public:
     virtual ~Generator() = default;
 
     void generate(uint64_t seed);
+    void addSectorType(std::string name, SectorType type);
+    void populate(const SectorData& sector, Scene& scene);
 
 private:
     void createMainGalaxy(const std::string& galaxyId, uint64_t seed);
@@ -46,5 +50,6 @@ private:
     const Options options;
     AssetsManager& assetsManager;
     Database& db;
+    std::unordered_map<std::string, SectorType> sectorTypes;
 };
 } // namespace Engine

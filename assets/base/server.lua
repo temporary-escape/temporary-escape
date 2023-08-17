@@ -12,3 +12,6 @@ require("base.factions.faction_valas")
 -- Event handlers
 require("base.events.event_server")
 require("base.events.event_player")
+
+-- Sectors
+require("base.sectors.sector_asteroid_field")

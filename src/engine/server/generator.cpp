@@ -4,8 +4,10 @@
 #include "../math/galaxy_distribution.hpp"
 #include "../math/minimum_spanning_tree.hpp"
 #include "../math/random.hpp"
+#include "../server/lua.hpp"
 #include "../utils/name_generator.hpp"
 #include "../utils/random.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -118,6 +120,31 @@ void Generator::generate(const uint64_t seed) {
         createGalaxyRegions(galaxyId);
         createGalaxySystems(galaxyId);
         createGalaxySectors(galaxyId);
+    }
+}
+
+void Generator::addSectorType(std::string name, SectorType type) {
+    const auto it = sectorTypes.emplace(std::move(name), std::move(type));
+    logger.info("Added sector type: {}", it.first->first);
+}
+
+void Generator::populate(const SectorData& sector, Scene& scene) {
+    std::mt19937_64 rng{sector.seed};
+
+    const auto it = sectorTypes.find(sector.type);
+    if (it == sectorTypes.end()) {
+        EXCEPTION("No such sector type: {}", sector.type);
+    }
+
+    logger.info("Populating sector: {} with type: {}", sector.id, it->first);
+
+    for (const auto& we : it->second.entities) {
+        const auto weight = randomReal<float>(rng, 0.0f, 1.0f);
+        if (weight < we.weight) {
+            auto table = scene.getLua().getState().create_table();
+            table["seed"] = randomSeed(rng);
+            scene.createEntityFrom(we.entity, table);
+        }
     }
 }
 
@@ -339,27 +366,80 @@ void Generator::createGalaxySectors(const std::string& galaxyId) {
 size_t Generator::createGalaxySectors(const GalaxyData& galaxy, const SystemData& system) {
     Rng rng{system.seed};
 
-    SectorData sector{};
-    sector.id = uuid();
-    sector.name = randomNameGenerator(rng);
-    sector.pos = Vector2{0.0f, 0.0f};
-    sector.galaxyId = galaxy.id;
-    sector.systemId = system.id;
-    sector.seed = randomSeed(rng);
-    sector.icon = assetsManager.getImages().find("icon_asteroid_field");
-    sector.luaTemplate = "base.sectors.sector_asteroid_field";
+    size_t total{0};
 
-    const auto key = fmt::format("{}/{}/{}", galaxy.id, system.id, sector.id);
-    db.put<SectorData>(key, sector);
+    const auto planets = db.seekAll<PlanetData>(fmt::format("{}/{}/", galaxy.id, system.id), 0);
 
-    // Mark this sector as a starting location
-    StartingLocationData startingLocation{};
-    startingLocation.galaxyId = galaxy.id;
-    startingLocation.systemId = system.id;
-    startingLocation.sectorId = sector.id;
-    db.put<StartingLocationData>(uuid(), startingLocation);
+    // Find the radius of the entire solar system
+    auto systemRadius{0.0f};
+    for (const auto& planet : planets) {
+        systemRadius = std::max<float>(glm::length(planet.pos), systemRadius);
+    }
+    // Add some extra space beyond planet orbits
+    systemRadius += 25.0f;
 
-    return 1;
+    // Utility to find a random position within the system
+    std::vector<Vector2> positions;
+    const auto findPosition = [&]() -> std::optional<Vector2> {
+        auto tries = 100;
+        while (tries-- > 0) {
+            const auto dist = randomReal<float>(rng, 5.0f, systemRadius);
+            const auto angle = randomReal<float>(rng, 0.0f, 360.0f);
+            const auto test = glm::rotate(Vector2{dist, 0.0f}, glm::radians(angle));
+
+            auto success{true};
+            for (const auto& pos : positions) {
+                if (glm::distance(test, pos) < 2.0f) {
+                    success = false;
+                    break;
+                }
+            }
+
+            if (success) {
+                return test;
+            }
+        }
+        return std::nullopt;
+    };
+
+    for (const auto& [name, type] : sectorTypes) {
+        if (!type.checkConditions(rng, galaxy, system, planets)) {
+            continue;
+        }
+
+        const auto count = randomInt<int>(rng, type.minCount, type.maxCount);
+
+        for (int i = 0; i <= count; i++) {
+            const auto pos = findPosition();
+            if (!pos) {
+                return total;
+            }
+
+            SectorData sector{};
+            sector.id = uuid();
+            sector.name = randomNameGenerator(rng);
+            sector.pos = *pos;
+            sector.galaxyId = galaxy.id;
+            sector.systemId = system.id;
+            sector.seed = randomSeed(rng);
+            sector.icon = type.mapIcon;
+            sector.type = name;
+
+            const auto key = fmt::format("{}/{}/{}", galaxy.id, system.id, sector.id);
+            db.put<SectorData>(key, sector);
+
+            // Mark this sector as a starting location
+            StartingLocationData startingLocation{};
+            startingLocation.galaxyId = galaxy.id;
+            startingLocation.systemId = system.id;
+            startingLocation.sectorId = sector.id;
+            db.put<StartingLocationData>(uuid(), startingLocation);
+        }
+
+        total += count;
+    }
+
+    return total;
 }
 
 void Generator::fillGalaxyRegions(const std::string& galaxyId, const std::vector<Vector2>& positions,

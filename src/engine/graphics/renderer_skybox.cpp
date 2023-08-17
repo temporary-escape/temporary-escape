@@ -155,7 +155,7 @@ void RendererSkybox::prepareNebulas(Scene& scene, Rng& rng) const {
 
     while (true) {
         const auto scale = dist(rng) * 0.5f + 0.25f;
-        const auto intensity = dist(rng) * 0.5f + 0.5f;
+        const auto intensity = dist(rng) * 0.2f + 0.9f;
         const auto color = Color4{dist(rng), dist(rng), dist(rng), 1.0f};
         const auto falloff = dist(rng) * 3.0f + 3.0f;
         const auto offset =

@@ -95,6 +95,7 @@ public:
 
     ComponentCamera* getPrimaryCamera() const;
     const ComponentSkybox* getSkybox();
+    Lua& getLua() const;
 
     static void bind(Lua& lua);
 

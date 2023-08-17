@@ -173,6 +173,13 @@ const ComponentSkybox* Scene::getSkybox() {
     return nullptr;
 }
 
+Lua& Scene::getLua() const {
+    if (!lua) {
+        EXCEPTION("No lua state within the scene");
+    }
+    return *lua;
+}
+
 bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {
     const auto& dynamicsWorld = getController<ControllerDynamicsWorld>();
     return dynamicsWorld.contactTestSphere(origin, radius);

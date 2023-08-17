@@ -560,10 +560,6 @@ void VulkanRenderer::copyImageToImage(VulkanTexture& texture, int level, const V
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     commandBuffer.start(beginInfo);
 
-    logger.debug("copyImageToImage src: {:x} dst: {:x}",
-                 reinterpret_cast<uint64_t>(source.getHandle()),
-                 reinterpret_cast<uint64_t>(texture.getHandle()));
-
     VkImageBlit blit{};
     blit.srcOffsets[0] = {0, 0, 0};
     blit.srcOffsets[1] = {size.x, size.y, 1};
