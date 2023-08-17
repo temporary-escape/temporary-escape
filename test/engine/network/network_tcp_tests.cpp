@@ -23,6 +23,11 @@ public:
         return peers;
     }
 
+    void clear() {
+        std::lock_guard<std::mutex> lock{mutex};
+        peers.clear();
+    }
+
 private:
     std::mutex mutex;
     std::vector<NetworkPeerPtr> peers;
@@ -53,6 +58,8 @@ public:
             server->stop();
             server.reset();
         }
+
+        dispatcher.clear();
 
         if (work) {
             logger.info("Stopping io_service");
