@@ -117,6 +117,8 @@ TEST_CASE_METHOD(TcpServerFixture, "Start and close the TCP client", "[tcp_serve
     REQUIRE(client->getAddress() == "[::1]:22334");
     REQUIRE_EVENTUALLY(dispatcher.getPeers().size() == 1);
 
+    client->close();
+
     stopAll();
 }
 
