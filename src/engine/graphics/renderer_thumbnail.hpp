@@ -9,6 +9,7 @@ public:
                                AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache);
 
     void render(const BlockPtr& block, const VoxelShape::Type shape);
+    void render(const PlanetTypePtr& planetType);
 
 private:
     void renderOneTime(Scene& scene);

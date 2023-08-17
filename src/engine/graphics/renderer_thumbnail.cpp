@@ -100,3 +100,50 @@ void RendererThumbnail::render(const Engine::BlockPtr& block, const Engine::Voxe
 
     vulkan.waitQueueIdle();
 }
+
+void RendererThumbnail::render(const PlanetTypePtr& planetType) {
+    logger.info("Rendering thumbnail for planet: {}", planetType->getName());
+
+    if (!planetType->getLowResTextures().getColor()) {
+        EXCEPTION("Planet type: {} has no textures generated", planetType->getName());
+    }
+
+    Scene scene{config, &voxelShapeCache};
+
+    { // Sun
+        auto sun = scene.createEntity();
+        sun.addComponent<ComponentDirectionalLight>(Color4{1.0f, 1.0f, 1.0f, 1.0f});
+        sun.addComponent<ComponentTransform>().translate(Vector3{-3.0f, 1.0f, 1.0f});
+    }
+
+    { // Camera
+        auto entity = scene.createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& camera = entity.addComponent<ComponentCamera>(transform);
+        camera.setProjection(40.0f);
+        camera.lookAt({0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+        scene.setPrimaryCamera(entity);
+    }
+
+    { // Skybox
+        auto entity = scene.createEntity();
+        auto& skybox = entity.addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(vulkan, std::move(skyboxTextures));
+    }
+
+    { // Planet
+        auto entity = scene.createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        transform.translate(Vector3{0.0f, 0.0f, -2.0f});
+        auto& planet = entity.addComponent<ComponentPlanet>(planetType, 1234);
+        planet.setBackground(true);
+        planet.setHighRes(false);
+    }
+
+    scene.update(0.1f);
+
+    renderOneTime(scene);
+
+    vulkan.waitQueueIdle();
+}

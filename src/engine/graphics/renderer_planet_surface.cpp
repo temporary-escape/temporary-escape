@@ -44,11 +44,31 @@ void RendererPlanetSurface::update(Scene& scene) {
     }
 }
 
+PlanetTextures RendererPlanetSurface::renderPlanet(uint64_t seed, const PlanetTypePtr& planetType) {
+    work.seed = seed;
+    work.planetType = planetType;
+    startJobs(6);
+
+    while (true) {
+        RendererWork::render();
+        if (!RendererWork::isBusy()) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+
+    PlanetTextures res{};
+    std::swap(res, planetTextures);
+    return res;
+}
+
 void RendererPlanetSurface::finished() {
     logger.info("Finished rendering planet: {} seed: {}", work.planetType->getName(), work.seed);
 
-    work.entity.getComponent<ComponentPlanet>().setTextures(vulkan, std::move(planetTextures));
-    planetTextures = PlanetTextures{};
+    if (work.entity) {
+        work.entity.getComponent<ComponentPlanet>().setTextures(vulkan, std::move(planetTextures));
+        planetTextures = PlanetTextures{};
+    }
 }
 
 void RendererPlanetSurface::beforeRender(VulkanCommandBuffer& vkb, Scene& scene, const size_t job) {

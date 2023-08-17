@@ -15,6 +15,7 @@ public:
                                    VoxelShapeCache& voxelShapeCache);
 
     void update(Scene& scene);
+    PlanetTextures renderPlanet(uint64_t seed, const PlanetTypePtr& planetType);
 
 protected:
     void beforeRender(VulkanCommandBuffer& vkb, Scene& scene, size_t job) override;

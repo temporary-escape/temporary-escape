@@ -63,7 +63,7 @@ private:
     void createPlanetLowResTextures();
     void createBlockThumbnails(RendererThumbnail& thumbnailRenderer);
     void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
-    void createPlanetThumbnails(Renderer& thumbnailRenderer);
+    void createPlanetThumbnails(RendererThumbnail& thumbnailRenderer);
     bool shouldBlit() const;
 
     void nuklearOnClick(bool push) override;

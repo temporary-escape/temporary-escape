@@ -391,11 +391,11 @@ void Application::createEmptyThumbnail(RendererThumbnail& thumbnailRenderer) {
 }
 
 void Application::createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface) {
-    /*uint64_t seed = 1;
+    uint64_t seed = 1;
     for (auto& planet : assetsManager->getPlanetTypes().findAll()) {
-        auto textures = planetGenerator.render(seed++ * 100, planet);
+        auto textures = rendererPlanetSurface.renderPlanet(seed++ * 100, planet);
         planet->setLowResTextures(std::move(textures));
-    }*/
+    }
 }
 
 void Application::createPlanetLowResTextures() {
@@ -404,26 +404,26 @@ void Application::createPlanetLowResTextures() {
     status.message = "Creating planets...";
     status.value = 0.5f;
 
-    /*const auto planetTextureSize = Vector2i{config.graphics.planetLowResTextureSize};
-    auto planetGeneratorLowRes =
-        std::make_unique<PlanetGenerator>(planetTextureSize, *this, *renderResources, *assetsManager);
+    const Vector2i viewport{config.graphics.planetLowResTextureSize, config.graphics.planetLowResTextureSize};
+    auto rendererPlanetSurfaceLowRes = std::make_unique<RendererPlanetSurface>(
+        config, viewport, *this, *renderResources, *assetsManager, *voxelShapeCache);
 
-    createPlanetLowResTextures(*planetGeneratorLowRes);*/
+    createPlanetLowResTextures(*rendererPlanetSurfaceLowRes);
 
     NEXT(createThumbnails());
 }
 
-void Application::createPlanetThumbnails(Renderer& thumbnailRenderer) {
+void Application::createPlanetThumbnails(RendererThumbnail& thumbnailRenderer) {
     logger.info("Creating planet thumbnails");
 
-    /*for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
+    for (const auto& planet : assetsManager->getPlanetTypes().findAll()) {
         thumbnailRenderer.render(planet);
         const auto alloc =
-            assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getTexture());
+            assetsManager->getImageAtlas().add(thumbnailRenderer.getViewport(), thumbnailRenderer.getFinalBuffer());
 
         const auto name = fmt::format("{}_image", planet->getName());
         planet->setThumbnail(assetsManager->addImage(name, alloc));
-    }*/
+    }
 }
 
 void Application::createBlockThumbnails(RendererThumbnail& thumbnailRenderer) {
@@ -450,14 +450,9 @@ void Application::createThumbnails() {
     auto rendererThumbnail =
         std::make_unique<RendererThumbnail>(config, *this, *renderResources, *assetsManager, *voxelShapeCache);
 
-    /*RenderOptions renderOptions{};
-    renderOptions.viewport = Vector2i{config.thumbnailSize, config.thumbnailSize};
-    auto thumbnailRenderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources,
-    *assetsManager);*/
-
     createBlockThumbnails(*rendererThumbnail);
     createEmptyThumbnail(*rendererThumbnail);
-    // createPlanetThumbnails(*thumbnailRenderer);
+    createPlanetThumbnails(*rendererThumbnail);
 
     assetsManager->finalize();
 
