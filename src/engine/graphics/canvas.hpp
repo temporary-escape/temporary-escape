@@ -27,6 +27,8 @@ public:
         image(pos, size, *asset);
     }
     void image(const Vector2& pos, const Vector2& size, const Image& asset);
+    void image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Vector2& uv,
+               const Vector2& st);
 
 private:
     struct Vertex {

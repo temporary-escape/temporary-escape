@@ -44,6 +44,13 @@ public:
         RightBottom = 0x04 | 0x20,
     };
 
+    enum class Symbol : uint32_t {
+        TriangleUp,
+        TriangleDown,
+        TriangleLeft,
+        TriangleRight,
+    };
+
     class EventCallback {
     public:
         virtual ~EventCallback() = default;
@@ -96,6 +103,7 @@ public:
     bool button(const Color4& color);
     void buttonToggle(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
     bool buttonImage(const ImagePtr& img);
+    void buttonImageToggle(const ImagePtr& img, bool& value);
     bool image(const ImagePtr& img);
     void imageToggle(const ImagePtr& img, bool& value);
     void imageToggle(const ImagePtr& img, bool& value, const std::string& text, TextAlign align = TextAlign::Center);
@@ -134,6 +142,7 @@ public:
     Vector2 getWindowSizeForContentRegion(const Vector2& size) const;
     Vector2 getSpacing() const;
     Vector2 getPadding() const;
+    Vector2 getGroupPadding() const;
     Vector2 getMousePos() const;
     Vector2 getWindowPos() const;
     Vector2 getWidgetSize() const;
@@ -148,6 +157,7 @@ private:
     void drawDragAndDrop();
     void render();
     void setStyleImageToggle(bool value);
+    void setStyleButtonToggle(bool value);
     nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
     static inline const auto padding = 4.0f;

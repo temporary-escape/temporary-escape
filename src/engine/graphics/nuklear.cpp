@@ -28,6 +28,7 @@ static nk_color fromColor(const Color4& color) {
 
 struct Nuklear::CustomStyle {
     nk_style_button image{};
+    nk_style_button toggle{};
 };
 
 Nuklear::Nuklear(EventCallback& events, const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily,
@@ -363,28 +364,41 @@ bool Nuklear::button(const std::string& text, const TextAlign align) {
 }
 
 void Nuklear::buttonToggle(const std::string& text, bool& value, Nuklear::TextAlign align) {
-    nk_bool v = value ? nk_true : nk_false;
-
     if (nk_widget_is_mouse_clicked(ctx.get(), nk_buttons::NK_BUTTON_LEFT)) {
         triggerEventClick();
     }
 
-    nk_selectable_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align), &v);
-    value = v == nk_true;
+    /*nk_selectable_label(ctx.get(), text.c_str(), static_cast<nk_flags>(align), &v);
+    value = v == nk_true;*/
+
+    setStyleButtonToggle(value);
+
+    if (nk_button_label_styled(ctx.get(), &customStyle->toggle, text.c_str())) {
+        value = true;
+    }
 }
 
 bool Nuklear::buttonImage(const ImagePtr& img) {
     struct nk_image ni {};
     ni.handle.ptr = img.get();
 
-    nk_style_button& style = ctx->style.button;
-    style.text_alignment = NK_TEXT_ALIGN_LEFT;
-
     if (nk_button_image(ctx.get(), ni) == nk_true) {
         triggerEventClick();
         return true;
     }
     return false;
+}
+
+void Engine::Nuklear::buttonImageToggle(const ImagePtr& img, bool& value) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    setStyleImageToggle(value);
+
+    if (nk_button_image_styled(ctx.get(), &customStyle->image, ni) == nk_true) {
+        triggerEventClick();
+        value = true;
+    }
 }
 
 bool Engine::Nuklear::button(const Color4& color) {
@@ -432,6 +446,22 @@ void Engine::Nuklear::setStyleImageToggle(const bool value) {
             customStyle->image.border_color = ctx->style.button.hover.data.color;
         } else {
             customStyle->image.border_color = ctx->style.button.border_color;
+        }
+    }
+}
+
+void Engine::Nuklear::setStyleButtonToggle(const bool value) {
+    if (value) {
+        if (isHovered()) {
+            customStyle->toggle.border_color = ctx->style.button.hover.data.color;
+        } else {
+            customStyle->toggle.border_color = ctx->style.button.active.data.color;
+        }
+    } else {
+        if (isHovered()) {
+            customStyle->toggle.border_color = ctx->style.button.hover.data.color;
+        } else {
+            customStyle->toggle.border_color = ctx->style.button.border_color;
         }
     }
 }
@@ -674,6 +704,10 @@ Vector2 Engine::Nuklear::getPadding() const {
     return Vector2{ctx->style.window.padding.x, ctx->style.window.padding.y};
 }
 
+Vector2 Engine::Nuklear::getGroupPadding() const {
+    return Vector2{ctx->style.window.group_padding.x, ctx->style.window.group_padding.y};
+}
+
 Vector2 Engine::Nuklear::getWindowPos() const {
     if (!ctx->active) {
         EXCEPTION("No active gui window");
@@ -861,4 +895,6 @@ void Nuklear::applyTheme() {
     customStyle->image.normal.data.color = TRANSPARENT_COLOR;
     customStyle->image.hover.data.color = TRANSPARENT_COLOR;
     customStyle->image.active.data.color = TRANSPARENT_COLOR;
+
+    customStyle->toggle = button;
 }

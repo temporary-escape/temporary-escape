@@ -141,7 +141,7 @@ void RenderPassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {
 }
 
 void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
-    auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>();
+    auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>(entt::exclude<TagDisabled>);
     auto& camera = *scene.getPrimaryCamera();
 
     pipelineGrid.bind(vkb);
@@ -184,7 +184,7 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
 }
 
 void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
-    auto systemModels = scene.getView<ComponentTransform, ComponentModel>();
+    auto systemModels = scene.getView<ComponentTransform, ComponentModel>(entt::exclude<TagDisabled>);
     auto& camera = *scene.getPrimaryCamera();
 
     pipelineModel.bind(vkb);

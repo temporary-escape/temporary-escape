@@ -3,9 +3,8 @@
 #include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
-#include "../gui/gui_block_action_bar.hpp"
+#include "../gui/gui_block_info.hpp"
 #include "../gui/gui_block_selector.hpp"
-#include "../gui/gui_side_menu.hpp"
 #include "../scene/scene.hpp"
 #include "../server/schemas.hpp"
 #include "view.hpp"
@@ -38,13 +37,17 @@ private:
     void createHelpers();
     Entity createHelperBox(const Color4& color, float width);
     void addBlock();
+    void removeBlock();
+    void updateSelectedBlock();
 
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
-    GuiBlockActionBar guiBlockActionBar;
     GuiBlockSelector guiBlockSelector;
-    GuiSideMenu guiBlockSideMenu;
+    GuiBlockInfo guiBlockInfo;
+    // GuiBlockActionBar guiBlockActionBar;
+    // GuiBlockSelector guiBlockSelector;
+    // GuiSideMenu guiBlockSideMenu;
 
     Vector2 raycastScreenPos;
     std::optional<Grid::RayCastResult> raycastResult;
@@ -53,5 +56,13 @@ private:
     Entity entityShip;
     Entity entityHelperAdd;
     Entity entityHelperRemove;
+    size_t currentRotation{0};
+
+    struct {
+        BlockPtr block{nullptr};
+        VoxelShape::Type shape{VoxelShape::Cube};
+        size_t color{0};
+        size_t rotation{0};
+    } selected;
 };
 } // namespace Engine

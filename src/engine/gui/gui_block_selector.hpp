@@ -6,16 +6,46 @@
 namespace Engine {
 class ENGINE_API GuiBlockSelector : public GuiWindow {
 public:
-    explicit GuiBlockSelector(const Config& config);
+    enum class Action {
+        Add,
+        Remove,
+        Replace,
+    };
 
+    explicit GuiBlockSelector(const Config& config, AssetsManager& assetsManager);
     ~GuiBlockSelector() override = default;
 
     void setBlocks(const Span<BlockPtr>& blocks);
+    Action getAction() const {
+        return action;
+    }
+    BlockPtr getSelectedBlock() const {
+        return selected ? selected->block : nullptr;
+    }
+    VoxelShape::Type getSelectedShape() const {
+        return selected ? selected->shape : VoxelShape::Type::Cube;
+    }
+    size_t getSelectedColor() const {
+        return activeColor;
+    }
+    BlockPtr getHoveredBlock() const {
+        return hovered ? hovered->block : nullptr;
+    }
+    VoxelShape::Type getHoveredShape() const {
+        return hovered ? hovered->shape : VoxelShape::Type::Cube;
+    }
+    const Vector2& getHoveredOffset() const {
+        return hoveredOffset;
+    }
 
 private:
+    static constexpr float actionBarSize{96.0f};
+    static constexpr size_t actionBarItems{10};
+
     struct Item {
-        BlockPtr block;
+        BlockPtr block{nullptr};
         std::string name;
+        VoxelShape::Type shape{VoxelShape::Cube};
     };
 
     struct Category {
@@ -28,14 +58,40 @@ private:
         bool enabled;
     };
 
+    void loadColors(const TexturePtr& asset);
     void drawLayout(Nuklear& nuklear) override;
-    void drawSearchBar(Nuklear& nuklear);
-    void drawCategories(Nuklear& nuklear);
-    void drawBlockSelection(Nuklear& nuklear);
+    void drawLayoutItems(Nuklear& nuklear);
+    void drawLayoutActions(Nuklear& nuklear);
+    void drawLayoutArrows(Nuklear& nuklear);
+    void drawLayoutTopBar(Nuklear& nuklear);
     void beforeDraw(Nuklear& nuklear, const Vector2& viewport) override;
 
+    Category& getCategory();
+
+    const Config& config;
+    AssetsManager& assetsManager;
+    std::array<Color4, 16 * 4> colors{};
+
     std::vector<Category> categories;
+    size_t categoryIndex{0};
+    size_t pageIndex{0};
+    size_t activeColor{0};
     std::vector<CategoryFilter> filterChoices;
     std::string searchQuery;
+    const Item* selected{nullptr};
+    const Item* hovered{nullptr};
+    Action action{Action::Add};
+    Vector2 hoveredOffset;
+
+    struct {
+        ImagePtr arrowUp;
+        ImagePtr arrowDown;
+        ImagePtr undo;
+        ImagePtr redo;
+        ImagePtr save;
+        ImagePtr load;
+        ImagePtr remove;
+        ImagePtr replace;
+    } images;
 };
 } // namespace Engine

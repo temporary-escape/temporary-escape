@@ -9,44 +9,22 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager
     config{config},
     vulkan{vulkan},
     assetsManager{assetsManager},
-    guiBlockActionBar{config, assetsManager},
-    guiBlockSelector{config},
-    guiBlockSideMenu{config},
+    guiBlockSelector{config, assetsManager},
+    guiBlockInfo{config, assetsManager},
     scene{config, &voxelShapeCache} {
 
     guiBlockSelector.setBlocks(assetsManager.getBlocks().findAll());
-
-    guiBlockSideMenu.setItems({
-        GuiSideMenu::Item{
-            assetsManager.getImages().find("icon_save"),
-            "Save current ship",
-            [this](bool active) {},
-            false,
-        },
-        GuiSideMenu::Item{
-            assetsManager.getImages().find("icon_open_folder"),
-            "Open a ship to edit",
-            [this](bool active) {},
-            false,
-        },
-        GuiSideMenu::Item{
-            assetsManager.getImages().find("icon_anticlockwise_rotation"),
-            "Undo",
-            [this](bool active) {},
-            false,
-        },
-        GuiSideMenu::Item{
-            assetsManager.getImages().find("icon_clockwise_rotation"),
-            "Redo",
-            [this](bool active) {},
-            false,
-        },
-    });
+    guiBlockInfo.setEnabled(false);
 
     createScene();
     createEntityShip();
     createGridLines();
     createHelpers();
+
+    selected.block = guiBlockSelector.getSelectedBlock();
+    selected.color = guiBlockSelector.getSelectedColor();
+    selected.shape = guiBlockSelector.getSelectedShape();
+    updateSelectedBlock();
 }
 
 void ViewBuild::createScene() {
@@ -109,6 +87,8 @@ void ViewBuild::createHelpers() {
     entityHelperAdd = createHelperBox(Color4{0.0f, 1.0f, 0.0f, 1.0f}, 0.525f);
     entityHelperAdd.setDisabled(true);
 
+    entityHelperAdd.addComponent<ComponentGrid>();
+
     entityHelperRemove = createHelperBox(Color4{1.0f, 0.0f, 0.0f, 1.0f}, 0.525f);
     entityHelperRemove.setDisabled(true);
 }
@@ -139,7 +119,7 @@ Entity ViewBuild::createHelperBox(const Color4& color, const float width) {
 void ViewBuild::createEntityShip() {
     entityShip = scene.createEntity();
     entityShip.addComponent<ComponentTransform>();
-    auto& debug = entityShip.addComponent<ComponentDebug>();
+    // auto& debug = entityShip.addComponent<ComponentDebug>();
     auto& grid = entityShip.addComponent<ComponentGrid>();
     grid.setDirty(true);
 
@@ -152,33 +132,59 @@ void ViewBuild::createEntityShip() {
 }
 
 void ViewBuild::addBlock() {
-    if (!raycastResult) {
+    if (!raycastResult || !selected.block) {
         return;
     }
 
-    const auto actionBarItem = guiBlockActionBar.getActiveBlock();
-    const auto actionBarColor = guiBlockActionBar.getActiveColor();
-    if (!actionBarItem.block) {
-        return;
-    }
-
-    auto& grid = entityShip.getComponent<ComponentGrid>();
     const auto pos = raycastResult->pos + raycastResult->orientation;
-    logger.info("Inserting pos: {} hit: {} orientation: {} insert pos: {}",
-                raycastResult->pos,
-                raycastResult->hitPos,
-                raycastResult->orientation,
-                pos);
-    grid.insert(pos, actionBarItem.block, 0, actionBarColor, actionBarItem.shape);
+    auto& grid = entityShip.getComponent<ComponentGrid>();
+    grid.insert(pos, selected.block, currentRotation, selected.color, selected.shape);
     grid.setDirty(true);
 }
 
-void ViewBuild::update(const float deltaTime) {
-    // time += deltaTime;
-    // Vector2 pos = glm::rotate(Vector2{1.0f, 0.0f}, glm::radians(time));
-    // entitySun.getComponent<ComponentTransform>().translate(Vector3{pos.x, 1.0f, pos.y} * 300.0f);
+void ViewBuild::removeBlock() {
+    if (!raycastResult) {
+        return;
+    }
+}
 
+void ViewBuild::updateSelectedBlock() {
+    auto& grid = entityHelperAdd.getComponent<ComponentGrid>();
+    if (selected.block) {
+        entityHelperAdd.setDisabled(false);
+        grid.insert({0, 0, 0}, selected.block, currentRotation, selected.color, selected.shape);
+        grid.setDirty(true);
+    } else {
+        entityHelperAdd.setDisabled(true);
+    }
+}
+
+void ViewBuild::update(const float deltaTime) {
     scene.update(deltaTime);
+
+    if (guiBlockSelector.getSelectedBlock() != selected.block ||
+        guiBlockSelector.getSelectedColor() != selected.color ||
+        guiBlockSelector.getSelectedShape() != selected.shape || currentRotation != selected.rotation) {
+
+        selected.block = guiBlockSelector.getSelectedBlock();
+        selected.color = guiBlockSelector.getSelectedColor();
+        selected.shape = guiBlockSelector.getSelectedShape();
+        selected.rotation = currentRotation;
+
+        updateSelectedBlock();
+    }
+
+    if (const auto hoveredBlock = guiBlockSelector.getHoveredBlock(); hoveredBlock) {
+        guiBlockInfo.setBlock(hoveredBlock);
+        guiBlockInfo.setShape(guiBlockSelector.getHoveredShape());
+        guiBlockInfo.setEnabled(true);
+
+        Vector2 offset{guiBlockSelector.getSize().x / -2.0f, 0.0f};
+        offset += guiBlockSelector.getHoveredOffset();
+        guiBlockInfo.setOffset(offset);
+    } else {
+        guiBlockInfo.setEnabled(false);
+    }
 
     const auto [eyes, rayEnd] = scene.screenToWorld(raycastScreenPos, 16.0f);
 
@@ -186,13 +192,46 @@ void ViewBuild::update(const float deltaTime) {
     raycastResult = grid.rayCast(eyes, rayEnd);
 
     if (raycastResult) {
-        if (entityHelperAdd.isDisabled()) {
-            entityHelperAdd.setDisabled(false);
+        // Action to add new blocks to the grid
+        if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Add) {
+            if (entityHelperAdd.isDisabled()) {
+                entityHelperAdd.setDisabled(false);
+            }
+            if (!entityHelperRemove.isDisabled()) {
+                entityHelperRemove.setDisabled(true);
+            }
+
+            auto& transform = entityHelperAdd.getComponent<ComponentTransform>();
+            transform.move(raycastResult->worldPos + raycastResult->normal);
         }
-        auto& transform = entityHelperAdd.getComponent<ComponentTransform>();
-        transform.move(raycastResult->worldPos + raycastResult->normal);
-    } else if (!entityHelperAdd.isDisabled()) {
-        entityHelperAdd.setDisabled(true);
+        // Action to remove blocks from the grid
+        else if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Remove) {
+            if (!entityHelperAdd.isDisabled()) {
+                entityHelperAdd.setDisabled(true);
+            }
+            if (entityHelperRemove.isDisabled()) {
+                entityHelperRemove.setDisabled(false);
+            }
+
+            auto& transform = entityHelperRemove.getComponent<ComponentTransform>();
+            transform.move(raycastResult->worldPos);
+        }
+        // Replace blocks
+        else if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Replace) {
+            if (!entityHelperAdd.isDisabled()) {
+                entityHelperAdd.setDisabled(true);
+            }
+            if (!entityHelperRemove.isDisabled()) {
+                entityHelperRemove.setDisabled(true);
+            }
+        }
+    } else {
+        if (!entityHelperAdd.isDisabled()) {
+            entityHelperAdd.setDisabled(true);
+        }
+        if (!entityHelperRemove.isDisabled()) {
+            entityHelperRemove.setDisabled(true);
+        }
     }
 }
 
@@ -200,9 +239,8 @@ void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
 void ViewBuild::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
-    guiBlockActionBar.draw(nuklear, viewport);
     guiBlockSelector.draw(nuklear, viewport);
-    guiBlockSideMenu.draw(nuklear, viewport);
+    guiBlockInfo.draw(nuklear, viewport);
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
@@ -212,14 +250,14 @@ void ViewBuild::eventMouseMoved(const Vector2i& pos) {
 }
 
 void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    /*if (gui.contextMenu.isEnabled() && !gui.contextMenu.isCursorInside(pos)) {
-        gui.contextMenu.setEnabled(false);
-    }*/
-
     scene.eventMousePressed(pos, button);
 
     if (button == MouseButton::Left) {
-        addBlock();
+        if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Add) {
+            addBlock();
+        } else if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Remove) {
+            removeBlock();
+        }
     }
 }
 
@@ -228,15 +266,20 @@ void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button
 }
 
 void ViewBuild::eventMouseScroll(const int xscroll, const int yscroll) {
+    scene.eventMouseScroll(xscroll, yscroll);
+
     if (yscroll > 0) {
-        const auto nextIndex = (guiBlockActionBar.getActiveIndex() + 1) % guiBlockActionBar.getMaxItems();
-        guiBlockActionBar.setActiveIndex(nextIndex);
-    } else if (yscroll < 0) {
-        auto nextIndex = static_cast<int>(guiBlockActionBar.getActiveIndex()) - 1;
-        if (nextIndex < 0) {
-            nextIndex = static_cast<int>(guiBlockActionBar.getMaxItems()) - 1;
+        if (currentRotation < 23) {
+            ++currentRotation;
+        } else {
+            currentRotation = 0;
         }
-        guiBlockActionBar.setActiveIndex(nextIndex);
+    } else if (yscroll < 0) {
+        if (currentRotation > 0) {
+            --currentRotation;
+        } else {
+            currentRotation = 23;
+        }
     }
 }
 
@@ -254,14 +297,10 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 
 void ViewBuild::onEnter() {
     guiBlockSelector.setEnabled(true);
-    guiBlockActionBar.setEnabled(true);
-    guiBlockSideMenu.setEnabled(true);
 }
 
 void ViewBuild::onExit() {
     guiBlockSelector.setEnabled(false);
-    guiBlockActionBar.setEnabled(false);
-    guiBlockSideMenu.setEnabled(false);
 }
 
 Scene* ViewBuild::getScene() {

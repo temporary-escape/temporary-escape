@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "../file/ogg_file_reader.hpp"
+#include "../file/png_file_reader.hpp"
 #include "../graphics/theme.hpp"
 #include "../utils/random.hpp"
 

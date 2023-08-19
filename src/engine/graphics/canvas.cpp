@@ -508,3 +508,30 @@ void Canvas::image(const Vector2& pos, const Vector2& size, const Image& asset) 
 
     cmd.texture = alc.texture;
 }
+
+void Canvas::image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Vector2& uv,
+                   const Vector2& st) {
+    auto& cmd = addDrawCommand();
+    cmd.start = indexOffset;
+    cmd.length = 6;
+    cmd.mode = 0;
+
+    const auto dst = allocate();
+
+    dst[0].pos = pos;
+    dst[1].pos = pos + Vector2{size.x, 0.0f};
+    dst[2].pos = pos + Vector2{size.x, size.y};
+    dst[3].pos = pos + Vector2{0.0f, size.y};
+
+    dst[0].color = nextColor;
+    dst[1].color = nextColor;
+    dst[2].color = nextColor;
+    dst[3].color = nextColor;
+
+    dst[0].uv = uv;
+    dst[1].uv = uv + Vector2{st.x, 0.0f};
+    dst[2].uv = uv + st;
+    dst[3].uv = uv + Vector2{0.0f, st.y};
+
+    cmd.texture = &texture;
+}

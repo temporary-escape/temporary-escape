@@ -50,7 +50,7 @@ void RenderPassShadow::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
 void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& controllerLights = scene.getController<ControllerLights>();
-    auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>();
+    auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>(entt::exclude<TagDisabled>);
 
     pipelineGrid.bind(vkb);
 
@@ -78,7 +78,7 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
 
 void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& controllerLights = scene.getController<ControllerLights>();
-    auto systemModels = scene.getView<ComponentTransform, ComponentModel>();
+    auto systemModels = scene.getView<ComponentTransform, ComponentModel>(entt::exclude<TagDisabled>);
 
     pipelineModel.bind(vkb);
 

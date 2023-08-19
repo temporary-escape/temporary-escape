@@ -47,9 +47,9 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     primitives.clear();
 
     for (const auto& [material, data] : map) {
-        logger.debug("Building mesh for type: {} of size: {} indices",
+        /*logger.debug("Building mesh for type: {} of size: {} indices",
                      material->baseColorTexture->getName(),
-                     data.indices.size());
+                     data.indices.size());*/
 
         if (data.indices.empty()) {
             continue;
