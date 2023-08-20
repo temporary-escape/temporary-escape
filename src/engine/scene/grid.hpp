@@ -8,6 +8,7 @@
 #include "../math/vector.hpp"
 #include "../utils/bitfield.hpp"
 #include "../utils/exceptions.hpp"
+#include "../utils/msgpack_adaptors.hpp"
 
 #include <array>
 #include <iostream>
@@ -111,6 +112,36 @@ public:
             return s;
         }
 
+        void convert(msgpack::object const& o) {
+            if (o.type != msgpack::type::ARRAY || o.via.array.size != 2) {
+                throw msgpack::type_error();
+            }
+
+            auto& e0 = o.via.array.ptr[0];
+            if (e0.type != msgpack::type::BIN) {
+                throw msgpack::type_error();
+            }
+
+            auto& e1 = o.via.array.ptr[1];
+            if (e1.type != msgpack::type::BIN) {
+                throw msgpack::type_error();
+            }
+
+            items.resize(e0.via.bin.size / sizeof(T));
+            std::memcpy(items.data(), e0.via.bin.ptr, e0.via.bin.size);
+
+            counters.resize(e1.via.bin.size / sizeof(uint16_t));
+            std::memcpy(counters.data(), e1.via.bin.ptr, e1.via.bin.size);
+        }
+
+        template <typename Stream> void pack(msgpack::packer<Stream>& o) const {
+            o.pack_array(2);
+            o.pack_bin(items.size() * sizeof(T));
+            o.pack_bin_body(reinterpret_cast<const char*>(items.data()), items.size() * sizeof(T));
+            o.pack_bin(counters.size() * sizeof(uint16_t));
+            o.pack_bin_body(reinterpret_cast<const char*>(counters.data()), counters.size() * sizeof(uint16_t));
+        }
+
     private:
         std::vector<T> items;
         std::vector<uint16_t> counters;
@@ -194,6 +225,8 @@ public:
     struct Type {
         BlockPtr block{nullptr};
         size_t count{0};
+
+        MSGPACK_DEFINE_ARRAY(block, count);
     };
 
     struct BlocksData {
@@ -265,6 +298,7 @@ public:
     public:
         Octree();
         void insert(const Vector3i& pos, const Voxel& voxel);
+        bool remove(const Vector3i& pos);
 
         void expand(Index idx, size_t level);
 
@@ -297,8 +331,11 @@ public:
             return Iterator(*this, 0, 0, Vector3i{0});
         }
 
+        MSGPACK_DEFINE_ARRAY(nodes, depth);
+
     private:
         void insert(Node& parent, const Vector3i& origin, const Vector3i& pos, const Voxel& voxel, size_t level);
+        bool remove(Node& parent, const Vector3i& origin, const Vector3i& pos, size_t level);
         [[nodiscard]] std::optional<Voxel> find(const Node& parent, const Vector3i& origin, const Vector3i& pos,
                                                 size_t level) const;
         [[nodiscard]] std::optional<RayCastResult> rayCast(const Node& parent, const Vector3i& origin, size_t level,
@@ -311,6 +348,7 @@ public:
 
     void insert(const Vector3i& pos, const BlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
     void insert(const Vector3i& pos, const uint16_t type, uint8_t rotation, uint8_t color, uint8_t shape);
+    bool remove(const Vector3i& pos);
 
     [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const {
         return voxels.find(pos);
@@ -327,6 +365,20 @@ public:
     Iterator iterate() {
         return voxels.iterate();
     }
+
+    [[nodiscard]] const NodesPool& pool() const {
+        return voxels.pool();
+    }
+
+    [[nodiscard]] const BlockPtr& getType(const size_t index) const {
+        static BlockPtr empty{nullptr};
+        if (index > types.size()) {
+            return empty;
+        }
+        return types.at(index).block;
+    }
+
+    MSGPACK_DEFINE_ARRAY(voxels, types);
 
 private:
     uint16_t insertBlock(const BlockPtr& block);
@@ -353,3 +405,25 @@ inline int Grid::Iterator::getBranchWidth() const {
     return Grid::getWidthForLevel(octree->getDepth() - level + 1);
 }
 } // namespace Engine
+
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+    namespace adaptor {
+
+    template <> struct convert<Engine::Grid::NodesPool> {
+        msgpack::object const& operator()(msgpack::object const& o, Engine::Grid::NodesPool& v) const {
+            v.convert(o);
+            return o;
+        }
+    };
+
+    template <> struct pack<Engine::Grid::NodesPool> {
+        template <typename Stream>
+        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Grid::NodesPool const& v) const {
+            v.pack(o);
+            return o;
+        }
+    };
+    } // namespace adaptor
+}
+} // namespace msgpack

@@ -37,6 +37,18 @@ public:
     const Vector2& getHoveredOffset() const {
         return hoveredOffset;
     }
+    template <typename Fn> void setCallbackUndo(Fn&& fn) {
+        callbacks.undo = std::forward<Fn>(fn);
+    }
+    template <typename Fn> void setCallbackRedo(Fn&& fn) {
+        callbacks.redo = std::forward<Fn>(fn);
+    }
+    template <typename Fn> void setCallbackSave(Fn&& fn) {
+        callbacks.save = std::forward<Fn>(fn);
+    }
+    template <typename Fn> void setCallbackLoad(Fn&& fn) {
+        callbacks.load = std::forward<Fn>(fn);
+    }
 
 private:
     static constexpr float actionBarSize{96.0f};
@@ -93,5 +105,12 @@ private:
         ImagePtr remove;
         ImagePtr replace;
     } images;
+
+    struct {
+        std::function<void()> undo;
+        std::function<void()> redo;
+        std::function<void()> save;
+        std::function<void()> load;
+    } callbacks;
 };
 } // namespace Engine

@@ -104,6 +104,7 @@ public:
     void buttonToggle(const std::string& text, bool& value, TextAlign align = TextAlign::Center);
     bool buttonImage(const ImagePtr& img);
     void buttonImageToggle(const ImagePtr& img, bool& value);
+    void selectable(const std::string& text, bool& value);
     bool image(const ImagePtr& img);
     void imageToggle(const ImagePtr& img, bool& value);
     void imageToggle(const ImagePtr& img, bool& value, const std::string& text, TextAlign align = TextAlign::Center);

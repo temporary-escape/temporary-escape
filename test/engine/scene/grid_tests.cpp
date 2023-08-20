@@ -1,11 +1,9 @@
 #include "../../common.hpp"
 #include <engine/scene/grid.hpp>
 
-#define TAG "[Grid]"
-
 using namespace Engine;
 
-TEST_CASE("Grid pool allocator", TAG) {
+TEST_CASE("Grid pool allocator", "[scene_grid]") {
     Grid::Pool<uint64_t, 0xFFFF> pool;
 
     REQUIRE(pool.size() == 0);
@@ -41,7 +39,7 @@ TEST_CASE("Grid pool allocator", TAG) {
     REQUIRE(pool.size() == 1024 + 1);
 }
 
-TEST_CASE("Octree insert voxels at [0, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at [0, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -86,7 +84,7 @@ TEST_CASE("Octree insert voxels at [0, 0, 0]", TAG) {
     REQUIRE(tree.getWidth() == 1);
 }
 
-TEST_CASE("Octree insert voxels at range [-1, -1, -1] - [0, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at range [-1, -1, -1] - [0, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -136,7 +134,7 @@ TEST_CASE("Octree insert voxels at range [-1, -1, -1] - [0, 0, 0]", TAG) {
     REQUIRE(tree.size() == 17);
 }
 
-TEST_CASE("Octree insert voxels at [1, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at [1, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -175,7 +173,7 @@ TEST_CASE("Octree insert voxels at [1, 0, 0]", TAG) {
     REQUIRE(tree.size() == 3);
 }
 
-TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [1, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [1, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -220,7 +218,7 @@ TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [1, 0, 0]", TAG) {
     REQUIRE(tree.size() == 4);
 }
 
-TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [2, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [2, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -265,7 +263,7 @@ TEST_CASE("Octree insert voxels at [0, 0, 0] and then at [2, 0, 0]", TAG) {
     REQUIRE(tree.size() == 6);
 }
 
-TEST_CASE("Octree insert voxels at range [0, 0, 0] - [7, 0, 0]", TAG) {
+TEST_CASE("Octree insert voxels at range [0, 0, 0] - [7, 0, 0]", "[scene_grid]") {
     Grid::Octree tree;
 
     REQUIRE(tree.getDepth() == 1);
@@ -307,7 +305,7 @@ TEST_CASE("Octree insert voxels at range [0, 0, 0] - [7, 0, 0]", TAG) {
     }
 }
 
-TEST_CASE("Octree insert and iterate two blocks", TAG) {
+TEST_CASE("Octree insert and iterate two blocks", "[scene_grid]") {
     Grid::Octree tree;
 
     Grid::Voxel voxel{};
@@ -365,7 +363,7 @@ TEST_CASE("Octree insert and iterate two blocks", TAG) {
     REQUIRE(children2.isVoxel() == true);
 }
 
-TEST_CASE("Octree insert and iterate three blocks", TAG) {
+TEST_CASE("Octree insert and iterate three blocks", "[scene_grid]") {
     Grid::Octree tree;
 
     Grid::Voxel voxel{};
@@ -463,7 +461,7 @@ TEST_CASE("Octree insert and iterate three blocks", TAG) {
     REQUIRE(!level0);
 }
 
-TEST_CASE("Octree insert expand twice", TAG) {
+TEST_CASE("Octree insert expand twice", "[scene_grid]") {
     Grid::Octree tree;
 
     Grid::Voxel voxel{};
@@ -514,7 +512,7 @@ TEST_CASE("Octree insert expand twice", TAG) {
     REQUIRE(it.getPos() == Vector3i{-1, 0, 1});
 }
 
-TEST_CASE("Grid ray cast negative x single block", TAG) {
+TEST_CASE("Grid ray cast negative x single block", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
 
@@ -523,7 +521,7 @@ TEST_CASE("Grid ray cast negative x single block", TAG) {
     REQUIRE(res->pos == Vector3i{0, 0, 0});
 }
 
-TEST_CASE("Grid ray cast positive x", TAG) {
+TEST_CASE("Grid ray cast positive x", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({1, 0, 0}, 0, 0, 0, VoxelShape::Cube);
@@ -533,7 +531,7 @@ TEST_CASE("Grid ray cast positive x", TAG) {
     REQUIRE(res->pos == Vector3i{1, 0, 0});
 }
 
-TEST_CASE("Grid ray cast negative x", TAG) {
+TEST_CASE("Grid ray cast negative x", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({-1, 0, 0}, 0, 0, 0, VoxelShape::Cube);
@@ -543,7 +541,7 @@ TEST_CASE("Grid ray cast negative x", TAG) {
     REQUIRE(res->pos == Vector3i{-1, 0, 0});
 }
 
-TEST_CASE("Grid ray cast positive y", TAG) {
+TEST_CASE("Grid ray cast positive y", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({0, 1, 0}, 0, 0, 0, VoxelShape::Cube);
@@ -553,7 +551,7 @@ TEST_CASE("Grid ray cast positive y", TAG) {
     REQUIRE(res->pos == Vector3i{0, 1, 0});
 }
 
-TEST_CASE("Grid ray cast negative y", TAG) {
+TEST_CASE("Grid ray cast negative y", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({0, -1, 0}, 0, 0, 0, VoxelShape::Cube);
@@ -563,7 +561,7 @@ TEST_CASE("Grid ray cast negative y", TAG) {
     REQUIRE(res->pos == Vector3i{0, -1, 0});
 }
 
-TEST_CASE("Grid ray cast positive z", TAG) {
+TEST_CASE("Grid ray cast positive z", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({0, 0, 1}, 0, 0, 0, VoxelShape::Cube);
@@ -573,7 +571,7 @@ TEST_CASE("Grid ray cast positive z", TAG) {
     REQUIRE(res->pos == Vector3i{0, 0, 1});
 }
 
-TEST_CASE("Grid ray cast negative z", TAG) {
+TEST_CASE("Grid ray cast negative z", "[scene_grid]") {
     Grid grid{};
     grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
     grid.insert({0, 0, -1}, 0, 0, 0, VoxelShape::Cube);
@@ -581,4 +579,91 @@ TEST_CASE("Grid ray cast negative z", TAG) {
     const auto res = grid.rayCast({0.0f, 0.0f, -5.0f}, {0.0f, 0.0f, 5.0f});
     REQUIRE(res.has_value() == true);
     REQUIRE(res->pos == Vector3i{0, 0, -1});
+}
+
+TEST_CASE("Grid with many inserts", "[scene_grid]") {
+    Grid grid{};
+    for (auto z = -8; z < 8; z++) {
+        for (auto y = -8; y < 8; y++) {
+            for (auto x = -8; x < 8; x++) {
+                grid.insert({x, y, z}, 0, 0, 0, VoxelShape::Cube);
+            }
+        }
+    }
+
+    for (auto z = -8; z < 8; z++) {
+        for (auto y = -8; y < 8; y++) {
+            for (auto x = -8; x < 8; x++) {
+                REQUIRE(grid.find({x, y, z}) != std::nullopt);
+            }
+        }
+    }
+
+    REQUIRE(grid.find({-9, -8, -8}) == std::nullopt);
+    REQUIRE(grid.find({8, 8, 8}) == std::nullopt);
+    REQUIRE(grid.pool().size() == 4689);
+}
+
+TEST_CASE("Grid insert and remove single block", "[scene_grid]") {
+    Grid grid{};
+
+    REQUIRE_FALSE(grid.remove({0, 0, 0}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    REQUIRE(grid.find({0, 0, 0}) != std::nullopt);
+
+    REQUIRE(grid.remove({0, 0, 0}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+}
+
+TEST_CASE("Grid insert many and remove single block", "[scene_grid]") {
+    Grid grid{};
+
+    grid.insert({0, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({1, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({2, 0, 0}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, 0, 1}, 0, 0, 0, VoxelShape::Cube);
+    grid.insert({0, 0, 2}, 0, 0, 0, VoxelShape::Cube);
+    REQUIRE(grid.pool().size() == 10);
+
+    REQUIRE(grid.remove({0, 0, 0}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({1, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({2, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 1}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 2}) != std::nullopt);
+    REQUIRE(grid.pool().size() == 9);
+
+    REQUIRE(grid.remove({0, 0, 1}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({1, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({2, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 1}) == std::nullopt);
+    REQUIRE(grid.find({0, 0, 2}) != std::nullopt);
+    REQUIRE(grid.pool().size() == 8);
+
+    REQUIRE(grid.remove({1, 0, 0}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({1, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({2, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 1}) == std::nullopt);
+    REQUIRE(grid.find({0, 0, 2}) != std::nullopt);
+    REQUIRE(grid.pool().size() == 7);
+
+    grid.insert({0, 0, 1}, 0, 0, 0, VoxelShape::Cube);
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({1, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({2, 0, 0}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 1}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 2}) != std::nullopt);
+    REQUIRE(grid.pool().size() == 8);
+
+    REQUIRE(grid.remove({2, 0, 0}));
+    REQUIRE(grid.find({0, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({1, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({2, 0, 0}) == std::nullopt);
+    REQUIRE(grid.find({0, 0, 1}) != std::nullopt);
+    REQUIRE(grid.find({0, 0, 2}) != std::nullopt);
+    REQUIRE(grid.pool().size() == 7);
 }

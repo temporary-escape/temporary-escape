@@ -7,6 +7,21 @@ static auto logger = createLogger(LOG_FILENAME);
 ComponentGrid::ComponentGrid(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
 }
 
+ComponentGrid::~ComponentGrid() {
+    clear();
+}
+
+void ComponentGrid::clear() {
+    logger.info("ComponentGrid::clear");
+    for (auto& primitive : primitives) {
+        if (vulkanRenderer) {
+            vulkanRenderer->dispose(std::move(primitive.mesh.ibo));
+            vulkanRenderer->dispose(std::move(primitive.mesh.vbo));
+        }
+    }
+    primitives.clear();
+}
+
 void ComponentGrid::update() {
 }
 
@@ -25,6 +40,8 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
 }
 
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
+    vulkanRenderer = &vulkan;
+
     if (!isDirty()) {
         return;
     }
@@ -47,9 +64,9 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     primitives.clear();
 
     for (const auto& [material, data] : map) {
-        /*logger.debug("Building mesh for type: {} of size: {} indices",
+        logger.debug("Building mesh for type: {} of size: {} indices",
                      material->baseColorTexture->getName(),
-                     data.indices.size());*/
+                     data.indices.size());
 
         if (data.indices.empty()) {
             continue;

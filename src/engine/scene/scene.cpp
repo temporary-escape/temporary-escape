@@ -20,7 +20,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : isServer{false}, lua{lua} {
+Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : lua{lua} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
 
@@ -104,6 +104,12 @@ void Scene::update(const float delta) {
         controller->update(delta);
     }
 
+    if (selectionEnabled) {
+        updateSelection();
+    }
+}
+
+void Scene::updateSelection() {
     if (selectedEntityOpaque) {
         selectedEntity = selectedEntityOpaque;
     } else if (selectedEntityIcon) {

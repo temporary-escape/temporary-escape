@@ -97,10 +97,15 @@ public:
     const ComponentSkybox* getSkybox();
     Lua& getLua() const;
 
+    void setSelectionEnabled(bool value) {
+        selectionEnabled = value;
+    }
+
     static void bind(Lua& lua);
 
 private:
-    bool isServer{false};
+    void updateSelection();
+
     entt::registry reg;
     std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
     std::vector<UserInput*> userInputs;
@@ -112,5 +117,6 @@ private:
     std::optional<Entity> selectedEntityLast{std::nullopt};
     Lua* lua{nullptr};
     std::unordered_map<std::string, std::unique_ptr<sol::table>> entityTemplates;
+    bool selectionEnabled{true};
 };
 } // namespace Engine

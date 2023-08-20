@@ -5,6 +5,7 @@
 #include "../graphics/nuklear.hpp"
 #include "../gui/gui_block_info.hpp"
 #include "../gui/gui_block_selector.hpp"
+#include "../gui/gui_file_browser.hpp"
 #include "../scene/scene.hpp"
 #include "../server/schemas.hpp"
 #include "view.hpp"
@@ -31,6 +32,17 @@ public:
     Scene* getScene() override;
 
 private:
+    static constexpr size_t maxHistoryItems = 10;
+
+    struct Action {
+        bool added{false};
+        BlockPtr block{nullptr};
+        VoxelShape::Type shape{VoxelShape::Type::Cube};
+        Vector3i pos;
+        size_t rotation{0};
+        size_t color{0};
+    };
+
     void createScene();
     void createGridLines();
     void createEntityShip();
@@ -39,12 +51,18 @@ private:
     void addBlock();
     void removeBlock();
     void updateSelectedBlock();
+    void doUndo();
+    void doRedo();
+    void doSave();
+    void doLoad();
+    void resetHistory();
 
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     GuiBlockSelector guiBlockSelector;
     GuiBlockInfo guiBlockInfo;
+    GuiFileBrowser guiFileBrowser;
     // GuiBlockActionBar guiBlockActionBar;
     // GuiBlockSelector guiBlockSelector;
     // GuiSideMenu guiBlockSideMenu;
@@ -64,5 +82,8 @@ private:
         size_t color{0};
         size_t rotation{0};
     } selected;
+
+    std::deque<Action> history{};
+    int64_t historyPos{0};
 };
 } // namespace Engine

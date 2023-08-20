@@ -436,6 +436,14 @@ void Grid::Octree::insert(const Vector3i& pos, const Voxel& voxel) {
     insert(nodes.at(0), Vector3i{0}, pos, voxel, 1);
 }
 
+bool Grid::Octree::remove(const Vector3i& pos) {
+    if (isOutside(pos)) {
+        return false;
+    }
+
+    return remove(nodes.at(0), Vector3i{0}, pos, 1);
+}
+
 void Grid::Octree::insert(Node& parent, const Vector3i& origin, const Vector3i& pos, const Voxel& voxel,
                           const size_t level) {
     const auto parentIdx = nodes.indexOf(parent);
@@ -617,6 +625,47 @@ std::optional<Grid::Voxel> Grid::Octree::find(const Node& parent, const Vector3i
     return std::nullopt;
 }
 
+bool Grid::Octree::remove(Grid::Node& parent, const Vector3i& origin, const Vector3i& pos, size_t level) {
+    auto* previous = &parent;
+    Index childIdx = parent.branch.child;
+    const auto findIdx = posToIndex(pos, origin);
+
+    while (childIdx) {
+        if (!childIdx || childIdx == badIndex) {
+            break;
+        }
+
+        auto& child = nodes.at(childIdx);
+
+        if (depth - level == 0) {
+            if (child.voxel.index == findIdx) {
+                if (previous == &parent && previous->branch.child == childIdx) {
+                    if (child.branch.next) {
+                        previous->branch.child = child.branch.next;
+                    } else {
+                        previous->branch.child = 0x00;
+                    }
+                } else {
+                    previous->branch.next = child.branch.next;
+                }
+                nodes.erase(childIdx);
+                child.data = 0x00;
+                return true;
+            }
+        } else {
+            if (child.branch.index == findIdx) {
+                const auto newOrigin = idxToOffset(findIdx, getWidthForLevel(depth - level + 1) / 2, origin);
+                return remove(child, newOrigin, pos, level + 1);
+            }
+        }
+
+        childIdx = child.branch.next;
+        previous = &child;
+    }
+
+    return false;
+}
+
 void Grid::Octree::expand(const Index idx, const size_t level) {
     // std::vector<Node*> children;
     // children.reserve(8);
@@ -769,6 +818,10 @@ void Grid::insert(const Vector3i& pos, const uint16_t type, const uint8_t rotati
     voxel.rotation = rotation;
     voxel.shape = shape;
     voxels.insert(pos, voxel);
+}
+
+bool Grid::remove(const Vector3i& pos) {
+    return voxels.remove(pos);
 }
 
 uint16_t Grid::insertBlock(const BlockPtr& block) {

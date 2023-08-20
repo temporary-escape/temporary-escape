@@ -214,18 +214,18 @@ void GuiBlockSelector::drawLayoutActions(Nuklear& nuklear) {
     nuklear.layoutDynamic(64.0f, 3);
 
     nuklear.tooltip("Undo");
-    if (nuklear.buttonImage(images.undo)) {
-        // Void
+    if (nuklear.buttonImage(images.undo) && callbacks.undo) {
+        callbacks.undo();
     }
 
     nuklear.tooltip("Redo");
-    if (nuklear.buttonImage(images.redo)) {
-        // Void
+    if (nuklear.buttonImage(images.redo) && callbacks.redo) {
+        callbacks.redo();
     }
 
     nuklear.tooltip("Save current design");
-    if (nuklear.buttonImage(images.save)) {
-        // Void
+    if (nuklear.buttonImage(images.save) && callbacks.save) {
+        callbacks.save();
     }
     nuklear.layoutDynamic(64.0f, 3);
 
@@ -245,8 +245,8 @@ void GuiBlockSelector::drawLayoutActions(Nuklear& nuklear) {
     }
 
     nuklear.tooltip("Load design");
-    if (nuklear.buttonImage(images.load)) {
-        // Void
+    if (nuklear.buttonImage(images.load) && callbacks.load) {
+        callbacks.load();
     }
 
     nuklear.groupEnd();

@@ -411,6 +411,15 @@ bool Engine::Nuklear::button(const Color4& color) {
     return false;
 }
 
+void Engine::Nuklear::selectable(const std::string& text, bool& value) {
+    nk_bool val = value ? nk_true : nk_false;
+
+    if (nk_selectable_label(ctx.get(), text.c_str(), NK_TEXT_ALIGN_LEFT + NK_TEXT_ALIGN_MIDDLE, &val)) {
+        triggerEventClick();
+        value = true;
+    }
+}
+
 bool Nuklear::image(const ImagePtr& img) {
     struct nk_image ni {};
     ni.handle.ptr = img.get();

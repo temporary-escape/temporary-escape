@@ -10,9 +10,10 @@ class ENGINE_API ComponentGrid : public Component, public Grid {
 public:
     ComponentGrid() = default;
     explicit ComponentGrid(entt::registry& reg, entt::entity handle);
-    virtual ~ComponentGrid() = default; // NOLINT(modernize-use-override)
+    virtual ~ComponentGrid();
     COMPONENT_DEFAULTS(ComponentGrid);
 
+    void clear();
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
     void update();
 
@@ -20,10 +21,13 @@ public:
         return primitives;
     }
 
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
+
 private:
     void debugIterate(Grid::Iterator iterator);
 
     ComponentDebug* debug{nullptr};
+    VulkanRenderer* vulkanRenderer{nullptr};
     std::list<Primitive> primitives;
 };
 } // namespace Engine

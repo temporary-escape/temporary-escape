@@ -1,8 +1,15 @@
 #include "view_build.hpp"
+#include "../file/msgpack_file_reader.hpp"
+#include "../file/msgpack_file_writer.hpp"
+#include "../file/teb_file_header.hpp"
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
+
+static Path getBuildDir(const Config& config) {
+    return config.assetsPath / "base" / "ships";
+}
 
 ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
                      VoxelShapeCache& voxelShapeCache) :
@@ -11,10 +18,19 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager
     assetsManager{assetsManager},
     guiBlockSelector{config, assetsManager},
     guiBlockInfo{config, assetsManager},
+    guiFileBrowser{config},
     scene{config, &voxelShapeCache} {
+
+    scene.setSelectionEnabled(false);
 
     guiBlockSelector.setBlocks(assetsManager.getBlocks().findAll());
     guiBlockInfo.setEnabled(false);
+    guiFileBrowser.setEnabled(false);
+
+    guiBlockSelector.setCallbackRedo([this]() { doRedo(); });
+    guiBlockSelector.setCallbackUndo([this]() { doUndo(); });
+    guiBlockSelector.setCallbackSave([this]() { doSave(); });
+    guiBlockSelector.setCallbackLoad([this]() { doLoad(); });
 
     createScene();
     createEntityShip();
@@ -132,7 +148,7 @@ void ViewBuild::createEntityShip() {
 }
 
 void ViewBuild::addBlock() {
-    if (!raycastResult || !selected.block) {
+    if (!raycastResult || !selected.block || guiFileBrowser.isEnabled()) {
         return;
     }
 
@@ -140,12 +156,168 @@ void ViewBuild::addBlock() {
     auto& grid = entityShip.getComponent<ComponentGrid>();
     grid.insert(pos, selected.block, currentRotation, selected.color, selected.shape);
     grid.setDirty(true);
+
+    // Insert a new undo item
+    if (historyPos < history.size()) {
+        history.erase(history.begin() + historyPos, history.end());
+    }
+    auto& action = history.emplace_back();
+    action.block = selected.block;
+    action.pos = pos;
+    action.rotation = currentRotation;
+    action.color = selected.color;
+    action.shape = selected.shape;
+    action.added = true;
+    historyPos = static_cast<int64_t>(history.size());
+
+    if (history.size() > maxHistoryItems) {
+        history.pop_front();
+    }
 }
 
 void ViewBuild::removeBlock() {
-    if (!raycastResult) {
+    if (!raycastResult || guiFileBrowser.isEnabled()) {
         return;
     }
+
+    const auto pos = raycastResult->pos;
+    auto& grid = entityShip.getComponent<ComponentGrid>();
+    auto found = grid.find(pos);
+
+    if (!found) {
+        return;
+    }
+
+    // Insert a new undo item
+    if (historyPos < history.size()) {
+        history.erase(history.begin() + historyPos, history.end());
+    }
+    auto& action = history.emplace_back();
+    action.block = grid.getType(found->type.value());
+    action.pos = pos;
+    action.rotation = found->rotation.value();
+    action.color = found->color.value();
+    action.shape = static_cast<VoxelShape::Type>(found->shape.value());
+    action.added = false;
+    historyPos = static_cast<int64_t>(history.size());
+
+    if (history.size() > maxHistoryItems) {
+        history.pop_front();
+    }
+
+    grid.remove(pos);
+    grid.setDirty(true);
+}
+
+void ViewBuild::doUndo() {
+    if (guiFileBrowser.isEnabled()) {
+        return;
+    }
+
+    if (historyPos > 0) {
+        --historyPos;
+    } else {
+        return;
+    }
+
+    auto& grid = entityShip.getComponent<ComponentGrid>();
+
+    auto& action = history.at(historyPos);
+    if (action.added) {
+        grid.remove(action.pos);
+    } else {
+        grid.insert(action.pos, action.block, action.rotation, action.color, action.shape);
+    }
+
+    grid.setDirty(true);
+}
+
+void ViewBuild::doRedo() {
+    if (guiFileBrowser.isEnabled()) {
+        return;
+    }
+
+    if (historyPos >= history.size()) {
+        return;
+    }
+
+    auto& grid = entityShip.getComponent<ComponentGrid>();
+    auto& action = history.at(historyPos);
+
+    if (!action.added) {
+        grid.remove(action.pos);
+    } else {
+        grid.insert(action.pos, action.block, action.rotation, action.color, action.shape);
+    }
+
+    ++historyPos;
+    grid.setDirty(true);
+}
+
+void ViewBuild::doSave() {
+    if (guiFileBrowser.isEnabled()) {
+        return;
+    }
+
+    guiFileBrowser.setConfirmText("Save");
+    guiFileBrowser.setFolder(getBuildDir(config), ".teb");
+    guiFileBrowser.setEnabled(true);
+    guiFileBrowser.setConfirmCallback([this](Path path) {
+        try {
+            resetHistory();
+
+            logger.info("Saving current design to: {}", path);
+
+            auto& grid = entityShip.getComponent<ComponentGrid>();
+            MsgpackFileWriter file{path};
+            TebFileHeader header{};
+            header.type = TebFileType::Ship;
+            file.pack(header);
+            file.pack(grid);
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Failed to save grid");
+        }
+    });
+}
+
+void ViewBuild::doLoad() {
+    if (guiFileBrowser.isEnabled()) {
+        return;
+    }
+
+    guiFileBrowser.setConfirmText("Load");
+    guiFileBrowser.setFolder(getBuildDir(config), ".teb");
+    guiFileBrowser.setEnabled(true);
+    guiFileBrowser.setConfirmCallback([this](Path path) {
+        try {
+            resetHistory();
+
+            logger.info("Loading design from: {}", path);
+
+            scene.removeEntity(entityShip);
+            entityShip = scene.createEntity();
+            entityShip.addComponent<ComponentTransform>();
+            auto& grid = entityShip.addComponent<ComponentGrid>();
+            grid.setDirty(true);
+
+            MsgpackFileReader file{path};
+            TebFileHeader header{};
+            file.unpack(header);
+
+            if (header.type != TebFileType::Ship) {
+                EXCEPTION("Bad file type");
+            }
+
+            file.unpack(grid);
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Failed to save grid");
+        }
+    });
+}
+
+void ViewBuild::resetHistory() {
+    historyPos = 0;
+    history.clear();
 }
 
 void ViewBuild::updateSelectedBlock() {
@@ -241,6 +413,7 @@ void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 void ViewBuild::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
     guiBlockSelector.draw(nuklear, viewport);
     guiBlockInfo.draw(nuklear, viewport);
+    guiFileBrowser.draw(nuklear, viewport);
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
@@ -297,10 +470,12 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 
 void ViewBuild::onEnter() {
     guiBlockSelector.setEnabled(true);
+    guiFileBrowser.setEnabled(false);
 }
 
 void ViewBuild::onExit() {
     guiBlockSelector.setEnabled(false);
+    guiFileBrowser.setEnabled(false);
 }
 
 Scene* ViewBuild::getScene() {
