@@ -73,6 +73,7 @@ public:
 
                 emptyIdx = items.size();
                 items.resize(items.size() + bucketSize);
+                std::memset(items.data() + emptyIdx, 0x00, bucketSize * sizeof(T));
                 counters.push_back(0);
             }
 
@@ -206,11 +207,9 @@ public:
     };
 
     union Node {
-        Node() = default;
-
         Voxel voxel;
         Branch branch;
-        uint64_t data{0};
+        uint64_t data;
 
         operator bool() const {
             return bool(data);
@@ -370,12 +369,13 @@ public:
         return voxels.pool();
     }
 
-    [[nodiscard]] const BlockPtr& getType(const size_t index) const {
-        static BlockPtr empty{nullptr};
-        if (index > types.size()) {
-            return empty;
-        }
-        return types.at(index).block;
+    [[nodiscard]] const BlockPtr& getType(const size_t index) const;
+
+    std::optional<uint16_t> getTypeIndex(const BlockPtr& block) const;
+    size_t getTypeCount(const size_t index) const;
+
+    size_t getTypeCount() const {
+        return types.size();
     }
 
     MSGPACK_DEFINE_ARRAY(voxels, types);
@@ -410,16 +410,19 @@ namespace msgpack {
 MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     namespace adaptor {
 
-    template <> struct convert<Engine::Grid::NodesPool> {
-        msgpack::object const& operator()(msgpack::object const& o, Engine::Grid::NodesPool& v) const {
+    template <typename T, size_t MaxSize, size_t BucketSize>
+    struct convert<Engine::Grid::Pool<T, MaxSize, BucketSize>> {
+        msgpack::object const& operator()(msgpack::object const& o,
+                                          Engine::Grid::Pool<T, MaxSize, BucketSize>& v) const {
             v.convert(o);
             return o;
         }
     };
 
-    template <> struct pack<Engine::Grid::NodesPool> {
+    template <typename T, size_t MaxSize, size_t BucketSize> struct pack<Engine::Grid::Pool<T, MaxSize, BucketSize>> {
         template <typename Stream>
-        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Grid::NodesPool const& v) const {
+        msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o,
+                                            Engine::Grid::Pool<T, MaxSize, BucketSize> const& v) const {
             v.pack(o);
             return o;
         }

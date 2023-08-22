@@ -9,10 +9,24 @@
 namespace Engine {
 class ENGINE_API Block : public Asset {
 public:
+    enum class ParticleType {
+        None,
+        Thruster,
+    };
+
+    struct ParticleInfo {
+        ParticleType type{ParticleType::None};
+        Color4 startColor;
+        Color4 endColor;
+
+        YAML_DEFINE(type, startColor, endColor);
+    };
+
     struct Definition {
         std::vector<VoxelShape::Type> shapes;
         std::string category;
         std::string label;
+        std::optional<ParticleInfo> particles;
 
         struct TextureDefinition {
             TexturePtr texture;
@@ -36,7 +50,7 @@ public:
 
         std::vector<MaterialDefinition> materials;
 
-        YAML_DEFINE(shapes, category, label, materials);
+        YAML_DEFINE(shapes, category, label, particles, materials);
     };
 
     explicit Block(std::string name, Path path);
@@ -80,6 +94,10 @@ public:
         return thumbnails[shape];
     }
 
+    const std::optional<ParticleInfo>& getParticleInfo() const {
+        return definition.particles;
+    }
+
     static std::shared_ptr<Block> from(const std::string& name);
 
     static void bind(Lua& lua);
@@ -110,6 +128,8 @@ template <> struct Yaml::Adaptor<BlockPtr> {
         }
     }
 };
+
+YAML_DEFINE_ENUM(Block::ParticleType, None, Thruster);
 } // namespace Engine
 
 namespace msgpack {

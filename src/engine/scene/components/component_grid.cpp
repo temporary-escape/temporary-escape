@@ -12,7 +12,6 @@ ComponentGrid::~ComponentGrid() {
 }
 
 void ComponentGrid::clear() {
-    logger.info("ComponentGrid::clear");
     for (auto& primitive : primitives) {
         if (vulkanRenderer) {
             vulkanRenderer->dispose(std::move(primitive.mesh.ibo));
@@ -39,6 +38,26 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
     }
 }
 
+void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
+    while (iterator) {
+        if (iterator.isVoxel()) {
+            auto pos = iterator.getPos();
+            auto& cache = blockCache.at(iterator.value().voxel.type.value());
+            if (cache.particles.type == Block::ParticleType::Thruster) {
+                auto& vertex = particles.vertices.emplace_back();
+                vertex.position = Vector3{pos} + Vector3{0, 0, 1};
+                vertex.direction = Vector3{0, 0, 1};
+                vertex.startColor = cache.particles.startColor;
+                vertex.endColor = cache.particles.endColor;
+            }
+        } else {
+            createParticlesVertices(iterator.children());
+        }
+
+        iterator.next();
+    }
+}
+
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
     vulkanRenderer = &vulkan;
 
@@ -48,10 +67,51 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
 
     setDirty(false);
 
-    if (debug) {
+    blockCache.clear();
+    blockCache.resize(Grid::getTypeCount());
+    for (size_t i = 0; i < blockCache.size(); i++) {
+        auto& cache = blockCache.at(i);
+        cache.block = Grid::getType(i);
+        if (const auto& p = cache.block->getParticleInfo(); p) {
+            cache.particles = *p;
+        }
+    }
+
+    /*if (debug) {
         debug->clear();
         auto iterator = iterate();
         debugIterate(iterator);
+    }*/
+
+    {
+        particles.vertices.clear();
+        auto iterator = iterate();
+        createParticlesVertices(iterator);
+
+        vulkan.dispose(std::move(particles.mesh.vbo));
+
+        if (!particles.vertices.empty()) {
+            VulkanBuffer::CreateInfo bufferInfo{};
+            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.size = particles.vertices.size() * sizeof(ComponentParticles::Vertex);
+            bufferInfo.usage =
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+            bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+            particles.mesh.vbo = vulkan.createBuffer(bufferInfo);
+
+            vulkan.copyDataToBuffer(particles.mesh.vbo, particles.vertices.data(), bufferInfo.size);
+
+            particles.mesh.instances = particles.vertices.size();
+            particles.mesh.count = 100;
+
+            logger.info("Created particles size: {}", particles.vertices.size());
+
+            particles.vertices.clear();
+            particles.vertices.shrink_to_fit();
+        }
     }
 
     Grid::RawPrimitiveData map;

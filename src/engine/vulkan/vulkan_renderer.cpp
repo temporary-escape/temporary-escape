@@ -153,6 +153,10 @@ void VulkanRenderer::onFrameDraw(const Vector2i& viewport, float deltaTime) {
     }
 
     try {
+        renderTime += deltaTime;
+        while (renderTime >= 60.0f) {
+            renderTime -= 60.0f;
+        }
         render(viewport, deltaTime);
     } catch (...) {
         waitDeviceIdle();

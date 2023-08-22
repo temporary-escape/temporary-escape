@@ -3,6 +3,7 @@
 #include "../../assets/texture.hpp"
 #include "../../scene/scene.hpp"
 #include "../pipelines/render_pipeline_lines.hpp"
+#include "../pipelines/render_pipeline_particles.hpp"
 #include "../pipelines/render_pipeline_point_cloud.hpp"
 #include "../pipelines/render_pipeline_poly_shape.hpp"
 #include "../render_buffer_pbr.hpp"
@@ -45,12 +46,16 @@ private:
                             ComponentPolyShape& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentLines& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
+                            ComponentGrid& component);
 
+    VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;
     RenderResources& resources;
     RenderPipeline* currentPipeline{nullptr};
     RenderPipelinePointCloud pipelinePointCloud;
     RenderPipelineLines pipelineLines;
     RenderPipelinePolyShape pipelinePolyShape;
+    RenderPipelineParticles pipelineParticles;
 };
 } // namespace Engine

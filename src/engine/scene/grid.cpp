@@ -840,6 +840,31 @@ uint16_t Grid::insertBlock(const BlockPtr& block) {
     return types.size() - 1;
 }
 
+const BlockPtr& Grid::getType(const size_t index) const {
+    static BlockPtr empty{nullptr};
+    if (index > types.size()) {
+        return empty;
+    }
+    return types.at(index).block;
+}
+
+std::optional<uint16_t> Grid::getTypeIndex(const BlockPtr& block) const {
+    for (size_t i = 0; i < types.size(); i++) {
+        auto& type = types.at(i);
+        if (type.block == block) {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
+size_t Grid::getTypeCount(const size_t index) const {
+    if (index > types.size()) {
+        return 0;
+    }
+    return types.at(index).count;
+}
+
 void Grid::generateMesh(const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
     auto it = voxels.iterate();
     generateMesh(it, voxelShapeCache, map);

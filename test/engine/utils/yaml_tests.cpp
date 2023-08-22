@@ -162,7 +162,7 @@ enum class EnumBaz {
     Third,
 };
 
-YAML_DEFINE_ENUM(EnumBaz, None, First, Second, Third)
+YAML_DEFINE_ENUM(EnumBaz, None, First, Second, Third);
 
 TEST_CASE("Enums", TAG) {
     struct Foo {

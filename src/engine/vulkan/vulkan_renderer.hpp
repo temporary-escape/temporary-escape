@@ -155,6 +155,10 @@ public:
         return renderPass;
     }
 
+    float getRenderTime() const {
+        return renderTime;
+    }
+
     bool canBeMipMapped(const VkFormat format) const;
 
 private:
@@ -185,5 +189,6 @@ private:
     std::vector<VulkanFramebuffer> swapChainFramebuffers;
     Vector2i lastViewportSize;
     bool framebufferResized{false};
+    float renderTime{0.0f};
 };
 } // namespace Engine

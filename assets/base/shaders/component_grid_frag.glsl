@@ -71,7 +71,7 @@ void main() {
     vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
     vec3 paletteColor = pow(texture(paletteTexture, vs_out.color).rgb, vec3(2.2));
 
-    vec3 emissive = texture(emissiveTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb;
+    vec3 emissive = texture(emissiveTexture, vs_out.texCoords).rgb * material.emissiveFactor.rgb;
     vec3 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rgb * material.metallicRoughnessFactor.rgb;
     float ambient = texture(ambientOcclusionTexture, vs_out.texCoords).r * material.ambientOcclusionFactor.r;
 

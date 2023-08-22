@@ -7,11 +7,13 @@ using namespace Engine;
 RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
                                      RenderResources& resources, AssetsManager& assetsManager) :
     RenderPass{vulkan, buffer, "RenderPassForward"},
+    vulkan{vulkan},
     buffer{buffer},
     resources{resources},
     pipelinePointCloud{vulkan, assetsManager},
     pipelineLines{vulkan, assetsManager},
-    pipelinePolyShape{vulkan, assetsManager} {
+    pipelinePolyShape{vulkan, assetsManager},
+    pipelineParticles{vulkan, assetsManager} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -59,6 +61,7 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     addPipeline(pipelinePointCloud, 0);
     addPipeline(pipelineLines, 0);
     addPipeline(pipelinePolyShape, 0);
+    addPipeline(pipelineParticles, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -69,6 +72,7 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     collectForRender<ComponentPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, scene, jobs);
     collectForRender<ComponentLines>(vkb, scene, jobs);
+    collectForRender<ComponentGrid>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -144,4 +148,27 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
     pipelineLines.flushConstants(vkb);
 
     pipelineLines.renderMesh(vkb, mesh);
+}
+
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                           ComponentTransform& transform, ComponentGrid& component) {
+    const auto& mesh = component.getParticlesMesh();
+    if (mesh.count == 0) {
+        return;
+    }
+
+    if (currentPipeline != &pipelineParticles) {
+        pipelineParticles.bind(vkb);
+        currentPipeline = &pipelineParticles;
+    }
+
+    pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineParticles.flushDescriptors(vkb);
+
+    const auto modelMatrix = transform.getAbsoluteTransform();
+    pipelineParticles.setModelMatrix(modelMatrix);
+    pipelineParticles.setTimeDelta(vulkan.getRenderTime());
+    pipelineParticles.flushConstants(vkb);
+
+    pipelineParticles.renderMesh(vkb, mesh);
 }

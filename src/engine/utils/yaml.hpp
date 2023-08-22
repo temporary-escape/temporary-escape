@@ -499,7 +499,7 @@ template <typename T> inline void pack(Yaml::Node& node, const std::string& key,
             }                                                                                                          \
             node.packString(it->second);                                                                               \
         }                                                                                                              \
-    };
+    }
 
 #define YAML_CALL_INSERT_TO_VARIANT(f)                                                                                 \
     if (type == #f) {                                                                                                  \
