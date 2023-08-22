@@ -12,7 +12,7 @@ layout (std140, binding = 0) uniform Camera {
 
 layout (push_constant) uniform Uniforms {
     mat4 modelMatrix;
-    float timeDelta;
+    // float timeDelta;
 } uniforms;
 
 layout (location = 0) in vec3 in_Position;
@@ -64,6 +64,6 @@ void geometrize(vec4 pos) {
 }
 
 void main() {
-    vec4 worldPos = uniforms.modelMatrix * vec4(in_Position + in_Direction * uniforms.timeDelta * 0.1f, 1.0);
+    vec4 worldPos = uniforms.modelMatrix * vec4(in_Position + in_Direction, 1.0);
     geometrize(camera.transformationProjectionMatrix * worldPos);
 }

@@ -14,9 +14,9 @@ public:
         static VulkanVertexLayoutMap getLayout() {
             return {
                 {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                {2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, direction)},
-                {3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, startColor)},
-                {4, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, endColor)},
+                {1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, direction)},
+                {2, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, startColor)},
+                {3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, endColor)},
             };
         };
     };

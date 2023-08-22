@@ -167,7 +167,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 
     const auto modelMatrix = transform.getAbsoluteTransform();
     pipelineParticles.setModelMatrix(modelMatrix);
-    pipelineParticles.setTimeDelta(vulkan.getRenderTime());
+    // pipelineParticles.setTimeDelta(vulkan.getRenderTime());
     pipelineParticles.flushConstants(vkb);
 
     pipelineParticles.renderMesh(vkb, mesh);

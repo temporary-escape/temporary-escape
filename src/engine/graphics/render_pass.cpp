@@ -20,8 +20,12 @@ void RenderPass::create() {
 
     for (const auto& [pipeline, subpass] : pipelines) {
         try {
-            const auto& subpassData = *std::next(subpassDescriptionData.begin(), subpass);
-            pipeline->create(renderPass, subpass, subpassData.attachments);
+            if (isCompute) {
+                pipeline->create(renderPass, subpass, {});
+            } else {
+                const auto& subpassData = *std::next(subpassDescriptionData.begin(), subpass);
+                pipeline->create(renderPass, subpass, subpassData.attachments);
+            }
         } catch (...) {
             EXCEPTION_NESTED("Failed to create render pipeline: {}", pipeline->getName());
         }
