@@ -44,11 +44,14 @@ void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
             auto pos = iterator.getPos();
             auto& cache = blockCache.at(iterator.value().voxel.type.value());
             if (cache.particles.type == Block::ParticleType::Thruster) {
-                auto& vertex = particles.vertices.emplace_back();
-                vertex.position = Vector3{pos} + Vector3{0, 0, 1};
-                vertex.direction = Vector3{0, 0, 1};
-                vertex.startColor = cache.particles.startColor;
-                vertex.endColor = cache.particles.endColor;
+                // 4 vertices per one quad (triangle strip)
+                for (auto i = 0; i < 1; i++) {
+                    auto& vertex = particles.vertices.emplace_back();
+                    vertex.position = Vector3{pos} + Vector3{0, 0, 1};
+                    vertex.direction = Vector3{0, 0, 1};
+                    vertex.startColor = cache.particles.startColor;
+                    vertex.endColor = cache.particles.endColor;
+                }
             }
         } else {
             createParticlesVertices(iterator.children());
@@ -105,7 +108,7 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
             vulkan.copyDataToBuffer(particles.mesh.vbo, particles.vertices.data(), bufferInfo.size);
 
             particles.mesh.instances = particles.vertices.size();
-            particles.mesh.count = 100;
+            particles.mesh.count = 10 * 6;
 
             logger.info("Created particles size: {}", particles.vertices.size());
 

@@ -10,7 +10,7 @@ RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan, AssetsM
     addShader(assetsManager.getShaders().find("component_particles_vert"));
     addShader(assetsManager.getShaders().find("component_particles_frag"));
     addVertexInput(RenderPipeline::VertexInput::of<ComponentParticles::Vertex>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
-    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Read);
     setPolygonMode(VkPolygonMode::VK_POLYGON_MODE_FILL);
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);

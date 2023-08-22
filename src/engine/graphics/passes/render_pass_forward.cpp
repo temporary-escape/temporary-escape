@@ -153,7 +153,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentGrid& component) {
     const auto& mesh = component.getParticlesMesh();
-    if (mesh.count == 0) {
+    if (mesh.count == 0 || !mesh.vbo) {
         return;
     }
 
@@ -167,8 +167,16 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 
     const auto modelMatrix = transform.getAbsoluteTransform();
     pipelineParticles.setModelMatrix(modelMatrix);
-    // pipelineParticles.setTimeDelta(vulkan.getRenderTime());
+    pipelineParticles.setTimeDelta(vulkan.getRenderTime());
     pipelineParticles.flushConstants(vkb);
 
-    pipelineParticles.renderMesh(vkb, mesh);
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+    vboBindings[0] = {&mesh.vbo, 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(mesh.count, mesh.instances, 0, 0);
+
+    /*for (uint32_t i = 0; i < mesh.instances; i++) {
+        vkb.draw(mesh.count, 10, i * 4, 0);
+    }*/
 }
