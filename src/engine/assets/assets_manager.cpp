@@ -112,6 +112,10 @@ void AssetsManager::findAssets() {
         }
 
         for (const auto& path : paths) {
+            init(particlesTypes, path / "particles", {".yml", ".yaml"});
+        }
+
+        for (const auto& path : paths) {
             init(blocks, path / "blocks", {".yml", ".yaml"});
         }
 

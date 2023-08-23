@@ -152,8 +152,8 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentGrid& component) {
-    const auto& mesh = component.getParticlesMesh();
-    if (mesh.count == 0 || !mesh.vbo) {
+    const auto& particles = component.getParticles();
+    if (particles.empty()) {
         return;
     }
 
@@ -162,21 +162,20 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
         currentPipeline = &pipelineParticles;
     }
 
-    pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
-    pipelineParticles.flushDescriptors(vkb);
+    for (const auto& [particlesType, matrices] : particles) {
 
-    const auto modelMatrix = transform.getAbsoluteTransform();
-    pipelineParticles.setModelMatrix(modelMatrix);
-    pipelineParticles.setTimeDelta(vulkan.getRenderTime());
-    pipelineParticles.flushConstants(vkb);
+        pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
+        pipelineParticles.setUniformParticlesType(particlesType->getUbo());
+        pipelineParticles.setTextureColor(particlesType->getTexture()->getVulkanTexture());
+        pipelineParticles.flushDescriptors(vkb);
 
-    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
-    vboBindings[0] = {&mesh.vbo, 0};
-    vkb.bindBuffers(vboBindings);
+        for (const auto& matrix : matrices) {
+            const auto modelMatrix = transform.getAbsoluteTransform() * matrix;
+            pipelineParticles.setModelMatrix(modelMatrix);
+            pipelineParticles.setTimeDelta(vulkan.getRenderTime());
+            pipelineParticles.flushConstants(vkb);
 
-    vkb.draw(mesh.count, mesh.instances, 0, 0);
-
-    /*for (uint32_t i = 0; i < mesh.instances; i++) {
-        vkb.draw(mesh.count, 10, i * 4, 0);
-    }*/
+            vkb.draw(4, particlesType->getCount(), 0, 0);
+        }
+    }
 }

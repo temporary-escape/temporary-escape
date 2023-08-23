@@ -1,9 +1,8 @@
 category: Blocks
 label: Engine
 particles:
-  type: Thruster
-  startColor: [ 1.0, 0.0, 0.0, 1.0 ]
-  endColor: [ 0.0, 0.0, 1.0, 1.0 ]
+  offset: [ 0.0, 0.0, 0.9 ]
+  type: particles_engine_thruster
 shapes:
   - Cube
 materials:

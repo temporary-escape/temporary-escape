@@ -9,13 +9,12 @@ RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan, AssetsM
 
     addShader(assetsManager.getShaders().find("component_particles_vert"));
     addShader(assetsManager.getShaders().find("component_particles_frag"));
-    addVertexInput(RenderPipeline::VertexInput::of<ComponentParticles::Vertex>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
-    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Read);
     setPolygonMode(VkPolygonMode::VK_POLYGON_MODE_FILL);
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    setBlending(Blending::Normal);
+    setBlending(Blending::Additive);
 }
 
 void RenderPipelineParticles::setModelMatrix(const Matrix4& value) {
@@ -30,6 +29,14 @@ void RenderPipelineParticles::setUniformCamera(const VulkanBuffer& ubo) {
     uniforms[0] = {"Camera", ubo};
 }
 
+void RenderPipelineParticles::setUniformParticlesType(const Engine::VulkanBuffer& ubo) {
+    uniforms[1] = {"ParticlesType", ubo};
+}
+
+void RenderPipelineParticles::setTextureColor(const VulkanTexture& texture) {
+    textures[0] = {"colorTexture", texture};
+}
+
 void RenderPipelineParticles::flushDescriptors(VulkanCommandBuffer& vkb) {
-    bindDescriptors(vkb, uniforms, {}, {});
+    bindDescriptors(vkb, uniforms, textures, {});
 }

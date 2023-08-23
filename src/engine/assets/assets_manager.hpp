@@ -6,6 +6,7 @@
 #include "image_atlas.hpp"
 #include "mod_manifest.hpp"
 #include "model.hpp"
+#include "particles_type.hpp"
 #include "planet_type.hpp"
 #include "shader.hpp"
 #include "sound.hpp"
@@ -101,6 +102,10 @@ public:
         return sounds;
     }
 
+    const Category<ParticlesType>& getParticlesTypes() const {
+        return particlesTypes;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -148,6 +153,7 @@ private:
     Category<PlanetType> planetTypes;
     Category<Shader> shaders;
     Category<Sound> sounds;
+    Category<ParticlesType> particlesTypes;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

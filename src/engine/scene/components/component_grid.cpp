@@ -43,14 +43,11 @@ void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
             auto& cache = blockCache.at(iterator.value().voxel.type.value());
-            if (cache.particles.type == Block::ParticleType::Thruster) {
-                // 4 vertices per one quad (triangle strip)
-                for (auto i = 0; i < 1; i++) {
-                    auto& vertex = particles.vertices.emplace_back();
-                    vertex.position = Vector3{pos} + Vector3{0, 0, 1};
-                    vertex.direction = Vector3{0, 0, 1};
-                    vertex.startColor = cache.particles.startColor;
-                    vertex.endColor = cache.particles.endColor;
+            if (cache.particles.type) {
+                const auto test = find(pos + Vector3i{0, 0, 1});
+                if (!test) {
+                    auto& mat = particles[cache.particles.type].emplace_back();
+                    mat = glm::translate(Matrix4{1.0f}, Vector3{pos} + cache.particles.offset);
                 }
             }
         } else {
@@ -75,8 +72,8 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     for (size_t i = 0; i < blockCache.size(); i++) {
         auto& cache = blockCache.at(i);
         cache.block = Grid::getType(i);
-        if (const auto& p = cache.block->getParticleInfo(); p) {
-            cache.particles = *p;
+        if (const auto& info = cache.block->getParticlesInfo(); info.has_value()) {
+            cache.particles = *info;
         }
     }
 
@@ -87,11 +84,11 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     }*/
 
     {
-        particles.vertices.clear();
+        particles.clear();
         auto iterator = iterate();
         createParticlesVertices(iterator);
 
-        vulkan.dispose(std::move(particles.mesh.vbo));
+        /*vulkan.dispose(std::move(particles.mesh.vbo));
 
         if (!particles.vertices.empty()) {
             VulkanBuffer::CreateInfo bufferInfo{};
@@ -114,7 +111,7 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
 
             particles.vertices.clear();
             particles.vertices.shrink_to_fit();
-        }
+        }*/
     }
 
     Grid::RawPrimitiveData map;

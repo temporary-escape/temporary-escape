@@ -3,36 +3,25 @@
 #include "asset.hpp"
 #include "image.hpp"
 #include "material.hpp"
+#include "particles_type.hpp"
 #include "texture.hpp"
 #include "voxel_shape.hpp"
 
 namespace Engine {
 class ENGINE_API Block : public Asset {
 public:
-    enum class ParticleType {
-        None,
-        Thruster,
-    };
-
-    struct ParticleInfo {
-        ParticleType type{ParticleType::None};
-        Color4 startColor;
-        Color4 endColor;
-
-        YAML_DEFINE(type, startColor, endColor);
-    };
-
     struct Definition {
-        std::vector<VoxelShape::Type> shapes;
-        std::string category;
-        std::string label;
-        std::optional<ParticleInfo> particles;
-
         struct TextureDefinition {
             TexturePtr texture;
             std::optional<Color4> factor{1.0f};
 
             YAML_DEFINE(texture, factor);
+        };
+
+        struct ParticlesInfo {
+            Vector3 offset;
+            ParticlesTypePtr type;
+            YAML_DEFINE(offset, type);
         };
 
         struct MaterialDefinition {
@@ -48,6 +37,10 @@ public:
             YAML_DEFINE(faces, baseColor, emissive, normal, ambientOcclusion, metallicRoughness, mask);
         };
 
+        std::vector<VoxelShape::Type> shapes;
+        std::string category;
+        std::string label;
+        std::optional<ParticlesInfo> particles;
         std::vector<MaterialDefinition> materials;
 
         YAML_DEFINE(shapes, category, label, particles, materials);
@@ -94,7 +87,7 @@ public:
         return thumbnails[shape];
     }
 
-    const std::optional<ParticleInfo>& getParticleInfo() const {
+    const std::optional<Definition::ParticlesInfo>& getParticlesInfo() const {
         return definition.particles;
     }
 
@@ -128,8 +121,6 @@ template <> struct Yaml::Adaptor<BlockPtr> {
         }
     }
 };
-
-YAML_DEFINE_ENUM(Block::ParticleType, None, Thruster);
 } // namespace Engine
 
 namespace msgpack {

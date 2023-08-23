@@ -9,10 +9,7 @@
 namespace Engine {
 class ENGINE_API ComponentGrid : public Component, public Grid {
 public:
-    struct BlockCache {
-        BlockPtr block{nullptr};
-        Block::ParticleInfo particles;
-    };
+    using ParticlesMap = std::unordered_map<ParticlesTypePtr, std::vector<Matrix4>>;
 
     ComponentGrid() = default;
     explicit ComponentGrid(entt::registry& reg, entt::entity handle);
@@ -27,13 +24,18 @@ public:
         return primitives;
     }
 
-    [[nodiscard]] const Mesh& getParticlesMesh() const {
-        return particles.mesh;
+    [[nodiscard]] const ParticlesMap& getParticles() const {
+        return particles;
     }
 
     MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
 
 private:
+    struct BlockCache {
+        BlockPtr block;
+        Block::Definition::ParticlesInfo particles;
+    };
+
     void debugIterate(Grid::Iterator iterator);
     void createParticlesVertices(Grid::Iterator iterator);
 
@@ -41,10 +43,6 @@ private:
     VulkanRenderer* vulkanRenderer{nullptr};
     std::list<Primitive> primitives;
     std::vector<BlockCache> blockCache;
-
-    struct {
-        Mesh mesh;
-        std::vector<ComponentParticles::Vertex> vertices;
-    } particles;
+    ParticlesMap particles;
 };
 } // namespace Engine
