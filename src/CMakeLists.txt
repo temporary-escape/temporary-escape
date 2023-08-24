@@ -71,6 +71,7 @@ target_link_libraries(${PROJECT_NAME}Library
         PRIVATE
         Png
         yaml-cpp
+        LibXml2::LibXml2
         OpenSSL::SSL
         OpenSSL::Crypto
         OpenAL::OpenAL

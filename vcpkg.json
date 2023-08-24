@@ -115,6 +115,9 @@
     },
     {
       "name": "libvorbis"
+    },
+    {
+      "name": "libxml2"
     }
   ],
   "overrides": [
@@ -292,6 +295,11 @@
       "name": "libvorbis",
       "version": "1.3.7",
       "port-version": 2
+    },
+    {
+      "name": "libxml2",
+      "version": "2.10.3",
+      "port-version": 1
     }
   ],
   "builtin-baseline": "f6a5d4e8eb7476b8d7fc12a56dff300c1c986131"
