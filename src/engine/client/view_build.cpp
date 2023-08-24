@@ -140,11 +140,7 @@ void ViewBuild::createEntityShip() {
     grid.setDirty(true);
 
     auto block = assetsManager.getBlocks().find("block_hull_t1");
-    for (int z = -10; z <= 10; z++) {
-        for (int x = -10; x <= 10; x++) {
-            grid.insert(Vector3i{x, 0, z}, block, 0, 0, VoxelShape::Type::Cube);
-        }
-    }
+    grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
 }
 
 void ViewBuild::addBlock() {

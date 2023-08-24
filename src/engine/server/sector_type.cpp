@@ -27,19 +27,19 @@ void Spawner::bind(Lua& lua) {
      */
     auto cls = m.new_usertype<Spawner>("Spawner", sol::constructors<Spawner(), Spawner(std::string, float, int)>());
     /**
-     * @field WeightedEntity.entity
+     * @field Spawner.entity
      * The string name of the entity (not the Lua package name!)
      * @type string
      */
     cls["entity"] = &Spawner::entity;
     /**
-     * @field WeightedEntity.weight
+     * @field Spawner.weight
      * The weight of the entity (default value is 1.0)
      * @type number
      */
     cls["weight"] = &Spawner::weight;
     /**
-     * @field WeightedEntity.count
+     * @field Spawner.count
      * How many of this entity we should spawn.
      * @type number
      */
