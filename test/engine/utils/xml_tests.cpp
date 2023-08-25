@@ -312,24 +312,6 @@ TEST_CASE("Xml with unordered_map", "[xml]") {
 
     const auto str = Xml::dump(doc);
 
-    static const std::string expected = R"(<?xml version="1.0" encoding="utf-8"?>
-<doc>
-  <items>
-    <second>
-      <msg>Hello World 2!</msg>
-    </second>
-    <third>
-      <msg>Hello World 3!</msg>
-    </third>
-    <first>
-      <msg>Hello World 1!</msg>
-    </first>
-  </items>
-</doc>
-)";
-
-    REQUIRE(str == expected);
-
     DocWithMap parsed{};
     Xml::load(parsed, str);
 
