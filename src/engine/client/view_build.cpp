@@ -11,11 +11,12 @@ static Path getBuildDir(const Config& config) {
     return config.assetsPath / "base" / "ships";
 }
 
-ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
                      VoxelShapeCache& voxelShapeCache) :
     config{config},
     vulkan{vulkan},
     assetsManager{assetsManager},
+    uiAudioSource{audio.createSource()},
     guiBlockSelector{config, assetsManager},
     guiBlockInfo{config, assetsManager},
     guiFileBrowser{config},
@@ -41,6 +42,9 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager
     selected.color = guiBlockSelector.getSelectedColor();
     selected.shape = guiBlockSelector.getSelectedShape();
     updateSelectedBlock();
+
+    sound.build = assetsManager.getSounds().find("build_01");
+    sound.destroy = assetsManager.getSounds().find("build_reverse_01");
 }
 
 void ViewBuild::createScene() {
@@ -169,6 +173,9 @@ void ViewBuild::addBlock() {
     if (history.size() > maxHistoryItems) {
         history.pop_front();
     }
+
+    uiAudioSource.bind(sound.build->getAudioBuffer());
+    uiAudioSource.play();
 }
 
 void ViewBuild::removeBlock() {
@@ -203,6 +210,9 @@ void ViewBuild::removeBlock() {
 
     grid.remove(pos);
     grid.setDirty(true);
+    
+    uiAudioSource.bind(sound.destroy->getAudioBuffer());
+    uiAudioSource.play();
 }
 
 void ViewBuild::doUndo() {

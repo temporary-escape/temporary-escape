@@ -18,7 +18,7 @@ class ENGINE_API Database;
 
 class ENGINE_API Editor : public UserInput {
 public:
-    explicit Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+    explicit Editor(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
                     VoxelShapeCache& voxelShapeCache, FontFamily& font);
     virtual ~Editor();
 

@@ -6,9 +6,12 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Editor::Editor(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+Editor::Editor(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
                VoxelShapeCache& voxelShapeCache, FontFamily& font) :
-    config{config}, assetsManager{assetsManager}, font{font}, view{config, vulkan, assetsManager, voxelShapeCache} {
+    config{config},
+    assetsManager{assetsManager},
+    font{font},
+    view{config, vulkan, audio, assetsManager, voxelShapeCache} {
 
     view.onEnter();
 }

@@ -301,7 +301,7 @@ void Application::renderStatus(const Vector2i& viewport) {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *this, *assetsManager, *voxelShapeCache, font);
+    editor = std::make_unique<Editor>(config, *this, audio, *assetsManager, *voxelShapeCache, font);
 }
 
 void Application::checkForClientScene() {

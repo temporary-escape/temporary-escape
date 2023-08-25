@@ -13,7 +13,7 @@
 namespace Engine {
 class ENGINE_API ViewBuild : public View {
 public:
-    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
                        VoxelShapeCache& voxelShapeCache);
     ~ViewBuild() = default;
 
@@ -60,6 +60,7 @@ private:
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
+    AudioSource uiAudioSource;
     GuiBlockSelector guiBlockSelector;
     GuiBlockInfo guiBlockInfo;
     GuiFileBrowser guiFileBrowser;
@@ -75,6 +76,11 @@ private:
     Entity entityHelperAdd;
     Entity entityHelperRemove;
     size_t currentRotation{0};
+
+    struct {
+        SoundPtr build;
+        SoundPtr destroy;
+    } sound;
 
     struct {
         BlockPtr block{nullptr};
