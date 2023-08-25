@@ -24,7 +24,7 @@ class Node;
 template <typename T> void convert(const Node& node, const std::string& key, T& value, bool required = true);
 template <typename T> void pack(Node& node, const std::string& key, const T& value);
 
-class Node {
+class ENGINE_API Node {
 public:
     Node() = default;
     explicit Node(const Node* parent, const std::string& name);
@@ -73,7 +73,7 @@ private:
     mutable unsigned char* contents{nullptr};
 };
 
-class Document {
+class ENGINE_API Document {
 public:
     explicit Document(const std::string& raw);
     explicit Document(const std::string& rootName, const std::string& version);
@@ -139,8 +139,9 @@ template <> struct Adaptor<float> {
     }
     static void convert(const Node& node, float& value) {
         const auto text = node.getText();
-        auto result = std::from_chars(text.data(), text.data() + text.size(), value);
-        if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
+        try {
+            value = std::stof(std::string{text});
+        } catch (std::exception&) {
             node.throwWith("invalid float value");
         }
     }
@@ -152,9 +153,10 @@ template <> struct Adaptor<double> {
     }
     static void convert(const Node& node, double& value) {
         const auto text = node.getText();
-        auto result = std::from_chars(text.data(), text.data() + text.size(), value);
-        if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
-            node.throwWith("invalid double value");
+        try {
+            value = std::stod(std::string{text});
+        } catch (std::exception&) {
+            node.throwWith("invalid float value");
         }
     }
 };
