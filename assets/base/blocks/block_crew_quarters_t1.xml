@@ -6,6 +6,7 @@
   <shape>Wedge</shape>
   <shape>Corner</shape>
   <shape>Penta</shape>
+  <rotation>Full</rotation>
   <material>
     <face>PositiveX</face>
     <face>NegativeX</face>

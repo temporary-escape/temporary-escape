@@ -266,9 +266,9 @@ void ViewSystem::finalize() {
         auto entity = scene->createEntity();
         auto& transform = entity.addComponent<ComponentTransform>();
         auto& camera = entity.addComponent<ComponentCamera>(transform);
-        camera.setOrthographic(25.0f);
-        camera.lookAt({0.0f, 10.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
-        camera.setZoomRange(5.0f, 250.0f);
+        auto& cameraPanning = entity.addComponent<ComponentCameraPanning>(camera);
+        cameraPanning.setTarget({0.0f, 10.0f, 0.0f});
+        cameraPanning.setDistanceRange(3.0f, 250.0f);
         scene->setPrimaryCamera(entity);
 
         entities.camera = entity;

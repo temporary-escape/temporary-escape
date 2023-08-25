@@ -2,6 +2,8 @@
 #include "../assets/assets_manager.hpp"
 #include "../server/lua.hpp"
 #include "controllers/controller_camera.hpp"
+#include "controllers/controller_camera_orbital.hpp"
+#include "controllers/controller_camera_panning.hpp"
 #include "controllers/controller_dynamics_world.hpp"
 #include "controllers/controller_grid.hpp"
 #include "controllers/controller_icon.hpp"
@@ -28,6 +30,8 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerIconSelectable>();
         addController<ControllerIcon>();
         addController<ControllerCamera>();
+        addController<ControllerCameraOrbital>();
+        addController<ControllerCameraPanning>();
         addController<ControllerGrid>(*voxelShapeCache);
         addController<ControllerLights>(*this);
         addController<ControllerStaticModel>();
@@ -48,18 +52,6 @@ void Scene::feedbackSelectedEntity(const uint32_t id) {
         selectedEntityOpaque = std::nullopt;
     }
 }
-
-/*std::optional<Entity> Scene::getSelectedEntity() {
-    const auto& iconsSelectable = getController<ControllerIconSelectable>();
-
-    if (const auto selected = iconsSelectable.getSelected(); selected.has_value()) {
-        return Entity{reg, *selected};
-    }
-    if (selectedEntity) {
-        return Entity{reg, *selectedEntity};
-    }
-    return std::nullopt;
-}*/
 
 Entity Scene::createEntity() {
     return fromHandle(reg.create());

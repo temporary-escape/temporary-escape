@@ -45,6 +45,8 @@ enum class Key {
     Backspace,
     Enter,
     Tab,
+    PageUp,
+    PageDown,
 };
 
 enum class Modifier : int {

@@ -4,6 +4,8 @@
 #include "../utils/msgpack_adaptors.hpp"
 #include "../utils/msgpack_friend.hpp"
 #include "components/component_camera.hpp"
+#include "components/component_camera_orbital.hpp"
+#include "components/component_camera_panning.hpp"
 #include "components/component_debug.hpp"
 #include "components/component_directional_light.hpp"
 #include "components/component_grid.hpp"
@@ -36,10 +38,11 @@ namespace Engine {
 class ENGINE_API Scene;
 
 using EntityComponentIds =
-    entt::ident<TagDisabled, ComponentTransform, ComponentScript, ComponentCamera, ComponentGrid, ComponentModel,
-                ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
-                ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
-                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentRigidBody>;
+    entt::ident<TagDisabled, ComponentTransform, ComponentScript, ComponentCamera, ComponentCameraOrbital,
+                ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentDirectionalLight, ComponentPointLight,
+                ComponentPointCloud, ComponentLines, ComponentDebug, ComponentIcon, ComponentLabel, ComponentPolyShape,
+                ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare, ComponentSkybox,
+                ComponentNebula, ComponentRigidBody>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;

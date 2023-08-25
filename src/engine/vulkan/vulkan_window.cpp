@@ -132,6 +132,12 @@ static Key toKey(int key) {
     case GLFW_KEY_TAB: {
         return Key::Tab;
     }
+    case GLFW_KEY_PAGE_UP: {
+        return Key::PageUp;
+    }
+    case GLFW_KEY_PAGE_DOWN: {
+        return Key::PageDown;
+    }
     default: {
         return Key::None;
     }

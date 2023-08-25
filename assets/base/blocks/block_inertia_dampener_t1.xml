@@ -3,6 +3,7 @@
   <category>Blocks</category>
   <label>Inertia Dampener</label>
   <shape>Cube</shape>
+  <rotation>None</rotation>
   <material>
     <face>PositiveX</face>
     <face>NegativeX</face>

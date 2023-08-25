@@ -3,6 +3,7 @@
   <category>Blocks</category>
   <label>Engine</label>
   <shape>Cube</shape>
+  <rotation>None</rotation>
   <particles>
     <offset>
       <x>0.0</x>

@@ -48,21 +48,30 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext&
 }
 
 void ViewBuild::createScene() {
-    auto entity = scene.createEntity();
-    entity.addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
-    entity.addComponent<ComponentTransform>().translate(Vector3{3.0f, 2.0f, 3.0f});
+    {
+        auto entity = scene.createEntity();
+        entity.addComponent<ComponentDirectionalLight>(Color4{2.0f, 1.9f, 1.8f, 1.0f});
+        entity.addComponent<ComponentTransform>().translate(Vector3{3.0f, 2.0f, 3.0f});
+    }
 
-    entity = scene.createEntity();
-    auto& skybox = entity.addComponent<ComponentSkybox>(0);
-    auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
-    skybox.setTextures(vulkan, std::move(skyboxTextures));
+    {
+        auto entity = scene.createEntity();
+        auto& skybox = entity.addComponent<ComponentSkybox>(0);
+        auto skyboxTextures = SkyboxTextures{vulkan, Color4{0.02f, 0.02f, 0.02f, 1.0f}};
+        skybox.setTextures(vulkan, std::move(skyboxTextures));
+    }
 
-    entity = scene.createEntity();
-    auto& cameraTransform = entity.addComponent<ComponentTransform>();
-    auto& cameraCamera = entity.addComponent<ComponentCamera>(cameraTransform);
-    cameraCamera.setProjection(80.0f);
-    cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
-    scene.setPrimaryCamera(entity);
+    {
+        auto entity = scene.createEntity();
+        auto& transform = entity.addComponent<ComponentTransform>();
+        auto& camera = entity.addComponent<ComponentCamera>(transform);
+        auto& cameraOrbital = entity.addComponent<ComponentCameraOrbital>(camera);
+        camera.setProjection(80.0f);
+        cameraOrbital.setDistance(5.0f);
+        cameraOrbital.setTarget({0.0f, 0.0f, 0.0f});
+        cameraOrbital.setRotation({-45.0f, 45.0f});
+        scene.setPrimaryCamera(entity);
+    }
 }
 
 void ViewBuild::createGridLines() {
@@ -329,6 +338,10 @@ void ViewBuild::resetHistory() {
 }
 
 void ViewBuild::updateSelectedBlock() {
+    if (selected.block && selected.block->getRotationMode() == Block::RotationMode::None) {
+        currentRotation = 0;
+    }
+
     auto& grid = entityHelperAdd.getComponent<ComponentGrid>();
     if (selected.block) {
         entityHelperAdd.setDisabled(false);
@@ -448,24 +461,24 @@ void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button
 
 void ViewBuild::eventMouseScroll(const int xscroll, const int yscroll) {
     scene.eventMouseScroll(xscroll, yscroll);
+}
 
-    if (yscroll > 0) {
+void ViewBuild::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    scene.eventKeyPressed(key, modifiers);
+
+    if (key == Key::LetterR || key == Key::PageUp) {
         if (currentRotation < 23) {
             ++currentRotation;
         } else {
             currentRotation = 0;
         }
-    } else if (yscroll < 0) {
+    } else if (key == Key::PageDown) {
         if (currentRotation > 0) {
             --currentRotation;
         } else {
             currentRotation = 23;
         }
     }
-}
-
-void ViewBuild::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    scene.eventKeyPressed(key, modifiers);
 }
 
 void ViewBuild::eventKeyReleased(const Key key, const Modifiers modifiers) {

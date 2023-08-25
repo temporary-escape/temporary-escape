@@ -10,6 +10,12 @@
 namespace Engine {
 class ENGINE_API Block : public Asset {
 public:
+    enum class RotationMode {
+        None,
+        Limited,
+        Full,
+    };
+
     struct Definition {
         struct TextureDefinition {
             TexturePtr texture;
@@ -77,6 +83,7 @@ public:
         std::string label;
         std::optional<ParticlesInfo> particles;
         std::vector<MaterialDefinition> materials;
+        RotationMode rotation{RotationMode::Full};
 
         void convert(const Xml::Node& xml) {
             xml.convert("shape", shapes);
@@ -84,6 +91,7 @@ public:
             xml.convert("label", label);
             xml.convert("particles", particles);
             xml.convert("material", materials);
+            xml.convert("rotation", rotation);
         }
 
         void pack(Xml::Node& xml) const {
@@ -92,6 +100,7 @@ public:
             xml.pack("label", label);
             xml.pack("particles", particles);
             xml.pack("material", materials);
+            xml.pack("rotation", rotation);
         }
     };
 
@@ -118,6 +127,10 @@ public:
 
     [[nodiscard]] const std::string& getCategory() const {
         return definition.category;
+    }
+
+    [[nodiscard]] RotationMode getRotationMode() const {
+        return definition.rotation;
     }
 
     [[nodiscard]] bool isSingular() const {
@@ -153,6 +166,7 @@ private:
 };
 
 XML_DEFINE(Block::Definition, "block");
+XML_DEFINE_ENUM(Block::RotationMode, None, Limited, Full);
 
 using BlockPtr = std::shared_ptr<Block>;
 

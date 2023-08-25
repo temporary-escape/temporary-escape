@@ -98,8 +98,10 @@ void Client::createScene(const SectorData& sector) {
     auto camera = scene->createEntity();
     auto& cameraTransform = camera.addComponent<ComponentTransform>();
     auto& cameraCamera = camera.addComponent<ComponentCamera>(cameraTransform);
+    auto& cameraOrbital = camera.addComponent<ComponentCameraOrbital>(cameraCamera);
     cameraCamera.setProjection(80.0f);
-    cameraCamera.lookAt({3.0f, 3.0f, 3.0f}, {0.0f, 0.0f, 0.0f});
+    cameraOrbital.setDistance(10.0f);
+    cameraOrbital.setRotation({-45.0f, 45.0f});
     scene->setPrimaryCamera(camera);
 
     /*auto entity = scene->createEntity();

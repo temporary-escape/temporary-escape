@@ -11,7 +11,7 @@ ComponentCamera::ComponentCamera(entt::registry& reg, entt::entity handle, Compo
 }
 
 void ComponentCamera::update(const float delta) {
-    if (!isOrthographic()) {
+    /*if (!isOrthographic()) {
         auto pos = Vector3{getTransform()[3]};
         const auto moveFactor = delta * speed * (fast ? 20.0f : 1.0f);
 
@@ -38,7 +38,7 @@ void ComponentCamera::update(const float delta) {
     } else {
         zoomValue = lerp(zoomValue, zoomTarget, 8.0f * delta);
         Camera::setOrthographic(zoomValue);
-    }
+    }*/
 }
 
 void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewport) {
@@ -76,11 +76,11 @@ void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewpo
     uboZeroPos.subDataLocal(&uniform, 0, sizeof(Uniform));
 }
 
-void ComponentCamera::moveToOrtographic(const Vector3& position) {
+/*void ComponentCamera::moveToOrtographic(const Vector3& position) {
     lookAt(position, position - Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f});
-}
+}*/
 
-void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
+/*void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
     static const auto pitchMin = glm::radians(-80.0f);
     static const auto pitchMax = glm::radians(80.0f);
     static const auto deg180 = glm::radians(180.0f);
@@ -104,9 +104,9 @@ void ComponentCamera::updateRotationFreeLook(const Vector2& diff) {
     forward = glm::normalize(glm::rotateY(forward, newYaw));
 
     lookAt(getEyesPos(), getEyesPos() + forward);
-}
+}*/
 
-void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
+/*void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
     if (isOrthographic()) {
         if (panFlag) {
             panning = true;
@@ -115,7 +115,7 @@ void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
             const auto to = screenToWorld(pos);
 
             const auto diff = Vector3{from.x - to.x, 0.0f, from.z - to.z};
-            moveToOrtographic(Vector3{getTransform()[3]} + diff* Vector3{1.0f, 1.0f, -1.0f});
+            moveToOrtographic(Vector3{getTransform()[3]} + diff * Vector3{1.0f, 1.0f, -1.0f});
 
             mousePosOld = pos;
         }
@@ -123,12 +123,12 @@ void ComponentCamera::eventMouseMoved(const Vector2i& pos) {
         if (rotationStarted) {
             const auto diff = Vector2{pos} - rotationInputValue;
             rotationInputValue = pos;
-            updateRotationFreeLook(diff* Vector2{1.0f, -1.0f});
+            updateRotationFreeLook(diff * Vector2{1.0f, -1.0f});
         }
     }
-}
+}*/
 
-void ComponentCamera::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+/*void ComponentCamera::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     if (isOrthographic()) {
         if (button == MouseButton::Right && !panFlag) {
             panFlag = true;
@@ -140,9 +140,9 @@ void ComponentCamera::eventMousePressed(const Vector2i& pos, const MouseButton b
             rotationInputValue = pos;
         }
     }
-}
+}*/
 
-void ComponentCamera::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
+/*void ComponentCamera::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     if (isOrthographic()) {
         if (button == MouseButton::Right) {
             panFlag = false;
@@ -153,9 +153,9 @@ void ComponentCamera::eventMouseReleased(const Vector2i& pos, const MouseButton 
             rotationStarted = false;
         }
     }
-}
+}*/
 
-void ComponentCamera::eventMouseScroll(const int xscroll, const int yscroll) {
+/*void ComponentCamera::eventMouseScroll(const int xscroll, const int yscroll) {
     if (isOrthographic()) {
         const auto factor = map(zoomTarget, zoomMin, zoomMax, 2.0f, 200.0f);
         zoomTarget += static_cast<float>(-yscroll * 0.2f) * factor;
@@ -166,9 +166,9 @@ void ComponentCamera::eventMouseScroll(const int xscroll, const int yscroll) {
             zoomTarget = zoomMax;
         }
     }
-}
+}*/
 
-void ComponentCamera::eventKeyPressed(const Key key, const Modifiers modifiers) {
+/*void ComponentCamera::eventKeyPressed(const Key key, const Modifiers modifiers) {
     if (!isOrthographic()) {
         if (config.input.cameraForward(key, modifiers)) {
             move[0] = true;
@@ -192,9 +192,9 @@ void ComponentCamera::eventKeyPressed(const Key key, const Modifiers modifiers) 
             fast = true;
         }
     }
-}
+}*/
 
-void ComponentCamera::eventKeyReleased(const Key key, const Modifiers modifiers) {
+/*void ComponentCamera::eventKeyReleased(const Key key, const Modifiers modifiers) {
     if (!isOrthographic()) {
         if (config.input.cameraForward(key, modifiers)) {
             move[0] = false;
@@ -218,7 +218,7 @@ void ComponentCamera::eventKeyReleased(const Key key, const Modifiers modifiers)
             fast = false;
         }
     }
-}
+}*/
 
-void ComponentCamera::eventCharTyped(const uint32_t code) {
-}
+/*void ComponentCamera::eventCharTyped(const uint32_t code) {
+}*/
