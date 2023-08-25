@@ -7,7 +7,7 @@
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
-static const auto profileFilename = "profile.yaml";
+static const auto profileFilename = "profile.xml";
 
 Application::Application(Config& config) :
     VulkanRenderer{config},
@@ -45,13 +45,13 @@ Application::Application(Config& config) :
     gui.createProfile.setOnSuccess([this](const GuiCreateProfile::Form& form) {
         playerLocalProfile.name = form.name;
         playerLocalProfile.secret = randomId();
-        playerLocalProfile.toYaml(this->config.userdataPath / profileFilename);
+        Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
 
         gui.mainMenu.setEnabled(true);
     });
 
     if (Fs::exists(config.userdataPath / profileFilename)) {
-        playerLocalProfile.fromYaml(config.userdataPath / profileFilename);
+        Xml::fromFile(config.userdataPath / profileFilename, playerLocalProfile);
         gui.createProfile.setEnabled(false);
     } else {
         gui.mainMenu.setEnabled(false);
@@ -68,7 +68,7 @@ Application::Application(Config& config) :
         this->gui.keepSettings.setOnResult([this, updated](bool result) {
             if (result) {
                 this->config = updated;
-                this->config.toYaml(this->config.userdataPath / "settings.yaml");
+                Xml::toFile(this->config.userdataPath / "settings.xml", this->config);
             } else {
                 this->setWindowFullScreen(this->config.graphics.fullscreen);
                 this->setWindowResolution({this->config.graphics.windowWidth, this->config.graphics.windowHeight});

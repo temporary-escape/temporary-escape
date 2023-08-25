@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<particles>
+  <color>
+    <start>
+      <x>0.4</x>
+      <y>0.7</y>
+      <z>1.0</z>
+      <w>0.5</w>
+    </start>
+    <end>
+      <x>1.0</x>
+      <y>0.9</y>
+      <z>0.8</z>
+      <w>0.0</w>
+    </end>
+  </color>
+  <spawn>
+    <start>
+      <x>0.5</x>
+      <y>0.5</y>
+      <z>0.1</z>
+    </start>
+    <end>
+      <x>0.1</x>
+      <y>0.1</y>
+      <z>0.1</z>
+    </end>
+  </spawn>
+  <size>
+    <start>
+      <x>0.5</x>
+      <y>0.5</y>
+    </start>
+    <end>
+      <x>0.2</x>
+      <y>0.2</y>
+    </end>
+  </size>
+  <count>400</count>
+  <duration>0.1</duration>
+  <direction>
+    <x>0.0</x>
+    <y>0.0</y>
+    <z>2.5</z>
+  </direction>
+  <texture>particle_simple</texture>
+</particles>

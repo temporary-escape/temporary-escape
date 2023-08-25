@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils/path.hpp"
-#include "../utils/yaml.hpp"
+#include "../utils/xml.hpp"
 #include "../vulkan/vulkan_texture.hpp"
 #include "asset.hpp"
 
@@ -25,27 +25,59 @@ public:
 
     struct Options {
         struct OptionsFiltering {
-            Filtering minification = Filtering::Linear;
-            Filtering magnification = Filtering::Linear;
+            Filtering minification{Filtering::Linear};
+            Filtering magnification{Filtering::Linear};
 
-            YAML_DEFINE(minification, magnification);
+            void convert(const Xml::Node& xml) {
+                xml.convert("minification", minification);
+                xml.convert("magnification", magnification);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("minification", minification);
+                xml.pack("magnification", magnification);
+            }
         };
 
         struct OptionsWrapping {
-            Wrapping vertical = Wrapping::Repeat;
-            Wrapping horizontal = Wrapping::Repeat;
+            Wrapping vertical{Wrapping::Repeat};
+            Wrapping horizontal{Wrapping::Repeat};
 
-            YAML_DEFINE(vertical, horizontal);
+            void convert(const Xml::Node& xml) {
+                xml.convert("vertical", vertical);
+                xml.convert("horizontal", horizontal);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("vertical", vertical);
+                xml.pack("horizontal", horizontal);
+            }
         };
 
-        std::optional<bool> isArray;
-        std::optional<bool> compress;
-        std::optional<bool> srgb;
-        std::optional<Type> type;
-        std::optional<OptionsFiltering> filtering;
-        std::optional<OptionsWrapping> wrapping;
+        bool isArray{false};
+        bool compress{true};
+        bool srgb{false};
+        Type type{Type::Texture2D};
+        OptionsFiltering filtering{};
+        OptionsWrapping wrapping{};
 
-        YAML_DEFINE(isArray, compress, srgb, type, filtering, wrapping);
+        void convert(const Xml::Node& xml) {
+            xml.convert("isArray", isArray, false);
+            xml.convert("compress", compress, false);
+            xml.convert("srgb", srgb, false);
+            xml.convert("type", type, false);
+            xml.convert("filtering", filtering, false);
+            xml.convert("wrapping", wrapping, false);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("isArray", isArray);
+            xml.pack("compress", compress);
+            xml.pack("srgb", srgb);
+            xml.pack("type", type);
+            xml.pack("filtering", filtering);
+            xml.pack("wrapping", wrapping);
+        }
 
         void apply(VulkanTexture::CreateInfo& textureInfo) const;
     };
@@ -81,22 +113,22 @@ private:
     VulkanTexture texture;
 };
 
+XML_DEFINE(Texture::Options, "texture");
+
 using TexturePtr = std::shared_ptr<Texture>;
 
-template <> struct Yaml::Adaptor<TexturePtr> {
-    static void convert(const Yaml::Node& node, TexturePtr& value) {
-        value = Texture::from(node.asString());
+template <> struct Xml::Adaptor<TexturePtr> {
+    static void convert(const Xml::Node& node, TexturePtr& value) {
+        value = Texture::from(std::string{node.getText()});
     }
-    static void pack(Yaml::Node& node, const TexturePtr& value) {
-        node.packString(value->getName());
+    static void pack(Xml::Node& node, const TexturePtr& value) {
+        node.setText(value->getName());
     }
 };
 
-YAML_DEFINE_ENUM(Texture::Wrapping, ClampToEdge, Repeat);
-
-YAML_DEFINE_ENUM(Texture::Filtering, Linear, Nearest);
-
-YAML_DEFINE_ENUM(Texture::Type, Texture1D, Texture2D);
+XML_DEFINE_ENUM(Texture::Wrapping, ClampToEdge, Repeat);
+XML_DEFINE_ENUM(Texture::Filtering, Linear, Nearest);
+XML_DEFINE_ENUM(Texture::Type, Texture1D, Texture2D);
 } // namespace Engine
 
 namespace msgpack {

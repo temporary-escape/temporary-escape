@@ -15,7 +15,7 @@ static void compressTexture(const Path& file) {
 
     // Should we compress it?
     auto shouldCompress = true;
-    if (textureOptions.compress && !(*textureOptions.compress)) {
+    if (textureOptions.compress) {
         shouldCompress = false;
     }
 
@@ -112,15 +112,15 @@ void AssetsManager::findAssets() {
         }
 
         for (const auto& path : paths) {
-            init(particlesTypes, path / "particles", {".yml", ".yaml"});
+            init(particlesTypes, path / "particles", {".xml"});
         }
 
         for (const auto& path : paths) {
-            init(blocks, path / "blocks", {".yml", ".yaml"});
+            init(blocks, path / "blocks", {".xml"});
         }
 
         for (const auto& path : paths) {
-            init(planetTypes, path / "planets", {".yml", ".yaml"});
+            init(planetTypes, path / "planets", {".xml"});
         }
 
         for (const auto& path : paths) {
@@ -134,7 +134,7 @@ void AssetsManager::findAssets() {
 void AssetsManager::addManifest(const Path& path) {
     try {
         ModManifest manifest{};
-        manifest.fromYaml(path / "manifest.yml");
+        Xml::fromFile(path / "manifest.xml", manifest);
         manifests.push_back(manifest);
     } catch (...) {
         EXCEPTION_NESTED("Failed to load manifest for mod package: \'{}\'", path);

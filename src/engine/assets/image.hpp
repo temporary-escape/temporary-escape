@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils/path.hpp"
-#include "../utils/yaml.hpp"
+#include "../utils/xml.hpp"
 #include "asset.hpp"
 #include "image_atlas.hpp"
 
@@ -28,12 +28,16 @@ private:
 
 using ImagePtr = std::shared_ptr<Image>;
 
-template <> struct Yaml::Adaptor<ImagePtr> {
-    static void convert(const Yaml::Node& node, ImagePtr& value) {
-        value = Image::from(node.asString());
+template <> struct Xml::Adaptor<ImagePtr> {
+    static void convert(const Xml::Node& node, ImagePtr& value) {
+        if (node && !node.empty()) {
+            value = Image::from(std::string{node.getText()});
+        }
     }
-    static void pack(Yaml::Node& node, const ImagePtr& value) {
-        node.packString(value->getName());
+    static void pack(Xml::Node& node, const ImagePtr& value) {
+        if (value) {
+            node.setText(value->getName());
+        }
     }
 };
 } // namespace Engine

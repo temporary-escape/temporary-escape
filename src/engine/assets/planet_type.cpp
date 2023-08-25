@@ -15,7 +15,7 @@ void PlanetType::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, Audi
     (void)audio;
 
     try {
-        definition.fromYaml(this->path);
+        Xml::fromFile(this->path, definition);
     } catch (...) {
         EXCEPTION_NESTED("Failed to load planet type: '{}'", getName());
     }

@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
             config.graphics.enableValidationLayers = false;
         }
 
-        if (std::filesystem::is_regular_file(config.userdataPath / "settings.yaml")) {
-            config.fromYaml(config.userdataPath / "settings.yaml");
+        if (std::filesystem::is_regular_file(config.userdataPath / "settings.xml")) {
+            Xml::fromFile(config.userdataPath / "settings.xml", config);
         }
 
         // config.graphics.debugDraw = true;

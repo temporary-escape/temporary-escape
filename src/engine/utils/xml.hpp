@@ -3,10 +3,12 @@
 #include "../library.hpp"
 #include "../math/quaternion.hpp"
 #include "../math/vector.hpp"
+#include "exceptions.hpp"
 #include "macros.hpp"
 #include "moveable_copyable.hpp"
 #include "path.hpp"
 #include <charconv>
+#include <fstream>
 #include <list>
 #include <unordered_map>
 #include <vector>
@@ -400,6 +402,23 @@ template <typename T> inline std::string dump(const T& value) {
 template <typename T> inline void load(T& value, const std::string& raw) {
     Document doc{raw};
     value.convert(doc.getRoot());
+}
+
+template <typename T> inline void toFile(const Path& path, const T& value) {
+    std::fstream file{path, std::ios::out};
+    if (!file) {
+        EXCEPTION("Failed to open file for writing: {}", path);
+    }
+    file << dump(value);
+}
+
+template <typename T> inline void fromFile(const Path& path, T& value) {
+    std::fstream file{path, std::ios::in};
+    if (!file) {
+        EXCEPTION("Failed to open file for reading: {}", path);
+    }
+    std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    load(value, str);
 }
 } // namespace Engine::Xml
 

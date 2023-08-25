@@ -9,7 +9,6 @@
 #include "../server/sector.hpp"
 #include "../utils/return_type.hpp"
 #include "../utils/worker.hpp"
-#include "../utils/yaml.hpp"
 #include "local_cache.hpp"
 #include "stats.hpp"
 
@@ -18,8 +17,18 @@ struct PlayerLocalProfile {
     std::string name;
     uint64_t secret;
 
-    YAML_DEFINE(name, secret);
+    void convert(const Xml::Node& xml) {
+        xml.convert("name", name);
+        xml.convert("secret", secret);
+    }
+
+    void pack(Xml::Node& xml) const {
+        xml.pack("name", name);
+        xml.pack("secret", secret);
+    }
 };
+
+XML_DEFINE(PlayerLocalProfile, "profile");
 
 class ENGINE_API Client : public NetworkDispatcher {
 public:

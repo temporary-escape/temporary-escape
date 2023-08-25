@@ -43,12 +43,16 @@ private:
 
 using ModelPtr = std::shared_ptr<Model>;
 
-template <> struct Yaml::Adaptor<ModelPtr> {
-    static void convert(const Yaml::Node& node, ModelPtr& value) {
-        value = Model::from(node.asString());
+template <> struct Xml::Adaptor<ModelPtr> {
+    static void convert(const Xml::Node& node, ModelPtr& value) {
+        if (node && !node.empty()) {
+            value = Model::from(std::string{node.getText()});
+        }
     }
-    static void pack(Yaml::Node& node, const ModelPtr& value) {
-        node.packString(value->getName());
+    static void pack(Xml::Node& node, const ModelPtr& value) {
+        if (value) {
+            node.setText(value->getName());
+        }
     }
 };
 } // namespace Engine

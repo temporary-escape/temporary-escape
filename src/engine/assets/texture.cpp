@@ -11,45 +11,39 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) const {
-    if (filtering) {
-        if (filtering->minification == Filtering::Linear) {
-            textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
-        } else if (filtering->minification == Filtering::Nearest) {
-            textureInfo.sampler.minFilter = VK_FILTER_NEAREST;
-        }
-
-        if (filtering->magnification == Filtering::Linear) {
-            textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
-        } else if (filtering->magnification == Filtering::Nearest) {
-            textureInfo.sampler.magFilter = VK_FILTER_NEAREST;
-        }
+    if (filtering.minification == Filtering::Linear) {
+        textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+    } else if (filtering.minification == Filtering::Nearest) {
+        textureInfo.sampler.minFilter = VK_FILTER_NEAREST;
     }
 
-    if (wrapping) {
-        if (wrapping->vertical == Wrapping::Repeat) {
-            textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        } else if (wrapping->horizontal == Wrapping::ClampToEdge) {
-            textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        }
-
-        if (wrapping->horizontal == Wrapping::Repeat) {
-            textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        } else if (wrapping->horizontal == Wrapping::ClampToEdge) {
-            textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        }
+    if (filtering.magnification == Filtering::Linear) {
+        textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    } else if (filtering.magnification == Filtering::Nearest) {
+        textureInfo.sampler.magFilter = VK_FILTER_NEAREST;
     }
 
-    if (type) {
-        if (type == Type::Texture1D) {
-            textureInfo.image.imageType = VK_IMAGE_TYPE_1D;
-            textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_1D;
-        } else if (type == Type::Texture2D) {
-            textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
-            textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        }
+    if (wrapping.vertical == Wrapping::Repeat) {
+        textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    } else if (wrapping.horizontal == Wrapping::ClampToEdge) {
+        textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     }
 
-    if (srgb && *srgb) {
+    if (wrapping.horizontal == Wrapping::Repeat) {
+        textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    } else if (wrapping.horizontal == Wrapping::ClampToEdge) {
+        textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    }
+
+    if (type == Type::Texture1D) {
+        textureInfo.image.imageType = VK_IMAGE_TYPE_1D;
+        textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_1D;
+    } else if (type == Type::Texture2D) {
+        textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+        textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    }
+
+    if (srgb) {
         if (textureInfo.image.format == VK_FORMAT_R8G8B8A8_UNORM) {
             textureInfo.image.format = VK_FORMAT_R8G8B8A8_SRGB;
             textureInfo.view.format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -62,11 +56,11 @@ void Texture::Options::apply(VulkanTexture::CreateInfo& textureInfo) const {
 
 Texture::Options Texture::loadOptions(const Path& path) {
     Options options{};
-    const auto optionsPath = path.parent_path() / (path.stem().string() + std::string(".yml"));
+    const auto optionsPath = path.parent_path() / (path.stem().string() + std::string(".xml"));
 
     if (Fs::exists(optionsPath)) {
         try {
-            options.fromYaml(optionsPath);
+            Xml::fromFile(optionsPath, options);
         } catch (...) {
             EXCEPTION_NESTED("Failed to load texture options from: '{}'", optionsPath.string());
         }
@@ -150,7 +144,7 @@ void Texture::loadPng(const Options& options, VulkanRenderer& vulkan) {
 
     switch (image.getFormat()) {
     case VK_FORMAT_R8G8B8A8_UNORM: {
-        if (options.srgb && *options.srgb) {
+        if (options.srgb) {
             textureInfo.image.format = VK_FORMAT_R8G8B8A8_SRGB;
         } else {
             textureInfo.image.format = VK_FORMAT_R8G8B8A8_UNORM;

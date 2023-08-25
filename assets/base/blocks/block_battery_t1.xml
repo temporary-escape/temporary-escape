@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<block>
+  <category>Blocks</category>
+  <label>Battery</label>
+  <shape>Cube</shape>
+  <material>
+    <face>PositiveX</face>
+    <face>NegativeX</face>
+    <face>PositiveY</face>
+    <face>NegativeY</face>
+    <face>PositiveZ</face>
+    <face>NegativeZ</face>
+    <baseColor>
+      <texture>texture_battery_diff</texture>
+    </baseColor>
+    <normal>
+      <texture>texture_battery_norm</texture>
+    </normal>
+    <metallicRoughness>
+      <texture>texture_battery_meta</texture>
+    </metallicRoughness>
+    <emissive>
+      <texture>texture_battery_emis</texture>
+    </emissive>
+    <mask>
+      <texture>texture_battery_mask</texture>
+    </mask>
+  </material>
+</block>

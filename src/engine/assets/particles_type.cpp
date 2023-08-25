@@ -14,7 +14,7 @@ void ParticlesType::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, A
     (void)audio;
 
     try {
-        definition.fromYaml(this->path);
+        Xml::fromFile(this->path, definition);
     } catch (...) {
         EXCEPTION_NESTED("Failed to load particles: '{}'", getName());
     }

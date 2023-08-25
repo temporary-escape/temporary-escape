@@ -27,21 +27,45 @@ public:
             Color4 start;
             Color4 end;
 
-            YAML_DEFINE(start, end);
+            void convert(const Xml::Node& xml) {
+                xml.convert("start", start);
+                xml.convert("end", end);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("start", start);
+                xml.pack("end", end);
+            }
         } color;
 
         struct {
             Vector2 start;
             Vector2 end;
 
-            YAML_DEFINE(start, end);
+            void convert(const Xml::Node& xml) {
+                xml.convert("start", start);
+                xml.convert("end", end);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("start", start);
+                xml.pack("end", end);
+            }
         } size;
 
         struct {
             Vector3 start;
             Vector3 end;
 
-            YAML_DEFINE(start, end);
+            void convert(const Xml::Node& xml) {
+                xml.convert("start", start);
+                xml.convert("end", end);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("start", start);
+                xml.pack("end", end);
+            }
         } spawn;
 
         Vector3 direction;
@@ -49,7 +73,25 @@ public:
         int count;
         TexturePtr texture;
 
-        YAML_DEFINE(color, size, spawn, direction, duration, count, texture);
+        void convert(const Xml::Node& xml) {
+            xml.convert("color", color);
+            xml.convert("size", size);
+            xml.convert("spawn", spawn);
+            xml.convert("direction", direction);
+            xml.convert("duration", duration);
+            xml.convert("count", count);
+            xml.convert("texture", texture);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("color", color);
+            xml.pack("size", size);
+            xml.pack("spawn", spawn);
+            xml.pack("direction", direction);
+            xml.pack("duration", duration);
+            xml.pack("count", count);
+            xml.pack("texture", texture);
+        }
     };
 
     explicit ParticlesType(std::string name, Path path);
@@ -79,21 +121,19 @@ private:
     VulkanBuffer ubo;
 };
 
+XML_DEFINE(ParticlesType::Definition, "particles");
+
 using ParticlesTypePtr = std::shared_ptr<ParticlesType>;
 
-template <> struct Yaml::Adaptor<ParticlesTypePtr> {
-    static void convert(const Yaml::Node& node, ParticlesTypePtr& value) {
-        if (!node || node.isNull()) {
-            value = nullptr;
-        } else {
-            value = ParticlesType::from(node.asString());
+template <> struct Xml::Adaptor<ParticlesTypePtr> {
+    static void convert(const Xml::Node& node, ParticlesTypePtr& value) {
+        if (node && !node.empty()) {
+            value = ParticlesType::from(std::string{node.getText()});
         }
     }
-    static void pack(Yaml::Node& node, const ParticlesTypePtr& value) {
+    static void pack(Xml::Node& node, const ParticlesTypePtr& value) {
         if (value) {
-            node.packString(value->getName());
-        } else {
-            node.packNull();
+            node.setText(value->getName());
         }
     }
 };

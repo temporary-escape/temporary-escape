@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<planet>
+  <biome>planet_life_biome</biome>
+  <roughness>planet_life_meta</roughness>
+  <atmosphere>
+    <start>
+      <x>0.1</x>
+      <y>0.7</y>
+      <z>1</z>
+      <w>1</w>
+    </start>
+    <end>
+      <x>0.8</x>
+      <y>0.9</y>
+      <z>1</z>
+      <w>1</w>
+    </end>
+    <strength>1</strength>
+    <waterLevel>0.25</waterLevel>
+  </atmosphere>
+</planet>

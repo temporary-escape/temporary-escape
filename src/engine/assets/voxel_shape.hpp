@@ -2,7 +2,7 @@
 
 #include "../library.hpp"
 #include "../math/vector.hpp"
-#include "../utils/yaml.hpp"
+#include "../utils/xml.hpp"
 #include "../vulkan/vulkan_types.hpp"
 #include <string>
 #include <vector>
@@ -85,6 +85,6 @@ inline const std::string& shapeTypeToFriendlyName(const VoxelShape::Type type) {
     return VoxelShape::typeFriendlyNames.at(size_t(type));
 }
 
-YAML_DEFINE_ENUM(VoxelShape::Face, PositiveX, NegativeX, PositiveY, NegativeY, PositiveZ, NegativeZ);
-YAML_DEFINE_ENUM(VoxelShape::Type, Cube, Wedge, Corner, Penta);
+XML_DEFINE_ENUM(VoxelShape::Face, PositiveX, NegativeX, PositiveY, NegativeY, PositiveZ, NegativeZ);
+XML_DEFINE_ENUM(VoxelShape::Type, Cube, Wedge, Corner, Penta);
 } // namespace Engine

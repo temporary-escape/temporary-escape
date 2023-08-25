@@ -1,7 +1,0 @@
-biome: 'planet_alien_biome'
-roughness: 'planet_alien_meta'
-atmosphere:
-  start: [ 0.9, 0.4, 1.0, 1.0 ]
-  end: [ 0.6, 0.3, 1.0, 1.0 ]
-  strength: 1.0
-  waterLevel: 0.25

@@ -2,6 +2,7 @@
 
 #include "../audio/audio_buffer.hpp"
 #include "../utils/path.hpp"
+#include "../utils/xml.hpp"
 #include "../vulkan/vulkan_shader.hpp"
 #include "asset.hpp"
 
@@ -28,12 +29,16 @@ private:
 
 using SoundPtr = std::shared_ptr<Sound>;
 
-template <> struct Yaml::Adaptor<SoundPtr> {
-    static void convert(const Yaml::Node& node, SoundPtr& value) {
-        value = Sound::from(node.asString());
+template <> struct Xml::Adaptor<SoundPtr> {
+    static void convert(const Xml::Node& node, SoundPtr& value) {
+        if (node && !node.empty()) {
+            value = Sound::from(std::string{node.getText()});
+        }
     }
-    static void pack(Yaml::Node& node, const SoundPtr& value) {
-        node.packString(value->getName());
+    static void pack(Xml::Node& node, const SoundPtr& value) {
+        if (value) {
+            node.setText(value->getName());
+        }
     }
 };
 } // namespace Engine

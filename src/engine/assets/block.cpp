@@ -12,9 +12,9 @@ Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::mo
 
 void Block::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
     (void)audio;
-    
+
     try {
-        definition.fromYaml(this->path);
+        Xml::fromFile(this->path, definition);
     } catch (...) {
         EXCEPTION_NESTED("Failed to load block: '{}'", getName());
     }

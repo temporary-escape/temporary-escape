@@ -89,9 +89,6 @@
       "name": "openal-soft"
     },
     {
-      "name": "yaml-cpp"
-    },
-    {
       "name": "lz4"
     },
     {
@@ -255,11 +252,6 @@
       "name": "openal-soft",
       "version": "1.22.2",
       "port-version": 4
-    },
-    {
-      "name": "yaml-cpp",
-      "version": "0.7.0",
-      "port-version": 1
     },
     {
       "name": "lz4",

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<planet>
+  <biome>planet_sulfur_biome</biome>
+  <roughness>planet_sulfur_meta</roughness>
+  <atmosphere>
+    <start>
+      <x>0.5</x>
+      <y>0.3</y>
+      <z>0.1</z>
+      <w>1</w>
+    </start>
+    <end>
+      <x>0.9</x>
+      <y>0.4</y>
+      <z>0.1</z>
+      <w>1</w>
+    </end>
+    <strength>2.7</strength>
+    <waterLevel>0.25</waterLevel>
+  </atmosphere>
+</planet>

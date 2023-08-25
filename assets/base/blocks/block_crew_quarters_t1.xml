@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<block>
+  <category>Blocks</category>
+  <label>Crew Quarters</label>
+  <shape>Cube</shape>
+  <shape>Wedge</shape>
+  <shape>Corner</shape>
+  <shape>Penta</shape>
+  <material>
+    <face>PositiveX</face>
+    <face>NegativeX</face>
+    <face>PositiveZ</face>
+    <face>NegativeZ</face>
+    <baseColor>
+      <texture>texture_hull_windows_diff</texture>
+    </baseColor>
+    <normal>
+      <texture>texture_hull_windows_norm</texture>
+    </normal>
+    <metallicRoughness>
+      <texture>texture_hull_windows_meta</texture>
+    </metallicRoughness>
+    <emissive>
+      <texture>texture_hull_windows_emis</texture>
+    </emissive>
+    <mask>
+      <texture>texture_hull_windows_mask</texture>
+    </mask>
+  </material>
+  <material>
+    <face>PositiveY</face>
+    <face>NegativeY</face>
+    <baseColor>
+      <texture>texture_hull_diff</texture>
+    </baseColor>
+    <normal>
+      <texture>texture_hull_norm</texture>
+    </normal>
+    <metallicRoughness>
+      <texture>texture_hull_meta</texture>
+    </metallicRoughness>
+    <mask>
+      <texture>texture_hull_mask</texture>
+    </mask>
+  </material>
+</block>

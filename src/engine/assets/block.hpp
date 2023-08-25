@@ -15,13 +15,30 @@ public:
             TexturePtr texture;
             std::optional<Color4> factor{1.0f};
 
-            YAML_DEFINE(texture, factor);
+            void convert(const Xml::Node& xml) {
+                xml.convert("texture", texture);
+                xml.convert("factor", factor);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("texture", texture);
+                xml.pack("factor", factor);
+            }
         };
 
         struct ParticlesInfo {
             Vector3 offset;
             ParticlesTypePtr type;
-            YAML_DEFINE(offset, type);
+
+            void convert(const Xml::Node& xml) {
+                xml.convert("offset", offset);
+                xml.convert("type", type);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("offset", offset);
+                xml.pack("type", type);
+            }
         };
 
         struct MaterialDefinition {
@@ -34,7 +51,25 @@ public:
             std::optional<TextureDefinition> metallicRoughness{};
             std::optional<TextureDefinition> mask{};
 
-            YAML_DEFINE(faces, baseColor, emissive, normal, ambientOcclusion, metallicRoughness, mask);
+            void convert(const Xml::Node& xml) {
+                xml.convert("face", faces);
+                xml.convert("baseColor", baseColor);
+                xml.convert("emissive", emissive);
+                xml.convert("normal", normal);
+                xml.convert("ambientOcclusion", ambientOcclusion);
+                xml.convert("metallicRoughness", metallicRoughness);
+                xml.convert("mask", mask);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("face", faces);
+                xml.pack("baseColor", baseColor);
+                xml.pack("emissive", emissive);
+                xml.pack("normal", normal);
+                xml.pack("ambientOcclusion", ambientOcclusion);
+                xml.pack("metallicRoughness", metallicRoughness);
+                xml.pack("mask", mask);
+            }
         };
 
         std::vector<VoxelShape::Type> shapes;
@@ -43,7 +78,21 @@ public:
         std::optional<ParticlesInfo> particles;
         std::vector<MaterialDefinition> materials;
 
-        YAML_DEFINE(shapes, category, label, particles, materials);
+        void convert(const Xml::Node& xml) {
+            xml.convert("shape", shapes);
+            xml.convert("category", category);
+            xml.convert("label", label);
+            xml.convert("particles", particles);
+            xml.convert("material", materials);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("shape", shapes);
+            xml.pack("category", category);
+            xml.pack("label", label);
+            xml.pack("particles", particles);
+            xml.pack("material", materials);
+        }
     };
 
     explicit Block(std::string name, Path path);
@@ -103,21 +152,19 @@ private:
     std::array<ImagePtr, VoxelShape::numOfShapes> thumbnails;
 };
 
+XML_DEFINE(Block::Definition, "block");
+
 using BlockPtr = std::shared_ptr<Block>;
 
-template <> struct Yaml::Adaptor<BlockPtr> {
-    static void convert(const Yaml::Node& node, BlockPtr& value) {
-        if (node.isNull()) {
-            value = nullptr;
-        } else {
-            value = Block::from(node.asString());
+template <> struct Xml::Adaptor<BlockPtr> {
+    static void convert(const Xml::Node& node, BlockPtr& value) {
+        if (node && !node.empty()) {
+            value = Block::from(std::string{node.getText()});
         }
     }
-    static void pack(Yaml::Node& node, const BlockPtr& value) {
+    static void pack(Xml::Node& node, const BlockPtr& value) {
         if (value) {
-            node.packString(value->getName());
-        } else {
-            node.packNull();
+            node.setText(value->getName());
         }
     }
 };

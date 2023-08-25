@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<block>
+  <category>Blocks</category>
+  <label>Computer Core</label>
+  <shape>Cube</shape>
+  <material>
+    <face>PositiveX</face>
+    <face>NegativeX</face>
+    <face>PositiveY</face>
+    <face>NegativeY</face>
+    <face>PositiveZ</face>
+    <face>NegativeZ</face>
+    <baseColor>
+      <texture>texture_computer_core_diff</texture>
+    </baseColor>
+    <normal>
+      <texture>texture_computer_core_norm</texture>
+    </normal>
+    <metallicRoughness>
+      <texture>texture_computer_core_meta</texture>
+    </metallicRoughness>
+    <emissive>
+      <texture>texture_computer_core_emis</texture>
+    </emissive>
+    <mask>
+      <texture>texture_computer_core_mask</texture>
+    </mask>
+  </material>
+</block>

@@ -20,10 +20,32 @@ public:
             float strength{0.0f};
             float waterLevel{0.0f};
 
-            YAML_DEFINE(start, end, strength, waterLevel);
+            void convert(const Xml::Node& xml) {
+                xml.convert("start", start);
+                xml.convert("end", end);
+                xml.convert("strength", strength);
+                xml.convert("waterLevel", waterLevel);
+            }
+
+            void pack(Xml::Node& xml) const {
+                xml.pack("start", start);
+                xml.pack("end", end);
+                xml.pack("strength", strength);
+                xml.pack("waterLevel", waterLevel);
+            }
         } atmosphere;
 
-        YAML_DEFINE(biome, roughness, atmosphere);
+        void convert(const Xml::Node& xml) {
+            xml.convert("biome", biome);
+            xml.convert("roughness", roughness);
+            xml.convert("atmosphere", atmosphere);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("biome", biome);
+            xml.pack("roughness", roughness);
+            xml.pack("atmosphere", atmosphere);
+        }
     };
 
     explicit PlanetType(std::string name, Path path);
@@ -73,7 +95,22 @@ private:
     ImagePtr thumbnail;
 };
 
+XML_DEFINE(PlanetType::Definition, "planet");
+
 using PlanetTypePtr = std::shared_ptr<PlanetType>;
+
+template <> struct Xml::Adaptor<PlanetTypePtr> {
+    static void convert(const Xml::Node& node, PlanetTypePtr& value) {
+        if (node && !node.empty()) {
+            value = PlanetType::from(std::string{node.getText()});
+        }
+    }
+    static void pack(Xml::Node& node, const PlanetTypePtr& value) {
+        if (value) {
+            node.setText(value->getName());
+        }
+    }
+};
 } // namespace Engine
 
 namespace msgpack {

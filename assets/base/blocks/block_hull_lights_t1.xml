@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<block>
+  <category>Hull</category>
+  <label>Hull Lights</label>
+  <shape>Cube</shape>
+  <shape>Wedge</shape>
+  <shape>Corner</shape>
+  <shape>Penta</shape>
+  <material>
+    <face>PositiveX</face>
+    <face>NegativeX</face>
+    <face>PositiveY</face>
+    <face>NegativeY</face>
+    <face>PositiveZ</face>
+    <face>NegativeZ</face>
+    <baseColor>
+      <texture>texture_hull_diff</texture>
+    </baseColor>
+    <normal>
+      <texture>texture_hull_norm</texture>
+    </normal>
+    <metallicRoughness>
+      <texture>texture_hull_meta</texture>
+    </metallicRoughness>
+    <emissive>
+      <texture>texture_hull_emis</texture>
+    </emissive>
+    <mask>
+      <texture>texture_hull_mask</texture>
+    </mask>
+  </material>
+</block>

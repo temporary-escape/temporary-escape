@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <name>Base</name>
+  <description>The core game library for the Temporary Escape game</description>
+  <author>Matus Novak</author>
+  <version>0.1.0</version>
+</manifest>

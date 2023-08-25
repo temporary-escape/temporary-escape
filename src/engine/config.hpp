@@ -1,7 +1,7 @@
 #pragma once
 
 #include "enums.hpp"
-#include "utils/yaml.hpp"
+#include "utils/xml.hpp"
 #include <chrono>
 #include <filesystem>
 #include <optional>
@@ -57,8 +57,33 @@ struct Config {
         int ssao = 32;
         int shadowsSize = 2048;
 
-        YAML_DEFINE(windowWidth, windowHeight, fullscreen, vsync, anisotropy, skyboxSize, planetTextureSize, fxaa,
-                    bloom, ssao, shadowsSize);
+        void convert(const Xml::Node& xml) {
+            xml.convert("windowWidth", windowWidth);
+            xml.convert("windowHeight", windowHeight);
+            xml.convert("fullscreen", fullscreen);
+            xml.convert("vsync", vsync);
+            xml.convert("anisotropy", anisotropy);
+            xml.convert("skyboxSize", skyboxSize);
+            xml.convert("planetTextureSize", planetTextureSize);
+            xml.convert("fxaa", fxaa);
+            xml.convert("bloom", bloom);
+            xml.convert("ssao", ssao);
+            xml.convert("shadowsSize", shadowsSize);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("windowWidth", windowWidth);
+            xml.pack("windowHeight", windowHeight);
+            xml.pack("fullscreen", fullscreen);
+            xml.pack("vsync", vsync);
+            xml.pack("anisotropy", anisotropy);
+            xml.pack("skyboxSize", skyboxSize);
+            xml.pack("planetTextureSize", planetTextureSize);
+            xml.pack("fxaa", fxaa);
+            xml.pack("bloom", bloom);
+            xml.pack("ssao", ssao);
+            xml.pack("shadowsSize", shadowsSize);
+        }
     } graphics;
 
     // Paths of interests
@@ -103,6 +128,14 @@ struct Config {
         KeyBinding systemMapToggle{Key::LetterN};
     } input;
 
-    YAML_DEFINE(graphics);
+    void convert(const Xml::Node& xml) {
+        xml.convert("graphics", graphics);
+    }
+
+    void pack(Xml::Node& xml) const {
+        xml.pack("graphics", graphics);
+    }
 };
+
+XML_DEFINE(Config, "settings");
 } // namespace Engine
