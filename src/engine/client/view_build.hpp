@@ -32,7 +32,7 @@ public:
     Scene* getScene() override;
 
 private:
-    static constexpr size_t maxHistoryItems = 10;
+    static constexpr size_t maxHistoryItems = 100;
 
     struct Action {
         bool added{false};

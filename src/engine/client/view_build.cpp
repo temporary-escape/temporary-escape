@@ -168,11 +168,12 @@ void ViewBuild::addBlock() {
     action.color = selected.color;
     action.shape = selected.shape;
     action.added = true;
-    historyPos = static_cast<int64_t>(history.size());
 
     if (history.size() > maxHistoryItems) {
         history.pop_front();
     }
+
+    historyPos = static_cast<int64_t>(history.size());
 
     uiAudioSource.bind(sound.build->getAudioBuffer());
     uiAudioSource.play();
@@ -202,15 +203,16 @@ void ViewBuild::removeBlock() {
     action.color = found->color.value();
     action.shape = static_cast<VoxelShape::Type>(found->shape.value());
     action.added = false;
-    historyPos = static_cast<int64_t>(history.size());
 
     if (history.size() > maxHistoryItems) {
         history.pop_front();
     }
 
+    historyPos = static_cast<int64_t>(history.size());
+
     grid.remove(pos);
     grid.setDirty(true);
-    
+
     uiAudioSource.bind(sound.destroy->getAudioBuffer());
     uiAudioSource.play();
 }
