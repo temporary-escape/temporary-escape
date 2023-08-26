@@ -13,15 +13,9 @@ AssetsManager* AssetsManager::instance{nullptr};
 static void compressTexture(const Path& file) {
     const auto textureOptions = Texture::loadOptions(file);
 
-    // Should we compress it?
-    auto shouldCompress = true;
-    if (textureOptions.compress) {
-        shouldCompress = false;
-    }
-
     const auto dst = replaceExtension(file, ".ktx2");
     if (!Fs::exists(dst) || Fs::last_write_time(file) > Fs::last_write_time(dst)) {
-        ktxCompressFile(file, dst, shouldCompress);
+        ktxCompressFile(file, dst, textureOptions.compress);
     } else {
         logger.info("Skipping texture: {}, not modified", file);
     }

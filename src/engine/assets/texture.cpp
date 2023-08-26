@@ -60,6 +60,7 @@ Texture::Options Texture::loadOptions(const Path& path) {
 
     if (Fs::exists(optionsPath)) {
         try {
+            logger.info("Loading texture options from: '{}'", optionsPath);
             Xml::fromFile(optionsPath, options);
         } catch (...) {
             EXCEPTION_NESTED("Failed to load texture options from: '{}'", optionsPath.string());
