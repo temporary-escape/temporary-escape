@@ -116,12 +116,58 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
+    
+    needs:
+      - build
+
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ vars.RELEASES_AWS_DEFAULT_REGION }}"
+      AWS_ENDPOINT_URL: "${{ vars.RELEASES_AWS_ENDPOINT_URL }}"
+      AWS_BUCKET_NAME: "${{ vars.RELEASES_AWS_BUCKET_NAME }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-windows-2022-archive
+          path: ./release
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-ubuntu-22.04-archive
+          path: ./release
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-macos-12-archive
+          path: ./release
+
+      - name: Upload to S3
+        shell: bash
+        run: |
+          VERSION=$(git describe --always --tags)
+          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/${VERSION}/" --recursive --acl public-read
+
   pages:
     name: Documentation
     runs-on: ubuntu-latest
 
     needs:
-      - build
+      - publish
 
     env:
       AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
@@ -168,49 +214,3 @@ jobs:
           git add .
           git commit -m "Update documentation" --allow-empty
           git push origin main -f
-
-  publish:
-    name: Publish
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')
-    
-    needs:
-      - pages
-
-    env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}"
-      AWS_DEFAULT_REGION: "${{ vars.RELEASES_AWS_DEFAULT_REGION }}"
-      AWS_ENDPOINT_URL: "${{ vars.RELEASES_AWS_ENDPOINT_URL }}"
-      AWS_BUCKET_NAME: "${{ vars.RELEASES_AWS_BUCKET_NAME }}"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0
-
-      - name: Download Windows Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: release-windows-2022-archive
-          path: ./release
-
-      - name: Download Linux Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: release-ubuntu-22.04-archive
-          path: ./release
-
-      - name: Download macOS Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: release-macos-12-archive
-          path: ./release
-
-      - name: Upload to S3
-        shell: bash
-        run: |
-          VERSION=$(git describe --always --tags)
-          aws --endpoint "https://${AWS_ENDPOINT_URL}" s3 cp ./release "s3://${AWS_BUCKET_NAME}/release/${VERSION}/" --recursive --acl public-read
