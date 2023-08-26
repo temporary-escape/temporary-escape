@@ -9,6 +9,7 @@
 #include "particles_type.hpp"
 #include "planet_type.hpp"
 #include "shader.hpp"
+#include "ship_template.hpp"
 #include "sound.hpp"
 #include "texture.hpp"
 #include "voxel_shape_cache.hpp"
@@ -106,6 +107,10 @@ public:
         return particlesTypes;
     }
 
+    const Category<ShipTemplate>& getShipTemplates() const {
+        return shipTemplates;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -154,6 +159,7 @@ private:
     Category<Shader> shaders;
     Category<Sound> sounds;
     Category<ParticlesType> particlesTypes;
+    Category<ShipTemplate> shipTemplates;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

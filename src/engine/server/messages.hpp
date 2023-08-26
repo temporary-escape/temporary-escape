@@ -103,4 +103,13 @@ struct MessageSceneUpdateEvent {
 };
 
 MESSAGE_DEFINE(MessageSceneUpdateEvent);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessagePlayerControlEvent {
+    uint64_t entityId{0};
+
+    MSGPACK_DEFINE(entityId);
+};
+
+MESSAGE_DEFINE(MessagePlayerControlEvent);
 } // namespace Engine

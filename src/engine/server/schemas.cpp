@@ -435,6 +435,22 @@ void Engine::bindSchemas(Lua& lua) {
 
     {
         /**
+         * @class PlayerData
+         * Database type that specifies the information of the player
+         */
+        /**
+         * @function PlayerData.new
+         * Default constructor
+         * @type string
+         */
+        auto cls = m.new_usertype<PlayerData>("PlayerData", sol::constructors<PlayerData>{});
+        cls["name"] = &PlayerData::name;
+        cls["id"] = &PlayerData::id;
+        cls["admin"] = &PlayerData::admin;
+    }
+
+    {
+        /**
          * @class PlayerLocationData
          * Database type that specifies the location of the player within the universe
          */
@@ -503,6 +519,12 @@ void Engine::bindSchemas(Lua& lua) {
          * @readonly
          */
         BindSchemaHelper<PlanetData>::bind(lua, cls, "planets", "PlanetData");
+        /**
+         * @field Database.players
+         * @type Repository<PlayerData>
+         * @readonly
+         */
+        BindSchemaHelper<PlayerData>::bind(lua, cls, "players", "PlayerData");
         /**
          * @field Database.player_locations
          * @type Repository<PlayerLocationData>

@@ -41,6 +41,8 @@ public:
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
+    Entity spawnPlayerEntity(const SessionPtr& session);
+
     const Config& config;
     Database& db;
     AssetsManager& assetsManager;

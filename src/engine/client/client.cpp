@@ -25,6 +25,7 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST(MessageFetchFactionsResponse);
     HANDLE_REQUEST(MessageFetchSystemsResponse);
     HANDLE_REQUEST(MessageSceneUpdateEvent);
+    HANDLE_REQUEST(MessagePlayerControlEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
@@ -299,5 +300,29 @@ void Client::handle(Request<MessageSceneUpdateEvent> req) {
     sync.postSafe([=]() {
         // Update, create, or delete entities in a scene
         scene->getController<ControllerNetwork>().receiveUpdate(req.object());
+    });
+}
+
+void Client::handle(Request<MessagePlayerControlEvent> req) {
+    sync.postSafe([=]() {
+        const auto data = req.get();
+        logger.info("Switching player control to entity: {}", data.entityId);
+        const auto entity = scene->getController<ControllerNetwork>().getRemoteToLocalEntity(data.entityId);
+        if (entity) {
+            const auto transform = entity->tryGetComponent<ComponentTransform>();
+            const auto camera = scene->getPrimaryCamera();
+
+            if (!camera) {
+                EXCEPTION("No camera in scene");
+            }
+            if (!transform) {
+                EXCEPTION("Entity has no transform");
+            }
+
+            auto cameraEntity = scene->fromHandle(camera->getHandle());
+            cameraEntity.getComponent<ComponentCameraOrbital>().setTarget(transform->getAbsolutePosition());
+        } else {
+            EXCEPTION("No local entity: {}", data.entityId);
+        }
     });
 }

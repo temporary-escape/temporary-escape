@@ -1,4 +1,8 @@
 #include "component_grid.hpp"
+#include "../../file/msgpack_file_reader.hpp"
+#include "../../file/teb_file_header.hpp"
+#include "../../server/lua.hpp"
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -22,6 +26,25 @@ void ComponentGrid::clear() {
 }
 
 void ComponentGrid::update() {
+}
+
+void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
+    if (!shipTemplate) {
+        EXCEPTION("Can not set grid from null ship template");
+    }
+
+    clear();
+
+    MsgpackFileReader file{shipTemplate->getPath()};
+    TebFileHeader header{};
+    file.unpack(header);
+
+    if (header.type != TebFileType::Ship) {
+        EXCEPTION("Can not set grid from ship template, bad file type");
+    }
+
+    file.unpack(*this);
+    setDirty(true);
 }
 
 void ComponentGrid::debugIterate(Grid::Iterator iterator) {
@@ -157,4 +180,11 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         primitive.mesh.count = data.indices.size();
         primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
     }
+}
+
+void ComponentGrid::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<ComponentGrid>("ComponentGrid");
+    cls["set_from"] = &ComponentGrid::setFrom;
 }

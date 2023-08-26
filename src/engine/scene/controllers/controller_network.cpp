@@ -37,6 +37,11 @@ static void postEmplaceComponent(const entt::entity handle, ComponentRigidBody& 
     component.setup();
 }
 
+static void postEmplaceComponent(const entt::entity handle, ComponentGrid& component) {
+    (void)handle;
+    component.setDirty(true);
+}
+
 template <typename Type> static void postPatchComponent(const entt::entity handle, Type& component) {
     (void)handle;
     (void)component;
@@ -119,6 +124,7 @@ static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt
         {EntityComponentIds::value<ComponentRigidBody>, &unpackComponent<ComponentRigidBody>},
         {EntityComponentIds::value<ComponentIcon>, &unpackComponent<ComponentIcon>},
         {EntityComponentIds::value<ComponentLabel>, &unpackComponent<ComponentLabel>},
+        {EntityComponentIds::value<ComponentGrid>, &unpackComponent<ComponentGrid>},
     };
 
     const auto found = unpackers.find(id);
@@ -135,6 +141,7 @@ void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentGrid>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
@@ -231,4 +238,12 @@ void ControllerNetwork::onDestroyEntity(entt::registry& r, entt::entity handle) 
         updatedComponentsCount -= std::bitset<64>{it->second}.count();
         updatedComponentsMap.erase(it);
     }
+}
+
+std::optional<Entity> ControllerNetwork::getRemoteToLocalEntity(const uint64_t id) const {
+    auto local = remoteToLocal.find(static_cast<entt::entity>(id));
+    if (local != remoteToLocal.end()) {
+        return Entity{reg, local->second};
+    }
+    return std::nullopt;
 }

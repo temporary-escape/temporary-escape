@@ -101,6 +101,10 @@ public:
         return handle;
     }
 
+    uint64_t getId() const {
+        return static_cast<uint64_t>(getHandle());
+    }
+
     operator bool() const {
         return reg && reg->valid(handle);
     }

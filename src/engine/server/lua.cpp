@@ -245,6 +245,9 @@ void Lua::setupBindings() {
     Block::bind(*this);
     Model::bind(*this);
     AssetsManager::bind(*this);
+    Sound::bind(*this);
+    ParticlesType::bind(*this);
+    ShipTemplate::bind(*this);
 
     // Server
     bindSchemas(*this);
@@ -261,6 +264,7 @@ void Lua::setupBindings() {
     ComponentTransform::bind(*this);
     ComponentIcon::bind(*this);
     ComponentLabel::bind(*this);
+    ComponentGrid::bind(*this);
     Scene::bind(*this);
 
     // Global functions

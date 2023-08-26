@@ -120,6 +120,10 @@ void AssetsManager::findAssets() {
         for (const auto& path : paths) {
             init(sounds, path / "sounds", {".ogg"});
         }
+
+        for (const auto& path : paths) {
+            init(shipTemplates, path / "ships", {".teb"});
+        }
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize assetsManager");
     }
@@ -249,6 +253,12 @@ void AssetsManager::bind(Lua& lua) {
     cls["find_block"] = [](AssetsManager& self, const std::string& name) { return self.getBlocks().find(name); };
     cls["find_model"] = [](AssetsManager& self, const std::string& name) { return self.getModels().find(name); };
     cls["find_sound"] = [](AssetsManager& self, const std::string& name) { return self.getSounds().find(name); };
+    cls["find_particles_type"] = [](AssetsManager& self, const std::string& name) {
+        return self.getParticlesTypes().find(name);
+    };
+    cls["find_ship_template"] = [](AssetsManager& self, const std::string& name) {
+        return self.getShipTemplates().find(name);
+    };
 
     cls["find_all_planet_types"] = [](AssetsManager& self) { return sol::as_table(self.getPlanetTypes().findAll()); };
     cls["find_all_images"] = [](AssetsManager& self) { return sol::as_table(self.getImages().findAll()); };
@@ -256,4 +266,10 @@ void AssetsManager::bind(Lua& lua) {
     cls["find_all_blocks"] = [](AssetsManager& self) { return sol::as_table(self.getBlocks().findAll()); };
     cls["find_all_models"] = [](AssetsManager& self) { return sol::as_table(self.getModels().findAll()); };
     cls["find_all_sounds"] = [](AssetsManager& self) { return sol::as_table(self.getSounds().findAll()); };
+    cls["find_all_particles_type"] = [](AssetsManager& self) {
+        return sol::as_table(self.getParticlesTypes().findAll());
+    };
+    cls["find_all_ship_templates"] = [](AssetsManager& self) {
+        return sol::as_table(self.getShipTemplates().findAll());
+    };
 }

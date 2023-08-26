@@ -28,6 +28,7 @@ public:
     void sendUpdate(NetworkPeer& peer);
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
+    std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
 
 private:
     template <typename T> void registerComponent() {

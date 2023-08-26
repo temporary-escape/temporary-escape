@@ -101,6 +101,10 @@ void Sector::addPlayer(const SessionPtr& session) {
         auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
         auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
 
+        // Spawn player entity
+        const auto playerEntity = spawnPlayerEntity(session);
+        const auto playerEntityId = playerEntity.getId();
+
         // Send a message to the player that their location has changed
         MessagePlayerLocationEvent msg{};
         msg.location.galaxyId = getGalaxyId();
@@ -118,10 +122,14 @@ void Sector::addPlayer(const SessionPtr& session) {
         eventBus.enqueue("sector_player_added", event);
 
         // Send all entities to the player
-        worker.post([this, session]() {
+        worker.post([this, session, playerEntityId]() {
             const auto peer = session->getStream();
             if (peer) {
                 scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
+
+                MessagePlayerControlEvent msg{};
+                msg.entityId = playerEntityId;
+                session->send(msg);
             }
         });
     });
@@ -134,6 +142,12 @@ void Sector::removePlayer(const SessionPtr& session) {
             players.erase(it);
         }
     });
+}
+
+Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
+    auto table = scene->getLua().getState().create_table();
+    table["player_id"] = session->getPlayerId();
+    return scene->createEntityFrom("player", table);
 }
 
 /*void Sector::handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res) {

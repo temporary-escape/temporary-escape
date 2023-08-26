@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../assets/primitive.hpp"
+#include "../../assets/ship_template.hpp"
 #include "../component.hpp"
 #include "../grid.hpp"
 #include "component_debug.hpp"
@@ -16,6 +17,8 @@ public:
     virtual ~ComponentGrid(); // NOLINT(*-use-override)
     COMPONENT_DEFAULTS(ComponentGrid);
 
+    void setFrom(const ShipTemplatePtr& shipTemplate);
+
     void clear();
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
     void update();
@@ -27,6 +30,8 @@ public:
     [[nodiscard]] const ParticlesMap& getParticles() const {
         return particles;
     }
+
+    static void bind(Lua& lua);
 
     MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
 
