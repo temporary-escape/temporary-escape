@@ -8,6 +8,11 @@ class btConvexShape;
 namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
+    struct Node {
+        std::string name{};
+        std::list<Primitive> primitives{};
+    };
+
     explicit Model(std::string name, Path path);
     Model(Model&& other) noexcept;
     Model& operator=(Model&& other) noexcept;
@@ -15,15 +20,15 @@ public:
 
     void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
 
-    const std::list<Primitive>& getPrimitives() const {
-        return primitives;
+    [[nodiscard]] const std::list<Node>& getNodes() const {
+        return nodes;
     }
 
     float getRadius() const {
         return bbRadius;
     }
 
-    btConvexShape* getCollisionShape() const {
+    [[nodiscard]] btConvexShape* getCollisionShape() const {
         return collisionShape.get();
     }
 
@@ -36,7 +41,7 @@ private:
     Vector3 bbMin{0.0f};
     Vector3 bbMax{0.0f};
     float bbRadius{0.0f};
-    std::list<Primitive> primitives;
+    std::list<Node> nodes;
     std::list<Material> materials;
     std::unique_ptr<btConvexShape> collisionShape;
 };

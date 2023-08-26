@@ -47,6 +47,14 @@ findOne(const Container& container, const std::function<bool(const typename Cont
     return findOne(container.begin(), container.end(), fn);
 }
 
+template <typename Container>
+std::vector<typename Container::value_type>
+findMany(const Container& container, const std::function<bool(const typename Container::value_type&)>& fn) {
+    std::vector<typename Container::value_type> res;
+    std::copy_if(container.begin(), container.end(), std::back_inserter(res), fn);
+    return res;
+}
+
 static Path fixFileNameExt(const Path& path) {
     const auto filename = fmt::format("{}.ktx2", path.stem().string());
     if (path.has_parent_path()) {
@@ -84,215 +92,223 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
             EXCEPTION("gltf file has no materials");
         }
 
-        const auto& nodes = gltf.getNodes();
-        if (nodes.empty()) {
+        const auto& modelNodes = gltf.getNodes();
+        if (modelNodes.empty()) {
             EXCEPTION("gltf file has no nodes");
         }
 
-        const auto objects = findOne(
-            nodes, [](const GltfNode& node) -> bool { return !isCollision(node.name) && node.mesh.has_value(); });
-        const auto collisions = findOne(
-            nodes, [](const GltfNode& node) -> bool { return isCollision(node.name) && node.mesh.has_value(); });
+        const auto objects = findMany(
+            modelNodes, [](const GltfNode& node) -> bool { return !isCollision(node.name) && node.mesh.has_value(); });
 
-        if (!objects.has_value()) {
+        const auto collisions = findOne(
+            modelNodes, [](const GltfNode& node) -> bool { return isCollision(node.name) && node.mesh.has_value(); });
+
+        if (objects.empty()) {
             EXCEPTION("gltf file has no valid node that can be used as a model");
         }
 
-        const auto& object = objects.value();
-        if (object.mesh.value().primitives.empty()) {
-            EXCEPTION("gltf node has an object but contains no primitives");
-        }
-
-        for (const auto& part : object.mesh.value().primitives) {
-            if (!part.indices.has_value()) {
-                EXCEPTION("gltf object primitive has no indices");
+        for (const auto& object : objects) {
+            if (object.mesh.value().primitives.empty()) {
+                EXCEPTION("gltf node has an object but contains no primitives");
             }
 
-            if (!part.material.has_value()) {
-                EXCEPTION("gltf object primitive has no material");
-            }
-
-            const auto positions = findOne(
-                part.attributes, [](const GltfAttribute& a) -> bool { return a.type == GltfAttributeType::Position; });
-            const auto normals = findOne(
-                part.attributes, [](const GltfAttribute& a) -> bool { return a.type == GltfAttributeType::Normal; });
-            const auto texCoords = findOne(
-                part.attributes, [](const GltfAttribute& a) -> bool { return a.type == GltfAttributeType::TexCoord; });
-            const auto tangents = findOne(
-                part.attributes, [](const GltfAttribute& a) -> bool { return a.type == GltfAttributeType::Tangent; });
-
-            if (!positions.has_value()) {
-                EXCEPTION("gltf object primitive has no position attribute");
-            }
-            if (!normals.has_value()) {
-                EXCEPTION("gltf object primitive has no normals attribute");
-            }
-            if (!texCoords.has_value()) {
-                EXCEPTION("gltf object primitive has no tex coords attribute");
-            }
-            if (!tangents.has_value()) {
-                EXCEPTION("gltf object primitive has no tangents attribute");
-            }
-
-            const auto& indices = part.indices;
-
-            if (indices->type != GltfType::Scalar) {
-                EXCEPTION("gltf object primitive indicess must be a scalar type");
-            }
-
-            if (positions->accessor.type != GltfType::Vec3) {
-                EXCEPTION("gltf object primitive positions must be a Vec3 type");
-            }
-            if (normals->accessor.type != GltfType::Vec3) {
-                EXCEPTION("gltf object primitive normals must be a Vec3 type");
-            }
-            if (texCoords->accessor.type != GltfType::Vec2) {
-                EXCEPTION("gltf object primitive tex coords must be a Vec3 type");
-            }
-            if (tangents->accessor.type != GltfType::Vec4) {
-                EXCEPTION("gltf object primitive tangents must be a Vec3 type");
-            }
-
-            if (positions->accessor.componentType != GltfComponentType::R32f) {
-                EXCEPTION("gltf object primitive positions must be component type of 32-bit float");
-            }
-            if (normals->accessor.componentType != GltfComponentType::R32f) {
-                EXCEPTION("gltf object primitive normals must be component type of 32-bit float");
-            }
-            if (texCoords->accessor.componentType != GltfComponentType::R32f) {
-                EXCEPTION("gltf object primitive tex coords must be component type of 32-bit float");
-            }
-            if (tangents->accessor.componentType != GltfComponentType::R32f) {
-                EXCEPTION("gltf object primitive tangents must be component type of 32-bit float");
-            }
-
-            const auto count = positions->accessor.count;
-            if (count != normals->accessor.count || count != texCoords->accessor.count ||
-                count != tangents->accessor.count) {
-                EXCEPTION("gltf object contains primitive which accessor has conflicting counts");
-            }
-
-            // Update the bounding box
-            bbMin = Vector3(positions->accessor.min);
-            bbMax = Vector3(positions->accessor.max);
-
-            // Update the bounding radius
-            const auto span = positions->accessor.bufferView.getSpan();
-            for (size_t i = 0; i < positions->accessor.count; i++) {
-                const auto* point = reinterpret_cast<const float*>(span.data()) + i * 3;
-                bbRadius = std::max(bbRadius, glm::length(Vector3{point[0], point[1], point[2]}));
-            }
-
-            const auto& partMaterial = part.material.value();
-
-            this->primitives.push_back({});
-            auto& primitive = this->primitives.back();
-            this->materials.push_back({});
-            auto& material = this->materials.back();
-            primitive.material = &material;
-            material.uniform.baseColorFactor = partMaterial.baseColorFactor;
-            material.uniform.emissiveFactor = partMaterial.emissiveFactor;
-            material.uniform.metallicRoughnessFactor = partMaterial.metallicRoughnessFactor;
-            material.uniform.normalFactor = Vector4{1.0f};
-            material.uniform.ambientOcclusionFactor = Vector4{1.0f};
-
-            // Only initialize textures if the Vulkan is present (client mode)
-            if (vulkan) {
-                if (partMaterial.baseColorTexture) {
-                    material.baseColorTexture = resolveTexture(partMaterial.baseColorTexture.value().getUri());
-                } else {
-                    material.baseColorTexture = assetsManager.getDefaultTextures().baseColor;
+            for (const auto& part : object.mesh.value().primitives) {
+                if (!part.indices.has_value()) {
+                    EXCEPTION("gltf object primitive has no indices");
                 }
 
-                if (partMaterial.normalTexture) {
-                    material.normalTexture = resolveTexture(partMaterial.normalTexture.value().getUri());
-                } else {
-                    material.normalTexture = assetsManager.getDefaultTextures().normal;
+                if (!part.material.has_value()) {
+                    EXCEPTION("gltf object primitive has no material");
                 }
 
-                if (partMaterial.emissiveTexture) {
-                    material.emissiveTexture = resolveTexture(partMaterial.emissiveTexture.value().getUri());
-                } else {
-                    material.emissiveTexture = assetsManager.getDefaultTextures().emissive;
+                const auto positions = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::Position;
+                });
+                const auto normals = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::Normal;
+                });
+                const auto texCoords = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::TexCoord;
+                });
+                const auto tangents = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::Tangent;
+                });
+
+                if (!positions.has_value()) {
+                    EXCEPTION("gltf object primitive has no position attribute");
+                }
+                if (!normals.has_value()) {
+                    EXCEPTION("gltf object primitive has no normals attribute");
+                }
+                if (!texCoords.has_value()) {
+                    EXCEPTION("gltf object primitive has no tex coords attribute");
+                }
+                if (!tangents.has_value()) {
+                    EXCEPTION("gltf object primitive has no tangents attribute");
                 }
 
-                if (partMaterial.metallicRoughnessTexture) {
-                    material.metallicRoughnessTexture =
-                        resolveTexture(partMaterial.metallicRoughnessTexture.value().getUri());
-                } else {
-                    material.metallicRoughnessTexture = assetsManager.getDefaultTextures().metallicRoughness;
+                const auto& indices = part.indices;
+
+                if (indices->type != GltfType::Scalar) {
+                    EXCEPTION("gltf object primitive indicess must be a scalar type");
                 }
 
-                if (partMaterial.ambientOcclusionTexture) {
-                    material.ambientOcclusionTexture =
-                        resolveTexture(partMaterial.ambientOcclusionTexture.value().getUri());
-                } else {
-                    material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
+                if (positions->accessor.type != GltfType::Vec3) {
+                    EXCEPTION("gltf object primitive positions must be a Vec3 type");
+                }
+                if (normals->accessor.type != GltfType::Vec3) {
+                    EXCEPTION("gltf object primitive normals must be a Vec3 type");
+                }
+                if (texCoords->accessor.type != GltfType::Vec2) {
+                    EXCEPTION("gltf object primitive tex coords must be a Vec3 type");
+                }
+                if (tangents->accessor.type != GltfType::Vec4) {
+                    EXCEPTION("gltf object primitive tangents must be a Vec3 type");
                 }
 
-                material.maskTexture = assetsManager.getDefaultTextures().mask;
-            }
+                if (positions->accessor.componentType != GltfComponentType::R32f) {
+                    EXCEPTION("gltf object primitive positions must be component type of 32-bit float");
+                }
+                if (normals->accessor.componentType != GltfComponentType::R32f) {
+                    EXCEPTION("gltf object primitive normals must be component type of 32-bit float");
+                }
+                if (texCoords->accessor.componentType != GltfComponentType::R32f) {
+                    EXCEPTION("gltf object primitive tex coords must be component type of 32-bit float");
+                }
+                if (tangents->accessor.componentType != GltfComponentType::R32f) {
+                    EXCEPTION("gltf object primitive tangents must be component type of 32-bit float");
+                }
 
-            switch (part.indices.value().componentType) {
-            case GltfComponentType::R8: {
-                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
-                break;
-            }
-            case GltfComponentType::R8u: {
-                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
-                break;
-            }
-            case GltfComponentType::R16: {
-                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
-                break;
-            }
-            case GltfComponentType::R16u: {
-                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
-                break;
-            }
-            case GltfComponentType::R32u: {
-                primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
-                break;
-            }
-            default: {
-                EXCEPTION("Invalid index type");
-            }
-            }
+                const auto count = positions->accessor.count;
+                if (count != normals->accessor.count || count != texCoords->accessor.count ||
+                    count != tangents->accessor.count) {
+                    EXCEPTION("gltf object contains primitive which accessor has conflicting counts");
+                }
 
-            if (part.type != GltfPrimitiveType::Triangles) {
-                EXCEPTION("Invalid primitive type");
-            }
+                // Update the bounding box
+                bbMin = Vector3(positions->accessor.min);
+                bbMax = Vector3(positions->accessor.max);
 
-            // Only initialize buffers if the Vulkan is present (client mode)
-            if (vulkan) {
-                const auto vboData =
-                    GltfUtils::combine(positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
-                const auto& iboData = part.indices->bufferView.getBuffer();
+                // Update the bounding radius
+                const auto span = positions->accessor.bufferView.getSpan();
+                for (size_t i = 0; i < positions->accessor.count; i++) {
+                    const auto* point = reinterpret_cast<const float*>(span.data()) + i * 3;
+                    bbRadius = std::max(bbRadius, glm::length(Vector3{point[0], point[1], point[2]}));
+                }
 
-                VulkanBuffer::CreateInfo bufferInfo{};
-                bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                bufferInfo.size = vboData.size() * sizeof(float);
-                bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-                bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-                bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-                primitive.mesh.vbo = vulkan->createBuffer(bufferInfo);
-                vulkan->copyDataToBuffer(primitive.mesh.vbo, vboData.data(), bufferInfo.size);
+                const auto& partMaterial = part.material.value();
 
-                bufferInfo.size = iboData.size() * sizeof(uint8_t);
-                bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-                primitive.mesh.ibo = vulkan->createBuffer(bufferInfo);
-                vulkan->copyDataToBuffer(primitive.mesh.ibo, iboData.data(), bufferInfo.size);
+                auto& node = nodes.emplace_back();
+                node.name = object.name;
 
-                primitive.mesh.count = static_cast<uint32_t>(part.indices->count);
+                auto& primitive = node.primitives.emplace_back();
+                auto& material = materials.emplace_back();
 
-                bufferInfo.size = iboData.size() * sizeof(uint8_t);
-                bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-                material.ubo = vulkan->createBuffer(bufferInfo);
-                vulkan->copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+                primitive.material = &material;
+                material.uniform.baseColorFactor = partMaterial.baseColorFactor;
+                material.uniform.emissiveFactor = partMaterial.emissiveFactor;
+                material.uniform.metallicRoughnessFactor = partMaterial.metallicRoughnessFactor;
+                material.uniform.normalFactor = Vector4{1.0f};
+                material.uniform.ambientOcclusionFactor = Vector4{1.0f};
+
+                // Only initialize textures if the Vulkan is present (client mode)
+                if (vulkan) {
+                    if (partMaterial.baseColorTexture) {
+                        material.baseColorTexture = resolveTexture(partMaterial.baseColorTexture.value().getUri());
+                    } else {
+                        material.baseColorTexture = assetsManager.getDefaultTextures().baseColor;
+                    }
+
+                    if (partMaterial.normalTexture) {
+                        material.normalTexture = resolveTexture(partMaterial.normalTexture.value().getUri());
+                    } else {
+                        material.normalTexture = assetsManager.getDefaultTextures().normal;
+                    }
+
+                    if (partMaterial.emissiveTexture) {
+                        material.emissiveTexture = resolveTexture(partMaterial.emissiveTexture.value().getUri());
+                    } else {
+                        material.emissiveTexture = assetsManager.getDefaultTextures().emissive;
+                    }
+
+                    if (partMaterial.metallicRoughnessTexture) {
+                        material.metallicRoughnessTexture =
+                            resolveTexture(partMaterial.metallicRoughnessTexture.value().getUri());
+                    } else {
+                        material.metallicRoughnessTexture = assetsManager.getDefaultTextures().metallicRoughness;
+                    }
+
+                    if (partMaterial.ambientOcclusionTexture) {
+                        material.ambientOcclusionTexture =
+                            resolveTexture(partMaterial.ambientOcclusionTexture.value().getUri());
+                    } else {
+                        material.ambientOcclusionTexture = assetsManager.getDefaultTextures().ambient;
+                    }
+
+                    material.maskTexture = assetsManager.getDefaultTextures().mask;
+                }
+
+                switch (part.indices.value().componentType) {
+                case GltfComponentType::R8: {
+                    primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
+                    break;
+                }
+                case GltfComponentType::R8u: {
+                    primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT8_EXT;
+                    break;
+                }
+                case GltfComponentType::R16: {
+                    primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
+                    break;
+                }
+                case GltfComponentType::R16u: {
+                    primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT16;
+                    break;
+                }
+                case GltfComponentType::R32u: {
+                    primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
+                    break;
+                }
+                default: {
+                    EXCEPTION("Invalid index type");
+                }
+                }
+
+                if (part.type != GltfPrimitiveType::Triangles) {
+                    EXCEPTION("Invalid primitive type");
+                }
+
+                // Only initialize buffers if the Vulkan is present (client mode)
+                if (vulkan) {
+                    const auto vboData = GltfUtils::combine(
+                        positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
+                    const auto& iboData = part.indices->bufferView.getBuffer();
+
+                    VulkanBuffer::CreateInfo bufferInfo{};
+                    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                    bufferInfo.size = vboData.size() * sizeof(float);
+                    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+                    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+                    primitive.mesh.vbo = vulkan->createBuffer(bufferInfo);
+                    vulkan->copyDataToBuffer(primitive.mesh.vbo, vboData.data(), bufferInfo.size);
+
+                    bufferInfo.size = iboData.size() * sizeof(uint8_t);
+                    bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                    primitive.mesh.ibo = vulkan->createBuffer(bufferInfo);
+                    vulkan->copyDataToBuffer(primitive.mesh.ibo, iboData.data(), bufferInfo.size);
+
+                    primitive.mesh.count = static_cast<uint32_t>(part.indices->count);
+
+                    bufferInfo.size = iboData.size() * sizeof(uint8_t);
+                    bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                    material.ubo = vulkan->createBuffer(bufferInfo);
+                    vulkan->copyDataToBuffer(material.ubo, &material.uniform, sizeof(Material::Uniform));
+                }
             }
         }
 

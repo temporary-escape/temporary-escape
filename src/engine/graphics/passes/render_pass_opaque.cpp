@@ -202,24 +202,28 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineModel.setEntityColor(entityColor(entity));
         pipelineModel.flushConstants(vkb);
 
-        for (auto& primitive : model.getModel()->getPrimitives()) {
-            if (!primitive.material) {
-                EXCEPTION("Primitive has no material");
+        for (const auto& node : model.getModel()->getNodes()) {
+            for (auto& primitive : node.primitives) {
+                if (!primitive.material) {
+                    EXCEPTION("Primitive has no material");
+                }
+
+                validateMaterial(*primitive.material);
+
+                pipelineModel.setUniformCamera(camera.getUbo().getCurrentBuffer());
+                pipelineModel.setUniformMaterial(primitive.material->ubo);
+
+                pipelineModel.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
+                pipelineModel.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
+                pipelineModel.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
+                pipelineModel.setTextureAmbientOcclusion(
+                    primitive.material->ambientOcclusionTexture->getVulkanTexture());
+                pipelineModel.setTextureMetallicRoughness(
+                    primitive.material->metallicRoughnessTexture->getVulkanTexture());
+                pipelineModel.flushDescriptors(vkb);
+
+                pipelineModel.renderMesh(vkb, primitive.mesh);
             }
-
-            validateMaterial(*primitive.material);
-
-            pipelineModel.setUniformCamera(camera.getUbo().getCurrentBuffer());
-            pipelineModel.setUniformMaterial(primitive.material->ubo);
-
-            pipelineModel.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
-            pipelineModel.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
-            pipelineModel.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
-            pipelineModel.setTextureAmbientOcclusion(primitive.material->ambientOcclusionTexture->getVulkanTexture());
-            pipelineModel.setTextureMetallicRoughness(primitive.material->metallicRoughnessTexture->getVulkanTexture());
-            pipelineModel.flushDescriptors(vkb);
-
-            pipelineModel.renderMesh(vkb, primitive.mesh);
         }
     }
 }
@@ -231,26 +235,29 @@ void RenderPassOpaque::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
     pipelineModelInstanced.bind(vkb);
 
     for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
-        for (auto& primitive : model->getPrimitives()) {
-            if (!primitive.material) {
-                EXCEPTION("Primitive has no material");
+        for (const auto& node : model->getNodes()) {
+            for (auto& primitive : node.primitives) {
+                if (!primitive.material) {
+                    EXCEPTION("Primitive has no material");
+                }
+
+                validateMaterial(*primitive.material);
+
+                pipelineModelInstanced.setUniformCamera(camera.getUbo().getCurrentBuffer());
+                pipelineModelInstanced.setUniformMaterial(primitive.material->ubo);
+
+                pipelineModelInstanced.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
+                pipelineModelInstanced.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
+                pipelineModelInstanced.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
+                pipelineModelInstanced.setTextureAmbientOcclusion(
+                    primitive.material->ambientOcclusionTexture->getVulkanTexture());
+                pipelineModelInstanced.setTextureMetallicRoughness(
+                    primitive.material->metallicRoughnessTexture->getVulkanTexture());
+                pipelineModelInstanced.flushDescriptors(vkb);
+
+                pipelineModelInstanced.renderMeshInstanced(
+                    vkb, primitive.mesh, buffer.getCurrentBuffer(), buffer.count());
             }
-
-            validateMaterial(*primitive.material);
-
-            pipelineModelInstanced.setUniformCamera(camera.getUbo().getCurrentBuffer());
-            pipelineModelInstanced.setUniformMaterial(primitive.material->ubo);
-
-            pipelineModelInstanced.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
-            pipelineModelInstanced.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
-            pipelineModelInstanced.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
-            pipelineModelInstanced.setTextureAmbientOcclusion(
-                primitive.material->ambientOcclusionTexture->getVulkanTexture());
-            pipelineModelInstanced.setTextureMetallicRoughness(
-                primitive.material->metallicRoughnessTexture->getVulkanTexture());
-            pipelineModelInstanced.flushDescriptors(vkb);
-
-            pipelineModelInstanced.renderMeshInstanced(vkb, primitive.mesh, buffer.getCurrentBuffer(), buffer.count());
         }
     }
 }

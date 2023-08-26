@@ -95,15 +95,17 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineModel.setEntityColor(entityColor(entity));
         pipelineModel.flushConstants(vkb);
 
-        for (auto& primitive : model.getModel()->getPrimitives()) {
-            if (!primitive.material) {
-                EXCEPTION("Primitive has no material");
+        for (const auto& node : model.getModel()->getNodes()) {
+            for (auto& primitive : node.primitives) {
+                if (!primitive.material) {
+                    EXCEPTION("Primitive has no material");
+                }
+
+                pipelineModel.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
+                pipelineModel.flushDescriptors(vkb);
+
+                pipelineModel.renderMesh(vkb, primitive.mesh);
             }
-
-            pipelineModel.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-            pipelineModel.flushDescriptors(vkb);
-
-            pipelineModel.renderMesh(vkb, primitive.mesh);
         }
     }
 }
@@ -115,11 +117,15 @@ void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
     pipelineModelInstanced.bind(vkb);
 
     for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
-        for (auto& primitive : model->getPrimitives()) {
-            pipelineModelInstanced.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-            pipelineModelInstanced.flushDescriptors(vkb);
+        for (const auto& node : model->getNodes()) {
+            for (auto& primitive : node.primitives) {
+                pipelineModelInstanced.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(),
+                                                        index);
+                pipelineModelInstanced.flushDescriptors(vkb);
 
-            pipelineModelInstanced.renderMeshInstanced(vkb, primitive.mesh, buffer.getCurrentBuffer(), buffer.count());
+                pipelineModelInstanced.renderMeshInstanced(
+                    vkb, primitive.mesh, buffer.getCurrentBuffer(), buffer.count());
+            }
         }
     }
 }
