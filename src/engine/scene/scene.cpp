@@ -104,16 +104,21 @@ void Scene::update(const float delta) {
 void Scene::updateSelection() {
     if (selectedEntityOpaque) {
         selectedEntity = selectedEntityOpaque;
-    } else if (selectedEntityIcon) {
-        selectedEntity = selectedEntityIcon;
-    } else {
+    }
+
+    if (selectedEntityIcon) {
+        const auto* icon = selectedEntityIcon->tryGetComponent<ComponentIcon>();
+        if (icon && !icon->isEnvironment()) {
+            selectedEntity = selectedEntityIcon;
+        }
+    } else if (!selectedEntityOpaque) {
         selectedEntity = std::nullopt;
     }
 
     if (selectedEntityLast != selectedEntity) {
         if (selectedEntityLast) {
             auto* icon = selectedEntityLast->tryGetComponent<ComponentIcon>();
-            if (icon) {
+            if (icon && icon->isEnvironment()) {
                 auto color = icon->getColor();
                 color.a = 0.0f;
                 icon->setColor(color);
@@ -124,7 +129,7 @@ void Scene::updateSelection() {
 
         if (selectedEntityLast) {
             auto* icon = selectedEntityLast->tryGetComponent<ComponentIcon>();
-            if (icon) {
+            if (icon && icon->isEnvironment()) {
                 auto color = icon->getColor();
                 color.a = 1.0f;
                 icon->setColor(color);

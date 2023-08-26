@@ -76,9 +76,15 @@ public:
         selectable = value;
     }
 
+    bool isEnvironment() const {
+        return environment;
+    }
+
+    void setEnvironment(bool value);
+
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(image, size, color, offset, selectable);
+    MSGPACK_DEFINE_ARRAY(image, size, color, offset, selectable, environment);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -86,8 +92,9 @@ protected:
 private:
     ImagePtr image;
     Vector2 size{32.0f, 32.0f};
-    Color4 color{0.7f, 0.7f, 0.7f, 0.0f};
+    Color4 color{0.7f, 0.7f, 0.7f, 1.0f};
     Vector2 offset{0.0f};
     bool selectable{true};
+    bool environment{false};
 };
 } // namespace Engine

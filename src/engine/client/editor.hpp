@@ -9,6 +9,7 @@
 #include "../graphics/renderer.hpp"
 #include "../gui/gui_block_selector.hpp"
 #include "../gui/gui_context_menu.hpp"
+#include "../gui/gui_main_menu.hpp"
 #include "../gui/gui_side_menu.hpp"
 #include "../server/server.hpp"
 #include "view_build.hpp"
@@ -36,8 +37,10 @@ public:
 
 private:
     const Config& config;
+    VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     FontFamily& font;
+    GuiMainMenu guiMainMenu;
     ViewBuild view;
 };
 } // namespace Engine

@@ -10,7 +10,9 @@ ComponentCameraOrbital::ComponentCameraOrbital(entt::registry& reg, entt::entity
 }
 
 void ComponentCameraOrbital::update(const float delta) {
-    Vector3 offset{distance, 0.0f, 0.0f};
+    distanceValue = lerp(distanceValue, distanceTarget, 8.0f * delta);
+
+    Vector3 offset{distanceValue, 0.0f, 0.0f};
     offset = glm::rotateZ(offset, glm::radians(rotation.x));
     offset = glm::rotateY(offset, glm::radians(rotation.y));
     const auto eyes = target - offset;
@@ -23,7 +25,8 @@ void ComponentCameraOrbital::setTarget(const Vector3& value) {
 }
 
 void ComponentCameraOrbital::setDistance(const float value) {
-    distance = value;
+    distanceValue = value;
+    distanceTarget = value;
 }
 
 void ComponentCameraOrbital::setRotation(const Vector2& value) {
@@ -77,14 +80,14 @@ void ComponentCameraOrbital::eventMouseReleased(const Vector2i& pos, const Mouse
 }
 
 void ComponentCameraOrbital::eventMouseScroll(const int xscroll, const int yscroll) {
-    const auto factor = map(distance, 1.0f, distanceRange.y, 1.0f, 250.0f);
-    distance += static_cast<float>(yscroll) * factor;
+    const auto factor = map(distanceTarget, 1.0f, distanceRange.y, 1.0f, 250.0f);
+    distanceTarget += static_cast<float>(yscroll) * factor;
 
-    if (distance < distanceRange.x) {
-        distance = distanceRange.x;
+    if (distanceTarget < distanceRange.x) {
+        distanceTarget = distanceRange.x;
     }
-    if (distance > distanceRange.y) {
-        distance = distanceRange.y;
+    if (distanceTarget > distanceRange.y) {
+        distanceTarget = distanceRange.y;
     }
 }
 

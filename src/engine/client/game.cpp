@@ -10,11 +10,18 @@ Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendere
            RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
            FontFamily& font, Client& client) :
     config{config},
+    vulkan{vulkan},
     rendererSkybox{rendererSkybox},
     rendererPlanetSurface{rendererPlanetSurface},
     assetsManager{assetsManager},
     font{font},
     client{client} {
+
+    guiMainMenu.setItems({
+        {"Continue", [this]() { guiMainMenu.setEnabled(false); }},
+        {"Exit Game", [this]() { this->vulkan.closeWindow(); }},
+    });
+    guiMainMenu.setEnabled(false);
 
     viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, voxelShapeCache, font, client);
     viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);
@@ -61,13 +68,17 @@ void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewpo
     if (view) {
         view->renderCanvas(canvas, viewport);
         nuklear.begin(viewport);
-        view->renderNuklear(nuklear, viewport);
+        if (guiMainMenu.isEnabled()) {
+            guiMainMenu.draw(nuklear, viewport);
+        } else {
+            view->renderNuklear(nuklear, viewport);
+        }
         nuklear.end();
     }
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventMouseMoved(pos);
     }
 }
@@ -113,29 +124,31 @@ void Game::eventMousePressed(const Vector2i& pos, const MouseButton button) {
         gui.contextMenu.setEnabled(false);
     }*/
 
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventMousePressed(pos, button);
     }
 }
 
 void Game::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventMouseReleased(pos, button);
     }
 }
 
 void Game::eventMouseScroll(const int xscroll, const int yscroll) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventMouseScroll(xscroll, yscroll);
     }
 }
 
 void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventKeyPressed(key, modifiers);
     }
 
-    if (config.input.galaxyMapToggle(key, modifiers)) {
+    if (key == Key::Escape) {
+        guiMainMenu.setEnabled(!guiMainMenu.isEnabled());
+    } else if (config.input.galaxyMapToggle(key, modifiers)) {
         switchToGalaxyMap();
     } else if (config.input.systemMapToggle(key, modifiers)) {
         switchToSystemMap();
@@ -143,13 +156,13 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
 }
 
 void Game::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventKeyReleased(key, modifiers);
     }
 }
 
 void Game::eventCharTyped(const uint32_t code) {
-    if (view) {
+    if (view && !guiMainMenu.isEnabled()) {
         view->eventCharTyped(code);
     }
 }

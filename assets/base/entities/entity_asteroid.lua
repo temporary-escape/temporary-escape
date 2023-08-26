@@ -12,7 +12,7 @@ local asteroid_models = {
     assets_manager:find_model("model_asteroid_01_h"),
 }
 
-local icon = assets_manager:find_image("icon_target")
+local image_icon = assets_manager:find_image("icon_target")
 
 local EntityAsteroid = {}
 
@@ -31,7 +31,8 @@ function EntityAsteroid.new (entity, data)
     component_rigid_body:set_from_model(component_model.model, data.size)
     component_rigid_body.mass = data.mass
 
-    entity:add_component_icon(icon)
+    local icon = entity:add_component_icon(image_icon)
+    icon.environment = true
     entity:add_component_label("Asteroid (Rock)")
 
     return inst

@@ -14,6 +14,8 @@ ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan,
     voxelShapeCache{voxelShapeCache},
     font{font},
     client{client} {
+
+    guiContextMenu.setEnabled(false);
 }
 
 void ViewSpace::update(const float deltaTime) {
@@ -55,6 +57,7 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
 void ViewSpace::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
+    guiContextMenu.draw(nuklear, viewport);
 }
 
 void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
@@ -97,9 +100,11 @@ Scene* ViewSpace::getScene() {
 }
 
 void ViewSpace::onEnter() {
+    guiContextMenu.setEnabled(false);
 }
 
 void ViewSpace::onExit() {
+    guiContextMenu.setEnabled(false);
 }
 
 void ViewSpace::eventMouseMoved(const Vector2i& pos) {
@@ -113,6 +118,8 @@ void ViewSpace::eventMousePressed(const Vector2i& pos, const MouseButton button)
     auto scene = client.getScene();
     if (scene) {
         scene->eventMousePressed(pos, button);
+
+        guiContextMenu.setEnabled(false);
     }
 }
 
@@ -120,6 +127,25 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
     auto scene = client.getScene();
     if (scene) {
         scene->eventMouseReleased(pos, button);
+
+        const auto& camera = *scene->getPrimaryCamera();
+        if (const auto selected = scene->getSelectedEntity();
+            selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
+
+            const auto* transform = selected->tryGetComponent<ComponentTransform>();
+            if (transform) {
+                const auto screenPos = camera.worldToScreen(transform->getAbsolutePosition(), true);
+                guiContextMenu.setItems({
+                    {"Approach", []() {}},
+                    {"Info", []() {}},
+                    {"Target", []() {}},
+                });
+                guiContextMenu.setEnabled(true);
+                guiContextMenu.setPos(screenPos);
+            }
+        } else if (guiContextMenu.isEnabled()) {
+            guiContextMenu.setEnabled(false);
+        }
     }
 }
 

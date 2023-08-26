@@ -3,6 +3,7 @@
 #include "../assets/assets_manager.hpp"
 #include "../graphics/canvas.hpp"
 #include "../graphics/nuklear.hpp"
+#include "../gui/gui_context_menu.hpp"
 #include "../scene/scene.hpp"
 #include "../server/schemas.hpp"
 #include "view.hpp"
@@ -41,5 +42,6 @@ private:
     VoxelShapeCache& voxelShapeCache;
     FontFamily& font;
     Client& client;
+    GuiContextMenu guiContextMenu;
 };
 } // namespace Engine

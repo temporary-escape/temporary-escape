@@ -33,7 +33,8 @@ private:
     bool rotationStarted{false};
     bool panning{false};
     Vector3 target{0.0f, 0.0f, 0.0f};
-    float distance{5.0f};
+    float distanceTarget{5.0f};
+    float distanceValue{5.0f};
     Vector2 rotation{0.0f, 0.0f};
     Vector2 mousePosOld;
     Vector2 distanceRange{3.0f, 5000.0f};

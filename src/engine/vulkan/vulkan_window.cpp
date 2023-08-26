@@ -138,6 +138,9 @@ static Key toKey(int key) {
     case GLFW_KEY_PAGE_DOWN: {
         return Key::PageDown;
     }
+    case GLFW_KEY_ESCAPE: {
+        return Key::Escape;
+    }
     default: {
         return Key::None;
     }

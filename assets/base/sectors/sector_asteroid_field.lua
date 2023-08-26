@@ -8,7 +8,8 @@ sector_type.weight = 1.0
 sector_type.min_count = 1
 sector_type.max_count = 4
 sector_type.entities = {
-    engine.Spawner.new("asteroid_cluster", 1.0, 1)
+    engine.Spawner.new("asteroid_cluster", 1.0, 1),
+    engine.Spawner.new("scout_ship", 1.0, 1)
 }
 
 server:add_sector_type("asteroid_field", sector_type)

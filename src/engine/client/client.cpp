@@ -309,6 +309,8 @@ void Client::handle(Request<MessagePlayerControlEvent> req) {
         logger.info("Switching player control to entity: {}", data.entityId);
         const auto entity = scene->getController<ControllerNetwork>().getRemoteToLocalEntity(data.entityId);
         if (entity) {
+            cache.playerEntityId = *entity;
+
             const auto transform = entity->tryGetComponent<ComponentTransform>();
             const auto camera = scene->getPrimaryCamera();
 

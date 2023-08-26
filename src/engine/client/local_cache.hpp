@@ -23,5 +23,8 @@ struct LocalCache {
         std::unordered_map<std::string, FactionData> factions;
         std::vector<const SystemData*> systemsOrdered;
     } galaxy;
+
+    // Scene information
+    Entity playerEntityId;
 };
 } // namespace Engine

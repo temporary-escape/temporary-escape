@@ -11,6 +11,7 @@
 #include "../graphics/renderer.hpp"
 #include "../graphics/renderer_planet_surface.hpp"
 #include "../graphics/renderer_skybox.hpp"
+#include "../gui/gui_main_menu.hpp"
 #include "../server/server.hpp"
 #include "client.hpp"
 #include "stats.hpp"
@@ -48,12 +49,13 @@ public:
 
 private:
     const Config& config;
+    VulkanRenderer& vulkan;
     RendererSkybox& rendererSkybox;
     RendererPlanetSurface& rendererPlanetSurface;
     AssetsManager& assetsManager;
     FontFamily& font;
     Client& client;
-    uint32_t selectedEntityId{0xFFFFFFFF};
+    GuiMainMenu guiMainMenu;
 
     std::unique_ptr<ViewBuild> viewBuild;
     std::unique_ptr<ViewSpace> viewSpace;
