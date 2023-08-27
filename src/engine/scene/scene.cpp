@@ -10,6 +10,7 @@
 #include "controllers/controller_icon_selectable.hpp"
 #include "controllers/controller_lights.hpp"
 #include "controllers/controller_lines.hpp"
+#include "controllers/controller_model_skinned.hpp"
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_point_cloud.hpp"
 #include "controllers/controller_poly_shape.hpp"
@@ -34,6 +35,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerCameraPanning>();
         addController<ControllerGrid>(*voxelShapeCache);
         addController<ControllerLights>(*this);
+        addController<ControllerModelSkinned>();
         addController<ControllerStaticModel>();
         addController<ControllerText>();
         addController<ControllerWorldText>();

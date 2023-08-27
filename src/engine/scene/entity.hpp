@@ -13,6 +13,7 @@
 #include "components/component_label.hpp"
 #include "components/component_lines.hpp"
 #include "components/component_model.hpp"
+#include "components/component_model_skinned.hpp"
 #include "components/component_nebula.hpp"
 #include "components/component_particle_emitter.hpp"
 #include "components/component_planet.hpp"
@@ -39,10 +40,10 @@ class ENGINE_API Scene;
 
 using EntityComponentIds =
     entt::ident<TagDisabled, ComponentTransform, ComponentScript, ComponentCamera, ComponentCameraOrbital,
-                ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentDirectionalLight, ComponentPointLight,
-                ComponentPointCloud, ComponentLines, ComponentDebug, ComponentIcon, ComponentLabel, ComponentPolyShape,
-                ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare, ComponentSkybox,
-                ComponentNebula, ComponentRigidBody>;
+                ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentModelSkinned, ComponentDirectionalLight,
+                ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug, ComponentIcon, ComponentLabel,
+                ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare,
+                ComponentSkybox, ComponentNebula, ComponentRigidBody>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;

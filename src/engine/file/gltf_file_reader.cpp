@@ -206,6 +206,19 @@ GltfPrimitive::GltfPrimitive(const GltfData& data, cgltf_primitive* primitive) :
     }
 }
 
+GltfSkin::GltfSkin(const GltfData& data, cgltf_skin* skin) :
+    data{data}, inverseBindMatrices{data, skin->inverse_bind_matrices} {
+
+    if (skin->name) {
+        name = skin->name;
+    }
+
+    for (size_t i = 0; i < skin->joints_count; i++) {
+        auto* joint = skin->joints[i];
+        joints.emplace_back(data, joint);
+    }
+}
+
 GltfMesh::GltfMesh(const GltfData& data, cgltf_mesh* mesh) : data(data) {
     if (mesh->name) {
         name = mesh->name;
@@ -221,6 +234,25 @@ GltfNode::GltfNode(const GltfData& data, cgltf_node* node) : data(data) {
     }
     if (node->name) {
         name = node->name;
+    }
+    if (node->skin) {
+        skin = GltfSkin{data, node->skin};
+    }
+    if (node->has_translation) {
+        translation = {
+            node->translation[0],
+            node->translation[1],
+            node->translation[2],
+        };
+    }
+
+    if (node->has_rotation) {
+        rotation = {
+            node->rotation[3],
+            node->rotation[0],
+            node->rotation[1],
+            node->rotation[2],
+        };
     }
 }
 
@@ -308,6 +340,84 @@ std::vector<float> GltfUtils::combine(const GltfAccessor& position, const GltfAc
         dst[11] = *tan++;
 
         dst += 12;
+    }
+
+    return ret;
+}
+
+std::vector<float> GltfUtils::combine(const GltfAccessor& position, const GltfAccessor& normals,
+                                      const GltfAccessor& texCoords, const GltfAccessor& tangents,
+                                      const GltfAccessor& joints, const GltfAccessor& weights) {
+    const auto count = position.count;
+    if (count != normals.count || count != texCoords.count || count != tangents.count) {
+        EXCEPTION("accessor counts do not match");
+    }
+
+    if (count * 3 * sizeof(float) != position.bufferView.size) {
+        EXCEPTION("accessor position buffer size does not match");
+    }
+    if (count * 3 * sizeof(float) != normals.bufferView.size) {
+        EXCEPTION("accessor normals buffer size does not match");
+    }
+    if (count * 2 * sizeof(float) != texCoords.bufferView.size) {
+        EXCEPTION("accessor texcoords buffer size does not match");
+    }
+    if (count * 4 * sizeof(float) != tangents.bufferView.size) {
+        EXCEPTION("accessor tangents buffer size does not match");
+    }
+    if (count * 4 * sizeof(uint8_t) != joints.bufferView.size) {
+        EXCEPTION("accessor joints buffer size does not match");
+    }
+    if (count * 4 * sizeof(float) != weights.bufferView.size) {
+        EXCEPTION("accessor weights buffer size does not match");
+    }
+
+    std::vector<float> ret;
+    ret.resize(position.count * 20);
+
+    auto* dst = &ret[0];
+    const auto positionRaw = position.bufferView.getBuffer();
+    const auto normalsRaw = normals.bufferView.getBuffer();
+    const auto texCoordsRaw = texCoords.bufferView.getBuffer();
+    const auto tangentsRaw = tangents.bufferView.getBuffer();
+    const auto jointsRaw = joints.bufferView.getBuffer();
+    const auto weightsRaw = weights.bufferView.getBuffer();
+
+    const auto* pos = reinterpret_cast<const float*>(&positionRaw[0]);
+    const auto* nor = reinterpret_cast<const float*>(&normalsRaw[0]);
+    const auto* tex = reinterpret_cast<const float*>(&texCoordsRaw[0]);
+    const auto* tan = reinterpret_cast<const float*>(&tangentsRaw[0]);
+    const auto* joint = reinterpret_cast<const uint8_t*>(&jointsRaw[0]);
+    const auto* weight = reinterpret_cast<const float*>(&weightsRaw[0]);
+
+    for (size_t i = 0; i < count; i++) {
+        dst[0] = *pos++;
+        dst[1] = *pos++;
+        dst[2] = *pos++;
+
+        dst[3] = *nor++;
+        dst[4] = *nor++;
+        dst[5] = *nor++;
+
+        dst[6] = *tex++;
+        dst[7] = *tex++;
+
+        dst[8] = *tan++;
+        dst[9] = *tan++;
+        dst[10] = *tan++;
+        dst[11] = *tan++;
+
+        dst[12] = static_cast<float>(*joint++);
+        dst[13] = static_cast<float>(*joint++);
+        dst[14] = static_cast<float>(*joint++);
+        dst[15] = static_cast<float>(*joint++);
+
+        dst[16] = *weight++;
+        dst[17] = *weight++;
+        dst[18] = *weight++;
+        dst[19] = *weight++;
+
+        dst += 20;
     }
 
     return ret;

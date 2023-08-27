@@ -122,6 +122,10 @@ void AssetsManager::findAssets() {
         }
 
         for (const auto& path : paths) {
+            init(turrets, path / "turrets", {".xml"});
+        }
+
+        for (const auto& path : paths) {
             init(shipTemplates, path / "ships", {".teb"});
         }
     } catch (...) {

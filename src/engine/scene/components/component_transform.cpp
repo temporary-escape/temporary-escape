@@ -8,12 +8,13 @@ using namespace Engine;
 ComponentTransform::ComponentTransform(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
 }
 
-void ComponentTransform::setParent(const ComponentTransform& value) {
-    parent = &value;
-}
-
-void ComponentTransform::removeParent() {
-    parent = nullptr;
+void ComponentTransform::setParent(const ComponentTransform* value) {
+    parent = value;
+    if (parent) {
+        parentId = static_cast<uint64_t>(parent->getHandle());
+    } else {
+        parentId = NullParentId;
+    }
 }
 
 void ComponentTransform::translate(const Vector3& pos) {
@@ -87,4 +88,5 @@ void ComponentTransform::bind(Lua& lua) {
     using GetTransformFunc = const Matrix4& (ComponentTransform::*)() const;
     auto GetTransform = static_cast<GetTransformFunc>(&ComponentTransform::getTransform);
     cls["transform"] = sol::property(GetTransform, &ComponentTransform::setTransform);
+    cls["parent"] = sol::property(&ComponentTransform::getParent, &ComponentTransform::setParent);
 }

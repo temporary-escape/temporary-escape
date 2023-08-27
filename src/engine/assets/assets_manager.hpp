@@ -12,6 +12,7 @@
 #include "ship_template.hpp"
 #include "sound.hpp"
 #include "texture.hpp"
+#include "turret.hpp"
 #include "voxel_shape_cache.hpp"
 #include <mutex>
 
@@ -111,6 +112,10 @@ public:
         return shipTemplates;
     }
 
+    const Category<Turret>& getTurrets() const {
+        return turrets;
+    }
+
     const std::vector<ModManifest>& getManifests() const {
         return manifests;
     }
@@ -160,6 +165,7 @@ private:
     Category<Sound> sounds;
     Category<ParticlesType> particlesTypes;
     Category<ShipTemplate> shipTemplates;
+    Category<Turret> turrets;
     std::vector<ModManifest> manifests;
     LoadQueue loadQueue;
 };

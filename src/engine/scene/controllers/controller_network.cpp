@@ -27,30 +27,76 @@ void ControllerNetwork::recalculate(VulkanRenderer& vulkan) {
     (void)vulkan;
 }
 
-template <typename Type> static void postEmplaceComponent(const entt::entity handle, Type& component) {
+template <typename Type>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle, Type& component) {
+    (void)remoteId;
     (void)handle;
     (void)component;
 }
 
-static void postEmplaceComponent(const entt::entity handle, ComponentRigidBody& component) {
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentTransform& component) {
+    (void)handle;
+
+    if (const auto it = transformChildParentMap.find(remoteId); it != transformChildParentMap.end()) {
+        const auto transform = reg.try_get<ComponentTransform>(it->second);
+        if (transform) {
+            transform->setParent(&component);
+        }
+        logger.warn("Matched parent transform id: {} to child: {}",
+                    static_cast<uint64_t>(handle),
+                    static_cast<uint64_t>(it->second));
+        transformChildParentMap.erase(it);
+    }
+
+    if (component.getParentId() != ComponentTransform::NullParentId) {
+        logger.warn("Emplace component transform with parent");
+        auto local = remoteToLocal.find(static_cast<entt::entity>(component.getParentId()));
+        if (local != remoteToLocal.end()) {
+            const auto transform = reg.try_get<ComponentTransform>(local->second);
+            if (transform) {
+                component.setParent(transform);
+            } else {
+                logger.warn("Failed to set parent transform id: {} for child: {}",
+                            component.getParentId(),
+                            static_cast<uint64_t>(handle));
+            }
+        } else {
+            logger.warn("Failed to find parent transform id: {} for child: {}",
+                        component.getParentId(),
+                        static_cast<uint64_t>(handle));
+            transformChildParentMap.emplace(component.getParentId(), handle);
+        }
+    }
+}
+
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentRigidBody& component) {
+    (void)remoteId;
     (void)handle;
     component.setup();
 }
 
-static void postEmplaceComponent(const entt::entity handle, ComponentGrid& component) {
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentGrid& component) {
+    (void)remoteId;
     (void)handle;
     component.setDirty(true);
 }
 
-template <typename Type> static void postPatchComponent(const entt::entity handle, Type& component) {
+template <typename Type>
+void ControllerNetwork::postPatchComponent(const uint64_t remoteId, const entt::entity handle, Type& component) {
+    (void)remoteId;
     (void)handle;
     (void)component;
 }
 
-template <typename T> using ComponentReferences = std::array<std::tuple<entt::entity, const T*>, 64>;
-
 template <typename Packer, typename Type>
-static void packComponent(Packer& packer, entt::entity handle, const Type& component, const SyncOperation op) {
+void ControllerNetwork::packComponent(Packer& packer, entt::entity handle, const Type& component,
+                                      const SyncOperation op) {
     static constexpr auto id = EntityComponentIds::value<Type>;
     packer.pack_array(4);
     packer.pack(id);
@@ -60,8 +106,8 @@ static void packComponent(Packer& packer, entt::entity handle, const Type& compo
 }
 
 template <typename Type>
-static void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components, const size_t count,
-                           const SyncOperation op) {
+void ControllerNetwork::sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components,
+                                       const size_t count, const SyncOperation op) {
 
     NetworkPeer::LockGuard lock{peer};
     peer.prepareSend<MessageSceneUpdateEvent>(0);
@@ -72,7 +118,8 @@ static void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& c
     peer.flush();
 }
 
-template <typename View> static void packComponents(NetworkPeer& peer, const View& view, const SyncOperation op) {
+template <typename View>
+void ControllerNetwork::packComponents(NetworkPeer& peer, const View& view, const SyncOperation op) {
     using Iterable = typename View::iterable::value_type;
     using Type = typename std::remove_reference<typename std::tuple_element<1, Iterable>::type>::type;
 
@@ -94,19 +141,19 @@ template <typename View> static void packComponents(NetworkPeer& peer, const Vie
 }
 
 template <typename T>
-static void unpackComponent(entt::registry& reg, const entt::entity handle, const msgpack::object& obj,
-                            const SyncOperation op) {
+void ControllerNetwork::unpackComponent(const uint64_t remoteId, const entt::entity handle, const msgpack::object& obj,
+                                        const SyncOperation op) {
     if (op == SyncOperation::Emplace) {
         auto& component = reg.emplace<T>(handle);
         component.postUnpack(reg, handle);
         obj.convert(component);
-        postEmplaceComponent(handle, component);
+        postEmplaceComponent(remoteId, handle, component);
         component.setDirty(true);
     } else if (op == SyncOperation::Patch) {
         auto* component = reg.try_get<T>(handle);
         if (component) {
             obj.convert(*component);
-            postPatchComponent(handle, *component);
+            postPatchComponent(remoteId, handle, *component);
             component->setDirty(true);
         }
     } else {
@@ -114,22 +161,21 @@ static void unpackComponent(entt::registry& reg, const entt::entity handle, cons
     }
 }
 
-using UnpackerFunction = void (*)(entt::registry&, entt::entity, const msgpack::object&, const SyncOperation op);
-
-static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt::entity handle,
-                              const msgpack::object& obj, const SyncOperation op) {
+void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remoteId, const entt::entity handle,
+                                          const msgpack::object& obj, const SyncOperation op) {
     static std::unordered_map<uint32_t, UnpackerFunction> unpackers = {
-        {EntityComponentIds::value<ComponentTransform>, &unpackComponent<ComponentTransform>},
-        {EntityComponentIds::value<ComponentModel>, &unpackComponent<ComponentModel>},
-        {EntityComponentIds::value<ComponentRigidBody>, &unpackComponent<ComponentRigidBody>},
-        {EntityComponentIds::value<ComponentIcon>, &unpackComponent<ComponentIcon>},
-        {EntityComponentIds::value<ComponentLabel>, &unpackComponent<ComponentLabel>},
-        {EntityComponentIds::value<ComponentGrid>, &unpackComponent<ComponentGrid>},
+        {EntityComponentIds::value<ComponentTransform>, &ControllerNetwork::unpackComponent<ComponentTransform>},
+        {EntityComponentIds::value<ComponentModel>, &ControllerNetwork::unpackComponent<ComponentModel>},
+        {EntityComponentIds::value<ComponentModelSkinned>, &ControllerNetwork::unpackComponent<ComponentModelSkinned>},
+        {EntityComponentIds::value<ComponentRigidBody>, &ControllerNetwork::unpackComponent<ComponentRigidBody>},
+        {EntityComponentIds::value<ComponentIcon>, &ControllerNetwork::unpackComponent<ComponentIcon>},
+        {EntityComponentIds::value<ComponentLabel>, &ControllerNetwork::unpackComponent<ComponentLabel>},
+        {EntityComponentIds::value<ComponentGrid>, &ControllerNetwork::unpackComponent<ComponentGrid>},
     };
 
     const auto found = unpackers.find(id);
     if (found != unpackers.end()) {
-        found->second(reg, handle, obj, op);
+        (this->*(found->second))(remoteId, handle, obj, op);
     } else {
         logger.warn("Unmatched component id: {} entity id: {}", id, static_cast<uint32_t>(handle));
     }
@@ -138,6 +184,7 @@ static void unpackComponentId(entt::registry& reg, const uint32_t id, const entt
 void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentModelSkinned>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
@@ -225,7 +272,7 @@ void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
         }
 
         if (local != remoteToLocal.end()) {
-            unpackComponentId(reg, id, local->second, child.ptr[3], op);
+            unpackComponentId(id, static_cast<uint64_t>(local->first), local->second, child.ptr[3], op);
         } else {
             logger.warn("Unmatched entity update id: {}", static_cast<uint32_t>(handle));
         }
@@ -233,6 +280,8 @@ void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
 }
 
 void ControllerNetwork::onDestroyEntity(entt::registry& r, entt::entity handle) {
+    (void)r;
+
     const auto it = updatedComponentsMap.find(handle);
     if (it != updatedComponentsMap.end()) {
         updatedComponentsCount -= std::bitset<64>{it->second}.count();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../library.hpp"
+#include "../math/quaternion.hpp"
 #include "../math/vector.hpp"
 #include "../utils/path.hpp"
 #include "../utils/span.hpp"
@@ -161,12 +162,29 @@ private:
     GltfData data;
 };
 
+class ENGINE_API GltfNode;
+
+class ENGINE_API GltfSkin {
+public:
+    explicit GltfSkin(const GltfData& data, cgltf_skin* skin);
+
+    std::string name;
+    GltfAccessor inverseBindMatrices;
+    std::vector<GltfNode> joints;
+
+private:
+    GltfData data;
+};
+
 class ENGINE_API GltfNode {
 public:
     explicit GltfNode(const GltfData& data, cgltf_node* node);
 
     std::string name;
     std::optional<GltfMesh> mesh;
+    std::optional<GltfSkin> skin;
+    Vector3 translation{};
+    Quaternion rotation{};
 
 private:
     GltfData data;
@@ -195,5 +213,8 @@ class ENGINE_API GltfUtils {
 public:
     static std::vector<float> combine(const GltfAccessor& position, const GltfAccessor& normals,
                                       const GltfAccessor& texCoords, const GltfAccessor& tangents);
+    static std::vector<float> combine(const GltfAccessor& position, const GltfAccessor& normals,
+                                      const GltfAccessor& texCoords, const GltfAccessor& tangents,
+                                      const GltfAccessor& joints, const GltfAccessor& weights);
 };
 } // namespace Engine

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../math/matrix.hpp"
 #include "primitive.hpp"
 #include "texture.hpp"
 
@@ -8,9 +9,22 @@ class btConvexShape;
 namespace Engine {
 class ENGINE_API Model : public Asset {
 public:
+    static constexpr size_t maxJoints = 16;
+
+    struct Skin {
+        std::array<Matrix4, maxJoints> inverseBindMat;
+        std::array<Matrix4, maxJoints> jointsLocalMat;
+        size_t count{0};
+
+        operator bool() const {
+            return count > 0;
+        }
+    };
+
     struct Node {
         std::string name{};
         std::list<Primitive> primitives{};
+        Skin skin{};
     };
 
     explicit Model(std::string name, Path path);

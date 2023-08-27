@@ -260,6 +260,7 @@ void Lua::setupBindings() {
     // Scene
     Entity::bind(*this);
     ComponentModel::bind(*this);
+    ComponentModelSkinned::bind(*this);
     ComponentRigidBody::bind(*this);
     ComponentTransform::bind(*this);
     ComponentIcon::bind(*this);

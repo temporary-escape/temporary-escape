@@ -9,17 +9,19 @@ enum class TransformFlags : uint64_t {
 
 class ENGINE_API ComponentTransform : public Component {
 public:
+    static constexpr auto NullParentId = std::numeric_limits<uint64_t>::max();
+
     ComponentTransform() = default;
     explicit ComponentTransform(entt::registry& reg, entt::entity handle);
     virtual ~ComponentTransform() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentTransform);
 
-public:
-    void setParent(const ComponentTransform& value);
-    void removeParent();
-
+    void setParent(const ComponentTransform* value);
     [[nodiscard]] const ComponentTransform* getParent() const {
         return parent;
+    }
+    [[nodiscard]] uint64_t getParentId() const {
+        return parentId;
     }
 
     void translate(const Vector3& pos);
@@ -55,7 +57,7 @@ public:
     void setStatic(const bool value);
     bool isStatic() const;
 
-    MSGPACK_DEFINE_ARRAY(transform, flags);
+    MSGPACK_DEFINE_ARRAY(transform, flags, parentId);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -63,6 +65,7 @@ protected:
 private:
     Matrix4 transform{1.0f};
     const ComponentTransform* parent{nullptr};
+    uint64_t parentId{NullParentId};
     uint64_t flags{0};
 };
 } // namespace Engine

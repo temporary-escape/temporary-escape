@@ -1,5 +1,6 @@
 #include "render_pass_opaque.hpp"
 #include "../../assets/assets_manager.hpp"
+#include "../../scene/controllers/controller_model_skinned.hpp"
 #include "../../scene/controllers/controller_static_model.hpp"
 #include "../../scene/scene.hpp"
 
@@ -42,6 +43,7 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
     resources{resources},
     pipelineGrid{vulkan, assetsManager},
     pipelineModel{vulkan, assetsManager},
+    pipelineModelSkinned{vulkan, assetsManager},
     pipelineModelInstanced{vulkan, assetsManager} {
 
     { // Depth
@@ -112,6 +114,7 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
 
     addPipeline(pipelineGrid, 0);
     addPipeline(pipelineModel, 0);
+    addPipeline(pipelineModelSkinned, 0);
     addPipeline(pipelineModelInstanced, 0);
 
     palette = assetsManager.getTextures().find("palette");
@@ -137,6 +140,7 @@ void RenderPassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     renderGrids(vkb, scene);
     renderModels(vkb, scene);
+    renderModelsSkinned(vkb, scene);
     renderModelsInstanced(vkb, scene);
 }
 
@@ -203,6 +207,11 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineModel.flushConstants(vkb);
 
         for (const auto& node : model.getModel()->getNodes()) {
+            // Skip animated models
+            if (node.skin) {
+                continue;
+            }
+
             for (auto& primitive : node.primitives) {
                 if (!primitive.material) {
                     EXCEPTION("Primitive has no material");
@@ -228,6 +237,54 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 }
 
+void RenderPassOpaque::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto& controllerModelsSkinned = scene.getController<ControllerModelSkinned>();
+    auto& camera = *scene.getPrimaryCamera();
+
+    pipelineModelSkinned.bind(vkb);
+
+    for (const auto& item : controllerModelsSkinned.getItems()) {
+        const auto& modelMatrix = item.transform;
+        const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
+
+        pipelineModelSkinned.setModelMatrix(modelMatrix);
+        pipelineModelSkinned.setNormalMatrix(normalMatrix);
+        pipelineModelSkinned.setEntityColor(entityColor(item.entity));
+        pipelineModelSkinned.flushConstants(vkb);
+
+        for (const auto& node : item.model->getNodes()) {
+            // Skip non-animated models
+            if (!node.skin) {
+                continue;
+            }
+
+            for (auto& primitive : node.primitives) {
+                if (!primitive.material) {
+                    EXCEPTION("Primitive has no material");
+                }
+
+                validateMaterial(*primitive.material);
+
+                pipelineModelSkinned.setUniformCamera(camera.getUbo().getCurrentBuffer());
+                pipelineModelSkinned.setUniformMaterial(primitive.material->ubo);
+                pipelineModelSkinned.setUniformArmature(controllerModelsSkinned.getUbo().getCurrentBuffer(),
+                                                        item.offset);
+
+                pipelineModelSkinned.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
+                pipelineModelSkinned.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
+                pipelineModelSkinned.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
+                pipelineModelSkinned.setTextureAmbientOcclusion(
+                    primitive.material->ambientOcclusionTexture->getVulkanTexture());
+                pipelineModelSkinned.setTextureMetallicRoughness(
+                    primitive.material->metallicRoughnessTexture->getVulkanTexture());
+                pipelineModelSkinned.flushDescriptors(vkb);
+
+                pipelineModelSkinned.renderMesh(vkb, primitive.mesh);
+            }
+        }
+    }
+}
+
 void RenderPassOpaque::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& controllerStaticModel = scene.getController<ControllerStaticModel>();
     auto& camera = *scene.getPrimaryCamera();
@@ -236,6 +293,11 @@ void RenderPassOpaque::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
 
     for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
         for (const auto& node : model->getNodes()) {
+            // Skip animated models
+            if (node.skin) {
+                continue;
+            }
+
             for (auto& primitive : node.primitives) {
                 if (!primitive.material) {
                     EXCEPTION("Primitive has no material");

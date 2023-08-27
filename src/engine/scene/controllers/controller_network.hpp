@@ -31,6 +31,25 @@ public:
     std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
 
 private:
+    using UnpackerFunction = void (ControllerNetwork::*)(uint64_t, entt::entity, const msgpack::object&,
+                                                         const SyncOperation op);
+    template <typename T> using ComponentReferences = std::array<std::tuple<entt::entity, const T*>, 64>;
+
+    template <typename Type> void postEmplaceComponent(uint64_t remoteId, entt::entity handle, Type& component);
+    template <typename Type> void postPatchComponent(uint64_t remoteId, entt::entity handle, Type& component);
+
+    template <typename T>
+    void unpackComponent(uint64_t remoteId, entt::entity handle, const msgpack::object& obj, SyncOperation op);
+    void unpackComponentId(const uint32_t id, uint64_t remoteId, entt::entity handle, const msgpack::object& obj,
+                           SyncOperation op);
+
+    template <typename Packer, typename Type>
+    void packComponent(Packer& packer, entt::entity handle, const Type& component, const SyncOperation op);
+    template <typename Type>
+    void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components, const size_t count,
+                        const SyncOperation op);
+    template <typename View> void packComponents(NetworkPeer& peer, const View& view, const SyncOperation op);
+
     template <typename T> void registerComponent() {
         reg.on_update<T>().template connect<&ControllerNetwork::onUpdateComponent<T>>(this);
         reg.on_destroy<T>().template connect<&ControllerNetwork::onDestroyComponent<T>>(this);
@@ -63,6 +82,7 @@ private:
     std::unordered_map<entt::entity, entt::entity> remoteToLocal;
     std::unordered_map<entt::entity, uint64_t> updatedComponentsMap;
     size_t updatedComponentsCount{0};
+    std::unordered_map<uint64_t, entt::entity> transformChildParentMap;
 };
 } // namespace Engine
 

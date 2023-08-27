@@ -32,6 +32,9 @@ void Entity::bind(Lua& lua) {
     cls["add_component_model"] = [](Entity& self, const ModelPtr& model) -> ComponentModel& {
         return self.addComponent<ComponentModel>(model);
     };
+    cls["add_component_model_skinned"] = [](Entity& self, const ModelPtr& model) -> ComponentModelSkinned& {
+        return self.addComponent<ComponentModelSkinned>(model);
+    };
     cls["add_component_rigid_body"] = &Entity::addComponent<ComponentRigidBody>;
     cls["add_component_icon"] = [](Entity& self, const ImagePtr& image) -> ComponentIcon& {
         return self.addComponent<ComponentIcon>(image);
@@ -46,6 +49,7 @@ void Entity::bind(Lua& lua) {
 
     cls["has_component_transform"] = &Entity::hasComponent<ComponentTransform>;
     cls["has_component_model"] = &Entity::hasComponent<ComponentModel>;
+    cls["has_component_model_skinned"] = &Entity::hasComponent<ComponentModelSkinned>;
     cls["has_component_rigid_body"] = &Entity::hasComponent<ComponentRigidBody>;
     cls["has_component_icon"] = &Entity::hasComponent<ComponentIcon>;
     cls["has_component_label"] = &Entity::hasComponent<ComponentLabel>;
@@ -53,6 +57,7 @@ void Entity::bind(Lua& lua) {
 
     cls["get_component_transform"] = &Entity::tryGetComponent<ComponentTransform>;
     cls["get_component_model"] = &Entity::tryGetComponent<ComponentModel>;
+    cls["get_component_model_skinned"] = &Entity::tryGetComponent<ComponentModelSkinned>;
     cls["get_component_rigid_body"] = &Entity::tryGetComponent<ComponentRigidBody>;
     cls["get_component_icon"] = &Entity::tryGetComponent<ComponentIcon>;
     cls["get_component_label"] = &Entity::tryGetComponent<ComponentLabel>;

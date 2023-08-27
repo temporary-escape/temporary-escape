@@ -112,6 +112,41 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                 EXCEPTION("gltf node has an object but contains no primitives");
             }
 
+            const auto& skin = object.skin;
+
+            auto& node = nodes.emplace_back();
+            node.name = object.name;
+
+            if (skin) {
+                if (skin->inverseBindMatrices.type != GltfType::Mat4) {
+                    EXCEPTION("gltf object skin matrices must be a mat4 type");
+                }
+                if (skin->inverseBindMatrices.count > maxJoints) {
+                    EXCEPTION("gltf object skin can not have more than {} joints", maxJoints);
+                }
+
+                node.skin.count = skin->inverseBindMatrices.count;
+                if (node.skin.count != skin->joints.size()) {
+                    EXCEPTION("gltf object skin joints count does not match nodes count");
+                }
+
+                auto buffer = skin->inverseBindMatrices.bufferView.getSpan();
+                if (node.skin.count * sizeof(Matrix4) != buffer.size()) {
+                    EXCEPTION("gltf object skin matrices buffer does not match the expected size");
+                }
+
+                std::memcpy(node.skin.inverseBindMat.data(), buffer.data(), node.skin.count * sizeof(Matrix4));
+
+                for (size_t i = 0; i < skin->joints.size(); i++) {
+                    const auto& joint = skin->joints[i];
+                    auto& mat = node.skin.jointsLocalMat[i];
+
+                    mat = Matrix4{1.0f};
+                    mat = glm::translate(mat, joint.translation);
+                    mat = mat * glm::mat4_cast(joint.rotation);
+                }
+            }
+
             for (const auto& part : object.mesh.value().primitives) {
                 if (!part.indices.has_value()) {
                     EXCEPTION("gltf object primitive has no indices");
@@ -133,6 +168,12 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                 const auto tangents = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
                     return a.type == GltfAttributeType::Tangent;
                 });
+                const auto joints = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::Joints;
+                });
+                const auto weights = findOne(part.attributes, [](const GltfAttribute& a) -> bool {
+                    return a.type == GltfAttributeType::Weights;
+                });
 
                 if (!positions.has_value()) {
                     EXCEPTION("gltf object primitive has no position attribute");
@@ -146,13 +187,18 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                 if (!tangents.has_value()) {
                     EXCEPTION("gltf object primitive has no tangents attribute");
                 }
+                if (skin && !joints.has_value()) {
+                    EXCEPTION("gltf object primitive has no joints attribute");
+                }
+                if (skin && !weights.has_value()) {
+                    EXCEPTION("gltf object primitive has no weights attribute");
+                }
 
                 const auto& indices = part.indices;
 
                 if (indices->type != GltfType::Scalar) {
                     EXCEPTION("gltf object primitive indicess must be a scalar type");
                 }
-
                 if (positions->accessor.type != GltfType::Vec3) {
                     EXCEPTION("gltf object primitive positions must be a Vec3 type");
                 }
@@ -160,10 +206,16 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                     EXCEPTION("gltf object primitive normals must be a Vec3 type");
                 }
                 if (texCoords->accessor.type != GltfType::Vec2) {
-                    EXCEPTION("gltf object primitive tex coords must be a Vec3 type");
+                    EXCEPTION("gltf object primitive tex coords must be a Vec2 type");
                 }
                 if (tangents->accessor.type != GltfType::Vec4) {
-                    EXCEPTION("gltf object primitive tangents must be a Vec3 type");
+                    EXCEPTION("gltf object primitive tangents must be a Vec4 type");
+                }
+                if (skin && joints->accessor.type != GltfType::Vec4) {
+                    EXCEPTION("gltf object primitive joints must be a Vec4 type");
+                }
+                if (skin && weights->accessor.type != GltfType::Vec4) {
+                    EXCEPTION("gltf object primitive weights must be a Vec4 type");
                 }
 
                 if (positions->accessor.componentType != GltfComponentType::R32f) {
@@ -178,11 +230,20 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                 if (tangents->accessor.componentType != GltfComponentType::R32f) {
                     EXCEPTION("gltf object primitive tangents must be component type of 32-bit float");
                 }
+                if (skin && joints->accessor.componentType != GltfComponentType::R8u) {
+                    EXCEPTION("gltf object primitive joints must be component type of 8-bit int");
+                }
+                if (skin && weights->accessor.componentType != GltfComponentType::R32f) {
+                    EXCEPTION("gltf object primitive weights must be component type of 32-bit float");
+                }
 
                 const auto count = positions->accessor.count;
                 if (count != normals->accessor.count || count != texCoords->accessor.count ||
                     count != tangents->accessor.count) {
-                    EXCEPTION("gltf object contains primitive which accessor has conflicting counts");
+                    EXCEPTION("gltf object contains primitive which accessors has conflicting counts");
+                }
+                if (skin && (count != joints->accessor.count || count != weights->accessor.count)) {
+                    EXCEPTION("gltf object contains primitive which accessors has conflicting counts");
                 }
 
                 // Update the bounding box
@@ -197,9 +258,6 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
                 }
 
                 const auto& partMaterial = part.material.value();
-
-                auto& node = nodes.emplace_back();
-                node.name = object.name;
 
                 auto& primitive = node.primitives.emplace_back();
                 auto& material = materials.emplace_back();
@@ -280,8 +338,19 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
                 // Only initialize buffers if the Vulkan is present (client mode)
                 if (vulkan) {
-                    const auto vboData = GltfUtils::combine(
-                        positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
+                    std::vector<float> vboData;
+                    if (skin) {
+                        vboData = GltfUtils::combine(positions->accessor,
+                                                     normals->accessor,
+                                                     texCoords->accessor,
+                                                     tangents->accessor,
+                                                     joints->accessor,
+                                                     weights->accessor);
+                    } else {
+                        vboData = GltfUtils::combine(
+                            positions->accessor, normals->accessor, texCoords->accessor, tangents->accessor);
+                    }
+
                     const auto& iboData = part.indices->bufferView.getBuffer();
 
                     VulkanBuffer::CreateInfo bufferInfo{};

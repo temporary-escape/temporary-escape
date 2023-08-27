@@ -96,6 +96,11 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineModel.flushConstants(vkb);
 
         for (const auto& node : model.getModel()->getNodes()) {
+            // Skip animated models
+            if (node.skin) {
+                continue;
+            }
+
             for (auto& primitive : node.primitives) {
                 if (!primitive.material) {
                     EXCEPTION("Primitive has no material");
@@ -118,6 +123,11 @@ void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
 
     for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
         for (const auto& node : model->getNodes()) {
+            // Skip animated models
+            if (node.skin) {
+                continue;
+            }
+            
             for (auto& primitive : node.primitives) {
                 pipelineModelInstanced.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(),
                                                         index);

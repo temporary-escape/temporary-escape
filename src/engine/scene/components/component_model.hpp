@@ -37,6 +37,26 @@ public:
         };
     };
 
+    struct SkinnedVertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 texCoords;
+        Vector4 tangent;
+        Vector4 joints;
+        Vector4 weights;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SkinnedVertex, position)},
+                {1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SkinnedVertex, normal)},
+                {2, VK_FORMAT_R32G32_SFLOAT, offsetof(SkinnedVertex, texCoords)},
+                {3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(SkinnedVertex, tangent)},
+                {4, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(SkinnedVertex, joints)},
+                {5, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(SkinnedVertex, weights)},
+            };
+        };
+    };
+
     ComponentModel() = default;
     explicit ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model);
     virtual ~ComponentModel() = default; // NOLINT(modernize-use-override)

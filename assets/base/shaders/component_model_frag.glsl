@@ -9,11 +9,11 @@ layout (std140, binding = 1) uniform Material {
     vec4 metallicRoughnessFactor;
 } material;
 
-layout (binding = 2) uniform sampler2D baseColorTexture;
-layout (binding = 3) uniform sampler2D emissiveTexture;
-layout (binding = 4) uniform sampler2D normalTexture;
-layout (binding = 5) uniform sampler2D ambientOcclusionTexture;
-layout (binding = 6) uniform sampler2D metallicRoughnessTexture;
+layout (binding = 3) uniform sampler2D baseColorTexture;
+layout (binding = 4) uniform sampler2D emissiveTexture;
+layout (binding = 5) uniform sampler2D normalTexture;
+layout (binding = 6) uniform sampler2D ambientOcclusionTexture;
+layout (binding = 7) uniform sampler2D metallicRoughnessTexture;
 
 layout (location = 0) in VS_OUT {
     vec3 normal;
