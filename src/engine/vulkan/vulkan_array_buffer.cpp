@@ -57,6 +57,13 @@ void* VulkanArrayBuffer::insert(const uint64_t id) {
     return &buffer.at(it->second);
 }
 
+size_t VulkanArrayBuffer::offsetOf(void* item) {
+    if (item < buffer.data() || item >= buffer.data() + buffer.size()) {
+        EXCEPTION("VulkanArrayBuffer offsetOf bad pointer");
+    }
+    return reinterpret_cast<unsigned char*>(item) - buffer.data();
+}
+
 void VulkanArrayBuffer::clear() {
     indexMap.clear();
     buffer.clear();

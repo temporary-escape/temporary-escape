@@ -238,21 +238,22 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
 }
 
 void RenderPassOpaque::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto viewModelsSkinned = scene.getView<ComponentTransform, ComponentModelSkinned>(entt::exclude<TagDisabled>);
     auto& controllerModelsSkinned = scene.getController<ControllerModelSkinned>();
     auto& camera = *scene.getPrimaryCamera();
 
     pipelineModelSkinned.bind(vkb);
 
-    for (const auto& item : controllerModelsSkinned.getItems()) {
-        const auto& modelMatrix = item.transform;
+    for (auto&& [entity, transform, component] : viewModelsSkinned.each()) {
+        const auto& modelMatrix = transform.getAbsoluteTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineModelSkinned.setModelMatrix(modelMatrix);
         pipelineModelSkinned.setNormalMatrix(normalMatrix);
-        pipelineModelSkinned.setEntityColor(entityColor(item.entity));
+        pipelineModelSkinned.setEntityColor(entityColor(entity));
         pipelineModelSkinned.flushConstants(vkb);
 
-        for (const auto& node : item.model->getNodes()) {
+        for (const auto& node : component.getModel()->getNodes()) {
             // Skip non-animated models
             if (!node.skin) {
                 continue;
@@ -268,7 +269,7 @@ void RenderPassOpaque::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scen
                 pipelineModelSkinned.setUniformCamera(camera.getUbo().getCurrentBuffer());
                 pipelineModelSkinned.setUniformMaterial(primitive.material->ubo);
                 pipelineModelSkinned.setUniformArmature(controllerModelsSkinned.getUbo().getCurrentBuffer(),
-                                                        item.offset);
+                                                        component.getUboOffset());
 
                 pipelineModelSkinned.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
                 pipelineModelSkinned.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());

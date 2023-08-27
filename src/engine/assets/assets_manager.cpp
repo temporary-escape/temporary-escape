@@ -263,6 +263,7 @@ void AssetsManager::bind(Lua& lua) {
     cls["find_ship_template"] = [](AssetsManager& self, const std::string& name) {
         return self.getShipTemplates().find(name);
     };
+    cls["find_turret"] = [](AssetsManager& self, const std::string& name) { return self.getTurrets().find(name); };
 
     cls["find_all_planet_types"] = [](AssetsManager& self) { return sol::as_table(self.getPlanetTypes().findAll()); };
     cls["find_all_images"] = [](AssetsManager& self) { return sol::as_table(self.getImages().findAll()); };
@@ -276,4 +277,5 @@ void AssetsManager::bind(Lua& lua) {
     cls["find_all_ship_templates"] = [](AssetsManager& self) {
         return sol::as_table(self.getShipTemplates().findAll());
     };
+    cls["find_all_turrets"] = [](AssetsManager& self) { return sol::as_table(self.getTurrets().findAll()); };
 }

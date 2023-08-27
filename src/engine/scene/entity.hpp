@@ -39,11 +39,11 @@ namespace Engine {
 class ENGINE_API Scene;
 
 using EntityComponentIds =
-    entt::ident<TagDisabled, ComponentTransform, ComponentScript, ComponentCamera, ComponentCameraOrbital,
-                ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentModelSkinned, ComponentDirectionalLight,
-                ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug, ComponentIcon, ComponentLabel,
-                ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet, ComponentStarFlare,
-                ComponentSkybox, ComponentNebula, ComponentRigidBody>;
+    entt::ident<TagDisabled, ComponentTransform, ComponentRigidBody, ComponentScript, ComponentCamera,
+                ComponentCameraOrbital, ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentModelSkinned,
+                ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
+                ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
+                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentTurret>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;

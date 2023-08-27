@@ -56,6 +56,7 @@ struct Config {
         bool debugDraw = false;
         int ssao = 32;
         int shadowsSize = 2048;
+        int shadowsLevel = 1;
 
         void convert(const Xml::Node& xml) {
             xml.convert("windowWidth", windowWidth);
@@ -69,6 +70,7 @@ struct Config {
             xml.convert("bloom", bloom);
             xml.convert("ssao", ssao);
             xml.convert("shadowsSize", shadowsSize);
+            xml.convert("shadowsLevel", shadowsLevel);
         }
 
         void pack(Xml::Node& xml) const {
@@ -83,6 +85,7 @@ struct Config {
             xml.pack("bloom", bloom);
             xml.pack("ssao", ssao);
             xml.pack("shadowsSize", shadowsSize);
+            xml.pack("shadowsLevel", shadowsLevel);
         }
     } graphics;
 

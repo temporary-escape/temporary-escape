@@ -48,8 +48,8 @@ void main() {
     in_Weights.w * armature.joints[int(in_Joints.w)];
 
     vec4 worldPos = uniforms.modelMatrix * skinMat * vec4(in_Position, 1.0);
-    vec3 N = normalize(uniforms.modelMatrix * skinMat * vec4(in_Normal, 0.0)).xyz;
-    vec3 T = normalize(uniforms.modelMatrix * skinMat * vec4(in_Tangent.xyz, 0.0)).xyz;
+    vec3 N = normalize(uniforms.normalMatrix * mat3(skinMat) * in_Normal);
+    vec3 T = normalize(uniforms.normalMatrix * mat3(skinMat) * in_Tangent.xyz);
 
     vs_out.normal = N;
     vs_out.worldpos = worldPos.xyz;

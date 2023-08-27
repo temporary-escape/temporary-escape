@@ -16,6 +16,7 @@
 #include "controllers/controller_poly_shape.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
+#include "controllers/controller_turret.hpp"
 #include "controllers/controller_world_text.hpp"
 #include <sol/sol.hpp>
 
@@ -42,6 +43,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerPointCloud>();
         addController<ControllerPolyShape>();
         addController<ControllerLines>();
+        addController<ControllerTurret>();
     }
 }
 

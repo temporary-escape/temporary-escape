@@ -46,6 +46,9 @@ void Entity::bind(Lua& lua) {
         return self.addComponent<ComponentScript>(instance);
     };
     cls["add_component_grid"] = [](Entity& self) -> ComponentGrid& { return self.addComponent<ComponentGrid>(); };
+    cls["add_component_turret"] = [](Entity& self, const TurretPtr& turret) -> ComponentTurret& {
+        return self.addComponent<ComponentTurret>(turret);
+    };
 
     cls["has_component_transform"] = &Entity::hasComponent<ComponentTransform>;
     cls["has_component_model"] = &Entity::hasComponent<ComponentModel>;
@@ -54,6 +57,7 @@ void Entity::bind(Lua& lua) {
     cls["has_component_icon"] = &Entity::hasComponent<ComponentIcon>;
     cls["has_component_label"] = &Entity::hasComponent<ComponentLabel>;
     cls["has_component_script"] = &Entity::hasComponent<ComponentScript>;
+    cls["has_component_turret"] = &Entity::hasComponent<ComponentTurret>;
 
     cls["get_component_transform"] = &Entity::tryGetComponent<ComponentTransform>;
     cls["get_component_model"] = &Entity::tryGetComponent<ComponentModel>;
@@ -63,6 +67,7 @@ void Entity::bind(Lua& lua) {
     cls["get_component_label"] = &Entity::tryGetComponent<ComponentLabel>;
     cls["get_component_script"] = &Entity::tryGetComponent<ComponentScript>;
     cls["get_component_grid"] = &Entity::tryGetComponent<ComponentGrid>;
+    cls["get_component_turret"] = &Entity::tryGetComponent<ComponentTurret>;
 
     cls["script"] = [](Entity& self) -> sol::table {
         auto* component = self.tryGetComponent<ComponentScript>();

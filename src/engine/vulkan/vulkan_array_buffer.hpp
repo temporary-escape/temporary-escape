@@ -19,6 +19,7 @@ public:
 
     void recalculate(VulkanRenderer& vulkan);
     void* insert(const uint64_t id);
+    size_t offsetOf(void* item);
     void remove(const uint64_t id);
     size_t count() const;
     size_t capacity() const;

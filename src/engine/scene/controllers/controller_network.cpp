@@ -87,6 +87,14 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     component.setDirty(true);
 }
 
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentModelSkinned& component) {
+    (void)remoteId;
+    (void)handle;
+    component.setModel(component.getModel());
+}
+
 template <typename Type>
 void ControllerNetwork::postPatchComponent(const uint64_t remoteId, const entt::entity handle, Type& component) {
     (void)remoteId;
@@ -171,6 +179,7 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
         {EntityComponentIds::value<ComponentIcon>, &ControllerNetwork::unpackComponent<ComponentIcon>},
         {EntityComponentIds::value<ComponentLabel>, &ControllerNetwork::unpackComponent<ComponentLabel>},
         {EntityComponentIds::value<ComponentGrid>, &ControllerNetwork::unpackComponent<ComponentGrid>},
+        {EntityComponentIds::value<ComponentTurret>, &ControllerNetwork::unpackComponent<ComponentTurret>},
     };
 
     const auto found = unpackers.find(id);
@@ -189,6 +198,7 @@ void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentGrid>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentTurret>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(NetworkPeer& peer) {

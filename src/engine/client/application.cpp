@@ -522,6 +522,7 @@ void Application::createSceneRenderer(const Vector2i& viewport) {
     RenderOptions renderOptions{};
     renderOptions.viewport = viewport;
     renderOptions.shadowsSize = config.graphics.shadowsSize;
+    renderOptions.shadowsLevel = config.graphics.shadowsLevel;
     renderOptions.ssao = config.graphics.ssao;
     renderOptions.bloom = config.graphics.bloom;
     renderOptions.fxaa = config.graphics.fxaa;

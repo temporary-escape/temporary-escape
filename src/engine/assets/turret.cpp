@@ -29,5 +29,6 @@ void Turret::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<Turret>("Turret");
-    cls["name"] = sol::property(&Turret::getName);
+    cls["name"] = sol::readonly_property(&Turret::getName);
+    cls["model"] = sol::readonly_property(&Turret::getModel);
 }

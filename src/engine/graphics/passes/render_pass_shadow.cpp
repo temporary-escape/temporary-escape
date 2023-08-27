@@ -1,6 +1,7 @@
 #include "render_pass_shadow.hpp"
 #include "../../assets/assets_manager.hpp"
 #include "../../scene/controllers/controller_lights.hpp"
+#include "../../scene/controllers/controller_model_skinned.hpp"
 #include "../../scene/controllers/controller_static_model.hpp"
 #include "../../scene/scene.hpp"
 
@@ -9,10 +10,12 @@ using namespace Engine;
 RenderPassShadow::RenderPassShadow(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
                                    RenderResources& resources, AssetsManager& assetsManager, const uint32_t index) :
     RenderPass{vulkan, buffer, "RenderPassShadow"},
+    options{options},
     resources{resources},
     index{index},
     pipelineGrid{vulkan, assetsManager},
     pipelineModel{vulkan, assetsManager},
+    pipelineModelSkinned{vulkan, assetsManager},
     pipelineModelInstanced{vulkan, assetsManager} {
 
     { // Depth
@@ -32,6 +35,7 @@ RenderPassShadow::RenderPassShadow(const RenderOptions& options, VulkanRenderer&
 
     addPipeline(pipelineGrid, 0);
     addPipeline(pipelineModel, 0);
+    addPipeline(pipelineModelSkinned, 0);
     addPipeline(pipelineModelInstanced, 0);
 }
 
@@ -43,9 +47,16 @@ void RenderPassShadow::render(VulkanCommandBuffer& vkb, Scene& scene) {
     vkb.setViewport({0, 0}, getViewport());
     vkb.setScissor({0, 0}, getViewport());
 
-    renderGrids(vkb, scene);
-    renderModels(vkb, scene);
-    renderModelsInstanced(vkb, scene);
+    if (options.shadowsLevel >= 2) {
+        renderModelsSkinned(vkb, scene);
+    }
+    if (options.shadowsLevel >= 1) {
+        renderGrids(vkb, scene);
+    }
+    if (options.shadowsLevel >= 0) {
+        renderModels(vkb, scene);
+        renderModelsInstanced(vkb, scene);
+    }
 }
 
 void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -115,6 +126,43 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 }
 
+void RenderPassShadow::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto viewModelsSkinned = scene.getView<ComponentTransform, ComponentModelSkinned>(entt::exclude<TagDisabled>);
+    auto& controllerLights = scene.getController<ControllerLights>();
+    auto& controllerModelSkinned = scene.getController<ControllerModelSkinned>();
+
+    pipelineModelSkinned.bind(vkb);
+
+    for (auto&& [entity, transform, component] : viewModelsSkinned.each()) {
+        const auto& modelMatrix = transform.getAbsoluteTransform();
+        const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
+
+        pipelineModelSkinned.setModelMatrix(modelMatrix);
+        pipelineModelSkinned.setNormalMatrix(normalMatrix);
+        pipelineModelSkinned.setEntityColor(entityColor(entity));
+        pipelineModelSkinned.flushConstants(vkb);
+
+        for (const auto& node : component.getModel()->getNodes()) {
+            // Skip non-animated models
+            if (!node.skin) {
+                continue;
+            }
+
+            for (auto& primitive : node.primitives) {
+                if (!primitive.material) {
+                    EXCEPTION("Primitive has no material");
+                }
+
+                pipelineModelSkinned.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
+                pipelineModelSkinned.setUniformArmature(controllerModelSkinned.getUbo().getCurrentBuffer(),
+                                                        component.getUboOffset());
+                pipelineModelSkinned.flushDescriptors(vkb);
+                pipelineModelSkinned.renderMesh(vkb, primitive.mesh);
+            }
+        }
+    }
+}
+
 void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& controllerLights = scene.getController<ControllerLights>();
     auto& controllerStaticModel = scene.getController<ControllerStaticModel>();
@@ -127,7 +175,7 @@ void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
             if (node.skin) {
                 continue;
             }
-            
+
             for (auto& primitive : node.primitives) {
                 pipelineModelInstanced.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(),
                                                         index);

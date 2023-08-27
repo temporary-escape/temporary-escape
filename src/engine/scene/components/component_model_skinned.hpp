@@ -28,9 +28,16 @@ public:
     };
 
     struct Armature {
-        Matrix4 joints[16];
+        Matrix4 joints[Model::maxJoints];
         int count;
         char padding[60];
+    };
+
+    struct Cache {
+        std::array<Matrix4, Model::maxJoints> inverseBindMat;
+        std::array<Matrix4, Model::maxJoints> jointsLocalMat;
+        std::array<Matrix4, Model::maxJoints> adjustmentsMat;
+        int count{0};
     };
 
     static_assert(sizeof(Armature) % 64 == 0);
@@ -46,6 +53,17 @@ public:
         return model;
     }
 
+    void setUboOffset(size_t value);
+    [[nodiscard]] size_t getUboOffset() const {
+        return uboOffset;
+    }
+
+    const Cache& getCache() const {
+        return cache;
+    }
+
+    void setAdjustment(size_t joint, const Matrix4& value);
+
     static void bind(Lua& lua);
 
     MSGPACK_DEFINE_ARRAY(model);
@@ -55,5 +73,7 @@ protected:
 
 private:
     ModelPtr model{nullptr};
+    Cache cache{};
+    size_t uboOffset{0};
 };
 } // namespace Engine

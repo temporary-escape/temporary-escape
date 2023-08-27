@@ -30,6 +30,8 @@ function EntityPlayer.new (entity, data)
     child_transform:translate(engine.Vector3.new(0.0, 2.0, 0.0))
     child_transform.parent = transform
     child:add_component_model_skinned(assets_manager:find_model("model_turret_projectile_01"))
+    local turret = child:add_component_turret(assets_manager:find_turret("turret_projectile_01"))
+    turret.target = engine.Vector3.new(250.0, 0.0, -150.0)
     child:add_component_icon(image_icon)
     child:add_component_label("Turret")
 

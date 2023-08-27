@@ -22,18 +22,19 @@ public:
 
     void recalculate(VulkanRenderer& vulkan) override;
 
-    [[nodiscard]] const std::vector<Item>& getItems() const {
-        return items;
-    }
-
-    [[nodiscard]] const VulkanDoubleBuffer& getUbo() const {
-        return ubo;
+    [[nodiscard]] const VulkanArrayBuffer& getUbo() const {
+        return buffer;
     }
 
 private:
+    void addOrUpdate(entt::entity handle, ComponentModelSkinned& component);
+    void remove(entt::entity handle);
+
+    void onConstruct(entt::registry& r, entt::entity handle);
+    void onUpdate(entt::registry& r, entt::entity handle);
+    void onDestroy(entt::registry& r, entt::entity handle);
+
     entt::registry& reg;
-    std::vector<Item> items;
-    std::vector<ComponentModelSkinned::Armature> armatures;
-    VulkanDoubleBuffer ubo;
+    VulkanArrayBuffer buffer;
 };
 } // namespace Engine

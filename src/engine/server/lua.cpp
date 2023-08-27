@@ -266,6 +266,7 @@ void Lua::setupBindings() {
     ComponentIcon::bind(*this);
     ComponentLabel::bind(*this);
     ComponentGrid::bind(*this);
+    ComponentTurret::bind(*this);
     Scene::bind(*this);
 
     // Global functions

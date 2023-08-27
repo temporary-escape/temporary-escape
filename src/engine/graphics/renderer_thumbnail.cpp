@@ -11,6 +11,7 @@ static RenderOptions getOptionsThumbnails(const Config& config) {
     options.ssao = false;
     options.bloom = false;
     options.shadowsSize = 0;
+    options.shadowsLevel = 0;
     options.viewport = {config.thumbnailSize, config.thumbnailSize};
     options.enableSrc = true;
     return options;
