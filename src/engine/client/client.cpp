@@ -26,6 +26,7 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST(MessageFetchSystemsResponse);
     HANDLE_REQUEST(MessageSceneUpdateEvent);
     HANDLE_REQUEST(MessagePlayerControlEvent);
+    HANDLE_REQUEST(MessageShipMovementEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
@@ -58,6 +59,17 @@ void Client::disconnect() {
 
 void Client::update() {
     sync.poll();
+
+    // Update player camera location
+    if (scene && cache.playerEntityId) {
+        const auto* transform = cache.playerEntityId.tryGetComponent<ComponentTransform>();
+        if (const auto* camera = scene->getPrimaryCamera(); camera) {
+            const auto cameraEntity = scene->fromHandle(camera->getHandle());
+            if (auto* cameraOrbital = cameraEntity.tryGetComponent<ComponentCameraOrbital>(); cameraOrbital) {
+                cameraOrbital->setTarget(transform->getAbsolutePosition());
+            }
+        }
+    }
 }
 
 void Client::startCacheSync() {
@@ -327,4 +339,8 @@ void Client::handle(Request<MessagePlayerControlEvent> req) {
             EXCEPTION("No local entity: {}", data.entityId);
         }
     });
+}
+
+void Client::handle(Request<MessageShipMovementEvent> req) {
+    sync.postSafe([=]() { const auto data = req.get(); });
 }

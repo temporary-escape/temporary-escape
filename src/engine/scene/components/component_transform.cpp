@@ -35,6 +35,18 @@ void ComponentTransform::rotate(const Quaternion& q) {
     setTransform(transform * glm::toMat4(q));
 }
 
+void ComponentTransform::rotateX(const float degrees) {
+    rotate(Vector3{1.0f, 0.0f, 0.0f}, degrees);
+}
+
+void ComponentTransform::rotateY(const float degrees) {
+    rotate(Vector3{0.0f, 1.0f, 0.0f}, degrees);
+}
+
+void ComponentTransform::rotateZ(const float degrees) {
+    rotate(Vector3{0.0f, 0.0f, 1.0f}, degrees);
+}
+
 void ComponentTransform::scale(const Vector3& value) {
     setTransform(glm::scale(transform, value));
 }
@@ -81,7 +93,9 @@ void ComponentTransform::bind(Lua& lua) {
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
     cls["scale"] = &ComponentTransform::scale;
-    cls["rotate"] = static_cast<void (ComponentTransform::*)(const Quaternion&)>(&ComponentTransform::rotate);
+    cls["rotate_x"] = &ComponentTransform::rotateX;
+    cls["rotate_y"] = &ComponentTransform::rotateY;
+    cls["rotate_z"] = &ComponentTransform::rotateZ;
     cls["rotate_by_axis"] =
         static_cast<void (ComponentTransform::*)(const Vector3&, const float)>(&ComponentTransform::rotate);
     cls["static"] = sol::property(&ComponentTransform::isStatic, &ComponentTransform::setStatic);

@@ -112,4 +112,24 @@ struct MessagePlayerControlEvent {
 };
 
 MESSAGE_DEFINE(MessagePlayerControlEvent);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageShipControlEvent {
+    float speed{0.0f};
+    int leftRight{0};
+    int upDown{0};
+
+    MSGPACK_DEFINE(speed, leftRight, upDown);
+};
+
+MESSAGE_DEFINE(MessageShipControlEvent);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageShipMovementEvent {
+    float speed{0.0f};
+
+    MSGPACK_DEFINE(speed);
+};
+
+MESSAGE_DEFINE(MessageShipMovementEvent);
 } // namespace Engine

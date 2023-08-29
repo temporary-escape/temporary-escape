@@ -61,20 +61,33 @@ public:
         return turret;
     }
 
-    void setTarget(const Vector3& value);
-    const Vector3& getTarget() const {
+    const Vector3& getTargetPos() const {
+        return targetPos;
+    }
+
+    void setTarget(const ComponentTransform* value);
+    const ComponentTransform* getTarget() const {
         return target;
     }
+
     void clearTarget();
+
+    bool isActive() const {
+        return active;
+    }
 
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(turret, target, active);
+    MSGPACK_DEFINE_ARRAY(turret, targetPos, active);
+
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     TurretPtr turret;
-    Vector3 target;
+    Vector3 targetPos;
     bool active{false};
+    const ComponentTransform* target{nullptr};
 
     /*Vector3 target;
     bool firing{true};

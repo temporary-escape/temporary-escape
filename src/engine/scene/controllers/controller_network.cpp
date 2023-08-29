@@ -10,12 +10,16 @@ static auto logger = createLogger(LOG_FILENAME);
 ControllerNetwork::ControllerNetwork(entt::registry& reg) : reg{reg} {
     registerComponent<ComponentTransform>();
     registerComponent<ComponentRigidBody>();
+    registerComponent<ComponentTurret>();
+    // registerComponent<ComponentShipControl>();
     reg.on_destroy<entt::entity>().connect<&ControllerNetwork::onDestroyEntity>(this);
 }
 
 ControllerNetwork::~ControllerNetwork() {
     unregisterComponent<ComponentTransform>();
     unregisterComponent<ComponentRigidBody>();
+    unregisterComponent<ComponentTurret>();
+    // unregisterComponent<ComponentShipControl>();
     reg.on_destroy<entt::entity>().disconnect<&ControllerNetwork::onDestroyEntity>(this);
 }
 
@@ -180,6 +184,7 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
         {EntityComponentIds::value<ComponentLabel>, &ControllerNetwork::unpackComponent<ComponentLabel>},
         {EntityComponentIds::value<ComponentGrid>, &ControllerNetwork::unpackComponent<ComponentGrid>},
         {EntityComponentIds::value<ComponentTurret>, &ControllerNetwork::unpackComponent<ComponentTurret>},
+        //{EntityComponentIds::value<ComponentShipControl>, &ControllerNetwork::unpackComponent<ComponentShipControl>},
     };
 
     const auto found = unpackers.find(id);
@@ -199,6 +204,7 @@ void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentGrid>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentTurret>(), SyncOperation::Emplace);
+    // packComponents(peer, reg.view<ComponentShipControl>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
@@ -238,6 +244,16 @@ void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
             prepareNext();
             packComponent(peer, handle, component, SyncOperation::Patch);
         }
+        if (pair.second & componentMaskId<ComponentTurret>()) {
+            const auto& component = reg.get<ComponentTurret>(handle);
+            prepareNext();
+            packComponent(peer, handle, component, SyncOperation::Patch);
+        }
+        /*if (pair.second & componentMaskId<ComponentShipControl>()) {
+            const auto& component = reg.get<ComponentShipControl>(handle);
+            prepareNext();
+            packComponent(peer, handle, component, SyncOperation::Patch);
+        }*/
     }
 
     peer.flush();

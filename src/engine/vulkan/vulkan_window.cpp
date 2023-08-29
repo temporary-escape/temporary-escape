@@ -210,8 +210,7 @@ void VulkanWindow::run() {
     // Display the window.
     glfwShowWindow(window.get());
 
-    // Track time elapsed from one Update call to the next.
-    double lastTime = glfwGetTime();
+    auto timePoint = std::chrono::high_resolution_clock::now();
 
     // Message loop.
     while (!glfwWindowShouldClose(window.get())) {
@@ -227,9 +226,11 @@ void VulkanWindow::run() {
             eventWindowResized(windowSize);
         }
 
-        double curTime = glfwGetTime();
-        onFrameDraw(windowSize, static_cast<float>(curTime - lastTime));
-        lastTime = curTime;
+        const auto now = std::chrono::high_resolution_clock::now();
+        const auto timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(now - timePoint);
+        timePoint = now;
+
+        onFrameDraw(windowSize, static_cast<float>(timeDiff.count()) / 1000000.0f);
     }
 
     onExit();

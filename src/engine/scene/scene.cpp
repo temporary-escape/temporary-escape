@@ -14,6 +14,7 @@
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_point_cloud.hpp"
 #include "controllers/controller_poly_shape.hpp"
+#include "controllers/controller_ship_control.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
 #include "controllers/controller_turret.hpp"
@@ -27,6 +28,8 @@ static auto logger = createLogger(LOG_FILENAME);
 Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : lua{lua} {
     addController<ControllerDynamicsWorld>(config);
     addController<ControllerNetwork>();
+    addController<ControllerTurret>();
+    addController<ControllerShipControl>();
 
     if (voxelShapeCache) {
         addController<ControllerIconSelectable>();
@@ -43,7 +46,6 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerPointCloud>();
         addController<ControllerPolyShape>();
         addController<ControllerLines>();
-        addController<ControllerTurret>();
     }
 }
 

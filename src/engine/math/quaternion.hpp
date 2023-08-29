@@ -50,10 +50,10 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         template <typename Stream>
         packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Quaternion const& v) const {
             o.pack_array(4);
+            o.pack_float(v.w);
             o.pack_float(v.x);
             o.pack_float(v.y);
             o.pack_float(v.z);
-            o.pack_float(v.w);
             return o;
         }
     };

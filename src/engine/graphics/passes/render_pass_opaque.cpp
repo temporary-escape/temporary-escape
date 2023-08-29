@@ -156,7 +156,7 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
 
         pipelineGrid.setModelMatrix(modelMatrix);
         pipelineGrid.setNormalMatrix(normalMatrix);
-        pipelineGrid.setEntityColor(entityColor(entity));
+        pipelineGrid.setEntityColor(entityColor(transform));
         pipelineGrid.flushConstants(vkb);
 
         for (auto& primitive : grid.getPrimitives()) {
@@ -203,7 +203,7 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
 
         pipelineModel.setModelMatrix(modelMatrix);
         pipelineModel.setNormalMatrix(normalMatrix);
-        pipelineModel.setEntityColor(entityColor(entity));
+        pipelineModel.setEntityColor(entityColor(transform));
         pipelineModel.flushConstants(vkb);
 
         for (const auto& node : model.getModel()->getNodes()) {
@@ -250,7 +250,7 @@ void RenderPassOpaque::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scen
 
         pipelineModelSkinned.setModelMatrix(modelMatrix);
         pipelineModelSkinned.setNormalMatrix(normalMatrix);
-        pipelineModelSkinned.setEntityColor(entityColor(entity));
+        pipelineModelSkinned.setEntityColor(entityColor(transform));
         pipelineModelSkinned.flushConstants(vkb);
 
         for (const auto& node : component.getModel()->getNodes()) {

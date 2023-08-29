@@ -19,11 +19,16 @@ void ComponentTurret::update(const float delta, const ComponentTransform& transf
         return;
     }
 
+    if (target) {
+        targetPos = target->getAbsolutePosition();
+        setDirty(true);
+    }
+
     const auto absoluteTransform = transform.getAbsoluteTransform();
 
     // Transform target world position into local coordinate system (to cancel our rotation).
     const auto transformInverted = glm::inverse(absoluteTransform);
-    const auto targetLocal = Vector3{transformInverted * Vector4{target, 1.0f}};
+    const auto targetLocal = Vector3{transformInverted * Vector4{targetPos, 1.0f}};
     const auto targetDir = glm::normalize(targetLocal /* - turret->getComponents().cannon.offset*/);
 
     // Calculate yaw and pitch.
@@ -34,52 +39,24 @@ void ComponentTurret::update(const float delta, const ComponentTransform& transf
     model.setAdjustment(1, glm::mat4_cast(Quaternion{Vector3{0.0f, yaw, 0.0f}}));
     model.setAdjustment(2, glm::mat4_cast(Quaternion{Vector3{pitch, 0.0f, 0.0f}}));
     model.setDirty(true);
-
-    // logger.info("Target dir: {}", targetDir);
-
-    /*const auto absoluteTransform = getObject().getAbsoluteTransform();
-
-    // Transform target world position into local coordinate system (to cancel our rotation).
-    const auto transformInverted = glm::inverse(absoluteTransform);
-    const auto targetLocal = Vector3{transformInverted * Vector4{target, 1.0f}};
-    const auto targetDir = glm::normalize(targetLocal - turret->getComponents().cannon.offset);
-
-    // Calculate yaw and pitch.
-    const auto yaw = std::atan2(-targetDir.z, targetDir.x);
-    const auto dist = std::sqrt(targetDir.z * targetDir.z + targetDir.x * targetDir.x);
-    const auto pitch = std::atan2(targetDir.y, dist);
-
-    // Cache the rotation values, we will need this for rendering the turret models.
-    rotation = {pitch, yaw - glm::radians(90.0f), 0.0f};
-
-    // Calculate the barrel's end position in world coordinates.
-    // We will use this to calculate where the bullets should go from.
-    static const auto front = Vector3{0.0f, 0.0f, -1.0f};
-    auto transform = glm::translate(absoluteTransform, turret->getComponents().cannon.offset);
-    transform = glm::rotate(transform, rotation.y, Vector3{0.0f, 1.0f, 0.0f});
-    transform = glm::rotate(transform, rotation.x, Vector3{1.0f, 0.0f, 0.0f});
-    transform = glm::translate(transform, front);
-
-    nozzlePos = transform[3];
-    nozzleDir = glm::normalize(target - nozzlePos);
-
-    if (firing) {
-        counter -= delta;
-    } else {
-        counter = 0.0f;
-    }*/
 }
 
 void ComponentTurret::setTurret(TurretPtr value) {
     turret = std::move(value);
 }
 
-void ComponentTurret::setTarget(const Vector3& value) {
-    active = true;
+void ComponentTurret::setTarget(const ComponentTransform* value) {
     target = value;
+    if (target) {
+        active = true;
+    }
 }
 
 void ComponentTurret::clearTarget() {
+}
+
+void ComponentTurret::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentTurret>(handle);
 }
 
 void ComponentTurret::bind(Lua& lua) {

@@ -16,6 +16,8 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    void onDestroyTransform(entt::registry& r, entt::entity handle);
+
     entt::registry& reg;
 };
 } // namespace Engine

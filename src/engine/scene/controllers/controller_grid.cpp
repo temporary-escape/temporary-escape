@@ -14,6 +14,9 @@ void ControllerGrid::update(const float delta) {
 
 void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
     for (auto&& [_, grid] : reg.view<ComponentGrid>().each()) {
-        grid.recalculate(vulkan, voxelShapeCache);
+        if (grid.isDirty()) {
+            grid.setDirty(false);
+            grid.recalculate(vulkan, voxelShapeCache);
+        }
     }
 }

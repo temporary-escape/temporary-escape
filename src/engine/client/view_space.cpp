@@ -134,14 +134,13 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
 
             const auto* transform = selected->tryGetComponent<ComponentTransform>();
             if (transform) {
-                const auto screenPos = camera.worldToScreen(transform->getAbsolutePosition(), true);
                 guiContextMenu.setItems({
                     {"Approach", []() {}},
                     {"Info", []() {}},
                     {"Target", []() {}},
                 });
                 guiContextMenu.setEnabled(true);
-                guiContextMenu.setPos(screenPos);
+                guiContextMenu.setPos(pos);
             }
         } else if (guiContextMenu.isEnabled()) {
             guiContextMenu.setEnabled(false);

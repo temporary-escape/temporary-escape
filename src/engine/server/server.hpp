@@ -33,6 +33,7 @@ public:
     void handle(Request<MessagePlayerSpawnRequest> req);
     void handle(Request<MessageModManifestsRequest> req);
     void handle(Request<MessagePingResponse> req);
+    void handle(Request<MessageShipControlEvent> req);
 
     EventBus& getEventBus() const;
     AssetsManager& getAssetManager() const {

@@ -47,7 +47,7 @@ void ControllerStaticModel::addOrUpdate(entt::entity handle, const ComponentTran
     auto* raw = found->second.insert(static_cast<uint64_t>(handle));
     auto* dst = reinterpret_cast<ComponentModel::InstancedVertex*>(raw);
     dst->modelMatrix = transform.getAbsoluteTransform();
-    dst->entityColor = entityColor(handle);
+    dst->entityColor = entityColor(transform);
 }
 
 void ControllerStaticModel::remove(entt::entity handle, const ComponentModel& model) {

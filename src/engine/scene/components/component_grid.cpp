@@ -84,12 +84,6 @@ void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
     vulkanRenderer = &vulkan;
 
-    if (!isDirty()) {
-        return;
-    }
-
-    setDirty(false);
-
     blockCache.clear();
     blockCache.resize(Grid::getTypeCount());
     for (size_t i = 0; i < blockCache.size(); i++) {

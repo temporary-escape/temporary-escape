@@ -36,6 +36,37 @@ void Game::update(float deltaTime) {
         scene->update(deltaTime);
     }
     view->update(deltaTime);
+
+    if (client.getCache().playerEntityId && control.update) {
+        control.update = false;
+        MessageShipControlEvent msg{};
+
+        if (control.forward && !control.backwards) {
+            msg.speed = 50.0f;
+        } else if (!control.forward && control.backwards) {
+            msg.speed = -20.0f;
+        } else {
+            msg.speed = 0.0f;
+        }
+
+        if (control.left && !control.right) {
+            msg.leftRight = -1;
+        } else if (!control.left && control.right) {
+            msg.leftRight = 1;
+        } else {
+            msg.leftRight = 0;
+        }
+
+        if (control.up && !control.down) {
+            msg.upDown = 1;
+        } else if (!control.up && control.down) {
+            msg.upDown = -1;
+        } else {
+            msg.upDown = 0;
+        }
+
+        client.send(msg);
+    }
 }
 
 bool Game::isReady() const {
@@ -153,11 +184,51 @@ void Game::eventKeyPressed(const Key key, const Modifiers modifiers) {
     } else if (config.input.systemMapToggle(key, modifiers)) {
         switchToSystemMap();
     }
+
+    if (key == Key::LetterW) {
+        control.forward = true;
+        control.update = true;
+    } else if (key == Key::LetterS) {
+        control.backwards = true;
+        control.update = true;
+    } else if (key == Key::LetterA) {
+        control.left = true;
+        control.update = true;
+    } else if (key == Key::LetterD) {
+        control.right = true;
+        control.update = true;
+    } else if (key == Key::SpaceBar) {
+        control.up = true;
+        control.update = true;
+    } else if (key == Key::LeftControl) {
+        control.down = true;
+        control.update = true;
+    }
 }
 
 void Game::eventKeyReleased(const Key key, const Modifiers modifiers) {
     if (view && !guiMainMenu.isEnabled()) {
         view->eventKeyReleased(key, modifiers);
+    }
+
+    if (key == Key::LetterW) {
+        control.forward = false;
+        control.update = true;
+    } else if (key == Key::LetterS) {
+        control.backwards = false;
+        control.update = true;
+    } else if (key == Key::LetterA) {
+        control.left = false;
+        control.update = true;
+    } else if (key == Key::LetterD) {
+        control.right = false;
+        control.update = true;
+    } else if (key == Key::SpaceBar) {
+        control.up = false;
+        control.update = true;
+    } else if (key == Key::LeftControl) {
+        control.down = false;
+        control.update = true;
     }
 }
 

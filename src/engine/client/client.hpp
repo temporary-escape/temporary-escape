@@ -69,12 +69,19 @@ public:
     void handle(Request<MessageFetchRegionsResponse> req);
     void handle(Request<MessageSceneUpdateEvent> req);
     void handle(Request<MessagePlayerControlEvent> req);
+    void handle(Request<MessageShipMovementEvent> req);
 
     // Used by unit tests for synchronized assertions
     template <typename Fn> bool check(Fn&& fn) {
         auto promise = std::make_shared<Promise<bool>>();
         sync.post([promise, f = std::forward<Fn>(fn)]() { promise->resolve(f()); });
         return promise->future().get(std::chrono::seconds{1});
+    }
+
+    template <typename T> void send(const T& msg) {
+        if (networkClient) {
+            networkClient->send(msg);
+        }
     }
 
 private:

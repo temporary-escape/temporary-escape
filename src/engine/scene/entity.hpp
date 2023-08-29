@@ -43,7 +43,7 @@ using EntityComponentIds =
                 ComponentCameraOrbital, ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentModelSkinned,
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
                 ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
-                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentTurret>;
+                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentTurret, ComponentShipControl>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;
@@ -124,6 +124,16 @@ inline Vector4 entityColor(entt::entity handle) {
     const auto b = static_cast<float>((i & 0x00FF0000) >> 16);
     const auto a = static_cast<float>((i & 0xFF000000) >> 24);
     return Vector4{r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f};
+}
+
+inline Vector4 entityColor(const ComponentTransform& transform) {
+    const auto* parent = &transform;
+    while (true) {
+        if (!parent->getParent()) {
+            return entityColor(parent->getHandle());
+        }
+        parent = parent->getParent();
+    }
 }
 
 inline bool operator==(const std::optional<Entity>& a, std::optional<Entity>& b) {

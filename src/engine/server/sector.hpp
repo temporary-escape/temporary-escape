@@ -38,6 +38,8 @@ public:
         return sectorId;
     }
 
+    void handle(const SessionPtr& session, MessageShipControlEvent req);
+
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
@@ -56,6 +58,7 @@ private:
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Lua> lua;
     std::vector<SessionPtr> players;
+    std::unordered_map<SessionPtr, entt::entity> playerControl;
     SynchronizedWorker worker;
 };
 

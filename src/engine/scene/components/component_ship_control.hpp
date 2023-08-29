@@ -11,13 +11,23 @@ public:
     virtual ~ComponentShipControl() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentShipControl);
 
-    void update(float delta);
-    void setMovement(bool left, bool right, bool up, bool down);
-    [[nodiscard]] std::tuple<float, float, float> getAngles() const;
+    void update(float delta, ComponentTransform& transform);
+    void setSpeed(float value);
+    void setDirection(const Vector3& value);
+    void setDirectionRelative(int leftRight, int downUp);
+    [[nodiscard]] float getSpeed() const {
+        return velocityValue;
+    }
+
+    MSGPACK_DEFINE_ARRAY(velocityValue, velocityTarget, rotation);
+
+protected:
+    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
-    ComponentTransform* componentTransform{nullptr};
-    bool moving{true};
-    bool rotate[4] = {false};
+    float velocityValue{0.0f};
+    float velocityTarget{0.0f};
+    Vector3 rotation{0.0f, 0.0f, 0.0f};
+    bool directionRelative[4] = {false, false, false, false};
 };
 } // namespace Engine

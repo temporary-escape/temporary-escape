@@ -74,15 +74,15 @@ void Sector::update() {
         const auto tickF = static_cast<float>(config.tickLengthUs.count()) / 1000000.0f;
         scene->update(tickF);
 
-        if (tickCount % 10 == 0 && tickCount != 0) {
-            auto& networkController = scene->getController<ControllerNetwork>();
-            for (const auto& player : players) {
-                if (const auto stream = player->getStream(); stream) {
-                    networkController.sendUpdate(*stream);
-                }
+        // if (tickCount % 2 == 0 && tickCount != 0) {
+        auto& networkController = scene->getController<ControllerNetwork>();
+        for (const auto& player : players) {
+            if (const auto stream = player->getStream(); stream) {
+                networkController.sendUpdate(*stream);
             }
-            networkController.resetUpdates();
         }
+        networkController.resetUpdates();
+        //}
 
         ++tickCount;
     } catch (...) {
@@ -102,8 +102,12 @@ void Sector::addPlayer(const SessionPtr& session) {
         auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
 
         // Spawn player entity
-        const auto playerEntity = spawnPlayerEntity(session);
+        auto playerEntity = spawnPlayerEntity(session);
+        playerEntity.addComponent<ComponentShipControl>();
         const auto playerEntityId = playerEntity.getId();
+
+        // Remember that this player controls this entity
+        playerControl.emplace(session, playerEntity.getHandle());
 
         // Send a message to the player that their location has changed
         MessagePlayerLocationEvent msg{};
@@ -127,6 +131,7 @@ void Sector::addPlayer(const SessionPtr& session) {
             if (peer) {
                 scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
 
+                // Let the player know which entity they control
                 MessagePlayerControlEvent msg{};
                 msg.entityId = playerEntityId;
                 session->send(msg);
@@ -150,20 +155,18 @@ Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
     return scene->createEntityFrom("player", table);
 }
 
-/*void Sector::handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res) {
-    sync.post([this, session, req = std::move(req)]() {
-        auto& systemPlayers = scene.getComponentSystem<ComponentPlayer>();
-        for (const auto& component : systemPlayers) {
-            if (component->getPlayerId() == session->getPlayerId()) {
-                auto entity = dynamic_cast<Entity*>(&component->getObject());
-                if (entity) {
-                    auto shipControl = entity->findComponent<ComponentShipControl>();
-                    if (shipControl) {
-                        shipControl->setMovement(req.left, req.right, req.up, req.down);
-                    }
-                }
-                break;
+void Sector::handle(const SessionPtr& session, MessageShipControlEvent req) {
+    worker.post([this, session, req]() {
+        // Find the entity that the player controls
+        const auto found = playerControl.find(session);
+        if (found != playerControl.end()) {
+            // Do something
+            const auto entity = scene->fromHandle(found->second);
+            auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
+            if (shipControl) {
+                shipControl->setSpeed(req.speed);
+                shipControl->setDirectionRelative(req.leftRight, req.upDown);
             }
         }
     });
-}*/
+}

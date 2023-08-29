@@ -37,6 +37,7 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessageModManifestsRequest);
     HANDLE_REQUEST(MessagePingResponse);
     HANDLE_REQUEST(MessagePlayerSpawnRequest);
+    HANDLE_REQUEST(MessageShipControlEvent);
 
     addService<ServicePlayers>();
     addService<ServiceGalaxy>();
@@ -179,13 +180,13 @@ void Server::tick() {
     logger.info("Starting tick");
 
     while (tickFlag.load()) {
-        const auto start = std::chrono::steady_clock::now();
+        const auto start = std::chrono::high_resolution_clock::now();
 
         // playerSessions.updateSessionsPing();
         pollEvents();
         updateSectors();
 
-        const auto now = std::chrono::steady_clock::now();
+        const auto now = std::chrono::high_resolution_clock::now();
         const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
         if (test < config.tickLengthUs) {
             std::this_thread::sleep_for(config.tickLengthUs - test);
@@ -381,6 +382,30 @@ void Server::handle(Request<MessagePingResponse> req) {
     auto session = playerSessions.getSession(req.peer);
     session->setLastPingTime(std::chrono::steady_clock::now());
     session->clearFlag(Session::Flags::PingSent);
+}
+
+void Server::handle(Request<MessageShipControlEvent> req) {
+    auto session = playerSessions.getSession(req.peer);
+
+    const auto data = req.get();
+
+    // Find where the player is located
+    const auto location = playerSessions.getLocation(session);
+    if (!location) {
+        logger.warn("Player {} has bad location", session->getPlayerId());
+        return;
+    }
+
+    // Forward the message to the sector
+    std::unique_lock<std::shared_mutex> lock{sectors.mutex};
+    const auto found = sectors.map.find(*location);
+    if (found == sectors.map.end()) {
+        // Maybe the sector no longer exists?
+        logger.warn("Player {} has a non-existing location", session->getPlayerId());
+        return;
+    }
+
+    found->second->handle(session, data);
 }
 
 void Server::bind(Lua& lua) {

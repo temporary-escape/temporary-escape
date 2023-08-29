@@ -29,6 +29,9 @@ public:
     void move(const Vector3& pos);
 
     void rotate(const Vector3& axis, float degrees);
+    void rotateX(float degrees);
+    void rotateY(float degrees);
+    void rotateZ(float degrees);
 
     void rotate(const Quaternion& q);
 

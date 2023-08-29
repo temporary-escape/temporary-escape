@@ -113,11 +113,22 @@ void ControllerModelSkinned::addOrUpdate(entt::entity handle, ComponentModelSkin
 
     armature->count = static_cast<int>(data.count);
 
-    Matrix4 parentTransform{1.0f};
+    /*Matrix4 parentTransform{1.0f};
     for (size_t i = 0; i < armature->count; i++) {
         const auto localTransform = parentTransform * data.adjustmentsMat[i] * data.jointsLocalMat[i];
         armature->joints[i] = localTransform * data.inverseBindMat[i];
         parentTransform = localTransform;
+    }*/
+
+    Matrix4 parentJointMat{1.0f};
+    std::array<Matrix4, Model::maxJoints> jointsMat{};
+    for (size_t i = 0; i < armature->count; i++) {
+        jointsMat[i] = parentJointMat * data.jointsLocalMat[i];
+        parentJointMat = jointsMat[i] * data.adjustmentsMat[i];
+    }
+
+    for (size_t i = 0; i < armature->count; i++) {
+        armature->joints[i] = jointsMat[i] * data.adjustmentsMat[i] * data.inverseBindMat[i];
     }
 
     component.setUboOffset(offset);
