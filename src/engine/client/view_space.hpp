@@ -33,6 +33,7 @@ public:
     Scene* getScene() override;
 
 private:
+    void doTargetEntity(const Entity& entity);
     void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
 
     Game& parent;
@@ -43,5 +44,16 @@ private:
     FontFamily& font;
     Client& client;
     GuiContextMenu guiContextMenu;
+
+    struct {
+        bool forward{false};
+        bool backwards{false};
+        bool left{false};
+        bool right{false};
+        bool up{false};
+        bool down{false};
+        bool update{false};
+        bool boost{false};
+    } control;
 };
 } // namespace Engine

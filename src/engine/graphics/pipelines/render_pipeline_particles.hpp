@@ -9,6 +9,8 @@ public:
 
     void setModelMatrix(const Matrix4& value);
     void setTimeDelta(float value);
+    void setOverrideStrength(float value);
+    void setOverrideAlpha(float value);
     void setUniformCamera(const VulkanBuffer& ubo);
     void setUniformParticlesType(const VulkanBuffer& ubo);
     void setTextureColor(const VulkanTexture& texture);

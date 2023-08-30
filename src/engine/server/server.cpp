@@ -37,7 +37,8 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessageModManifestsRequest);
     HANDLE_REQUEST(MessagePingResponse);
     HANDLE_REQUEST(MessagePlayerSpawnRequest);
-    HANDLE_REQUEST(MessageShipControlEvent);
+    HANDLE_REQUEST(MessageControlMovementEvent);
+    HANDLE_REQUEST(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
     addService<ServiceGalaxy>();
@@ -283,6 +284,26 @@ void Server::disconnectPlayer(const std::string& playerId) {
     }
 }
 
+SectorPtr Server::getSectorForSession(const SessionPtr& session) {
+    // Find where the player is located
+    const auto location = playerSessions.getLocation(session);
+    if (!location) {
+        logger.warn("Player {} has bad location", session->getPlayerId());
+        return nullptr;
+    }
+
+    // Forward the message to the sector
+    std::unique_lock<std::shared_mutex> lock{sectors.mutex};
+    const auto found = sectors.map.find(*location);
+    if (found == sectors.map.end()) {
+        // Maybe the sector no longer exists?
+        logger.warn("Player {} has a non-existing location", session->getPlayerId());
+        return nullptr;
+    }
+
+    return found->second;
+}
+
 void Server::handle(Request<MessageLoginRequest> req) {
     logger.info("New login peer: {}", req.peer->getAddress());
 
@@ -379,33 +400,31 @@ void Server::handle(Request<MessageModManifestsRequest> req) {
 }
 
 void Server::handle(Request<MessagePingResponse> req) {
-    auto session = playerSessions.getSession(req.peer);
+    const auto session = playerSessions.getSession(req.peer);
     session->setLastPingTime(std::chrono::steady_clock::now());
     session->clearFlag(Session::Flags::PingSent);
 }
 
-void Server::handle(Request<MessageShipControlEvent> req) {
-    auto session = playerSessions.getSession(req.peer);
+void Server::handle(Request<MessageControlMovementEvent> req) {
+    const auto session = playerSessions.getSession(req.peer);
+    const auto sector = getSectorForSession(session);
+    if (!sector) {
+        return;
+    }
 
     const auto data = req.get();
+    sector->handle(session, data);
+}
 
-    // Find where the player is located
-    const auto location = playerSessions.getLocation(session);
-    if (!location) {
-        logger.warn("Player {} has bad location", session->getPlayerId());
+void Server::handle(Request<MessageControlTargetEvent> req) {
+    const auto session = playerSessions.getSession(req.peer);
+    const auto sector = getSectorForSession(session);
+    if (!sector) {
         return;
     }
 
-    // Forward the message to the sector
-    std::unique_lock<std::shared_mutex> lock{sectors.mutex};
-    const auto found = sectors.map.find(*location);
-    if (found == sectors.map.end()) {
-        // Maybe the sector no longer exists?
-        logger.warn("Player {} has a non-existing location", session->getPlayerId());
-        return;
-    }
-
-    found->second->handle(session, data);
+    const auto data = req.get();
+    sector->handle(session, data);
 }
 
 void Server::bind(Lua& lua) {

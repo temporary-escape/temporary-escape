@@ -11,7 +11,7 @@ ControllerNetwork::ControllerNetwork(entt::registry& reg) : reg{reg} {
     registerComponent<ComponentTransform>();
     registerComponent<ComponentRigidBody>();
     registerComponent<ComponentTurret>();
-    // registerComponent<ComponentShipControl>();
+    registerComponent<ComponentShipControl>();
     reg.on_destroy<entt::entity>().connect<&ControllerNetwork::onDestroyEntity>(this);
 }
 
@@ -19,7 +19,7 @@ ControllerNetwork::~ControllerNetwork() {
     unregisterComponent<ComponentTransform>();
     unregisterComponent<ComponentRigidBody>();
     unregisterComponent<ComponentTurret>();
-    // unregisterComponent<ComponentShipControl>();
+    unregisterComponent<ComponentShipControl>();
     reg.on_destroy<entt::entity>().disconnect<&ControllerNetwork::onDestroyEntity>(this);
 }
 
@@ -43,15 +43,24 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentTransform& component) {
     (void)handle;
 
-    if (const auto it = transformChildParentMap.find(remoteId); it != transformChildParentMap.end()) {
-        const auto transform = reg.try_get<ComponentTransform>(it->second);
-        if (transform) {
-            transform->setParent(&component);
+    reg.emplace<ComponentRemoteHandle>(handle, reg, handle, remoteId);
+
+    while (true) {
+        const auto match = std::find_if(transformChildParentMap.begin(),
+                                        transformChildParentMap.end(),
+                                        [&](const auto& el) { return el.parentId == remoteId; });
+        if (match != transformChildParentMap.end()) {
+            const auto transform = reg.try_get<ComponentTransform>(match->child);
+            if (transform) {
+                transform->setParent(&component);
+            }
+            logger.warn("Matched parent transform id: {} to child: {}",
+                        static_cast<uint64_t>(handle),
+                        static_cast<uint64_t>(match->child));
+            transformChildParentMap.erase(match);
+        } else {
+            break;
         }
-        logger.warn("Matched parent transform id: {} to child: {}",
-                    static_cast<uint64_t>(handle),
-                    static_cast<uint64_t>(it->second));
-        transformChildParentMap.erase(it);
     }
 
     if (component.getParentId() != ComponentTransform::NullParentId) {
@@ -70,7 +79,8 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
             logger.warn("Failed to find parent transform id: {} for child: {}",
                         component.getParentId(),
                         static_cast<uint64_t>(handle));
-            transformChildParentMap.emplace(component.getParentId(), handle);
+
+            transformChildParentMap.push_back({component.getParentId(), handle});
         }
     }
 }
@@ -97,6 +107,14 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setModel(component.getModel());
+}
+
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentShipControl& component) {
+    (void)remoteId;
+    (void)handle;
+    component.setActive(false);
 }
 
 template <typename Type>
@@ -184,7 +202,7 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
         {EntityComponentIds::value<ComponentLabel>, &ControllerNetwork::unpackComponent<ComponentLabel>},
         {EntityComponentIds::value<ComponentGrid>, &ControllerNetwork::unpackComponent<ComponentGrid>},
         {EntityComponentIds::value<ComponentTurret>, &ControllerNetwork::unpackComponent<ComponentTurret>},
-        //{EntityComponentIds::value<ComponentShipControl>, &ControllerNetwork::unpackComponent<ComponentShipControl>},
+        {EntityComponentIds::value<ComponentShipControl>, &ControllerNetwork::unpackComponent<ComponentShipControl>},
     };
 
     const auto found = unpackers.find(id);
@@ -204,7 +222,7 @@ void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentGrid>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentTurret>(), SyncOperation::Emplace);
-    // packComponents(peer, reg.view<ComponentShipControl>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentShipControl>(), SyncOperation::Emplace);
 }
 
 void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
@@ -249,11 +267,11 @@ void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
             prepareNext();
             packComponent(peer, handle, component, SyncOperation::Patch);
         }
-        /*if (pair.second & componentMaskId<ComponentShipControl>()) {
+        if (pair.second & componentMaskId<ComponentShipControl>()) {
             const auto& component = reg.get<ComponentShipControl>(handle);
             prepareNext();
             packComponent(peer, handle, component, SyncOperation::Patch);
-        }*/
+        }
     }
 
     peer.flush();

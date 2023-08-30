@@ -26,7 +26,6 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST(MessageFetchSystemsResponse);
     HANDLE_REQUEST(MessageSceneUpdateEvent);
     HANDLE_REQUEST(MessagePlayerControlEvent);
-    HANDLE_REQUEST(MessageShipMovementEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
@@ -339,8 +338,4 @@ void Client::handle(Request<MessagePlayerControlEvent> req) {
             EXCEPTION("No local entity: {}", data.entityId);
         }
     });
-}
-
-void Client::handle(Request<MessageShipMovementEvent> req) {
-    sync.postSafe([=]() { const auto data = req.get(); });
 }

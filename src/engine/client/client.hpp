@@ -69,7 +69,6 @@ public:
     void handle(Request<MessageFetchRegionsResponse> req);
     void handle(Request<MessageSceneUpdateEvent> req);
     void handle(Request<MessagePlayerControlEvent> req);
-    void handle(Request<MessageShipMovementEvent> req);
 
     // Used by unit tests for synchronized assertions
     template <typename Fn> bool check(Fn&& fn) {

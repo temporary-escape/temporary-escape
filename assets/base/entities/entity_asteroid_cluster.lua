@@ -16,10 +16,10 @@ function EntityAsteroidCluster.populate (self)
     local rng = engine.MT19937.new(self.seed)
     local scene = engine.get_scene()
     local origin = engine.Vector3.new(0.0, 0.0, 0.0)
-    local cluster = AsteroidCluster.new(rng:rand_seed(), origin, 1500.0)
+    local cluster = AsteroidCluster.new(rng:rand_seed(), origin, 10000.0)
 
     for _ = 1, 1000 do
-        local size = rng:rand_real(2.0, 15.0)
+        local size = rng:rand_real(10.0, 75.0)
 
         local data = {
             size = size,

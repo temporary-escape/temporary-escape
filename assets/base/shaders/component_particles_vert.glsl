@@ -25,6 +25,8 @@ layout (std140, binding = 1) uniform ParticlesType {
 layout (push_constant) uniform Uniforms {
     mat4 modelMatrix;
     float timeDelta;
+    float overrideStrength;
+    float overrideAlpha;
 } uniforms;
 
 layout (location = 0) out VS_OUT {
@@ -156,6 +158,6 @@ void main() {
     // vec3 modelPos = in_Position + in_Direction * index;
     vec3 direction = (uniforms.modelMatrix * vec4(particlesType.direction, 0.0)).xyz;
     vec4 worldPos = uniforms.modelMatrix * vec4(ox, oy, oz, 1.0);
-    worldPos += vec4(direction * time, 0.0);
+    worldPos += vec4(direction * time * uniforms.overrideStrength, 0.0);
     geometrize(camera.transformationProjectionMatrix * worldPos, time);
 }

@@ -3,6 +3,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 static constexpr size_t shadowMapCascadeCount = 4;
 
 ControllerLights::ControllerLights(entt::registry& reg, Scene& scene) : reg{reg}, scene{scene} {
@@ -66,7 +68,7 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     const auto farClip = 2000.0f;
     const auto clipRange = farClip - nearClip;
     const auto cascadeSplitLambda = 0.95f;
-    const auto nearFarMul = 4.0f;
+    const auto nearFarMul = 1.0f;
 
     const auto projectionMatrix = glm::perspective(glm::radians(camera->getFov()),
                                                    static_cast<float>(viewport.x) / static_cast<float>(viewport.y),
@@ -130,7 +132,7 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
         }
 
         // Get frustum center
-        auto frustumCenter = camera->getEyesPos();
+        auto frustumCenter = Vector3{0.0f};
         for (size_t i = 0; i < 8; i++) {
             frustumCenter += frustumCorners[i];
         }

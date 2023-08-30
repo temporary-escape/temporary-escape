@@ -157,6 +157,21 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
         return;
     }
 
+    const auto reg = component.getRegistry();
+    if (!reg) {
+        return;
+    }
+
+    const auto shipControl = reg->try_get<ComponentShipControl>(component.getHandle());
+    if (!shipControl) {
+        return;
+    }
+
+    auto strength = map(shipControl->getSpeed(), 0.0f, shipControl->getSpeedMax(), 0.0f, 1.0f);
+    auto alpha = map(shipControl->getSpeed(), 0.0f, shipControl->getSpeedMax() / 5.0f, 0.0f, 1.0f);
+    strength = glm::clamp(strength, 0.0f, 2.0f);
+    alpha = glm::clamp(alpha, 0.0f, 1.0f);
+
     if (currentPipeline != &pipelineParticles) {
         pipelineParticles.bind(vkb);
         currentPipeline = &pipelineParticles;
@@ -173,6 +188,8 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
             const auto modelMatrix = transform.getAbsoluteTransform() * matrix;
             pipelineParticles.setModelMatrix(modelMatrix);
             pipelineParticles.setTimeDelta(vulkan.getRenderTime());
+            pipelineParticles.setOverrideStrength(strength);
+            pipelineParticles.setOverrideAlpha(alpha);
             pipelineParticles.flushConstants(vkb);
 
             vkb.draw(4, particlesType->getCount(), 0, 0);

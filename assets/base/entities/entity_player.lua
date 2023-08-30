@@ -15,6 +15,8 @@ function EntityPlayer.new (entity, data)
     local transform = entity:add_component_transform()
     transform:translate(engine.Vector3.new(200.0, -20.0, 0.0))
 
+    local ship_control = entity:add_component_ship_control()
+
     local grid = entity:add_component_grid()
     grid:set_from(assets_manager:find_ship_template("player_starter_ship"))
 
@@ -31,8 +33,15 @@ function EntityPlayer.new (entity, data)
     child_transform.parent = transform
     child:add_component_model_skinned(assets_manager:find_model("model_turret_projectile_01"))
     local turret = child:add_component_turret(assets_manager:find_turret("turret_projectile_01"))
-    -- turret.target = engine.Vector3.new(250.0, 0.0, -150.0)
-    -- turret.tracking = transform
+    ship_control:add_turret(turret)
+
+    child = scene:create_entity()
+    child_transform = child:add_component_transform()
+    child_transform:translate(engine.Vector3.new(0.0, 0.5, -6.0))
+    child_transform.parent = transform
+    child:add_component_model_skinned(assets_manager:find_model("model_turret_projectile_01"))
+    turret = child:add_component_turret(assets_manager:find_turret("turret_projectile_01"))
+    ship_control:add_turret(turret)
 
     return inst
 end

@@ -1,7 +1,9 @@
 #include "component_ship_control.hpp"
+#include "../../server/lua.hpp"
 #include "../../utils/exceptions.hpp"
 #include "../entity.hpp"
 #include <glm/gtx/euler_angles.hpp>
+#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -11,6 +13,10 @@ ComponentShipControl::ComponentShipControl(entt::registry& reg, entt::entity han
 }
 
 void ComponentShipControl::update(const float delta, ComponentTransform& transform) {
+    if (!active) {
+        return;
+    }
+
     float velocityDelta;
 
     if (velocityTarget > 0.001f && velocityValue < velocityTarget) {
@@ -21,7 +27,7 @@ void ComponentShipControl::update(const float delta, ComponentTransform& transfo
         velocityDelta = delta;
     }
 
-    velocityValue = glm::mix(velocityValue, velocityTarget, velocityDelta);
+    velocityValue = glm::mix(velocityValue, velocityBoost ? velocityTarget * 4.0f : velocityTarget, velocityDelta);
 
     static const auto pi2 = glm::pi<float>() * 2.0f;
     static const auto maxPitch = glm::radians(45.0f);
@@ -97,11 +103,30 @@ void ComponentShipControl::update(const float delta, ComponentTransform& transfo
 
 void ComponentShipControl::setSpeed(const float value) {
     velocityTarget = value;
+    if (velocityTarget > velocityMax) {
+        velocityTarget = velocityMax;
+    }
+}
+
+void ComponentShipControl::setSpeedMax(const float value) {
+    velocityMax = value;
 }
 
 void ComponentShipControl::setDirection(const Vector3& value) {
     (void)value;
     // TODO
+}
+
+void ComponentShipControl::setActive(const bool value) {
+    active = value;
+}
+
+void ComponentShipControl::setSpeedBoost(bool value) {
+    velocityBoost = value;
+}
+
+void ComponentShipControl::addTurret(ComponentTurret& turret) {
+    turrets.push_back(&turret);
 }
 
 void ComponentShipControl::setDirectionRelative(const int leftRight, const int downUp) {
@@ -113,4 +138,11 @@ void ComponentShipControl::setDirectionRelative(const int leftRight, const int d
 
 void ComponentShipControl::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentShipControl>(handle);
+}
+
+void ComponentShipControl::bind(Lua& lua) {
+    auto& m = lua.root();
+
+    auto cls = m.new_usertype<ComponentShipControl>("ComponentShipControl");
+    cls["add_turret"] = &ComponentShipControl::addTurret;
 }

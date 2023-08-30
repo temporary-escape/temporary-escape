@@ -267,6 +267,7 @@ void Lua::setupBindings() {
     ComponentLabel::bind(*this);
     ComponentGrid::bind(*this);
     ComponentTurret::bind(*this);
+    ComponentShipControl::bind(*this);
     Scene::bind(*this);
 
     // Global functions

@@ -103,7 +103,7 @@ void Sector::addPlayer(const SessionPtr& session) {
 
         // Spawn player entity
         auto playerEntity = spawnPlayerEntity(session);
-        playerEntity.addComponent<ComponentShipControl>();
+        // playerEntity.addComponent<ComponentShipControl>();
         const auto playerEntityId = playerEntity.getId();
 
         // Remember that this player controls this entity
@@ -155,17 +155,42 @@ Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
     return scene->createEntityFrom("player", table);
 }
 
-void Sector::handle(const SessionPtr& session, MessageShipControlEvent req) {
+void Sector::handle(const SessionPtr& session, MessageControlMovementEvent req) {
     worker.post([this, session, req]() {
         // Find the entity that the player controls
         const auto found = playerControl.find(session);
         if (found != playerControl.end()) {
-            // Do something
             const auto entity = scene->fromHandle(found->second);
             auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
             if (shipControl) {
                 shipControl->setSpeed(req.speed);
                 shipControl->setDirectionRelative(req.leftRight, req.upDown);
+                shipControl->setSpeedBoost(req.boost);
+            }
+        }
+    });
+}
+
+void Sector::handle(const SessionPtr& session, MessageControlTargetEvent req) {
+    worker.post([this, session, req]() {
+        // Find the entity that the player controls
+        const auto found = playerControl.find(session);
+        if (found != playerControl.end()) {
+            const auto entity = scene->fromHandle(found->second);
+            auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
+
+            const auto target = scene->fromHandle(static_cast<entt::entity>(req.entityId));
+            if (!target) {
+                logger.warn("Can not target entity: {} invalid entity", req.entityId);
+                return;
+            }
+
+            if (const auto* targetTransform = target.tryGetComponent<ComponentTransform>(); targetTransform) {
+                for (auto* turret : shipControl->getTurrets()) {
+                    turret->setTarget(targetTransform);
+                }
+            } else {
+                logger.warn("Can not target entity: {} no transform found", req.entityId);
             }
         }
     });

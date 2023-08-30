@@ -33,7 +33,8 @@ public:
     void handle(Request<MessagePlayerSpawnRequest> req);
     void handle(Request<MessageModManifestsRequest> req);
     void handle(Request<MessagePingResponse> req);
-    void handle(Request<MessageShipControlEvent> req);
+    void handle(Request<MessageControlMovementEvent> req);
+    void handle(Request<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;
     AssetsManager& getAssetManager() const {
@@ -86,6 +87,7 @@ private:
     SessionPtr getPlayerSession(const std::string& playerId);
     SectorPtr startSector(const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
+    SectorPtr getSectorForSession(const SessionPtr& session);
 
     const Config& config;
     AssetsManager& assetsManager;

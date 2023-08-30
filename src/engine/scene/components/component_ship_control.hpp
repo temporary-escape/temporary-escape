@@ -2,6 +2,7 @@
 
 #include "../component.hpp"
 #include "component_transform.hpp"
+#include "component_turret.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentShipControl : public Component {
@@ -12,14 +13,33 @@ public:
     COMPONENT_DEFAULTS(ComponentShipControl);
 
     void update(float delta, ComponentTransform& transform);
-    void setSpeed(float value);
     void setDirection(const Vector3& value);
     void setDirectionRelative(int leftRight, int downUp);
+    void setSpeed(float value);
     [[nodiscard]] float getSpeed() const {
         return velocityValue;
     }
+    void setSpeedMax(float value);
+    [[nodiscard]] float getSpeedMax() const {
+        return velocityMax;
+    }
+    void setSpeedBoost(bool value);
+    [[nodiscard]] bool getSpeedBoost() const {
+        return velocityBoost;
+    }
+    void setActive(bool value);
+    [[nodiscard]] bool isActive() const {
+        return active;
+    }
 
-    MSGPACK_DEFINE_ARRAY(velocityValue, velocityTarget, rotation);
+    void addTurret(ComponentTurret& turret);
+    const std::vector<ComponentTurret*>& getTurrets() const {
+        return turrets;
+    }
+
+    static void bind(Lua& lua);
+
+    MSGPACK_DEFINE_ARRAY(velocityValue, velocityTarget, velocityMax, rotation, velocityBoost);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -27,7 +47,11 @@ protected:
 private:
     float velocityValue{0.0f};
     float velocityTarget{0.0f};
+    float velocityMax{100.0f};
     Vector3 rotation{0.0f, 0.0f, 0.0f};
+    bool velocityBoost{false};
     bool directionRelative[4] = {false, false, false, false};
+    bool active{true};
+    std::vector<ComponentTurret*> turrets;
 };
 } // namespace Engine

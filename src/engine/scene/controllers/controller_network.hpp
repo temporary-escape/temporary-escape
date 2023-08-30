@@ -31,6 +31,11 @@ public:
     std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
 
 private:
+    struct ChildParentValue {
+        uint64_t parentId;
+        entt::entity child;
+    };
+
     using UnpackerFunction = void (ControllerNetwork::*)(uint64_t, entt::entity, const msgpack::object&,
                                                          const SyncOperation op);
     template <typename T> using ComponentReferences = std::array<std::tuple<entt::entity, const T*>, 64>;
@@ -66,7 +71,6 @@ private:
             ++updatedComponentsCount;
         }
     }
-
     template <typename T> void onDestroyComponent(entt::registry& r, entt::entity handle) {
         auto it = updatedComponentsMap.find(handle);
         if (it != updatedComponentsMap.end()) {
@@ -82,7 +86,7 @@ private:
     std::unordered_map<entt::entity, entt::entity> remoteToLocal;
     std::unordered_map<entt::entity, uint64_t> updatedComponentsMap;
     size_t updatedComponentsCount{0};
-    std::unordered_map<uint64_t, entt::entity> transformChildParentMap;
+    std::vector<ChildParentValue> transformChildParentMap;
 };
 } // namespace Engine
 

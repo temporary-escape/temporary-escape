@@ -71,6 +71,10 @@ public:
         return handle;
     }
 
+    entt::registry* getRegistry() const {
+        return reg;
+    }
+
 protected:
     virtual void patch(entt::registry& r, entt::entity h) {
         (void)r;

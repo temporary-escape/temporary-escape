@@ -19,33 +19,37 @@ ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan,
 }
 
 void ViewSpace::update(const float deltaTime) {
-    /*auto scene = client.getScene();
-    if (const auto selected = scene->getSelectedEntity(); selected != selectedEntity) {
-        if (selectedEntity) {
-            auto* icon = selectedEntity->tryGetComponent<ComponentIcon>();
-            if (icon) {
-                auto color = icon->getColor();
-                color.a = 0.0f;
-                icon->setColor(color);
-            }
-        }
+    if (client.getCache().playerEntityId && control.update) {
+        control.update = false;
+        MessageControlMovementEvent msg{};
+        msg.boost = control.boost;
 
-        selectedEntity = selected;
-        if (selectedEntity) {
-            logger.info("Selected entity: {}", static_cast<uint32_t>(selectedEntity->getHandle()));
-
-            if (selectedEntity) {
-                auto* icon = selectedEntity->tryGetComponent<ComponentIcon>();
-                if (icon) {
-                    auto color = icon->getColor();
-                    color.a = 1.0f;
-                    icon->setColor(color);
-                }
-            }
+        if (control.forward && !control.backwards) {
+            msg.speed = 100.0f;
+        } else if (!control.forward && control.backwards) {
+            msg.speed = -20.0f;
         } else {
-            logger.info("Selected entity: null");
+            msg.speed = 0.0f;
         }
-    }*/
+
+        if (control.left && !control.right) {
+            msg.leftRight = -1;
+        } else if (!control.left && control.right) {
+            msg.leftRight = 1;
+        } else {
+            msg.leftRight = 0;
+        }
+
+        if (control.up && !control.down) {
+            msg.upDown = 1;
+        } else if (!control.up && control.down) {
+            msg.upDown = -1;
+        } else {
+            msg.upDown = 0;
+        }
+
+        client.send(msg);
+    }
 }
 
 void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
@@ -61,13 +65,22 @@ void ViewSpace::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
 }
 
 void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
+    if (!client.getCache().playerEntityId) {
+        return;
+    }
+
+    const auto* playerEntityTransform = client.getCache().playerEntityId.tryGetComponent<ComponentTransform>();
+    if (!playerEntityTransform) {
+        return;
+    }
+
     const auto selectedEntity = scene.getSelectedEntity();
     if (selectedEntity) {
         const auto& transform = selectedEntity->getComponent<ComponentTransform>();
         const auto worldPos = transform.getAbsolutePosition();
         const auto screenPos = scene.worldToScreen(worldPos);
 
-        const auto dist = glm::distance(camera.getEyesPos(), worldPos) / 1000.0f;
+        const auto dist = glm::distance(playerEntityTransform->getAbsolutePosition(), worldPos) / 1000.0f;
         const char* fmt;
 
         if (dist < 1.0f) {
@@ -107,6 +120,24 @@ void ViewSpace::onExit() {
     guiContextMenu.setEnabled(false);
 }
 
+void ViewSpace::doTargetEntity(const Entity& entity) {
+    if (client.getCache().playerEntityId) {
+        const auto* remoteHandle = entity.tryGetComponent<ComponentRemoteHandle>();
+        if (remoteHandle) {
+            if (const auto remoteId = remoteHandle->getRemoteId(); remoteId != ComponentTransform::NullParentId) {
+                MessageControlTargetEvent msg{};
+                msg.entityId = remoteId;
+
+                client.send(msg);
+            } else {
+                logger.warn("Can not target entity, invalid remote handle");
+            }
+        } else {
+            logger.warn("Can not target entity, no remote handle");
+        }
+    }
+}
+
 void ViewSpace::eventMouseMoved(const Vector2i& pos) {
     auto scene = client.getScene();
     if (scene) {
@@ -137,7 +168,7 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
                 guiContextMenu.setItems({
                     {"Approach", []() {}},
                     {"Info", []() {}},
-                    {"Target", []() {}},
+                    {"Target", [this, selected]() { doTargetEntity(*selected); }},
                 });
                 guiContextMenu.setEnabled(true);
                 guiContextMenu.setPos(pos);
@@ -159,6 +190,29 @@ void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
     auto scene = client.getScene();
     if (scene) {
         scene->eventKeyPressed(key, modifiers);
+
+        if (key == Key::LetterW) {
+            control.forward = true;
+            control.update = true;
+        } else if (key == Key::LetterS) {
+            control.backwards = true;
+            control.update = true;
+        } else if (key == Key::LetterA) {
+            control.left = true;
+            control.update = true;
+        } else if (key == Key::LetterD) {
+            control.right = true;
+            control.update = true;
+        } else if (key == Key::SpaceBar) {
+            control.up = true;
+            control.update = true;
+        } else if (key == Key::LeftControl) {
+            control.down = true;
+            control.update = true;
+        } else if (key == Key::LeftShift) {
+            control.boost = true;
+            control.update = true;
+        }
     }
 }
 
@@ -166,6 +220,29 @@ void ViewSpace::eventKeyReleased(const Key key, const Modifiers modifiers) {
     auto scene = client.getScene();
     if (scene) {
         scene->eventKeyReleased(key, modifiers);
+
+        if (key == Key::LetterW) {
+            control.forward = false;
+            control.update = true;
+        } else if (key == Key::LetterS) {
+            control.backwards = false;
+            control.update = true;
+        } else if (key == Key::LetterA) {
+            control.left = false;
+            control.update = true;
+        } else if (key == Key::LetterD) {
+            control.right = false;
+            control.update = true;
+        } else if (key == Key::SpaceBar) {
+            control.up = false;
+            control.update = true;
+        } else if (key == Key::LeftControl) {
+            control.down = false;
+            control.update = true;
+        } else if (key == Key::LeftShift) {
+            control.boost = false;
+            control.update = true;
+        }
     }
 }
 

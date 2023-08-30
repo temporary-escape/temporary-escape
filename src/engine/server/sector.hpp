@@ -38,7 +38,8 @@ public:
         return sectorId;
     }
 
-    void handle(const SessionPtr& session, MessageShipControlEvent req);
+    void handle(const SessionPtr& session, MessageControlMovementEvent req);
+    void handle(const SessionPtr& session, MessageControlTargetEvent req);
 
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 

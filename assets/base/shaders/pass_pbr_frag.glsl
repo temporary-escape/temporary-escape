@@ -150,7 +150,7 @@ float filterPCF(vec4 sc, uint cascadeIndex) {
 
     float shadowFactor = 0.0;
     int count = 0;
-    int range = 2;
+    int range = 3;
 
     for (int x = -range; x <= range; x++) {
         for (int y = -range; y <= range; y++) {
@@ -209,11 +209,11 @@ void main() {
     for (int i = 0; i < directionalLights.count; ++i)
     {
         // calculate per-light radiance
-    /*vec3 L = normalize(directionalLights.directions[i].xyz - worldpos);
-        vec3 H = normalize(V + L);
-        float distance = length(directionalLights.directions[i].xyz - worldpos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = directionalLights.colors[i].xyz * attenuation;*/
+        /*vec3 L = normalize(directionalLights.directions[i].xyz - worldpos);
+            vec3 H = normalize(V + L);
+            float distance = length(directionalLights.directions[i].xyz - worldpos);
+            float attenuation = 1.0 / (distance * distance);
+            vec3 radiance = directionalLights.colors[i].xyz * attenuation;*/
 
         vec3 L = normalize(directionalLights.directions[i].xyz);
         if (directionalLights.directions[i].w > 0.5) {

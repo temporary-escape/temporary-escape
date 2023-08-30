@@ -62,15 +62,5 @@ private:
     std::unique_ptr<ViewGalaxy> viewGalaxy;
     std::unique_ptr<ViewSystem> viewSystem;
     View* view{nullptr};
-
-    struct {
-        bool forward{false};
-        bool backwards{false};
-        bool left{false};
-        bool right{false};
-        bool up{false};
-        bool down{false};
-        bool update{false};
-    } control;
 };
 } // namespace Engine

@@ -21,8 +21,16 @@ void RenderPipelineParticles::setModelMatrix(const Matrix4& value) {
     pushConstants(PushConstant{"modelMatrix", value});
 }
 
-void RenderPipelineParticles::setTimeDelta(float value) {
+void RenderPipelineParticles::setTimeDelta(const float value) {
     pushConstants(PushConstant{"timeDelta", value});
+}
+
+void RenderPipelineParticles::setOverrideStrength(const float value) {
+    pushConstants(PushConstant{"overrideStrength", value});
+}
+
+void RenderPipelineParticles::setOverrideAlpha(const float value) {
+    pushConstants(PushConstant{"overrideAlpha", value});
 }
 
 void RenderPipelineParticles::setUniformCamera(const VulkanBuffer& ubo) {
