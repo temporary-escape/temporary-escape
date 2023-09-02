@@ -122,6 +122,7 @@ protected:
     void setDepthClamp(DepthClamp depthClamp);
     void setCompute(bool value);
     void setBlending(Blending blending);
+    void setLineWidth(float width);
 
     template <typename... Constants> void pushConstants(Constants&&... constants) {
         pushConstantsInternal(constantsBuffer, std::forward<Constants>(constants)...);

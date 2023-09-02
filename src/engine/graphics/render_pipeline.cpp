@@ -9,6 +9,7 @@ RenderPipeline::RenderPipeline(VulkanRenderer& vulkan, std::string name) : vulka
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::None);
+    setLineWidth(1.0f);
 }
 
 void RenderPipeline::create(VulkanRenderPass& renderPass, const uint32_t subpass,
@@ -295,7 +296,6 @@ void RenderPipeline::createGraphicsPipeline(VulkanRenderPass& renderPass, const 
 
     pipelineInfo.rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     pipelineInfo.rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    pipelineInfo.rasterizer.lineWidth = 1.0f;
     pipelineInfo.rasterizer.depthBiasEnable = VK_FALSE;
 
     pipelineInfo.multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -511,6 +511,10 @@ void RenderPipeline::setCompute(const bool value) {
 
 void RenderPipeline::setBlending(const RenderPipeline::Blending blending) {
     attachmentBlending = blending;
+}
+
+void RenderPipeline::setLineWidth(const float width) {
+    pipelineInfo.rasterizer.lineWidth = width;
 }
 
 VulkanDescriptorPool& RenderPipeline::getDescriptionPool() {

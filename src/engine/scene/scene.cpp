@@ -14,6 +14,7 @@
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_point_cloud.hpp"
 #include "controllers/controller_poly_shape.hpp"
+#include "controllers/controller_rigid_body.hpp"
 #include "controllers/controller_ship_control.hpp"
 #include "controllers/controller_static_model.hpp"
 #include "controllers/controller_text.hpp"
@@ -26,9 +27,11 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : lua{lua} {
-    addController<ControllerDynamicsWorld>(config);
+    auto& dynamicsWorld = addController<ControllerDynamicsWorld>(config);
+    addController<ControllerGrid>(dynamicsWorld, voxelShapeCache);
+    addController<ControllerRigidBody>(dynamicsWorld);
     addController<ControllerNetwork>();
-    addController<ControllerTurret>();
+    addController<ControllerTurret>(dynamicsWorld);
     addController<ControllerShipControl>();
 
     if (voxelShapeCache) {
@@ -37,7 +40,6 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerCamera>();
         addController<ControllerCameraOrbital>();
         addController<ControllerCameraPanning>();
-        addController<ControllerGrid>(*voxelShapeCache);
         addController<ControllerLights>(*this);
         addController<ControllerModelSkinned>();
         addController<ControllerStaticModel>();

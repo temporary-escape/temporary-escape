@@ -2,11 +2,41 @@
 #include "../../file/msgpack_file_reader.hpp"
 #include "../../file/teb_file_header.hpp"
 #include "../../server/lua.hpp"
+#include <btBulletDynamicsCommon.h>
 #include <sol/sol.hpp>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
+
+static auto boxShape = std::make_unique<btBoxShape>(btVector3{0.5f, 0.5f, 0.5f});
+
+class ComponentGridMotionState : public btMotionState {
+public:
+    explicit ComponentGridMotionState(ComponentGrid& componentGrid, ComponentTransform& componentTransform) :
+        componentGrid{componentGrid}, componentTransform{componentTransform} {
+    }
+
+    ~ComponentGridMotionState() override = default;
+
+    void getWorldTransform(btTransform& worldTrans) const override {
+        const auto mat = componentTransform.getAbsoluteTransform();
+        worldTrans.setFromOpenGLMatrix(&mat[0][0]);
+    }
+
+    void setWorldTransform(const btTransform& worldTrans) override {
+        Matrix4 mat;
+        worldTrans.getOpenGLMatrix(&mat[0][0]);
+        componentTransform.setTransform(mat);
+        componentGrid.setDirty(true);
+    }
+
+private:
+    ComponentGrid& componentGrid;
+    ComponentTransform& componentTransform;
+};
+
+ComponentGrid::ComponentGrid() = default;
 
 ComponentGrid::ComponentGrid(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
 }
@@ -14,6 +44,10 @@ ComponentGrid::ComponentGrid(entt::registry& reg, entt::entity handle) : Compone
 ComponentGrid::~ComponentGrid() {
     clear();
 }
+
+ComponentGrid::ComponentGrid(ComponentGrid&& other) noexcept = default;
+
+ComponentGrid& ComponentGrid::operator=(ComponentGrid&& other) noexcept = default;
 
 void ComponentGrid::clear() {
     for (auto& primitive : primitives) {
@@ -26,6 +60,65 @@ void ComponentGrid::clear() {
 }
 
 void ComponentGrid::update() {
+}
+
+void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) {
+    while (iterator) {
+        if (iterator.isVoxel()) {
+            auto pos = iterator.getPos();
+            btTransform transform{};
+            transform.setIdentity();
+            transform.setOrigin({pos.x, pos.y, pos.z});
+            compoundShape.addChildShape(transform, boxShape.get());
+        } else {
+            createShape(compoundShape, iterator.children());
+        }
+
+        iterator.next();
+    }
+}
+
+void ComponentGrid::updateShape(btDynamicsWorld& dynamicsWorld) {
+    if (rigidBody) {
+        return;
+    }
+
+    logger.info("ComponentGrid::updateShape");
+
+    btVector3 localInertia{0.0f, 0.0f, 0.0f};
+    btScalar mass{1.0f};
+
+    shape = std::make_unique<btCompoundShape>();
+    auto& compoundShape = *static_cast<btCompoundShape*>(shape.get());
+
+    auto iterator = iterate();
+    createShape(compoundShape, iterator);
+
+    compoundShape.recalculateLocalAabb();
+
+    shape->calculateLocalInertia(mass, localInertia);
+
+    if (!rigidBody) {
+        auto transform = tryGet<ComponentTransform>();
+        if (!transform) {
+            EXCEPTION("ComponentGrid added on entity with no ComponentTransform");
+        }
+        motionState = std::unique_ptr<btMotionState>{new ComponentGridMotionState(*this, *transform)};
+
+        logger.info("ComponentGrid::updateShape new rigidBody");
+        btRigidBody::btRigidBodyConstructionInfo rbInfo{mass, motionState.get(), shape.get(), localInertia};
+        rigidBody = std::make_unique<btRigidBody>(rbInfo);
+        rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+        rigidBody->setActivationState(DISABLE_DEACTIVATION);
+        btTransform trans;
+        motionState->getWorldTransform(trans);
+        rigidBody->setWorldTransform(trans);
+
+        dynamicsWorld.addRigidBody(rigidBody.get());
+    } else {
+        logger.info("ComponentGrid::updateShape setCollisionShape");
+        rigidBody->setCollisionShape(shape.get());
+    }
 }
 
 void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
@@ -174,6 +267,10 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         primitive.mesh.count = data.indices.size();
         primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
     }
+}
+
+void ComponentGrid::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentGrid>(handle);
 }
 
 void ComponentGrid::bind(Lua& lua) {

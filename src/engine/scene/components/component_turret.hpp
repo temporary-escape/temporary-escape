@@ -7,52 +7,29 @@
 namespace Engine {
 class ENGINE_API ComponentTurret : public Component {
 public:
+    struct ENGINE_API BulletInstance {
+        Vector3 origin;
+        Vector3 direction;
+        float lifetime{0.0f};
+        float size;
+        float speed;
+
+        static VulkanVertexLayoutMap getLayout() {
+            return {
+                {1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(BulletInstance, origin)},
+                {2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(BulletInstance, direction)},
+                {3, VK_FORMAT_R32_SFLOAT, offsetof(BulletInstance, lifetime)},
+                {4, VK_FORMAT_R32_SFLOAT, offsetof(BulletInstance, size)},
+                {5, VK_FORMAT_R32_SFLOAT, offsetof(BulletInstance, speed)},
+            };
+        };
+    };
+
     ComponentTurret() = default;
     explicit ComponentTurret(entt::registry& reg, entt::entity handle);
     explicit ComponentTurret(entt::registry& reg, entt::entity handle, TurretPtr turret);
     virtual ~ComponentTurret() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentTurret);
-
-    /*[[nodiscard]] const Vector3& getTarget() const {
-        return target;
-    }
-
-    void setTarget(const Vector3& value) {
-        setDirty(true);
-        target = value;
-    }
-
-    [[nodiscard]] const Vector3& getRotation() const {
-        return rotation;
-    }
-
-    [[nodiscard]] const Vector3& getNozzlePos() const {
-        return nozzlePos;
-    }
-
-    [[nodiscard]] const Vector3& getNozzleDir() const {
-        return nozzleDir;
-    }
-
-    [[nodiscard]] bool shouldFire() const {
-        if (!firing) {
-            return false;
-        }
-        return counter <= 0.0f;
-    }
-
-    void resetFire() {
-        counter = 0.1f;
-    }
-
-    void setFiring(bool value) {
-        setDirty(true);
-        firing = value;
-    }
-
-    [[nodiscard]] bool getFiring() const {
-        return firing;
-    }*/
 
     void update(float delta, const ComponentTransform& transform, ComponentModelSkinned& model);
 
@@ -63,6 +40,10 @@ public:
 
     const Vector3& getTargetPos() const {
         return targetPos;
+    }
+
+    const Vector3& getTargetDirection() const {
+        return targetDirGlobal;
     }
 
     void setTarget(const ComponentTransform* value);
@@ -76,9 +57,16 @@ public:
         return active;
     }
 
+    int getCounter() const {
+        return counter;
+    }
+
+    bool shouldShoot() const;
+    void resetShoot();
+
     static void bind(Lua& lua);
 
-    MSGPACK_DEFINE_ARRAY(turret, targetPos, active);
+    MSGPACK_DEFINE_ARRAY(turret, targetPos, active, shootReady);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -86,14 +74,10 @@ protected:
 private:
     TurretPtr turret;
     Vector3 targetPos;
+    Vector3 targetDirGlobal{0.0f, 0.0f, -1.0f};
     bool active{false};
+    int counter{0};
+    bool shootReady{false};
     const ComponentTransform* target{nullptr};
-
-    /*Vector3 target;
-    bool firing{true};
-    Vector3 rotation;
-    Vector3 nozzleDir;
-    Vector3 nozzlePos;
-    float counter{0.0f};*/
 };
 } // namespace Engine

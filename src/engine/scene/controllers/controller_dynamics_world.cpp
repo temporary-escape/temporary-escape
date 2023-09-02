@@ -57,8 +57,8 @@ public:
         return btIDebugDraw::DBG_DrawWireframe;
     }
 
-    const VulkanBuffer& getVbo() const {
-        return vbo.getCurrentBuffer();
+    const VulkanDoubleBuffer& getVbo() const {
+        return vbo;
     }
 
     size_t getCount() const {
@@ -122,15 +122,9 @@ ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg, const Conf
                                                             collisionConfiguration.get())} {
 
     dynamicsWorld->setGravity(btVector3{0, 0, 0});
-
-    reg.on_construct<ComponentRigidBody>().connect<&ControllerDynamicsWorld::onConstruct>(this);
-    reg.on_destroy<ComponentRigidBody>().connect<&ControllerDynamicsWorld::onDestroy>(this);
 }
 
-ControllerDynamicsWorld::~ControllerDynamicsWorld() {
-    reg.on_construct<ComponentRigidBody>().disconnect<&ControllerDynamicsWorld::onConstruct>(this);
-    reg.on_destroy<ComponentRigidBody>().disconnect<&ControllerDynamicsWorld::onDestroy>(this);
-}
+ControllerDynamicsWorld::~ControllerDynamicsWorld() = default;
 
 void ControllerDynamicsWorld::update(const float delta) {
     dynamicsWorld->stepSimulation(delta, 10);
@@ -163,22 +157,7 @@ void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {
     }
 }
 
-void ControllerDynamicsWorld::onConstruct(entt::registry& r, const entt::entity handle) {
-    auto& component = reg.get<ComponentRigidBody>(handle);
-    auto rigidBody = component.getRigidBody();
-    component.setDynamicsWorld(*dynamicsWorld);
-}
-
-void ControllerDynamicsWorld::onDestroy(entt::registry& r, const entt::entity handle) {
-    auto& component = reg.get<ComponentRigidBody>(handle);
-    auto rigidBody = component.getRigidBody();
-    if (rigidBody) {
-        // logger.debug("Removed rigid body entity: {}", static_cast<uint32_t>(handle));
-        dynamicsWorld->removeRigidBody(rigidBody);
-    }
-}
-
-const VulkanBuffer& ControllerDynamicsWorld::getDebugDrawVbo() const {
+const VulkanDoubleBuffer& ControllerDynamicsWorld::getDebugDrawVbo() const {
     if (!debugDraw) {
         EXCEPTION("No dynamics world debug draw setup");
     }
@@ -190,4 +169,23 @@ size_t ControllerDynamicsWorld::getDebugDrawCount() const {
         EXCEPTION("No dynamics world debug draw setup");
     }
     return dynamic_cast<const CollisionDebugDraw*>(debugDraw.get())->getCount();
+}
+
+void ControllerDynamicsWorld::rayCast(const Vector3& start, const Vector3& end, RayCastResult& result) {
+    btVector3 transFrom{start.x, start.y, start.z};
+    btVector3 transTo{end.x, end.y, end.z};
+
+    btCollisionWorld::ClosestRayResultCallback callback{transFrom, transTo};
+    dynamicsWorld->rayTest(transFrom, transTo, callback);
+
+    if (callback.hasHit()) {
+        result.valid = true;
+        result.hitPos = toVector(callback.m_hitPointWorld);
+    } else {
+        result.valid = false;
+    }
+}
+
+btDynamicsWorld& ControllerDynamicsWorld::get() {
+    return *dynamicsWorld.get();
 }

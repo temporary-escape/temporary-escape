@@ -12,13 +12,13 @@ struct MessageFetchPlanetsRequest {
     std::string systemId;
     std::string token;
 
-    MSGPACK_DEFINE(galaxyId, systemId, token);
+    MSGPACK_DEFINE_ARRAY(galaxyId, systemId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchPlanetsRequest);
 
 struct MessageFetchPlanetsResponse : MessagePage<PlanetData> {
-    MSGPACK_DEFINE(MSGPACK_BASE(MessagePage<PlanetData>));
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(MessagePage<PlanetData>));
 };
 
 MESSAGE_DEFINE(MessageFetchPlanetsResponse);

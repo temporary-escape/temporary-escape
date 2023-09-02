@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "../scene/controllers/controller_network.hpp"
+#include "../scene/controllers/controller_turret.hpp"
 #include "../utils/random.hpp"
 #include <fstream>
 
@@ -25,6 +26,7 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST(MessageFetchFactionsResponse);
     HANDLE_REQUEST(MessageFetchSystemsResponse);
     HANDLE_REQUEST(MessageSceneUpdateEvent);
+    // HANDLE_REQUEST(MessageSceneBulletsEvent);
     HANDLE_REQUEST(MessagePlayerControlEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
@@ -313,6 +315,13 @@ void Client::handle(Request<MessageSceneUpdateEvent> req) {
         scene->getController<ControllerNetwork>().receiveUpdate(req.object());
     });
 }
+
+/*void Client::handle(Request<MessageSceneBulletsEvent> req) {
+    sync.postSafe([=]() {
+        // Update, create, or delete entities in a scene
+        scene->getController<ControllerTurret>().receiveBullets(req.object());
+    });
+}*/
 
 void Client::handle(Request<MessagePlayerControlEvent> req) {
     sync.postSafe([=]() {

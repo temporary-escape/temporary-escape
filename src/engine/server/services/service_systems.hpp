@@ -11,7 +11,7 @@ struct MessageFetchSystemRequest {
     std::string galaxyId;
     std::string systemId;
 
-    MSGPACK_DEFINE(galaxyId, systemId);
+    MSGPACK_DEFINE_ARRAY(galaxyId, systemId);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemRequest);
@@ -19,7 +19,7 @@ MESSAGE_DEFINE(MessageFetchSystemRequest);
 struct MessageFetchSystemResponse {
     SystemData system;
 
-    MSGPACK_DEFINE(system);
+    MSGPACK_DEFINE_ARRAY(system);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemResponse);
@@ -28,13 +28,13 @@ struct MessageFetchSystemsRequest {
     std::string galaxyId;
     std::string token;
 
-    MSGPACK_DEFINE(galaxyId, token);
+    MSGPACK_DEFINE_ARRAY(galaxyId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchSystemsRequest);
 
 struct MessageFetchSystemsResponse : MessagePage<SystemData> {
-    MSGPACK_DEFINE(MSGPACK_BASE(MessagePage<SystemData>));
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(MessagePage<SystemData>));
 };
 
 MESSAGE_DEFINE(MessageFetchSystemsResponse);

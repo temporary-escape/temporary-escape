@@ -36,6 +36,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     (void)component;
+    component.setDirty(true);
 }
 
 template <>
@@ -83,6 +84,8 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
             transformChildParentMap.push_back({component.getParentId(), handle});
         }
     }
+
+    component.setDirty(true);
 }
 
 template <>
@@ -91,6 +94,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setup();
+    component.setDirty(true);
 }
 
 template <>
@@ -98,6 +102,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentGrid& component) {
     (void)remoteId;
     (void)handle;
+    component.setDirty(true);
     component.setDirty(true);
 }
 
@@ -107,6 +112,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setModel(component.getModel());
+    component.setDirty(true);
 }
 
 template <>
@@ -115,6 +121,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setActive(false);
+    component.setDirty(true);
 }
 
 template <typename Type>
@@ -178,7 +185,6 @@ void ControllerNetwork::unpackComponent(const uint64_t remoteId, const entt::ent
         component.postUnpack(reg, handle);
         obj.convert(component);
         postEmplaceComponent(remoteId, handle, component);
-        component.setDirty(true);
     } else if (op == SyncOperation::Patch) {
         auto* component = reg.try_get<T>(handle);
         if (component) {

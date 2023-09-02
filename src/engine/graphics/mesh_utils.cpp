@@ -248,3 +248,58 @@ Mesh Engine::createPlanetMesh(VulkanRenderer& vulkan) {
 
     return mesh;
 }
+
+Mesh Engine::createBulletMesh(VulkanRenderer& vulkan) {
+    static const std::vector<Vector3> objVertex = {
+        {0.000000, 0.000000, 0.500000},
+        {0.000000, 0.018639, 0.488768},
+        {0.013180, 0.013180, 0.488768},
+        {0.018639, 0.000000, 0.488768},
+        {0.013180, -0.013180, 0.488768},
+        {0.000000, -0.018639, 0.488768},
+        {-0.013180, -0.013180, 0.488768},
+        {-0.018639, 0.000000, 0.488768},
+        {-0.013180, 0.013180, 0.488768},
+        {-0.000000, -0.000000, -0.500000},
+        {0.000000, 0.025000, 0.464022},
+        {0.017678, 0.017678, 0.464022},
+        {0.025000, 0.000000, 0.464022},
+        {0.017678, -0.017678, 0.464022},
+        {0.000000, -0.025000, 0.464022},
+        {-0.017678, -0.017678, 0.464022},
+        {-0.025000, 0.000000, 0.464022},
+        {-0.017678, 0.017678, 0.464022},
+    };
+
+    static const std::vector<uint8_t> objIndex = {
+        1,  3,  2,  2,  12, 11, 1,  4,  3,  12, 4,  13, 1,  5,  4,  4,  14, 13, 1,  6,  5,  14, 6,  15,
+        1,  7,  6,  6,  16, 15, 1,  8,  7,  16, 8,  17, 1,  9,  8,  8,  18, 17, 1,  2,  9,  18, 2,  11,
+        2,  3,  12, 12, 3,  4,  4,  5,  14, 14, 5,  6,  6,  7,  16, 16, 7,  8,  8,  9,  18, 18, 9,  2,
+        18, 11, 10, 17, 18, 10, 16, 17, 10, 15, 16, 10, 14, 15, 10, 13, 14, 10, 12, 13, 10, 11, 12, 10,
+    };
+
+    std::vector<BulletVertex> vertices;
+    vertices.resize(objIndex.size());
+
+    for (size_t i = 0; i < vertices.size(); i++) {
+        vertices[i].position = objVertex[objIndex[i] - 1];
+    }
+
+    Mesh mesh{};
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(BulletVertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
+
+    mesh.count = vertices.size();
+
+    return mesh;
+}

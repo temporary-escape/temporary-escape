@@ -38,6 +38,9 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     if (getPhysicalDeviceFeatures().depthClamp) {
         deviceFeatures.depthClamp = VK_TRUE;
     }
+    if (getPhysicalDeviceFeatures().wideLines) {
+        deviceFeatures.wideLines = VK_TRUE;
+    }
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

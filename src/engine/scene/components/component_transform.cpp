@@ -65,7 +65,7 @@ void ComponentTransform::setTransform(const Matrix4& value) {
 
 Vector3 ComponentTransform::getAbsolutePosition() const {
     if (const auto p = getParent()) {
-        return p->getAbsolutePosition() + getPosition();
+        return Vector3{getAbsoluteTransform()[3]};
     }
     return getPosition();
 }

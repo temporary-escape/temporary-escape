@@ -10,7 +10,7 @@ namespace Engine {
 struct MessageFetchGalaxyRequest {
     bool dummy{false};
 
-    MSGPACK_DEFINE(dummy);
+    MSGPACK_DEFINE_ARRAY(dummy);
 };
 
 MESSAGE_DEFINE(MessageFetchGalaxyRequest);
@@ -19,7 +19,7 @@ struct MessageFetchGalaxyResponse {
     std::string galaxyId;
     std::string name;
 
-    MSGPACK_DEFINE(name, galaxyId);
+    MSGPACK_DEFINE_ARRAY(name, galaxyId);
 };
 
 MESSAGE_DEFINE(MessageFetchGalaxyResponse);

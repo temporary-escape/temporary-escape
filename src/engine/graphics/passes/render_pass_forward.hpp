@@ -2,6 +2,9 @@
 
 #include "../../assets/texture.hpp"
 #include "../../scene/scene.hpp"
+#include "../pipelines/render_pipeline_bullets.hpp"
+#include "../pipelines/render_pipeline_bullets_trail.hpp"
+#include "../pipelines/render_pipeline_debug.hpp"
 #include "../pipelines/render_pipeline_lines.hpp"
 #include "../pipelines/render_pipeline_particles.hpp"
 #include "../pipelines/render_pipeline_point_cloud.hpp"
@@ -48,6 +51,9 @@ private:
                             ComponentLines& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
                             ComponentGrid& component);
+    void renderSceneBullets(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
+    void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
+    void renderSceneDebug(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
 
     VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;
@@ -56,6 +62,9 @@ private:
     RenderPipelinePointCloud pipelinePointCloud;
     RenderPipelineLines pipelineLines;
     RenderPipelinePolyShape pipelinePolyShape;
+    RenderPipelineBullets pipelineBullets;
+    RenderPipelineBulletsTrail pipelineBulletsTrail;
     RenderPipelineParticles pipelineParticles;
+    RenderPipelineDebug pipelineDebug;
 };
 } // namespace Engine

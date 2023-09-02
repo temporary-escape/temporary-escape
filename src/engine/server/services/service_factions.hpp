@@ -10,7 +10,7 @@ namespace Engine {
 struct MessageFetchFactionRequest {
     std::string factionId;
 
-    MSGPACK_DEFINE(factionId);
+    MSGPACK_DEFINE_ARRAY(factionId);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionRequest);
@@ -18,7 +18,7 @@ MESSAGE_DEFINE(MessageFetchFactionRequest);
 struct MessageFetchFactionResponse {
     FactionData faction;
 
-    MSGPACK_DEFINE(faction);
+    MSGPACK_DEFINE_ARRAY(faction);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionResponse);
@@ -27,13 +27,13 @@ struct MessageFetchFactionsRequest {
     std::string galaxyId;
     std::string token;
 
-    MSGPACK_DEFINE(galaxyId, token);
+    MSGPACK_DEFINE_ARRAY(galaxyId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchFactionsRequest);
 
 struct MessageFetchFactionsResponse : MessagePage<FactionData> {
-    MSGPACK_DEFINE(MSGPACK_BASE(MessagePage<FactionData>));
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(MessagePage<FactionData>));
 };
 
 MESSAGE_DEFINE(MessageFetchFactionsResponse);

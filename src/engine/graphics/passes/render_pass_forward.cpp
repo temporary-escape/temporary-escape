@@ -1,5 +1,7 @@
 #include "render_pass_forward.hpp"
 #include "../../assets/assets_manager.hpp"
+#include "../../scene/controllers/controller_dynamics_world.hpp"
+#include "../../scene/controllers/controller_turret.hpp"
 #include "../../scene/scene.hpp"
 
 using namespace Engine;
@@ -13,7 +15,10 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     pipelinePointCloud{vulkan, assetsManager},
     pipelineLines{vulkan, assetsManager},
     pipelinePolyShape{vulkan, assetsManager},
-    pipelineParticles{vulkan, assetsManager} {
+    pipelineBullets{vulkan, assetsManager},
+    pipelineBulletsTrail{vulkan, assetsManager},
+    pipelineParticles{vulkan, assetsManager},
+    pipelineDebug{vulkan, assetsManager} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -61,7 +66,10 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     addPipeline(pipelinePointCloud, 0);
     addPipeline(pipelineLines, 0);
     addPipeline(pipelinePolyShape, 0);
+    addPipeline(pipelineBullets, 0);
+    addPipeline(pipelineBulletsTrail, 0);
     addPipeline(pipelineParticles, 0);
+    addPipeline(pipelineDebug, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -80,6 +88,11 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     for (auto& job : jobs) {
         job.fn();
     }
+
+    auto& camera = *scene.getPrimaryCamera();
+    renderSceneBullets(vkb, camera, scene);
+    renderSceneBulletsTrail(vkb, camera, scene);
+    renderSceneDebug(vkb, camera, scene);
 }
 
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
@@ -195,4 +208,74 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
             vkb.draw(4, particlesType->getCount(), 0, 0);
         }
     }
+}
+
+void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+    const auto& controller = scene.getController<ControllerTurret>();
+    const auto& vboInstances = controller.getVboBullets();
+    const auto& meshBullet = resources.getMeshBullet();
+    const auto count = controller.getBulletsCount();
+
+    if (count == 0 || !vboInstances) {
+        return;
+    }
+
+    pipelineBullets.bind(vkb);
+
+    pipelineBullets.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineBullets.flushDescriptors(vkb);
+
+    std::array<VulkanVertexBufferBindRef, 2> vboBindings{};
+    vboBindings[0] = {&meshBullet.vbo, 0};
+    vboBindings[1] = {&vboInstances.getCurrentBuffer(), 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(meshBullet.count, count, 0, 0);
+}
+
+void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+    const auto& controller = scene.getController<ControllerTurret>();
+    const auto& vboInstances = controller.getVboBullets();
+    const auto& meshBullet = resources.getMeshBullet();
+    const auto count = controller.getBulletsCount();
+
+    if (count == 0 || !vboInstances) {
+        return;
+    }
+
+    pipelineBulletsTrail.bind(vkb);
+
+    pipelineBulletsTrail.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineBulletsTrail.flushDescriptors(vkb);
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+    vboBindings[0] = {&vboInstances.getCurrentBuffer(), 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(2, count, 0, 0);
+}
+
+void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+    const auto& controller = scene.getController<ControllerDynamicsWorld>();
+    const auto& vbo = controller.getDebugDrawVbo();
+    const auto count = controller.getDebugDrawCount();
+
+    if (count == 0 || !vbo) {
+        return;
+    }
+
+    pipelineDebug.bind(vkb);
+
+    Matrix4 modelMatrix{1.0f};
+
+    pipelineDebug.setModelMatrix(modelMatrix);
+    pipelineDebug.flushConstants(vkb);
+    pipelineDebug.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineDebug.flushDescriptors(vkb);
+
+    std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+    vboBindings[0] = {&vbo.getCurrentBuffer(), 0};
+    vkb.bindBuffers(vboBindings);
+
+    vkb.draw(count * 2, 1, 0, 0);
 }

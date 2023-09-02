@@ -9,7 +9,7 @@ namespace Engine {
 struct MessagePlayerLocationRequest {
     bool dummy{false};
 
-    MSGPACK_DEFINE(dummy);
+    MSGPACK_DEFINE_ARRAY(dummy);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationRequest);
@@ -17,7 +17,7 @@ MESSAGE_DEFINE(MessagePlayerLocationRequest);
 struct MessagePlayerLocationResponse {
     std::optional<PlayerLocationData> location;
 
-    MSGPACK_DEFINE(location);
+    MSGPACK_DEFINE_ARRAY(location);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationResponse);

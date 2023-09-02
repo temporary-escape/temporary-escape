@@ -70,6 +70,7 @@ RenderResources::RenderResources(VulkanRenderer& vulkan) :
     meshFullScreenQuad = createFullScreenQuad(vulkan);
     meshPlanet = createPlanetMesh(vulkan);
     meshSkyboxCube = createSkyboxCube(vulkan);
+    meshBullet = createBulletMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
     defaultSSAO = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 1);

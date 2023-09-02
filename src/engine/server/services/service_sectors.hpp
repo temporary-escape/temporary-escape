@@ -12,7 +12,7 @@ struct MessageFetchSectorRequest {
     std::string systemId;
     std::string sectorId;
 
-    MSGPACK_DEFINE(galaxyId, systemId, sectorId);
+    MSGPACK_DEFINE_ARRAY(galaxyId, systemId, sectorId);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorRequest);
@@ -20,7 +20,7 @@ MESSAGE_DEFINE(MessageFetchSectorRequest);
 struct MessageFetchSectorResponse {
     SectorData sector;
 
-    MSGPACK_DEFINE(sector);
+    MSGPACK_DEFINE_ARRAY(sector);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorResponse);
@@ -30,13 +30,13 @@ struct MessageFetchSectorsRequest {
     std::string systemId;
     std::string token;
 
-    MSGPACK_DEFINE(galaxyId, systemId, token);
+    MSGPACK_DEFINE_ARRAY(galaxyId, systemId, token);
 };
 
 MESSAGE_DEFINE(MessageFetchSectorsRequest);
 
 struct MessageFetchSectorsResponse : MessagePage<SectorData> {
-    MSGPACK_DEFINE(MSGPACK_BASE(MessagePage<SectorData>));
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(MessagePage<SectorData>));
 };
 
 MESSAGE_DEFINE(MessageFetchSectorsResponse);
