@@ -2,6 +2,7 @@
 #include "../../network/network_peer.hpp"
 #include "../../server/messages.hpp"
 #include <bitset>
+#include <btBulletDynamicsCommon.h>
 
 using namespace Engine;
 
@@ -93,8 +94,11 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentRigidBody& component) {
     (void)remoteId;
     (void)handle;
-    component.setup();
-    component.setDirty(true);
+    // component.setup();
+    // component.setDirty(true);
+    /*if (const auto* model = reg.try_get<ComponentModel>(handle); model && model->getModel()) {
+        component.setShape(model->getModel()->getCollisionShape().clone());
+    }*/
 }
 
 template <>
@@ -103,6 +107,13 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setDirty(true);
+}
+
+template <>
+void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
+                                             ComponentModel& component) {
+    (void)remoteId;
+    (void)handle;
     component.setDirty(true);
 }
 
@@ -112,7 +123,6 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setModel(component.getModel());
-    component.setDirty(true);
 }
 
 template <>
@@ -128,7 +138,7 @@ template <typename Type>
 void ControllerNetwork::postPatchComponent(const uint64_t remoteId, const entt::entity handle, Type& component) {
     (void)remoteId;
     (void)handle;
-    (void)component;
+    component.setDirty(true);
 }
 
 template <typename Packer, typename Type>
@@ -190,7 +200,6 @@ void ControllerNetwork::unpackComponent(const uint64_t remoteId, const entt::ent
         if (component) {
             obj.convert(*component);
             postPatchComponent(remoteId, handle, *component);
-            component->setDirty(true);
         }
     } else {
         logger.warn("Unknown sync operation for entity id: {}", static_cast<uint32_t>(handle));
@@ -201,9 +210,9 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
                                           const msgpack::object& obj, const SyncOperation op) {
     static std::unordered_map<uint32_t, UnpackerFunction> unpackers = {
         {EntityComponentIds::value<ComponentTransform>, &ControllerNetwork::unpackComponent<ComponentTransform>},
+        {EntityComponentIds::value<ComponentRigidBody>, &ControllerNetwork::unpackComponent<ComponentRigidBody>},
         {EntityComponentIds::value<ComponentModel>, &ControllerNetwork::unpackComponent<ComponentModel>},
         {EntityComponentIds::value<ComponentModelSkinned>, &ControllerNetwork::unpackComponent<ComponentModelSkinned>},
-        {EntityComponentIds::value<ComponentRigidBody>, &ControllerNetwork::unpackComponent<ComponentRigidBody>},
         {EntityComponentIds::value<ComponentIcon>, &ControllerNetwork::unpackComponent<ComponentIcon>},
         {EntityComponentIds::value<ComponentLabel>, &ControllerNetwork::unpackComponent<ComponentLabel>},
         {EntityComponentIds::value<ComponentGrid>, &ControllerNetwork::unpackComponent<ComponentGrid>},
@@ -221,9 +230,9 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
 
 void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Emplace);
+    packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModelSkinned>(), SyncOperation::Emplace);
-    packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentIcon>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentLabel>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentGrid>(), SyncOperation::Emplace);

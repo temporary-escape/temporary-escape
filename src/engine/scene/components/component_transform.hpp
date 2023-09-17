@@ -53,6 +53,8 @@ public:
         return {transform[3]};
     }
 
+    Quaternion getOrientation() const;
+
     [[nodiscard]] Vector3 getAbsolutePosition() const;
 
     static void bind(Lua& lua);

@@ -36,6 +36,19 @@ function EntityAsteroidCluster.populate (self)
             rigid_body:reset_transform(cluster.pos, cluster.orientation)
         end
     end
+
+    local data = {
+        size = 20.0,
+        seed = rng:rand_seed(),
+        mass = 1.0,
+    }
+
+    local entity = scene:create_entity_template("asteroid", data)
+    local transform = entity:get_component_transform()
+    transform:translate(engine.Vector3.new(350.0, 20.0, 0.0))
+    local rigid_body = entity:get_component_rigid_body()
+    rigid_body:reset_transform(transform.position, transform.orientation)
+    rigid_body.linear_velocity = engine.Vector3.new(-50.0, 0.0, 0.0)
 end
 
 return EntityAsteroidCluster

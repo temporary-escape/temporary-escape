@@ -187,5 +187,5 @@ void ControllerDynamicsWorld::rayCast(const Vector3& start, const Vector3& end, 
 }
 
 btDynamicsWorld& ControllerDynamicsWorld::get() {
-    return *dynamicsWorld.get();
+    return *dynamicsWorld;
 }

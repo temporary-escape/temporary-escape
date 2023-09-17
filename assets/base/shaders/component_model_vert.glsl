@@ -35,8 +35,8 @@ out gl_PerVertex {
 
 void main() {
     vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
-    vec3 N = normalize(uniforms.normalMatrix * in_Normal);
-    vec3 T = normalize(uniforms.normalMatrix * in_Tangent.xyz);
+    vec3 N = normalize(uniforms.modelMatrix * vec4(in_Normal, 0.0)).xyz;
+    vec3 T = normalize(uniforms.modelMatrix * vec4(in_Tangent.xyz, 0.0)).xyz;
 
     vs_out.normal = N;
     vs_out.worldpos = worldPos.xyz;

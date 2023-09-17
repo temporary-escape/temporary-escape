@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/matrix.hpp"
+#include "collision_shape.hpp"
 #include "primitive.hpp"
 #include "texture.hpp"
 
@@ -42,8 +43,8 @@ public:
         return bbRadius;
     }
 
-    [[nodiscard]] btConvexShape* getCollisionShape() const {
-        return collisionShape.get();
+    [[nodiscard]] const CollisionShape& getCollisionShape() const {
+        return collisionShape;
     }
 
     static std::shared_ptr<Model> from(const std::string& name);
@@ -57,7 +58,7 @@ private:
     float bbRadius{0.0f};
     std::list<Node> nodes;
     std::list<Material> materials;
-    std::unique_ptr<btConvexShape> collisionShape;
+    CollisionShape collisionShape;
 };
 
 using ModelPtr = std::shared_ptr<Model>;

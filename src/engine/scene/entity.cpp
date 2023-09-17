@@ -24,6 +24,14 @@ bool Entity::isDisabled() const {
     return reg && reg->try_get<TagDisabled>(handle);
 }
 
+static sol::table entityPropertyScript(Entity& self) {
+    auto* component = self.tryGetComponent<ComponentScript>();
+    if (component) {
+        return component->getInstance();
+    }
+    return nullptr;
+};
+
 void Entity::bind(Lua& lua) {
     auto& m = lua.root();
 
@@ -74,11 +82,15 @@ void Entity::bind(Lua& lua) {
     cls["get_component_turret"] = &Entity::tryGetComponent<ComponentTurret>;
     cls["get_component_ship_control"] = &Entity::tryGetComponent<ComponentShipControl>;
 
-    cls["script"] = [](Entity& self) -> sol::table {
-        auto* component = self.tryGetComponent<ComponentScript>();
-        if (component) {
-            return component->getInstance();
-        }
-        return nullptr;
-    };
+    cls["script"] = sol::readonly_property(&entityPropertyScript);
+    cls["transform"] = sol::readonly_property(&Entity::tryGetComponent<ComponentTransform>);
+    cls["model"] = sol::readonly_property(&Entity::tryGetComponent<ComponentModel>);
+    cls["model_skinned"] = sol::readonly_property(&Entity::tryGetComponent<ComponentModelSkinned>);
+    cls["rigid_body"] = sol::readonly_property(&Entity::tryGetComponent<ComponentRigidBody>);
+    cls["icon"] = sol::readonly_property(&Entity::tryGetComponent<ComponentIcon>);
+    cls["label"] = sol::readonly_property(&Entity::tryGetComponent<ComponentLabel>);
+    cls["script"] = sol::readonly_property(&Entity::tryGetComponent<ComponentScript>);
+    cls["grid"] = sol::readonly_property(&Entity::tryGetComponent<ComponentGrid>);
+    cls["turret"] = sol::readonly_property(&Entity::tryGetComponent<ComponentTurret>);
+    cls["ship_control"] = sol::readonly_property(&Entity::tryGetComponent<ComponentShipControl>);
 }

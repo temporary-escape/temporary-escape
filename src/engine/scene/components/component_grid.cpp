@@ -59,10 +59,22 @@ void ComponentGrid::clear() {
     primitives.clear();
 }
 
-void ComponentGrid::update() {
+std::unique_ptr<btCollisionShape> ComponentGrid::createCollisionShape() {
+    if (pool().size() == 0) {
+        return nullptr;
+    }
+
+    auto shape = std::make_unique<btCompoundShape>();
+
+    auto iterator = iterate();
+    createShape(*shape, iterator);
+
+    shape->recalculateLocalAabb();
+
+    return shape;
 }
 
-void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) {
+void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) const {
     while (iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
@@ -78,7 +90,7 @@ void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator i
     }
 }
 
-void ComponentGrid::updateShape(btDynamicsWorld& dynamicsWorld) {
+/*void ComponentGrid::updateShape(btDynamicsWorld& dynamicsWorld) {
     if (rigidBody) {
         return;
     }
@@ -119,7 +131,7 @@ void ComponentGrid::updateShape(btDynamicsWorld& dynamicsWorld) {
         logger.info("ComponentGrid::updateShape setCollisionShape");
         rigidBody->setCollisionShape(shape.get());
     }
-}
+}*/
 
 void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
     if (!shipTemplate) {

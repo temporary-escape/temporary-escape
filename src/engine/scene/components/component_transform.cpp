@@ -70,6 +70,10 @@ Vector3 ComponentTransform::getAbsolutePosition() const {
     return getPosition();
 }
 
+Quaternion ComponentTransform::getOrientation() const {
+    return glm::quat_cast(transform);
+}
+
 void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentTransform>(handle);
 }
@@ -103,4 +107,6 @@ void ComponentTransform::bind(Lua& lua) {
     auto GetTransform = static_cast<GetTransformFunc>(&ComponentTransform::getTransform);
     cls["transform"] = sol::property(GetTransform, &ComponentTransform::setTransform);
     cls["parent"] = sol::property(&ComponentTransform::getParent, &ComponentTransform::setParent);
+    cls["position"] = sol::readonly_property(&ComponentTransform::getPosition);
+    cls["orientation"] = sol::readonly_property(&ComponentTransform::getOrientation);
 }

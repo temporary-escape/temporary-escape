@@ -35,7 +35,6 @@ void ControllerRigidBody::onDestroy(entt::registry& r, const entt::entity handle
     auto& component = reg.get<ComponentRigidBody>(handle);
     auto rigidBody = component.getRigidBody();
     if (rigidBody) {
-        // logger.debug("Removed rigid body entity: {}", static_cast<uint32_t>(handle));
         dynamicsWorld.get().removeRigidBody(rigidBody);
     }
 }

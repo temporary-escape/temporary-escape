@@ -49,113 +49,59 @@ ComponentRigidBody::ComponentRigidBody(ComponentRigidBody&& other) noexcept = de
 
 ComponentRigidBody& ComponentRigidBody::operator=(ComponentRigidBody&& other) noexcept = default;
 
-void ComponentRigidBody::setModel(const ModelPtr& value) {
-    if (model == value) {
-        return;
-    }
-    model = value;
-}
-
-const ModelPtr& ComponentRigidBody::getModel() const {
-    return model;
-}
-
-void ComponentRigidBody::setFromModel(ModelPtr model, const float scale) {
-    this->model = std::move(model);
-    this->scale = scale;
-    setup();
-}
-
-void ComponentRigidBody::setup() {
-    if (!model) {
-        EXCEPTION("ComponentRigidBody setup with no model");
-    }
-    if (!model->getCollisionShape()) {
-        EXCEPTION("ComponentRigidBody setup with model: '{}' that has no collision shape", model->getName());
-    }
+void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
     auto transform = tryGet<ComponentTransform>();
     if (!transform) {
         EXCEPTION("ComponentRigidBody added on entity with no ComponentTransform");
     }
 
-    const auto* modelShape = model->getCollisionShape();
-    if (const auto convexHull = static_cast<const btConvexHullShape*>(modelShape); convexHull != nullptr) {
-        shape = std::make_unique<btConvexHullShape>(&convexHull->getPoints()->x(), convexHull->getNumPoints());
-    } else {
-        EXCEPTION("ComponentRigidBody setup with model: '{}' that has unknown collision shape");
-    }
-
+    shape = std::move(value);
     shape->setLocalScaling(btVector3{scale, scale, scale});
 
-    // shape = std::make_unique<btUniformScalingShape>(model->getCollisionShape(), scale);
-
-    motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(*this, *transform)};
-
-    btVector3 localInertia{0.0f, 0.0f, 0.0f};
-    if (mass != 0.0f) {
-        shape->calculateLocalInertia(mass, localInertia);
-    }
-
-    btRigidBody::btRigidBodyConstructionInfo rbInfo{mass, motionState.get(), shape.get(), localInertia};
-    rigidBody = std::make_unique<btRigidBody>(rbInfo);
-
-    dynamicsWorld->addRigidBody(rigidBody.get());
-}
-
-void ComponentRigidBody::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentRigidBody>(handle);
-}
-
-void ComponentRigidBody::setMass(const float value) {
-    if (mass == value) {
-        return;
-    }
-
-    mass = value;
-
     if (rigidBody) {
+        rigidBody->setCollisionShape(shape.get());
         btVector3 localInertia{0.0f, 0.0f, 0.0f};
         if (mass != 0.0f) {
             shape->calculateLocalInertia(mass, localInertia);
         }
         rigidBody->setMassProps(mass, localInertia);
 
-        auto flags = rigidBody->getCollisionFlags();
+    } else {
+        motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(*this, *transform)};
+
+        btVector3 localInertia{0.0f, 0.0f, 0.0f};
         if (mass != 0.0f) {
-            flags &= ~(btCollisionObject::CF_STATIC_OBJECT);
-            flags |= btCollisionObject::CF_DYNAMIC_OBJECT;
-            rigidBody->setCollisionFlags(flags);
-        } else {
-            flags &= ~(btCollisionObject::CF_DYNAMIC_OBJECT);
-            flags |= btCollisionObject::CF_STATIC_OBJECT;
-            rigidBody->setCollisionFlags(flags);
+            shape->calculateLocalInertia(mass, localInertia);
         }
 
-        motionState->setWorldTransform(rigidBody->getWorldTransform());
-    }
-}
+        btRigidBody::btRigidBodyConstructionInfo rbInfo{mass, motionState.get(), shape.get(), localInertia};
+        rigidBody = std::make_unique<btRigidBody>(rbInfo);
 
-float ComponentRigidBody::getMass() const {
-    return mass;
-}
+        /*btTransform worldTransform;
+        worldTransform.setFromOpenGLMatrix(&transform->getAbsoluteTransform()[0][0]);
+        rigidBody->setWorldTransform(worldTransform);*/
 
-void ComponentRigidBody::setScale(float value) {
-    if (scale == value) {
-        return;
-    }
-
-    scale = value;
-
-    /*if (rigidBody) {
-        shape->setLocalScaling(btVector3{scale, scale, scale});
-        if (dynamicsWorld) {
-            dynamicsWorld->updateSingleAabb(rigidBody.get());
+        if (mass == 0.0f) {
+            btTransform worldTransform;
+            const auto m = withoutScale(transform->getAbsoluteTransform());
+            worldTransform.setFromOpenGLMatrix(&m[0][0]);
+            rigidBody->setWorldTransform(worldTransform);
         }
-    }*/
+
+        if (kinematic) {
+            logger.warn("Setting to kinematic!");
+            rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+            rigidBody->setActivationState(DISABLE_DEACTIVATION);
+        }
+
+        dynamicsWorld->addRigidBody(rigidBody.get());
+    }
+
+    setDirty(true);
 }
 
-float ComponentRigidBody::getScale() const {
-    return scale;
+void ComponentRigidBody::patch(entt::registry& reg, entt::entity handle) {
+    reg.patch<ComponentRigidBody>(handle);
 }
 
 void ComponentRigidBody::setLinearVelocity(const Vector3& value) {
@@ -254,13 +200,13 @@ void ComponentRigidBody::updateTransform() {
         return;
     }
     motionState->setWorldTransform(rigidBody->getWorldTransform());
+    dynamicsWorld->updateSingleAabb(rigidBody.get());
 }
 
 void ComponentRigidBody::bind(Lua& lua) {
     auto& m = lua.root();
 
     auto cls = m.new_usertype<ComponentRigidBody>("ComponentRigidBody");
-    cls["set_from_model"] = &ComponentRigidBody::setFromModel;
     cls["linear_velocity"] =
         sol::property(&ComponentRigidBody::getLinearVelocity, &ComponentRigidBody::setLinearVelocity);
     cls["angular_velocity"] =
@@ -268,6 +214,7 @@ void ComponentRigidBody::bind(Lua& lua) {
     cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
     cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
     cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
+    cls["kinematic"] = sol::property(&ComponentRigidBody::getKinematic, &ComponentRigidBody::setKinematic);
     cls["clear_forces"] = &ComponentRigidBody::clearForces;
     cls["activate"] = &ComponentRigidBody::activate;
     cls["reset_transform"] = &ComponentRigidBody::resetTransform;

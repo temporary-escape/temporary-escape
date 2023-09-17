@@ -398,9 +398,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
             const auto span = positions->accessor.bufferView.getSpan();
             auto* points = reinterpret_cast<const float*>(span.data());
-            auto shape = std::make_unique<btConvexHullShape>(
-                points, static_cast<int>(positions->accessor.count), sizeof(float) * 3);
-            collisionShape = std::move(shape);
+            collisionShape = CollisionShape::createConvexHull(points, positions->accessor.count);
 
             // Update the bounding box
             bbMin = Vector3(positions->accessor.min);
@@ -415,7 +413,7 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
         }
 
         if (!collisionShape) {
-            collisionShape = std::make_unique<btSphereShape>(bbRadius);
+            collisionShape = CollisionShape::createSphere(bbRadius);
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to load model: '{}'", getName());

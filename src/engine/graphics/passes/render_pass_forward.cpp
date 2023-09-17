@@ -1,6 +1,6 @@
 #include "render_pass_forward.hpp"
 #include "../../assets/assets_manager.hpp"
-#include "../../scene/controllers/controller_dynamics_world.hpp"
+#include "../../scene/controllers/controller_bullets.hpp"
 #include "../../scene/controllers/controller_turret.hpp"
 #include "../../scene/scene.hpp"
 
@@ -211,10 +211,10 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 }
 
 void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
-    const auto& controller = scene.getController<ControllerTurret>();
-    const auto& vboInstances = controller.getVboBullets();
+    const auto& controller = scene.getController<ControllerBullets>();
+    const auto& vboInstances = controller.getVbo();
     const auto& meshBullet = resources.getMeshBullet();
-    const auto count = controller.getBulletsCount();
+    const auto count = controller.getCount();
 
     if (count == 0 || !vboInstances) {
         return;
@@ -234,10 +234,10 @@ void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, const Compo
 }
 
 void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
-    const auto& controller = scene.getController<ControllerTurret>();
-    const auto& vboInstances = controller.getVboBullets();
+    const auto& controller = scene.getController<ControllerBullets>();
+    const auto& vboInstances = controller.getVbo();
     const auto& meshBullet = resources.getMeshBullet();
-    const auto count = controller.getBulletsCount();
+    const auto count = controller.getCount();
 
     if (count == 0 || !vboInstances) {
         return;

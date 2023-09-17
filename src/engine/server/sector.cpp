@@ -91,7 +91,7 @@ void Sector::update() {
 }
 
 void Sector::addPlayer(const SessionPtr& session) {
-    worker.post([this, session]() {
+    worker.postSafe([this, session]() {
         const auto it = std::find_if(players.begin(), players.end(), [&](const SessionPtr& p) { return p == session; });
         if (it != players.end()) {
             EXCEPTION("Player: {} is already in sector: {}", session->getPlayerId(), sectorId);
@@ -126,7 +126,7 @@ void Sector::addPlayer(const SessionPtr& session) {
         eventBus.enqueue("sector_player_added", event);
 
         // Send all entities to the player
-        worker.post([this, session, playerEntityId]() {
+        worker.postSafe([this, session, playerEntityId]() {
             const auto peer = session->getStream();
             if (peer) {
                 scene->getController<ControllerNetwork>().sendFullSnapshot(*peer);
@@ -141,7 +141,7 @@ void Sector::addPlayer(const SessionPtr& session) {
 }
 
 void Sector::removePlayer(const SessionPtr& session) {
-    worker.post([this, session]() {
+    worker.postSafe([this, session]() {
         const auto it = std::find_if(players.begin(), players.end(), [&](const SessionPtr& p) { return p == session; });
         if (it != players.end()) {
             players.erase(it);
@@ -156,7 +156,7 @@ Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
 }
 
 void Sector::handle(const SessionPtr& session, MessageControlMovementEvent req) {
-    worker.post([this, session, req]() {
+    worker.postSafe([this, session, req]() {
         // Find the entity that the player controls
         const auto found = playerControl.find(session);
         if (found != playerControl.end()) {
@@ -172,7 +172,7 @@ void Sector::handle(const SessionPtr& session, MessageControlMovementEvent req) 
 }
 
 void Sector::handle(const SessionPtr& session, MessageControlTargetEvent req) {
-    worker.post([this, session, req]() {
+    worker.postSafe([this, session, req]() {
         // Find the entity that the player controls
         const auto found = playerControl.find(session);
         if (found != playerControl.end()) {

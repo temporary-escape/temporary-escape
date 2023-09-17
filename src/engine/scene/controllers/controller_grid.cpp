@@ -1,6 +1,9 @@
 #include "controller_grid.hpp"
+#include <btBulletDynamicsCommon.h>
 
 using namespace Engine;
+
+static auto logger = createLogger(LOG_FILENAME);
 
 ControllerGrid::ControllerGrid(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
                                VoxelShapeCache* voxelShapeCache) :
@@ -19,9 +22,6 @@ ControllerGrid::~ControllerGrid() {
 
 void ControllerGrid::update(const float delta) {
     (void)delta;
-    for (auto&& [_, transform, grid] : reg.view<ComponentTransform, ComponentGrid>().each()) {
-        grid.updateShape(dynamicsWorld.get());
-    }
 }
 
 void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
@@ -37,6 +37,17 @@ void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
     }
 }
 
+void ControllerGrid::addOrUpdate(entt::entity handle, ComponentGrid& component) {
+    logger.warn("addOrUpdate start");
+    if (auto* rigidBody = reg.try_get<ComponentRigidBody>(handle); rigidBody) {
+        auto shape = component.createCollisionShape();
+        if (shape) {
+            rigidBody->setShape(std::move(shape));
+        }
+    }
+    logger.warn("addOrUpdate end");
+}
+
 void ControllerGrid::onConstruct(entt::registry& r, entt::entity handle) {
     (void)r;
     (void)handle;
@@ -45,7 +56,7 @@ void ControllerGrid::onConstruct(entt::registry& r, entt::entity handle) {
 void ControllerGrid::onUpdate(entt::registry& r, entt::entity handle) {
     (void)r;
     auto& component = reg.get<ComponentGrid>(handle);
-    component.update();
+    addOrUpdate(handle, component);
 }
 
 void ControllerGrid::onDestroy(entt::registry& r, entt::entity handle) {

@@ -15,6 +15,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    void addOrUpdate(entt::entity handle, ComponentGrid& component);
     void onConstruct(entt::registry& r, entt::entity handle);
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);

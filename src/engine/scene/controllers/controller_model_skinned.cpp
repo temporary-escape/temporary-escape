@@ -30,73 +30,6 @@ void ControllerModelSkinned::update(const float delta) {
 }
 
 void ControllerModelSkinned::recalculate(VulkanRenderer& vulkan) {
-    /*armatures.clear();
-    items.clear();
-
-    auto view = reg.view<ComponentTransform, ComponentModelSkinned>(entt::exclude<TagDisabled>);
-    for (auto&& [entity, transform, component] : view.each()) {
-        const auto& model = component.getModel();
-        if (!model || model->getNodes().empty()) {
-            continue;
-        }
-
-        const auto& node = model->getNodes().front();
-        if (!node.skin) {
-            continue;
-        }
-
-        const auto offset = armatures.size() * sizeof(ComponentModelSkinned::Armature);
-
-        if (armatures.capacity() <= armatures.size()) {
-            armatures.reserve(armatures.capacity() + 64);
-            items.reserve(armatures.capacity() + 64);
-        }
-
-        auto& armature = armatures.emplace_back();
-        armature.count = static_cast<int>(node.skin.count);
-
-        Matrix4 previous{1.0f};
-        for (size_t i = 0; i < armature.count; i++) {
-            armature.joints[i] = previous * node.skin.jointsLocalMat[i] * node.skin.inverseBindMat[i];
-            previous = previous * node.skin.jointsLocalMat[i];
-        }
-
-        auto& item = items.emplace_back();
-        item.transform = transform.getAbsoluteTransform();
-        item.offset = offset;
-        item.model = model.get();
-        item.entity = entity;
-    }
-
-    const auto bufferSize = armatures.size() * sizeof(ComponentModelSkinned::Armature);
-    if (!bufferSize) {
-        if (ubo) {
-            vulkan.dispose(std::move(ubo));
-            ubo = VulkanDoubleBuffer{};
-        }
-        return;
-    }
-
-    if (!ubo || ubo.getSize() < bufferSize) {
-        if (ubo) {
-            vulkan.dispose(std::move(ubo));
-            ubo = VulkanDoubleBuffer{};
-        }
-
-        VulkanBuffer::CreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = bufferSize;
-        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-        logger.debug("Recreating armature buffer with {} items", armatures.size());
-        ubo = vulkan.createDoubleBuffer(bufferInfo);
-    }
-
-    ubo.subDataLocal(armatures.data(), 0, bufferSize);*/
-
     buffer.recalculate(vulkan);
 }
 
@@ -112,13 +45,6 @@ void ControllerModelSkinned::addOrUpdate(entt::entity handle, ComponentModelSkin
     auto* armature = reinterpret_cast<ComponentModelSkinned::Armature*>(raw);
 
     armature->count = static_cast<int>(data.count);
-
-    /*Matrix4 parentTransform{1.0f};
-    for (size_t i = 0; i < armature->count; i++) {
-        const auto localTransform = parentTransform * data.adjustmentsMat[i] * data.jointsLocalMat[i];
-        armature->joints[i] = localTransform * data.inverseBindMat[i];
-        parentTransform = localTransform;
-    }*/
 
     Matrix4 parentJointMat{1.0f};
     std::array<Matrix4, Model::maxJoints> jointsMat{};

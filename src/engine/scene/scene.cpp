@@ -1,6 +1,7 @@
 #include "scene.hpp"
 #include "../assets/assets_manager.hpp"
 #include "../server/lua.hpp"
+#include "controllers/controller_bullets.hpp"
 #include "controllers/controller_camera.hpp"
 #include "controllers/controller_camera_orbital.hpp"
 #include "controllers/controller_camera_panning.hpp"
@@ -10,6 +11,7 @@
 #include "controllers/controller_icon_selectable.hpp"
 #include "controllers/controller_lights.hpp"
 #include "controllers/controller_lines.hpp"
+#include "controllers/controller_model.hpp"
 #include "controllers/controller_model_skinned.hpp"
 #include "controllers/controller_network.hpp"
 #include "controllers/controller_point_cloud.hpp"
@@ -31,8 +33,10 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
     addController<ControllerGrid>(dynamicsWorld, voxelShapeCache);
     addController<ControllerRigidBody>(dynamicsWorld);
     addController<ControllerNetwork>();
-    addController<ControllerTurret>(dynamicsWorld);
+    auto& bullets = addController<ControllerBullets>(dynamicsWorld);
+    addController<ControllerTurret>(dynamicsWorld, bullets);
     addController<ControllerShipControl>();
+    addController<ControllerModel>();
 
     if (voxelShapeCache) {
         addController<ControllerIconSelectable>();

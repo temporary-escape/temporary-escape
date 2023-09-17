@@ -22,14 +22,14 @@ function EntityAsteroid.new (entity, data)
     inst.entity = entity
 
     local transform = entity:add_component_transform()
-    transform.static = true
+    transform.static = data.mass == 0.0
+
+    local component_rigid_body = entity:add_component_rigid_body()
+    component_rigid_body.mass = data.mass
+    component_rigid_body.scale = data.size
 
     local model_index = (data.seed % #asteroid_models) + 1
-
-    local component_model = entity:add_component_model(asteroid_models[model_index])
-    local component_rigid_body = entity:add_component_rigid_body()
-    component_rigid_body:set_from_model(component_model.model, data.size)
-    component_rigid_body.mass = data.mass
+    entity:add_component_model(asteroid_models[model_index])
 
     local icon = entity:add_component_icon(image_icon)
     icon.environment = true

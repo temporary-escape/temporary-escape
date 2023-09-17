@@ -8,10 +8,7 @@
 #include "component_particles.hpp"
 #include "component_transform.hpp"
 
-class btRigidBody;
 class btCollisionShape;
-class btMotionState;
-class btDynamicsWorld;
 class btCompoundShape;
 
 namespace Engine {
@@ -32,8 +29,6 @@ public:
 
     void clear();
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
-    void update();
-    void updateShape(btDynamicsWorld& dynamicsWorld);
 
     [[nodiscard]] const std::list<Primitive>& getPrimitives() const {
         return primitives;
@@ -43,9 +38,7 @@ public:
         return particles;
     }
 
-    btRigidBody* getRigidBody() const {
-        return rigidBody.get();
-    }
+    [[nodiscard]] std::unique_ptr<btCollisionShape> createCollisionShape();
 
     static void bind(Lua& lua);
 
@@ -62,15 +55,12 @@ private:
 
     void debugIterate(Grid::Iterator iterator);
     void createParticlesVertices(Grid::Iterator iterator);
-    void createShape(btCompoundShape& compoundShape, Grid::Iterator iterator);
+    void createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) const;
 
     ComponentDebug* debug{nullptr};
     VulkanRenderer* vulkanRenderer{nullptr};
     std::list<Primitive> primitives;
     std::vector<BlockCache> blockCache;
-    std::unique_ptr<btCollisionShape> shape;
-    std::unique_ptr<btMotionState> motionState;
-    std::unique_ptr<btRigidBody> rigidBody;
     ParticlesMap particles;
 };
 } // namespace Engine

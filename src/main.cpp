@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
             Xml::fromFile(config.userdataPath / "settings.xml", config);
         }
 
-        // config.graphics.debugDraw = true;
+        config.graphics.debugDraw = true;
 
         if (parser.got_subcommand("compress-assets")) {
             return commandCompressAssets(config);
