@@ -11,7 +11,8 @@ class ENGINE_API CollisionShape {
 public:
     CollisionShape();
     ~CollisionShape();
-    MOVEABLE(CollisionShape);
+    CollisionShape(CollisionShape&& other);
+    CollisionShape& operator=(CollisionShape&& other);
     NON_COPYABLE(CollisionShape);
 
     [[nodiscard]] std::unique_ptr<btCollisionShape> clone() const;

@@ -8,6 +8,10 @@ CollisionShape::CollisionShape() = default;
 
 CollisionShape::~CollisionShape() = default;
 
+CollisionShape::CollisionShape(CollisionShape&& other) = default;
+
+CollisionShape& CollisionShape::operator=(CollisionShape&& other) = default;
+
 std::unique_ptr<btCollisionShape> CollisionShape::clone() const {
     switch (type) {
     case Type::Sphere: {
