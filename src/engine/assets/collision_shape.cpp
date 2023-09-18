@@ -4,6 +4,8 @@
 
 using namespace Engine;
 
+CollisionShape::CollisionShape() = default;
+
 CollisionShape::~CollisionShape() = default;
 
 std::unique_ptr<btCollisionShape> CollisionShape::clone() const {

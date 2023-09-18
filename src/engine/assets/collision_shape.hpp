@@ -9,7 +9,7 @@ class btCollisionShape;
 namespace Engine {
 class ENGINE_API CollisionShape {
 public:
-    CollisionShape() = default;
+    CollisionShape();
     ~CollisionShape();
     MOVEABLE(CollisionShape);
     NON_COPYABLE(CollisionShape);
