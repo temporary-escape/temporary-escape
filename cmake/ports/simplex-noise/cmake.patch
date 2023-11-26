@@ -1,0 +1,63 @@
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+new file mode 100644
+index 0000000..d8b8e11
+--- /dev/null
++++ b/cmake/CMakeLists.txt
+@@ -0,0 +1,47 @@
++cmake_minimum_required(VERSION 3.21)
++project (SimplexNoise)
++
++# List all sources/headers files
++set(SOURCES
++ "${PROJECT_SOURCE_DIR}/../src/SimplexNoise.cpp"
++)
++set(HEADERS
++ "${PROJECT_SOURCE_DIR}/../src/SimplexNoise.h"
++)
++
++add_library(SimplexNoise STATIC ${SOURCES} ${HEADERS})
++
++target_include_directories(SimplexNoise PUBLIC
++    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
++    $<INSTALL_INTERFACE:include>
++)
++
++include(CMakePackageConfigHelpers)
++write_basic_package_version_file(
++    "${PROJECT_BINARY_DIR}/SimplexNoiseConfigVersion.cmake"
++    VERSION 1.0.0
++    COMPATIBILITY AnyNewerVersion
++)
++
++install(TARGETS SimplexNoise
++    EXPORT SimplexNoiseTargets
++    LIBRARY DESTINATION lib COMPONENT Runtime
++    ARCHIVE DESTINATION lib COMPONENT Development
++    RUNTIME DESTINATION bin COMPONENT Runtime
++    PUBLIC_HEADER DESTINATION include COMPONENT Development
++    BUNDLE DESTINATION bin COMPONENT Runtime
++)
++
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++    "${CMAKE_CURRENT_LIST_DIR}/SimplexNoiseConfig.cmake.in"
++    "${PROJECT_BINARY_DIR}/SimplexNoiseConfig.cmake"
++    INSTALL_DESTINATION share/SimplexNoise
++)
++
++install(EXPORT SimplexNoiseTargets DESTINATION share/SimplexNoise)
++install(FILES "${PROJECT_BINARY_DIR}/SimplexNoiseConfigVersion.cmake"
++              "${PROJECT_BINARY_DIR}/SimplexNoiseConfig.cmake"
++        DESTINATION share/SimplexNoise)
++
++install(FILES ${HEADERS} DESTINATION include)
+diff --git a/cmake/SimplexNoiseConfig.cmake.in b/cmake/SimplexNoiseConfig.cmake.in
+new file mode 100644
+index 0000000..af8e17c
+--- /dev/null
++++ b/cmake/SimplexNoiseConfig.cmake.in
+@@ -0,0 +1,4 @@
++@PACKAGE_INIT@
++
++include("${CMAKE_CURRENT_LIST_DIR}/SimplexNoiseTargets.cmake")
++check_required_components("@PROJECT_NAME@")

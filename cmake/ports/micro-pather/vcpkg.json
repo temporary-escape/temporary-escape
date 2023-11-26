@@ -1,0 +1,16 @@
+{
+  "name": "micro-pather",
+  "version": "1.0.0",
+  "description": "MicroPather is a path finder and A* solver",
+  "homepage": "https://github.com/leethomason/MicroPather",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

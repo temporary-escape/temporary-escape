@@ -1,0 +1,70 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..806b38b
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,47 @@
++cmake_minimum_required(VERSION 3.21)
++project (MicroPather)
++
++# List all sources/headers files
++set(SOURCES
++ "${PROJECT_SOURCE_DIR}/micropather.cpp"
++)
++set(HEADERS
++ "${PROJECT_SOURCE_DIR}/micropather.h"
++)
++
++add_library(MicroPather STATIC ${SOURCES} ${HEADERS})
++
++target_include_directories(MicroPather PUBLIC
++    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
++    $<INSTALL_INTERFACE:include>
++)
++
++include(CMakePackageConfigHelpers)
++write_basic_package_version_file(
++    "${PROJECT_BINARY_DIR}/MicroPatherConfigVersion.cmake"
++    VERSION 1.0.0
++    COMPATIBILITY AnyNewerVersion
++)
++
++install(TARGETS MicroPather
++    EXPORT MicroPatherTargets
++    LIBRARY DESTINATION lib COMPONENT Runtime
++    ARCHIVE DESTINATION lib COMPONENT Development
++    RUNTIME DESTINATION bin COMPONENT Runtime
++    PUBLIC_HEADER DESTINATION include COMPONENT Development
++    BUNDLE DESTINATION bin COMPONENT Runtime
++)
++
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++    "${CMAKE_CURRENT_LIST_DIR}/MicroPatherConfig.cmake.in"
++    "${PROJECT_BINARY_DIR}/MicroPatherConfig.cmake"
++    INSTALL_DESTINATION share/MicroPather
++)
++
++install(EXPORT MicroPatherTargets DESTINATION share/MicroPather)
++install(FILES "${PROJECT_BINARY_DIR}/MicroPatherConfigVersion.cmake"
++              "${PROJECT_BINARY_DIR}/MicroPatherConfig.cmake"
++        DESTINATION share/MicroPather)
++
++install(FILES ${HEADERS} DESTINATION include)
+diff --git a/LICENSE.txt b/LICENSE.txt
+new file mode 100644
+index 0000000..3546645
+--- /dev/null
++++ b/LICENSE.txt
+@@ -0,0 +1 @@
++unknown
+diff --git a/MicroPatherConfig.cmake.in b/MicroPatherConfig.cmake.in
+new file mode 100644
+index 0000000..28fcea7
+--- /dev/null
++++ b/MicroPatherConfig.cmake.in
+@@ -0,0 +1,4 @@
++@PACKAGE_INIT@
++
++include("${CMAKE_CURRENT_LIST_DIR}/MicroPatherTargets.cmake")
++check_required_components("@PROJECT_NAME@")

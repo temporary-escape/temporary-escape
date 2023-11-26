@@ -1,0 +1,16 @@
+{
+  "name": "ad-mipmap",
+  "version": "1.0.0",
+  "description": "A mipmap generator ",
+  "homepage": "https://github.com/Vavassor/ad_mipmap",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

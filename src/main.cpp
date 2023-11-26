@@ -1,7 +1,7 @@
 #include <CLI/CLI.hpp>
-#include <engine/client/application.hpp>
-#include <engine/utils/exceptions.hpp>
-#include <engine/utils/log.hpp>
+#include <Engine/Client/Application.hpp>
+#include <Engine/Utils/Exceptions.hpp>
+#include <Engine/Utils/Log.hpp>
 
 using namespace Engine;
 

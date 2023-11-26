@@ -1,0 +1,60 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..631fdf4
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,44 @@
++cmake_minimum_required(VERSION 3.21)
++
++project(Voronoi)
++
++set(SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/jc_voronoi_clip.h" "${CMAKE_CURRENT_LIST_DIR}/src/jc_voronoi.h")
++
++add_library(Voronoi INTERFACE ${SOURCES})
++add_library(Voronoi::Voronoi ALIAS Voronoi)
++set_target_properties(Voronoi PROPERTIES C_STANDARD 11)
++
++target_include_directories(Voronoi INTERFACE
++    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
++    $<INSTALL_INTERFACE:include>
++)
++
++include(CMakePackageConfigHelpers)
++write_basic_package_version_file(
++    "${PROJECT_BINARY_DIR}/VoronoiConfigVersion.cmake"
++    VERSION 0.9.0
++    COMPATIBILITY AnyNewerVersion
++)
++
++install(TARGETS Voronoi
++    EXPORT VoronoiTargets
++    LIBRARY DESTINATION lib COMPONENT Runtime
++    ARCHIVE DESTINATION lib COMPONENT Development
++    RUNTIME DESTINATION bin COMPONENT Runtime
++    PUBLIC_HEADER DESTINATION include COMPONENT Development
++    BUNDLE DESTINATION bin COMPONENT Runtime
++)
++
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++    "${CMAKE_CURRENT_LIST_DIR}/VoronoiConfig.cmake.in"
++    "${PROJECT_BINARY_DIR}/VoronoiConfig.cmake"
++    INSTALL_DESTINATION share/Voronoi
++)
++
++install(EXPORT VoronoiTargets DESTINATION share/Voronoi)
++install(FILES "${PROJECT_BINARY_DIR}/VoronoiConfigVersion.cmake"
++              "${PROJECT_BINARY_DIR}/VoronoiConfig.cmake"
++        DESTINATION share/Voronoi)
++
++install(FILES ${SOURCES} DESTINATION include)
+diff --git a/VoronoiConfig.cmake.in b/VoronoiConfig.cmake.in
+new file mode 100644
+index 0000000..1744cd6
+--- /dev/null
++++ b/VoronoiConfig.cmake.in
+@@ -0,0 +1,4 @@
++@PACKAGE_INIT@
++
++include("${CMAKE_CURRENT_LIST_DIR}/VoronoiTargets.cmake")
++check_required_components("@PROJECT_NAME@")

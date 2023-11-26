@@ -13,7 +13,7 @@ endif ()
 target_link_libraries(${PROJECT_NAME}UnitTests
         PUBLIC Catch2::Catch2
         Catch2::Catch2WithMain
-        ${PROJECT_NAME}Library
+        ${PROJECT_NAME}Engine
         OpenSSL::SSL
         OpenSSL::Crypto)
 

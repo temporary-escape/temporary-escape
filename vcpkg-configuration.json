@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
+  "overlay-ports": [
+    "./cmake/ports/ad-mipmap",
+    "./cmake/ports/voronoi",
+    "./cmake/ports/simplex-noise",
+    "./cmake/ports/micro-pather"
+  ]
+}

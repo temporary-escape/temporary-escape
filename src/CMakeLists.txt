@@ -1,25 +1,25 @@
 include(CMakeParseArguments)
 
 file(GLOB_RECURSE SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/engine/*.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/engine/*.c
-        ${CMAKE_CURRENT_LIST_DIR}/engine/*.hpp
-        ${CMAKE_CURRENT_LIST_DIR}/engine/*.h)
+        ${CMAKE_CURRENT_LIST_DIR}/Engine/*.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/Engine/*.c
+        ${CMAKE_CURRENT_LIST_DIR}/Engine/*.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/Engine/*.h)
 
 # Define the library
-add_library(${PROJECT_NAME}Library SHARED ${SOURCES})
-set_target_properties(${PROJECT_NAME}Library PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
-set_target_properties(${PROJECT_NAME}Library PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+add_library(${PROJECT_NAME}Engine SHARED ${SOURCES})
+set_target_properties(${PROJECT_NAME}Engine PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
+set_target_properties(${PROJECT_NAME}Engine PROPERTIES OUTPUT_NAME "${PROJECT_NAME}Engine")
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
-    target_compile_options(${PROJECT_NAME}Library PUBLIC -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_options(${PROJECT_NAME}Engine PUBLIC -fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
 # Inherit the common options
-target_link_libraries(${PROJECT_NAME}Library PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
+target_link_libraries(${PROJECT_NAME}Engine PUBLIC ${PROJECT_NAME}Common::${PROJECT_NAME}Common)
 
 # Common compile definitions
-target_compile_definitions(${PROJECT_NAME}Library
+target_compile_definitions(${PROJECT_NAME}Engine
         PUBLIC
         SOL_ALL_SAFETIES_ON=1
         PRIVATE
@@ -27,12 +27,12 @@ target_compile_definitions(${PROJECT_NAME}Library
         "ENGINE_SOURCE_PATH=${CMAKE_CURRENT_LIST_DIR}/Engine")
 
 # Header lookup paths
-set_target_properties(${PROJECT_NAME}Library
+set_target_properties(${PROJECT_NAME}Engine
         PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}")
 
 # Where the compiled output goes
-set_target_properties(${PROJECT_NAME}Library
+set_target_properties(${PROJECT_NAME}Engine
         PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -40,14 +40,14 @@ set_target_properties(${PROJECT_NAME}Library
 
 # Platform specific dependencies
 if (UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME}Library
+    target_link_libraries(${PROJECT_NAME}Engine
             PRIVATE
             ZLIB::ZLIB
             LibLZMA::LibLZMA
             unofficial::UUID::uuid
             uring::uring)
 elseif (APPLE)
-    target_link_libraries(${PROJECT_NAME}Library
+    target_link_libraries(${PROJECT_NAME}Engine
             PRIVATE
             ZLIB::ZLIB
             LibLZMA::LibLZMA
@@ -56,7 +56,7 @@ elseif (APPLE)
 endif ()
 
 # Component specific libraries
-target_link_libraries(${PROJECT_NAME}Library
+target_link_libraries(${PROJECT_NAME}Engine
         PUBLIC
         fmt::fmt
         asio
@@ -67,7 +67,7 @@ target_link_libraries(${PROJECT_NAME}Library
         VulkanHeaders::VulkanHeaders
         EnTT::EnTT)
 
-target_link_libraries(${PROJECT_NAME}Library
+target_link_libraries(${PROJECT_NAME}Engine
         PRIVATE
         Png
         LibXml2::LibXml2
@@ -82,8 +82,8 @@ target_link_libraries(${PROJECT_NAME}Library
         unofficial::vulkan-memory-allocator::vulkan-memory-allocator
         spirv-cross-glsl
         freetype
-        SimplexNoise::SimplexNoise
-        Voronoi::Voronoi
+        SimplexNoise
+        Voronoi
         nuklear
         OpenSSL::SSL
         OpenSSL::Crypto
@@ -91,11 +91,12 @@ target_link_libraries(${PROJECT_NAME}Library
         RocksDB::rocksdb
         LuaUnofficial
         sol2
-        AdMipMap::AdMipMap
+        AdMipMap
         KTX::ktx
         ${BULLET_LIBRARIES}
         Vorbis::vorbis
-        Vorbis::vorbisfile)
+        Vorbis::vorbisfile
+        MicroPather)
 
 # The main target
 if (MSVC)
@@ -114,7 +115,7 @@ endif ()
 
 target_link_libraries(${PROJECT_NAME}Main
         PRIVATE CLI11::CLI11
-        ${PROJECT_NAME}Library
+        ${PROJECT_NAME}Engine
         OpenSSL::SSL
         OpenSSL::Crypto)
 
@@ -124,7 +125,7 @@ set_target_properties(${PROJECT_NAME}Main
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-install(TARGETS ${PROJECT_NAME}Main ${PROJECT_NAME}Library
+install(TARGETS ${PROJECT_NAME}Main ${PROJECT_NAME}Engine
         LIBRARY DESTINATION "."
         RUNTIME DESTINATION ".")
 

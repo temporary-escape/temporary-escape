@@ -1,0 +1,16 @@
+{
+  "name": "simplex-noise",
+  "version": "1.0.0",
+  "description": "A Perlin's Simplex Noise C++ Implementation (1D, 2D, 3D) ",
+  "homepage": "https://github.com/SRombauts/SimplexNoise",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

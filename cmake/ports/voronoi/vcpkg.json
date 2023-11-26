@@ -1,0 +1,16 @@
+{
+  "name": "voronoi",
+  "version": "0.9.0",
+  "description": "A C implementation for creating 2D voronoi diagrams",
+  "homepage": "https://github.com/JCash/voronoi",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}
