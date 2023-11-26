@@ -55,11 +55,10 @@ int main(int argc, char** argv) {
 
     try {
         const auto userdataPath = std::filesystem::absolute(Path(defaultUserData));
-        const auto logPath = userdataPath / "debug.log";
 
         // Log::configure(true, logPath);
         logger.info("Temporary Escape main");
-        logger.info("Log file location: '{}'", logPath.string());
+        logger.info("Log file location: '{}'", getLoggerPath());
 
         rootPath = std::filesystem::absolute(rootPath);
         config.assetsPath = rootPath / "assets";
@@ -80,7 +79,7 @@ int main(int argc, char** argv) {
             Xml::fromFile(config.userdataPath / "settings.xml", config);
         }
 
-        config.graphics.debugDraw = true;
+        // config.graphics.debugDraw = true;
 
         if (parser.got_subcommand("compress-assets")) {
             return commandCompressAssets(config);

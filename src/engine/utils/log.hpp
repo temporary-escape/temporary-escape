@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../library.hpp"
+#include "path.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <optional>
@@ -54,6 +55,7 @@ private:
     std::shared_ptr<SpdLogger> log;
 };
 
+extern ENGINE_API Path getLoggerPath();
 extern ENGINE_API Logger createLogger(const std::string_view& name);
 
 namespace Detail {

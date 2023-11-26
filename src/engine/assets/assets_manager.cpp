@@ -17,7 +17,7 @@ static void compressTexture(const Path& file) {
     if (!Fs::exists(dst) || Fs::last_write_time(file) > Fs::last_write_time(dst)) {
         ktxCompressFile(file, dst, textureOptions.compress);
     } else {
-        logger.info("Skipping texture: {}, not modified", file);
+        logger.debug("Skipping texture: {}, not modified", file);
     }
 }
 
@@ -26,7 +26,7 @@ static void compressShader(const Path& file) {
     if (!Fs::exists(dst) || Fs::last_write_time(file) > Fs::last_write_time(dst)) {
         compileGLSLFile(file, dst);
     } else {
-        logger.info("Skipping shader: {}, not modified", file);
+        logger.debug("Skipping shader: {}, not modified", file);
     }
 }
 

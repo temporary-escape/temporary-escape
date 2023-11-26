@@ -26,8 +26,12 @@ static std::unique_ptr<spdlog::logger> createLogger(const Path& path) {
     return logger;
 }
 
+Path Engine::getLoggerPath() {
+    return getAppDataPath() / "TemporaryEscape.log";
+}
+
 Logger Engine::createLogger(const std::string_view& name) {
-    static auto root = ::createLogger(getAppDataPath() / "TemporaryEscape.log");
+    static auto root = ::createLogger(getLoggerPath());
     return Logger{std::string{name}, *root};
 }
 
