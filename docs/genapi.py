@@ -384,7 +384,7 @@ def generate_docs_child(f, child: LuaElement):
         f.write("```{note}\n")
         f.write(child.note)
         f.write("\n```\n\n")
-    
+
     if child.warn:
         f.write("```{warning}\n")
         f.write(child.warn)
@@ -490,7 +490,7 @@ def generate_docs(path: str, module: LuaModule):
 
 
 def main():
-    path = os.path.join(DIR, "..", "src", "engine")
+    path = os.path.join(DIR, "..", "src", "Engine", "Server", "Bindings")
     dst = os.path.join(DIR, "source", "modding", "api")
     modules: Dict[str, LuaModule] = {}
     for file in Path(path).rglob("*.cpp"):

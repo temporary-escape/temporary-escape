@@ -93,3 +93,70 @@ void GuiWindow::setFontSize(const int size) {
 bool GuiWindow::isCursorInside(const Vector2i& mousePos) {
     return mousePos.x > pos.x && mousePos.x < pos.x + size.x && mousePos.y > pos.y && mousePos.y < pos.y + size.y;
 }
+
+GuiWindow2::GuiWindow2(const FontFamily& fontFamily, const int fontSize) :
+    GuiContext{fontFamily, fontSize},
+    GuiWidgetLayout{static_cast<GuiContext&>(*this)},
+    flags{WindowFlag::Title | WindowFlag::NoScrollbar} {
+}
+
+void GuiWindow2::update(const Vector2i& viewport) {
+    GuiContext::update();
+    setPos(Vector2{viewport} / 2.0f - size / 2.0f);
+}
+
+void GuiWindow2::draw() {
+    // We are rendering into an FBO, therefore the position is always at [0, 0]
+    if (GuiContext::beginWindow(title, {0.0f, 0.0f}, size, flags)) {
+        GuiWidgetLayout::draw();
+    }
+    GuiContext::endWindow();
+}
+
+void GuiWindow2::setTitle(std::string value) {
+    title = std::move(value);
+}
+
+void GuiWindow2::setSize(const Vector2& value) {
+    size = value;
+}
+
+void GuiWindow2::setPos(const Vector2& value) {
+    pos = value;
+}
+
+void GuiWindow2::setEnabled(const bool value) {
+    enabled = value;
+}
+
+void GuiWindow2::setBordered(bool value) {
+    if (value) {
+        flags |= WindowFlag::Border;
+    } else {
+        flags &= ~WindowFlag::Border;
+    }
+}
+
+void GuiWindow2::setBackground(bool value) {
+    if (value) {
+        flags |= WindowFlag::Background;
+    } else {
+        flags &= ~WindowFlag::Background;
+    }
+}
+
+void GuiWindow2::setNoScrollbar(bool value) {
+    if (value) {
+        flags |= WindowFlag::NoScrollbar;
+    } else {
+        flags &= ~WindowFlag::NoScrollbar;
+    }
+}
+
+void GuiWindow2::setDynamic(bool value) {
+    if (value) {
+        flags |= WindowFlag::Dynamic;
+    } else {
+        flags &= ~WindowFlag::Dynamic;
+    }
+}

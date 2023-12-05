@@ -16,7 +16,10 @@ Application::Application(Config& config) :
     audioSource{audio.createSource()},
     canvas{*this},
     font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
-    nuklear{*this, config, canvas, font, config.guiFontSize} {
+    nuklear{*this, config, canvas, font, config.guiFontSize},
+    rendererCanvas{*this},
+    canvas2{*this},
+    guiManager{*this, rendererCanvas, font, config.guiFontSize} {
 
     loadSounds();
 
@@ -27,7 +30,9 @@ Application::Application(Config& config) :
         config.graphics.ssao = false;
     }
 
-    gui.mainMenu.setItems({
+    guiManager.addWindow<GuiWindowMainMenu>();
+
+    /*gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},
         {"Multiplayer", []() {}},
         {"Settings",
@@ -40,24 +45,24 @@ Application::Application(Config& config) :
         {"Mods", []() {}},
         {"Exit", [this]() { closeWindow(); }},
     });
-    gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);
+    gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);*/
 
-    gui.createProfile.setOnSuccess([this](const GuiCreateProfile::Form& form) {
+    /*gui.createProfile.setOnSuccess([this](const GuiCreateProfile::Form& form) {
         playerLocalProfile.name = form.name;
         playerLocalProfile.secret = randomId();
         Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
 
         gui.mainMenu.setEnabled(true);
-    });
+    });*/
 
     if (Fs::exists(config.userdataPath / profileFilename)) {
         Xml::fromFile(config.userdataPath / profileFilename, playerLocalProfile);
-        gui.createProfile.setEnabled(false);
+        // gui.createProfile.setEnabled(false);
     } else {
-        gui.mainMenu.setEnabled(false);
+        // gui.mainMenu.setEnabled(false);
     }
 
-    gui.keepSettings.setEnabled(false);
+    /*gui.keepSettings.setEnabled(false);
     gui.mainSettings.setEnabled(false);
     gui.mainSettings.setOnApply([this](const Config& updated) {
         logger.info("Updated config");
@@ -74,7 +79,7 @@ Application::Application(Config& config) :
                 this->setWindowResolution({this->config.graphics.windowWidth, this->config.graphics.windowHeight});
             }
         });
-    });
+    });*/
 
     VkQueryPoolCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -101,8 +106,8 @@ bool Application::shouldBlit() const {
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
-    gui.keepSettings.updateProgress(deltaTime);
-    gui.mainMenu.setEnabled(!gui.keepSettings.isEnabled() && !gui.mainSettings.isEnabled() && status.value <= 0.0f);
+    // gui.keepSettings.updateProgress(deltaTime);
+    // gui.mainMenu.setEnabled(!gui.keepSettings.isEnabled() && !gui.mainSettings.isEnabled() && status.value <= 0.0f);
 
     if (getSwapChain().getExtent().width != viewport.x || getSwapChain().getExtent().height != viewport.y) {
         logger.warn("Swap chain size does not match");
@@ -131,6 +136,8 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (client) {
         client->update();
     }
+
+    rendererCanvas.reset();
 
     auto vkb = createCommandBuffer();
 
@@ -172,6 +179,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         --shouldBlitCount;
     }
 
+    // GUI
+    guiManager.render(vkb, viewport);
+
+    // HUD
     VulkanRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.framebuffer = &getSwapChainFramebuffer();
     renderPassInfo.renderPass = &getRenderPass();
@@ -211,15 +222,27 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
             renderStatus(viewport);
         }
 
-        nuklear.begin(viewport);
+        /*nuklear.begin(viewport);
         gui.mainMenu.draw(nuklear, viewport);
         gui.createProfile.draw(nuklear, viewport);
         gui.mainSettings.draw(nuklear, viewport);
         gui.keepSettings.draw(nuklear, viewport);
-        nuklear.end();
+        nuklear.end();*/
+
+        /*canvas2.begin();
+        canvas2.drawRect({200.0f, 200.0f}, {300.0f, 100.0f}, {1.0f, 0.0f, 0.0f, 1.0f});
+        canvas2.drawRect({500.0f, 500.0f}, {50.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f});
+        canvas2.flush();
+
+        rendererCanvas.render(vkb, canvas2, viewport);*/
     }
 
     canvas.end(vkb);
+
+    canvas2.begin(viewport);
+    guiManager.blit(canvas2);
+    canvas2.flush();
+    rendererCanvas.render(vkb, canvas2, viewport);
 
     vkb.endRenderPass();
 
@@ -240,13 +263,13 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
 void Application::renderVersion(const Vector2i& viewport) {
     canvas.color(Theme::text * alpha(0.5f));
-    canvas.font(font.regular, config.guiFontSize);
+    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
     canvas.text({5.0f, 5.0f + config.guiFontSize}, GAME_VERSION);
 }
 
 void Application::renderFrameTime(const Vector2i& viewport) {
     canvas.color(Theme::text * alpha(0.5f));
-    canvas.font(font.regular, config.guiFontSize);
+    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
 
     {
         const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
@@ -280,7 +303,7 @@ void Application::renderFrameTime(const Vector2i& viewport) {
 
 void Application::renderStatus(const Vector2i& viewport) {
     canvas.color(Theme::text);
-    canvas.font(font.regular, config.guiFontSize);
+    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
     const auto fontHeight = static_cast<float>(config.guiFontSize) * 1.25f;
     canvas.text(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight}, status.message);
 
@@ -578,7 +601,7 @@ void Application::startSinglePlayer() {
     status.message = "Loading...";
     status.value = 0.0f;
 
-    gui.mainMenu.setEnabled(false);
+    // gui.mainMenu.setEnabled(false);
 
     NEXT(compressAssets());
 }
@@ -591,71 +614,71 @@ void Application::startEditor() {
 
 void Application::eventMouseMoved(const Vector2i& pos) {
     mousePos = pos;
-    nuklear.eventMouseMoved(pos);
-    if (!nuklear.isCursorInsideWindow(pos)) {
+    guiManager.eventMouseMoved(pos);
+    /*if (!nuklear.isCursorInsideWindow(pos)) {
         if (game) {
             game->eventMouseMoved(pos);
         } else if (editor) {
             editor->eventMouseMoved(pos);
         }
-    }
+    }*/
 }
 
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
-    nuklear.eventMousePressed(pos, button);
-    if (!nuklear.isCursorInsideWindow(pos) && !nuklear.isInputActive()) {
+    guiManager.eventMousePressed(pos, button);
+    /*if (!nuklear.isCursorInsideWindow(pos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMousePressed(pos, button);
         } else if (editor) {
             editor->eventMousePressed(pos, button);
         }
-    }
+    }*/
 }
 
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
-    nuklear.eventMouseReleased(pos, button);
-    if (!nuklear.isInputActive()) {
+    guiManager.eventMouseReleased(pos, button);
+    /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventMouseReleased(pos, button);
         } else if (editor) {
             editor->eventMouseReleased(pos, button);
         }
-    }
+    }*/
 }
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
-    nuklear.eventMouseScroll(xscroll, yscroll);
-    if (!nuklear.isCursorInsideWindow(mousePos) && !nuklear.isInputActive()) {
+    guiManager.eventMouseScroll(xscroll, yscroll);
+    /*if (!nuklear.isCursorInsideWindow(mousePos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMouseScroll(xscroll, yscroll);
         } else if (editor) {
             editor->eventMouseScroll(xscroll, yscroll);
         }
-    }
+    }*/
 }
 
 void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    nuklear.eventKeyPressed(key, modifiers);
-    if (!nuklear.isInputActive()) {
+    guiManager.eventKeyPressed(key, modifiers);
+    /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventKeyPressed(key, modifiers);
         } else if (editor) {
             editor->eventKeyPressed(key, modifiers);
         }
-    }
+    }*/
 }
 
 void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    nuklear.eventKeyReleased(key, modifiers);
-    if (!nuklear.isInputActive()) {
+    guiManager.eventKeyReleased(key, modifiers);
+    /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventKeyReleased(key, modifiers);
         } else if (editor) {
             editor->eventKeyReleased(key, modifiers);
         }
-    }
+    }*/
 }
 
 void Application::eventWindowResized(const Vector2i& size) {
@@ -663,14 +686,14 @@ void Application::eventWindowResized(const Vector2i& size) {
 }
 
 void Application::eventCharTyped(const uint32_t code) {
-    nuklear.eventCharTyped(code);
-    if (!nuklear.isInputActive()) {
+    guiManager.eventCharTyped(code);
+    /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventCharTyped(code);
         } else if (editor) {
             editor->eventCharTyped(code);
         }
-    }
+    }*/
 }
 
 void Application::eventWindowBlur() {

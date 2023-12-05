@@ -93,7 +93,7 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, c
 
         const auto text = fmt::format(fmt, dist);
 
-        canvas.font(font.light, config.guiFontSize);
+        canvas.font(font.get(FontFace::Light), config.guiFontSize);
         canvas.color(Color4{1.0f});
         canvas.text(screenPos + Vector2{20.0f, 0.0f}, text);
 

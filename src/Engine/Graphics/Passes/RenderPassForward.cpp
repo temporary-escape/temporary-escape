@@ -92,7 +92,7 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& camera = *scene.getPrimaryCamera();
     renderSceneBullets(vkb, camera, scene);
     renderSceneBulletsTrail(vkb, camera, scene);
-    // renderSceneDebug(vkb, camera, scene);
+    renderSceneDebug(vkb, camera, scene);
 }
 
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,

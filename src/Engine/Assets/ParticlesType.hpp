@@ -101,19 +101,17 @@ public:
 
     static std::shared_ptr<ParticlesType> from(const std::string& name);
 
-    const VulkanBuffer& getUbo() const {
+    [[nodiscard]] const VulkanBuffer& getUbo() const {
         return ubo;
     }
 
-    int getCount() const {
+    [[nodiscard]] int getCount() const {
         return definition.count;
     }
 
-    const TexturePtr& getTexture() const {
+    [[nodiscard]] const TexturePtr& getTexture() const {
         return definition.texture;
     }
-
-    static void bind(Lua& lua);
 
 private:
     Path path;

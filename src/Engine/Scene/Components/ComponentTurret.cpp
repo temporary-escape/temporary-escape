@@ -1,7 +1,5 @@
 #include "ComponentTurret.hpp"
-#include "../../Server/Lua.hpp"
 #include "../Entity.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -78,13 +76,4 @@ void ComponentTurret::clearTarget() {
 
 void ComponentTurret::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentTurret>(handle);
-}
-
-void ComponentTurret::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentTurret>("ComponentTurret");
-    cls["turret"] = sol::property(&ComponentTurret::getTurret, &ComponentTurret::setTurret);
-    cls["target"] = sol::property(&ComponentTurret::getTarget, &ComponentTurret::setTarget);
-    cls["clear_target"] = &ComponentTurret::clearTarget;
 }

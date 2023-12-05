@@ -1,9 +1,7 @@
 #include "MinimumSpanningTree.hpp"
-#include "../Server/Lua.hpp"
 #include "../Utils/Random.hpp"
 #include <glm/gtx/norm.hpp>
 #include <queue>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -139,16 +137,4 @@ void MinimumSpanningTree::calculate() {
             }
         }
     }
-}
-
-void MinimumSpanningTree::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<MinimumSpanningTree>("MinimumSpanningTree", sol::constructors<MinimumSpanningTree()>{});
-    cls["add_position"] = &MinimumSpanningTree::addPosition;
-    cls["calculate"] = &MinimumSpanningTree::calculate;
-    cls["has_connections"] = &MinimumSpanningTree::hasConnections;
-    cls["get_connections"] = [](MinimumSpanningTree& self, const size_t index) {
-        return sol::as_table(self.getConnections(index));
-    };
 }

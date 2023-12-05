@@ -101,8 +101,6 @@ public:
         selectionEnabled = value;
     }
 
-    static void bind(Lua& lua);
-
 private:
     void updateSelection();
 

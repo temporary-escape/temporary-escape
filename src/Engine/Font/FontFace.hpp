@@ -28,6 +28,13 @@ public:
         float ascend;
     };
 
+    enum Type {
+        Regular = 0,
+        Bold,
+        Thin,
+        Light,
+    };
+
     explicit FontFace(VulkanRenderer& vulkan, const Path& path, float size);
     ~FontFace();
 

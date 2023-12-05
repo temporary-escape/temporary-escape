@@ -82,8 +82,6 @@ public:
 
     void setEnvironment(bool value);
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(image, size, color, offset, selectable, environment);
 
 protected:

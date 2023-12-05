@@ -66,9 +66,14 @@ public:
         generator.addSectorType(std::move(name), std::move(type));
     }
 
-    static Server* instance;
+    // Sector functions
+    void movePlayerToSector(const std::string& playerId, const std::string& sectorId);
+    SessionPtr getPlayerSession(const std::string& playerId);
+    SectorPtr startSector(const std::string& sectorId);
+    void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
+    SectorPtr getSectorForSession(const SessionPtr& session);
 
-    static void bind(Lua& lua);
+    static Server* instance;
 
 private:
     void load();
@@ -81,13 +86,6 @@ private:
         services.emplace(typeid(T).hash_code(),
                          std::make_unique<T>(*this, db, playerSessions, std::forward<Args>(args)...));
     }
-
-    // Sector functions
-    void movePlayerToSector(const std::string& playerId, const std::string& sectorId);
-    SessionPtr getPlayerSession(const std::string& playerId);
-    SectorPtr startSector(const std::string& sectorId);
-    void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
-    SectorPtr getSectorForSession(const SessionPtr& session);
 
     const Config& config;
     AssetsManager& assetsManager;

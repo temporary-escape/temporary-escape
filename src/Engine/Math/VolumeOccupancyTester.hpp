@@ -8,8 +8,6 @@ public:
     void add(const Vector3& pos, float radius);
     bool contactTest(const Vector3& pos, float radius);
 
-    static void bind(Lua& lua);
-
 private:
     struct Item {
         Vector3 pos;

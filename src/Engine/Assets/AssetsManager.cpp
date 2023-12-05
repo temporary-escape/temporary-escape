@@ -1,14 +1,14 @@
 #include "AssetsManager.hpp"
 #include "../File/Ktx2FileReader.hpp"
-#include "../Server/Lua.hpp"
 #include "../Vulkan/GlslCompiler.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
 AssetsManager* AssetsManager::instance{nullptr};
+
+static const std::vector<std::string> ignoreLoad = {};
 
 static void compressTexture(const Path& file) {
     const auto textureOptions = Texture::loadOptions(file);
@@ -221,7 +221,13 @@ void AssetsManager::init(Category<T>& assets, const Path& path, const std::set<s
 
     std::set<std::string> processed;
 
-    iterateDir(path, ext, [&](const Path& file) { addAsset(assets, file); });
+    iterateDir(path, ext, [&](const Path& file) {
+        // Is this file ignored on purpose?
+        if (std::find(ignoreLoad.begin(), ignoreLoad.end(), file.filename().string()) != ignoreLoad.end()) {
+            return;
+        }
+        addAsset(assets, file);
+    });
 }
 
 template <typename T> std::shared_ptr<T> AssetsManager::addAsset(Category<T>& assets, const Path& path) {
@@ -243,39 +249,4 @@ ImagePtr AssetsManager::addImage(const std::string& name, const ImageAtlas::Allo
     auto asset = std::make_shared<Image>(name, allocation);
     images.insert(name, asset);
     return asset;
-}
-
-void AssetsManager::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<AssetsManager>("AssetsManager");
-    cls["find_planet_type"] = [](AssetsManager& self, const std::string& name) {
-        return self.getPlanetTypes().find(name);
-    };
-    cls["find_image"] = [](AssetsManager& self, const std::string& name) { return self.getImages().find(name); };
-    cls["find_texture"] = [](AssetsManager& self, const std::string& name) { return self.getTextures().find(name); };
-    cls["find_block"] = [](AssetsManager& self, const std::string& name) { return self.getBlocks().find(name); };
-    cls["find_model"] = [](AssetsManager& self, const std::string& name) { return self.getModels().find(name); };
-    cls["find_sound"] = [](AssetsManager& self, const std::string& name) { return self.getSounds().find(name); };
-    cls["find_particles_type"] = [](AssetsManager& self, const std::string& name) {
-        return self.getParticlesTypes().find(name);
-    };
-    cls["find_ship_template"] = [](AssetsManager& self, const std::string& name) {
-        return self.getShipTemplates().find(name);
-    };
-    cls["find_turret"] = [](AssetsManager& self, const std::string& name) { return self.getTurrets().find(name); };
-
-    cls["find_all_planet_types"] = [](AssetsManager& self) { return sol::as_table(self.getPlanetTypes().findAll()); };
-    cls["find_all_images"] = [](AssetsManager& self) { return sol::as_table(self.getImages().findAll()); };
-    cls["find_all_textures"] = [](AssetsManager& self) { return sol::as_table(self.getTextures().findAll()); };
-    cls["find_all_blocks"] = [](AssetsManager& self) { return sol::as_table(self.getBlocks().findAll()); };
-    cls["find_all_models"] = [](AssetsManager& self) { return sol::as_table(self.getModels().findAll()); };
-    cls["find_all_sounds"] = [](AssetsManager& self) { return sol::as_table(self.getSounds().findAll()); };
-    cls["find_all_particles_type"] = [](AssetsManager& self) {
-        return sol::as_table(self.getParticlesTypes().findAll());
-    };
-    cls["find_all_ship_templates"] = [](AssetsManager& self) {
-        return sol::as_table(self.getShipTemplates().findAll());
-    };
-    cls["find_all_turrets"] = [](AssetsManager& self) { return sol::as_table(self.getTurrets().findAll()); };
 }

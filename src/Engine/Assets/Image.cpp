@@ -1,8 +1,6 @@
 #include "Image.hpp"
 #include "../File/Ktx2FileReader.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -50,11 +48,4 @@ void Image::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
 ImagePtr Image::from(const std::string& name) {
     return AssetsManager::getInstance().getImages().find(name);
-}
-
-void Image::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Image>("Image");
-    cls["name"] = sol::property(&Image::getName);
 }

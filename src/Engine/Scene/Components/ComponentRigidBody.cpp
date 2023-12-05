@@ -1,7 +1,5 @@
 #include "ComponentRigidBody.hpp"
-#include "../../Server/Lua.hpp"
 #include <btBulletDynamicsCommon.h>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -49,6 +47,10 @@ ComponentRigidBody::ComponentRigidBody(ComponentRigidBody&& other) noexcept = de
 
 ComponentRigidBody& ComponentRigidBody::operator=(ComponentRigidBody&& other) noexcept = default;
 
+void ComponentRigidBody::setShape(const CollisionShape& shape) {
+    setShape(shape.clone());
+}
+
 void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
     auto transform = tryGet<ComponentTransform>();
     if (!transform) {
@@ -81,11 +83,14 @@ void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
         worldTransform.setFromOpenGLMatrix(&transform->getAbsoluteTransform()[0][0]);
         rigidBody->setWorldTransform(worldTransform);*/
 
+        auto collisionGroup = CollisionGroup::Default;
+
         if (mass == 0.0f) {
             btTransform worldTransform;
             const auto m = withoutScale(transform->getAbsoluteTransform());
             worldTransform.setFromOpenGLMatrix(&m[0][0]);
             rigidBody->setWorldTransform(worldTransform);
+            collisionGroup = CollisionGroup::Static;
         }
 
         if (kinematic) {
@@ -94,7 +99,7 @@ void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
             rigidBody->setActivationState(DISABLE_DEACTIVATION);
         }
 
-        dynamicsWorld->addRigidBody(rigidBody.get());
+        dynamicsWorld->addRigidBody(rigidBody.get(), collisionGroup, CollisionGroup::Everything);
     }
 
     setDirty(true);
@@ -201,21 +206,4 @@ void ComponentRigidBody::updateTransform() {
     }
     motionState->setWorldTransform(rigidBody->getWorldTransform());
     dynamicsWorld->updateSingleAabb(rigidBody.get());
-}
-
-void ComponentRigidBody::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentRigidBody>("ComponentRigidBody");
-    cls["linear_velocity"] =
-        sol::property(&ComponentRigidBody::getLinearVelocity, &ComponentRigidBody::setLinearVelocity);
-    cls["angular_velocity"] =
-        sol::property(&ComponentRigidBody::getAngularVelocity, &ComponentRigidBody::setAngularVelocity);
-    cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
-    cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
-    cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
-    cls["kinematic"] = sol::property(&ComponentRigidBody::getKinematic, &ComponentRigidBody::setKinematic);
-    cls["clear_forces"] = &ComponentRigidBody::clearForces;
-    cls["activate"] = &ComponentRigidBody::activate;
-    cls["reset_transform"] = &ComponentRigidBody::resetTransform;
 }

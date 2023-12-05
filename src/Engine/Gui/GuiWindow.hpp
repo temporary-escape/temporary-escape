@@ -1,6 +1,10 @@
 #pragma once
 
 #include "../Graphics/Nuklear.hpp"
+#include "Widgets/GuiWidgetButton.hpp"
+#include "Widgets/GuiWidgetLabel.hpp"
+#include "Widgets/GuiWidgetLayout.hpp"
+#include "Widgets/GuiWidgetRow.hpp"
 
 namespace Engine {
 class ENGINE_API GuiWindow {
@@ -40,5 +44,44 @@ protected:
     Vector2 pos{0.0f, 0.0f};
     Nuklear::Flags flags{0};
     int fontSize{0};
+};
+
+class ENGINE_API GuiWindow2 : public GuiContext, public GuiWidgetLayout {
+public:
+    GuiWindow2(const FontFamily& fontFamily, int fontSize);
+    virtual ~GuiWindow2() = default;
+
+    virtual void update(const Vector2i& viewport);
+    void draw() override;
+
+    void setTitle(std::string value);
+    const std::string& getTitle() const {
+        return title;
+    }
+
+    void setSize(const Vector2& value);
+    const Vector2& getSize() const {
+        return size;
+    }
+    void setPos(const Vector2& value);
+    const Vector2& getPos() const {
+        return pos;
+    }
+    void setEnabled(bool value);
+    bool isEnabled() const {
+        return enabled;
+    }
+
+    void setBordered(bool value);
+    void setBackground(bool value);
+    void setNoScrollbar(bool value);
+    void setDynamic(bool value);
+
+private:
+    std::string title{"Window"};
+    Vector2 size;
+    Vector2 pos;
+    GuiContext::Flags flags{0};
+    bool enabled{false};
 };
 } // namespace Engine

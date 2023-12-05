@@ -24,8 +24,6 @@ public:
 
     [[nodiscard]] sol::table& getInstance() const;
 
-    static void bind(Lua& lua);
-
 private:
     struct Data;
     std::unique_ptr<Data> data;

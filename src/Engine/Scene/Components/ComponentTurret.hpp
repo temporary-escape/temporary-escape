@@ -64,8 +64,6 @@ public:
     bool shouldShoot() const;
     void resetShoot();
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(turret, targetPos, active, shootReady);
 
 protected:

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Server/Lua.hpp"
-#include "../Utils/Format.hpp"
+#include "../../Utils/Format.hpp"
+#include "../Lua.hpp"
 #include <sol/sol.hpp>
 
 namespace Engine {

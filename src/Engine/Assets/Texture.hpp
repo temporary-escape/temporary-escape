@@ -103,8 +103,6 @@ public:
 
     static std::shared_ptr<Texture> from(const std::string& name);
 
-    static void bind(Lua& lua);
-
 private:
     void loadPng(const Options& options, VulkanRenderer& vulkan);
     void loadKtx2(const Options& options, VulkanRenderer& vulkan);

@@ -1,8 +1,6 @@
 #include "DelaunayTriangulation.hpp"
-#include "../Server/Lua.hpp"
 #include <algorithm>
 #include <optional>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -212,17 +210,4 @@ void DelaunayTriangulation::calculate() {
         addConnection(t.b, t.c);
         addConnection(t.c, t.a);
     }
-}
-
-void DelaunayTriangulation::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls =
-        m.new_usertype<DelaunayTriangulation>("DelaunayTriangulation", sol::constructors<DelaunayTriangulation()>{});
-    cls["add_position"] = &DelaunayTriangulation::addPosition;
-    cls["calculate"] = &DelaunayTriangulation::calculate;
-    cls["has_connections"] = &DelaunayTriangulation::hasConnections;
-    cls["get_connections"] = [](DelaunayTriangulation& self, const size_t index) {
-        return sol::as_table(self.getConnections(index));
-    };
 }

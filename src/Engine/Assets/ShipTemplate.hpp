@@ -19,8 +19,6 @@ public:
         return path;
     }
 
-    static void bind(Lua& lua);
-
 private:
     Path path;
 };

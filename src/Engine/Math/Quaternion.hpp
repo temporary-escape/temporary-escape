@@ -11,8 +11,6 @@ namespace Engine {
 using Quaternion = glm::quat;
 
 ENGINE_API Quaternion randomQuaternion(std::mt19937_64& rng);
-
-ENGINE_API void bindMathQuaternion(Lua& lua);
 } // namespace Engine
 
 inline std::ostream& operator<<(std::ostream& os, Engine::Quaternion const& v) {

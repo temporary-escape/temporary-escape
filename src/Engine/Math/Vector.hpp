@@ -23,8 +23,6 @@ using Color4 = glm::vec4;
 inline Color4 alpha(float a) {
     return Color4{1.0f, 1.0f, 1.0f, a};
 }
-
-ENGINE_API void bindMathVectors(Lua& lua);
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Vector2> {

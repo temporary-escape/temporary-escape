@@ -13,8 +13,6 @@ struct ENGINE_API Spawner {
     std::string entity;
     float weight{1.0f};
     int count;
-
-    static void bind(Lua& lua);
 };
 
 struct ENGINE_API SectorCondition {
@@ -26,8 +24,6 @@ struct ENGINE_API SectorCondition {
 
     std::string name;
     Value value;
-
-    static void bind(Lua& lua);
 };
 
 struct ENGINE_API SectorType {
@@ -40,7 +36,5 @@ struct ENGINE_API SectorType {
 
     bool checkConditions(Rng& rng, const GalaxyData& galaxy, const SystemData& system,
                          const std::vector<PlanetData>& planets) const;
-
-    static void bind(Lua& lua);
 };
 } // namespace Engine

@@ -13,8 +13,6 @@ public:
 
     [[nodiscard]] std::optional<Vector2> operator()(std::mt19937_64& rng);
 
-    static void bind(Lua& lua);
-
 private:
     float maxWidth;
     float division;

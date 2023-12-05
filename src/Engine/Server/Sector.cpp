@@ -1,5 +1,6 @@
 #include "Sector.hpp"
 #include "../Scene/Controllers/ControllerNetwork.hpp"
+#include "../Scene/Controllers/ControllerPathfinding.hpp"
 #include "../Utils/StringUtils.hpp"
 #include "Server.hpp"
 #include <sol/sol.hpp>
@@ -42,8 +43,7 @@ void Sector::load() {
 
     lua = std::make_unique<Lua>(config, eventBus);
     scene = std::make_unique<Scene>(config, nullptr, lua.get());
-
-    lua->root()["get_scene"] = [this]() { return scene.get(); };
+    lua->setScene(*scene);
 
     const auto galaxyData = db.get<GalaxyData>(galaxyId);
     const auto systemData = db.get<SystemData>(fmt::format("{}/{}", galaxyId, systemId));
@@ -62,6 +62,10 @@ void Sector::load() {
             EXCEPTION("Failed to call sector template: '{}' error: {}", sectorData.luaTemplate, err.what());
         }
     });*/
+
+    // Build pathfinding
+    /*scene->getController<ControllerDynamicsWorld>().updateAabbs();
+    scene->getController<ControllerPathfinding>().buildTree();*/
 
     loaded = true;
     logger.info("Sector is loaded: '{}'", sectorId);

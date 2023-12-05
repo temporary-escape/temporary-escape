@@ -1,7 +1,5 @@
 #include "FloodFill.hpp"
-#include "../Server/Lua.hpp"
 #include "../Utils/Exceptions.hpp"
-#include <sol/sol.hpp>
 #include <unordered_set>
 
 using namespace Engine;
@@ -72,32 +70,5 @@ void FloodFill::calculate() {
         if (progress.empty()) {
             break;
         }
-    }
-}
-
-void FloodFill::Result::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    {
-        auto cls = m.new_usertype<Result>("FloodFillResult", sol::constructors<Result()>{});
-        cls["index"] = &Result::index;
-        cls["point"] = &Result::point;
-    }
-}
-
-void FloodFill::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    Result::bind(lua);
-
-    { // FloodFill
-        auto cls = m.new_usertype<FloodFill>("FloodFill", sol::constructors<FloodFill()>{});
-        cls["calculate"] = &FloodFill::calculate;
-        cls["add_start_point"] = &FloodFill::addStartPoint;
-        cls["size"] = &FloodFill::size;
-        cls["get"] = &FloodFill::get;
-        cls["add_position"] = [](FloodFill& self, const Vector2& pos, sol::as_table_t<std::vector<size_t>> conns) {
-            self.addPosition(pos, conns.value());
-        };
     }
 }

@@ -9,6 +9,17 @@ class btMotionState;
 class btDynamicsWorld;
 
 namespace Engine {
+struct CollisionGroup {
+    static constexpr int Default = 1;
+    static constexpr int Static = 2;
+    static constexpr int Kinematic = 4;
+    static constexpr int Debris = 8;
+    static constexpr int Sensor = 16;
+    static constexpr int Everything = 0x7FFFFFFF;
+};
+
+using CollisionMask = int;
+
 class ENGINE_API ComponentRigidBody : public Component {
 public:
     ComponentRigidBody();
@@ -24,6 +35,7 @@ public:
         return rigidBody.get();
     }
 
+    void setShape(const CollisionShape& shape);
     void setShape(std::unique_ptr<btCollisionShape> value);
 
     void setLinearVelocity(const Vector3& value);
@@ -69,8 +81,6 @@ public:
 
     [[nodiscard]] int32_t getFlags() const;
     void setFlags(int32_t value);
-
-    static void bind(Lua& lua);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;

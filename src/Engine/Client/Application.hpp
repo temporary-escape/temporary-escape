@@ -2,12 +2,11 @@
 
 #include "../Audio/AudioContext.hpp"
 #include "../Database/Database.hpp"
+#include "../Graphics/RendererCanvas.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
-#include "../Gui/GuiCreateProfile.hpp"
-#include "../Gui/GuiKeepSettings.hpp"
-#include "../Gui/GuiMainMenu.hpp"
-#include "../Gui/GuiMainSettings.hpp"
+#include "../Gui/GuiManager.hpp"
+#include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
@@ -77,13 +76,16 @@ private:
     Nuklear nuklear;
     Status status;
     VulkanQueryPool renderQueryPool;
+    RendererCanvas rendererCanvas;
+    Canvas2 canvas2;
+    GuiManager guiManager;
 
-    struct {
+    /*struct {
         GuiMainMenu mainMenu;
         GuiCreateProfile createProfile;
         GuiMainSettings mainSettings;
         GuiKeepSettings keepSettings;
-    } gui;
+    } gui;*/
 
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;

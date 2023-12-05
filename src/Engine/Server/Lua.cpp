@@ -54,6 +54,18 @@ static void myPanic(sol::optional<std::string> maybeMsg) {
     logger.error("Lua panic: unknown error");
 }
 
+Lua::Binder::Binder(std::function<void(sol::table&)> fn, std::string_view name) : fn{std::move(fn)}, name{name} {
+    Lua::registerBinder(*this);
+}
+
+void Lua::Binder::setup(sol::table& m) {
+    try {
+        fn(m);
+    } catch (...) {
+        EXCEPTION_NESTED("Failed to setup lua bindings for: {}", name);
+    }
+}
+
 struct Lua::Data {
     sol::state state{sol::c_call<decltype(&myPanic), myPanic>};
     sol::table engine;
@@ -181,100 +193,38 @@ sol::table& Lua::root() {
     return data->engine;
 }
 
-sol::state& Engine::Lua::getState() {
+sol::state& Lua::getState() {
     return data->state;
+}
+
+Scene& Lua::getScene() {
+    if (!scene) {
+        EXCEPTION("Trying to access scene from a non-sector script");
+    }
+    return *scene;
 }
 
 void Lua::setScene(Scene& value) {
     scene = &value;
 }
 
-static Server* getServerHelper() {
-    return Server::instance;
+void Engine::Lua::registerBinder(Lua::Binder& binder) {
+    getBinders().push_back(&binder);
 }
 
-static EventBus* getEventBusHelper() {
-    return &Server::instance->getEventBus();
-}
-
-static AssetsManager* getAssetManagerHelper() {
-    return &Server::instance->getAssetManager();
-}
-
-static Database* getDatabase() {
-    return &Server::instance->getDatabase();
+std::vector<Lua::Binder*>& Lua::getBinders() {
+    static std::vector<Binder*> binders;
+    return binders;
 }
 
 void Lua::setupBindings() {
-    auto& m = data->engine;
+    auto& m = root();
 
-    // Math
-    bindMathVectors(*this);
-    bindMathQuaternion(*this);
-    bindMathMatrices(*this);
-    MinimumSpanningTree::bind(*this);
-    DelaunayTriangulation::bind(*this);
-    FloodFill::bind(*this);
-    GalaxyDistribution::bind(*this);
-    VolumeOccupancyTester::bind(*this);
-    m["random_circle_positions"] = &randomCirclePositions;
-    m["radians"] = glm::radians<float>;
-    m["degrees"] = glm::degrees<float>;
-
-    { // std::mt19937_64
-        auto cls = m.new_usertype<std::mt19937_64>("MT19937", sol::constructors<std::mt19937_64(uint64_t)>{});
-        cls["rand_int"] = [](std::mt19937_64& self, const int64_t min, const int64_t max) {
-            return randomInt<int64_t>(self, min, max);
-        };
-        cls["rand_real"] = [](std::mt19937_64& self, const float min, const float max) {
-            return randomReal<float>(self, min, max);
-        };
-        cls["rand_seed"] = [](std::mt19937_64& self) { return randomInt<uint64_t>(self, 0, 0x1FFFFFFFFFFFFF); };
-        cls["rand_quaternion"] = [](std::mt19937_64& self) { return randomQuaternion(self); };
-    }
-
-    // Utils
-    NameGenerator::bind(*this);
-    Logger::bind(*this);
-    m["uuid"] = &uuid;
-
-    // Assets
-    PlanetType::bind(*this);
-    Image::bind(*this);
-    Texture::bind(*this);
-    Block::bind(*this);
-    Model::bind(*this);
-    AssetsManager::bind(*this);
-    Sound::bind(*this);
-    ParticlesType::bind(*this);
-    ShipTemplate::bind(*this);
-
-    // Server
-    bindSchemas(*this);
-    Server::bind(*this);
     EventHandler::bind(*this);
-    Spawner::bind(*this);
-    SectorCondition::bind(*this);
-    SectorType::bind(*this);
+    m["get_scene"] = [this]() -> Scene* { return &getScene(); };
+    m["get_event_bus"] = [this]() -> EventHandler* { return eventHandler.get(); };
 
-    // Scene
-    Entity::bind(*this);
-    ComponentModel::bind(*this);
-    ComponentModelSkinned::bind(*this);
-    ComponentRigidBody::bind(*this);
-    ComponentTransform::bind(*this);
-    ComponentIcon::bind(*this);
-    ComponentLabel::bind(*this);
-    ComponentGrid::bind(*this);
-    ComponentTurret::bind(*this);
-    ComponentShipControl::bind(*this);
-    Scene::bind(*this);
-
-    // Global functions
-    m["create_logger"] = &createLogger;
-    m["get_server"] = &getServerHelper;
-    m["get_scene"] = [this]() -> Scene* { return this->scene; };
-    m["get_event_bus"] = [this]() { return this->eventHandler.get(); };
-    m["get_database"] = &getDatabase;
-    m["get_assets_manager"] = &getAssetManagerHelper;
+    for (const auto binder : getBinders()) {
+        binder->setup(m);
+    }
 }

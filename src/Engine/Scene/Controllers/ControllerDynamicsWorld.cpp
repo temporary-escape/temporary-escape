@@ -13,6 +13,23 @@ static inline Color4 toColor(const btVector3& color) {
     return {color.x(), color.y(), color.z(), 1.0f};
 }
 
+ContactTestObject::ContactTestObject(CollisionShape& shape) : shape{shape.clone()} {
+    object = std::make_unique<btCollisionObject>();
+    object->setCollisionShape(this->shape.get());
+}
+
+ContactTestObject::~ContactTestObject() = default;
+
+btCollisionObject* ContactTestObject::get() const {
+    return object.get();
+}
+
+void ContactTestObject::setTransform(const Matrix4& value) {
+    btTransform transform{};
+    transform.setFromOpenGLMatrix(&value[0][0]);
+    object->setWorldTransform(transform);
+}
+
 class CollisionDebugDraw : public btIDebugDraw {
 public:
     explicit CollisionDebugDraw(VulkanRenderer& vulkan) : vulkan{vulkan} {
@@ -94,7 +111,9 @@ private:
 
 class SimpleContactResultCallback : public btCollisionWorld::ContactResultCallback {
 public:
-    SimpleContactResultCallback() = default;
+    SimpleContactResultCallback(const CollisionMask mask) {
+        m_collisionFilterMask = mask;
+    }
 
     btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, const int partId0,
                              const int index0, const btCollisionObjectWrapper* colObj1Wrap, const int partId1,
@@ -103,7 +122,7 @@ public:
         return 0;
     }
 
-    bool hasResult() const {
+    [[nodiscard]] bool hasResult() const {
         return result;
     }
 
@@ -130,20 +149,50 @@ void ControllerDynamicsWorld::update(const float delta) {
     dynamicsWorld->stepSimulation(delta, 10);
 }
 
-bool ControllerDynamicsWorld::contactTestSphere(const Vector3& origin, const float radius) const {
+bool ControllerDynamicsWorld::contactTest(ContactTestObject& object, const CollisionMask mask) const {
+    SimpleContactResultCallback callback{mask};
+    dynamicsWorld->contactTest(object.get(), callback);
+    return callback.hasResult();
+}
+
+bool ControllerDynamicsWorld::contactTestSphere(const Vector3& origin, const float radius,
+                                                const CollisionMask mask) const {
     btSphereShape shape{radius};
     btCollisionObject object{};
 
     object.setCollisionShape(&shape);
     btTransform transform{};
+    transform.setIdentity();
     transform.setOrigin({origin.x, origin.y, origin.z});
     object.setWorldTransform(transform);
 
-    SimpleContactResultCallback callback{};
+    SimpleContactResultCallback callback{mask};
 
     dynamicsWorld->contactTest(&object, callback);
 
     return callback.hasResult();
+}
+
+bool ControllerDynamicsWorld::contactTestBox(const Vector3& origin, float width, const CollisionMask mask) const {
+    const auto half = width / 2.0f;
+    btBoxShape shape{{half, half, half}};
+    btCollisionObject object{};
+
+    object.setCollisionShape(&shape);
+    btTransform transform{};
+    transform.setIdentity();
+    transform.setOrigin({origin.x, origin.y, origin.z});
+    object.setWorldTransform(transform);
+
+    SimpleContactResultCallback callback{mask};
+
+    dynamicsWorld->contactTest(&object, callback);
+
+    return callback.hasResult();
+}
+
+void ControllerDynamicsWorld::updateAabbs() {
+    dynamicsWorld->updateAabbs();
 }
 
 void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {

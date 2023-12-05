@@ -1,7 +1,5 @@
 #include "Block.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -84,11 +82,4 @@ void Block::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
 BlockPtr Block::from(const std::string& name) {
     return AssetsManager::getInstance().getBlocks().find(name);
-}
-
-void Block::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Block>("Block");
-    cls["name"] = sol::property(&Block::getName);
 }

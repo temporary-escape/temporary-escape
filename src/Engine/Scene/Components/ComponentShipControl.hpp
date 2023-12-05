@@ -37,8 +37,6 @@ public:
         return turrets;
     }
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(velocityValue, velocityTarget, velocityMax, rotation, velocityBoost);
 
 protected:

@@ -40,8 +40,6 @@ public:
 
     [[nodiscard]] std::unique_ptr<btCollisionShape> createCollisionShape();
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
 
 protected:

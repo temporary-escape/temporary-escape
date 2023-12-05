@@ -1,6 +1,4 @@
 #include "ComponentModelSkinned.hpp"
-#include "../../Server/Lua.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -46,11 +44,4 @@ void ComponentModelSkinned::setUboOffset(const size_t value) {
 
 void ComponentModelSkinned::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentModelSkinned>(handle);
-}
-
-void ComponentModelSkinned::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentModelSkinned>("ComponentModelSkinned");
-    cls["model"] = sol::property(&ComponentModelSkinned::getModel, &ComponentModelSkinned::setModel);
 }

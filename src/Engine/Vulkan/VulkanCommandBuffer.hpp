@@ -67,6 +67,7 @@ public:
     void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                      uint32_t firstInstance);
+    void drawIndexedIndirect(const VulkanBuffer& commands, VkDeviceSize offset, uint32_t drawCount, uint32_t stride);
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     void copyImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
                    const VkImageCopy& region);

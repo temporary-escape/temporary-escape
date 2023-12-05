@@ -20,8 +20,6 @@ public:
         return buffer;
     }
 
-    static void bind(Lua& lua);
-
 private:
     Path path;
     AudioBuffer buffer;

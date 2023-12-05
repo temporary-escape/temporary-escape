@@ -112,8 +112,6 @@ public:
         return reg && reg->valid(handle);
     }
 
-    static void bind(Lua& lua);
-
 private:
     entt::registry* reg{nullptr};
     entt::entity handle;

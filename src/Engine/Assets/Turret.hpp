@@ -28,7 +28,6 @@ public:
 
     static std::shared_ptr<Turret> from(const std::string& name);
 
-    static void bind(Lua& lua);
 
 private:
     Path path;

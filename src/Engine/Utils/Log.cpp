@@ -1,8 +1,6 @@
 #include "Log.hpp"
-#include "../Server/Lua.hpp"
 #include "Path.hpp"
 #include <memory>
-#include <sol/sol.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
@@ -33,14 +31,4 @@ Path Engine::getLoggerPath() {
 Logger Engine::createLogger(const std::string_view& name) {
     static auto root = ::createLogger(getLoggerPath());
     return Logger{std::string{name}, *root};
-}
-
-void Logger::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Logger>("Logger");
-    cls["info"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::info);
-    cls["debug"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::debug);
-    cls["warn"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::warn);
-    cls["error"] = static_cast<void (Logger::*)(const std::string&)>(&Logger::error);
 }

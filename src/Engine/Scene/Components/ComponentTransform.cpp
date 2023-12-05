@@ -1,7 +1,5 @@
 #include "ComponentTransform.hpp"
-#include "../../Server/Lua.hpp"
 #include "../Entity.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -88,25 +86,4 @@ void ComponentTransform::setStatic(const bool value) {
 
 bool ComponentTransform::isStatic() const {
     return flags & static_cast<uint64_t>(TransformFlags::Static);
-}
-
-void ComponentTransform::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentTransform>("ComponentTransform");
-    cls["move"] = &ComponentTransform::move;
-    cls["translate"] = &ComponentTransform::translate;
-    cls["scale"] = &ComponentTransform::scale;
-    cls["rotate_x"] = &ComponentTransform::rotateX;
-    cls["rotate_y"] = &ComponentTransform::rotateY;
-    cls["rotate_z"] = &ComponentTransform::rotateZ;
-    cls["rotate_by_axis"] =
-        static_cast<void (ComponentTransform::*)(const Vector3&, const float)>(&ComponentTransform::rotate);
-    cls["static"] = sol::property(&ComponentTransform::isStatic, &ComponentTransform::setStatic);
-    using GetTransformFunc = const Matrix4& (ComponentTransform::*)() const;
-    auto GetTransform = static_cast<GetTransformFunc>(&ComponentTransform::getTransform);
-    cls["transform"] = sol::property(GetTransform, &ComponentTransform::setTransform);
-    cls["parent"] = sol::property(&ComponentTransform::getParent, &ComponentTransform::setParent);
-    cls["position"] = sol::readonly_property(&ComponentTransform::getPosition);
-    cls["orientation"] = sol::readonly_property(&ComponentTransform::getOrientation);
 }

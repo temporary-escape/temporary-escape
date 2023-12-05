@@ -1,7 +1,5 @@
 #include "GalaxyDistribution.hpp"
-#include "../Server/Lua.hpp"
 #include "../Utils/Exceptions.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -52,12 +50,4 @@ std::optional<Vector2> GalaxyDistribution::operator()(std::mt19937_64& rng) {
     }
 
     return {};
-}
-
-void GalaxyDistribution::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<GalaxyDistribution>("GalaxyDistribution",
-                                                  sol::constructors<GalaxyDistribution(float, float, float)>{});
-    cls["get"] = &GalaxyDistribution::operator();
 }

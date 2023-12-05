@@ -49,8 +49,6 @@ public:
 
     static std::shared_ptr<Model> from(const std::string& name);
 
-    static void bind(Lua& lua);
-
 private:
     Path path;
     Vector3 bbMin{0.0f};

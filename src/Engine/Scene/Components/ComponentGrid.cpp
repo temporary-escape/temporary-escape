@@ -1,9 +1,7 @@
 #include "ComponentGrid.hpp"
 #include "../../File/MsgpackFileReader.hpp"
 #include "../../File/TebFileHeader.hpp"
-#include "../../Server/Lua.hpp"
 #include <btBulletDynamicsCommon.h>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -283,11 +281,4 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
 
 void ComponentGrid::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentGrid>(handle);
-}
-
-void ComponentGrid::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentGrid>("ComponentGrid");
-    cls["set_from"] = &ComponentGrid::setFrom;
 }

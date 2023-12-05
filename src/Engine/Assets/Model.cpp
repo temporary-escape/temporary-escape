@@ -1,10 +1,8 @@
 #include "Model.hpp"
 #include "../File/GltfFileReader.hpp"
-#include "../Server/Lua.hpp"
 #include "../Utils/StringUtils.hpp"
 #include "AssetsManager.hpp"
 #include <btBulletDynamicsCommon.h>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -422,12 +420,4 @@ void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
 ModelPtr Model::from(const std::string& name) {
     return AssetsManager::getInstance().getModels().find(name);
-}
-
-void Model::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Model>("Model");
-    cls["name"] = sol::readonly_property(&Model::getName);
-    cls["radius"] = sol::readonly_property(&Model::getRadius);
 }

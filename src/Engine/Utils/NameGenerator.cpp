@@ -1,7 +1,5 @@
 #include "NameGenerator.hpp"
-#include "../Server/Lua.hpp"
 #include <iostream>
-#include <sol/sol.hpp>
 #include <sstream>
 #include <string_view>
 
@@ -96,15 +94,4 @@ std::string NameGenerator::operator()(std::mt19937_64& rng) const {
 
     ss[0] = std::toupper(ss[0]);
     return {ss.data(), ss.size()};
-}
-
-static std::shared_ptr<NameGenerator> createNameGenerator(sol::as_table_t<std::vector<std::string>> arg) {
-    return std::make_shared<NameGenerator>(arg.value());
-}
-
-void NameGenerator::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<NameGenerator>("NameGenerator", sol::factories(&createNameGenerator));
-    cls["get"] = &NameGenerator::operator();
 }

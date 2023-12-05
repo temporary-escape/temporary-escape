@@ -1,7 +1,6 @@
 #include "VolumeOccupancyTester.hpp"
 #include "../Server/Lua.hpp"
 #include "../Utils/Exceptions.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -16,13 +15,4 @@ bool VolumeOccupancyTester::contactTest(const Vector3& pos, float radius) {
         }
     }
     return false;
-}
-
-void VolumeOccupancyTester::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls =
-        m.new_usertype<VolumeOccupancyTester>("VolumeOccupancyTester", sol::constructors<VolumeOccupancyTester()>{});
-    cls["add"] = &VolumeOccupancyTester::add;
-    cls["contact_test"] = &VolumeOccupancyTester::contactTest;
 }

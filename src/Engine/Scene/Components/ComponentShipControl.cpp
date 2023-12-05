@@ -1,9 +1,7 @@
 #include "ComponentShipControl.hpp"
-#include "../../Server/Lua.hpp"
 #include "../../Utils/Exceptions.hpp"
 #include "../Entity.hpp"
 #include <glm/gtx/euler_angles.hpp>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -138,11 +136,4 @@ void ComponentShipControl::setDirectionRelative(const int leftRight, const int d
 
 void ComponentShipControl::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentShipControl>(handle);
-}
-
-void ComponentShipControl::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentShipControl>("ComponentShipControl");
-    cls["add_turret"] = &ComponentShipControl::addTurret;
 }

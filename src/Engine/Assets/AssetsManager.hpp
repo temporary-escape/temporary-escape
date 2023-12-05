@@ -145,8 +145,6 @@ public:
         return loadQueue;
     }
 
-    static void bind(Lua& lua);
-
 private:
     void addManifest(const Path& path);
     TexturePtr createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name);

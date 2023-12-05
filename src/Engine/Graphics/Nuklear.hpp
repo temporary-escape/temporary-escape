@@ -150,7 +150,7 @@ public:
     bool inputHasMouseDown(MouseButton button = MouseButton::Left);
 
 private:
-    struct CustomStyle;
+    // struct CustomStyle;
 
     void triggerEventClick();
     void applyTheme();
@@ -159,22 +159,22 @@ private:
     void render();
     void setStyleImageToggle(bool value);
     void setStyleButtonToggle(bool value);
-    nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
+    // nk_user_font& addFontFamily(const FontFamily& fontFamily, int size);
 
     static inline const auto padding = 4.0f;
 
-    using FontSizeMap = std::unordered_map<int, std::unique_ptr<nk_user_font>>;
-    using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
+    // using FontSizeMap = std::unordered_map<int, std::unique_ptr<nk_user_font>>;
+    // using FontFamilyMap = std::unordered_map<const FontFamily*, FontSizeMap>;
 
-    EventCallback& events;
-    const Config& config;
-    Canvas& canvas;
-    const FontFamily& defaultFontFamily;
-    std::unique_ptr<CustomStyle> customStyle;
+    // EventCallback& events;
+    // const Config& config;
+    // Canvas& canvas;
+    // const FontFamily& defaultFontFamily;
+    // std::unique_ptr<CustomStyle> customStyle;
     int defaultFontSize;
     Vector2i lastViewportValue;
-    std::unique_ptr<nk_context> ctx;
-    FontFamilyMap fonts;
+    // std::unique_ptr<nk_context> ctx;
+    // FontFamilyMap fonts;
     std::vector<std::tuple<Vector2, Vector2>> windowsBounds;
     std::list<std::function<void()>> inputEvents;
     nk_user_font* defaultFont;

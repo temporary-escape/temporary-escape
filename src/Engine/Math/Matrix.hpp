@@ -15,8 +15,6 @@ using Matrix4 = glm::mat4x4;
 using Matrix3 = glm::mat3x3;
 
 ENGINE_API Matrix4 withoutScale(const Matrix4& mat);
-
-ENGINE_API void bindMathMatrices(Lua& lua);
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Matrix3> {

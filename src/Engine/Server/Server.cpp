@@ -10,7 +10,6 @@
 #include "Services/ServiceSectors.hpp"
 #include "Services/ServiceSystems.hpp"
 #include <memory>
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -425,31 +424,4 @@ void Server::handle(Request<MessageControlTargetEvent> req) {
 
     const auto data = req.get();
     sector->handle(session, data);
-}
-
-void Server::bind(Lua& lua) {
-    /**
-     * @module engine
-     */
-    auto& m = lua.root();
-
-    /**
-     * @class Server
-     * A class that represents server operations
-     */
-    auto cls = m.new_usertype<Server>("Server");
-    /**
-     * @function Server:move_player_to_sector
-     * Moves a player to sector and starts the sector if it is not running
-     * @param player_id The ID of the player to move
-     * @praam sector_id The ID of the sector
-     */
-    cls["move_player_to_sector"] = &Server::movePlayerToSector;
-    /**
-     * @function Server:add_sector_type
-     * Adds a new sector type, or overwrites an existing sector type, for the galaxy generator.
-     * @param name Name of the sector type
-     * @param type An instance of SectorType
-     */
-    cls["add_sector_type"] = &Server::addSectorType;
 }

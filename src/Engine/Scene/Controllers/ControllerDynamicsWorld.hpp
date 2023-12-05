@@ -10,11 +10,26 @@ class btSequentialImpulseConstraintSolver;
 class btDiscreteDynamicsWorld;
 class btIDebugDraw;
 class btRigidBody;
+class btCollisionObject;
 
 namespace Engine {
+class ContactTestObject {
+public:
+    ContactTestObject(CollisionShape& shape);
+    ~ContactTestObject();
+
+    btCollisionObject* get() const;
+    void setTransform(const Matrix4& value);
+
+private:
+    std::unique_ptr<btCollisionShape> shape;
+    std::unique_ptr<btCollisionObject> object;
+};
+
 class ENGINE_API ControllerDynamicsWorld : public Controller {
 public:
-    struct RayCastResult {
+    class RayCastResult {
+    public:
         Vector3 hitPos;
         bool valid{false};
 
@@ -30,7 +45,10 @@ public:
 
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;
-    bool contactTestSphere(const Vector3& origin, float radius) const;
+    bool contactTest(ContactTestObject& object, CollisionMask mask = CollisionGroup::Everything) const;
+    bool contactTestBox(const Vector3& origin, float width, CollisionMask mask = CollisionGroup::Everything) const;
+    bool contactTestSphere(const Vector3& origin, float radius, CollisionMask mask = CollisionGroup::Everything) const;
+    void updateAabbs();
     void rayCast(const Vector3& start, const Vector3& end, RayCastResult& result);
 
     const VulkanDoubleBuffer& getDebugDrawVbo() const;

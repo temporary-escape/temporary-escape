@@ -1,10 +1,8 @@
 #include "Texture.hpp"
 #include "../File/Ktx2FileReader.hpp"
 #include "../File/PngFileReader.hpp"
-#include "../Server/Lua.hpp"
 #include "../Utils/StringUtils.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -282,11 +280,4 @@ void Texture::loadKtx2(const Texture::Options& options, VulkanRenderer& vulkan) 
 
 TexturePtr Texture::from(const std::string& name) {
     return AssetsManager::getInstance().getTextures().find(name);
-}
-
-void Texture::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Texture>("Texture");
-    cls["name"] = sol::property(&Texture::getName);
 }

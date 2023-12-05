@@ -1,7 +1,5 @@
 #include "ParticlesType.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -50,13 +48,3 @@ void ParticlesType::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, A
 ParticlesTypePtr ParticlesType::from(const std::string& name) {
     return AssetsManager::getInstance().getParticlesTypes().find(name);
 }
-
-void ParticlesType::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ParticlesType>("ParticlesType");
-    cls["name"] = sol::property(&ParticlesType::getName);
-}
-
-static_assert(offsetof(ParticlesType::Uniform, startSize) == 96);
-static_assert(offsetof(ParticlesType::Uniform, endSize) == 104);

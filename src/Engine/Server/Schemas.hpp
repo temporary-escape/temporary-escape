@@ -131,6 +131,4 @@ struct PlanetData {
 };
 
 SCHEMA_DEFINE(PlanetData);
-
-ENGINE_API void bindSchemas(Lua& lua);
 } // namespace Engine

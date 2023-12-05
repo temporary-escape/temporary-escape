@@ -48,8 +48,6 @@ public:
         log->warn(msg, std::forward<Args>(args)...);
     }
 
-    static void bind(Lua& lua);
-
 private:
     std::string name;
     std::shared_ptr<SpdLogger> log;

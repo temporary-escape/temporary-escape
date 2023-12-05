@@ -1,8 +1,6 @@
 #include "Sound.hpp"
 #include "../File/OggFileReader.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -30,11 +28,4 @@ void Sound::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
 SoundPtr Sound::from(const std::string& name) {
     return AssetsManager::getInstance().getSounds().find(name);
-}
-
-void Sound::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Sound>("Sound");
-    cls["name"] = sol::property(&Sound::getName);
 }

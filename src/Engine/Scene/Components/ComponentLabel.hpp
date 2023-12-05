@@ -20,8 +20,6 @@ public:
         setDirty(true);
     }
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(label);
 
 protected:

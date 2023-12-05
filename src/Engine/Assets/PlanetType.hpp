@@ -85,8 +85,6 @@ public:
 
     static std::shared_ptr<PlanetType> from(const std::string& name);
 
-    static void bind(Lua& lua);
-
 private:
     Path path;
     Definition definition;

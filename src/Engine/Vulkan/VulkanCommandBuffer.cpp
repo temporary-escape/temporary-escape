@@ -146,6 +146,11 @@ void VulkanCommandBuffer::drawIndexed(const uint32_t indexCount, const uint32_t 
     vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
+void VulkanCommandBuffer::drawIndexedIndirect(const VulkanBuffer& commands, const VkDeviceSize offset,
+                                              const uint32_t drawCount, const uint32_t stride) {
+    vkCmdDrawIndexedIndirect(commandBuffer, commands.getHandle(), offset, drawCount, stride);
+}
+
 void VulkanCommandBuffer::dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) {
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }

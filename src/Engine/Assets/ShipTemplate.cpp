@@ -1,9 +1,7 @@
 #include "ShipTemplate.hpp"
 #include "../File/MsgpackFileReader.hpp"
 #include "../File/TebFileHeader.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -31,11 +29,4 @@ void ShipTemplate::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, Au
 
 ShipTemplatePtr ShipTemplate::from(const std::string& name) {
     return AssetsManager::getInstance().getShipTemplates().find(name);
-}
-
-void ShipTemplate::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ShipTemplate>("ShipTemplate");
-    cls["name"] = sol::property(&ShipTemplate::getName);
 }

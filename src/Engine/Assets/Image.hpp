@@ -19,8 +19,6 @@ public:
 
     static std::shared_ptr<Image> from(const std::string& name);
 
-    static void bind(Lua& lua);
-
 private:
     Path path;
     ImageAtlas::Allocation allocation;

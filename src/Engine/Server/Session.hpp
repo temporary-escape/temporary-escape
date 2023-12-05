@@ -56,8 +56,6 @@ public:
         return stream.lock();
     }
 
-    static void bind(Lua& lua);
-
 private:
     std::string playerId;
     std::weak_ptr<NetworkPeer> stream;

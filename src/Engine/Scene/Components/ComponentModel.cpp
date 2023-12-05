@@ -1,6 +1,4 @@
 #include "ComponentModel.hpp"
-#include "../../Server/Lua.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -11,11 +9,4 @@ ComponentModel::ComponentModel(entt::registry& reg, entt::entity handle, const M
 
 void ComponentModel::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentModel>(handle);
-}
-
-void ComponentModel::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentModel>("ComponentModel");
-    cls["model"] = sol::property(&ComponentModel::getModel, &ComponentModel::setModel);
 }

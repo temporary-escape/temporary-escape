@@ -1,5 +1,4 @@
 #include "ComponentScript.hpp"
-#include "../../Server/Lua.hpp"
 #include "../Entity.hpp"
 #include <sol/sol.hpp>
 
@@ -25,11 +24,4 @@ ComponentScript& Engine::ComponentScript::operator=(ComponentScript&& other) noe
 
 sol::table& Engine::ComponentScript::getInstance() const {
     return data->instance;
-}
-
-void ComponentScript::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<ComponentScript>("ComponentScript");
-    cls["instance"] = sol::readonly_property(&ComponentScript::getInstance);
 }

@@ -1,6 +1,5 @@
 #include "Scene.hpp"
 #include "../Assets/AssetsManager.hpp"
-#include "../Server/Lua.hpp"
 #include "Controllers/ControllerBullets.hpp"
 #include "Controllers/ControllerCamera.hpp"
 #include "Controllers/ControllerCameraOrbital.hpp"
@@ -14,6 +13,7 @@
 #include "Controllers/ControllerModel.hpp"
 #include "Controllers/ControllerModelSkinned.hpp"
 #include "Controllers/ControllerNetwork.hpp"
+#include "Controllers/ControllerPathfinding.hpp"
 #include "Controllers/ControllerPointCloud.hpp"
 #include "Controllers/ControllerPolyShape.hpp"
 #include "Controllers/ControllerRigidBody.hpp"
@@ -37,6 +37,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
     addController<ControllerTurret>(dynamicsWorld, bullets);
     addController<ControllerShipControl>();
     addController<ControllerModel>();
+    // addController<ControllerPathfinding>(dynamicsWorld);
 
     if (voxelShapeCache) {
         addController<ControllerIconSelectable>();
@@ -262,14 +263,4 @@ Vector2 Scene::worldToScreen(const Vector3& pos) const {
     }
 
     return camera->worldToScreen(pos, true);
-}
-
-void Scene::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<Scene>("Scene");
-    cls["create_entity"] = &Scene::createEntity;
-    cls["contact_test_sphere"] = &Scene::contactTestSphere;
-    cls["add_entity_template"] = &Scene::addEntityTemplate;
-    cls["create_entity_template"] = &Scene::createEntityFrom;
 }

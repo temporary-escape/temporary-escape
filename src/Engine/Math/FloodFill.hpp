@@ -12,8 +12,6 @@ public:
     struct Result {
         size_t index{0};
         size_t point{0};
-
-        static void bind(Lua& lua);
     };
 
     FloodFill() = default;
@@ -36,8 +34,6 @@ public:
     const Result& get(const size_t index) {
         return results.at(index);
     }
-
-    static void bind(Lua& lua);
 
 private:
     std::vector<Vector2> positions;

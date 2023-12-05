@@ -57,8 +57,6 @@ public:
 
     [[nodiscard]] Vector3 getAbsolutePosition() const;
 
-    static void bind(Lua& lua);
-
     void setStatic(const bool value);
     bool isStatic() const;
 

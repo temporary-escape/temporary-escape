@@ -1,7 +1,5 @@
 #include "PlanetType.hpp"
-#include "../Server/Lua.hpp"
 #include "AssetsManager.hpp"
-#include <sol/sol.hpp>
 
 using namespace Engine;
 
@@ -39,11 +37,4 @@ void PlanetType::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, Audi
 
 PlanetTypePtr PlanetType::from(const std::string& name) {
     return AssetsManager::getInstance().getPlanetTypes().find(name);
-}
-
-void PlanetType::bind(Lua& lua) {
-    auto& m = lua.root();
-
-    auto cls = m.new_usertype<PlanetType>("PlanetType");
-    cls["name"] = sol::property(&PlanetType::getName);
 }

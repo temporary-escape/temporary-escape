@@ -70,8 +70,6 @@ public:
         return model;
     }
 
-    static void bind(Lua& lua);
-
     MSGPACK_DEFINE_ARRAY(model);
 
 protected:

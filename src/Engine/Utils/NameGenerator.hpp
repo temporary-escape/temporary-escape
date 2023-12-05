@@ -14,8 +14,6 @@ public:
 
     std::string operator()(std::mt19937_64& rng) const;
 
-    static void bind(Lua& lua);
-
 private:
     void build(const std::vector<std::string>& words);
 

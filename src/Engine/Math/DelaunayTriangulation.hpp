@@ -24,8 +24,6 @@ public:
 
     void calculate();
 
-    static void bind(Lua& lua);
-
 private:
     std::vector<Vector2> vertices;
     std::unordered_map<size_t, std::vector<size_t>> connections;

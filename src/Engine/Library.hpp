@@ -11,8 +11,3 @@
 #else
 #define ENGINE_API
 #endif
-
-// Forward definition
-namespace Engine {
-class Lua;
-}
