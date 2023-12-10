@@ -8,15 +8,14 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const float size) : size{size} {
+FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const int size) : size{size} {
     auto loader = FontLoader{path, size};
 
     std::vector<std::tuple<int, FontLoader::Glyph>> raw;
 
     static std::vector<std::tuple<int, int>> ranges = {
         {0x0000, 0x0000}, // Unknown,
-        {0x0020, 0x007F}, // Basic Latin
-        {0x00A0, 0x00FF}, // Latin-1 Supplement
+        {0x0020, 0x00FF}, // Basic Latin + Latin-1 Supplement
         {0x0100, 0x017F}, // Latin Extended-A
         {0x0180, 0x024F}, // Latin Extended-B
         {0x0250, 0x02AF}, // IPA Extensions

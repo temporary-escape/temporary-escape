@@ -38,15 +38,15 @@ void Editor::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i
     }
 }
 
-void Editor::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
-    view.renderCanvas(canvas, viewport);
+void Editor::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+    /*view.renderCanvas(canvas, viewport);
     nuklear.begin(viewport);
     if (guiMainMenu.isEnabled()) {
         guiMainMenu.draw(nuklear, viewport);
     } else {
         view.renderNuklear(nuklear, viewport);
     }
-    nuklear.end();
+    nuklear.end();*/
 }
 
 void Editor::eventMouseMoved(const Vector2i& pos) {

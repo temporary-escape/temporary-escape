@@ -1,4 +1,6 @@
 #include "GuiManager.hpp"
+#include "GuiWindow.hpp"
+#include "Windows/GuiWindowModal.hpp"
 
 using namespace Engine;
 
@@ -10,8 +12,19 @@ GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const F
     createRenderPass();
 }
 
+GuiManager::~GuiManager() = default;
+
 void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
+    for (const auto window : windowsToRemove) {
+        removeWindowInternal(window);
+    }
+    windowsToRemove.clear();
+
     for (auto& window : windows) {
+        if (!window.ptr->isEnabled()) {
+            continue;
+        }
+
         window.ptr->update(viewport);
 
         if (!window.ptr->isDirty()) {
@@ -65,21 +78,103 @@ void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
 }
 
 void GuiManager::blit(Canvas2& canvas) {
+    const Color4 colorDefault{1.0f, 1.0f, 1.0f, 1.0f};
+    const Color4 colorDimmed{0.3f, 0.3f, 0.3f, 1.0f};
+
     for (auto& window : windows) {
-        canvas.drawTexture(window.ptr->getPos(), window.ptr->getSize(), window.fboColor, {1.0f, 1.0f, 1.0f, 1.0f});
+        if (!window.ptr->isEnabled()) {
+            continue;
+        }
+
+        const auto extent = getExtent(window);
+        const Vector2 size{extent.width, extent.height};
+        const auto dimmed = focused != nullptr && focused != window.ptr.get();
+        canvas.drawTexture(window.ptr->getPos(), size, window.fboColor, dimmed ? colorDimmed : colorDefault);
     }
+}
+
+void GuiManager::removeWindowInternal(const GuiWindow2* window) {
+    auto it = std::find_if(
+        windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == window; });
+
+    if (window == focused) {
+        clearFocused();
+    }
+
+    if (it != windows.end()) {
+        vulkan.dispose(std::move(it->fboColor));
+        vulkan.dispose(std::move(it->fbo));
+        windows.erase(it);
+    }
+}
+
+void GuiManager::removeWindow(const GuiWindow2& window) {
+    windowsToRemove.push_back(&window);
+}
+
+void GuiManager::setFocused(const GuiWindow2& window) {
+    auto it = std::find_if(
+        windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == &window; });
+
+    if (it == windows.end()) {
+        return;
+    }
+
+    focused = &window;
+}
+
+void GuiManager::clearFocused() {
+    focused = nullptr;
+}
+
+std::shared_ptr<GuiWindowModal> GuiManager::modal(std::string title, std::string text,
+                                                  const std::vector<std::string>& choices,
+                                                  const ModalCallback& callback) {
+    auto window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices);
+    window->setEnabled(true);
+    setFocused(*window);
+    window->setOnClickCallback([this, window, callback](const std::string& choice) {
+        (void)choice;
+        window->setEnabled(false);
+        clearFocused();
+        this->removeWindow(*window);
+        if (callback) {
+            callback(false);
+        }
+    });
+    return window;
+}
+
+std::shared_ptr<GuiWindowModal> GuiManager::modalSuccess(std::string title, std::string text,
+                                                         const ModalCallback& callback) {
+    static std::vector<std::string> choices{"Ok"};
+    auto window = modal(std::move(title), std::move(text), choices, callback);
+    window->setHeaderSuccess(true);
+    return window;
+}
+
+std::shared_ptr<GuiWindowModal> GuiManager::modalDanger(std::string title, std::string text,
+                                                        const ModalCallback& callback) {
+    static std::vector<std::string> choices{"Ok"};
+    auto window = modal(std::move(title), std::move(text), choices, callback);
+    window->setHeaderDanger(true);
+    return window;
 }
 
 void GuiManager::eventMouseMoved(const Vector2i& pos) {
     for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
         const auto& p = Vector2i{window.ptr->getPos()};
         const auto& s = Vector2i{window.ptr->getSize()};
 
         if (p.x <= pos.x && p.x + s.x >= pos.x && p.y <= pos.y && p.y + s.y >= pos.y) {
-            window.input = true;
+            window.hover = true;
             window.ptr->eventMouseMoved(pos - p);
-        } else if (window.input) {
-            window.input = false;
+        } else if (window.hover) {
+            window.hover = false;
             window.ptr->eventMouseMoved({999999.0f, 999999.0f});
         }
     }
@@ -87,6 +182,10 @@ void GuiManager::eventMouseMoved(const Vector2i& pos) {
 
 void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
         const auto& p = Vector2i{window.ptr->getPos()};
         const auto& s = Vector2i{window.ptr->getSize()};
 
@@ -99,6 +198,10 @@ void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button
 
 void GuiManager::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
         const auto& p = Vector2i{window.ptr->getPos()};
         const auto& s = Vector2i{window.ptr->getSize()};
 
@@ -113,19 +216,50 @@ void GuiManager::eventMouseReleased(const Vector2i& pos, const MouseButton butto
 
 void GuiManager::eventMouseScroll(const int xscroll, const int yscroll) {
     for (auto& window : windows) {
-        if (window.input) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (window.hover) {
             window.ptr->eventMouseScroll(xscroll, yscroll);
         }
     }
 }
 
 void GuiManager::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (window.ptr->hasActiveInput()) {
+            window.ptr->eventKeyPressed(key, modifiers);
+        }
+    }
 }
 
 void GuiManager::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (window.ptr->hasActiveInput()) {
+            window.ptr->eventKeyReleased(key, modifiers);
+        }
+    }
 }
 
 void GuiManager::eventCharTyped(const uint32_t code) {
+    for (auto& window : windows) {
+        if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (window.ptr->hasActiveInput()) {
+            window.ptr->eventCharTyped(code);
+        }
+    }
 }
 
 void GuiManager::createRenderPass() {

@@ -9,7 +9,7 @@ public:
 
     static_assert(FontFace::Type::Light + 1 == total);
 
-    explicit FontFamily(VulkanRenderer& vulkan, const Path& dir, const std::string& name, float size);
+    explicit FontFamily(VulkanRenderer& vulkan, const Path& dir, const std::string& name, int size);
 
     FontFace& get(FontFace::Type type) {
         return faces.at(type);

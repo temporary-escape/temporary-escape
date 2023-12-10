@@ -18,7 +18,7 @@ public:
         float ascend;
     };
 
-    explicit FontLoader(const Path& path, float size);
+    explicit FontLoader(const Path& path, int size);
     Glyph getGlyph(int code);
 
 private:

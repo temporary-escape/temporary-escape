@@ -110,7 +110,7 @@ void GuiWindow2::draw() {
     if (GuiContext::beginWindow(title, {0.0f, 0.0f}, size, flags)) {
         GuiWidgetLayout::draw();
     }
-    GuiContext::endWindow();
+    GuiContext::endWindow(flags);
 }
 
 void GuiWindow2::setTitle(std::string value) {
@@ -127,6 +127,7 @@ void GuiWindow2::setPos(const Vector2& value) {
 
 void GuiWindow2::setEnabled(const bool value) {
     enabled = value;
+    setDirty();
 }
 
 void GuiWindow2::setBordered(bool value) {
@@ -158,5 +159,21 @@ void GuiWindow2::setDynamic(bool value) {
         flags |= WindowFlag::Dynamic;
     } else {
         flags &= ~WindowFlag::Dynamic;
+    }
+}
+
+void GuiWindow2::setHeaderSuccess(bool value) {
+    if (value) {
+        flags |= WindowFlag::HeaderSuccess;
+    } else {
+        flags &= ~WindowFlag::HeaderSuccess;
+    }
+}
+
+void GuiWindow2::setHeaderDanger(bool value) {
+    if (value) {
+        flags |= WindowFlag::HeaderDanger;
+    } else {
+        flags &= ~WindowFlag::HeaderDanger;
     }
 }

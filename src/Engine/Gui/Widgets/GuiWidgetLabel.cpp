@@ -6,6 +6,7 @@ GuiWidgetLabel::GuiWidgetLabel(GuiContext& ctx, std::string label) : GuiWidget{c
 }
 
 void GuiWidgetLabel::draw() {
+    ctx.label(label);
 }
 
 void GuiWidgetLabel::setLabel(std::string value) {

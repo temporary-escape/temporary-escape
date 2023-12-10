@@ -7,6 +7,12 @@ Canvas2::Canvas2(VulkanRenderer& vulkan) : vulkan{vulkan} {
     resetTextures();
 }
 
+Canvas2::~Canvas2() {
+    vulkan.dispose(std::move(vbo));
+    vulkan.dispose(std::move(ibo));
+    vulkan.dispose(std::move(cbo));
+}
+
 /*void Canvas2::render(VulkanCommandBuffer& vkb) {
     flush(vertices, vbo);
     flush(indices, ibo);
@@ -38,6 +44,10 @@ void Canvas2::begin(const Vector2i& viewport) {
 
     batches.clear();
 
+    for (auto& texture : textures) {
+        texture = nullptr;
+    }
+
     auto& batch = batches.emplace_back();
     batch.offset = 0;
     batch.length = 0;
@@ -48,7 +58,7 @@ void Canvas2::begin(const Vector2i& viewport) {
 }
 
 void Canvas2::setScissor(const Vector2& pos, const Vector2& size) {
-    if (batches.back().length) {
+    /*if (batches.back().length) {
         const auto newOffset = batches.back().offset + batches.back().length;
 
         auto& batch = batches.emplace_back();
@@ -59,7 +69,7 @@ void Canvas2::setScissor(const Vector2& pos, const Vector2& size) {
     batches.back().scissor = {
         {static_cast<int>(pos.x), static_cast<int>(pos.x)},
         {static_cast<int>(size.x), static_cast<int>(size.y)},
-    };
+    };*/
 }
 
 void Canvas2::clearScissor() {
@@ -76,6 +86,11 @@ void Canvas2::doRect(Canvas2::Vertex*& v, uint32_t*& i, const Vector2& pos, cons
     v[1].color = color;
     v[2].color = color;
     v[3].color = color;
+
+    v[0].uv = {0.0f, 0.0f, 0.0f, 0.0f};
+    v[1].uv = {0.0f, 0.0f, 0.0f, 0.0f};
+    v[2].uv = {0.0f, 0.0f, 0.0f, 0.0f};
+    v[3].uv = {0.0f, 0.0f, 0.0f, 0.0f};
 
     const auto offset = getOffset(vertices, v);
     i[0] = offset;
@@ -162,7 +177,7 @@ void Canvas2::drawTexture(const Vector2& pos, const Vector2& size, const VulkanT
     batches.back().length++;
 }
 
-void Canvas2::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, const float size,
+void Canvas2::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, const int size,
                        const Color4& color) {
     const auto total = utf8::distance(text.begin(), text.end());
     const auto& face = font.get(FontFace::Regular);

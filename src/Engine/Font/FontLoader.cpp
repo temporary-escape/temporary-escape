@@ -23,7 +23,7 @@ static FT_Library getFreeType() {
     return ft.get();
 }
 
-FontLoader::FontLoader(const Path& path, const float size) {
+FontLoader::FontLoader(const Path& path, const int size) {
     auto ft = getFreeType();
 
     FT_Face f;
@@ -45,15 +45,17 @@ FontLoader::Glyph FontLoader::getGlyph(int code) {
         EXCEPTION("Failed to load glyph: {}", code);
     }
 
-    // glyph.bearing.x = face->glyph->bitmap_left;
-    // glyph.bearing.x = face->glyph->bitmap_top;
     glyph.box.x = static_cast<float>(face->glyph->metrics.width) / static_cast<float>(1 << 6);
     glyph.box.y = static_cast<float>(face->glyph->metrics.height) / static_cast<float>(1 << 6);
     glyph.bitmapSize.x = face->glyph->bitmap.width;
     glyph.bitmapSize.y = face->glyph->bitmap.rows;
     glyph.bitmapPitch = face->glyph->bitmap.pitch;
     glyph.advance = face->glyph->advance.x;
-    glyph.ascend = face->glyph->bitmap.rows - face->glyph->bitmap_top;
+    if (face->glyph->bitmap.rows > face->glyph->bitmap_top) {
+        glyph.ascend = face->glyph->bitmap.rows - face->glyph->bitmap_top;
+    } else {
+        glyph.ascend = -static_cast<float>(face->glyph->bitmap_top - face->glyph->bitmap.rows);
+    }
 
     glyph.bitmap = std::make_unique<char[]>(glyph.bitmapSize.x * glyph.bitmapSize.y);
     std::memcpy(glyph.bitmap.get(), face->glyph->bitmap.buffer, glyph.bitmapSize.x * glyph.bitmapSize.y);

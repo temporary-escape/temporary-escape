@@ -6,6 +6,7 @@
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
 #include "../Gui/GuiManager.hpp"
+#include "../Gui/Windows/GuiWindowCreateProfile.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
@@ -39,6 +40,7 @@ public:
     void eventWindowFocus() override;
 
 private:
+    void loadProfile();
     void loadSounds();
     void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
@@ -71,21 +73,17 @@ private:
 
     AudioContext audio;
     AudioSource audioSource;
-    Canvas canvas;
     FontFamily font;
-    Nuklear nuklear;
     Status status;
     VulkanQueryPool renderQueryPool;
     RendererCanvas rendererCanvas;
     Canvas2 canvas2;
     GuiManager guiManager;
 
-    /*struct {
-        GuiMainMenu mainMenu;
-        GuiCreateProfile createProfile;
-        GuiMainSettings mainSettings;
-        GuiKeepSettings keepSettings;
-    } gui;*/
+    struct {
+        std::shared_ptr<GuiWindowMainMenu> mainMenu{nullptr};
+        std::shared_ptr<GuiWindowCreateProfile> createProfile{nullptr};
+    } gui;
 
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;
@@ -104,7 +102,7 @@ private:
     std::future<std::function<void()>> future;
     std::promise<std::function<void()>> promise;
     std::atomic<bool> shouldStop{false};
-    Vector2i mousePos;
+    Vector2i mousePos{0, 0};
     bool editorOnly{false};
     int shouldBlitCount{0};
 

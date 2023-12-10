@@ -83,10 +83,6 @@ void ViewGalaxy::update(const float deltaTime) {
 void ViewGalaxy::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
-void ViewGalaxy::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
-    guiModalLoading.draw(nuklear, viewport);
-}
-
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
     if (!loading) {
         scene->eventMouseMoved(pos);

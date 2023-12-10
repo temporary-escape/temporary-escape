@@ -206,41 +206,37 @@ void GuiContext::render(Canvas2& canvas) {
     nk_clear(nk.get());
 }
 
-bool GuiContext::beginWindow(const std::string& title, const Vector2& pos, const Vector2& size,
-                             GuiContext::Flags flags) {
+bool GuiContext::beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, const Flags flags) {
+    activeInput = false;
+
     if (flags & WindowFlag::Transparent) {
         nk_style_push_color(nk.get(), &nk->style.window.background, nk_rgba(0, 0, 0, 0));
         nk_style_push_style_item(
             nk.get(), &nk->style.window.fixed_background, nk_style_item_color(nk_rgba(0, 0, 0, 0)));
-        resetStyle = true;
+    }
+
+    if (flags & WindowFlag::HeaderSuccess) {
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Theme::secondary));
+    } else if (flags & WindowFlag::HeaderDanger) {
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Theme::ternary));
     }
 
     if (nk_begin_titled(nk.get(), title.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags)) {
-        // windowsBounds.emplace_back(pos, size);
-        /*if (!(flags & static_cast<Flags>(WindowFlag::Moveable))) {
-            nk_window_set_position(nk.get(), title.c_str(), nk_vec2(pos.x, pos.y));
-        }*/
-
-        /*nk_layout_row_dynamic(nk.get(), 30, 2);
-
-        nk_button_label(nk.get(), "Hello");
-        nk_button_label(nk.get(), "World");
-        nk_button_label(nk.get(), "First");
-        nk_button_label(nk.get(), "Second");*/
-
         return true;
     }
 
     return false;
 }
 
-void GuiContext::endWindow() {
+void GuiContext::endWindow(const Flags flags) {
     nk_end(nk.get());
 
-    if (resetStyle) {
-        resetStyle = false;
+    if (flags & WindowFlag::Transparent) {
         nk_style_pop_color(nk.get());
         nk_style_pop_style_item(nk.get());
+    }
+    if (flags & WindowFlag::HeaderSuccess || flags & WindowFlag::HeaderDanger) {
+        nk_style_pop_color(nk.get());
     }
 }
 
@@ -256,6 +252,11 @@ void GuiContext::layoutRowEnd() {
     nk_layout_row_end(nk.get());
 }
 
+void GuiContext::skip() {
+    struct nk_rect bounds {};
+    nk_widget(&bounds, nk.get());
+}
+
 bool GuiContext::button(const std::string& label) {
     if (nk_button_label(nk.get(), label.c_str())) {
         return true;
@@ -263,31 +264,71 @@ bool GuiContext::button(const std::string& label) {
     return false;
 }
 
+void GuiContext::label(const std::string& label) {
+    nk_label(nk.get(), label.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
+}
+
+bool GuiContext::textInput(std::string& text, size_t max) {
+    if (editBuffer.size() < max + 1) {
+        editBuffer.resize(max + 1);
+    }
+    std::memcpy(editBuffer.data(), text.data(), std::min(text.size(), max));
+    editBuffer[text.size()] = '\0';
+
+    auto len = static_cast<int>(std::min(text.size(), max));
+    auto modified = false;
+
+    const auto state = nk_edit_string(nk.get(), NK_EDIT_SIMPLE, editBuffer.data(), &len, max, nk_filter_default);
+    if (len != text.size()) {
+        text.resize(len);
+        std::memcpy(text.data(), editBuffer.data(), text.size());
+        modified = true;
+    }
+
+    activeInput = !(state & NK_WIDGET_STATE_ACTIVE);
+
+    return modified;
+}
+
 void GuiContext::eventMouseMoved(const Vector2i& pos) {
     inputEvents.emplace_back([=]() { nk_input_motion(nk.get(), pos.x, pos.y); });
     setDirty();
 }
 
-void GuiContext::eventMousePressed(const Vector2i& pos, MouseButton button) {
+void GuiContext::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     inputEvents.emplace_back([=]() { nk_input_button(nk.get(), toNkButtons(button), pos.x, pos.y, true); });
     setDirty();
 }
 
-void GuiContext::eventMouseReleased(const Vector2i& pos, MouseButton button) {
+void GuiContext::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     inputEvents.emplace_back([=]() { nk_input_button(nk.get(), toNkButtons(button), pos.x, pos.y, false); });
     setDirty();
 }
 
-void GuiContext::eventMouseScroll(int xscroll, int yscroll) {
+void GuiContext::eventMouseScroll(int xscroll, const int yscroll) {
+    inputEvents.emplace_back([=]() { nk_input_scroll(nk.get(), nk_vec2(xscroll, yscroll)); });
+    setDirty();
 }
 
-void GuiContext::eventKeyPressed(Key key, Modifiers modifiers) {
+void GuiContext::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    const auto k = toNkKeys(key);
+    if (k != nk_keys::NK_KEY_NONE) {
+        inputEvents.emplace_back([=]() { nk_input_key(nk.get(), toNkKeys(key), true); });
+        setDirty();
+    }
 }
 
-void GuiContext::eventKeyReleased(Key key, Modifiers modifiers) {
+void GuiContext::eventKeyReleased(const Key key, const Modifiers modifiers) {
+    const auto k = toNkKeys(key);
+    if (k != nk_keys::NK_KEY_NONE) {
+        inputEvents.emplace_back([=]() { nk_input_key(nk.get(), toNkKeys(key), false); });
+        setDirty();
+    }
 }
 
-void GuiContext::eventCharTyped(uint32_t code) {
+void GuiContext::eventCharTyped(const uint32_t code) {
+    inputEvents.emplace_back([=]() { nk_input_unicode(nk.get(), code); });
+    setDirty();
 }
 
 static const auto BLACK = HEX(0x000000ff);
@@ -304,6 +345,7 @@ static const auto ACTIVE_COLOR = PRIMARY_COLOR;
 void GuiContext::applyTheme() {
     auto& window = nk->style.window;
     auto& button = nk->style.button;
+    auto& edit = nk->style.edit;
     auto& checkbox = nk->style.checkbox;
     auto& selectable = nk->style.selectable;
     auto& text = nk->style.text;
@@ -391,6 +433,21 @@ void GuiContext::applyTheme() {
     button.rounding = 0;
     // button.padding.x = 0;
     // button.padding.y = 0;
+
+    edit.normal.data.color = BACKGROUND_COLOR;
+    edit.hover.data.color = BACKGROUND_COLOR;
+    edit.active.data.color = BACKGROUND_COLOR;
+    edit.border = 1.0f;
+    edit.border_color = BORDER_GREY;
+    edit.text_normal = TEXT_WHITE;
+    edit.text_hover = TEXT_WHITE;
+    edit.text_active = ACTIVE_COLOR;
+    edit.cursor_normal = ACTIVE_COLOR;
+    edit.cursor_hover = ACTIVE_COLOR;
+    edit.cursor_text_normal = TEXT_BLACK;
+    edit.cursor_text_hover = TEXT_BLACK;
+    // edit.selected_normal = ACTIVE_COLOR;
+    // edit.selected_hover = ACTIVE_COLOR;
 
     checkbox.text_normal = TEXT_WHITE;
     checkbox.text_hover = TEXT_WHITE;

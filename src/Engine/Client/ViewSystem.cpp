@@ -56,9 +56,6 @@ void ViewSystem::update(const float deltaTime) {
 void ViewSystem::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
-void ViewSystem::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
-}
-
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
     if (!loading) {
         scene->eventMouseMoved(pos);

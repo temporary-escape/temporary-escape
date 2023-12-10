@@ -1,4 +1,6 @@
 #include "RendererCanvas.hpp"
+#include <canvas_frag.spirv.h>
+#include <canvas_vert.spirv.h>
 
 using namespace Engine;
 
@@ -167,8 +169,8 @@ void RendererCanvas::create() {
     }
 
     // Shader
-    shaderVert = vulkan.createShaderModule(vertexShaderSource, VK_SHADER_STAGE_VERTEX_BIT);
-    shaderFrag = vulkan.createShaderModule(fragmentShaderSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    shaderVert = vulkan.createShaderModule(Embed::canvas_vert_spirv, VK_SHADER_STAGE_VERTEX_BIT);
+    shaderFrag = vulkan.createShaderModule(Embed::canvas_frag_spirv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VulkanPipeline::CreateInfo pipelineInfo{};
     pipelineInfo.shaderModules = {&shaderVert, &shaderFrag};

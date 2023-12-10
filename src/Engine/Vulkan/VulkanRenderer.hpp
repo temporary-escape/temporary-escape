@@ -34,6 +34,7 @@ public:
 
     VulkanShader createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage);
     VulkanShader createShaderModule(const Path& path, VkShaderStageFlagBits stage);
+    VulkanShader createShaderModule(const Span<uint8_t>& spirv, VkShaderStageFlagBits stage);
     VulkanPipeline createPipeline(const VulkanRenderPass& renderPass, const VulkanPipeline::CreateInfo& createInfo);
     VulkanPipeline createPipeline(const VulkanPipeline::CreateComputeInfo& createInfo);
     VulkanPipeline createPipeline(const VulkanPipeline::CreateInfo& createInfo) {

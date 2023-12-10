@@ -2,13 +2,40 @@
 
 using namespace Engine;
 
-GuiWindowMainMenu::GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize) :
-    GuiWindow2{fontFamily, static_cast<int>(fontSize * 1.5f)} {
-    setSize({350.0f, 600.0f});
+GuiWindowMainMenu::GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize) : GuiWindow2{fontFamily, fontSize} {
+    setSize({250.0f, 600.0f});
     setTitle("Main Menu");
+    setDynamic(true);
 
-    auto& row = addWidget<GuiWidgetRow>(60.0f, 1);
-    row.addWidget<GuiWidgetButton>("Hello World!");
-    row.addWidget<GuiWidgetButton>("Settings");
-    row.addWidget<GuiWidgetButton>("Quit");
+    auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
+    buttonSingleplayer = &row.addWidget<GuiWidgetButton>("Singleplayer");
+    buttonMultiplayer = &row.addWidget<GuiWidgetButton>("Multiplayer");
+    buttonEditor = &row.addWidget<GuiWidgetButton>("Editor");
+    buttonSettings = &row.addWidget<GuiWidgetButton>("Settings");
+    buttonMods = &row.addWidget<GuiWidgetButton>("Mods");
+    buttonQuit = &row.addWidget<GuiWidgetButton>("Quit");
+}
+
+void GuiWindowMainMenu::setOnClickQuit(GuiWidgetButton::OnClickCallback callback) {
+    buttonQuit->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickSettings(GuiWidgetButton::OnClickCallback callback) {
+    buttonSettings->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickSingleplayer(GuiWidgetButton::OnClickCallback callback) {
+    buttonSingleplayer->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickMultiplayer(GuiWidgetButton::OnClickCallback callback) {
+    buttonMultiplayer->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickEditor(GuiWidgetButton::OnClickCallback callback) {
+    buttonEditor->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickMods(GuiWidgetButton::OnClickCallback callback) {
+    buttonMods->setOnClick(std::move(callback));
 }

@@ -14,6 +14,23 @@ static std::string loadShaderFile(const Path& path) {
     return readFileStr(path);
 }
 
+VulkanShader::VulkanShader(VulkanDevice& device, const Span<uint8_t>& spirv, VkShaderStageFlagBits stage) :
+    device{device.getDevice()}, stage{stage} {
+
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+    this->spirv.resize(spirv.size() / sizeof(uint32_t));
+    std::memcpy(this->spirv.data(), spirv.data(), spirv.size());
+
+    createInfo.codeSize = this->spirv.size() * sizeof(uint32_t);
+    createInfo.pCode = this->spirv.data();
+
+    if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        EXCEPTION("Failed to create shader module!");
+    }
+}
+
 VulkanShader::VulkanShader(VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage) :
     device{device.getDevice()}, stage{stage} {
 

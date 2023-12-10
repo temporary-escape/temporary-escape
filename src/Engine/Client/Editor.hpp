@@ -25,7 +25,7 @@ public:
 
     void update(float deltaTime);
     void render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport);
-    void renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport);
+    void renderCanvas(Canvas& canvas, const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;

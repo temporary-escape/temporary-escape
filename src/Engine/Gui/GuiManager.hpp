@@ -1,12 +1,17 @@
 #pragma once
 
 #include "../Graphics/RendererCanvas.hpp"
-#include "GuiWindow.hpp"
 
 namespace Engine {
-class GuiManager {
+class ENGINE_API GuiWindow2;
+class ENGINE_API GuiWindowModal;
+
+class ENGINE_API GuiManager {
 public:
+    using ModalCallback = std::function<void(bool)>;
+
     explicit GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const FontFamily& fontFamily, int fontSize);
+    virtual ~GuiManager();
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
     void blit(Canvas2& canvas);
@@ -17,6 +22,16 @@ public:
         windows.back().ptr = std::make_shared<T>(fontFamily, fontSize, std::forward<Args>(args)...);
         return std::dynamic_pointer_cast<T>(windows.back().ptr);
     }
+    void removeWindow(const GuiWindow2& window);
+    void setFocused(const GuiWindow2& window);
+    void clearFocused();
+
+    std::shared_ptr<GuiWindowModal> modalSuccess(std::string title, std::string text,
+                                                 const ModalCallback& callback = nullptr);
+    std::shared_ptr<GuiWindowModal> modalDanger(std::string title, std::string text,
+                                                const ModalCallback& callback = nullptr);
+    std::shared_ptr<GuiWindowModal> modal(std::string title, std::string text, const std::vector<std::string>& choices,
+                                          const ModalCallback& callback = nullptr);
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -32,10 +47,11 @@ private:
         std::shared_ptr<GuiWindow2> ptr;
         VulkanTexture fboColor;
         VulkanFramebuffer fbo;
-        bool input{false};
+        bool hover{false};
         uint64_t buttonMask{0};
     };
 
+    void removeWindowInternal(const GuiWindow2* window);
     void createRenderPass();
     void createFbo(WindowData& data);
     void createFboTexture(WindowData& data);
@@ -48,6 +64,8 @@ private:
     int fontSize;
     VulkanRenderPass renderPass;
 
-    std::vector<WindowData> windows;
+    std::list<WindowData> windows;
+    std::vector<const GuiWindow2*> windowsToRemove;
+    const GuiWindow2* focused{nullptr};
 };
 } // namespace Engine

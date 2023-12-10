@@ -14,6 +14,9 @@ public:
         widgets.push_back(std::unique_ptr<GuiWidget>(static_cast<GuiWidget*>(ptr)));
         return *ptr;
     }
+    GuiWidget& addEmpty() {
+        return addWidget<GuiWidget>();
+    }
     void clearWidgets();
     void removeWidget(GuiWidget& widget);
 

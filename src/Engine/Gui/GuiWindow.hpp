@@ -5,6 +5,7 @@
 #include "Widgets/GuiWidgetLabel.hpp"
 #include "Widgets/GuiWidgetLayout.hpp"
 #include "Widgets/GuiWidgetRow.hpp"
+#include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {
 class ENGINE_API GuiWindow {
@@ -76,6 +77,8 @@ public:
     void setBackground(bool value);
     void setNoScrollbar(bool value);
     void setDynamic(bool value);
+    void setHeaderSuccess(bool value);
+    void setHeaderDanger(bool value);
 
 private:
     std::string title{"Window"};

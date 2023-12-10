@@ -26,6 +26,7 @@ public:
     using Batches = std::vector<Batch>;
 
     explicit Canvas2(VulkanRenderer& vulkan);
+    virtual ~Canvas2();
 
     void flush();
     void begin(const Vector2i& viewport);
@@ -34,7 +35,7 @@ public:
     void drawRect(const Vector2& pos, const Vector2& size, const Color4& color);
     void drawRectOutline(const Vector2& pos, const Vector2& size, float thickness, const Color4& color);
     void drawTexture(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color);
-    void drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, float size,
+    void drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
                   const Color4& color);
 
     bool hasData() const {

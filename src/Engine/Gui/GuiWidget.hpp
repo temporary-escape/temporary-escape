@@ -9,7 +9,7 @@ public:
     explicit GuiWidget(GuiContext& ctx);
     virtual ~GuiWidget() = default;
 
-    virtual void draw() = 0;
+    virtual void draw();
 
     void setWidth(float value);
     float getWidth() const {

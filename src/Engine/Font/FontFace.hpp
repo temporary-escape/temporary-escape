@@ -35,7 +35,7 @@ public:
         Light,
     };
 
-    explicit FontFace(VulkanRenderer& vulkan, const Path& path, float size);
+    explicit FontFace(VulkanRenderer& vulkan, const Path& path, int size);
     ~FontFace();
 
     const Glyph& getGlyph(const uint32_t code) const {
@@ -46,7 +46,7 @@ public:
         return it->second;
     }
 
-    float getSize() const {
+    int getSize() const {
         return size;
     }
 
@@ -63,7 +63,7 @@ public:
 
 private:
     static inline const Vector2i padding{2, 2};
-    const float size;
+    const int size;
     std::unordered_map<uint32_t, Glyph> glyphs;
     const Glyph* unknown;
     VulkanTexture texture;

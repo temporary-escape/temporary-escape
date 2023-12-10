@@ -64,8 +64,8 @@ void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& 
     }
 }
 
-void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewport) {
-    if (view) {
+void Game::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+    /*if (view) {
         view->renderCanvas(canvas, viewport);
         nuklear.begin(viewport);
         if (guiMainMenu.isEnabled()) {
@@ -74,7 +74,7 @@ void Game::renderCanvas(Canvas& canvas, Nuklear& nuklear, const Vector2i& viewpo
             view->renderNuklear(nuklear, viewport);
         }
         nuklear.end();
-    }
+    }*/
 }
 
 void Game::eventMouseMoved(const Vector2i& pos) {

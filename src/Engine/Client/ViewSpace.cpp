@@ -60,10 +60,6 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     }
 }
 
-void ViewSpace::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
-    guiContextMenu.draw(nuklear, viewport);
-}
-
 void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
     if (!client.getCache().playerEntityId) {
         return;

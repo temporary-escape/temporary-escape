@@ -112,6 +112,8 @@ public:
 
 protected:
     void addShader(const ShaderPtr& shader);
+    void addShader(VulkanShader& shader);
+    void addShader(const Span<uint8_t>& spirv, VkShaderStageFlagBits stage);
     void addVertexInput(const VertexInput& vertexInput);
     void setTopology(VkPrimitiveTopology topology);
     void setPolygonMode(VkPolygonMode polygonMode);
@@ -168,7 +170,8 @@ private:
     VulkanRenderer& vulkan;
     const std::string name;
     bool compute{false};
-    std::vector<ShaderPtr> shaders;
+    std::list<VulkanShader> compiled;
+    std::vector<VulkanShader*> shaders;
     std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
     VulkanPipeline::CreateInfo pipelineInfo;

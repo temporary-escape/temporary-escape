@@ -1,8 +1,6 @@
 #include "Application.hpp"
 #include "../File/OggFileReader.hpp"
-#include "../File/PngFileReader.hpp"
 #include "../Graphics/Theme.hpp"
-#include "../Utils/Random.hpp"
 
 using namespace Engine;
 
@@ -14,9 +12,7 @@ Application::Application(Config& config) :
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    canvas{*this},
-    font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2.0f},
-    nuklear{*this, config, canvas, font, config.guiFontSize},
+    font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2},
     rendererCanvas{*this},
     canvas2{*this},
     guiManager{*this, rendererCanvas, font, config.guiFontSize} {
@@ -30,7 +26,38 @@ Application::Application(Config& config) :
         config.graphics.ssao = false;
     }
 
-    guiManager.addWindow<GuiWindowMainMenu>();
+    gui.createProfile = guiManager.addWindow<GuiWindowCreateProfile>();
+    gui.createProfile->setOnCreateCallback([this](const GuiWindowCreateProfile::Result& result) {
+        try {
+            playerLocalProfile.name = result.name;
+            playerLocalProfile.secret = randomId();
+            Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
+            gui.createProfile->setEnabled(false);
+
+            guiManager.modalSuccess("Success", "User profile created!", [this](bool result) {
+                (void)result;
+                gui.mainMenu->setEnabled(true);
+            });
+
+        } catch (std::exception& e) {
+            guiManager.modalDanger("Error", "Failed to save profile!", [this](bool result) {
+                (void)result;
+                closeWindow();
+            });
+
+            BACKTRACE(e, "Failed to create user profile");
+        }
+    });
+
+    gui.mainMenu = guiManager.addWindow<GuiWindowMainMenu>();
+    gui.mainMenu->setOnClickSingleplayer([this]() {
+        gui.mainMenu->setEnabled(false);
+        startSinglePlayer();
+    });
+    gui.mainMenu->setOnClickQuit([this]() { closeWindow(); });
+    gui.mainMenu->setOnClickSettings([this]() { closeWindow(); });
+
+    loadProfile();
 
     /*gui.mainMenu.setItems({
         {"Singleplayer", [this]() { startSinglePlayer(); }},
@@ -54,13 +81,6 @@ Application::Application(Config& config) :
 
         gui.mainMenu.setEnabled(true);
     });*/
-
-    if (Fs::exists(config.userdataPath / profileFilename)) {
-        Xml::fromFile(config.userdataPath / profileFilename, playerLocalProfile);
-        // gui.createProfile.setEnabled(false);
-    } else {
-        // gui.mainMenu.setEnabled(false);
-    }
 
     /*gui.keepSettings.setEnabled(false);
     gui.mainSettings.setEnabled(false);
@@ -204,16 +224,18 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         renderer->blit(vkb);
     }
 
-    canvas.begin(viewport);
+    // canvas.begin(viewport);
+
+    canvas2.begin(viewport);
 
     renderVersion(viewport);
     renderFrameTime(viewport);
 
     if (shouldBlit()) {
         if (game && game->isReady()) {
-            game->renderCanvas(canvas, nuklear, viewport);
+            // game->renderCanvas(canvas, nuklear, viewport);
         } else if (editor) {
-            editor->renderCanvas(canvas, nuklear, viewport);
+            // editor->renderCanvas(canvas, nuklear, viewport);
         }
     }
 
@@ -237,9 +259,8 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         rendererCanvas.render(vkb, canvas2, viewport);*/
     }
 
-    canvas.end(vkb);
+    // canvas.end(vkb);
 
-    canvas2.begin(viewport);
     guiManager.blit(canvas2);
     canvas2.flush();
     rendererCanvas.render(vkb, canvas2, viewport);
@@ -262,64 +283,83 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 }
 
 void Application::renderVersion(const Vector2i& viewport) {
-    canvas.color(Theme::text * alpha(0.5f));
-    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
-    canvas.text({5.0f, 5.0f + config.guiFontSize}, GAME_VERSION);
+    (void)viewport;
+
+    static const Color4 color{Theme::text * alpha(0.5f)};
+    const Vector2 pos{5.0f, 5.0f + static_cast<float>(config.guiFontSize)};
+    canvas2.drawText(pos, GAME_VERSION, font, config.guiFontSize, color);
 }
 
 void Application::renderFrameTime(const Vector2i& viewport) {
-    canvas.color(Theme::text * alpha(0.5f));
-    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
+    static const Color4 color{Theme::text * alpha(0.5f)};
+
+    const auto posX = static_cast<float>(viewport.x) - 170.0f;
+    const auto fontSize = static_cast<float>(config.guiFontSize);
 
     {
         const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Render: {:.1f}ms", renderTimeMs);
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize}, text);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Frame: {:.1f}ms", frameTimeMs);
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 2.0}, text);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 2.0}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto vRamMB = static_cast<float>(getAllocator().getUsedBytes()) / 1048576.0f;
         const auto text = fmt::format("VRAM: {:.0f}MB", vRamMB);
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 3.0}, text);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 3.0}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto text = fmt::format("render: {}", shouldBlit());
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 4.0}, text);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
     }
 
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
-        canvas.text({viewport.x - 170.0f, 5.0f + config.guiFontSize * 5.0}, text);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 5.0}, text, font, config.guiFontSize, color);
     }
 }
 
 void Application::renderStatus(const Vector2i& viewport) {
-    canvas.color(Theme::text);
-    canvas.font(font.get(FontFace::Regular), config.guiFontSize);
     const auto fontHeight = static_cast<float>(config.guiFontSize) * 1.25f;
-    canvas.text(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight}, status.message);
+    canvas2.drawText(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight},
+                     status.message,
+                     font,
+                     config.guiFontSize,
+                     Theme::text);
 
-    canvas.color(Theme::backgroundTransparent);
-    canvas.rect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                {static_cast<float>(viewport.x) - 100.0f, 25.0f});
+    canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                     {static_cast<float>(viewport.x) - 100.0f, 25.0f},
+                     Theme::backgroundTransparent);
 
-    canvas.color(Theme::primary);
-    canvas.rect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f});
+    canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                     {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
+                     Theme::primary);
 }
 
 #define NEXT(expr)                                                                                                     \
     promise = decltype(promise){};                                                                                     \
     promise.set_value([=]() { (expr); });                                                                              \
-    future = promise.get_future();
+    future = promise.get_future()
+
+void Application::loadProfile() {
+    const auto profilePath = config.userdataPath / profileFilename;
+
+    if (Fs::exists(profilePath)) {
+        logger.info("Loading profile from: '{}'", profilePath);
+        Xml::fromFile(profilePath, playerLocalProfile);
+        gui.mainMenu->setEnabled(true);
+    } else {
+        logger.warn("No such profile found: '{}'", profilePath);
+        gui.createProfile->setEnabled(true);
+    }
+}
 
 void Application::createEditor() {
     status.message = "Entering...";
@@ -414,10 +454,10 @@ void Application::createEmptyThumbnail(RendererThumbnail& thumbnailRenderer) {
     assetsManager->addImage("block_empty_image", alloc);
 }
 
-void Application::createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface) {
+void Application::createPlanetLowResTextures(RendererPlanetSurface& renderer) {
     uint64_t seed = 1;
     for (auto& planet : assetsManager->getPlanetTypes().findAll()) {
-        auto textures = rendererPlanetSurface.renderPlanet(seed++ * 100, planet);
+        auto textures = renderer.renderPlanet(seed++ * 100, planet);
         planet->setLowResTextures(std::move(textures));
     }
 }

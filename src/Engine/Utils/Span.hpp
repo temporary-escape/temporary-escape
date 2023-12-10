@@ -26,6 +26,9 @@ public:
     template <size_t N> Span(const std::array<T, N>& arr) noexcept : ptr{arr.data()}, len{arr.size()} {
     }
 
+    template <size_t N> Span(const T (&arr)[N]) noexcept : ptr{arr}, len{N} {
+    }
+
     [[nodiscard]] std::size_t size() const noexcept {
         return len;
     }

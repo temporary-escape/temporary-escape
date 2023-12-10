@@ -189,6 +189,10 @@ VulkanShader VulkanRenderer::createShaderModule(const std::string& glsl, VkShade
     return VulkanShader{*this, glsl, stage};
 }
 
+VulkanShader VulkanRenderer::createShaderModule(const Span<uint8_t>& spirv, VkShaderStageFlagBits stage) {
+    return VulkanShader{*this, spirv, stage};
+}
+
 VulkanPipeline VulkanRenderer::createPipeline(const VulkanRenderPass& renderPass,
                                               const VulkanPipeline::CreateInfo& createInfo) {
     return VulkanPipeline{*this, renderPass, createInfo};

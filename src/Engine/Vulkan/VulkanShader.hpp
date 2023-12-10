@@ -10,6 +10,7 @@ class ENGINE_API VulkanDevice;
 class ENGINE_API VulkanShader : public VulkanDisposable {
 public:
     VulkanShader() = default;
+    explicit VulkanShader(VulkanDevice& device, const Span<uint8_t>& spirv, VkShaderStageFlagBits stage);
     explicit VulkanShader(VulkanDevice& device, const std::string& glsl, VkShaderStageFlagBits stage);
     explicit VulkanShader(VulkanDevice& device, const Path& path, VkShaderStageFlagBits stage);
 

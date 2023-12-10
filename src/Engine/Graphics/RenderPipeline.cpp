@@ -158,7 +158,7 @@ RenderPipeline::ReflectInfo RenderPipeline::reflect() const {
 
     // Extract inputs and outputs from the shaders
     for (const auto& shader : shaders) {
-        const auto reflection = shader->getVulkanShader().reflect();
+        const auto reflection = shader->reflect();
 
         if (shader->getStage() == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) {
             resources.vertexInputs = reflection.getInputs();
@@ -182,7 +182,7 @@ RenderPipeline::ReflectInfo RenderPipeline::reflect() const {
 
         if (reflection.getPushConstants().size > 0) {
             if (resources.pushConstants.size > 0 && resources.pushConstants != reflection.getPushConstants()) {
-                EXCEPTION("Inconsistent push constants shader: {}", shader->getName());
+                EXCEPTION("Inconsistent push constants pipeline: {}", name);
             } else {
                 resources.pushConstants = reflection.getPushConstants();
             }
@@ -394,7 +394,7 @@ void RenderPipeline::createComputePipeline(const RenderPipeline::ReflectInfo& re
 
     VulkanPipeline::CreateComputeInfo computeInfo{};
 
-    computeInfo.shaderModule = &shaders.back()->getVulkanShader();
+    computeInfo.shaderModule = shaders.back();
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
@@ -414,8 +414,17 @@ void RenderPipeline::createComputePipeline(const RenderPipeline::ReflectInfo& re
 }
 
 void RenderPipeline::addShader(const ShaderPtr& shader) {
-    shaders.push_back(shader);
-    pipelineInfo.shaderModules.push_back(&shader->getVulkanShader());
+    addShader(shader->getVulkanShader());
+}
+
+void RenderPipeline::addShader(VulkanShader& shader) {
+    shaders.push_back(&shader);
+    pipelineInfo.shaderModules.push_back(&shader);
+}
+
+void RenderPipeline::addShader(const Span<uint8_t>& spirv, const VkShaderStageFlagBits stage) {
+    compiled.push_back(vulkan.createShaderModule(spirv, stage));
+    addShader(compiled.back());
 }
 
 void RenderPipeline::addVertexInput(const VertexInput& input) {

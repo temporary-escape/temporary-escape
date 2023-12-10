@@ -431,12 +431,6 @@ void ViewBuild::update(const float deltaTime) {
 void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
-void ViewBuild::renderNuklear(Nuklear& nuklear, const Vector2i& viewport) {
-    guiBlockSelector.draw(nuklear, viewport);
-    guiBlockInfo.draw(nuklear, viewport);
-    guiFileBrowser.draw(nuklear, viewport);
-}
-
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
     scene.eventMouseMoved(pos);
 

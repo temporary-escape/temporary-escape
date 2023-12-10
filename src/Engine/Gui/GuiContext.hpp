@@ -23,7 +23,9 @@ public:
         ScaleLeft = (1 << (9)),
         NoInput = (1 << (10)),
         Dynamic = (1 << (11)),
-        Transparent = (1 << (29)),
+        Transparent = (1 << (28)),
+        HeaderSuccess = (1 << (29)),
+        HeaderDanger = (1 << (30)),
     };
 
     explicit GuiContext(const FontFamily& fontFamily, int fontSize);
@@ -33,13 +35,16 @@ public:
     void render(Canvas2& canvas);
 
     bool beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
-    void endWindow();
+    void endWindow(Flags flags);
 
     void layoutRowBegin(float height, int columns);
     void layoutRowPush(float width);
     void layoutRowEnd();
 
+    void skip();
     bool button(const std::string& label);
+    void label(const std::string& label);
+    bool textInput(std::string& text, size_t max);
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -58,6 +63,9 @@ public:
     void setDirty() {
         dirty = true;
     }
+    bool hasActiveInput() const {
+        return activeInput;
+    }
 
 private:
     static inline const auto padding = 4.0f;
@@ -70,7 +78,9 @@ private:
     std::array<std::unique_ptr<nk_user_font>, FontFamily::total> fonts;
     std::list<std::function<void()>> inputEvents;
     bool dirty{true};
-    bool resetStyle{false};
+
+    std::vector<char> editBuffer;
+    bool activeInput{false};
 };
 
 inline GuiContext::Flags operator|(const GuiContext::WindowFlag a, const GuiContext::WindowFlag b) {
@@ -81,12 +91,18 @@ inline GuiContext::Flags operator|(const GuiContext::Flags a, const GuiContext::
     return a | static_cast<GuiContext::Flags>(b);
 }
 
-inline GuiContext::Flags operator|=(const GuiContext::Flags a, const GuiContext::WindowFlag b) {
-    return a | static_cast<GuiContext::Flags>(b);
+inline GuiContext::Flags& operator|=(GuiContext::Flags& a, const GuiContext::WindowFlag b) {
+    a = a | b;
+    return a;
 }
 
 inline GuiContext::Flags operator&(const GuiContext::Flags a, const GuiContext::WindowFlag b) {
     return a & static_cast<GuiContext::Flags>(b);
+}
+
+inline GuiContext::Flags& operator&=(GuiContext::Flags& a, const GuiContext::WindowFlag b) {
+    a = a & static_cast<GuiContext::Flags>(b);
+    return a;
 }
 
 inline GuiContext::Flags operator~(const GuiContext::WindowFlag a) {
