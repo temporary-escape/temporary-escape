@@ -18,6 +18,6 @@ void GuiWidgetLayout::clearWidgets() {
 void GuiWidgetLayout::removeWidget(GuiWidget& widget) {
     widgets.erase(std::remove_if(widgets.begin(),
                                  widgets.end(),
-                                 [&](const std::unique_ptr<GuiWidget>& w) { return w.get() == &widget; }),
+                                 [&](const std::shared_ptr<GuiWidget>& w) { return w.get() == &widget; }),
                   widgets.end());
 }

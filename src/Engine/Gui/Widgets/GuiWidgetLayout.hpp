@@ -11,7 +11,7 @@ public:
 
     template <typename T, typename... Args> T& addWidget(Args&&... args) {
         auto* ptr = new T(ctx, std::forward<Args>(args)...);
-        widgets.push_back(std::unique_ptr<GuiWidget>(static_cast<GuiWidget*>(ptr)));
+        widgets.push_back(std::shared_ptr<GuiWidget>(static_cast<GuiWidget*>(ptr)));
         return *ptr;
     }
     GuiWidget& addEmpty() {
@@ -21,6 +21,6 @@ public:
     void removeWidget(GuiWidget& widget);
 
 protected:
-    std::vector<std::unique_ptr<GuiWidget>> widgets;
+    std::vector<std::shared_ptr<GuiWidget>> widgets;
 };
 } // namespace Engine
