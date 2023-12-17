@@ -46,3 +46,7 @@ __pycache__
 
 # MacOS files
 .DS_Store
+
+# Data folder
+!data/*
+
