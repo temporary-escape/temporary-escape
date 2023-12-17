@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineBloomUpsample : public RenderPipeline {
 public:
-    explicit RenderPipelineBloomUpsample(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineBloomUpsample(VulkanRenderer& vulkan);
 
     void setTexture(const VulkanTexture& texture);
     void setFilterRadius(float value);

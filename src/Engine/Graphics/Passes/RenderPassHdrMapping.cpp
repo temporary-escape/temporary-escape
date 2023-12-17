@@ -5,13 +5,12 @@
 using namespace Engine;
 
 RenderPassHDRMapping::RenderPassHDRMapping(const RenderOptions& options, VulkanRenderer& vulkan,
-                                           RenderBufferPbr& buffer, RenderResources& resources,
-                                           AssetsManager& assetsManager) :
+                                           RenderBufferPbr& buffer, RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassHDRMapping"},
     options{options},
     buffer{buffer},
     resources{resources},
-    pipelineHDRMapping{vulkan, assetsManager} {
+    pipelineHDRMapping{vulkan} {
 
     { // Forward
         AttachmentInfo attachment{};

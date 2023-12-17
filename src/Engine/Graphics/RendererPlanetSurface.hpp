@@ -11,8 +11,7 @@ class ENGINE_API Scene;
 class ENGINE_API RendererPlanetSurface : public RendererWork {
 public:
     explicit RendererPlanetSurface(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
-                                   RenderResources& resources, AssetsManager& assetsManager,
-                                   VoxelShapeCache& voxelShapeCache);
+                                   RenderResources& resources, VoxelShapeCache& voxelShapeCache);
 
     void update(Scene& scene);
     PlanetTextures renderPlanet(uint64_t seed, const PlanetTypePtr& planetType);

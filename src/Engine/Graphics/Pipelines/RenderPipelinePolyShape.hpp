@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePolyShape : public RenderPipeline {
 public:
-    explicit RenderPipelinePolyShape(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePolyShape(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setUniformCamera(const VulkanBuffer& ubo);

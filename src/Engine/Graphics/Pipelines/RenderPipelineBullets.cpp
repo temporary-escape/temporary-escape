@@ -2,14 +2,15 @@
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentTurret.hpp"
 #include "../MeshUtils.hpp"
+#include <pass_bullets_frag.spirv.h>
+#include <pass_bullets_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineBullets::RenderPipelineBullets(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineBullets"} {
+RenderPipelineBullets::RenderPipelineBullets(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineBullets"} {
 
-    addShader(assetsManager.getShaders().find("pass_bullets_vert"));
-    addShader(assetsManager.getShaders().find("pass_bullets_frag"));
+    addShader(Embed::pass_bullets_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_bullets_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<BulletVertex>(0));
     addVertexInput(RenderPipeline::VertexInput::of<ComponentTurret::BulletInstance>(1, VK_VERTEX_INPUT_RATE_INSTANCE));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);

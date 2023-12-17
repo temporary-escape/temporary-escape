@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineFXAA : public RenderPipeline {
 public:
-    explicit RenderPipelineFXAA(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineFXAA(VulkanRenderer& vulkan);
 
     void setTexture(const VulkanTexture& texture);
     void setTextureSize(const Vector2& value);

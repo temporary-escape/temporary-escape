@@ -5,11 +5,11 @@
 using namespace Engine;
 
 RenderPassPlanetNormal::RenderPassPlanetNormal(VulkanRenderer& vulkan, RenderBufferPlanet& buffer,
-                                               RenderResources& resources, AssetsManager& assetsManager) :
+                                               RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassPlanetNormal"},
     buffer{buffer},
     resources{resources},
-    pipelinePlanetNormal{vulkan, assetsManager} {
+    pipelinePlanetNormal{vulkan} {
 
     { // Normal
         AttachmentInfo attachment{};

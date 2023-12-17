@@ -8,15 +8,15 @@
 using namespace Engine;
 
 RenderPassShadow::RenderPassShadow(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                   RenderResources& resources, AssetsManager& assetsManager, const uint32_t index) :
+                                   RenderResources& resources, const uint32_t index) :
     RenderPass{vulkan, buffer, "RenderPassShadow"},
     options{options},
     resources{resources},
     index{index},
-    pipelineGrid{vulkan, assetsManager},
-    pipelineModel{vulkan, assetsManager},
-    pipelineModelSkinned{vulkan, assetsManager},
-    pipelineModelInstanced{vulkan, assetsManager} {
+    pipelineGrid{vulkan},
+    pipelineModel{vulkan},
+    pipelineModelSkinned{vulkan},
+    pipelineModelInstanced{vulkan} {
 
     { // Depth
         AttachmentInfo attachmentInfo{};

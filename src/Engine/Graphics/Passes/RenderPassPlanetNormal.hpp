@@ -9,8 +9,7 @@
 namespace Engine {
 class ENGINE_API RenderPassPlanetNormal : public RenderPass {
 public:
-    explicit RenderPassPlanetNormal(VulkanRenderer& vulkan, RenderBufferPlanet& buffer, RenderResources& resources,
-                                    AssetsManager& assetsManager);
+    explicit RenderPassPlanetNormal(VulkanRenderer& vulkan, RenderBufferPlanet& buffer, RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

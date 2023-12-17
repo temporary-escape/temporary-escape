@@ -5,11 +5,11 @@
 using namespace Engine;
 
 RenderPassSkyboxIrradiance::RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderBufferSkybox& buffer,
-                                                       RenderResources& resources, AssetsManager& assetsManager) :
+                                                       RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassSkyboxIrradiance"},
     vulkan{vulkan},
     resources{resources},
-    pipelineSkyboxIrradiance{vulkan, assetsManager} {
+    pipelineSkyboxIrradiance{vulkan} {
 
     { // Color
         AttachmentInfo attachment{};

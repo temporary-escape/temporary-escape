@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineSkyboxPrefilter : public RenderPipeline {
 public:
-    explicit RenderPipelineSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineSkyboxPrefilter(VulkanRenderer& vulkan);
 
     void setProjectionViewMatrix(const Matrix4& value);
     void setTextureSkybox(const VulkanTexture& texture);

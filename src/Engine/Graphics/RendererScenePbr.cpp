@@ -16,14 +16,13 @@
 
 using namespace Engine;
 
-RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources,
-                                   AssetsManager& assetsManager) :
+RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources) :
     Renderer{vulkan},
     options{options},
     vulkan{vulkan},
     resources{resources},
     renderBufferPbr{options, vulkan},
-    pipelineBlit{vulkan, assetsManager} {
+    pipelineBlit{vulkan} {
 
     try {
         pipelineBlit.create(vulkan.getRenderPass(), 0, {0});
@@ -32,52 +31,43 @@ RendererScenePbr::RendererScenePbr(const RenderOptions& options, VulkanRenderer&
     }
 
     try {
-        addRenderPass(std::make_unique<RenderPassCompute>(this->options, vulkan, renderBufferPbr, assetsManager));
-        addRenderPass(
-            std::make_unique<RenderPassSkybox>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(
-            std::make_unique<RenderPassOpaque>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassCompute>(this->options, vulkan, renderBufferPbr));
+        addRenderPass(std::make_unique<RenderPassSkybox>(this->options, vulkan, renderBufferPbr, resources));
+        addRenderPass(std::make_unique<RenderPassOpaque>(this->options, vulkan, renderBufferPbr, resources));
 
         if (this->options.shadowsSize) {
             for (auto i = 0; i < 4; i++) {
-                addRenderPass(std::make_unique<RenderPassShadow>(
-                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+                addRenderPass(std::make_unique<RenderPassShadow>(this->options, vulkan, renderBufferPbr, resources, i));
             }
         }
 
         if (this->options.ssao) {
-            addRenderPass(
-                std::make_unique<RenderPassSSAO>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+            addRenderPass(std::make_unique<RenderPassSSAO>(this->options, vulkan, renderBufferPbr, resources));
         }
 
-        addRenderPass(
-            std::make_unique<RenderPassPbr>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
-        addRenderPass(
-            std::make_unique<RenderPassForward>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassPbr>(this->options, vulkan, renderBufferPbr, resources));
+        addRenderPass(std::make_unique<RenderPassForward>(this->options, vulkan, renderBufferPbr, resources));
 
         if (this->options.fxaa) {
-            addRenderPass(
-                std::make_unique<RenderPassFXAA>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+            addRenderPass(std::make_unique<RenderPassFXAA>(this->options, vulkan, renderBufferPbr, resources));
         }
 
         if (this->options.bloom) {
             // Physical bloom is implemented based on the following tutorial:
             // https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
             for (auto i = 0; i < RenderBufferPbr::bloomMipMaps; i++) {
-                addRenderPass(std::make_unique<RenderPassBloomDownsample>(
-                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+                addRenderPass(
+                    std::make_unique<RenderPassBloomDownsample>(this->options, vulkan, renderBufferPbr, resources, i));
             }
             for (int i = RenderBufferPbr::bloomMipMaps - 2; i >= 0; i--) {
-                addRenderPass(std::make_unique<RenderPassBloomUpsample>(
-                    this->options, vulkan, renderBufferPbr, resources, assetsManager, i));
+                addRenderPass(
+                    std::make_unique<RenderPassBloomUpsample>(this->options, vulkan, renderBufferPbr, resources, i));
             }
         }
 
-        addRenderPass(
-            std::make_unique<RenderPassHDRMapping>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassHDRMapping>(this->options, vulkan, renderBufferPbr, resources));
 
-        addRenderPass(
-            std::make_unique<RenderPassNonHDR>(this->options, vulkan, renderBufferPbr, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassNonHDR>(this->options, vulkan, renderBufferPbr, resources));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }

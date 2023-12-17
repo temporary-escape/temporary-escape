@@ -5,11 +5,11 @@
 using namespace Engine;
 
 RenderPassSkyboxPrefilter::RenderPassSkyboxPrefilter(VulkanRenderer& vulkan, RenderBufferSkybox& buffer,
-                                                     RenderResources& resources, AssetsManager& assetsManager) :
+                                                     RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassSkyboxPrefilter"},
     vulkan{vulkan},
     resources{resources},
-    pipelineSkyboxPrefilter{vulkan, assetsManager} {
+    pipelineSkyboxPrefilter{vulkan} {
 
     { // Color
         AttachmentInfo attachment{};

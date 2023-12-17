@@ -34,8 +34,10 @@ public:
     void update();
     void render(Canvas2& canvas);
 
-    bool beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
-    void endWindow(Flags flags);
+    bool windowBegin(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
+    void windowEnd(Flags flags);
+    bool groupBegin(const std::string& name, bool scrollbar);
+    void groupEnd();
 
     void layoutRowBegin(float height, int columns);
     void layoutRowPush(float width);
@@ -43,8 +45,15 @@ public:
 
     void skip();
     bool button(const std::string& label);
+    bool buttonToggle(const std::string& label, bool& value);
+    bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label);
     bool textInput(std::string& text, size_t max);
+    bool comboBegin(const Vector2& size, const std::string& label);
+    void comboEnd();
+    bool comboItem(const std::string& label);
+    bool isHovered();
+    Vector2 getWidgetSize() const;
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);

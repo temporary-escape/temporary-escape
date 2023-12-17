@@ -35,7 +35,7 @@ public:
         Light,
     };
 
-    explicit FontFace(VulkanRenderer& vulkan, const Path& path, int size);
+    explicit FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& data, int size);
     ~FontFace();
 
     const Glyph& getGlyph(const uint32_t code) const {

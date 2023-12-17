@@ -5,7 +5,11 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ComponentPointCloud::ComponentPointCloud(entt::registry& reg, entt::entity handle, TexturePtr texture) :
-    Component{reg, handle}, texture{std::move(texture)} {
+    Component{reg, handle}, texture{std::move(texture)}, texturePtr{&this->texture->getVulkanTexture()} {
+}
+
+ComponentPointCloud::ComponentPointCloud(entt::registry& reg, entt::entity handle, const VulkanTexture& texture) :
+    Component{reg, handle}, texturePtr{&texture} {
 }
 
 void ComponentPointCloud::reserve(const size_t count) {
@@ -30,7 +34,7 @@ void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
 
     setDirty(false);
 
-    logger.debug("Recreating {} points with image: {}", points.size(), texture->getName());
+    logger.debug("Recreating {} points", points.size());
 
     vulkan.dispose(std::move(mesh.vbo));
 

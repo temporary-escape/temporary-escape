@@ -1,14 +1,16 @@
 #include "RenderPipelineBloomDownsample.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <pass_bloom_downsample_frag.spirv.h>
+#include <pass_bloom_downsample_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineBloomDownsample::RenderPipelineBloomDownsample(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineBloomDownsample::RenderPipelineBloomDownsample(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineBloomDownsample"} {
 
-    addShader(assetsManager.getShaders().find("pass_bloom_downsample_vert"));
-    addShader(assetsManager.getShaders().find("pass_bloom_downsample_frag"));
+    addShader(Embed::pass_bloom_downsample_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_bloom_downsample_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

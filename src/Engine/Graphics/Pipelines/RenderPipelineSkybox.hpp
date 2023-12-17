@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineSkybox : public RenderPipeline {
 public:
-    explicit RenderPipelineSkybox(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineSkybox(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setUniformCamera(const VulkanBuffer& ubo);

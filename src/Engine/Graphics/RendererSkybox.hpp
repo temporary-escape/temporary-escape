@@ -11,7 +11,7 @@ class ENGINE_API Scene;
 class ENGINE_API RendererSkybox : public RendererWork {
 public:
     explicit RendererSkybox(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
-                            AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache);
+                            VoxelShapeCache& voxelShapeCache);
 
     void update(Scene& scene);
 
@@ -34,16 +34,13 @@ private:
 
     const Config& config;
     VulkanRenderer& vulkan;
+    RenderResources& resources;
     RenderBufferSkybox renderBufferSkybox;
 
     struct {
         Entity entity;
         uint64_t seed{0};
     } work;
-
-    struct {
-        TexturePtr star;
-    } textures;
 
     SkyboxTextures skyboxTextures;
 };

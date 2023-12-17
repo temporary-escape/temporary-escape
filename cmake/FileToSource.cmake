@@ -10,6 +10,7 @@ file(READ ${INPUT} HEX_CONTENT HEX)
 
 get_filename_component(FILENAME ${INPUT} NAME)
 string(REPLACE "." "_" VARIABLE_NAME "${FILENAME}")
+string(REPLACE "-" "_" VARIABLE_NAME "${VARIABLE_NAME}")
 
 string(REPEAT "[0-9a-f]" 32 COLUMN_PATTERN)
 string(REGEX REPLACE "(${COLUMN_PATTERN})" "\\1\n" CONTENT "${HEX_CONTENT}")

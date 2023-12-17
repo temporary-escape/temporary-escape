@@ -6,11 +6,10 @@
 
 using namespace Engine;
 
-RenderPipelineBlit::RenderPipelineBlit(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineBlit"} {
+RenderPipelineBlit::RenderPipelineBlit(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineBlit"} {
 
-    addShader(Embed::blit_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addShader(Embed::blit_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::blit_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

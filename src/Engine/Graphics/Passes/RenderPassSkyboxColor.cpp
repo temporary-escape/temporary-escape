@@ -5,12 +5,12 @@
 using namespace Engine;
 
 RenderPassSkyboxColor::RenderPassSkyboxColor(VulkanRenderer& vulkan, RenderBufferSkybox& buffer,
-                                             RenderResources& resources, AssetsManager& assetsManager) :
+                                             RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassSkybox"},
     vulkan{vulkan},
     resources{resources},
-    pipelineSkyboxNebula{vulkan, assetsManager},
-    pipelineSkyboxStars{vulkan, assetsManager} {
+    pipelineSkyboxNebula{vulkan},
+    pipelineSkyboxStars{vulkan} {
 
     { // Color
         AttachmentInfo attachment{};
@@ -76,7 +76,7 @@ void RenderPassSkyboxColor::renderPointClouds(VulkanCommandBuffer& vkb, Scene& s
             continue;
         }
 
-        pipelineSkyboxStars.setTextureColor(pointCloud.getTexture()->getVulkanTexture());
+        pipelineSkyboxStars.setTextureColor(pointCloud.getTexture());
         pipelineSkyboxStars.flushDescriptors(vkb);
 
         const auto modelMatrix = transform.getAbsoluteTransform();

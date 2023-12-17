@@ -1,14 +1,16 @@
 #include "RenderPipelinePlanetColor.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <planet_color_frag.spirv.h>
+#include <planet_color_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePlanetColor::RenderPipelinePlanetColor(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePlanetColor::RenderPipelinePlanetColor(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePlanetColor"} {
 
-    addShader(assetsManager.getShaders().find("planet_color_vert"));
-    addShader(assetsManager.getShaders().find("planet_color_frag"));
+    addShader(Embed::planet_color_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::planet_color_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

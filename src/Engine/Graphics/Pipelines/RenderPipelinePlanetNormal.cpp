@@ -1,14 +1,16 @@
 #include "RenderPipelinePlanetNormal.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <planet_normal_frag.spirv.h>
+#include <planet_normal_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePlanetNormal::RenderPipelinePlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePlanetNormal::RenderPipelinePlanetNormal(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePlanetColor"} {
 
-    addShader(assetsManager.getShaders().find("planet_normal_vert"));
-    addShader(assetsManager.getShaders().find("planet_normal_frag"));
+    addShader(Embed::planet_normal_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::planet_normal_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

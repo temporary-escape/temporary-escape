@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineOutline : public RenderPipeline {
 public:
-    explicit RenderPipelineOutline(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineOutline(VulkanRenderer& vulkan);
 
     void setColorSelected(const Color4& value);
     void setColorFinal(const Color4& value);

@@ -11,7 +11,7 @@ namespace Engine {
 class ENGINE_API RenderPassSkybox : public RenderPass {
 public:
     explicit RenderPassSkybox(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                              RenderResources& resources, AssetsManager& assetsManager);
+                              RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
@@ -25,6 +25,5 @@ private:
     RenderPipelineSkybox pipelineSkybox;
     RenderPipelinePlanet pipelinePlanet;
     RenderPipelineStarFlare pipelineStarFlare;
-    TexturePtr textureBrdf;
 };
 } // namespace Engine

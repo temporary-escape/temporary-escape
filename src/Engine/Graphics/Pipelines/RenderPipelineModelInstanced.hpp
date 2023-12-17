@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineModelInstanced : public RenderPipeline {
 public:
-    explicit RenderPipelineModelInstanced(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineModelInstanced(VulkanRenderer& vulkan);
 
     void setUniformCamera(const VulkanBuffer& ubo);
     void setUniformMaterial(const VulkanBuffer& ubo);

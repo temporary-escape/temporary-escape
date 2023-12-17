@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineHDRMapping : public RenderPipeline {
 public:
-    explicit RenderPipelineHDRMapping(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineHDRMapping(VulkanRenderer& vulkan);
 
     void setBloomStrength(float value);
     void setGamma(float value);

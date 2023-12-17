@@ -51,9 +51,24 @@ public:
         return defaultBloom;
     }
 
+    const VulkanTexture& getPalette() const {
+        return palette;
+    }
+
+    const VulkanTexture& getBrdf() const {
+        return brdf;
+    }
+
+    const VulkanTexture& getSkyboxStar() const {
+        return skyboxStar;
+    }
+
 private:
     void createSsaoNoise();
     void createSsaoSamples();
+    void createPalette();
+    void createBrdf();
+    void createSkyboxStar();
 
     VulkanRenderer& vulkan;
     Mesh meshFullScreenQuad;
@@ -68,5 +83,8 @@ private:
     VulkanTexture defaultSSAO;
     VulkanTexture defaultShadow;
     VulkanTexture defaultBloom;
+    VulkanTexture palette;
+    VulkanTexture brdf;
+    VulkanTexture skyboxStar;
 };
 } // namespace Engine

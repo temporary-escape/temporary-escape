@@ -6,7 +6,7 @@ namespace Engine {
 class ENGINE_API RendererThumbnail : public RendererScenePbr {
 public:
     explicit RendererThumbnail(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
-                               AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache);
+                               VoxelShapeCache& voxelShapeCache);
 
     void render(const BlockPtr& block, const VoxelShape::Type shape);
     void render(const PlanetTypePtr& planetType);

@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineDebug : public RenderPipeline {
 public:
-    explicit RenderPipelineDebug(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineDebug(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setUniformCamera(const VulkanBuffer& ubo);

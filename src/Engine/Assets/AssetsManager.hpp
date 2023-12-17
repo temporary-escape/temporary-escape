@@ -8,7 +8,6 @@
 #include "Model.hpp"
 #include "ParticlesType.hpp"
 #include "PlanetType.hpp"
-#include "Shader.hpp"
 #include "ShipTemplate.hpp"
 #include "Sound.hpp"
 #include "Texture.hpp"
@@ -96,10 +95,6 @@ public:
         return planetTypes;
     }
 
-    const Category<Shader>& getShaders() const {
-        return shaders;
-    }
-
     const Category<Sound>& getSounds() const {
         return sounds;
     }
@@ -159,7 +154,6 @@ private:
     Category<Image> images;
     Category<Model> models;
     Category<PlanetType> planetTypes;
-    Category<Shader> shaders;
     Category<Sound> sounds;
     Category<ParticlesType> particlesTypes;
     Category<ShipTemplate> shipTemplates;

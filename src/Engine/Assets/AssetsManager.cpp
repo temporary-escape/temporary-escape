@@ -1,6 +1,5 @@
 #include "AssetsManager.hpp"
 #include "../File/Ktx2FileReader.hpp"
-#include "../Vulkan/GlslCompiler.hpp"
 
 using namespace Engine;
 
@@ -21,15 +20,6 @@ static void compressTexture(const Path& file) {
     }
 }
 
-static void compressShader(const Path& file) {
-    const auto dst = replaceExtension(file, ".spirv");
-    if (!Fs::exists(dst) || Fs::last_write_time(file) > Fs::last_write_time(dst)) {
-        compileGLSLFile(file, dst);
-    } else {
-        logger.debug("Skipping shader: {}, not modified", file);
-    }
-}
-
 void AssetsManager::compressAssets(const Config& config) {
     try {
         const std::vector<Path> paths = {config.assetsPath / "base"};
@@ -42,7 +32,6 @@ void AssetsManager::compressAssets(const Config& config) {
             iterateDir(path / "textures", {".png"}, [&](const Path& file) { compressTexture(file); });
             iterateDir(path / "models", {".png"}, [&](const Path& file) { compressTexture(file); });
             iterateDir(path / "images", {".png"}, [&](const Path& file) { compressTexture(file); });
-            iterateDir(path / "shaders", {".glsl"}, [&](const Path& file) { compressShader(file); });
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to compress assets");
@@ -87,10 +76,6 @@ void AssetsManager::findAssets() {
 
         for (const auto& path : paths) {
             addManifest(path);
-        }
-
-        for (const auto& path : paths) {
-            init(shaders, path / "shaders", {".spirv"});
         }
 
         for (const auto& path : paths) {

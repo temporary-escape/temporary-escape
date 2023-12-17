@@ -6,12 +6,12 @@
 using namespace Engine;
 
 RenderPassSSAO::RenderPassSSAO(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                               RenderResources& resources, AssetsManager& assetsManager) :
+                               RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassSSAO"},
     options{options},
     buffer{buffer},
     resources{resources},
-    pipelineSSAO{vulkan, assetsManager} {
+    pipelineSSAO{vulkan} {
 
     { // SSAO
         AttachmentInfo attachment{};

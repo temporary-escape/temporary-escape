@@ -1,14 +1,16 @@
 #include "RenderPipelinePointCloud.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentPointCloud.hpp"
+#include <component_point_cloud_frag.spirv.h>
+#include <component_point_cloud_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePointCloud::RenderPipelinePointCloud(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePointCloud::RenderPipelinePointCloud(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePointCloud"} {
 
-    addShader(assetsManager.getShaders().find("component_point_cloud_vert"));
-    addShader(assetsManager.getShaders().find("component_point_cloud_frag"));
+    addShader(Embed::component_point_cloud_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_point_cloud_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentPointCloud::Point>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Read);

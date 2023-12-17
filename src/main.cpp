@@ -64,8 +64,6 @@ int main(int argc, char** argv) {
         config.assetsPath = rootPath / "assets";
         config.userdataPath = std::filesystem::absolute(defaultUserData);
         config.userdataSavesPath = config.userdataPath / "Saves";
-        config.fontsPath = rootPath / "fonts";
-        config.shapesPath = rootPath / "shapes";
 
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);

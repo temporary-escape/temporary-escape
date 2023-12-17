@@ -149,6 +149,22 @@ Ktx2FileReader::Ktx2FileReader(const Path& path) : stream{std::make_unique<ktxSt
     }
 }
 
+Ktx2FileReader::Ktx2FileReader(const Span<uint8_t>& data) {
+    ktxTexture2* ptr;
+    const auto result = ktxTexture_CreateFromMemory(
+        data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, (ktxTexture**)(&ptr));
+
+    if (result != KTX_SUCCESS) {
+        EXCEPTION("Failed to read ktx2 from memory error: {}", ktxErrorToStr(result));
+    }
+
+    ktx = std::shared_ptr<ktxTexture2>{ptr, [](ktxTexture2* p) { ktxTexture_Destroy(ktxTexture(p)); }};
+
+    if (ktx->classId != ktxTexture2_c) {
+        EXCEPTION("Failed to read ktx2 file: {} error: file is in ktx1 format but expected ktx2 format");
+    }
+}
+
 Ktx2FileReader::~Ktx2FileReader() = default;
 
 static ktx_transcode_fmt_e getTranscodeTargetETC(Ktx2CompressionTarget target) {

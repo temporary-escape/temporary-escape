@@ -14,3 +14,11 @@ void GuiWidgetRow::draw() {
     }
     ctx.layoutRowEnd();
 }
+
+void GuiWidgetRow::setHeight(const float value) {
+    height = value;
+}
+
+void GuiWidgetRow::setColumns(const int value) {
+    columns = value;
+}

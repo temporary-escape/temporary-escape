@@ -15,8 +15,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/CompileShaders.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/EmbedFiles.cmake)
 
 compile_shaders(${PROJECT_NAME}Shaders "${CMAKE_CURRENT_LIST_DIR}/shaders")
-embed_files(${PROJECT_NAME}Fonts "${CMAKE_CURRENT_LIST_DIR}/fonts/*.ttf")
-embed_files(${PROJECT_NAME}Shapes "${CMAKE_CURRENT_LIST_DIR}/shapes/*.gltf")
+embed_files(${PROJECT_NAME}Data "${CMAKE_CURRENT_LIST_DIR}/data/*.*")
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
     include(${CMAKE_CURRENT_LIST_DIR}/cmake/AddressSanitizer.cmake)

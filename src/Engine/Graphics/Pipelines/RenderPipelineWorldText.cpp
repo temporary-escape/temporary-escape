@@ -1,15 +1,16 @@
 #include "RenderPipelineWorldText.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentWorldText.hpp"
-#include "../MeshUtils.hpp"
+#include <component_world_text_frag.spirv.h>
+#include <component_world_text_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineWorldText::RenderPipelineWorldText(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineWorldText::RenderPipelineWorldText(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineWorldText"} {
 
-    addShader(assetsManager.getShaders().find("component_world_text_vert"));
-    addShader(assetsManager.getShaders().find("component_world_text_frag"));
+    addShader(Embed::component_world_text_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_world_text_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentWorldText::Vertex>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Read);

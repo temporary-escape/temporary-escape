@@ -1,10 +1,10 @@
 install(DIRECTORY
         "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shapes"
-        "${CMAKE_CURRENT_SOURCE_DIR}/fonts"
         DESTINATION "."
         PATTERN "*.kra" EXCLUDE
         PATTERN "*.png" EXCLUDE
+        PATTERN "*.h" EXCLUDE
+        PATTERN "*.spirv" EXCLUDE
         PATTERN "*.glsl" EXCLUDE)
 
 if (MSVC)
@@ -21,6 +21,8 @@ if (MSVC)
             PATTERN "install" EXCLUDE
             PATTERN "release" EXCLUDE
             PATTERN "third_party" EXCLUDE
+            PATTERN "TemporaryEscapeData" EXCLUDE
+            PATTERN "TemporaryEscapeShaders" EXCLUDE
             PATTERN "Testing" EXCLUDE
             PATTERN "_CPack_Packages" EXCLUDE
             PATTERN "ZIP" EXCLUDE)

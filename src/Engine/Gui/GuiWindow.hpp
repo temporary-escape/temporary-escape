@@ -2,9 +2,13 @@
 
 #include "../Graphics/Nuklear.hpp"
 #include "Widgets/GuiWidgetButton.hpp"
+#include "Widgets/GuiWidgetButtonToggle.hpp"
+#include "Widgets/GuiWidgetCheckbox.hpp"
+#include "Widgets/GuiWidgetCombo.hpp"
 #include "Widgets/GuiWidgetLabel.hpp"
 #include "Widgets/GuiWidgetLayout.hpp"
 #include "Widgets/GuiWidgetRow.hpp"
+#include "Widgets/GuiWidgetTabs.hpp"
 #include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {

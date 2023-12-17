@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePbr : public RenderPipeline {
 public:
-    explicit RenderPipelinePbr(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePbr(VulkanRenderer& vulkan);
 
     void setUniformCamera(const VulkanBuffer& ubo);
     void setUniformDirectionalLights(const VulkanBuffer& ubo);

@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineStarFlare : public RenderPipeline {
 public:
-    explicit RenderPipelineStarFlare(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineStarFlare(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setSize(const Vector2& value);

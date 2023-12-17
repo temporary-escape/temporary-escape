@@ -1,14 +1,15 @@
 #include "RenderPipelinePlanet.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <pass_skybox_planet_frag.spirv.h>
+#include <pass_skybox_planet_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePlanet::RenderPipelinePlanet(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelinePlanet"} {
+RenderPipelinePlanet::RenderPipelinePlanet(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelinePlanet"} {
 
-    addShader(assetsManager.getShaders().find("pass_skybox_planet_vert"));
-    addShader(assetsManager.getShaders().find("pass_skybox_planet_frag"));
+    addShader(Embed::pass_skybox_planet_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_skybox_planet_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<PlanetVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::ReadWrite);

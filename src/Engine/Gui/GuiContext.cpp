@@ -206,7 +206,7 @@ void GuiContext::render(Canvas2& canvas) {
     nk_clear(nk.get());
 }
 
-bool GuiContext::beginWindow(const std::string& title, const Vector2& pos, const Vector2& size, const Flags flags) {
+bool GuiContext::windowBegin(const std::string& title, const Vector2& pos, const Vector2& size, const Flags flags) {
     activeInput = false;
 
     if (flags & WindowFlag::Transparent) {
@@ -228,7 +228,7 @@ bool GuiContext::beginWindow(const std::string& title, const Vector2& pos, const
     return false;
 }
 
-void GuiContext::endWindow(const Flags flags) {
+void GuiContext::windowEnd(const Flags flags) {
     nk_end(nk.get());
 
     if (flags & WindowFlag::Transparent) {
@@ -238,6 +238,40 @@ void GuiContext::endWindow(const Flags flags) {
     if (flags & WindowFlag::HeaderSuccess || flags & WindowFlag::HeaderDanger) {
         nk_style_pop_color(nk.get());
     }
+}
+
+bool GuiContext::groupBegin(const std::string& name, const bool scrollbar) {
+    auto flags = Flags{0} | WindowFlag::Border;
+    if (!scrollbar) {
+        flags = flags | WindowFlag::NoScrollbar;
+    }
+
+    return nk_group_begin_titled(nk.get(), name.c_str(), name.c_str(), flags) == nk_true;
+}
+
+bool GuiContext::comboBegin(const Vector2& size, const std::string& label) {
+    struct nk_vec2 s {
+        size.x, size.y,
+    };
+    const auto height = nk_widget_height(nk.get());
+
+    return nk_combo_begin_label(nk.get(), label.c_str(), s) == nk_true;
+}
+
+void GuiContext::comboEnd() {
+    nk_combo_end(nk.get());
+}
+
+bool GuiContext::comboItem(const std::string& label) {
+    const auto height = nk_widget_height(nk.get());
+
+    nk_layout_row_dynamic(nk.get(), height, 1);
+
+    return nk_combo_item_label(nk.get(), label.c_str(), NK_TEXT_ALIGN_LEFT) == nk_true;
+}
+
+void GuiContext::groupEnd() {
+    nk_group_end(nk.get());
 }
 
 void GuiContext::layoutRowBegin(const float height, const int columns) {
@@ -264,6 +298,37 @@ bool GuiContext::button(const std::string& label) {
     return false;
 }
 
+bool GuiContext::buttonToggle(const std::string& label, bool& value) {
+    if (value) {
+        if (isHovered()) {
+            nk_style_push_color(nk.get(), &nk->style.button.border_color, nk->style.button.hover.data.color);
+        } else {
+            nk_style_push_color(nk.get(), &nk->style.button.border_color, nk->style.button.active.data.color);
+        }
+    } else {
+        if (isHovered()) {
+            nk_style_push_color(nk.get(), &nk->style.button.border_color, nk->style.button.hover.data.color);
+        } else {
+            nk_style_push_color(nk.get(), &nk->style.button.border_color, nk->style.button.border_color);
+        }
+    }
+
+    auto previous = value;
+    if (nk_button_label(nk.get(), label.c_str())) {
+        value = !value;
+    }
+
+    nk_style_pop_color(nk.get());
+
+    return previous != value;
+}
+
+bool GuiContext::checkbox(const std::string& label, bool& value) {
+    auto previous = value;
+    value = nk_check_label(nk.get(), label.c_str(), value ? nk_true : nk_false) == nk_true;
+    return previous != value;
+}
+
 void GuiContext::label(const std::string& label) {
     nk_label(nk.get(), label.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
 }
@@ -288,6 +353,19 @@ bool GuiContext::textInput(std::string& text, size_t max) {
     activeInput = !(state & NK_WIDGET_STATE_ACTIVE);
 
     return modified;
+}
+
+bool GuiContext::isHovered() {
+    // return nk_widget_is_hovered(ctx.get()) == nk_true;
+    const auto bounds = nk_widget_bounds(nk.get());
+    return nk_input_is_mouse_hovering_rect(&nk->input, bounds) == nk_true;
+}
+
+Vector2 GuiContext::getWidgetSize() const {
+    return {
+        nk_widget_width(nk.get()),
+        nk_widget_height(nk.get()),
+    };
 }
 
 void GuiContext::eventMouseMoved(const Vector2i& pos) {
@@ -375,13 +453,14 @@ void GuiContext::applyTheme() {
     window.header.label_hover = TEXT_BLACK;
     window.header.label_active = TEXT_BLACK;
     window.header.padding = nk_vec2(2, 1);
-    window.group_padding = nk_vec2(0, 0);
+    window.group_padding = nk_vec2(padding, padding);
     window.padding = nk_vec2(padding, padding);
     window.group_border = 1.0f;
     window.background = BACKGROUND_COLOR;
     window.min_row_height_padding = 0;
     window.combo_border_color = ACTIVE_COLOR;
     window.combo_border = 1.0f;
+    window.group_border_color = BORDER_GREY;
 
     combo.border = 1.0f;
     combo.border_color = BORDER_GREY;
@@ -493,11 +572,4 @@ void GuiContext::applyTheme() {
     progress.cursor_border_color = TRANSPARENT_COLOR;
     progress.padding.x = 0;
     progress.padding.y = 0;
-
-    /*customStyle->image = button;
-    customStyle->image.normal.data.color = TRANSPARENT_COLOR;
-    customStyle->image.hover.data.color = TRANSPARENT_COLOR;
-    customStyle->image.active.data.color = TRANSPARENT_COLOR;
-
-    customStyle->toggle = button;*/
 }

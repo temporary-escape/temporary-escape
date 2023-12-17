@@ -70,7 +70,7 @@ private:
         bool enabled;
     };
 
-    void loadColors(const TexturePtr& asset);
+    void loadColors();
     void drawLayout(Nuklear& nuklear) override;
     void drawLayoutItems(Nuklear& nuklear);
     void drawLayoutActions(Nuklear& nuklear);

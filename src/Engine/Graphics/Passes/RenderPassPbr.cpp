@@ -6,12 +6,12 @@
 using namespace Engine;
 
 RenderPassPbr::RenderPassPbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                             RenderResources& resources, AssetsManager& assetsManager) :
+                             RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassPbr"},
     options{options},
     buffer{buffer},
     resources{resources},
-    pipelinePbr{vulkan, assetsManager} {
+    pipelinePbr{vulkan} {
 
     { // Forward
         AttachmentInfo attachment{};
@@ -38,8 +38,6 @@ RenderPassPbr::RenderPassPbr(const RenderOptions& options, VulkanRenderer& vulka
     }
 
     addPipeline(pipelinePbr, 0);
-
-    brdf = assetsManager.getTextures().find("brdf");
 }
 
 void RenderPassPbr::beforeRender(VulkanCommandBuffer& vkb) {
@@ -137,7 +135,7 @@ void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePbr.setUniformShadowsViewProj(controllerLights.getUboShadowsViewProj().getCurrentBuffer());
     pipelinePbr.setTextureIrradiance(skyboxTextures->getIrradiance());
     pipelinePbr.setTexturePrefilter(skyboxTextures->getPrefilter());
-    pipelinePbr.setTextureBrdf(brdf->getVulkanTexture());
+    pipelinePbr.setTextureBrdf(resources.getBrdf());
     pipelinePbr.setTextureDepth(texDepth);
     pipelinePbr.setTextureBaseColorAmbient(texBaseColorAmbient);
     pipelinePbr.setTextureEmissiveRoughness(texEmissiveRoughness);

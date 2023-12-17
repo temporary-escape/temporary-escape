@@ -10,8 +10,7 @@ class ENGINE_API Scene;
 
 class ENGINE_API RendererScenePbr : public Renderer {
 public:
-    explicit RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources,
-                              AssetsManager& assetsManager);
+    explicit RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources);
 
     void setMousePos(const Vector2i& mousePos);
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

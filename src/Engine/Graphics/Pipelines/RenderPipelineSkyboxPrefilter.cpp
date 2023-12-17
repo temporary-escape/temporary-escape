@@ -1,14 +1,16 @@
 #include "RenderPipelineSkyboxPrefilter.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <skybox_prefilter_frag.spirv.h>
+#include <skybox_prefilter_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineSkyboxPrefilter::RenderPipelineSkyboxPrefilter(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineSkyboxPrefilter::RenderPipelineSkyboxPrefilter(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineSkyboxIrradiance"} {
 
-    addShader(assetsManager.getShaders().find("skybox_prefilter_vert"));
-    addShader(assetsManager.getShaders().find("skybox_prefilter_frag"));
+    addShader(Embed::skybox_prefilter_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::skybox_prefilter_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<SkyboxVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

@@ -8,8 +8,7 @@
 namespace Engine {
 class ENGINE_API RenderPassCompute : public RenderPass {
 public:
-    explicit RenderPassCompute(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                               AssetsManager& assetsManager);
+    explicit RenderPassCompute(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer);
 
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
 

@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePlanetColor : public RenderPipeline {
 public:
-    explicit RenderPipelinePlanetColor(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePlanetColor(VulkanRenderer& vulkan);
 
     void setTextureBiome(const VulkanTexture& texture);
     void setTextureRoughness(const VulkanTexture& texture);

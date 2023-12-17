@@ -9,16 +9,15 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 RendererPlanetSurface::RendererPlanetSurface(const Config& config, const Vector2i& viewport, VulkanRenderer& vulkan,
-                                             RenderResources& resources, AssetsManager& assetsManager,
-                                             VoxelShapeCache& voxelShapeCache) :
+                                             RenderResources& resources, VoxelShapeCache& voxelShapeCache) :
     RendererWork{config, vulkan, voxelShapeCache},
     vulkan{vulkan},
     viewport{viewport},
     renderBufferPlanet{viewport, vulkan} {
 
     try {
-        addRenderPass(std::make_unique<RenderPassPlanetSurface>(vulkan, renderBufferPlanet, resources, assetsManager));
-        addRenderPass(std::make_unique<RenderPassPlanetNormal>(vulkan, renderBufferPlanet, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassPlanetSurface>(vulkan, renderBufferPlanet, resources));
+        addRenderPass(std::make_unique<RenderPassPlanetNormal>(vulkan, renderBufferPlanet, resources));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }

@@ -9,6 +9,15 @@ public:
 
     void draw() override;
 
+    void setHeight(float value);
+    float getHeight() const {
+        return height;
+    }
+    void setColumns(int value);
+    int getColumns() const {
+        return columns;
+    }
+
 private:
     float height;
     int columns;

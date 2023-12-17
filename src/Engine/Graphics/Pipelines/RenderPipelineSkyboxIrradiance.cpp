@@ -1,14 +1,16 @@
 #include "RenderPipelineSkyboxIrradiance.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <skybox_irradiance_frag.spirv.h>
+#include <skybox_irradiance_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineSkyboxIrradiance::RenderPipelineSkyboxIrradiance(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineSkyboxIrradiance::RenderPipelineSkyboxIrradiance(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineSkyboxIrradiance"} {
 
-    addShader(assetsManager.getShaders().find("skybox_irradiance_vert"));
-    addShader(assetsManager.getShaders().find("skybox_irradiance_frag"));
+    addShader(Embed::skybox_irradiance_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::skybox_irradiance_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<SkyboxVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

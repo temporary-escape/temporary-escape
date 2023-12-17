@@ -1,14 +1,15 @@
 #include "RenderPipelineLines.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentLines.hpp"
+#include <component_lines_frag.spirv.h>
+#include <component_lines_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineLines::RenderPipelineLines(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineLines"} {
+RenderPipelineLines::RenderPipelineLines(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineLines"} {
 
-    addShader(assetsManager.getShaders().find("component_lines_vert"));
-    addShader(assetsManager.getShaders().find("component_lines_frag"));
+    addShader(Embed::component_lines_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_lines_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentLines::Vertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     setDepthMode(DepthMode::Read);

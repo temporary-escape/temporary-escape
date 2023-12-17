@@ -193,6 +193,7 @@ private:
 class ENGINE_API GltfFileReader {
 public:
     explicit GltfFileReader(const Path& path);
+    explicit GltfFileReader(const Span<uint8_t>& source);
     virtual ~GltfFileReader();
 
     const std::vector<GltfMaterial>& getMaterials() const {
@@ -204,6 +205,8 @@ public:
     }
 
 private:
+    void process();
+
     GltfData data;
     std::vector<GltfMaterial> materials;
     std::vector<GltfNode> nodes;

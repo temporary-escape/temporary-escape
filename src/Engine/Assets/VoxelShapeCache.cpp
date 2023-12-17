@@ -1,10 +1,21 @@
 #include "VoxelShapeCache.hpp"
 #include "../File/GltfFileReader.hpp"
 #include "../Math/Matrix.hpp"
+#include <shape_corner.gltf.h>
+#include <shape_cube.gltf.h>
+#include <shape_penta.gltf.h>
+#include <shape_wedge.gltf.h>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
+
+static std::unordered_map<VoxelShape::Type, Span<uint8_t>> typeToEmbededSource = {
+    {VoxelShape::Type::Cube, Embed::shape_cube_gltf},
+    {VoxelShape::Type::Corner, Embed::shape_corner_gltf},
+    {VoxelShape::Type::Penta, Embed::shape_penta_gltf},
+    {VoxelShape::Type::Wedge, Embed::shape_wedge_gltf},
+};
 
 static VoxelShape::Face sideFromString(const std::string& str) {
     if (str == "X+") {
@@ -89,11 +100,11 @@ const Matrix4& VoxelShapeCache::getRotationMatrixInverted(const uint8_t rotation
     return matrices.at(rotation);
 }
 
-static VoxelShape load(const Path& path) {
+static VoxelShape load(const Span<uint8_t>& source) {
     try {
         VoxelShape shape{};
 
-        const GltfFileReader gltf{path};
+        const GltfFileReader gltf{source};
 
         for (const auto& node : gltf.getNodes()) {
             VoxelShape::Face side = VoxelShape::Face::Default;
@@ -205,7 +216,7 @@ static VoxelShape load(const Path& path) {
 
         return shape;
     } catch (...) {
-        EXCEPTION_NESTED("Failed to load shape: '{}'", path);
+        EXCEPTION_NESTED("Failed to load shape");
     }
 }
 
@@ -216,9 +227,7 @@ VoxelShapeCache::VoxelShapeCache(const Config& config) : config{config} {
 
 void VoxelShapeCache::init() {
     for (const auto shapeType : VoxelShape::allTypes) {
-        const auto& name = shapeTypeToFileName(shapeType);
-        const auto path = config.shapesPath / Path{name + ".gltf"};
-        shapes.insert(std::make_pair(shapeType, load(path)));
+        shapes.insert(std::make_pair(shapeType, load(typeToEmbededSource[shapeType])));
     }
 }
 

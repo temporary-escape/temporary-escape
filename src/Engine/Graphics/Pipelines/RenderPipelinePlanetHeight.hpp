@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePlanetHeight : public RenderPipeline {
 public:
-    explicit RenderPipelinePlanetHeight(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePlanetHeight(VulkanRenderer& vulkan);
 
     void setIndex(int value);
     void setSeed(float value);

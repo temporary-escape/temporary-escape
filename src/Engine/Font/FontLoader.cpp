@@ -23,13 +23,12 @@ static FT_Library getFreeType() {
     return ft.get();
 }
 
-FontLoader::FontLoader(const Path& path, const int size) {
+FontLoader::FontLoader(const Span<uint8_t>& data, int size) {
     auto ft = getFreeType();
 
     FT_Face f;
-    const auto pathStr = path.string();
-    if (FT_New_Face(ft, pathStr.c_str(), 0, &f)) {
-        EXCEPTION("Failed to open font: '{}'", path);
+    if (FT_New_Memory_Face(ft, data.data(), data.size(), 0, &f)) {
+        EXCEPTION("Failed to open font from memory");
     }
 
     face = std::shared_ptr<FT_FaceRec_>(f, [](FT_Face f) { FT_Done_Face(f); });

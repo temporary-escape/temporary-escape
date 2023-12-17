@@ -1,6 +1,10 @@
 #include "RenderResources.hpp"
+#include "../File/Ktx2FileReader.hpp"
 #include "../Math/Utils.hpp"
 #include "MeshUtils.hpp"
+#include <brdf.ktx2.h>
+#include <palette.ktx2.h>
+#include <skybox_star.ktx2.h>
 
 using namespace Engine;
 
@@ -73,6 +77,9 @@ RenderResources::RenderResources(VulkanRenderer& vulkan) :
     meshBullet = createBulletMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
+    createPalette();
+    createBrdf();
+    createSkyboxStar();
     defaultSSAO = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 1);
     defaultShadow = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 4);
     defaultBloom = createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, 1);
@@ -172,4 +179,107 @@ void RenderResources::createSsaoSamples() {
 
     ssaoSamples.ubo = vulkan.createBuffer(bufferInfo);
     vulkan.copyDataToBuffer(ssaoSamples.ubo, weights.data(), bufferInfo.size);
+}
+
+static VulkanTexture::CreateInfo createCreateInfo(Ktx2FileReader& image) {
+    const auto& size = image.getSize();
+
+    VkExtent3D extent{
+        static_cast<uint32_t>(size.x),
+        static_cast<uint32_t>(size.y),
+        1,
+    };
+
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = extent;
+    textureInfo.image.mipLevels = 1;
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    textureInfo.view.format = textureInfo.image.format;
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
+
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+
+    return textureInfo;
+}
+
+static VulkanTexture createTexture(VulkanRenderer& vulkan, Ktx2FileReader& image,
+                                   const VulkanTexture::CreateInfo& textureInfo) {
+    if (image.needsTranscoding()) {
+        image.transcode(vulkan.getCompressionType(), Ktx2CompressionTarget::RGBA);
+    }
+    image.readData();
+
+    VulkanTexture texture = vulkan.createTexture(textureInfo);
+
+    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    for (auto i = 0; i < textureInfo.image.mipLevels; i++) {
+        const auto& chunk = image.getData(i, 0);
+        vulkan.copyDataToImage(texture, i, {0, 0}, 0, chunk.size, chunk.pixels.data(), chunk.pixels.size());
+    }
+
+    vulkan.transitionImageLayout(
+        texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    return texture;
+}
+
+void RenderResources::createPalette() {
+    Ktx2FileReader image{Embed::palette_ktx2};
+
+    if (image.getSize().y != 1) {
+        EXCEPTION("Expected palette texture to be 1D in size but instead is: {}", image.getSize());
+    }
+
+    auto textureInfo = createCreateInfo(image);
+    textureInfo.image.imageType = VK_IMAGE_TYPE_1D;
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_1D;
+    textureInfo.sampler.magFilter = VK_FILTER_NEAREST;
+    textureInfo.sampler.minFilter = VK_FILTER_NEAREST;
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+    palette = createTexture(vulkan, image, textureInfo);
+}
+
+void RenderResources::createBrdf() {
+    Ktx2FileReader image{Embed::brdf_ktx2};
+
+    auto textureInfo = createCreateInfo(image);
+    brdf = createTexture(vulkan, image, textureInfo);
+}
+
+void RenderResources::createSkyboxStar() {
+    Ktx2FileReader image{Embed::skybox_star_ktx2};
+
+    auto textureInfo = createCreateInfo(image);
+    skyboxStar = createTexture(vulkan, image, textureInfo);
 }

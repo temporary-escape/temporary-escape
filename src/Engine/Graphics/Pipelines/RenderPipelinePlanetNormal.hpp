@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePlanetNormal : public RenderPipeline {
 public:
-    explicit RenderPipelinePlanetNormal(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePlanetNormal(VulkanRenderer& vulkan);
 
     void setTextureHeight(const VulkanTexture& texture);
     void setResolution(float value);

@@ -3,6 +3,7 @@
 #include "../File/Ktx2FileReader.hpp"
 #include "../Math/Utils.hpp"
 #include "../Utils/StringUtils.hpp"
+#include <palette.ktx2.h>
 
 using namespace Engine;
 
@@ -11,7 +12,7 @@ GuiBlockSelector::GuiBlockSelector(const Config& config, AssetsManager& assetsMa
 
     setFlags(Nuklear::WindowFlags::NoScrollbar | Nuklear::WindowFlags::Border);
 
-    loadColors(assetsManager.getTextures().find("palette"));
+    loadColors();
 
     images.arrowUp = assetsManager.getImages().find("icon_small_arrow_up");
     images.arrowDown = assetsManager.getImages().find("icon_small_arrow_down");
@@ -23,8 +24,8 @@ GuiBlockSelector::GuiBlockSelector(const Config& config, AssetsManager& assetsMa
     images.load = assetsManager.getImages().find("icon_open_folder");
 }
 
-void GuiBlockSelector::loadColors(const TexturePtr& asset) {
-    Ktx2FileReader image{asset->getPath()};
+void GuiBlockSelector::loadColors() {
+    Ktx2FileReader image{Embed::palette_ktx2};
 
     if (image.needsTranscoding()) {
         image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);

@@ -3,6 +3,7 @@
 #include "../Library.hpp"
 #include "../Math/Vector.hpp"
 #include "../Utils/Path.hpp"
+#include "../Utils/Span.hpp"
 
 struct FT_FaceRec_;
 
@@ -18,7 +19,7 @@ public:
         float ascend;
     };
 
-    explicit FontLoader(const Path& path, int size);
+    explicit FontLoader(const Span<uint8_t>& data, int size);
     Glyph getGlyph(int code);
 
 private:

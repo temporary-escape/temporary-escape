@@ -1,14 +1,16 @@
 #include "RenderPipelineModelSkinned.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentModelSkinned.hpp"
+#include <component_model_frag.spirv.h>
+#include <component_model_skinned_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineModelSkinned::RenderPipelineModelSkinned(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineModelSkinned::RenderPipelineModelSkinned(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineModelSkinned"} {
 
-    addShader(assetsManager.getShaders().find("component_model_skinned_vert"));
-    addShader(assetsManager.getShaders().find("component_model_frag"));
+    addShader(Embed::component_model_skinned_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_model_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModelSkinned::Vertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::ReadWrite);

@@ -2,14 +2,15 @@
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentDebug.hpp"
 #include "../MeshUtils.hpp"
+#include <component_debug_frag.spirv.h>
+#include <component_debug_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineDebug::RenderPipelineDebug(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineDebug"} {
+RenderPipelineDebug::RenderPipelineDebug(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineDebug"} {
 
-    addShader(assetsManager.getShaders().find("component_debug_vert"));
-    addShader(assetsManager.getShaders().find("component_debug_frag"));
+    addShader(Embed::component_debug_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_debug_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<BulletVertex>(0));
     addVertexInput(RenderPipeline::VertexInput::of<ComponentDebug::Vertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);

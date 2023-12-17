@@ -22,11 +22,11 @@ function(compile_shaders NAME DIRECTORY)
         else ()
             message(FATAL_ERROR "Unknown shader type: ${BASENAME}")
         endif ()
-        
+
         set(SPIRV_FILE "${OUTPUT_DIR}/${BASENAME}.spirv")
 
         add_custom_command(OUTPUT ${SPIRV_FILE}
-                COMMAND ${GLSL_COMPILER} -V "${FILE}" -o "${SPIRV_FILE}" -S "${SHADER_TYPE}"
+                COMMAND ${GLSL_COMPILER} -V "${FILE}" -o "${SPIRV_FILE}" -S "${SHADER_TYPE}" -w
                 WORKING_DIRECTORY ${OUTPUT_DIR}
                 DEPENDS ${FILE}
                 VERBATIM

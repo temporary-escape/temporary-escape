@@ -1,15 +1,16 @@
 #include "RenderPipelineBulletsTrail.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentTurret.hpp"
-#include "../MeshUtils.hpp"
+#include <pass_bullets_trail_frag.spirv.h>
+#include <pass_bullets_trail_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineBulletsTrail::RenderPipelineBulletsTrail(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineBulletsTrail::RenderPipelineBulletsTrail(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineBulletsTrail"} {
 
-    addShader(assetsManager.getShaders().find("pass_bullets_trail_vert"));
-    addShader(assetsManager.getShaders().find("pass_bullets_trail_frag"));
+    addShader(Embed::pass_bullets_trail_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_bullets_trail_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentTurret::BulletInstance>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     setDepthMode(DepthMode::Read);

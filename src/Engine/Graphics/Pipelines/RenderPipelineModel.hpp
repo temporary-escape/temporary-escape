@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineModel : public RenderPipeline {
 public:
-    explicit RenderPipelineModel(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineModel(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setNormalMatrix(const Matrix3& value);

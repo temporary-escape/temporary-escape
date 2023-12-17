@@ -2,11 +2,11 @@
 
 using namespace Engine;
 
-FontFamily::FontFamily(VulkanRenderer& vulkan, const Path& dir, const std::string& name, const int size) :
+FontFamily::FontFamily(VulkanRenderer& vulkan, const Sources& sources, const int size) :
     faces{
-        FontFace{vulkan, dir / Path{name + "-regular.ttf"}, size},
-        FontFace{vulkan, dir / Path{name + "-bold.ttf"}, size},
-        FontFace{vulkan, dir / Path{name + "-thin.ttf"}, size},
-        FontFace{vulkan, dir / Path{name + "-light.ttf"}, size},
+        FontFace{vulkan, sources.regular, size},
+        FontFace{vulkan, sources.bold, size},
+        FontFace{vulkan, sources.thin, size},
+        FontFace{vulkan, sources.light, size},
     } {
 }

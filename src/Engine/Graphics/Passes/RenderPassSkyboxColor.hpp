@@ -9,8 +9,7 @@
 namespace Engine {
 class ENGINE_API RenderPassSkyboxColor : public RenderPass {
 public:
-    explicit RenderPassSkyboxColor(VulkanRenderer& vulkan, RenderBufferSkybox& buffer, RenderResources& resources,
-                                   AssetsManager& assetsManager);
+    explicit RenderPassSkyboxColor(VulkanRenderer& vulkan, RenderBufferSkybox& buffer, RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

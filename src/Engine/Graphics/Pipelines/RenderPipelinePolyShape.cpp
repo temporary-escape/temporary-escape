@@ -1,14 +1,16 @@
 #include "RenderPipelinePolyShape.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentPolyShape.hpp"
+#include <component_poly_shape_frag.spirv.h>
+#include <component_poly_shape_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePolyShape::RenderPipelinePolyShape(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePolyShape::RenderPipelinePolyShape(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePolyShape"} {
 
-    addShader(assetsManager.getShaders().find("component_poly_shape_vert"));
-    addShader(assetsManager.getShaders().find("component_poly_shape_frag"));
+    addShader(Embed::component_poly_shape_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_poly_shape_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentPolyShape::Point>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Read);

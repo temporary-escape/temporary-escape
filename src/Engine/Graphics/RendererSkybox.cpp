@@ -34,21 +34,17 @@ static const std::array<Vector3, 6> captureViewUp = {
 };
 
 RendererSkybox::RendererSkybox(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
-                               AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache) :
-    RendererWork{config, vulkan, voxelShapeCache}, config{config}, vulkan{vulkan}, renderBufferSkybox{config, vulkan} {
+                               VoxelShapeCache& voxelShapeCache) :
+    RendererWork{config, vulkan, voxelShapeCache}, config{config}, vulkan{vulkan}, resources{resources}, renderBufferSkybox{config, vulkan} {
 
     try {
-        addRenderPass(std::make_unique<RenderPassSkyboxColor>(vulkan, renderBufferSkybox, resources, assetsManager));
-        addRenderPass(
-            std::make_unique<RenderPassSkyboxIrradiance>(vulkan, renderBufferSkybox, resources, assetsManager));
-        addRenderPass(
-            std::make_unique<RenderPassSkyboxPrefilter>(vulkan, renderBufferSkybox, resources, assetsManager));
+        addRenderPass(std::make_unique<RenderPassSkyboxColor>(vulkan, renderBufferSkybox, resources));
+        addRenderPass(std::make_unique<RenderPassSkyboxIrradiance>(vulkan, renderBufferSkybox, resources));
+        addRenderPass(std::make_unique<RenderPassSkyboxPrefilter>(vulkan, renderBufferSkybox, resources));
     } catch (...) {
         EXCEPTION_NESTED("Failed to setup render passes");
     }
     create();
-
-    textures.star = assetsManager.getTextures().find("system_map_sun");
 }
 
 void RendererSkybox::update(Scene& scene) {
@@ -186,7 +182,7 @@ void RendererSkybox::prepareStars(Scene& scene, Rng& rng, const Vector2& size, c
 
     auto entity = scene.createEntity();
     entity.addComponent<ComponentTransform>();
-    auto& pointCloud = entity.addComponent<ComponentPointCloud>(textures.star);
+    auto& pointCloud = entity.addComponent<ComponentPointCloud>(resources.getSkyboxStar());
     pointCloud.reserve(count);
 
     for (size_t i = 0; i < count; i++) {

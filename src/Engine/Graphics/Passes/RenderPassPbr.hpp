@@ -9,7 +9,7 @@ namespace Engine {
 class ENGINE_API RenderPassPbr : public RenderPass {
 public:
     explicit RenderPassPbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                           RenderResources& resources, AssetsManager& assetsManager);
+                           RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
@@ -19,6 +19,5 @@ private:
     RenderBufferPbr& buffer;
     RenderResources& resources;
     RenderPipelinePbr pipelinePbr;
-    TexturePtr brdf;
 };
 } // namespace Engine

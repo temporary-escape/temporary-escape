@@ -30,6 +30,7 @@ public:
 
     ComponentPointCloud() = default;
     explicit ComponentPointCloud(entt::registry& reg, entt::entity handle, TexturePtr texture);
+    explicit ComponentPointCloud(entt::registry& reg, entt::entity handle, const VulkanTexture& texture);
     virtual ~ComponentPointCloud() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentPointCloud);
 
@@ -40,8 +41,8 @@ public:
 
     void recalculate(VulkanRenderer& vulkan);
 
-    [[nodiscard]] const TexturePtr& getTexture() const {
-        return texture;
+    [[nodiscard]] const VulkanTexture& getTexture() const {
+        return *texturePtr;
     }
 
     [[nodiscard]] const Mesh& getMesh() const {
@@ -50,6 +51,7 @@ public:
 
 private:
     TexturePtr texture;
+    const VulkanTexture* texturePtr{nullptr};
     std::vector<Point> points;
     Mesh mesh;
 };

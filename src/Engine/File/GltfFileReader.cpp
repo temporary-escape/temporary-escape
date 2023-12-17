@@ -273,7 +273,9 @@ GltfFileReader::GltfFileReader(const Path& path) {
 
     this->data = std::shared_ptr<cgltf_data>(data, [](cgltf_data* ptr) -> void { cgltf_free(ptr); });
 
-    try {
+    process();
+
+    /*try {
         for (auto i = 0; i < static_cast<int>(this->data->materials_count); i++) {
             materials.emplace_back(this->data, &this->data->materials[i]);
         }
@@ -283,10 +285,44 @@ GltfFileReader::GltfFileReader(const Path& path) {
         }
     } catch (std::exception& e) {
         EXCEPTION("Failed to parse gltf file: {}\n{}", path.string(), e.what());
+    }*/
+}
+
+GltfFileReader::GltfFileReader(const Span<uint8_t>& source) {
+    cgltf_options options;
+    std::memset(&options, 0, sizeof(options));
+
+    cgltf_data* data = nullptr;
+    auto result = cgltf_parse(&options, source.data(), source.size(), &data);
+    if (result != cgltf_result_success) {
+        EXCEPTION("Failed to open gltf from memory error: {}", gltfErrorToString(result));
     }
+
+    result = cgltf_load_buffers(&options, data, "");
+    if (result != cgltf_result_success) {
+        EXCEPTION("Failed to parse gltf buffers error: {}", gltfErrorToString(result));
+    }
+
+    this->data = std::shared_ptr<cgltf_data>(data, [](cgltf_data* ptr) -> void { cgltf_free(ptr); });
+
+    process();
 }
 
 GltfFileReader::~GltfFileReader() = default;
+
+void GltfFileReader::process() {
+    try {
+        for (auto i = 0; i < static_cast<int>(this->data->materials_count); i++) {
+            materials.emplace_back(this->data, &this->data->materials[i]);
+        }
+
+        for (auto i = 0; i < static_cast<int>(this->data->nodes_count); i++) {
+            nodes.emplace_back(this->data, &this->data->nodes[i]);
+        }
+    } catch (std::exception& e) {
+        EXCEPTION("Failed to parse gltf error: {}", e.what());
+    }
+}
 
 std::vector<float> GltfUtils::combine(const GltfAccessor& position, const GltfAccessor& normals,
                                       const GltfAccessor& texCoords, const GltfAccessor& tangents) {

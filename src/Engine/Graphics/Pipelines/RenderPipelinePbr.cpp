@@ -6,11 +6,10 @@
 
 using namespace Engine;
 
-RenderPipelinePbr::RenderPipelinePbr(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelinePbr"} {
+RenderPipelinePbr::RenderPipelinePbr(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelinePbr"} {
 
-    addShader(Embed::pass_pbr_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addShader(Embed::pass_pbr_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_pbr_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

@@ -1,18 +1,29 @@
 #include "Application.hpp"
 #include "../File/OggFileReader.hpp"
 #include "../Graphics/Theme.hpp"
+#include <iosevka-aile-bold.ttf.h>
+#include <iosevka-aile-light.ttf.h>
+#include <iosevka-aile-regular.ttf.h>
+#include <iosevka-aile-thin.ttf.h>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 static const auto profileFilename = "profile.xml";
 
+static FontFamily::Sources fontSources{
+    Embed::iosevka_aile_regular_ttf,
+    Embed::iosevka_aile_bold_ttf,
+    Embed::iosevka_aile_light_ttf,
+    Embed::iosevka_aile_thin_ttf,
+};
+
 Application::Application(Config& config) :
     VulkanRenderer{config},
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    font{*this, config.fontsPath, config.guiFontName, config.guiFontSize * 2},
+    font{*this, fontSources, config.guiFontSize * 2},
     rendererCanvas{*this},
     canvas2{*this},
     guiManager{*this, rendererCanvas, font, config.guiFontSize} {
@@ -54,8 +65,22 @@ Application::Application(Config& config) :
         gui.mainMenu->setEnabled(false);
         startSinglePlayer();
     });
+    gui.mainMenu->setOnClickEditor([this]() {
+        gui.mainMenu->setEnabled(false);
+        startEditor();
+    });
     gui.mainMenu->setOnClickQuit([this]() { closeWindow(); });
-    gui.mainMenu->setOnClickSettings([this]() { closeWindow(); });
+    gui.mainMenu->setOnClickSettings([this]() {
+        gui.settings->setEnabled(true);
+        gui.settings->reset();
+        gui.mainMenu->setEnabled(false);
+    });
+
+    gui.settings = guiManager.addWindow<GuiWindowSettings>(*this, config);
+    gui.settings->setOnSubmit([this](bool value) {
+        gui.settings->setEnabled(false);
+        gui.mainMenu->setEnabled(true);
+    });
 
     loadProfile();
 
@@ -469,8 +494,8 @@ void Application::createPlanetLowResTextures() {
     status.value = 0.5f;
 
     const Vector2i viewport{config.graphics.planetLowResTextureSize, config.graphics.planetLowResTextureSize};
-    auto rendererPlanetSurfaceLowRes = std::make_unique<RendererPlanetSurface>(
-        config, viewport, *this, *renderResources, *assetsManager, *voxelShapeCache);
+    auto rendererPlanetSurfaceLowRes =
+        std::make_unique<RendererPlanetSurface>(config, viewport, *this, *renderResources, *voxelShapeCache);
 
     createPlanetLowResTextures(*rendererPlanetSurfaceLowRes);
 
@@ -511,8 +536,7 @@ void Application::createThumbnails() {
     status.message = "Creating thumbnails...";
     status.value = 0.6f;
 
-    auto rendererThumbnail =
-        std::make_unique<RendererThumbnail>(config, *this, *renderResources, *assetsManager, *voxelShapeCache);
+    auto rendererThumbnail = std::make_unique<RendererThumbnail>(config, *this, *renderResources, *voxelShapeCache);
 
     createBlockThumbnails(*rendererThumbnail);
     createEmptyThumbnail(*rendererThumbnail);
@@ -589,7 +613,7 @@ void Application::createSceneRenderer(const Vector2i& viewport) {
     renderOptions.ssao = config.graphics.ssao;
     renderOptions.bloom = config.graphics.bloom;
     renderOptions.fxaa = config.graphics.fxaa;
-    renderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources, *assetsManager);
+    renderer = std::make_unique<RendererScenePbr>(renderOptions, *this, *renderResources);
 }
 
 void Application::createRenderers() {
@@ -602,12 +626,11 @@ void Application::createRenderers() {
 
     createSceneRenderer({config.graphics.windowWidth, config.graphics.windowHeight});
 
-    rendererSkybox =
-        std::make_unique<RendererSkybox>(config, *this, *renderResources, *assetsManager, *voxelShapeCache);
+    rendererSkybox = std::make_unique<RendererSkybox>(config, *this, *renderResources, *voxelShapeCache);
 
     const Vector2i viewport{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-    rendererPlanetSurface = std::make_unique<RendererPlanetSurface>(
-        config, viewport, *this, *renderResources, *assetsManager, *voxelShapeCache);
+    rendererPlanetSurface =
+        std::make_unique<RendererPlanetSurface>(config, viewport, *this, *renderResources, *voxelShapeCache);
 
     NEXT(createPlanetLowResTextures());
 }

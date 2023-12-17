@@ -27,6 +27,7 @@ struct ENGINE_API Ktx2Chunk {
 class ENGINE_API Ktx2FileReader {
 public:
     explicit Ktx2FileReader(const Path& path);
+    explicit Ktx2FileReader(const Span<uint8_t>& data);
     virtual ~Ktx2FileReader();
 
     [[nodiscard]] bool needsTranscoding() const;

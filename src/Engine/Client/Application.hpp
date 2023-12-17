@@ -8,6 +8,7 @@
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
+#include "../Gui/Windows/GuiWindowSettings.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
@@ -81,8 +82,9 @@ private:
     GuiManager guiManager;
 
     struct {
-        std::shared_ptr<GuiWindowMainMenu> mainMenu{nullptr};
-        std::shared_ptr<GuiWindowCreateProfile> createProfile{nullptr};
+        std::shared_ptr<GuiWindowMainMenu> mainMenu;
+        std::shared_ptr<GuiWindowCreateProfile> createProfile;
+        std::shared_ptr<GuiWindowSettings> settings;
     } gui;
 
     std::unique_ptr<AssetsManager> assetsManager;

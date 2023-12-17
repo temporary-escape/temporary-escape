@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineLines : public RenderPipeline {
 public:
-    explicit RenderPipelineLines(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineLines(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setColor(const Color4& value);

@@ -1,15 +1,16 @@
 #include "RenderPipelineShadowsGrid.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Camera.hpp"
-#include "../MeshUtils.hpp"
+#include <component_grid_vert.spirv.h>
+#include <component_shadow_frag.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineShadowsGrid::RenderPipelineShadowsGrid(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineShadowsGrid::RenderPipelineShadowsGrid(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineShadowsGrid"} {
 
-    addShader(assetsManager.getShaders().find("component_grid_vert"));
-    addShader(assetsManager.getShaders().find("component_shadow_frag"));
+    addShader(Embed::component_grid_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_shadow_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<VoxelShape::VertexFinal>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::ReadWrite);

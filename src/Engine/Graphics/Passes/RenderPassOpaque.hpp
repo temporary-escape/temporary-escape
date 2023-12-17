@@ -12,7 +12,7 @@ namespace Engine {
 class ENGINE_API RenderPassOpaque : public RenderPass {
 public:
     explicit RenderPassOpaque(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                              RenderResources& resources, AssetsManager& assetsManager);
+                              RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
@@ -34,7 +34,6 @@ private:
     RenderPipelineModel pipelineModel;
     RenderPipelineModelSkinned pipelineModelSkinned;
     RenderPipelineModelInstanced pipelineModelInstanced;
-    TexturePtr palette;
     Vector2i mousePos;
     VulkanDoubleBuffer entityColorBuffer;
 };

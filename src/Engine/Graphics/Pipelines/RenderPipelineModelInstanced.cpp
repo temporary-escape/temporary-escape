@@ -1,15 +1,16 @@
 #include "RenderPipelineModelInstanced.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentModel.hpp"
-#include "../MeshUtils.hpp"
+#include <component_model_frag.spirv.h>
+#include <component_model_instanced_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineModelInstanced::RenderPipelineModelInstanced(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineModelInstanced::RenderPipelineModelInstanced(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineModel"} {
 
-    addShader(assetsManager.getShaders().find("component_model_instanced_vert"));
-    addShader(assetsManager.getShaders().find("component_model_frag"));
+    addShader(Embed::component_model_instanced_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_model_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModel::Vertex>(0));
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModel::InstancedVertex>(
         1, VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE));

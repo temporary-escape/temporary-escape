@@ -1,14 +1,16 @@
 #include "RenderPipelineParticles.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentParticles.hpp"
+#include <component_particles_frag.spirv.h>
+#include <component_particles_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineParticles"} {
 
-    addShader(assetsManager.getShaders().find("component_particles_vert"));
-    addShader(assetsManager.getShaders().find("component_particles_frag"));
+    addShader(Embed::component_particles_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_particles_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Read);
     setPolygonMode(VkPolygonMode::VK_POLYGON_MODE_FILL);

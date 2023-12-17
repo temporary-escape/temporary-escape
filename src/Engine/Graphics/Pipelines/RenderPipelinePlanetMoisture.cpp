@@ -1,14 +1,16 @@
 #include "RenderPipelinePlanetMoisture.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <planet_flow_noise_frag.spirv.h>
+#include <planet_flow_noise_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePlanetMoisture::RenderPipelinePlanetMoisture(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePlanetMoisture::RenderPipelinePlanetMoisture(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePlanetMoisture"} {
 
-    addShader(assetsManager.getShaders().find("planet_flow_noise_vert"));
-    addShader(assetsManager.getShaders().find("planet_flow_noise_frag"));
+    addShader(Embed::planet_flow_noise_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::planet_flow_noise_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

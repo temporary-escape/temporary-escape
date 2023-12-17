@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Assets/Shader.hpp"
 #include "../Math/Matrix.hpp"
 #include "../Math/Vector.hpp"
 #include "../Utils/Exceptions.hpp"
@@ -111,7 +110,6 @@ public:
     void renderMeshInstanced(VulkanCommandBuffer& vkb, const Mesh& mesh, const VulkanBuffer& vbo, uint32_t count) const;
 
 protected:
-    void addShader(const ShaderPtr& shader);
     void addShader(VulkanShader& shader);
     void addShader(const Span<uint8_t>& spirv, VkShaderStageFlagBits stage);
     void addVertexInput(const VertexInput& vertexInput);

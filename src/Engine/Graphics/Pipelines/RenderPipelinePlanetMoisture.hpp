@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePlanetMoisture : public RenderPipeline {
 public:
-    explicit RenderPipelinePlanetMoisture(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePlanetMoisture(VulkanRenderer& vulkan);
 
     void setIndex(int value);
     void setSeed(float value);

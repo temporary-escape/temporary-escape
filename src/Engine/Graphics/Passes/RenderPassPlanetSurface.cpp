@@ -5,13 +5,13 @@
 using namespace Engine;
 
 RenderPassPlanetSurface::RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderBufferPlanet& buffer,
-                                                 RenderResources& resources, AssetsManager& assetsManager) :
+                                                 RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassPlanetSurface"},
     buffer{buffer},
     resources{resources},
-    pipelinePlanetHeight{vulkan, assetsManager},
-    pipelinePlanetMoisture{vulkan, assetsManager},
-    pipelinePlanetColor{vulkan, assetsManager} {
+    pipelinePlanetHeight{vulkan},
+    pipelinePlanetMoisture{vulkan},
+    pipelinePlanetColor{vulkan} {
 
     { // Heightmap
         AttachmentInfo attachment{};

@@ -197,7 +197,7 @@ void Canvas2::drawText(const Vector2& pos, const std::string_view& text, const F
 
     const auto scale = static_cast<float>(size) / static_cast<float>(face.getSize());
 
-    auto it = text.data();
+    auto it = text.begin();
     while (it < text.end()) {
         const auto code = utf8::next(it, text.end());
         const auto& glyph = face.getGlyph(code);

@@ -413,10 +413,6 @@ void RenderPipeline::createComputePipeline(const RenderPipeline::ReflectInfo& re
     pipeline = vulkan.createPipeline(computeInfo);
 }
 
-void RenderPipeline::addShader(const ShaderPtr& shader) {
-    addShader(shader->getVulkanShader());
-}
-
 void RenderPipeline::addShader(VulkanShader& shader) {
     shaders.push_back(&shader);
     pipelineInfo.shaderModules.push_back(&shader);

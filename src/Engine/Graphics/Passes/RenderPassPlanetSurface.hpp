@@ -11,8 +11,7 @@
 namespace Engine {
 class ENGINE_API RenderPassPlanetSurface : public RenderPass {
 public:
-    explicit RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderBufferPlanet& buffer, RenderResources& resources,
-                                     AssetsManager& assetsManager);
+    explicit RenderPassPlanetSurface(VulkanRenderer& vulkan, RenderBufferPlanet& buffer, RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

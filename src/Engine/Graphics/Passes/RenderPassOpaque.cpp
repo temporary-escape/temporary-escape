@@ -37,14 +37,14 @@ static void validateMaterial(const Material& material) {
 }
 
 RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                   RenderResources& resources, AssetsManager& assetsManager) :
+                                   RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassOpaque"},
     buffer{buffer},
     resources{resources},
-    pipelineGrid{vulkan, assetsManager},
-    pipelineModel{vulkan, assetsManager},
-    pipelineModelSkinned{vulkan, assetsManager},
-    pipelineModelInstanced{vulkan, assetsManager} {
+    pipelineGrid{vulkan},
+    pipelineModel{vulkan},
+    pipelineModelSkinned{vulkan},
+    pipelineModelInstanced{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -117,8 +117,6 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
     addPipeline(pipelineModelSkinned, 0);
     addPipeline(pipelineModelInstanced, 0);
 
-    palette = assetsManager.getTextures().find("palette");
-
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = 4; // 1 pixel RGBA
@@ -179,7 +177,7 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
             pipelineGrid.setTextureAmbientOcclusion(primitive.material->ambientOcclusionTexture->getVulkanTexture());
             pipelineGrid.setTextureMetallicRoughness(primitive.material->metallicRoughnessTexture->getVulkanTexture());
             pipelineGrid.setTextureMask(primitive.material->maskTexture->getVulkanTexture());
-            pipelineGrid.setTexturePalette(palette->getVulkanTexture());
+            pipelineGrid.setTexturePalette(resources.getPalette());
             pipelineGrid.flushDescriptors(vkb);
 
             pipelineGrid.renderMesh(vkb, primitive.mesh);

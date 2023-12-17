@@ -11,7 +11,7 @@ namespace Engine {
 class ENGINE_API RenderPassNonHDR : public RenderPass {
 public:
     explicit RenderPassNonHDR(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                              RenderResources& resources, AssetsManager& assetsManager);
+                              RenderResources& resources);
 
     void beforeRender(VulkanCommandBuffer& vkb) override;
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;

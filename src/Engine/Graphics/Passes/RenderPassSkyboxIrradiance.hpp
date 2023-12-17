@@ -8,8 +8,7 @@
 namespace Engine {
 class ENGINE_API RenderPassSkyboxIrradiance : public RenderPass {
 public:
-    explicit RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderBufferSkybox& buffer, RenderResources& resources,
-                                        AssetsManager& assetsManager);
+    explicit RenderPassSkyboxIrradiance(VulkanRenderer& vulkan, RenderBufferSkybox& buffer, RenderResources& resources);
 
     void setTextureSkybox(const VulkanTexture& value);
     void beforeRender(VulkanCommandBuffer& vkb) override;

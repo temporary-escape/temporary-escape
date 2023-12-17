@@ -107,10 +107,10 @@ void GuiWindow2::update(const Vector2i& viewport) {
 
 void GuiWindow2::draw() {
     // We are rendering into an FBO, therefore the position is always at [0, 0]
-    if (GuiContext::beginWindow(title, {0.0f, 0.0f}, size, flags)) {
+    if (GuiContext::windowBegin(title, {0.0f, 0.0f}, size, flags)) {
         GuiWidgetLayout::draw();
     }
-    GuiContext::endWindow(flags);
+    GuiContext::windowEnd(flags);
 }
 
 void GuiWindow2::setTitle(std::string value) {

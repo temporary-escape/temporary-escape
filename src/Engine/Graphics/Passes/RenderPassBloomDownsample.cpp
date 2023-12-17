@@ -6,12 +6,12 @@ using namespace Engine;
 
 RenderPassBloomDownsample::RenderPassBloomDownsample(const RenderOptions& options, VulkanRenderer& vulkan,
                                                      RenderBufferPbr& buffer, RenderResources& resources,
-                                                     AssetsManager& assetsManager, const uint32_t level) :
+                                                     const uint32_t level) :
     RenderPass{vulkan, buffer, "RenderPassBloomDownsample"},
     options{options},
     buffer{buffer},
     resources{resources},
-    pipelineBloomDownsample{vulkan, assetsManager},
+    pipelineBloomDownsample{vulkan},
     level{level} {
 
     { // Bloom

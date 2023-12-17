@@ -7,14 +7,14 @@
 using namespace Engine;
 
 RenderPassNonHDR::RenderPassNonHDR(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                   RenderResources& resources, AssetsManager& assetsManager) :
+                                   RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassNonHDR"},
     options{options},
     buffer{buffer},
     resources{resources},
-    pipelineOutline{vulkan, assetsManager},
-    pipelineIcons{vulkan, assetsManager},
-    pipelineWorldText{vulkan, assetsManager} {
+    pipelineOutline{vulkan},
+    pipelineIcons{vulkan},
+    pipelineWorldText{vulkan} {
 
     { // Forward
         AttachmentInfo attachment{};

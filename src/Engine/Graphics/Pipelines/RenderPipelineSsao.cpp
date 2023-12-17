@@ -1,14 +1,15 @@
 #include "RenderPipelineSsao.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <pass_ssao_frag.spirv.h>
+#include <pass_ssao_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineSSAO::RenderPipelineSSAO(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineSSAO"} {
+RenderPipelineSSAO::RenderPipelineSSAO(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineSSAO"} {
 
-    addShader(assetsManager.getShaders().find("pass_ssao_vert"));
-    addShader(assetsManager.getShaders().find("pass_ssao_frag"));
+    addShader(Embed::pass_ssao_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::pass_ssao_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::Ignore);

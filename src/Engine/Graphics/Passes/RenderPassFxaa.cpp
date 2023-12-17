@@ -5,11 +5,8 @@
 using namespace Engine;
 
 RenderPassFXAA::RenderPassFXAA(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                               RenderResources& resources, AssetsManager& assetsManager) :
-    RenderPass{vulkan, buffer, "RenderPassFXAA"},
-    buffer{buffer},
-    resources{resources},
-    pipelineFXAA{vulkan, assetsManager} {
+                               RenderResources& resources) :
+    RenderPass{vulkan, buffer, "RenderPassFXAA"}, buffer{buffer}, resources{resources}, pipelineFXAA{vulkan} {
 
     { // FXAA
         AttachmentInfo attachment{};

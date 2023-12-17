@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineBulletsTrail : public RenderPipeline {
 public:
-    explicit RenderPipelineBulletsTrail(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineBulletsTrail(VulkanRenderer& vulkan);
 
     void setUniformCamera(const VulkanBuffer& ubo);
     void flushDescriptors(VulkanCommandBuffer& vkb);

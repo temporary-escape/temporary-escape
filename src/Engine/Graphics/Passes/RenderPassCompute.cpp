@@ -6,9 +6,8 @@
 
 using namespace Engine;
 
-RenderPassCompute::RenderPassCompute(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                     AssetsManager& assetsManager) :
-    RenderPass{vulkan, buffer, "RenderPassCompute"}, pipelinePositionFeedback{vulkan, assetsManager} {
+RenderPassCompute::RenderPassCompute(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer) :
+    RenderPass{vulkan, buffer, "RenderPassCompute"}, pipelinePositionFeedback{vulkan} {
 
     addPipeline(pipelinePositionFeedback, 0);
 }

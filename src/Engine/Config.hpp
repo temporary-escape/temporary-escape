@@ -93,9 +93,7 @@ struct Config {
     std::filesystem::path assetsPath;
     std::filesystem::path userdataPath;
     std::filesystem::path cwdPath;
-    std::filesystem::path fontsPath;
     std::filesystem::path userdataSavesPath;
-    std::filesystem::path shapesPath;
 
     std::optional<std::string> saveFolderName;
     bool saveFolderClean = false;
@@ -104,7 +102,6 @@ struct Config {
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 18;
-    std::string guiFontName = "iosevka-aile";
 
     struct Server {
         size_t dbCacheSize{256};

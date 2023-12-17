@@ -1,14 +1,15 @@
 #include "RenderPipelineIcons.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentIcon.hpp"
+#include <component_icons_frag.spirv.h>
+#include <component_icons_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineIcons::RenderPipelineIcons(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineIcons"} {
+RenderPipelineIcons::RenderPipelineIcons(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineIcons"} {
 
-    addShader(assetsManager.getShaders().find("component_icons_vert"));
-    addShader(assetsManager.getShaders().find("component_icons_frag"));
+    addShader(Embed::component_icons_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_icons_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentIcon::Point>(0, VK_VERTEX_INPUT_RATE_INSTANCE));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Ignore);

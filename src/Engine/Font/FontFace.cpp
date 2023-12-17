@@ -8,8 +8,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const int size) : size{size} {
-    auto loader = FontLoader{path, size};
+FontFace::FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& data, const int size) : size{size} {
+    auto loader = FontLoader{data, size};
 
     std::vector<std::tuple<int, FontLoader::Glyph>> raw;
 
@@ -65,7 +65,7 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const int size) : s
     }
 
     if (finalWidth == 0 || finalHeight == 0) {
-        EXCEPTION("Unable to pack all glyphs for font: '{}' size: {}", path, size);
+        EXCEPTION("Unable to pack all glyphs for font size: {}", size);
     }
 
     std::unique_ptr<char[]> pixels{new char[finalWidth * finalHeight]};
@@ -155,7 +155,7 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, const int size) : s
 
     vulkan.generateMipMaps(texture);
 
-    logger.info("Loaded font: '{}' of size: {} with atlas size: {}", path, size, Vector2i{finalWidth, finalHeight});
+    logger.info("Loaded font of size: {} with atlas size: {}", size, Vector2i{finalWidth, finalHeight});
 }
 
 FontFace::~FontFace() = default;

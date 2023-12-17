@@ -20,15 +20,13 @@ target_link_libraries(${PROJECT_NAME}Engine PUBLIC ${PROJECT_NAME}Common::${PROJ
 
 # Embedded files
 get_property(SHADERS_DIR TARGET ${PROJECT_NAME}Shaders PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-get_property(FONTS_DIR TARGET ${PROJECT_NAME}Fonts PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-get_property(SHAPES_DIR TARGET ${PROJECT_NAME}Shapes PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+get_property(DATA_DIR TARGET ${PROJECT_NAME}Data PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(${PROJECT_NAME}Engine
         PRIVATE
         "${SHADERS_DIR}"
-        "${FONTS_DIR}"
-        "${SHAPES_DIR}")
+        "${DATA_DIR}")
 
-add_dependencies(${PROJECT_NAME}Engine ${PROJECT_NAME}Shaders ${PROJECT_NAME}Fonts ${PROJECT_NAME}Shapes)
+add_dependencies(${PROJECT_NAME}Engine ${PROJECT_NAME}Shaders ${PROJECT_NAME}Data)
 
 # Common compile definitions
 target_compile_definitions(${PROJECT_NAME}Engine

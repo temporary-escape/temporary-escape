@@ -7,18 +7,18 @@
 using namespace Engine;
 
 RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                     RenderResources& resources, AssetsManager& assetsManager) :
+                                     RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassForward"},
     vulkan{vulkan},
     buffer{buffer},
     resources{resources},
-    pipelinePointCloud{vulkan, assetsManager},
-    pipelineLines{vulkan, assetsManager},
-    pipelinePolyShape{vulkan, assetsManager},
-    pipelineBullets{vulkan, assetsManager},
-    pipelineBulletsTrail{vulkan, assetsManager},
-    pipelineParticles{vulkan, assetsManager},
-    pipelineDebug{vulkan, assetsManager} {
+    pipelinePointCloud{vulkan},
+    pipelineLines{vulkan},
+    pipelinePolyShape{vulkan},
+    pipelineBullets{vulkan},
+    pipelineBulletsTrail{vulkan},
+    pipelineParticles{vulkan},
+    pipelineDebug{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -108,7 +108,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
     }
 
     pipelinePointCloud.setUniformCamera(camera.getUbo().getCurrentBuffer());
-    pipelinePointCloud.setTextureColor(component.getTexture()->getVulkanTexture());
+    pipelinePointCloud.setTextureColor(component.getTexture());
     pipelinePointCloud.flushDescriptors(vkb);
 
     const auto modelMatrix = transform.getAbsoluteTransform();

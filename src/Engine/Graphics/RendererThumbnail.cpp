@@ -18,8 +18,8 @@ static RenderOptions getOptionsThumbnails(const Config& config) {
 }
 
 RendererThumbnail::RendererThumbnail(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
-                                     AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache) :
-    RendererScenePbr{getOptionsThumbnails(config), vulkan, resources, assetsManager},
+                                     VoxelShapeCache& voxelShapeCache) :
+    RendererScenePbr{getOptionsThumbnails(config), vulkan, resources},
     config{config},
     vulkan{vulkan},
     voxelShapeCache{voxelShapeCache} {

@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineBlit : public RenderPipeline {
 public:
-    explicit RenderPipelineBlit(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineBlit(VulkanRenderer& vulkan);
 
     void setTexture(const VulkanTexture& texture);
     void flushDescriptors(VulkanCommandBuffer& vkb);

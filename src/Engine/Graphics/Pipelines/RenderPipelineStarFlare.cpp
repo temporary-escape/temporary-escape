@@ -1,14 +1,16 @@
 #include "RenderPipelineStarFlare.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../MeshUtils.hpp"
+#include <component_star_flare_frag.spirv.h>
+#include <component_star_flare_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineStarFlare::RenderPipelineStarFlare(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelineStarFlare::RenderPipelineStarFlare(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineStarFlare"} {
 
-    addShader(assetsManager.getShaders().find("component_star_flare_vert"));
-    addShader(assetsManager.getShaders().find("component_star_flare_frag"));
+    addShader(Embed::component_star_flare_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_star_flare_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<FullScreenVertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     setDepthMode(DepthMode::Read);

@@ -1,12 +1,13 @@
 #include "RenderPipelinePositionFeedback.hpp"
 #include "../../Assets/AssetsManager.hpp"
+#include <position_feedback_comp.spirv.h>
 
 using namespace Engine;
 
-RenderPipelinePositionFeedback::RenderPipelinePositionFeedback(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
+RenderPipelinePositionFeedback::RenderPipelinePositionFeedback(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelinePositionFeedback"} {
 
-    addShader(assetsManager.getShaders().find("position_feedback_comp"));
+    addShader(Embed::position_feedback_comp_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT);
     setCompute(true);
 }
 

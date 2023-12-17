@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelinePositionFeedback : public RenderPipeline {
 public:
-    explicit RenderPipelinePositionFeedback(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelinePositionFeedback(VulkanRenderer& vulkan);
 
     void setViewport(const Vector2& value);
     void setCount(int value);

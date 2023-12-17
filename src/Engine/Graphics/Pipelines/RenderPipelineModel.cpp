@@ -1,14 +1,15 @@
 #include "RenderPipelineModel.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Components/ComponentModel.hpp"
+#include <component_model_frag.spirv.h>
+#include <component_model_vert.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineModel::RenderPipelineModel(VulkanRenderer& vulkan, AssetsManager& assetsManager) :
-    RenderPipeline{vulkan, "RenderPipelineModel"} {
+RenderPipelineModel::RenderPipelineModel(VulkanRenderer& vulkan) : RenderPipeline{vulkan, "RenderPipelineModel"} {
 
-    addShader(assetsManager.getShaders().find("component_model_vert"));
-    addShader(assetsManager.getShaders().find("component_model_frag"));
+    addShader(Embed::component_model_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_model_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModel::Vertex>(0));
     setTopology(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setDepthMode(DepthMode::ReadWrite);

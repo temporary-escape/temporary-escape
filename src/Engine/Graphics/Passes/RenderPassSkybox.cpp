@@ -6,12 +6,12 @@
 using namespace Engine;
 
 RenderPassSkybox::RenderPassSkybox(const RenderOptions& options, VulkanRenderer& vulkan, RenderBufferPbr& buffer,
-                                   RenderResources& resources, AssetsManager& assetsManager) :
+                                   RenderResources& resources) :
     RenderPass{vulkan, buffer, "RenderPassSkybox"},
     resources{resources},
-    pipelinePlanet{vulkan, assetsManager},
-    pipelineSkybox{vulkan, assetsManager},
-    pipelineStarFlare{vulkan, assetsManager} {
+    pipelinePlanet{vulkan},
+    pipelineSkybox{vulkan},
+    pipelineStarFlare{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -40,8 +40,6 @@ RenderPassSkybox::RenderPassSkybox(const RenderOptions& options, VulkanRenderer&
     addPipeline(pipelinePlanet, 0);
     addPipeline(pipelineSkybox, 0);
     addPipeline(pipelineStarFlare, 0);
-
-    textureBrdf = assetsManager.getTextures().find("brdf");
 }
 
 void RenderPassSkybox::beforeRender(VulkanCommandBuffer& vkb) {
@@ -115,7 +113,7 @@ void RenderPassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene, con
         pipelinePlanet.setTextureMetallicRoughness(planetTextures->getMetallicRoughness());
         pipelinePlanet.setTextureSkyboxIrradiance(skyboxTextures.getIrradiance());
         pipelinePlanet.setTextureSkyboxPrefilter(skyboxTextures.getPrefilter());
-        pipelinePlanet.setTextureBrdf(textureBrdf->getVulkanTexture());
+        pipelinePlanet.setTextureBrdf(resources.getBrdf());
         pipelinePlanet.flushDescriptors(vkb);
 
         pipelinePlanet.renderMesh(vkb, resources.getMeshPlanet());

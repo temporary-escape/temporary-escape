@@ -2,16 +2,16 @@
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Camera.hpp"
 #include "../../Scene/Components/ComponentModel.hpp"
-#include "../MeshUtils.hpp"
+#include <component_model_instanced_vert.spirv.h>
+#include <component_shadow_frag.spirv.h>
 
 using namespace Engine;
 
-RenderPipelineShadowsModelInstanced::RenderPipelineShadowsModelInstanced(VulkanRenderer& vulkan,
-                                                                         AssetsManager& assetsManager) :
+RenderPipelineShadowsModelInstanced::RenderPipelineShadowsModelInstanced(VulkanRenderer& vulkan) :
     RenderPipeline{vulkan, "RenderPipelineShadowsModelInstanced"} {
 
-    addShader(assetsManager.getShaders().find("component_model_instanced_vert"));
-    addShader(assetsManager.getShaders().find("component_shadow_frag"));
+    addShader(Embed::component_model_instanced_vert_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
+    addShader(Embed::component_shadow_frag_spirv, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModel::Vertex>(0));
     addVertexInput(RenderPipeline::VertexInput::of<ComponentModel::InstancedVertex>(
         1, VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE));

@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineSSAO : public RenderPipeline {
 public:
-    explicit RenderPipelineSSAO(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineSSAO(VulkanRenderer& vulkan);
 
     void setKernelSize(const int value);
     void setScale(const Vector2& value);

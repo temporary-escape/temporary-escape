@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API RenderPipelineIcons : public RenderPipeline {
 public:
-    explicit RenderPipelineIcons(VulkanRenderer& vulkan, AssetsManager& assetsManager);
+    explicit RenderPipelineIcons(VulkanRenderer& vulkan);
 
     void setModelMatrix(const Matrix4& value);
     void setScale(float scale);
