@@ -9,8 +9,6 @@ public:
 
     explicit GuiWidgetTextInput(GuiContext& ctx, size_t max = 256);
 
-    void draw() override;
-
     void setValue(std::string value);
     const std::string& getValue() const {
         return input;
@@ -19,6 +17,8 @@ public:
     void setOnModify(OnModifyCallback value);
 
 private:
+    void drawInternal() override;
+
     const size_t max;
     std::string input;
 

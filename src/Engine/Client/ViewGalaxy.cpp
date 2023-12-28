@@ -39,7 +39,7 @@ ViewGalaxy::~ViewGalaxy() {
     }
 }
 
-void ViewGalaxy::update(const float deltaTime) {
+void ViewGalaxy::update(const float deltaTime, const Vector2i& viewport) {
     guiModalLoading.setProgress(0.5f);
 
     if (futureLoad.valid() && futureLoad.ready()) {
@@ -80,7 +80,7 @@ void ViewGalaxy::update(const float deltaTime) {
     }
 }
 
-void ViewGalaxy::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+void ViewGalaxy::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
 }
 
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {

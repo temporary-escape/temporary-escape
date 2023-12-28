@@ -1,10 +1,7 @@
 #pragma once
 
 #include "../Audio/AudioContext.hpp"
-#include "../Database/Database.hpp"
 #include "../Graphics/RendererCanvas.hpp"
-#include "../Graphics/RendererScenePbr.hpp"
-#include "../Graphics/RendererThumbnail.hpp"
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
@@ -12,8 +9,8 @@
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
-#include "Editor.hpp"
-#include "Game.hpp"
+#include "Client.hpp"
+#include "View.hpp"
 #include <queue>
 
 namespace Engine {
@@ -21,6 +18,12 @@ struct ENGINE_API Status {
     std::string message;
     float value{0.0f};
 };
+
+class ENGINE_API ViewSpace;
+class ENGINE_API Database;
+class ENGINE_API RendererBackground;
+class ENGINE_API RendererScenePbr;
+class ENGINE_API RendererThumbnail;
 
 class ENGINE_API Application : public VulkanRenderer, public Nuklear::EventCallback {
 public:
@@ -82,24 +85,25 @@ private:
     GuiManager guiManager;
 
     struct {
-        std::shared_ptr<GuiWindowMainMenu> mainMenu;
-        std::shared_ptr<GuiWindowCreateProfile> createProfile;
-        std::shared_ptr<GuiWindowSettings> settings;
+        GuiWindowMainMenu* mainMenu;
+        GuiWindowCreateProfile* createProfile;
+        GuiWindowSettings* settings;
     } gui;
+
+    struct {
+        ViewSpace* space{nullptr};
+    } view;
 
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;
     std::unique_ptr<Server> server;
-    std::thread serverThread;
-    std::unique_ptr<RendererSkybox> rendererSkybox;
-    std::unique_ptr<RendererPlanetSurface> rendererPlanetSurface;
+    std::unique_ptr<RendererBackground> rendererBackground;
     std::unique_ptr<RenderResources> renderResources;
     std::unique_ptr<RendererScenePbr> renderer;
     std::unique_ptr<VoxelShapeCache> voxelShapeCache;
     std::unique_ptr<Client> client;
+    std::unique_ptr<ViewContext> views;
     PlayerLocalProfile playerLocalProfile;
-    std::unique_ptr<Game> game;
-    std::unique_ptr<Editor> editor;
 
     std::future<std::function<void()>> future;
     std::promise<std::function<void()>> promise;

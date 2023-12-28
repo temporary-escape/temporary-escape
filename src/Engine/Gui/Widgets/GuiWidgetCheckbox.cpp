@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWidgetCheckbox::GuiWidgetCheckbox(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {
 }
 
-void GuiWidgetCheckbox::draw() {
+void GuiWidgetCheckbox::drawInternal() {
     if (ctx.checkbox(label, toggle)) {
         if (onClick) {
             onClick(toggle);

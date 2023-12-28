@@ -352,7 +352,7 @@ void ViewBuild::updateSelectedBlock() {
     }
 }
 
-void ViewBuild::update(const float deltaTime) {
+void ViewBuild::update(const float deltaTime, const Vector2i& viewport) {
     scene.update(deltaTime);
 
     if (guiBlockSelector.getSelectedBlock() != selected.block ||
@@ -428,7 +428,7 @@ void ViewBuild::update(const float deltaTime) {
     }
 }
 
-void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+void ViewBuild::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {

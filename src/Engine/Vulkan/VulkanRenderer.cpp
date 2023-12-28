@@ -6,7 +6,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 VulkanRenderer::VulkanRenderer(const Config& config) :
-    VulkanDevice{config}, config{config}, lastViewportSize{config.graphics.windowWidth, config.graphics.windowHeight} {
+    VulkanDevice{config}, config{config}, lastViewportSize{config.graphics.windowSize} {
 
     const auto indices = getQueueFamilies();
 

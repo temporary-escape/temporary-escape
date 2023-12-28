@@ -1,10 +1,102 @@
 #include "GuiContext.hpp"
+#include "../Assets/Image.hpp"
 #include "../Graphics/Theme.hpp"
 #define NK_IMPLEMENTATION 1
 #define NK_INCLUDE_DEFAULT_ALLOCATOR 1
 #include <nuklear.h>
 
 using namespace Engine;
+
+void draw_button_text_image(struct nk_command_buffer* out, const struct nk_rect* bounds, const struct nk_rect* label,
+                            const struct nk_rect* image, nk_flags state, const struct nk_style_button* style,
+                            const char* str, int len, const struct nk_user_font* font, const struct nk_image* img,
+                            nk_flags align) {
+    struct nk_text text;
+    const struct nk_style_item* background;
+    background = nk_draw_button(out, bounds, state, style);
+
+    /* select correct colors */
+    if (background->type == NK_STYLE_ITEM_COLOR)
+        text.background = background->data.color;
+    else
+        text.background = style->text_background;
+    if (state & NK_WIDGET_STATE_HOVER)
+        text.text = style->text_hover;
+    else if (state & NK_WIDGET_STATE_ACTIVED)
+        text.text = style->text_active;
+    else
+        text.text = style->text_normal;
+
+    text.padding = nk_vec2(0, 0);
+    nk_widget_text(out, *label, str, len, &text, align, font);
+    nk_draw_image(out, *image, img, nk_white);
+}
+
+nk_bool do_button_text_image(nk_flags* state, struct nk_command_buffer* out, struct nk_rect bounds, struct nk_image img,
+                             const char* str, int len, nk_flags align, enum nk_button_behavior behavior,
+                             const struct nk_style_button* style, const struct nk_user_font* font,
+                             const struct nk_input* in) {
+    int ret;
+    struct nk_rect icon;
+    struct nk_rect content;
+
+    NK_ASSERT(style);
+    NK_ASSERT(state);
+    NK_ASSERT(font);
+    NK_ASSERT(out);
+    if (!out || !font || !style || !str)
+        return nk_false;
+
+    ret = nk_do_button(state, out, bounds, style, in, behavior, &content);
+    icon.y = bounds.y + style->padding.y;
+    icon.w = icon.h = bounds.h - 2 * style->padding.y;
+    icon.x += style->image_padding.x;
+    icon.y += style->image_padding.y;
+    icon.w -= 2 * style->image_padding.x;
+    icon.h -= 2 * style->image_padding.y;
+
+    if (style->draw_begin)
+        style->draw_begin(out, style->userdata);
+    draw_button_text_image(out, &bounds, &content, &icon, *state, style, str, len, font, &img, align);
+    if (style->draw_end)
+        style->draw_end(out, style->userdata);
+    return ret;
+}
+
+nk_bool button_image_text_styled(struct nk_context* ctx, const struct nk_style_button* style, struct nk_image img,
+                                 const char* text, int len, nk_flags align) {
+    struct nk_window* win;
+    struct nk_panel* layout;
+    const struct nk_input* in;
+
+    struct nk_rect bounds;
+    enum nk_widget_layout_states state;
+
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
+    if (!ctx || !ctx->current || !ctx->current->layout)
+        return 0;
+
+    win = ctx->current;
+    layout = win->layout;
+
+    state = nk_widget(&bounds, ctx);
+    if (!state)
+        return 0;
+    in = (state == NK_WIDGET_ROM || layout->flags & NK_WINDOW_ROM) ? 0 : &ctx->input;
+    return do_button_text_image(&ctx->last_widget_state,
+                                &win->buffer,
+                                bounds,
+                                img,
+                                text,
+                                len,
+                                align,
+                                ctx->button_behavior,
+                                style,
+                                ctx->style.font,
+                                in);
+}
 
 static Color4 asColor(const nk_color& color) {
     return {static_cast<float>(color.r) / 255.0f,
@@ -187,15 +279,15 @@ void GuiContext::render(Canvas2& canvas) {
             break;
         }
         case NK_COMMAND_IMAGE: {
-            /*const auto c = reinterpret_cast<const struct nk_command_image*>(cmd);
+            const auto c = reinterpret_cast<const struct nk_command_image*>(cmd);
             const auto& color = asColor(c->col);
             const auto image = reinterpret_cast<Image*>(c->img.handle.ptr);
             if (image) {
-                canvas.color(color);
-                canvas.image({static_cast<float>(c->x), static_cast<float>(c->y)},
-                             {static_cast<float>(c->w), static_cast<float>(c->h)},
-                             *image);
-            }*/
+                canvas.drawImage({static_cast<float>(c->x), static_cast<float>(c->y)},
+                                 {static_cast<float>(c->w), static_cast<float>(c->h)},
+                                 *image,
+                                 color);
+            }
             break;
         }
         default: {
@@ -221,15 +313,10 @@ bool GuiContext::windowBegin(const std::string& title, const Vector2& pos, const
         nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Theme::ternary));
     }
 
-    if (nk_begin_titled(nk.get(), title.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags)) {
-        return true;
-    }
+    // const auto* titleStr = flags & WindowFlag::Title ? title.c_str() : nullptr;
 
-    return false;
-}
-
-void GuiContext::windowEnd(const Flags flags) {
-    nk_end(nk.get());
+    const auto res =
+        nk_begin_titled(nk.get(), title.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags);
 
     if (flags & WindowFlag::Transparent) {
         nk_style_pop_color(nk.get());
@@ -238,6 +325,12 @@ void GuiContext::windowEnd(const Flags flags) {
     if (flags & WindowFlag::HeaderSuccess || flags & WindowFlag::HeaderDanger) {
         nk_style_pop_color(nk.get());
     }
+
+    return res == nk_true;
+}
+
+void GuiContext::windowEnd(const Flags flags) {
+    nk_end(nk.get());
 }
 
 bool GuiContext::groupBegin(const std::string& name, const bool scrollbar) {
@@ -270,6 +363,51 @@ bool GuiContext::comboItem(const std::string& label) {
     return nk_combo_item_label(nk.get(), label.c_str(), NK_TEXT_ALIGN_LEFT) == nk_true;
 }
 
+void GuiContext::progress(const float value, const float max, const Color4& color) {
+    nk_style_push_color(nk.get(), &nk->style.progress.cursor_normal.data.color, fromColor(color));
+    // nk_style_push_style_item(nk.get(), &nk->style.progress.cursor_normal, nk_style_item_color(fromColor(color)));
+
+    auto current = static_cast<nk_size>(value);
+    nk_progress(nk.get(), &current, static_cast<nk_size>(max), NK_FIXED);
+
+    // nk_style_pop_style_item(nk.get());
+    nk_style_pop_color(nk.get());
+}
+
+void GuiContext::image(const ImagePtr& img, const Color4& color) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+    nk_image_color(nk.get(), ni, fromColor(color));
+}
+
+bool GuiContext::imageToggle(const ImagePtr& img, bool& value, const Color4& color) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    auto previous = value;
+    if (nk_button_image_styled(nk.get(), &nk->style.button, ni) == nk_true) {
+        value = true;
+    }
+
+    return previous != value;
+}
+
+bool GuiContext::imageToggleLabel(const ImagePtr& img, bool& value, const Color4& color, const std::string& text,
+                                  const GuiTextAlign align) {
+    struct nk_image ni {};
+    ni.handle.ptr = img.get();
+
+    const auto flags = static_cast<nk_flags>(align);
+    auto previous = value;
+    const auto len = static_cast<int>(text.size());
+
+    if (button_image_text_styled(nk.get(), &nk->style.button, ni, text.c_str(), len, flags) == nk_true) {
+        value = true;
+    }
+
+    return previous != value;
+}
+
 void GuiContext::groupEnd() {
     nk_group_end(nk.get());
 }
@@ -284,6 +422,26 @@ void GuiContext::layoutRowPush(const float width) {
 
 void GuiContext::layoutRowEnd() {
     nk_layout_row_end(nk.get());
+}
+
+void GuiContext::layoutTemplateBegin(const float height) {
+    nk_layout_row_template_begin(nk.get(), height);
+}
+
+void GuiContext::layoutTemplatePushDynamic() {
+    nk_layout_row_template_push_dynamic(nk.get());
+}
+
+void GuiContext::layoutTemplatePushVariable(const float width) {
+    nk_layout_row_template_push_variable(nk.get(), width);
+}
+
+void GuiContext::layoutTemplatePushStatic(const float width) {
+    nk_layout_row_template_push_static(nk.get(), width);
+}
+
+void GuiContext::layoutTemplateEnd() {
+    nk_layout_row_template_end(nk.get());
 }
 
 void GuiContext::skip() {
@@ -355,6 +513,12 @@ bool GuiContext::textInput(std::string& text, size_t max) {
     return modified;
 }
 
+void GuiContext::tooltip(const std::string& text) {
+    if (isHovered()) {
+        nk_tooltip(nk.get(), text.c_str());
+    }
+}
+
 bool GuiContext::isHovered() {
     // return nk_widget_is_hovered(ctx.get()) == nk_true;
     const auto bounds = nk_widget_bounds(nk.get());
@@ -365,6 +529,13 @@ Vector2 GuiContext::getWidgetSize() const {
     return {
         nk_widget_width(nk.get()),
         nk_widget_height(nk.get()),
+    };
+}
+
+Vector2 GuiContext::getPadding() const {
+    return {
+        nk->style.window.padding.x,
+        nk->style.window.padding.y,
     };
 }
 

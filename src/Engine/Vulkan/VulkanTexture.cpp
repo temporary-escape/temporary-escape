@@ -4,6 +4,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo) :
     device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
 
@@ -13,12 +15,12 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo)
 
     VmaAllocationInfo allocationInfo;
     if (vmaCreateImage(allocator, &createInfo.image, &allocInfo, &image, &allocation, &allocationInfo) != VK_SUCCESS) {
-        destroy();
+        VulkanTexture::destroy();
         EXCEPTION("Failed to allocate image memory!");
     }
 
     if (vkCreateSampler(device.getDevice(), &createInfo.sampler, nullptr, &sampler) != VK_SUCCESS) {
-        destroy();
+        VulkanTexture::destroy();
         EXCEPTION("Failed to allocate image sampler!");
     }
 
@@ -28,6 +30,8 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo)
     if (vkCreateImageView(device.getDevice(), &createInfoView, nullptr, &view) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate image view!");
     }
+
+    logger.debug("Created VulkanTexture of size: {} pixels", createInfo.image.extent);
 
     format = createInfo.image.format;
     extent = createInfo.image.extent;

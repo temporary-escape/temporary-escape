@@ -11,15 +11,18 @@
 namespace Engine {
 class ENGINE_API Client;
 class ENGINE_API Game;
+class ENGINE_API GuiManager;
+class ENGINE_API GuiWindowShipToolbar;
 
 class ENGINE_API ViewSpace : public View {
 public:
-    explicit ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client);
+    explicit ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager,
+                       AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font,
+                       Client& client);
     ~ViewSpace() = default;
 
-    void update(float deltaTime) override;
-    void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
+    void update(float deltaTime, const Vector2i& viewport) override;
+    void renderCanvas(Canvas2& canvas, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -33,18 +36,21 @@ public:
 
 private:
     void doTargetEntity(const Entity& entity);
-    void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
+    void renderCanvasSelectedEntity(Canvas2& canvas, const Scene& scene, const ComponentCamera& camera);
 
-    Game& parent;
     const Config& config;
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     VoxelShapeCache& voxelShapeCache;
+    GuiManager& guiManager;
     FontFamily& font;
     Client& client;
-    GuiContextMenu guiContextMenu;
 
     struct {
+        GuiWindowShipToolbar* toolbar{nullptr};
+    } gui;
+
+    /*struct {
         bool forward{false};
         bool backwards{false};
         bool left{false};
@@ -53,6 +59,6 @@ private:
         bool down{false};
         bool update{false};
         bool boost{false};
-    } control;
+    } control;*/
 };
 } // namespace Engine

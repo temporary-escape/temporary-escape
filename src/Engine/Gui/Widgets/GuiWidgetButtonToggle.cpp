@@ -6,7 +6,7 @@ GuiWidgetButtonToggle::GuiWidgetButtonToggle(GuiContext& ctx, std::string label)
     GuiWidget{ctx}, label{std::move(label)} {
 }
 
-void GuiWidgetButtonToggle::draw() {
+void GuiWidgetButtonToggle::drawInternal() {
     if (ctx.buttonToggle(label, toggle)) {
         if (onClick) {
             onClick(toggle);

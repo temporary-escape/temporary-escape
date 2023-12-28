@@ -28,7 +28,7 @@ Editor::~Editor() {
 }
 
 void Editor::update(float deltaTime) {
-    view.update(deltaTime);
+    view.update(deltaTime, {0, 0});
 }
 
 void Editor::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport) {

@@ -1,11 +1,24 @@
 #pragma once
 
+#include "../Assets/Image.hpp"
 #include "../Graphics/Canvas2.hpp"
 
 struct nk_context;
 struct nk_user_font;
 
 namespace Engine {
+enum class GuiTextAlign : uint32_t {
+    Left = 0x01 | 0x10,
+    Center = 0x02 | 0x10,
+    Right = 0x04 | 0x10,
+    LeftTop = 0x01 | 0x08,
+    CenterTop = 0x02 | 0x08,
+    RightTop = 0x04 | 0x08,
+    LeftBottom = 0x01 | 0x20,
+    CenterBottom = 0x02 | 0x20,
+    RightBottom = 0x04 | 0x20,
+};
+
 class ENGINE_API GuiContext {
 public:
     using Flags = uint32_t;
@@ -43,6 +56,12 @@ public:
     void layoutRowPush(float width);
     void layoutRowEnd();
 
+    void layoutTemplateBegin(float height);
+    void layoutTemplatePushDynamic();
+    void layoutTemplatePushVariable(float width);
+    void layoutTemplatePushStatic(float width);
+    void layoutTemplateEnd();
+
     void skip();
     bool button(const std::string& label);
     bool buttonToggle(const std::string& label, bool& value);
@@ -52,8 +71,15 @@ public:
     bool comboBegin(const Vector2& size, const std::string& label);
     void comboEnd();
     bool comboItem(const std::string& label);
+    void progress(float value, float max, const Color4& color);
+    void image(const ImagePtr& img, const Color4& color);
+    bool imageToggle(const ImagePtr& img, bool& value, const Color4& color);
+    bool imageToggleLabel(const ImagePtr& img, bool& value, const Color4& color, const std::string& text,
+                          const GuiTextAlign align);
+    void tooltip(const std::string& text);
     bool isHovered();
     Vector2 getWidgetSize() const;
+    Vector2 getPadding() const;
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -115,6 +141,6 @@ inline GuiContext::Flags& operator&=(GuiContext::Flags& a, const GuiContext::Win
 }
 
 inline GuiContext::Flags operator~(const GuiContext::WindowFlag a) {
-    return static_cast<GuiContext::Flags>(a);
+    return ~static_cast<GuiContext::Flags>(a);
 }
 } // namespace Engine

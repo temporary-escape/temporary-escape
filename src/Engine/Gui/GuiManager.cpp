@@ -1,6 +1,4 @@
 #include "GuiManager.hpp"
-#include "GuiWindow.hpp"
-#include "Windows/GuiWindowModal.hpp"
 
 using namespace Engine;
 
@@ -10,6 +8,8 @@ GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const F
                        const int fontSize) :
     vulkan{vulkan}, renderer{renderer}, fontFamily{fontFamily}, fontSize{fontSize} {
     createRenderPass();
+
+    // contextMenu = addWindow<GuiWindowContextMenu>();
 }
 
 GuiManager::~GuiManager() = default;
@@ -127,10 +127,9 @@ void GuiManager::clearFocused() {
     focused = nullptr;
 }
 
-std::shared_ptr<GuiWindowModal> GuiManager::modal(std::string title, std::string text,
-                                                  const std::vector<std::string>& choices,
-                                                  const ModalCallback& callback) {
-    auto window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices);
+GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std::vector<std::string>& choices,
+                                  const ModalCallback& callback) {
+    auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices);
     window->setEnabled(true);
     setFocused(*window);
     window->setOnClickCallback([this, window, callback](const std::string& choice) {
@@ -145,20 +144,36 @@ std::shared_ptr<GuiWindowModal> GuiManager::modal(std::string title, std::string
     return window;
 }
 
-std::shared_ptr<GuiWindowModal> GuiManager::modalSuccess(std::string title, std::string text,
-                                                         const ModalCallback& callback) {
+GuiWindowModal* GuiManager::modalSuccess(std::string title, std::string text, const ModalCallback& callback) {
     static std::vector<std::string> choices{"Ok"};
     auto window = modal(std::move(title), std::move(text), choices, callback);
     window->setHeaderSuccess(true);
     return window;
 }
 
-std::shared_ptr<GuiWindowModal> GuiManager::modalDanger(std::string title, std::string text,
-                                                        const ModalCallback& callback) {
+GuiWindowModal* GuiManager::modalDanger(std::string title, std::string text, const ModalCallback& callback) {
     static std::vector<std::string> choices{"Ok"};
     auto window = modal(std::move(title), std::move(text), choices, callback);
     window->setHeaderDanger(true);
     return window;
+}
+
+bool GuiManager::isMousePosOverlap(const Vector2i& mousePos) const {
+    for (auto& window : windows) {
+        if (!window.ptr->isEnabled()) {
+            continue;
+        }
+
+        const auto& pos = window.ptr->getPos();
+        const auto& size = window.ptr->getSize();
+
+        if (mousePos.x >= pos.x && mousePos.x <= pos.x + size.x && mousePos.y >= pos.y &&
+            mousePos.y <= pos.y + size.y) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void GuiManager::eventMouseMoved(const Vector2i& pos) {

@@ -101,8 +101,11 @@ GuiWindow2::GuiWindow2(const FontFamily& fontFamily, const int fontSize) :
 }
 
 void GuiWindow2::update(const Vector2i& viewport) {
+    if (updatePos) {
+        updatePos = false;
+        setPos(Vector2{viewport} / 2.0f - size / 2.0f);
+    }
     GuiContext::update();
-    setPos(Vector2{viewport} / 2.0f - size / 2.0f);
 }
 
 void GuiWindow2::draw() {
@@ -130,7 +133,7 @@ void GuiWindow2::setEnabled(const bool value) {
     setDirty();
 }
 
-void GuiWindow2::setBordered(bool value) {
+void GuiWindow2::setBordered(const bool value) {
     if (value) {
         flags |= WindowFlag::Border;
     } else {
@@ -138,7 +141,7 @@ void GuiWindow2::setBordered(bool value) {
     }
 }
 
-void GuiWindow2::setBackground(bool value) {
+void GuiWindow2::setBackground(const bool value) {
     if (value) {
         flags |= WindowFlag::Background;
     } else {
@@ -146,7 +149,7 @@ void GuiWindow2::setBackground(bool value) {
     }
 }
 
-void GuiWindow2::setNoScrollbar(bool value) {
+void GuiWindow2::setNoScrollbar(const bool value) {
     if (value) {
         flags |= WindowFlag::NoScrollbar;
     } else {
@@ -154,7 +157,23 @@ void GuiWindow2::setNoScrollbar(bool value) {
     }
 }
 
-void GuiWindow2::setDynamic(bool value) {
+void GuiWindow2::setHeader(const bool value) {
+    if (value) {
+        flags |= WindowFlag::Title;
+    } else {
+        flags &= ~WindowFlag::Title;
+    }
+}
+
+void GuiWindow2::setTransparent(const bool value) {
+    if (value) {
+        flags |= WindowFlag::Transparent;
+    } else {
+        flags &= ~WindowFlag::Transparent;
+    }
+}
+
+void GuiWindow2::setDynamic(const bool value) {
     if (value) {
         flags |= WindowFlag::Dynamic;
     } else {
@@ -162,7 +181,15 @@ void GuiWindow2::setDynamic(bool value) {
     }
 }
 
-void GuiWindow2::setHeaderSuccess(bool value) {
+void GuiWindow2::setNoInput(const bool value) {
+    if (value) {
+        flags |= WindowFlag::NoInput;
+    } else {
+        flags &= ~WindowFlag::NoInput;
+    }
+}
+
+void GuiWindow2::setHeaderSuccess(const bool value) {
     if (value) {
         flags |= WindowFlag::HeaderSuccess;
     } else {
@@ -170,7 +197,7 @@ void GuiWindow2::setHeaderSuccess(bool value) {
     }
 }
 
-void GuiWindow2::setHeaderDanger(bool value) {
+void GuiWindow2::setHeaderDanger(const bool value) {
     if (value) {
         flags |= WindowFlag::HeaderDanger;
     } else {

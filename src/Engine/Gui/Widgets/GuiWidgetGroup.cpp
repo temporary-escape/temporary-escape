@@ -8,7 +8,7 @@ GuiWidgetGroup::GuiWidgetGroup(GuiContext& ctx) :
 
 void GuiWidgetGroup::draw() {
     if (ctx.groupBegin(name, true)) {
-        GuiWidgetLayout::draw();
+        GuiWidgetLayout::drawInternal();
         ctx.groupEnd();
     }
 }

@@ -1,25 +1,29 @@
 #include "ViewSpace.hpp"
+#include "../Gui/GuiManager.hpp"
+#include "../Gui/Windows/GuiWindowShipToolbar.hpp"
 #include "Client.hpp"
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ViewSpace::ViewSpace(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
+ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager, AssetsManager& assetsManager,
                      VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client) :
-    parent{parent},
     config{config},
     vulkan{vulkan},
+    guiManager{guiManager},
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     font{font},
     client{client} {
 
-    guiContextMenu.setEnabled(false);
+    gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
 }
 
-void ViewSpace::update(const float deltaTime) {
-    if (client.getCache().playerEntityId && control.update) {
+void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
+    gui.toolbar->updatePos(viewport);
+
+    /*if (client.getCache().playerEntityId && control.update) {
         control.update = false;
         MessageControlMovementEvent msg{};
         msg.boost = control.boost;
@@ -49,10 +53,10 @@ void ViewSpace::update(const float deltaTime) {
         }
 
         client.send(msg);
-    }
+    }*/
 }
 
-void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+void ViewSpace::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
     auto scene = client.getScene();
     auto camera = scene ? scene->getPrimaryCamera() : nullptr;
     if (scene && camera) {
@@ -60,7 +64,7 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     }
 }
 
-void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
+void ViewSpace::renderCanvasSelectedEntity(Canvas2& canvas, const Scene& scene, const ComponentCamera& camera) {
     if (!client.getCache().playerEntityId) {
         return;
     }
@@ -89,13 +93,15 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, c
 
         const auto text = fmt::format(fmt, dist);
 
-        canvas.font(font.get(FontFace::Light), config.guiFontSize);
-        canvas.color(Color4{1.0f});
-        canvas.text(screenPos + Vector2{20.0f, 0.0f}, text);
+        canvas.drawText(screenPos + Vector2{20.0f, 0.0f}, text, font, config.guiFontSize, Color4{1.0f});
 
         const auto* label = selectedEntity->tryGetComponent<ComponentLabel>();
         if (label) {
-            canvas.text(screenPos + Vector2{20.0f, config.guiFontSize}, label->getLabel());
+            canvas.drawText(screenPos + Vector2{20.0f, config.guiFontSize},
+                            label->getLabel(),
+                            font,
+                            config.guiFontSize,
+                            Color4{1.0f});
         }
     }
 }
@@ -109,11 +115,13 @@ Scene* ViewSpace::getScene() {
 }
 
 void ViewSpace::onEnter() {
-    guiContextMenu.setEnabled(false);
+    // guiContextMenu.setEnabled(false);
+    gui.toolbar->setEnabled(true);
 }
 
 void ViewSpace::onExit() {
-    guiContextMenu.setEnabled(false);
+    gui.toolbar->setEnabled(false);
+    // guiContextMenu.setEnabled(false);
 }
 
 void ViewSpace::doTargetEntity(const Entity& entity) {
@@ -146,7 +154,7 @@ void ViewSpace::eventMousePressed(const Vector2i& pos, const MouseButton button)
     if (scene) {
         scene->eventMousePressed(pos, button);
 
-        guiContextMenu.setEnabled(false);
+        // guiContextMenu.setEnabled(false);
     }
 }
 
@@ -155,7 +163,7 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
     if (scene) {
         scene->eventMouseReleased(pos, button);
 
-        const auto& camera = *scene->getPrimaryCamera();
+        /*const auto& camera = *scene->getPrimaryCamera();
         if (const auto selected = scene->getSelectedEntity();
             selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
 
@@ -171,7 +179,7 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
             }
         } else if (guiContextMenu.isEnabled()) {
             guiContextMenu.setEnabled(false);
-        }
+        }*/
     }
 }
 
@@ -187,7 +195,7 @@ void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
     if (scene) {
         scene->eventKeyPressed(key, modifiers);
 
-        if (key == Key::LetterW) {
+        /*if (key == Key::LetterW) {
             control.forward = true;
             control.update = true;
         } else if (key == Key::LetterS) {
@@ -208,7 +216,7 @@ void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
         } else if (key == Key::LeftShift) {
             control.boost = true;
             control.update = true;
-        }
+        }*/
     }
 }
 
@@ -217,7 +225,7 @@ void ViewSpace::eventKeyReleased(const Key key, const Modifiers modifiers) {
     if (scene) {
         scene->eventKeyReleased(key, modifiers);
 
-        if (key == Key::LetterW) {
+        /*if (key == Key::LetterW) {
             control.forward = false;
             control.update = true;
         } else if (key == Key::LetterS) {
@@ -238,7 +246,7 @@ void ViewSpace::eventKeyReleased(const Key key, const Modifiers modifiers) {
         } else if (key == Key::LeftShift) {
             control.boost = false;
             control.update = true;
-        }
+        }*/
     }
 }
 

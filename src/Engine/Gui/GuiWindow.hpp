@@ -5,10 +5,14 @@
 #include "Widgets/GuiWidgetButtonToggle.hpp"
 #include "Widgets/GuiWidgetCheckbox.hpp"
 #include "Widgets/GuiWidgetCombo.hpp"
+#include "Widgets/GuiWidgetImage.hpp"
+#include "Widgets/GuiWidgetImageToggle.hpp"
 #include "Widgets/GuiWidgetLabel.hpp"
 #include "Widgets/GuiWidgetLayout.hpp"
+#include "Widgets/GuiWidgetProgressBar.hpp"
 #include "Widgets/GuiWidgetRow.hpp"
 #include "Widgets/GuiWidgetTabs.hpp"
+#include "Widgets/GuiWidgetTemplateRow.hpp"
 #include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {
@@ -80,7 +84,10 @@ public:
     void setBordered(bool value);
     void setBackground(bool value);
     void setNoScrollbar(bool value);
+    void setHeader(bool value);
+    void setTransparent(bool value);
     void setDynamic(bool value);
+    void setNoInput(bool value);
     void setHeaderSuccess(bool value);
     void setHeaderDanger(bool value);
 
@@ -90,5 +97,6 @@ private:
     Vector2 pos;
     GuiContext::Flags flags{0};
     bool enabled{false};
+    bool updatePos{true};
 };
 } // namespace Engine

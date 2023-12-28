@@ -32,7 +32,7 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulka
     textures.starHigh = assetsManager.getTextures().find("star_spectrum_high");
 }
 
-void ViewSystem::update(const float deltaTime) {
+void ViewSystem::update(const float deltaTime, const Vector2i& viewport) {
     guiModalLoading.setProgress(loadingValue);
 
     if (futureLoad.valid() && futureLoad.ready()) {
@@ -53,7 +53,7 @@ void ViewSystem::update(const float deltaTime) {
     scene->update(deltaTime);
 }
 
-void ViewSystem::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
+void ViewSystem::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
 }
 
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {

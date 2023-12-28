@@ -156,9 +156,7 @@ static void errorCallback(const int error, const char* description) {
 static const char* name = "TemporaryEscape";
 
 VulkanWindow::VulkanWindow(const Engine::Config& config) :
-    currentWindowSize{config.graphics.windowWidth, config.graphics.windowHeight},
-    mousePos{},
-    isFullScreen{config.graphics.fullscreen} {
+    currentWindowSize{config.graphics.windowSize}, mousePos{}, isFullScreen{config.graphics.fullscreen} {
 
     if (volkInitialize() != VK_SUCCESS) {
         EXCEPTION("Failed to initialize Vulkan");

@@ -9,21 +9,20 @@ public:
 
     GuiWidgetCombo(GuiContext& ctx);
 
-    void draw() override;
-
     void setOnSelected(OnSelectedCallback value);
     void addChoice(const std::string_view& value);
     void setChosen(size_t value);
     void clear();
 
 private:
+    void drawInternal() override;
+
     OnSelectedCallback onClick;
     std::vector<std::string> choices;
     size_t chosen{0};
 };
 
-template <typename T>
-class ENGINE_API GuiWidgetComboTyped : public GuiWidgetCombo {
+template <typename T> class ENGINE_API GuiWidgetComboTyped : public GuiWidgetCombo {
 public:
     using OnSelectedCallback = std::function<void(const T&)>;
 

@@ -9,7 +9,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const CreateComputeInfo& co
 
     if (vkCreatePipelineLayout(device.getDevice(), &computeInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) !=
         VK_SUCCESS) {
-        destroy();
+        VulkanPipeline::destroy();
         EXCEPTION("Failed to create pipeline layout!");
     }
 
@@ -26,7 +26,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const CreateComputeInfo& co
 
     if (vkCreateComputePipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
         VK_SUCCESS) {
-        destroy();
+        VulkanPipeline::destroy();
         EXCEPTION("Failed to create compute pipeline!");
     }
 }
@@ -36,7 +36,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
 
     if (vkCreatePipelineLayout(device.getDevice(), &createInfo.pipelineLayoutInfo, nullptr, &pipelineLayout) !=
         VK_SUCCESS) {
-        destroy();
+        VulkanPipeline::destroy();
         EXCEPTION("Failed to create pipeline layout!");
     }
 
@@ -47,7 +47,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
         const auto& shaderModule = *createInfo.shaderModules.at(i);
 
         if (!shaderModule || shaderModule.getHandle() == VK_NULL_HANDLE) {
-            destroy();
+            VulkanPipeline::destroy();
             EXCEPTION("Can not create pipeline with uninitialized shader module");
         }
 
@@ -76,13 +76,13 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const VulkanRenderPass& ren
 
     if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
         VK_SUCCESS) {
-        destroy();
+        VulkanPipeline::destroy();
         EXCEPTION("Failed to create graphics pipeline!");
     }
 }
 
 VulkanPipeline::~VulkanPipeline() {
-    destroy();
+    VulkanPipeline::destroy();
 }
 
 VulkanPipeline::VulkanPipeline(VulkanPipeline&& other) noexcept {

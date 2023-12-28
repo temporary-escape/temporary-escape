@@ -33,8 +33,7 @@ struct Config {
     std::string windowName = "Temporary Escape";
 
     struct Graphics {
-        int windowWidth = 1920;
-        int windowHeight = 1080;
+        Vector2i windowSize = {1920, 1080};
         bool fullscreen = false;
         bool enableValidationLayers = true;
         bool vsync = true;
@@ -59,8 +58,7 @@ struct Config {
         int shadowsLevel = 1;
 
         void convert(const Xml::Node& xml) {
-            xml.convert("windowWidth", windowWidth);
-            xml.convert("windowHeight", windowHeight);
+            xml.convert("windowSize", windowSize);
             xml.convert("fullscreen", fullscreen);
             xml.convert("vsync", vsync);
             xml.convert("anisotropy", anisotropy);
@@ -71,11 +69,11 @@ struct Config {
             xml.convert("ssao", ssao);
             xml.convert("shadowsSize", shadowsSize);
             xml.convert("shadowsLevel", shadowsLevel);
+            xml.convert("debugDraw", debugDraw);
         }
 
         void pack(Xml::Node& xml) const {
-            xml.pack("windowWidth", windowWidth);
-            xml.pack("windowHeight", windowHeight);
+            xml.pack("windowSize", windowSize);
             xml.pack("fullscreen", fullscreen);
             xml.pack("vsync", vsync);
             xml.pack("anisotropy", anisotropy);
@@ -86,6 +84,7 @@ struct Config {
             xml.pack("ssao", ssao);
             xml.pack("shadowsSize", shadowsSize);
             xml.pack("shadowsLevel", shadowsLevel);
+            xml.pack("debugDraw", debugDraw);
         }
     } graphics;
 

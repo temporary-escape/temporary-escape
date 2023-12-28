@@ -150,6 +150,57 @@ public:
     virtual void destroy() = 0;
 };
 
-ENGINE_API VkDeviceSize getFormatDataSize(const VkFormat format, const VkExtent3D& extent);
+ENGINE_API VkDeviceSize getFormatDataSize(VkFormat format, const VkExtent3D& extent);
 ENGINE_API bool isDepthFormat(VkFormat format);
+
 } // namespace Engine
+
+template <> struct fmt::formatter<VkExtent2D> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(VkExtent2D const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.width, vec.height);
+    }
+};
+
+template <> struct fmt::formatter<VkOffset2D> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(VkOffset2D const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.x, vec.y);
+    }
+};
+
+template <> struct fmt::formatter<VkExtent3D> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(VkExtent3D const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.width, vec.height, vec.depth);
+    }
+};
+
+template <> struct fmt::formatter<VkOffset3D> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(VkOffset3D const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.x, vec.y, vec.z);
+    }
+};
+
+template <> struct fmt::formatter<VkRect2D> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(VkRect2D const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.offset, vec.extent);
+    }
+};

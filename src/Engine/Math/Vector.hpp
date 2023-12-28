@@ -23,6 +23,19 @@ using Color4 = glm::vec4;
 inline Color4 alpha(float a) {
     return Color4{1.0f, 1.0f, 1.0f, a};
 }
+
+inline Color4 hexColor(const uint32_t color) {
+    return Color4{
+        static_cast<float>((color & 0xFF000000) >> 24) / 255.0f,
+        static_cast<float>((color & 0xFF0000) >> 16) / 255.0f,
+        static_cast<float>((color & 0xFF00) >> 8) / 255.0f,
+        static_cast<float>(color & 0xFF) / 255.0f,
+    };
+}
+
+inline Color4 hexColorGamma(const uint32_t color) {
+    return glm::pow(hexColor(color), Vector4{2.2f});
+}
 } // namespace Engine
 
 template <> struct fmt::formatter<Engine::Vector2> {

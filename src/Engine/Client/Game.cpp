@@ -8,12 +8,13 @@ static auto logger = createLogger(LOG_FILENAME);
 
 Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendererSkybox,
            RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache,
-           FontFamily& font, Client& client) :
+           GuiManager& guiManager, FontFamily& font, Client& client) :
     config{config},
     vulkan{vulkan},
     rendererSkybox{rendererSkybox},
     rendererPlanetSurface{rendererPlanetSurface},
     assetsManager{assetsManager},
+    guiManager{guiManager},
     font{font},
     client{client} {
 
@@ -23,9 +24,10 @@ Game::Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendere
     });
     guiMainMenu.setEnabled(false);
 
-    viewSpace = std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, voxelShapeCache, font, client);
+    /*viewSpace =
+        std::make_unique<ViewSpace>(*this, config, vulkan, assetsManager, voxelShapeCache, guiManager, font, client);
     viewGalaxy = std::make_unique<ViewGalaxy>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);
-    viewSystem = std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);
+    viewSystem = std::make_unique<ViewSystem>(*this, config, vulkan, assetsManager, voxelShapeCache, client, font);*/
     view = viewSpace.get();
 }
 
@@ -35,7 +37,7 @@ void Game::update(float deltaTime) {
     if (const auto scene = client.getScene(); scene) {
         scene->update(deltaTime);
     }
-    view->update(deltaTime);
+    view->update(deltaTime, {0, 0});
 }
 
 bool Game::isReady() const {
@@ -44,7 +46,7 @@ bool Game::isReady() const {
 }
 
 void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport) {
-    rendererSkybox.render();
+    /*rendererSkybox.render();
     if (!rendererPlanetSurface.isBusy()) {
         if (auto scene = client.getScene(); scene != nullptr) {
             rendererSkybox.update(*scene);
@@ -56,7 +58,7 @@ void Game::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& 
         if (auto scene = client.getScene(); scene != nullptr) {
             rendererPlanetSurface.update(*scene);
         }
-    }
+    }*/
 
     auto* scene = view->getScene();
     if (scene && scene->getPrimaryCamera()) {

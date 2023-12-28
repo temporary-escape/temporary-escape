@@ -237,6 +237,50 @@ void Canvas2::drawText(const Vector2& pos, const std::string_view& text, const F
     batches.back().length++;
 }
 
+void Canvas2::drawImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) {
+    if (!image.getAllocation().texture) {
+        return;
+    }
+
+    const auto& alc = image.getAllocation();
+
+    auto* v = reserve(vertices, 4);
+    auto* i = reserve(indices, 6);
+    auto* c = reserve(commands, 1);
+    const auto tex = static_cast<float>(addTexture(*alc.texture));
+
+    v[0].pos = pos;
+    v[1].pos = pos + Vector2{size.x, 0.0f};
+    v[2].pos = pos + Vector2{size.x, size.y};
+    v[3].pos = pos + Vector2{0.0f, size.y};
+
+    v[0].color = color;
+    v[1].color = color;
+    v[2].color = color;
+    v[3].color = color;
+
+    v[0].uv = {alc.uv.x, alc.uv.y, 1.0f, tex};
+    v[1].uv = {alc.uv.x + alc.st.x, alc.uv.y, 1.0f, tex};
+    v[2].uv = {alc.uv.x + alc.st.x, alc.uv.y + alc.st.y, 1.0f, tex};
+    v[3].uv = {alc.uv.x, alc.uv.y + alc.st.y, 1.0f, tex};
+
+    const auto offset = getOffset(vertices, v);
+    i[0] = offset;
+    i[1] = offset + 1;
+    i[2] = offset + 2;
+    i[3] = offset + 2;
+    i[4] = offset + 3;
+    i[5] = offset;
+
+    c->firstIndex = getOffset(indices, i);
+    c->firstInstance = 0;
+    c->instanceCount = 1;
+    c->vertexOffset = 0;
+    c->indexCount = 6;
+
+    batches.back().length++;
+}
+
 template <typename T> size_t Canvas2::getOffset(Buffer<T>& buffer, const T* ptr) const {
     return ptr - &buffer.data.front();
 }

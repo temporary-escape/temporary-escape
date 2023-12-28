@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWidgetLayout::GuiWidgetLayout(GuiContext& ctx) : GuiWidget{ctx} {
 }
 
-void GuiWidgetLayout::draw() {
+void GuiWidgetLayout::drawInternal() {
     for (auto& widget : widgets) {
         widget->draw();
     }

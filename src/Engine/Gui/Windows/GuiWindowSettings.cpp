@@ -14,22 +14,6 @@ static void addOption(GuiWidgetLayout& layout, const std::string& name, bool& va
     checkbox.setOnClick([&value](bool toggle) { value = toggle; });
 }
 
-static GuiWidgetCombo& addOption(GuiWidgetLayout& layout, const std::string& name,
-                                 const std::vector<std::string>& choices) {
-
-    auto& row = layout.addWidget<GuiWidgetRow>(30.0f, 2);
-
-    auto& label = row.addWidget<GuiWidgetLabel>(name);
-    label.setWidth(0.5f);
-
-    auto& combo = row.addWidget<GuiWidgetCombo>();
-    for (const auto& choice : choices) {
-        combo.addChoice(choice);
-    }
-
-    return combo;
-}
-
 template <typename T>
 static GuiWidgetCombo& addOption(GuiWidgetLayout& layout, const std::string& name, T& value,
                                  const std::vector<std::tuple<std::string, T>>& choices) {
@@ -80,11 +64,7 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
         addOption(tab, "Fullscreen", config.graphics.fullscreen);
         addOption(tab, "V-Sync", config.graphics.vsync);
 
-        /*size_t currentVideoMode{0};
-        comboResolution = &addOption(tab, "Resolution", getVideoModes(vulkan, config, currentVideoMode));
-        comboResolution->setChosen(currentVideoMode);*/
-
-        // addOption(tab, "Resolution", config.graphics.windowSize, getVideoModes(vulkan));
+        addOption(tab, "Resolution", config.graphics.windowSize, getVideoModes(vulkan));
 
         addOption(tab, "Bloom", config.graphics.bloom);
         addOption(tab, "Anti-Aliasing", config.graphics.fxaa);

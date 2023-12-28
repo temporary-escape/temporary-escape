@@ -21,7 +21,7 @@ void GuiMainSettings::setVideoModes(std::vector<Vector2i> value) {
     for (size_t i = 0; i < videoModes.size(); i++) {
         auto& videoMode = videoModes.at(i);
         videoModesStr.push_back(fmt::format("{}x{}", videoMode.x, videoMode.y));
-        if (config.graphics.windowWidth == videoMode.x && config.graphics.windowHeight == videoMode.y) {
+        if (config.graphics.windowSize == videoMode) {
             videoModeChosen = i;
         }
     }
@@ -190,8 +190,7 @@ void GuiMainSettings::drawBottomBar(Nuklear& nuklear) {
         setEnabled(false);
     }
     if (nuklear.button("Save")) {
-        config.graphics.windowWidth = videoModes.at(videoModeChosen).x;
-        config.graphics.windowHeight = videoModes.at(videoModeChosen).y;
+        config.graphics.windowSize = videoModes.at(videoModeChosen);
         onApply(config);
         setEnabled(false);
     }

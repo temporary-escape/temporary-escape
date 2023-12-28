@@ -9,8 +9,6 @@ public:
 
     explicit GuiWidgetButtonToggle(GuiContext& ctx, std::string label);
 
-    void draw() override;
-
     void setLabel(std::string value);
     const std::string& getLabel() const {
         return label;
@@ -22,6 +20,8 @@ public:
     }
 
 private:
+    void drawInternal() override;
+
     std::string label;
     OnClickCallback onClick;
     bool toggle{false};

@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWidgetCombo::GuiWidgetCombo(GuiContext& ctx) : GuiWidget{ctx} {
 }
 
-void GuiWidgetCombo::draw() {
+void GuiWidgetCombo::drawInternal() {
     Vector2 size{
         ctx.getWidgetSize().x,
         200.0f,

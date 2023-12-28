@@ -39,6 +39,7 @@ PngFileReader::PngFileReader(const Path& path) : png{nullptr}, info{nullptr}, fi
         EXCEPTION("Failed to read png struct file: '{}' error: png_create_read_struct", path.string());
     }
 
+    // png_set_read_fn
     info = png_create_info_struct(png);
     if (!info) {
         fclose(file);

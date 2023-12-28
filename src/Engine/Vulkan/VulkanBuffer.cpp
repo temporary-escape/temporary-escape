@@ -4,6 +4,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
     device{device.getDevice()}, allocator{device.getAllocator().getHandle()} {
 
@@ -25,6 +27,8 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
     if (vmaCreateBuffer(allocator, &createInfo, &allocInfo, &buffer, &allocation, &allocationInfo) != VK_SUCCESS) {
         EXCEPTION("Failed to allocate buffer memory!");
     }
+
+    logger.debug("Created VulkanBuffer of size: {} bytes", createInfo.size);
 
     bufferSize = createInfo.size;
     mappedPtr = allocationInfo.pMappedData;

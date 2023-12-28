@@ -1,11 +1,10 @@
 #pragma once
 
 #include "../Graphics/RendererCanvas.hpp"
+// #include "Windows/GuiWindowContextMenu.hpp"
+#include "Windows/GuiWindowModal.hpp"
 
 namespace Engine {
-class ENGINE_API GuiWindow2;
-class ENGINE_API GuiWindowModal;
-
 class ENGINE_API GuiManager {
 public:
     using ModalCallback = std::function<void(bool)>;
@@ -16,22 +15,22 @@ public:
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
     void blit(Canvas2& canvas);
 
-    template <typename T, typename... Args> std::shared_ptr<T> addWindow(Args&&... args) {
+    template <typename T, typename... Args> T* addWindow(Args&&... args) {
         windows.emplace_back();
         windows.back().canvas = std::make_unique<Canvas2>(vulkan);
         windows.back().ptr = std::make_shared<T>(fontFamily, fontSize, std::forward<Args>(args)...);
-        return std::dynamic_pointer_cast<T>(windows.back().ptr);
+        return dynamic_cast<T*>(windows.back().ptr.get());
     }
     void removeWindow(const GuiWindow2& window);
     void setFocused(const GuiWindow2& window);
     void clearFocused();
 
-    std::shared_ptr<GuiWindowModal> modalSuccess(std::string title, std::string text,
-                                                 const ModalCallback& callback = nullptr);
-    std::shared_ptr<GuiWindowModal> modalDanger(std::string title, std::string text,
-                                                const ModalCallback& callback = nullptr);
-    std::shared_ptr<GuiWindowModal> modal(std::string title, std::string text, const std::vector<std::string>& choices,
-                                          const ModalCallback& callback = nullptr);
+    GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
+    GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
+    GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
+                          const ModalCallback& callback = nullptr);
+
+    bool isMousePosOverlap(const Vector2i& mousePos) const;
 
     void eventMouseMoved(const Vector2i& pos);
     void eventMousePressed(const Vector2i& pos, MouseButton button);
@@ -67,5 +66,6 @@ private:
     std::list<WindowData> windows;
     std::vector<const GuiWindow2*> windowsToRemove;
     const GuiWindow2* focused{nullptr};
+    // GuiWindowContextMenu* contextMenu;
 };
 } // namespace Engine

@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWidgetLabel::GuiWidgetLabel(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {
 }
 
-void GuiWidgetLabel::draw() {
+void GuiWidgetLabel::drawInternal() {
     ctx.label(label);
 }
 

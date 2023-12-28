@@ -9,8 +9,6 @@ public:
 
     explicit GuiWidgetButton(GuiContext& ctx, std::string label);
 
-    void draw() override;
-
     void setLabel(std::string value);
     const std::string& getLabel() const {
         return label;
@@ -18,6 +16,8 @@ public:
     void setOnClick(OnClickCallback value);
 
 private:
+    void drawInternal() override;
+
     std::string label;
     OnClickCallback onClick;
 };

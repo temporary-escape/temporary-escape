@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
     parser.add_option("--root", rootPath, "Root directory")
         ->check(CLI::ExistingDirectory)
         ->default_val(defaultRoot.string());
-    parser.add_option("--width", config.graphics.windowWidth, "Window width");
-    parser.add_option("--height", config.graphics.windowHeight, "Window height");
+    parser.add_option("--width", config.graphics.windowSize.x, "Window width");
+    parser.add_option("--height", config.graphics.windowSize.y, "Window height");
 
     parser.add_subcommand("play", "Play the game")->fallthrough(true);
     parser.add_subcommand("compress-assets", "Compress all PNG textures into KTX2")->fallthrough(true);

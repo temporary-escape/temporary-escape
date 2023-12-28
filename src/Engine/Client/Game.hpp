@@ -22,12 +22,13 @@
 
 namespace Engine {
 class ENGINE_API Database;
+class ENGINE_API GuiManager;
 
 class ENGINE_API Game : public UserInput {
 public:
     explicit Game(const Config& config, VulkanRenderer& vulkan, RendererSkybox& rendererSkybox,
                   RendererPlanetSurface& rendererPlanetSurface, AssetsManager& assetsManager,
-                  VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client);
+                  VoxelShapeCache& voxelShapeCache, GuiManager& guiManager, FontFamily& font, Client& client);
     virtual ~Game();
 
     bool isReady() const;
@@ -53,6 +54,7 @@ private:
     RendererSkybox& rendererSkybox;
     RendererPlanetSurface& rendererPlanetSurface;
     AssetsManager& assetsManager;
+    GuiManager& guiManager;
     FontFamily& font;
     Client& client;
     GuiMainMenu guiMainMenu;

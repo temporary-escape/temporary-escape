@@ -1,11 +1,12 @@
 #pragma once
 
+#include "../Assets/Image.hpp"
 #include "../Font/FontFamily.hpp"
 #include "../Math/Matrix.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
 
 namespace Engine {
-class Canvas2 {
+class ENGINE_API Canvas2 {
 public:
     struct Vertex {
         Vector2 pos;
@@ -37,6 +38,7 @@ public:
     void drawTexture(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color);
     void drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
                   const Color4& color);
+    void drawImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color);
 
     bool hasData() const {
         return vbo && ibo && cbo && commands.count > 0;

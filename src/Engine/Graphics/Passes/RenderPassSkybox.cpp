@@ -89,11 +89,7 @@ void RenderPassSkybox::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene, con
 
         const PlanetTextures* planetTextures;
 
-        if (component.isHighRes()) {
-            if (!component.getTextures().getColor()) {
-                continue;
-            }
-
+        if (component.isHighRes() && component.isGenerated()) {
             planetTextures = &component.getTextures();
         } else {
             planetTextures = &component.getPlanetType()->getLowResTextures();

@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWidgetButton::GuiWidgetButton(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {
 }
 
-void GuiWidgetButton::draw() {
+void GuiWidgetButton::drawInternal() {
     if (ctx.button(label)) {
         if (onClick) {
             onClick();

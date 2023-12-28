@@ -1,6 +1,12 @@
 #include "Application.hpp"
+#include "../Database/DatabaseRocksdb.hpp"
 #include "../File/OggFileReader.hpp"
+#include "../Graphics/RendererBackground.hpp"
+#include "../Graphics/RendererPlanetSurface.hpp"
+#include "../Graphics/RendererScenePbr.hpp"
+#include "../Graphics/RendererThumbnail.hpp"
 #include "../Graphics/Theme.hpp"
+#include "ViewSpace.hpp"
 #include <iosevka-aile-bold.ttf.h>
 #include <iosevka-aile-light.ttf.h>
 #include <iosevka-aile-regular.ttf.h>
@@ -210,19 +216,31 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         renderer->setMousePos(mousePos);
     }
 
-    if (game) {
+    /*if (game) {
         game->update(deltaTime);
         game->render(vkb, *renderer, viewport);
     } else if (editor) {
         editor->update(deltaTime);
         editor->render(vkb, *renderer, viewport);
+    }*/
+
+    if (client) {
+        const auto scene = client->getScene();
+        if (scene) {
+            scene->update(deltaTime);
+        }
     }
 
-    if ((!game || !game->isReady()) && !editor) {
+    if (views) {
+        views->update(deltaTime, viewport);
+        views->render(vkb, *renderer, viewport);
+    }
+
+    /*if ((!game || !game->isReady()) && !editor) {
         shouldBlitCount = 2;
     } else {
         --shouldBlitCount;
-    }
+    }*/
 
     // GUI
     guiManager.render(vkb, viewport);
@@ -237,7 +255,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValues = {clearColor};
 
-    if (shouldBlit() && renderer->isBlitReady()) {
+    if (views && views->getCurrent() && renderer->isBlitReady()) {
         renderer->transitionForBlit(vkb);
     }
 
@@ -245,7 +263,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     vkb.setViewport({0, 0}, viewport);
     vkb.setScissor({0, 0}, viewport);
 
-    if (shouldBlit() && renderer->isBlitReady()) {
+    if (views && views->getCurrent() && renderer->isBlitReady()) {
         renderer->blit(vkb);
     }
 
@@ -256,15 +274,19 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     renderVersion(viewport);
     renderFrameTime(viewport);
 
-    if (shouldBlit()) {
+    if (views) {
+        views->renderCanvas(canvas2, viewport);
+    }
+
+    /*if (shouldBlit()) {
         if (game && game->isReady()) {
             // game->renderCanvas(canvas, nuklear, viewport);
         } else if (editor) {
             // editor->renderCanvas(canvas, nuklear, viewport);
         }
-    }
+    }*/
 
-    if (!shouldBlit()) {
+    if (!views || !views->getCurrent()) {
         if (!status.message.empty()) {
             renderStatus(viewport);
         }
@@ -389,7 +411,7 @@ void Application::loadProfile() {
 void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
-    editor = std::make_unique<Editor>(config, *this, audio, *assetsManager, *voxelShapeCache, font);
+    // editor = std::make_unique<Editor>(config, *this, audio, *assetsManager, *voxelShapeCache, font);
 }
 
 void Application::checkForClientScene() {
@@ -397,10 +419,10 @@ void Application::checkForClientScene() {
     status.value = 1.0f;
 
     if (client->getScene()) {
-        logger.info("Client has a scene, creating Game instance");
+        logger.info("Client has a scene, creating game views");
 
-        game = std::make_unique<Game>(
-            config, *this, *rendererSkybox, *rendererPlanetSurface, *assetsManager, *voxelShapeCache, font, *client);
+        view.space = views->addView<ViewSpace>(*assetsManager, *voxelShapeCache, font, *client);
+        views->setCurrent(view.space);
     } else {
         NEXT(checkForClientScene());
     }
@@ -544,6 +566,8 @@ void Application::createThumbnails() {
 
     assetsManager->finalize();
 
+    views = std::make_unique<ViewContext>(config, *this, *assetsManager, guiManager, *rendererBackground);
+
     if (editorOnly) {
         NEXT(createEditor());
     } else {
@@ -624,13 +648,9 @@ void Application::createRenderers() {
 
     renderResources = std::make_unique<RenderResources>(*this);
 
-    createSceneRenderer({config.graphics.windowWidth, config.graphics.windowHeight});
+    createSceneRenderer(config.graphics.windowSize);
 
-    rendererSkybox = std::make_unique<RendererSkybox>(config, *this, *renderResources, *voxelShapeCache);
-
-    const Vector2i viewport{config.graphics.planetTextureSize, config.graphics.planetTextureSize};
-    rendererPlanetSurface =
-        std::make_unique<RendererPlanetSurface>(config, viewport, *this, *renderResources, *voxelShapeCache);
+    rendererBackground = std::make_unique<RendererBackground>(config, *this, *renderResources, *voxelShapeCache);
 
     NEXT(createPlanetLowResTextures());
 }
@@ -678,6 +698,9 @@ void Application::startEditor() {
 void Application::eventMouseMoved(const Vector2i& pos) {
     mousePos = pos;
     guiManager.eventMouseMoved(pos);
+    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+        views->eventMouseMoved(pos);
+    }
     /*if (!nuklear.isCursorInsideWindow(pos)) {
         if (game) {
             game->eventMouseMoved(pos);
@@ -690,6 +713,9 @@ void Application::eventMouseMoved(const Vector2i& pos) {
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     guiManager.eventMousePressed(pos, button);
+    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+        views->eventMousePressed(pos, button);
+    }
     /*if (!nuklear.isCursorInsideWindow(pos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMousePressed(pos, button);
@@ -702,6 +728,9 @@ void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     guiManager.eventMouseReleased(pos, button);
+    if (views) {
+        views->eventMouseReleased(pos, button);
+    }
     /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventMouseReleased(pos, button);
@@ -713,6 +742,9 @@ void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
     guiManager.eventMouseScroll(xscroll, yscroll);
+    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+        views->eventMouseScroll(xscroll, yscroll);
+    }
     /*if (!nuklear.isCursorInsideWindow(mousePos) && !nuklear.isInputActive()) {
         if (game) {
             game->eventMouseScroll(xscroll, yscroll);
@@ -724,6 +756,9 @@ void Application::eventMouseScroll(const int xscroll, const int yscroll) {
 
 void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     guiManager.eventKeyPressed(key, modifiers);
+    if (views) {
+        views->eventKeyPressed(key, modifiers);
+    }
     /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventKeyPressed(key, modifiers);
@@ -735,6 +770,9 @@ void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
 
 void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
     guiManager.eventKeyReleased(key, modifiers);
+    if (views) {
+        views->eventKeyReleased(key, modifiers);
+    }
     /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventKeyReleased(key, modifiers);
@@ -750,6 +788,10 @@ void Application::eventWindowResized(const Vector2i& size) {
 
 void Application::eventCharTyped(const uint32_t code) {
     guiManager.eventCharTyped(code);
+    if (views) {
+        views->eventCharTyped(code);
+    }
+
     /*if (!nuklear.isInputActive()) {
         if (game) {
             game->eventCharTyped(code);
