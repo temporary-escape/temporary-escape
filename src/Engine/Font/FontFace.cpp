@@ -213,5 +213,8 @@ Vector2 FontFace::getPenOffset(const std::string_view& text, float height, const
     case TextAlign::RightBottom: {
         return {bounds.x, bounds.y};
     }
+    default: {
+        return {0.0f, 0.0f};
+    }
     }
 }

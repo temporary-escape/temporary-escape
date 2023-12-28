@@ -39,32 +39,24 @@ static GuiWidgetCombo& addOption(GuiWidgetLayout& layout, const std::string& nam
     auto& label = row.addWidget<GuiWidgetLabel>(name);
     label.setWidth(0.5f);
 
-    auto& combo = row.addWidget<GuiWidgetCombo>();
-    size_t counter{0};
+    auto& combo = row.addWidget<GuiWidgetComboTyped<T>>();
 
     for (const auto& [text, choice] : choices) {
-        combo.addChoice(text);
-        if (choice == value) {
-            combo.setChosen(counter);
-        }
-        counter++;
+        combo.addChoice(text, choice);
     }
+    combo.setValue(value);
 
     return combo;
 }
 
-static std::vector<std::string> getVideoModes(VulkanRenderer& vulkan, const Config& config, size_t& chosen) {
+static std::vector<std::tuple<std::string, Vector2i>> getVideoModes(VulkanRenderer& vulkan) {
     const auto videoModes = vulkan.getSupportedResolutionModes();
 
-    std::vector<std::string> result;
+    std::vector<std::tuple<std::string, Vector2i>> result;
 
     result.reserve(videoModes.size());
-    for (size_t i = 0; i < videoModes.size(); i++) {
-        auto& videoMode = videoModes.at(i);
-        result.push_back(fmt::format("{}x{}", videoMode.x, videoMode.y));
-        if (config.graphics.windowWidth == videoMode.x && config.graphics.windowHeight == videoMode.y) {
-            chosen = i;
-        }
+    for (auto videoMode : videoModes) {
+        result.emplace_back(fmt::format("{}x{}", videoMode.x, videoMode.y), videoMode);
     }
 
     return result;
@@ -88,9 +80,11 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
         addOption(tab, "Fullscreen", config.graphics.fullscreen);
         addOption(tab, "V-Sync", config.graphics.vsync);
 
-        size_t currentVideoMode{0};
+        /*size_t currentVideoMode{0};
         comboResolution = &addOption(tab, "Resolution", getVideoModes(vulkan, config, currentVideoMode));
-        comboResolution->setChosen(currentVideoMode);
+        comboResolution->setChosen(currentVideoMode);*/
+
+        // addOption(tab, "Resolution", config.graphics.windowSize, getVideoModes(vulkan));
 
         addOption(tab, "Bloom", config.graphics.bloom);
         addOption(tab, "Anti-Aliasing", config.graphics.fxaa);
@@ -104,6 +98,46 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 8},
                       {"High", 16},
                   });
+
+        addOption(tab,
+                  "Background",
+                  config.graphics.skyboxSize,
+                  {
+                      {"Low", 1024},
+                      {"Medium", 2048},
+                      {"High", 4096},
+                  });
+
+        addOption(tab,
+                  "Planets",
+                  config.graphics.planetTextureSize,
+                  {
+                      {"Low", 512},
+                      {"Medium", 1024},
+                      {"High", 2048},
+                  });
+
+        addOption(tab,
+                  "SSAO",
+                  config.graphics.ssao,
+                  {
+                      {"Off", 0},
+                      {"Low", 16},
+                      {"Medium", 32},
+                      {"High", 64},
+                  });
+
+        addOption(tab,
+                  "Shadows",
+                  config.graphics.shadowsSize,
+                  {
+                      {"Off", 0},
+                      {"Low", 1024},
+                      {"Medium", 2048},
+                      {"High", 4096},
+                  });
+
+        addOption(tab, "Debug Draw", config.graphics.debugDraw);
     }
 
     tabs.addTab("Audio");
@@ -136,7 +170,7 @@ void GuiWindowSettings::setOnSubmit(GuiWindowSettings::OnSubmitCallback callback
 }
 
 void GuiWindowSettings::reset() {
-    size_t currentVideoMode{0};
+    /*size_t currentVideoMode{0};
     getVideoModes(vulkan, config, currentVideoMode);
-    comboResolution->setChosen(currentVideoMode);
+    comboResolution->setChosen(currentVideoMode);*/
 }

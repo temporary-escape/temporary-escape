@@ -181,6 +181,9 @@ static ktx_transcode_fmt_e getTranscodeTargetETC(Ktx2CompressionTarget target) {
     case Ktx2CompressionTarget::RGBA: {
         return KTX_TTF_ETC2_RGBA;
     }
+    default: {
+        EXCEPTION("Unknown compression target");
+    }
     }
 }
 
@@ -197,6 +200,9 @@ static ktx_transcode_fmt_e getTranscodeTargetBC(Ktx2CompressionTarget target) {
     }
     case Ktx2CompressionTarget::RGBA: {
         return KTX_TTF_BC3_RGBA;
+    }
+    default:{
+        EXCEPTION("Unknown compression target");
     }
     }
 }

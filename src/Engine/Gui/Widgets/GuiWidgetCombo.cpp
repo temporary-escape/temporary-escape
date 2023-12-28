@@ -35,3 +35,8 @@ void GuiWidgetCombo::addChoice(const std::string_view& value) {
 void GuiWidgetCombo::setChosen(const size_t value) {
     chosen = std::min(value, choices.size());
 }
+
+void GuiWidgetCombo::clear() {
+    choices.clear();
+    chosen = 0;
+}

@@ -25,7 +25,7 @@ PngFileReader::PngFileReader(const Path& path) : png{nullptr}, info{nullptr}, fi
     }
 
     std::unique_ptr<uint8_t[]> header(new uint8_t[8]);
-    fread(header.get(), 1, 8, file);
+    (void)fread(header.get(), 1, 8, file);
 
     if (png_sig_cmp(header.get(), 0, 8)) {
         fclose(file);

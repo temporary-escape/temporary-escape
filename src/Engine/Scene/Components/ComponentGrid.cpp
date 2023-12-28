@@ -78,7 +78,11 @@ void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator i
             auto pos = iterator.getPos();
             btTransform transform{};
             transform.setIdentity();
-            transform.setOrigin({pos.x, pos.y, pos.z});
+            transform.setOrigin({
+                static_cast<float>(pos.x),
+                static_cast<float>(pos.y),
+                static_cast<float>(pos.z),
+            });
             compoundShape.addChildShape(transform, boxShape.get());
         } else {
             createShape(compoundShape, iterator.children());
