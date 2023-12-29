@@ -34,6 +34,7 @@ void GuiWindow::setSize(const Vector2& value) {
 }
 
 void GuiWindow::setPos(const Vector2& value) {
+    updatePos = false;
     pos = value;
 }
 

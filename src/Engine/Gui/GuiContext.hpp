@@ -65,7 +65,7 @@ public:
     void layoutTemplateEnd();
 
     void skip();
-    bool button(const std::string& label);
+    bool button(const std::string& label, const ImagePtr& image = nullptr);
     bool buttonToggle(const std::string& label, bool& value);
     bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label);

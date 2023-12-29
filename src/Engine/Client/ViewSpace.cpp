@@ -18,6 +18,8 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
     client{client} {
 
     gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
+
+    icons.approach = assetsManager.getImages().find("icon_convergence_target");
 }
 
 void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
@@ -150,6 +152,10 @@ void ViewSpace::eventMouseMoved(const Vector2i& pos) {
 }
 
 void ViewSpace::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    if (guiManager.isContextMenuVisible()) {
+        guiManager.hideContextMenu();
+    }
+
     auto scene = client.getScene();
     if (scene) {
         scene->eventMousePressed(pos, button);
@@ -164,15 +170,16 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
         scene->eventMouseReleased(pos, button);
 
         const auto& camera = *scene->getPrimaryCamera();
-        if (const auto selected = scene->getSelectedEntity();
-            selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
+        const auto selected = scene->getSelectedEntity();
+        if (selected.has_value() && !guiManager.isContextMenuVisible() && button == MouseButton::Right &&
+            !camera.isPanning()) {
 
             const auto* transform = selected->tryGetComponent<ComponentTransform>();
             if (transform) {
                 guiManager.clearContextMenu();
-                guiManager.addContextMenuItem("Approach", []() {});
-                guiManager.addContextMenuItem("Info", []() {});
-                guiManager.addContextMenuItem("Attach", []() {});
+                guiManager.addContextMenuItem("Approach", icons.approach, []() {});
+                guiManager.addContextMenuItem("Info", icons.approach, []() {});
+                guiManager.addContextMenuItem("Attach", icons.approach, []() {});
                 guiManager.showContextMenu(pos);
             }
         } else if (guiManager.isContextMenuVisible()) {
@@ -189,6 +196,10 @@ void ViewSpace::eventMouseScroll(const int xscroll, const int yscroll) {
 }
 
 void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    if (key == Key::Escape && guiManager.isContextMenuVisible()) {
+        guiManager.hideContextMenu();
+    }
+
     auto scene = client.getScene();
     if (scene) {
         scene->eventKeyPressed(key, modifiers);

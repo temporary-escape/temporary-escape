@@ -47,6 +47,10 @@ private:
         GuiWindowShipToolbar* toolbar{nullptr};
     } gui;
 
+    struct {
+        ImagePtr approach;
+    } icons;
+
     /*struct {
         bool forward{false};
         bool backwards{false};

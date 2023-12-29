@@ -26,7 +26,7 @@ public:
     void clearFocused();
 
     void clearContextMenu();
-    void addContextMenuItem(std::string label, GuiWidgetButton::OnClickCallback onClick);
+    void addContextMenuItem(std::string label, ImagePtr icon, GuiWidgetButton::OnClickCallback onClick);
     void showContextMenu(const Vector2i& pos);
     void hideContextMenu();
     bool isContextMenuVisible() const;

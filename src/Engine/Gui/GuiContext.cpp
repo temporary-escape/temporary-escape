@@ -464,10 +464,20 @@ void GuiContext::skip() {
     nk_widget(&bounds, nk.get());
 }
 
-bool GuiContext::button(const std::string& label) {
-    if (nk_button_label(nk.get(), label.c_str())) {
-        return true;
+bool GuiContext::button(const std::string& label, const ImagePtr& image) {
+    if (image) {
+        struct nk_image ni {};
+        ni.handle.ptr = image.get();
+
+        if (nk_button_image_label(nk.get(), ni, label.c_str(), NK_TEXT_ALIGN_LEFT)) {
+            return true;
+        }
+    } else {
+        if (nk_button_label(nk.get(), label.c_str())) {
+            return true;
+        }
     }
+
     return false;
 }
 

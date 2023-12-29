@@ -131,8 +131,9 @@ void GuiManager::clearContextMenu() {
     contextMenu->clear();
 }
 
-void GuiManager::addContextMenuItem(std::string label, GuiWidgetButton::OnClickCallback onClick) {
+void GuiManager::addContextMenuItem(std::string label, ImagePtr icon, GuiWidgetButton::OnClickCallback onClick) {
     auto& button = contextMenu->addItem(std::move(label));
+    button.setImage(std::move(icon));
     button.setOnClick([this, c = std::move(onClick)]() {
         contextMenu->setEnabled(false);
         if (c) {

@@ -13,12 +13,17 @@ public:
     const std::string& getLabel() const {
         return label;
     }
+    void setImage(ImagePtr value);
+    const ImagePtr& getImage() const {
+        return image;
+    }
     void setOnClick(OnClickCallback value);
 
 private:
     void drawInternal() override;
 
     std::string label;
+    ImagePtr image;
     OnClickCallback onClick;
 };
 } // namespace Engine
