@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../Assets/Image.hpp"
-#include "../Graphics/Canvas2.hpp"
+#include "../Graphics/Canvas.hpp"
+#include "GuiStyle.hpp"
 
 struct nk_context;
 struct nk_user_font;
@@ -45,9 +46,10 @@ public:
     virtual ~GuiContext();
 
     void update();
-    void render(Canvas2& canvas);
+    void render(Canvas& canvas);
 
-    bool windowBegin(const std::string& title, const Vector2& pos, const Vector2& size, Flags flags);
+    bool windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
+                     Flags flags);
     void windowEnd(Flags flags);
     bool groupBegin(const std::string& name, bool scrollbar);
     void groupEnd();
@@ -71,13 +73,15 @@ public:
     bool comboBegin(const Vector2& size, const std::string& label);
     void comboEnd();
     bool comboItem(const std::string& label);
-    void progress(float value, float max, const Color4& color);
+    void progress(float value, float max);
+    void progress(float value, float max, const GuiStyleProgress& style, float height);
     void image(const ImagePtr& img, const Color4& color);
     bool imageToggle(const ImagePtr& img, bool& value, const Color4& color);
     bool imageToggleLabel(const ImagePtr& img, bool& value, const Color4& color, const std::string& text,
                           const GuiTextAlign align);
     void tooltip(const std::string& text);
-    bool isHovered();
+    bool isHovered() const;
+    bool isMouseDown(const MouseButton button) const;
     Vector2 getWidgetSize() const;
     Vector2 getPadding() const;
 

@@ -1,5 +1,4 @@
 #include "Nuklear.hpp"
-#include "Theme.hpp"
 // #define NK_IMPLEMENTATION 1
 // #define NK_INCLUDE_DEFAULT_ALLOCATOR 1
 // #include <nuklear.h>
@@ -31,7 +30,7 @@ struct Nuklear::CustomStyle {
     nk_style_button toggle{};
 };*/
 
-Nuklear::Nuklear(EventCallback& events, const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily,
+Nuklear::Nuklear(EventCallback& events, const Config& config, const FontFamily& defaultFontFamily,
                  const int defaultFontSize) /* :
      events{events},
      config{config},

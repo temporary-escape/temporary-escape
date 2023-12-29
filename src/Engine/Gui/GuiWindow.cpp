@@ -2,42 +2,31 @@
 
 using namespace Engine;
 
-GuiWindow::GuiWindow() : title{std::to_string(reinterpret_cast<uint64_t>(this))} {
+GuiWindow::GuiWindow(const FontFamily& fontFamily, const int fontSize) :
+    GuiContext{fontFamily, fontSize},
+    GuiWidgetLayout{static_cast<GuiContext&>(*this)},
+    id{std::to_string(reinterpret_cast<uint64_t>(this))},
+    flags{WindowFlag::Title | WindowFlag::NoScrollbar} {
 }
 
-void GuiWindow::draw(Nuklear& nuklear, const Vector2& viewport) {
-    if (!enabled) {
-        return;
+void GuiWindow::update(const Vector2i& viewport) {
+    if (updatePos) {
+        updatePos = false;
+        setPos(Vector2{viewport} / 2.0f - size / 2.0f);
     }
-
-    if (fontSize) {
-        nuklear.fontSize(fontSize);
-    }
-
-    beforeDraw(nuklear, viewport);
-    if (nuklear.beginWindow(title, pos, size, flags)) {
-        pos = nuklear.getWindowPos();
-        drawLayout(nuklear);
-    } else if (getFlags() & static_cast<Nuklear::Flags>(Nuklear::WindowFlags::Closeable)) {
-        setEnabled(false);
-    }
-    nuklear.endWindow();
-
-    if (fontSize) {
-        nuklear.resetFont();
-    }
+    GuiContext::update();
 }
 
-const Vector2& GuiWindow::getSize() const {
-    return size;
+void GuiWindow::draw() {
+    // We are rendering into an FBO, therefore the position is always at [0, 0]
+    if (GuiContext::windowBegin(id, title, {0.0f, 0.0f}, size, flags)) {
+        GuiWidgetLayout::draw();
+    }
+    GuiContext::windowEnd(flags);
 }
 
-const Vector2& GuiWindow::getPos() const {
-    return pos;
-}
-
-Nuklear::Flags GuiWindow::getFlags() const {
-    return flags;
+void GuiWindow::setTitle(std::string value) {
+    title = std::move(value);
 }
 
 void GuiWindow::setSize(const Vector2& value) {
@@ -48,92 +37,12 @@ void GuiWindow::setPos(const Vector2& value) {
     pos = value;
 }
 
-void GuiWindow::setFlags(unsigned int value) {
-    flags = value;
-}
-
-void GuiWindow::setEnabled(bool value) {
-    enabled = value;
-}
-
-void GuiWindow::beforeDraw(Nuklear& nuklear, const Vector2& viewport) {
-    (void)nuklear;
-    (void)viewport;
-}
-
-const std::string& GuiWindow::getTitle() const {
-    return title;
-}
-
-void GuiWindow::setTitle(const std::string& value) {
-    title = value;
-    flags = flags | Nuklear::WindowFlags::Title;
-}
-
-void GuiWindow::setBordered() {
-    flags = flags | Nuklear::WindowFlags::Border;
-}
-
-void GuiWindow::setAlwaysBackground() {
-    flags = flags | Nuklear::WindowFlags::Background;
-}
-
-void GuiWindow::setNoScrollbar() {
-    flags = flags | Nuklear::WindowFlags::NoScrollbar;
-}
-
-void GuiWindow::setDynamic() {
-    flags = flags | Nuklear::WindowFlags::Dynamic;
-}
-
-void GuiWindow::setFontSize(const int size) {
-    fontSize = size;
-}
-
-bool GuiWindow::isCursorInside(const Vector2i& mousePos) {
-    return mousePos.x > pos.x && mousePos.x < pos.x + size.x && mousePos.y > pos.y && mousePos.y < pos.y + size.y;
-}
-
-GuiWindow2::GuiWindow2(const FontFamily& fontFamily, const int fontSize) :
-    GuiContext{fontFamily, fontSize},
-    GuiWidgetLayout{static_cast<GuiContext&>(*this)},
-    flags{WindowFlag::Title | WindowFlag::NoScrollbar} {
-}
-
-void GuiWindow2::update(const Vector2i& viewport) {
-    if (updatePos) {
-        updatePos = false;
-        setPos(Vector2{viewport} / 2.0f - size / 2.0f);
-    }
-    GuiContext::update();
-}
-
-void GuiWindow2::draw() {
-    // We are rendering into an FBO, therefore the position is always at [0, 0]
-    if (GuiContext::windowBegin(title, {0.0f, 0.0f}, size, flags)) {
-        GuiWidgetLayout::draw();
-    }
-    GuiContext::windowEnd(flags);
-}
-
-void GuiWindow2::setTitle(std::string value) {
-    title = std::move(value);
-}
-
-void GuiWindow2::setSize(const Vector2& value) {
-    size = value;
-}
-
-void GuiWindow2::setPos(const Vector2& value) {
-    pos = value;
-}
-
-void GuiWindow2::setEnabled(const bool value) {
+void GuiWindow::setEnabled(const bool value) {
     enabled = value;
     setDirty();
 }
 
-void GuiWindow2::setBordered(const bool value) {
+void GuiWindow::setBordered(const bool value) {
     if (value) {
         flags |= WindowFlag::Border;
     } else {
@@ -141,7 +50,7 @@ void GuiWindow2::setBordered(const bool value) {
     }
 }
 
-void GuiWindow2::setBackground(const bool value) {
+void GuiWindow::setBackground(const bool value) {
     if (value) {
         flags |= WindowFlag::Background;
     } else {
@@ -149,7 +58,7 @@ void GuiWindow2::setBackground(const bool value) {
     }
 }
 
-void GuiWindow2::setNoScrollbar(const bool value) {
+void GuiWindow::setNoScrollbar(const bool value) {
     if (value) {
         flags |= WindowFlag::NoScrollbar;
     } else {
@@ -157,7 +66,7 @@ void GuiWindow2::setNoScrollbar(const bool value) {
     }
 }
 
-void GuiWindow2::setHeader(const bool value) {
+void GuiWindow::setHeader(const bool value) {
     if (value) {
         flags |= WindowFlag::Title;
     } else {
@@ -165,7 +74,7 @@ void GuiWindow2::setHeader(const bool value) {
     }
 }
 
-void GuiWindow2::setTransparent(const bool value) {
+void GuiWindow::setTransparent(const bool value) {
     if (value) {
         flags |= WindowFlag::Transparent;
     } else {
@@ -173,7 +82,7 @@ void GuiWindow2::setTransparent(const bool value) {
     }
 }
 
-void GuiWindow2::setDynamic(const bool value) {
+void GuiWindow::setDynamic(const bool value) {
     if (value) {
         flags |= WindowFlag::Dynamic;
     } else {
@@ -181,7 +90,7 @@ void GuiWindow2::setDynamic(const bool value) {
     }
 }
 
-void GuiWindow2::setNoInput(const bool value) {
+void GuiWindow::setNoInput(const bool value) {
     if (value) {
         flags |= WindowFlag::NoInput;
     } else {
@@ -189,7 +98,7 @@ void GuiWindow2::setNoInput(const bool value) {
     }
 }
 
-void GuiWindow2::setHeaderSuccess(const bool value) {
+void GuiWindow::setHeaderSuccess(const bool value) {
     if (value) {
         flags |= WindowFlag::HeaderSuccess;
     } else {
@@ -197,7 +106,7 @@ void GuiWindow2::setHeaderSuccess(const bool value) {
     }
 }
 
-void GuiWindow2::setHeaderDanger(const bool value) {
+void GuiWindow::setHeaderDanger(const bool value) {
     if (value) {
         flags |= WindowFlag::HeaderDanger;
     } else {

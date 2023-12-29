@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Graphics/RendererCanvas.hpp"
-// #include "Windows/GuiWindowContextMenu.hpp"
+#include "Windows/GuiWindowContextMenu.hpp"
 #include "Windows/GuiWindowModal.hpp"
 
 namespace Engine {
@@ -13,17 +13,23 @@ public:
     virtual ~GuiManager();
 
     void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
-    void blit(Canvas2& canvas);
+    void blit(Canvas& canvas);
 
     template <typename T, typename... Args> T* addWindow(Args&&... args) {
         windows.emplace_back();
-        windows.back().canvas = std::make_unique<Canvas2>(vulkan);
+        windows.back().canvas = std::make_unique<Canvas>(vulkan);
         windows.back().ptr = std::make_shared<T>(fontFamily, fontSize, std::forward<Args>(args)...);
         return dynamic_cast<T*>(windows.back().ptr.get());
     }
-    void removeWindow(const GuiWindow2& window);
-    void setFocused(const GuiWindow2& window);
+    void removeWindow(const GuiWindow& window);
+    void setFocused(const GuiWindow& window);
     void clearFocused();
+
+    void clearContextMenu();
+    void addContextMenuItem(std::string label, GuiWidgetButton::OnClickCallback onClick);
+    void showContextMenu(const Vector2i& pos);
+    void hideContextMenu();
+    bool isContextMenuVisible() const;
 
     GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
@@ -42,15 +48,15 @@ public:
 
 private:
     struct WindowData {
-        std::unique_ptr<Canvas2> canvas;
-        std::shared_ptr<GuiWindow2> ptr;
+        std::unique_ptr<Canvas> canvas;
+        std::shared_ptr<GuiWindow> ptr;
         VulkanTexture fboColor;
         VulkanFramebuffer fbo;
         bool hover{false};
         uint64_t buttonMask{0};
     };
 
-    void removeWindowInternal(const GuiWindow2* window);
+    void removeWindowInternal(const GuiWindow* window);
     void createRenderPass();
     void createFbo(WindowData& data);
     void createFboTexture(WindowData& data);
@@ -64,8 +70,8 @@ private:
     VulkanRenderPass renderPass;
 
     std::list<WindowData> windows;
-    std::vector<const GuiWindow2*> windowsToRemove;
-    const GuiWindow2* focused{nullptr};
-    // GuiWindowContextMenu* contextMenu;
+    std::vector<const GuiWindow*> windowsToRemove;
+    const GuiWindow* focused{nullptr};
+    GuiWindowContextMenu* contextMenu;
 };
 } // namespace Engine

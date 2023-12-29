@@ -1,6 +1,5 @@
 #include "GuiContext.hpp"
 #include "../Assets/Image.hpp"
-#include "../Graphics/Theme.hpp"
 #define NK_IMPLEMENTATION 1
 #define NK_INCLUDE_DEFAULT_ALLOCATOR 1
 #include <nuklear.h>
@@ -198,7 +197,7 @@ void GuiContext::update() {
     }
 }
 
-void GuiContext::render(Canvas2& canvas) {
+void GuiContext::render(Canvas& canvas) {
     const struct nk_command* cmd;
     nk_foreach(cmd, nk.get()) {
         switch (cmd->type) {
@@ -298,7 +297,8 @@ void GuiContext::render(Canvas2& canvas) {
     nk_clear(nk.get());
 }
 
-bool GuiContext::windowBegin(const std::string& title, const Vector2& pos, const Vector2& size, const Flags flags) {
+bool GuiContext::windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
+                             const Flags flags) {
     activeInput = false;
 
     if (flags & WindowFlag::Transparent) {
@@ -308,15 +308,14 @@ bool GuiContext::windowBegin(const std::string& title, const Vector2& pos, const
     }
 
     if (flags & WindowFlag::HeaderSuccess) {
-        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Theme::secondary));
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::secondary));
     } else if (flags & WindowFlag::HeaderDanger) {
-        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Theme::ternary));
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::ternary));
     }
 
     // const auto* titleStr = flags & WindowFlag::Title ? title.c_str() : nullptr;
 
-    const auto res =
-        nk_begin_titled(nk.get(), title.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags);
+    const auto res = nk_begin_titled(nk.get(), id.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), flags);
 
     if (flags & WindowFlag::Transparent) {
         nk_style_pop_color(nk.get());
@@ -363,15 +362,31 @@ bool GuiContext::comboItem(const std::string& label) {
     return nk_combo_item_label(nk.get(), label.c_str(), NK_TEXT_ALIGN_LEFT) == nk_true;
 }
 
-void GuiContext::progress(const float value, const float max, const Color4& color) {
-    nk_style_push_color(nk.get(), &nk->style.progress.cursor_normal.data.color, fromColor(color));
-    // nk_style_push_style_item(nk.get(), &nk->style.progress.cursor_normal, nk_style_item_color(fromColor(color)));
-
+void GuiContext::progress(const float value, const float max) {
     auto current = static_cast<nk_size>(value);
     nk_progress(nk.get(), &current, static_cast<nk_size>(max), NK_FIXED);
+}
 
-    // nk_style_pop_style_item(nk.get());
-    nk_style_pop_color(nk.get());
+void GuiContext::progress(const float value, const float max, const GuiStyleProgress& style, const float height) {
+    struct nk_rect bounds {};
+    nk_widget(&bounds, nk.get());
+
+    if (height > 0.0f) {
+        bounds.y += bounds.h / 2.0f - height / 2.0f;
+        bounds.h = height;
+    }
+
+    const auto* borderColor = isHovered() ? &style.border.hover : &style.border.normal;
+    const auto* rectColor = isHovered() ? &style.bar.hover : &style.bar.normal;
+
+    nk_stroke_rect(&nk->current->buffer, bounds, 0.0f, 1.0f, fromColor(*borderColor));
+
+    bounds.x += 1;
+    bounds.y += 1;
+    bounds.w -= 2;
+    bounds.h -= 2;
+    bounds.w = bounds.w * (value / max);
+    nk_fill_rect(&nk->current->buffer, bounds, 0.0f, fromColor(*rectColor));
 }
 
 void GuiContext::image(const ImagePtr& img, const Color4& color) {
@@ -519,10 +534,34 @@ void GuiContext::tooltip(const std::string& text) {
     }
 }
 
-bool GuiContext::isHovered() {
+bool GuiContext::isHovered() const {
     // return nk_widget_is_hovered(ctx.get()) == nk_true;
     const auto bounds = nk_widget_bounds(nk.get());
     return nk_input_is_mouse_hovering_rect(&nk->input, bounds) == nk_true;
+}
+
+bool GuiContext::isMouseDown(const MouseButton button) const {
+    nk_buttons nb;
+    switch (button) {
+    case MouseButton::Left: {
+        nb = NK_BUTTON_LEFT;
+        break;
+    }
+    case MouseButton::Right: {
+        nb = NK_BUTTON_RIGHT;
+        break;
+    }
+    case MouseButton::Middle: {
+        nb = NK_BUTTON_MIDDLE;
+        break;
+    }
+    default: {
+        return false;
+    }
+    }
+
+    const auto bounds = nk_widget_bounds(nk.get());
+    return nk_input_has_mouse_click_down_in_rect(&nk->input, nb, bounds, nk_true) == nk_true;
 }
 
 Vector2 GuiContext::getWidgetSize() const {
@@ -581,12 +620,12 @@ void GuiContext::eventCharTyped(const uint32_t code) {
 }
 
 static const auto BLACK = HEX(0x000000ff);
-static const auto PRIMARY_COLOR = fromColor(Theme::primary);
+static const auto PRIMARY_COLOR = fromColor(Colors::primary);
 static const auto WHITE = HEX(0xe5e5e3ff);
-static const auto TEXT_WHITE = fromColor(Theme::text);
+static const auto TEXT_WHITE = fromColor(Colors::text);
 static const auto TEXT_BLACK = HEX(0x030303ff);
 static const auto TEXT_GREY = HEX(0x393939ff);
-static const auto BACKGROUND_COLOR = fromColor(Theme::backgroundTransparent); // HEX(0x0a0a0aff);
+static const auto BACKGROUND_COLOR = fromColor(Colors::background);
 static const auto BORDER_GREY = HEX(0x202020ff);
 static const auto TRANSPARENT_COLOR = HEX(0x00000000);
 static const auto ACTIVE_COLOR = PRIMARY_COLOR;

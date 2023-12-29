@@ -24,7 +24,7 @@ inline Color4 alpha(float a) {
     return Color4{1.0f, 1.0f, 1.0f, a};
 }
 
-inline Color4 hexColor(const uint32_t color) {
+inline constexpr Color4 hexColor(const uint32_t color) {
     return Color4{
         static_cast<float>((color & 0xFF000000) >> 24) / 255.0f,
         static_cast<float>((color & 0xFF0000) >> 16) / 255.0f,

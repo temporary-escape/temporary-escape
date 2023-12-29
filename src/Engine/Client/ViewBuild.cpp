@@ -17,30 +17,18 @@ ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext&
     vulkan{vulkan},
     assetsManager{assetsManager},
     uiAudioSource{audio.createSource()},
-    guiBlockSelector{config, assetsManager},
-    guiBlockInfo{config, assetsManager},
-    guiFileBrowser{config},
     scene{config, &voxelShapeCache} {
 
     scene.setSelectionEnabled(false);
-
-    guiBlockSelector.setBlocks(assetsManager.getBlocks().findAll());
-    guiBlockInfo.setEnabled(false);
-    guiFileBrowser.setEnabled(false);
-
-    guiBlockSelector.setCallbackRedo([this]() { doRedo(); });
-    guiBlockSelector.setCallbackUndo([this]() { doUndo(); });
-    guiBlockSelector.setCallbackSave([this]() { doSave(); });
-    guiBlockSelector.setCallbackLoad([this]() { doLoad(); });
 
     createScene();
     createEntityShip();
     createGridLines();
     createHelpers();
 
-    selected.block = guiBlockSelector.getSelectedBlock();
-    selected.color = guiBlockSelector.getSelectedColor();
-    selected.shape = guiBlockSelector.getSelectedShape();
+    // selected.block = guiBlockSelector.getSelectedBlock();
+    // selected.color = guiBlockSelector.getSelectedColor();
+    // selected.shape = guiBlockSelector.getSelectedShape();
     updateSelectedBlock();
 
     sound.build = assetsManager.getSounds().find("build_01");
@@ -157,7 +145,7 @@ void ViewBuild::createEntityShip() {
 }
 
 void ViewBuild::addBlock() {
-    if (!raycastResult || !selected.block || guiFileBrowser.isEnabled()) {
+    if (!raycastResult || !selected.block) {
         return;
     }
 
@@ -189,7 +177,7 @@ void ViewBuild::addBlock() {
 }
 
 void ViewBuild::removeBlock() {
-    if (!raycastResult || guiFileBrowser.isEnabled()) {
+    if (!raycastResult) {
         return;
     }
 
@@ -227,10 +215,6 @@ void ViewBuild::removeBlock() {
 }
 
 void ViewBuild::doUndo() {
-    if (guiFileBrowser.isEnabled()) {
-        return;
-    }
-
     if (historyPos > 0) {
         --historyPos;
     } else {
@@ -250,10 +234,6 @@ void ViewBuild::doUndo() {
 }
 
 void ViewBuild::doRedo() {
-    if (guiFileBrowser.isEnabled()) {
-        return;
-    }
-
     if (historyPos >= history.size()) {
         return;
     }
@@ -272,7 +252,7 @@ void ViewBuild::doRedo() {
 }
 
 void ViewBuild::doSave() {
-    if (guiFileBrowser.isEnabled()) {
+    /*if (guiFileBrowser.isEnabled()) {
         return;
     }
 
@@ -294,11 +274,11 @@ void ViewBuild::doSave() {
         } catch (std::exception& e) {
             BACKTRACE(e, "Failed to save grid");
         }
-    });
+    });*/
 }
 
 void ViewBuild::doLoad() {
-    if (guiFileBrowser.isEnabled()) {
+    /*if (guiFileBrowser.isEnabled()) {
         return;
     }
 
@@ -329,7 +309,7 @@ void ViewBuild::doLoad() {
         } catch (std::exception& e) {
             BACKTRACE(e, "Failed to save grid");
         }
-    });
+    });*/
 }
 
 void ViewBuild::resetHistory() {
@@ -355,7 +335,7 @@ void ViewBuild::updateSelectedBlock() {
 void ViewBuild::update(const float deltaTime, const Vector2i& viewport) {
     scene.update(deltaTime);
 
-    if (guiBlockSelector.getSelectedBlock() != selected.block ||
+    /*if (guiBlockSelector.getSelectedBlock() != selected.block ||
         guiBlockSelector.getSelectedColor() != selected.color ||
         guiBlockSelector.getSelectedShape() != selected.shape || currentRotation != selected.rotation) {
 
@@ -425,10 +405,10 @@ void ViewBuild::update(const float deltaTime, const Vector2i& viewport) {
         if (!entityHelperRemove.isDisabled()) {
             entityHelperRemove.setDisabled(true);
         }
-    }
+    }*/
 }
 
-void ViewBuild::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
+void ViewBuild::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
 void ViewBuild::eventMouseMoved(const Vector2i& pos) {
@@ -440,13 +420,13 @@ void ViewBuild::eventMouseMoved(const Vector2i& pos) {
 void ViewBuild::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     scene.eventMousePressed(pos, button);
 
-    if (button == MouseButton::Left) {
+    /*if (button == MouseButton::Left) {
         if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Add) {
             addBlock();
         } else if (guiBlockSelector.getAction() == GuiBlockSelector::Action::Remove) {
             removeBlock();
         }
-    }
+    }*/
 }
 
 void ViewBuild::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
@@ -484,13 +464,9 @@ void ViewBuild::eventCharTyped(const uint32_t code) {
 }
 
 void ViewBuild::onEnter() {
-    guiBlockSelector.setEnabled(true);
-    guiFileBrowser.setEnabled(false);
 }
 
 void ViewBuild::onExit() {
-    guiBlockSelector.setEnabled(false);
-    guiFileBrowser.setEnabled(false);
 }
 
 Scene* ViewBuild::getScene() {

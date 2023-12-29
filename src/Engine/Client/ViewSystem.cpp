@@ -1,5 +1,4 @@
 #include "ViewSystem.hpp"
-#include "../Graphics/Theme.hpp"
 #include "../Utils/Overloaded.hpp"
 #include "Client.hpp"
 
@@ -18,10 +17,7 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulka
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     client{client},
-    font{font},
-    guiModalLoading{"System Map"} {
-
-    guiModalLoading.setEnabled(false);
+    font{font} {
 
     images.systemPlanet = assetsManager.getImages().find("icon_ringed_planet");
     images.systemMoon = assetsManager.getImages().find("icon_world");
@@ -33,14 +29,11 @@ ViewSystem::ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulka
 }
 
 void ViewSystem::update(const float deltaTime, const Vector2i& viewport) {
-    guiModalLoading.setProgress(loadingValue);
-
     if (futureLoad.valid() && futureLoad.ready()) {
         try {
             futureLoad.get();
             finalize();
             loading = false;
-            guiModalLoading.setEnabled(false);
         } catch (...) {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
@@ -53,7 +46,7 @@ void ViewSystem::update(const float deltaTime, const Vector2i& viewport) {
     scene->update(deltaTime);
 }
 
-void ViewSystem::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
+void ViewSystem::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
 void ViewSystem::eventMouseMoved(const Vector2i& pos) {
@@ -298,7 +291,6 @@ void ViewSystem::onEnter() {
 
     loading = true;
     loadingValue = 0.0f;
-    guiModalLoading.setEnabled(true);
 
     stopToken.stop();
     stopToken = StopToken{};
@@ -309,5 +301,4 @@ void ViewSystem::onEnter() {
 void ViewSystem::onExit() {
     // Stop loading if we have exited
     stopToken.stop();
-    guiModalLoading.setEnabled(false);
 }

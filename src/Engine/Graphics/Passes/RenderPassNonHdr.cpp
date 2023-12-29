@@ -2,7 +2,6 @@
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Controllers/ControllerIcon.hpp"
 #include "../../Scene/Scene.hpp"
-#include "../Theme.hpp"
 
 using namespace Engine;
 
@@ -69,7 +68,7 @@ void RenderPassNonHDR::renderOutline(VulkanCommandBuffer& vkb, Scene& scene) {
 
     const auto& texEntity = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::Entity);
     const auto selectedColor = entityColor(selected->getHandle());
-    const auto finalColor = Theme::primary * alpha(0.2);
+    const auto finalColor = Colors::primary * alpha(0.2);
 
     pipelineOutline.setColorFinal(finalColor);
     pipelineOutline.setColorSelected(selectedColor);

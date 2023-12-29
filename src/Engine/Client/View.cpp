@@ -54,7 +54,7 @@ void ViewContext::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vec
     }
 }
 
-void ViewContext::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
+void ViewContext::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     if (!current) {
         return;
     }

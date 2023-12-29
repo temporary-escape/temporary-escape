@@ -9,7 +9,7 @@ GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const F
     vulkan{vulkan}, renderer{renderer}, fontFamily{fontFamily}, fontSize{fontSize} {
     createRenderPass();
 
-    // contextMenu = addWindow<GuiWindowContextMenu>();
+    contextMenu = addWindow<GuiWindowContextMenu>();
 }
 
 GuiManager::~GuiManager() = default;
@@ -77,7 +77,7 @@ void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     }
 }
 
-void GuiManager::blit(Canvas2& canvas) {
+void GuiManager::blit(Canvas& canvas) {
     const Color4 colorDefault{1.0f, 1.0f, 1.0f, 1.0f};
     const Color4 colorDimmed{0.3f, 0.3f, 0.3f, 1.0f};
 
@@ -93,7 +93,7 @@ void GuiManager::blit(Canvas2& canvas) {
     }
 }
 
-void GuiManager::removeWindowInternal(const GuiWindow2* window) {
+void GuiManager::removeWindowInternal(const GuiWindow* window) {
     auto it = std::find_if(
         windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == window; });
 
@@ -108,11 +108,11 @@ void GuiManager::removeWindowInternal(const GuiWindow2* window) {
     }
 }
 
-void GuiManager::removeWindow(const GuiWindow2& window) {
+void GuiManager::removeWindow(const GuiWindow& window) {
     windowsToRemove.push_back(&window);
 }
 
-void GuiManager::setFocused(const GuiWindow2& window) {
+void GuiManager::setFocused(const GuiWindow& window) {
     auto it = std::find_if(
         windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == &window; });
 
@@ -125,6 +125,33 @@ void GuiManager::setFocused(const GuiWindow2& window) {
 
 void GuiManager::clearFocused() {
     focused = nullptr;
+}
+
+void GuiManager::clearContextMenu() {
+    contextMenu->clear();
+}
+
+void GuiManager::addContextMenuItem(std::string label, GuiWidgetButton::OnClickCallback onClick) {
+    auto& button = contextMenu->addItem(std::move(label));
+    button.setOnClick([this, c = std::move(onClick)]() {
+        contextMenu->setEnabled(false);
+        if (c) {
+            c();
+        }
+    });
+}
+
+void GuiManager::showContextMenu(const Vector2i& pos) {
+    contextMenu->setPos(pos);
+    contextMenu->setEnabled(true);
+}
+
+void GuiManager::hideContextMenu() {
+    contextMenu->setEnabled(false);
+}
+
+bool GuiManager::isContextMenuVisible() const {
+    return contextMenu->isEnabled();
 }
 
 GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std::vector<std::string>& choices,

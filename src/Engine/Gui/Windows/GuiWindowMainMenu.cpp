@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-GuiWindowMainMenu::GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize) : GuiWindow2{fontFamily, fontSize} {
+GuiWindowMainMenu::GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize) : GuiWindow{fontFamily, fontSize} {
     setSize({250.0f, 600.0f});
     setTitle("Main Menu");
     setDynamic(true);

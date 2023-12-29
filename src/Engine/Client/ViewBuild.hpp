@@ -1,11 +1,6 @@
 #pragma once
 
 #include "../Assets/AssetsManager.hpp"
-#include "../Graphics/Canvas.hpp"
-#include "../Graphics/Nuklear.hpp"
-#include "../Gui/GuiBlockInfo.hpp"
-#include "../Gui/GuiBlockSelector.hpp"
-#include "../Gui/GuiFileBrowser.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Schemas.hpp"
 #include "View.hpp"
@@ -18,7 +13,7 @@ public:
     ~ViewBuild() = default;
 
     void update(float deltaTime, const Vector2i& viewport) override;
-    void renderCanvas(Canvas2& canvas, const Vector2i& viewport) override;
+    void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -60,12 +55,6 @@ private:
     VulkanRenderer& vulkan;
     AssetsManager& assetsManager;
     AudioSource uiAudioSource;
-    GuiBlockSelector guiBlockSelector;
-    GuiBlockInfo guiBlockInfo;
-    GuiFileBrowser guiFileBrowser;
-    // GuiBlockActionBar guiBlockActionBar;
-    // GuiBlockSelector guiBlockSelector;
-    // GuiSideMenu guiBlockSideMenu;
 
     Vector2 raycastScreenPos;
     std::optional<Grid::RayCastResult> raycastResult;

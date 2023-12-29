@@ -56,7 +56,7 @@ void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
     }*/
 }
 
-void ViewSpace::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
+void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     auto scene = client.getScene();
     auto camera = scene ? scene->getPrimaryCamera() : nullptr;
     if (scene && camera) {
@@ -64,7 +64,7 @@ void ViewSpace::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
     }
 }
 
-void ViewSpace::renderCanvasSelectedEntity(Canvas2& canvas, const Scene& scene, const ComponentCamera& camera) {
+void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
     if (!client.getCache().playerEntityId) {
         return;
     }
@@ -163,23 +163,21 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
     if (scene) {
         scene->eventMouseReleased(pos, button);
 
-        /*const auto& camera = *scene->getPrimaryCamera();
+        const auto& camera = *scene->getPrimaryCamera();
         if (const auto selected = scene->getSelectedEntity();
             selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
 
             const auto* transform = selected->tryGetComponent<ComponentTransform>();
             if (transform) {
-                guiContextMenu.setItems({
-                    {"Approach", []() {}},
-                    {"Info", []() {}},
-                    {"Target", [this, selected]() { doTargetEntity(*selected); }},
-                });
-                guiContextMenu.setEnabled(true);
-                guiContextMenu.setPos(pos);
+                guiManager.clearContextMenu();
+                guiManager.addContextMenuItem("Approach", []() {});
+                guiManager.addContextMenuItem("Info", []() {});
+                guiManager.addContextMenuItem("Attach", []() {});
+                guiManager.showContextMenu(pos);
             }
-        } else if (guiContextMenu.isEnabled()) {
-            guiContextMenu.setEnabled(false);
-        }*/
+        } else if (guiManager.isContextMenuVisible()) {
+            guiManager.hideContextMenu();
+        }
     }
 }
 

@@ -1,148 +1,90 @@
 #pragma once
 
 #include "../Assets/Image.hpp"
-#include "../Font/FontFace.hpp"
+#include "../Font/FontFamily.hpp"
 #include "../Math/Matrix.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
 
 namespace Engine {
 class ENGINE_API Canvas {
 public:
-    explicit Canvas(VulkanRenderer& vulkan);
-
-    void begin(const Vector2i& viewport);
-    void end(VulkanCommandBuffer& vkb);
-    void scissor(const Vector2& pos, const Vector2& size);
-    void color(const Color4& value) {
-        nextColor = value;
-    }
-    void font(const FontFace& font, const int height) {
-        currentFontFace = &font;
-        currentFontHeight = height;
-    }
-    void rect(const Vector2& pos, const Vector2& size);
-    void rectOutline(const Vector2& pos, const Vector2& size, float thickness);
-    void text(const Vector2& pos, const std::string_view& text);
-    void image(const Vector2& pos, const Vector2& size, const ImagePtr& asset) {
-        image(pos, size, *asset);
-    }
-    void image(const Vector2& pos, const Vector2& size, const Image& asset);
-    void image(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Vector2& uv,
-               const Vector2& st);
-
-private:
     struct Vertex {
         Vector2 pos;
-        Vector2 uv;
+        Vector4 uv;
         Vector4 color;
     };
 
-    struct CommandDraw {
-        size_t start{0};
-        size_t length{0};
-        const VulkanTexture* texture{nullptr};
-        int mode{0};
-
-        [[nodiscard]] bool canMerge(const CommandDraw& other) const {
-            return texture == other.texture && mode == other.mode;
-        }
-
-        void merge(const CommandDraw& other) {
-            length += other.length;
-        }
+    struct Batch {
+        struct {
+            Vector2i pos;
+            Vector2i size;
+        } scissor;
+        size_t offset;
+        size_t length;
     };
 
-    struct CommandScissor {
-        Vector2i pos;
-        Vector2i size;
+    using SamplerArray = std::array<const VulkanTexture*, 16>;
+    using Batches = std::vector<Batch>;
 
-        [[nodiscard]] bool canMerge(const CommandScissor& other) const {
-            return false;
-        }
+    explicit Canvas(VulkanRenderer& vulkan);
+    virtual ~Canvas();
 
-        void merge(const CommandScissor& other) {
-            (void)other;
-        }
+    void flush();
+    void begin(const Vector2i& viewport);
+    void setScissor(const Vector2& pos, const Vector2& size);
+    void clearScissor();
+    void drawRect(const Vector2& pos, const Vector2& size, const Color4& color);
+    void drawRectOutline(const Vector2& pos, const Vector2& size, float thickness, const Color4& color);
+    void drawTexture(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color);
+    void drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
+                  const Color4& color);
+    void drawImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color);
+
+    bool hasData() const {
+        return vbo && ibo && cbo && commands.count > 0;
+    }
+    [[nodiscard]] const VulkanBuffer& getVbo() const {
+        return vbo.getCurrentBuffer();
+    }
+    [[nodiscard]] const VulkanBuffer& getIbo() const {
+        return ibo.getCurrentBuffer();
+    }
+    [[nodiscard]] const VulkanBuffer& getCbo() const {
+        return cbo.getCurrentBuffer();
+    }
+    [[nodiscard]] const SamplerArray& getSamplerArray() const {
+        return textures;
+    }
+    [[nodiscard]] const Batches& getBatches() const {
+        return batches;
+    }
+
+private:
+    template <typename T> struct Buffer {
+        std::vector<T> data;
+        size_t count{0};
     };
 
-    struct Command {
-        union {
-            CommandDraw draw{};
-            CommandScissor scissor;
-        };
+    void doRect(Canvas::Vertex*& v, uint32_t*& i, const Vector2& pos, const Vector2& size, const Color4& color);
 
-        enum Type {
-            None,
-            Draw,
-            Scissor,
-        } type = Type::None;
-
-        Command() = default;
-
-        [[nodiscard]] bool canMerge(const Command& other) const {
-            if (type != other.type) {
-                return false;
-            }
-
-            switch (type) {
-            case Type::Draw: {
-                return draw.canMerge(other.draw);
-            }
-            case Type::Scissor: {
-                return scissor.canMerge(other.scissor);
-            }
-            default: {
-                return false;
-            }
-            }
-        }
-
-        void merge(const Command& other) {
-            switch (type) {
-            case Type::Draw: {
-                draw.merge(other.draw);
-            }
-            case Type::Scissor: {
-                scissor.merge(other.scissor);
-            }
-            default: {
-                break;
-            }
-            }
-        }
-    };
-
-    struct UniformBuffer {
-        Matrix4 mvp;
-    };
-
-    void createPipeline();
-    void createDescriptorSetLayout();
-    void createVertexBuffer();
-    void createIndexBuffer();
-    void createUniformBuffer();
-    void createDefaultTexture();
-    Command& addCommand();
-    CommandDraw& addDrawCommand();
-    CommandScissor& addScissorCommand();
-    Vertex* allocate();
+    template <typename T> VkBufferUsageFlags getBufferUsage() const;
+    template <typename T> T* reserve(Buffer<T>& buffer, const size_t count);
+    template <typename T> size_t getOffset(Buffer<T>& buffer, const T* ptr) const;
+    template <typename T> void flush(Buffer<T>& buffer, VulkanDoubleBuffer& target);
+    void resetTextures();
+    size_t addTexture(const VulkanTexture& texture);
 
     VulkanRenderer& vulkan;
-    const FontFace* currentFontFace{nullptr};
-    int currentFontHeight{18};
-    Vector2i lastViewport;
-    VulkanPipeline pipeline;
-    VulkanDescriptorSetLayout descriptorSetLayout;
+
     VulkanDoubleBuffer vbo;
     VulkanDoubleBuffer ibo;
-    VulkanDoubleBuffer ubo;
-    VulkanTexture defaultTexture;
-    Color4 nextColor{1.0f};
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
-    std::vector<Command> commands;
-    size_t vertexOffset{0};
-    size_t commandCount{0};
-    size_t indexOffset{0};
+    VulkanDoubleBuffer cbo;
+
+    Buffer<Vertex> vertices;
+    Buffer<uint32_t> indices;
+    Buffer<VkDrawIndexedIndirectCommand> commands;
+    SamplerArray textures;
+    Vector2i currentViewport;
+    Batches batches;
 };
 } // namespace Engine

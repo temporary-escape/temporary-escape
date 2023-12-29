@@ -74,7 +74,7 @@ void RendererCanvas::reset() {
     descriptorPool.reset();
 }
 
-void RendererCanvas::render(VulkanCommandBuffer& vkb, Canvas2& canvas, const Vector2i& viewport) {
+void RendererCanvas::render(VulkanCommandBuffer& vkb, Canvas& canvas, const Vector2i& viewport) {
     if (!canvas.hasData()) {
         return;
     }
@@ -177,7 +177,7 @@ void RendererCanvas::create() {
 
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(Canvas2::Vertex);
+    bindingDescription.stride = sizeof(Canvas::Vertex);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
@@ -185,17 +185,17 @@ void RendererCanvas::create() {
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(Canvas2::Vertex, pos);
+    attributeDescriptions[0].offset = offsetof(Canvas::Vertex, pos);
 
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Canvas2::Vertex, uv);
+    attributeDescriptions[1].offset = offsetof(Canvas::Vertex, uv);
 
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
     attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Canvas2::Vertex, color);
+    attributeDescriptions[2].offset = offsetof(Canvas::Vertex, color);
 
     pipelineInfo.vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     pipelineInfo.vertexInputInfo.vertexBindingDescriptionCount = 1;

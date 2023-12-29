@@ -48,7 +48,7 @@ static std::vector<std::tuple<std::string, Vector2i>> getVideoModes(VulkanRender
 
 GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan,
                                      Config& config) :
-    GuiWindow2{fontFamily, fontSize}, vulkan{vulkan}, config{config} {
+    GuiWindow{fontFamily, fontSize}, vulkan{vulkan}, config{config} {
 
     setSize({450.0f, 700.0f});
     setTitle("Settings");

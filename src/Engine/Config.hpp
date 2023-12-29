@@ -136,5 +136,15 @@ struct Config {
     }
 };
 
+struct Colors {
+    static constexpr Color4 primary{0.99f, 0.86f, 0.05f, 1.0f};
+    static constexpr Color4 secondary{0.024f, 0.81f, 0.69f, 1.0f};
+    static constexpr Color4 ternary{0.91f, 0.0f, 0.05f, 1.0f};
+    static constexpr Color4 background{0.02f, 0.02f, 0.02f, 1.0f};
+    static constexpr Color4 border{hexColor(0x202020ff)};
+    static constexpr Color4 text{0.9f, 0.9f, 0.9f, 1.0f};
+    static constexpr Color4 transparent{0.0f, 0.0f, 0.0f, 0.0f};
+};
+
 XML_DEFINE(Config, "settings");
 } // namespace Engine

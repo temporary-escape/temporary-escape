@@ -5,13 +5,53 @@ using namespace Engine;
 
 static const auto colorShield = hexColorGamma(0x339bd8ff);
 static const auto colorHealth = hexColorGamma(0xa4d949ff);
-static const auto colorEnergy = hexColorGamma(0xfed839ff);
-static const auto colorHyperspace = hexColorGamma(0xfed839ff);
+static const auto colorBattery = hexColorGamma(0xfed839ff);
+static const auto colorGenerated = hexColorGamma(0xfed839ff);
 static const auto progressHeight = 16.0f;
 static const auto actionBarSize = 64.0f;
 
+const GuiStyleProgress GuiWindowShipToolbar::styleProgressShields = {
+    .border = GuiWidgetProgressBar::defaultStyle.border,
+    .bar =
+        {
+            .normal = colorShield,
+            .hover = colorShield,
+            .active = colorShield,
+        },
+};
+
+const GuiStyleProgress GuiWindowShipToolbar::styleProgressHealth = {
+    .border = GuiWidgetProgressBar::defaultStyle.border,
+    .bar =
+        {
+            .normal = colorHealth,
+            .hover = colorHealth,
+            .active = colorHealth,
+        },
+};
+
+const GuiStyleProgress GuiWindowShipToolbar::styleProgressBattery = {
+    .border = GuiWidgetProgressBar::defaultStyle.border,
+    .bar =
+        {
+            .normal = colorBattery,
+            .hover = colorBattery,
+            .active = colorBattery,
+        },
+};
+
+const GuiStyleProgress GuiWindowShipToolbar::styleProgressGenerated = {
+    .border = GuiWidgetProgressBar::defaultStyle.border,
+    .bar =
+        {
+            .normal = colorGenerated,
+            .hover = colorGenerated,
+            .active = colorGenerated,
+        },
+};
+
 GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager) :
-    GuiWindow2{fontFamily, fontSize} {
+    GuiWindow{fontFamily, fontSize} {
 
     setSize({
         actionBarSize * 10.0f + ctx.getPadding().x * 11.0f,
@@ -39,7 +79,8 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
             progressShields = &row.addWidget<GuiWidgetProgressBar>();
             progressShields->setValue(1000.0f);
             progressShields->setMax(1000.0f);
-            progressShields->setColor(colorShield);
+            progressShields->setHeight(progressHeight / 2.0f);
+            progressShields->setStyle(&styleProgressShields);
             progressShields->setWidth(progressWidth, true);
             progressShields->setTooltip("Shields");
         }
@@ -48,7 +89,8 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
             progressHull = &row.addWidget<GuiWidgetProgressBar>();
             progressHull->setValue(1000.0f);
             progressHull->setMax(1000.0f);
-            progressHull->setColor(colorHealth);
+            progressHull->setHeight(progressHeight / 2.0f);
+            progressHull->setStyle(&styleProgressHealth);
             progressHull->setWidth(progressWidth, true);
             progressHull->setTooltip("Health");
 
@@ -63,13 +105,14 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
 
         { // Battery energy
             auto& image = row.addWidget<GuiWidgetImage>(assetsManager.getImages().find("icon_battery_pack"));
-            image.setColor(colorEnergy);
+            image.setColor(colorBattery);
             image.setWidth(progressHeight, true);
 
             progressBattery = &row.addWidget<GuiWidgetProgressBar>();
             progressBattery->setValue(1000.0f);
             progressBattery->setMax(1000.0f);
-            progressBattery->setColor(colorEnergy);
+            progressBattery->setHeight(progressHeight / 2.0f);
+            progressBattery->setStyle(&styleProgressBattery);
             progressBattery->setWidth(progressWidth, true);
             progressBattery->setTooltip("Battery Energy");
         }
@@ -78,12 +121,13 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
             progressGenerated = &row.addWidget<GuiWidgetProgressBar>();
             progressGenerated->setValue(1000.0f);
             progressGenerated->setMax(1000.0f);
-            progressGenerated->setColor(colorHyperspace);
+            progressGenerated->setHeight(progressHeight / 2.0f);
+            progressGenerated->setStyle(&styleProgressGenerated);
             progressGenerated->setWidth(progressWidth, true);
             progressGenerated->setTooltip("Generated Energy");
 
             auto& image = row.addWidget<GuiWidgetImage>(assetsManager.getImages().find("icon_power_lightning"));
-            image.setColor(colorHyperspace);
+            image.setColor(colorGenerated);
             image.setWidth(progressHeight, true);
         }
     }

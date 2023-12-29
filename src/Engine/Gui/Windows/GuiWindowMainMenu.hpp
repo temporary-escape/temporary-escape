@@ -3,7 +3,7 @@
 #include "../GuiWindow.hpp"
 
 namespace Engine {
-class GuiWindowMainMenu : public GuiWindow2 {
+class GuiWindowMainMenu : public GuiWindow {
 public:
     GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize);
 

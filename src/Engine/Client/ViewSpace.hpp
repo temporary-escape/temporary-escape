@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../Assets/AssetsManager.hpp"
-#include "../Graphics/Canvas.hpp"
-#include "../Graphics/Nuklear.hpp"
-#include "../Gui/GuiContextMenu.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Schemas.hpp"
 #include "View.hpp"
@@ -22,7 +19,7 @@ public:
     ~ViewSpace() = default;
 
     void update(float deltaTime, const Vector2i& viewport) override;
-    void renderCanvas(Canvas2& canvas, const Vector2i& viewport) override;
+    void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -36,7 +33,7 @@ public:
 
 private:
     void doTargetEntity(const Entity& entity);
-    void renderCanvasSelectedEntity(Canvas2& canvas, const Scene& scene, const ComponentCamera& camera);
+    void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
 
     const Config& config;
     VulkanRenderer& vulkan;

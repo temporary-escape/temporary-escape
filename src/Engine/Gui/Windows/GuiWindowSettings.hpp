@@ -3,7 +3,7 @@
 #include "../GuiWindow.hpp"
 
 namespace Engine {
-class GuiWindowSettings : public GuiWindow2 {
+class GuiWindowSettings : public GuiWindow {
 public:
     using OnSubmitCallback = std::function<void(bool)>;
 

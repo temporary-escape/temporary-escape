@@ -1,8 +1,6 @@
 #include "ViewGalaxy.hpp"
-#include "../Graphics/Theme.hpp"
 #include "../Math/ConvexHull.hpp"
 #include "Client.hpp"
-#include "Game.hpp"
 
 using namespace Engine;
 
@@ -19,10 +17,7 @@ ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulka
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     client{client},
-    guiModalLoading{"Galaxy Map"},
     font{font} {
-
-    guiModalLoading.setEnabled(false);
 
     textures.systemStar = assetsManager.getTextures().find("star_flare");
     images.iconSelect = assetsManager.getImages().find("icon_target");
@@ -40,14 +35,11 @@ ViewGalaxy::~ViewGalaxy() {
 }
 
 void ViewGalaxy::update(const float deltaTime, const Vector2i& viewport) {
-    guiModalLoading.setProgress(0.5f);
-
     if (futureLoad.valid() && futureLoad.ready()) {
         try {
             futureLoad.get();
             finalize();
             loading = false;
-            guiModalLoading.setEnabled(false);
         } catch (...) {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
@@ -70,17 +62,17 @@ void ViewGalaxy::update(const float deltaTime, const Vector2i& viewport) {
     // Update region labels alpha color
     if (entities.regions) {
         const auto f = glm::clamp(map(camera->getOrthoScale(), 20.0f, 70.0f, 0.1f, 0.85f), 0.1f, 0.85f);
-        entities.regions.getComponent<ComponentWorldText>().setColor(Theme::text * alpha(f));
+        entities.regions.getComponent<ComponentWorldText>().setColor(Colors::text * alpha(f));
     }
 
     // Update system names
     if (entities.names) {
         const auto f = 1.0f - glm::clamp(map(camera->getOrthoScale(), 20.0f, 100.0f, 0.5f, 1.0f), 0.5f, 1.0f);
-        entities.names.getComponent<ComponentWorldText>().setColor(Theme::text * alpha(f));
+        entities.names.getComponent<ComponentWorldText>().setColor(Colors::text * alpha(f));
     }
 }
 
-void ViewGalaxy::renderCanvas(Canvas2& canvas, const Vector2i& viewport) {
+void ViewGalaxy::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
 }
 
 void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
@@ -155,13 +147,13 @@ void ViewGalaxy::load() {
     entities.names = scene->createEntity();
     entities.names.addComponent<ComponentTransform>();
     auto& names = entities.names.addComponent<ComponentWorldText>(
-        font.get(FontFace::Regular), Theme::text * alpha(0.5f), config.guiFontSize);
+        font.get(FontFace::Regular), Colors::text * alpha(0.5f), config.guiFontSize);
     names.setOffset(Vector2{0, -config.guiFontSize});
 
     entities.regions = scene->createEntity();
     entities.regions.addComponent<ComponentTransform>();
     auto& regionsNames = entities.regions.addComponent<ComponentWorldText>(
-        font.get(FontFace::Regular), Theme::text * alpha(0.1f), 32.0f);
+        font.get(FontFace::Regular), Colors::text * alpha(0.1f), 32.0f);
 
     { // Create entities for regions
         logger.info("Creating regions");
@@ -260,7 +252,7 @@ void ViewGalaxy::load() {
         auto& icon = entities.currentPos.addComponent<ComponentIcon>(images.iconCurrentPos);
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
-        icon.setColor(Theme::primary);
+        icon.setColor(Colors::primary);
         icon.setSelectable(false);
     }
 
@@ -323,7 +315,6 @@ void ViewGalaxy::onEnter() {
     scene.reset();
 
     loading = true;
-    guiModalLoading.setEnabled(true);
     futureLoad = std::async([this]() { return load(); });
 }
 
@@ -336,5 +327,4 @@ void ViewGalaxy::onExit() {
             EXCEPTION_NESTED("Failed to construct galaxy scene");
         }
     }
-    guiModalLoading.setEnabled(false);
 }

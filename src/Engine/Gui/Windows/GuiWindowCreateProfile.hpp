@@ -3,7 +3,7 @@
 #include "../GuiWindow.hpp"
 
 namespace Engine {
-class GuiWindowCreateProfile : public GuiWindow2 {
+class GuiWindowCreateProfile : public GuiWindow {
 public:
     struct Result {
         std::string name;

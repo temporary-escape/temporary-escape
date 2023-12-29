@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Assets/Image.hpp"
 #include "../Font/FontFamily.hpp"
 #include "../Window.hpp"
-#include "Canvas.hpp"
 #include <any>
 #include <functional>
 #include <list>
@@ -57,7 +57,7 @@ public:
         virtual void nuklearOnClick(bool push) = 0;
     };
 
-    explicit Nuklear(EventCallback& events, const Config& config, Canvas& canvas, const FontFamily& defaultFontFamily,
+    explicit Nuklear(EventCallback& events, const Config& config, const FontFamily& defaultFontFamily,
                      int defaultFontSize);
     ~Nuklear();
 

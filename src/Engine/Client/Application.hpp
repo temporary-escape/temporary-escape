@@ -81,7 +81,7 @@ private:
     Status status;
     VulkanQueryPool renderQueryPool;
     RendererCanvas rendererCanvas;
-    Canvas2 canvas2;
+    Canvas canvas2;
     GuiManager guiManager;
 
     struct {

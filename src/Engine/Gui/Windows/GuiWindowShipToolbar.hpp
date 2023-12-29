@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API AssetsManager;
 
-class ENGINE_API GuiWindowShipToolbar : public GuiWindow2 {
+class ENGINE_API GuiWindowShipToolbar : public GuiWindow {
 public:
     explicit GuiWindowShipToolbar(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager);
 
@@ -16,5 +16,10 @@ private:
     GuiWidgetProgressBar* progressHull{nullptr};
     GuiWidgetProgressBar* progressBattery{nullptr};
     GuiWidgetProgressBar* progressGenerated{nullptr};
+
+    static const GuiStyleProgress styleProgressShields;
+    static const GuiStyleProgress styleProgressHealth;
+    static const GuiStyleProgress styleProgressBattery;
+    static const GuiStyleProgress styleProgressGenerated;
 };
 } // namespace Engine

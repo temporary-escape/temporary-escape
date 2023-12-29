@@ -5,7 +5,6 @@
 #include "../Graphics/RendererPlanetSurface.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
-#include "../Graphics/Theme.hpp"
 #include "ViewSpace.hpp"
 #include <iosevka-aile-bold.ttf.h>
 #include <iosevka-aile-light.ttf.h>
@@ -332,13 +331,13 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 void Application::renderVersion(const Vector2i& viewport) {
     (void)viewport;
 
-    static const Color4 color{Theme::text * alpha(0.5f)};
+    static const Color4 color{Colors::text * alpha(0.5f)};
     const Vector2 pos{5.0f, 5.0f + static_cast<float>(config.guiFontSize)};
     canvas2.drawText(pos, GAME_VERSION, font, config.guiFontSize, color);
 }
 
 void Application::renderFrameTime(const Vector2i& viewport) {
-    static const Color4 color{Theme::text * alpha(0.5f)};
+    static const Color4 color{Colors::text * alpha(0.5f)};
 
     const auto posX = static_cast<float>(viewport.x) - 170.0f;
     const auto fontSize = static_cast<float>(config.guiFontSize);
@@ -379,15 +378,15 @@ void Application::renderStatus(const Vector2i& viewport) {
                      status.message,
                      font,
                      config.guiFontSize,
-                     Theme::text);
+                     Colors::text);
 
     canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
                      {static_cast<float>(viewport.x) - 100.0f, 25.0f},
-                     Theme::backgroundTransparent);
+                     Colors::background);
 
     canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
                      {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
-                     Theme::primary);
+                     Colors::primary);
 }
 
 #define NEXT(expr)                                                                                                     \

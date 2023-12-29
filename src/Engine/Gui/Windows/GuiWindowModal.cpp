@@ -7,7 +7,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 GuiWindowModal::GuiWindowModal(const FontFamily& fontFamily, int fontSize, std::string title, std::string text,
                                const std::vector<std::string>& choices) :
-    GuiWindow2{fontFamily, fontSize} {
+    GuiWindow{fontFamily, fontSize} {
     setSize({350.0f, 200.0f});
     setTitle(std::move(title));
     setDynamic(true);

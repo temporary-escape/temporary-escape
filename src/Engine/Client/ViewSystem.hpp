@@ -2,9 +2,6 @@
 
 #include "../Assets/AssetsManager.hpp"
 #include "../Future.hpp"
-#include "../Graphics/Canvas.hpp"
-#include "../Graphics/Nuklear.hpp"
-#include "../Gui/GuiModalLoading.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Schemas.hpp"
 #include "../Utils/StopToken.hpp"
@@ -21,7 +18,7 @@ public:
     ~ViewSystem() = default;
 
     void update(float deltaTime, const Vector2i& viewport) override;
-    void renderCanvas(Canvas2& canvas, const Vector2i& viewport) override;
+    void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
     void eventMouseMoved(const Vector2i& pos) override;
     void eventMousePressed(const Vector2i& pos, MouseButton button) override;
     void eventMouseReleased(const Vector2i& pos, MouseButton button) override;
@@ -48,7 +45,6 @@ private:
     VoxelShapeCache& voxelShapeCache;
     Client& client;
     FontFamily& font;
-    GuiModalLoading guiModalLoading;
     std::unique_ptr<Scene> scene;
 
     struct {

@@ -3,7 +3,7 @@
 #include "../GuiWindow.hpp"
 
 namespace Engine {
-class GuiWindowModal : public GuiWindow2 {
+class GuiWindowModal : public GuiWindow {
 public:
     using OnClickCallback = std::function<void(const std::string&)>;
 

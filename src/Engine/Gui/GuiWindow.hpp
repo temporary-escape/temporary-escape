@@ -16,49 +16,10 @@
 #include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {
-class ENGINE_API GuiWindow {
+class ENGINE_API GuiWindow : public GuiContext, public GuiWidgetLayout {
 public:
-    GuiWindow();
+    GuiWindow(const FontFamily& fontFamily, int fontSize);
     virtual ~GuiWindow() = default;
-
-    void draw(Nuklear& nuklear, const Vector2& viewport);
-
-    const Vector2& getSize() const;
-    const Vector2& getPos() const;
-    Nuklear::Flags getFlags() const;
-    void setSize(const Vector2& value);
-    void setEnabled(bool value);
-    void setPos(const Vector2& value);
-    void setFlags(unsigned int value);
-    const std::string& getTitle() const;
-    void setTitle(const std::string& value);
-    void setBordered();
-    void setAlwaysBackground();
-    void setNoScrollbar();
-    void setDynamic();
-    void setFontSize(int size);
-    bool isCursorInside(const Vector2i& mousePos);
-
-    bool isEnabled() const {
-        return enabled;
-    }
-
-protected:
-    virtual void beforeDraw(Nuklear& nuklear, const Vector2& viewport);
-    virtual void drawLayout(Nuklear& nuklear) = 0;
-
-    bool enabled{true};
-    std::string title;
-    Vector2 size{100.0f, 100.0f};
-    Vector2 pos{0.0f, 0.0f};
-    Nuklear::Flags flags{0};
-    int fontSize{0};
-};
-
-class ENGINE_API GuiWindow2 : public GuiContext, public GuiWidgetLayout {
-public:
-    GuiWindow2(const FontFamily& fontFamily, int fontSize);
-    virtual ~GuiWindow2() = default;
 
     virtual void update(const Vector2i& viewport);
     void draw() override;
@@ -92,6 +53,7 @@ public:
     void setHeaderDanger(bool value);
 
 private:
+    std::string id;
     std::string title{"Window"};
     Vector2 size;
     Vector2 pos;

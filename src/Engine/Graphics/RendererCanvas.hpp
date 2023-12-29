@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Vulkan/VulkanRenderer.hpp"
-#include "Canvas2.hpp"
+#include "Canvas.hpp"
 
 namespace Engine {
 class RendererCanvas {
@@ -9,7 +9,7 @@ public:
     explicit RendererCanvas(VulkanRenderer& vulkan);
 
     void reset();
-    void render(VulkanCommandBuffer& vkb, Canvas2& canvas, const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, Canvas& canvas, const Vector2i& viewport);
 
 private:
     void create();
