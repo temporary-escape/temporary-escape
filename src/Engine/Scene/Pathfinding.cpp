@@ -6,14 +6,6 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-/*#define NODE_ADDRESS_MASK 0xFFFFFFULL
-#define NODE_CHILD_OFFSET 0ULL
-#define NODE_CHILD_MASK (NODE_ADDRESS_MASK << NODE_CHILD_OFFSET)
-#define NODE_NEXT_OFFSET 24ULL
-#define NODE_NEXT_MASK (NODE_ADDRESS_MASK << NODE_NEXT_OFFSET)
-#define NODE_INDEX_OFFSET 48ULL
-#define NODE_INDEX_MASK (0x07ULL << NODE_INDEX_OFFSET)*/
-
 template <typename V>
 static inline glm::vec<3, V> idxToOffset(const int idx, const glm::vec<3, V>& origin, const V size) {
     using Vec = glm::vec<3, V>;
@@ -63,7 +55,7 @@ static inline bool isInsideBox(const Vector3i& origin, const int width, const Ve
 }
 
 Pathfinding::Pathfinding(Tester& tester, const int depth, const int scale) :
-    tester{tester}, depth{depth}, scale{scale}, count{0} {
+    tester{tester}, depth{depth}, scale{scale}, levels{} {
 
     // Create all layers
     for (auto d = 0; d < depth; d++) {
@@ -76,28 +68,43 @@ Pathfinding::Pathfinding(Tester& tester, const int depth, const int scale) :
     root.children = 0;
 }
 
-size_t Pathfinding::build() {
+void Pathfinding::build() {
     logger.info("Pathfinding building of size: {} units", std::pow(2, depth) * scale);
     const auto t0 = std::chrono::high_resolution_clock::now();
-    const auto hits = build(0, {0, 0, 0}, 0);
+    build(0, {0, 0, 0}, 0);
+    optimize();
     const auto t1 = std::chrono::high_resolution_clock::now();
     const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
-    logger.info("Pathfinding built in {}ms with {} nodes", diff.count(), count);
-
-    for (size_t level = 0; level < temp.size(); level++) {
-        logger.info("Pathfinding level: {} node count: {}", level, temp[level].size());
-    }
-
-    return hits;
+    logger.info("Pathfinding built in {}ms with {} nodes", diff.count(), nodes.size());
 }
 
 bool Pathfinding::find(const Vector3& pos) {
     return find(0, {0, 0, 0}, 0, pos);
 }
 
-size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) {
-    size_t result{0};
+void Pathfinding::optimize() {
+    for (int level = 0; level < depth; level++) {
+        // Allocate the level into the continuous array
+        const auto start = allocateNodes(temp[level].size());
 
+        logger.debug("Pathfinding optimize copying level: {} to offset: {} of size: {}", level, start, temp[level].size());
+
+        // Copy the nodes over
+        std::memcpy(&nodes[start], &temp[level][0], temp[level].size() * sizeof(Node));
+
+        // Update the offsets in this layer
+        // The start of the next layer is exactly at the end of this layer
+        for (size_t i = start; i < start + temp[level].size(); i++) {
+            nodes[i].offset += start + temp[level].size();
+        }
+    }
+
+    // Free the temp nodes memory
+    temp.clear();
+    temp.shrink_to_fit();
+}
+
+void Pathfinding::build(Index index, const Vector3i& origin, const int level) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
     if (nodeWidth < 4) {
@@ -111,8 +118,6 @@ size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) 
         const auto childOrigin = idxToOffset<int>(idx, origin, nodeWidth);
 
         if (tester.contactTestBox(childOrigin, childWidth)) {
-            ++result;
-
             children |= 1 << idx;
         }
     }
@@ -127,12 +132,20 @@ size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) 
         for (int idx = 0; idx < 8; idx++) {
             if (children & (1 << idx)) {
                 const auto childOrigin = idxToOffset<int>(idx, origin, nodeWidth);
-                result += build(node.offset + idx, childOrigin, level + 1);
+                build(node.offset + idx, childOrigin, level + 1);
             }
         }
     }
+}
 
-    return result;
+Pathfinding::Index Pathfinding::allocateNodes(const size_t num) {
+    if (nodes.size() + num > nodes.capacity()) {
+        nodes.reserve(nodes.capacity() + nodeCapacityMultipler);
+    }
+
+    const auto offset = nodes.size();
+    nodes.resize(offset + num);
+    return static_cast<Index>(offset);
 }
 
 Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
@@ -146,8 +159,6 @@ Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
         layer.reserve(layer.size() + std::min<size_t>(nodeCapacityMultipler, expectedNodes));
     }
 
-    count += 8;
-
     const auto offset = layer.size();
     layer.resize(layer.size() + 8);
     return static_cast<Index>(offset);
@@ -158,7 +169,7 @@ bool Pathfinding::find(const Index index, const Vector3i& origin, const int leve
 
     const auto childWidth = nodeWidth / 2;
 
-    auto& node = temp[level][index];
+    auto& node = nodes[index];
 
     for (int idx = 0; idx < 8; idx++) {
         if (node.children & (1 << idx)) {

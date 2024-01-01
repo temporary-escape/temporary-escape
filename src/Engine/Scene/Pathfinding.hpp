@@ -30,7 +30,7 @@ public:
 
     //size_t addNode();
 
-    size_t build();
+    void build();
     bool find(const Vector3& pos);
     //void iterate(const std::function<void(const Vector3i&, int)>& fn);
 
@@ -40,10 +40,6 @@ public:
 
     [[nodiscard]] int getScale() const {
         return scale;
-    }
-
-    [[nodiscard]] size_t getCount() const {
-        return count;
     }
 
 private:
@@ -58,7 +54,9 @@ private:
     };*/
 
     Index allocateTempNodes(int level);
-    size_t build(Index index, const Vector3i& origin, int level);
+    Index allocateNodes(size_t num);
+    void optimize();
+    void build(Index index, const Vector3i& origin, int level);
     bool find(Index index, const Vector3i& origin, int level, const Vector3& pos);
     //void iterate(size_t node, const Vector3i& origin, int level, const std::function<void(const Vector3i&, int)>& fn);
 
@@ -68,10 +66,10 @@ private:
     Tester& tester;
     const int depth;
     const int scale;
-    size_t count;
     //std::vector<Bucket> buckets;
-    //std::vector<Node> nodes;
 
+    std::vector<Node> nodes;
     Layers temp;
+    std::array<size_t, 16> levels;
 };
 } // namespace Engine
