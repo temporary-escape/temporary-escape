@@ -52,17 +52,17 @@ TEST_CASE_METHOD(SceneFixture, "Check if box overlaps with dynamics world", "[Sc
     }
 }
 
-/*TEST_CASE_METHOD(SceneFixture, "Build pathfinding tree and find node", "[Scene]") {
+TEST_CASE_METHOD(SceneFixture, "Build pathfinding tree and find node", "[Scene]") {
     auto sphere = CollisionShape::createSphere(1.0f);
 
     for (auto z = -128; z <= 128; z += 32) {
         auto entity = scene->createEntity();
         auto& transform = entity.addComponent<ComponentTransform>();
         transform.move({5.0f, 5.0f, static_cast<float>(z) + 16.0f});
-        // transform.setStatic(true);
+        transform.setStatic(true);
 
         auto& rigidBody = entity.addComponent<ComponentRigidBody>();
-        // rigidBody.setMass(0.0f);
+        rigidBody.setMass(0.0f);
         rigidBody.setScale(1.0f);
         rigidBody.setShape(sphere);
     }
@@ -75,4 +75,4 @@ TEST_CASE_METHOD(SceneFixture, "Check if box overlaps with dynamics world", "[Sc
 
     REQUIRE(pathfinding.getOctree().find({5.0f, 5.0f, -128.0f + 16.0f}) != 0);
     REQUIRE(pathfinding.getOctree().find({5.0f, 64.0f, -128.0f + 16.0f}) == 0);
-}*/
+}

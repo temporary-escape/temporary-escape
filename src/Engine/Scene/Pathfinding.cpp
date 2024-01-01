@@ -67,50 +67,14 @@ Pathfinding::Pathfinding(Tester& tester, const int depth, const int scale) :
 
     // Create all layers
     for (auto d = 0; d < depth; d++) {
-        layers.emplace_back();
+        temp.emplace_back();
     }
 
     // Create the root node
-    auto& root = layers[0].emplace_back();
+    auto& root = temp[0].emplace_back();
     root.offset = 0;
     root.children = 0;
 }
-
-/*size_t Pathfinding::addNode() {
-    for (size_t b = 0; b < buckets.size(); b++) {
-        auto& bucket = buckets.at(b);
-        const auto offset = b * bucketSize;
-
-        // Does the bucket have free space?
-        if (bucket.used < bucketSize) {
-            // Fast check if the next (a suggestion) is an empty node
-            if (nodes.at(offset + bucket.next) == 0) {
-                bucket.used++;
-                count++;
-                return offset + bucket.next++;
-            }
-
-            // Find an empty node in the bucket
-            for (size_t i = 0; i < bucketSize; i++) {
-                if (nodes.at(offset + i) == 0) {
-                    bucket.next = offset + i + 1;
-                    count++;
-                    bucket.used++;
-                    return offset + i;
-                }
-            }
-        }
-    }
-
-    // Buckets are full, add a new one
-    nodes.resize(nodes.capacity() + bucketSize);
-    const auto offset = buckets.size() * bucketSize;
-    auto& bucket = buckets.emplace_back();
-    count++;
-    bucket.used++;
-    bucket.next = 1;
-    return nodes.at(offset + 0);
-}*/
 
 size_t Pathfinding::build() {
     logger.info("Pathfinding building of size: {} units", std::pow(2, depth) * scale);
@@ -120,39 +84,21 @@ size_t Pathfinding::build() {
     const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
     logger.info("Pathfinding built in {}ms with {} nodes", diff.count(), count);
 
-    for (size_t level = 0; level < layers.size(); level++) {
-        logger.info("Pathfinding level: {} node count: {}", level, layers[level].size());
+    for (size_t level = 0; level < temp.size(); level++) {
+        logger.info("Pathfinding level: {} node count: {}", level, temp[level].size());
     }
 
     return hits;
 }
 
-/*size_t Pathfinding::find(const Vector3& pos) {
+bool Pathfinding::find(const Vector3& pos) {
     return find(0, {0, 0, 0}, 0, pos);
-}*/
-
-/*void Pathfinding::iterate(const std::function<void(const Vector3i&, int)>& fn) {
-    return iterate(0, {0, 0, 0}, 0, fn);
-}*/
-
-/*inline void Pathfinding::setNodeValue(const size_t node, const uint64_t offset, const uint64_t mask,
-                                      const uint64_t value) {
-    nodes.at(node) = (nodes.at(node) & ~mask) | ((value << offset) & mask);
-}*/
-
-/*inline uint64_t Pathfinding::getNodeValue(const size_t node, const uint64_t offset, const uint64_t mask) {
-    return (nodes.at(node) & mask) >> offset;
-}*/
+}
 
 size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) {
     size_t result{0};
 
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
-    /*logger.info("Building node: {} origin: {} level: {} width: {}",
-                reinterpret_cast<uint64_t>(&node),
-                origin,
-                level,
-                nodeWidth);*/
 
     if (nodeWidth < 4) {
         EXCEPTION("Pathfinding node width is too small at level: {}", level);
@@ -167,20 +113,16 @@ size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) 
         if (tester.contactTestBox(childOrigin, childWidth)) {
             ++result;
 
-            /*if (level + 1 != depth) {
-                result += build(node, childOrigin, level + 1);
-            }*/
-
             children |= 1 << idx;
         }
     }
 
-    auto& node = layers[level][index];
+    auto& node = temp[level][index];
     node.children = children;
     node.offset = 0;
 
     if (children && level + 1 != depth) {
-        node.offset = allocateNodes(level + 1);
+        node.offset = allocateTempNodes(level + 1);
 
         for (int idx = 0; idx < 8; idx++) {
             if (children & (1 << idx)) {
@@ -191,55 +133,14 @@ size_t Pathfinding::build(Index index, const Vector3i& origin, const int level) 
     }
 
     return result;
-
-    /*for (int idx = 0; idx < 8; idx++) {
-        const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
-
-        if (tester.contactTestBox(childOrigin, static_cast<float>(childWidth))) {
-            // logger.info("Contact test success origin: {} width: {}", childOrigin, childWidth);
-            const auto child = addNode();
-
-            // Is this the first child?
-            if (previous == node) {
-                setNodeValue(previous, NODE_CHILD_OFFSET, NODE_CHILD_MASK, child);
-                previous = child;
-            }
-            // Must be a neighbour
-            else {
-                setNodeValue(previous, NODE_NEXT_OFFSET, NODE_NEXT_MASK, child);
-                previous = child;
-            }
-
-            setNodeValue(previous, NODE_INDEX_OFFSET, NODE_INDEX_MASK, idx);
-
-            if (level + 1 == depth) {
-                logger.info("Leaf origin: {} width: {}", childOrigin, childWidth);
-            } else {
-                 logger.info("Branch origin: {} width: {}", childOrigin, childWidth);
-            }
-        }
-    }
-
-    if (level + 1 < depth) {
-        auto child = getNodeValue(node, NODE_CHILD_OFFSET, NODE_CHILD_MASK);
-
-        while (child) {
-            const auto idx = static_cast<int>(getNodeValue(child, NODE_INDEX_OFFSET, NODE_INDEX_MASK));
-            const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
-
-            build(child, childOrigin, level + 1);
-
-            child = getNodeValue(child, NODE_NEXT_OFFSET, NODE_NEXT_MASK);
-        }
-    }*/
 }
 
-Pathfinding::Index Pathfinding::allocateNodes(const int level) {
-    if (level <= 0 || level >= layers.size()) {
+Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
+    if (level <= 0 || level >= temp.size()) {
         EXCEPTION("Failed to allocate nodes, error: level {} out of bounds", level);
     }
 
-    auto& layer = layers[level];
+    auto& layer = temp[level];
     if (layer.size() + 8 > layer.capacity()) {
         const auto expectedNodes = static_cast<size_t>(std::pow(2, level - 1));
         layer.reserve(layer.size() + std::min<size_t>(nodeCapacityMultipler, expectedNodes));
@@ -252,53 +153,29 @@ Pathfinding::Index Pathfinding::allocateNodes(const int level) {
     return static_cast<Index>(offset);
 }
 
-/*size_t Pathfinding::find(size_t node, const Vector3i& origin, const int level, const Vector3& pos) {
+bool Pathfinding::find(const Index index, const Vector3i& origin, const int level, const Vector3& pos) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
     const auto childWidth = nodeWidth / 2;
 
-    auto child = getNodeValue(node, NODE_CHILD_OFFSET, NODE_CHILD_MASK);
+    auto& node = temp[level][index];
 
-    while (child) {
-        const auto idx = static_cast<int>(getNodeValue(child, NODE_INDEX_OFFSET, NODE_INDEX_MASK));
-        const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
+    for (int idx = 0; idx < 8; idx++) {
+        if (node.children & (1 << idx)) {
+            const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
 
-        if (isInsideBox(childOrigin, childWidth, pos)) {
-            if (level + 1 == depth) {
-                return child;
-            } else {
-                const auto test = find(child, childOrigin, level + 1, pos);
-                if (test) {
-                    return test;
+            if (isInsideBox(childOrigin, childWidth, pos)) {
+                if (level + 1 == depth) {
+                    return true;
+                } else {
+                    const auto test = find(node.offset + idx, childOrigin, level + 1, pos);
+                    if (test) {
+                        return true;
+                    }
                 }
             }
         }
-
-        child = getNodeValue(child, NODE_NEXT_OFFSET, NODE_NEXT_MASK);
     }
 
-    return 0;
-}*/
-
-/*void Pathfinding::iterate(size_t node, const Vector3i& origin, int level,
-                          const std::function<void(const Vector3i&, int)>& fn) {
-
-    const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
-
-    const auto childWidth = nodeWidth / 2;
-
-    auto child = getNodeValue(node, NODE_CHILD_OFFSET, NODE_CHILD_MASK);
-
-    while (child) {
-        const auto idx = static_cast<int>(getNodeValue(child, NODE_INDEX_OFFSET, NODE_INDEX_MASK));
-        const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
-
-        if (level + 1 == depth) {
-            fn(childOrigin, childWidth);
-        } else {
-            iterate(child, childOrigin, level + 1, fn);
-        }
-
-        child = getNodeValue(child, NODE_NEXT_OFFSET, NODE_NEXT_MASK);
-    }
-}*/
+    return false;
+}
