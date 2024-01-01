@@ -28,7 +28,7 @@ public:
         return octree;
     }
 
-    bool contactTestBox(const Vector3& pos, float width) override;
+    bool contactTestBox(const Vector3i& pos, int width) override;
 
 private:
     entt::registry& reg;

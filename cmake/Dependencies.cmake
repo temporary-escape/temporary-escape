@@ -47,6 +47,7 @@ find_package(Voronoi CONFIG REQUIRED)
 find_package(Bullet CONFIG REQUIRED)
 find_package(Vorbis CONFIG REQUIRED)
 find_package(MicroPather CONFIG REQUIRED)
+find_package(libmorton CONFIG REQUIRED)
 
 if (APPLE)
     file(GLOB LIB_VULKAN_DYLIBS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/vulkan-sdk/libvulkan*.dylib")

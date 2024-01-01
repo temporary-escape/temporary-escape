@@ -75,9 +75,7 @@ target_link_libraries(${PROJECT_NAME}Engine
         spdlog::spdlog
         glm::glm
         VulkanHeaders::VulkanHeaders
-        EnTT::EnTT)
-
-target_link_libraries(${PROJECT_NAME}Engine
+        EnTT::EnTT
         PRIVATE
         Png
         LibXml2::LibXml2
@@ -106,7 +104,8 @@ target_link_libraries(${PROJECT_NAME}Engine
         ${BULLET_LIBRARIES}
         Vorbis::vorbis
         Vorbis::vorbisfile
-        MicroPather)
+        MicroPather
+        libmorton::libmorton)
 
 # The main target
 if (MSVC)
