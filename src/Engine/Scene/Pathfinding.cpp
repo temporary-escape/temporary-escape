@@ -43,15 +43,53 @@ static inline glm::vec<3, V> idxToOffset(const int idx, const glm::vec<3, V>& or
     }
 }
 
+template <typename... Args>
+static inline uint8_t idxToMask(const Args... args) {
+    uint8_t result{0};
+    ((result |= 1 << args), ...);
+    return result;
+}
+
+static std::array<uint8_t, 6> sidesMask = {
+    // Positive X
+    idxToMask(0, 3, 4, 7),
+    // Negative X
+    idxToMask(1, 2, 5, 6),
+    // Positive Y
+    idxToMask(0, 1, 2, 3),
+    // Negative Y
+    idxToMask(4, 5, 6, 7),
+    // Positive Z
+    idxToMask(0, 1, 4, 5),
+    // Negative Z
+    idxToMask(2, 3, 6, 7),
+};
+
+static inline int getHashCodeLevel(const Pathfinding::HashCode code) {
+    int level = 0;
+    while (true) {
+        const auto test = 0x0FULL << (level * 4ULL);
+        if (!(test & code)) {
+            break;
+        }
+        ++level;
+    }
+    return level - 1;
+}
+
 static inline bool isInsideBox(const Vector3i& origin, const int width, const Vector3i& pos) {
     const auto half = width / 2;
 
-    if (pos.x > origin.x - half && pos.x < origin.x + half && pos.y > origin.y - half && pos.y < origin.y + half &&
-        pos.z > origin.z - half && pos.z < origin.z + half) {
+    if (pos.x >= origin.x - half && pos.x < origin.x + half && pos.y >= origin.y - half && pos.y < origin.y + half &&
+        pos.z >= origin.z - half && pos.z < origin.z + half) {
         return true;
     }
 
     return false;
+}
+
+static int64_t heuristic(const Vector3i& a, const Vector3i& b) {
+    return glm::abs(a.x - b.x) + glm::abs(a.y - b.y) + glm::abs(a.z - b.z);
 }
 
 Pathfinding::Pathfinding(Tester& tester, const int depth, const int scale) :
@@ -78,8 +116,31 @@ void Pathfinding::build() {
     logger.info("Pathfinding built in {}ms with {} nodes", diff.count(), nodes.size());
 }
 
-bool Pathfinding::find(const Vector3& pos) {
-    return find(0, {0, 0, 0}, 0, pos);
+std::optional<Pathfinding::HashCode> Pathfinding::find(const Vector3& pos) {
+    return find(0, {0, 0, 0}, 0, HashCode{0}, pos);
+}
+
+Pathfinding::NodeInfo Pathfinding::findNearest(const Vector3& pos, int maxLevel) {
+    return findNearest(0, {0, 0, 0}, 0, HashCode{0}, pos, maxLevel);
+}
+
+bool Pathfinding::findPath(const Vector3& from, const Vector3& to) {
+    const auto start = findNearest(from);
+    if (!start) {
+        return false;
+    }
+
+    const auto goal = findNearest(to);
+    if (!goal) {
+        return false;
+    }
+
+    logger.info("Start pos: {} level: {} code: {:x}", start.pos, start.level, start.code);
+    logger.info("Goal pos: {} level: {} code: {:x}", goal.pos, goal.level, goal.code);
+
+    getNeighbours(start);
+
+    return true;
 }
 
 void Pathfinding::optimize() {
@@ -87,7 +148,8 @@ void Pathfinding::optimize() {
         // Allocate the level into the continuous array
         const auto start = allocateNodes(temp[level].size());
 
-        logger.debug("Pathfinding optimize copying level: {} to offset: {} of size: {}", level, start, temp[level].size());
+        logger.debug(
+            "Pathfinding optimize copying level: {} to offset: {} of size: {}", level, start, temp[level].size());
 
         // Copy the nodes over
         std::memcpy(&nodes[start], &temp[level][0], temp[level].size() * sizeof(Node));
@@ -164,7 +226,50 @@ Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
     return static_cast<Index>(offset);
 }
 
-bool Pathfinding::find(const Index index, const Vector3i& origin, const int level, const Vector3& pos) {
+void Pathfinding::getNeighbours(const NodeInfo& info) {
+    const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - info.level)));
+    const auto childWidth = nodeWidth / 2;
+
+    const auto found = findNearest(info.pos + Vector3i{nodeWidth, 0, 0}, info.level);
+    logger.info("Found nearest -x code: {:x} pos: {} level: {}", found.code, found.pos, found.level);
+
+    /*std::array<Vector3i, 6> neighbours = {
+        info.pos + Vector3i{childWidth, 0, 0},
+        info.pos + Vector3i{0, childWidth, 0},
+
+        info.pos + Vector3i{-childWidth, 0, 0},
+        info.pos + Vector3i{0, -childWidth, 0},
+
+        info.pos + Vector3i{0, 0, childWidth},
+        info.pos + Vector3i{0, 0, -childWidth},
+    };*/
+}
+
+void Pathfinding::getNeighboursSide(const Vector3i& pos, const uint8_t side) {
+    logger.info("Looking for neighbours at: {} side: {}", pos, side);
+    getNeighboursSide(0, {0, 0, 0}, 0, HashCode{0}, pos, side);
+}
+
+void Pathfinding::getNeighboursSide(const Index index, const Vector3i& origin, const int level, const HashCode previous,
+                                    const Vector3i& pos, const uint8_t side) {
+    const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
+
+    const auto childWidth = nodeWidth / 2;
+
+    auto& node = nodes[index];
+
+    for (int idx = 0; idx < 8; idx++) {
+        if (node.children & (1 << idx) && sidesMask[side]) {
+            const auto nextCode = previous | (((idx + 1) & 0x0F) << (level * 4));
+            const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
+
+
+        }
+    }
+}
+
+std::optional<Pathfinding::HashCode> Pathfinding::find(const Index index, const Vector3i& origin, const int level,
+                                                       const HashCode previous, const Vector3& pos) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
     const auto childWidth = nodeWidth / 2;
@@ -173,20 +278,55 @@ bool Pathfinding::find(const Index index, const Vector3i& origin, const int leve
 
     for (int idx = 0; idx < 8; idx++) {
         if (node.children & (1 << idx)) {
+            const auto nextCode = previous | (((idx + 1) & 0x0F) << (level * 4));
             const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
 
             if (isInsideBox(childOrigin, childWidth, pos)) {
                 if (level + 1 == depth) {
-                    return true;
+                    return nextCode;
                 } else {
-                    const auto test = find(node.offset + idx, childOrigin, level + 1, pos);
+                    const auto test = find(node.offset + idx, childOrigin, level + 1, nextCode, pos);
                     if (test) {
-                        return true;
+                        return test;
                     }
                 }
             }
         }
     }
 
-    return false;
+    return std::nullopt;
+}
+
+Pathfinding::NodeInfo Pathfinding::findNearest(const Index index, const Vector3i& origin, const int level,
+                                             const HashCode previous, const Vector3& pos, int maxLevel) {
+    const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
+
+    const auto childWidth = nodeWidth / 2;
+
+    auto& node = nodes[index];
+
+    for (int idx = 0; idx < 8; idx++) {
+        const auto nextCode = previous | HashCode{(idx & 0x0FULL) << (level * 4ULL)};
+        const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
+
+        if (isInsideBox(childOrigin, childWidth, pos)) {
+            if (level + 1 != depth && node.children & (1 << idx) && level + 1 < maxLevel) {
+                return findNearest(node.offset + idx, childOrigin, level + 1, nextCode, pos, maxLevel);
+            } else {
+                return NodeInfo{
+                    .pos = childOrigin,
+                    .offset = static_cast<Index>(node.offset + idx),
+                    .code = nextCode,
+                    .level = level + 1,
+                };
+            }
+        }
+    }
+
+    return {
+        .pos = {0, 0, 0},
+        .offset = 0,
+        .code = 0,
+        .level = 0,
+    };
 }

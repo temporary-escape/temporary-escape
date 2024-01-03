@@ -73,6 +73,8 @@ TEST_CASE_METHOD(SceneFixture, "Build pathfinding tree and find node", "[Scene]"
     auto& pathfinding = scene->getController<ControllerPathfinding>();
     pathfinding.buildTree();
 
-    REQUIRE(pathfinding.getOctree().find({5.0f, 5.0f, -128.0f + 16.0f}) != 0);
-    REQUIRE(pathfinding.getOctree().find({5.0f, 64.0f, -128.0f + 16.0f}) == 0);
+    REQUIRE(pathfinding.getOctree().find({5.0f, 5.0f, -128.0f + 16.0f}).has_value() == true);
+    REQUIRE(pathfinding.getOctree().find({5.0f, 64.0f, -128.0f + 16.0f}).has_value() == false);
+
+    REQUIRE(pathfinding.getOctree().findPath({-40.0f, 5.0f, 5.0f}, {40.0f, 5.0f, 5.0f}) == true);
 }

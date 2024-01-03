@@ -18,10 +18,27 @@ public:
 
     using Index = uint32_t;
     using ChildrenMask = uint8_t;
+    using HashCode = uint64_t;
 
     struct Node {
         Index offset;
         ChildrenMask children;
+    };
+
+    struct NodeInfo {
+        Vector3i pos;
+        Index offset;
+        HashCode code;
+        int level;
+
+        operator bool() const {
+            return offset != 0;
+        }
+    };
+
+    struct Info {
+        Index from;
+        uint32_t cost;
     };
 
     explicit Pathfinding(Tester& tester, int depth, int scale);
@@ -31,7 +48,9 @@ public:
     //size_t addNode();
 
     void build();
-    bool find(const Vector3& pos);
+    std::optional<HashCode> find(const Vector3& pos);
+    NodeInfo findNearest(const Vector3& pos, int maxLevel = std::numeric_limits<int>::max());
+    bool findPath(const Vector3& from, const Vector3& to);
     //void iterate(const std::function<void(const Vector3i&, int)>& fn);
 
     [[nodiscard]] int getDepth() const {
@@ -57,7 +76,12 @@ private:
     Index allocateNodes(size_t num);
     void optimize();
     void build(Index index, const Vector3i& origin, int level);
-    bool find(Index index, const Vector3i& origin, int level, const Vector3& pos);
+    void getNeighbours(const NodeInfo& info);
+    void getNeighboursSide(const Vector3i& pos, uint8_t side);
+    void getNeighboursSide(const Index index, const Vector3i& origin, int level, HashCode previous, const Vector3i& pos, uint8_t side);
+    std::optional<HashCode> find(Index index, const Vector3i& origin, int level, HashCode previous, const Vector3& pos);
+    NodeInfo findNearest(Index index, const Vector3i& origin, int level, HashCode previous, const Vector3& pos, int maxLevel);
+
     //void iterate(size_t node, const Vector3i& origin, int level, const std::function<void(const Vector3i&, int)>& fn);
 
     //inline void setNodeValue(size_t node, uint64_t offset, uint64_t mask, uint64_t value);
@@ -69,6 +93,7 @@ private:
     //std::vector<Bucket> buckets;
 
     std::vector<Node> nodes;
+    std::vector<Info> infos;
     Layers temp;
     std::array<size_t, 16> levels;
 };
