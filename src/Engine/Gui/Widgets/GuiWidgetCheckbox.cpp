@@ -2,25 +2,22 @@
 
 using namespace Engine;
 
-GuiWidgetCheckbox::GuiWidgetCheckbox(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {
+GuiWidgetCheckbox::GuiWidgetCheckbox(GuiContext& ctx, std::string label, bool& value) : GuiWidget{ctx}, label{std::move(label)}, value{&value} {
 }
 
 void GuiWidgetCheckbox::drawInternal() {
-    if (ctx.checkbox(label, toggle)) {
+    if (ctx.checkbox(label, *value)) {
         if (onClick) {
-            onClick(toggle);
+            onClick(*value);
         }
     }
 }
 
 void GuiWidgetCheckbox::setLabel(std::string value) {
     label = std::move(value);
+    ctx.setDirty();
 }
 
 void GuiWidgetCheckbox::setOnClick(OnClickCallback value) {
     onClick = std::move(value);
-}
-
-void GuiWidgetCheckbox::setValue(const bool value) {
-    toggle = value;
 }

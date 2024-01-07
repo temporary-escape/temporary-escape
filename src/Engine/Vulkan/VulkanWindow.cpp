@@ -382,6 +382,7 @@ void VulkanWindow::setWindowFullScreen(const bool value) {
 }
 
 void VulkanWindow::setWindowResolution(const Vector2i& size) {
+    logger.info("Setting window resolution to: {}", size);
     currentWindowSize = size;
     glfwSetWindowSize(window.get(), currentWindowSize.x, currentWindowSize.y);
 }

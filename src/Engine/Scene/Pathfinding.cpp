@@ -1,6 +1,7 @@
 #include "Pathfinding.hpp"
 #include "../Utils/Exceptions.hpp"
 #include "../Utils/Log.hpp"
+#include <queue>
 
 using namespace Engine;
 
@@ -44,13 +45,13 @@ static inline glm::vec<3, V> idxToOffset(const int idx, const glm::vec<3, V>& or
 }
 
 template <typename... Args>
-static inline uint8_t idxToMask(const Args... args) {
+static inline constexpr uint8_t idxToMask(const Args... args) {
     uint8_t result{0};
     ((result |= 1 << args), ...);
     return result;
 }
 
-static std::array<uint8_t, 6> sidesMask = {
+static constexpr std::array<uint8_t, 6> sidesMask = {
     // Positive X
     idxToMask(0, 3, 4, 7),
     // Negative X
@@ -125,20 +126,54 @@ Pathfinding::NodeInfo Pathfinding::findNearest(const Vector3& pos, int maxLevel)
 }
 
 bool Pathfinding::findPath(const Vector3& from, const Vector3& to) {
-    const auto start = findNearest(from);
-    if (!start) {
+    const auto t0 = std::chrono::high_resolution_clock::now();
+
+    QueryData data;
+
+    data.start = findNearest(from);
+    if (!data.start) {
         return false;
     }
 
-    const auto goal = findNearest(to);
-    if (!goal) {
+    data.goal = findNearest(to);
+    if (!data.goal) {
         return false;
     }
 
-    logger.info("Start pos: {} level: {} code: {:x}", start.pos, start.level, start.code);
-    logger.info("Goal pos: {} level: {} code: {:x}", goal.pos, goal.level, goal.code);
+    logger.info("Start pos: {} level: {} code: {:x}", data.start.pos, data.start.level, data.start.code);
+    logger.info("Goal pos: {} level: {} code: {:x}", data.goal.pos, data.goal.level, data.goal.code);
 
-    getNeighbours(start);
+    /*if (infos.size() != nodes.size()) {
+        infos.resize(nodes.size());
+    }
+    std::memset(infos.data(), 0, infos.size() * sizeof(Info));*/
+
+    // getNeighbours(start);
+
+    std::vector<NodeInfoDistance> frontierVec;
+    frontierVec.reserve(1 * 1024);
+    data.frontier = std::priority_queue<NodeInfoDistance>(std::less<NodeInfoDistance>(), std::move(frontierVec));
+    data.frontier.emplace(NodeInfoDistance{data.start, 0});
+
+    data.costSoFar.reserve(1 * 1024);
+    data.costSoFar[data.start.code] = Info{.from = 0, .cost = 0,};
+
+    size_t count{0};
+
+    while (!data.frontier.empty()) {
+        data.current = data.frontier.top();
+        data.frontier.pop();
+
+        if (data.current.info.code == data.goal.code) {
+            break;
+        }
+
+        getNeighbours(data.current.info, data);
+    }
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+    logger.info("Pathfinding found in {}ms count: {}", diff.count(), count);
 
     return true;
 }
@@ -157,7 +192,9 @@ void Pathfinding::optimize() {
         // Update the offsets in this layer
         // The start of the next layer is exactly at the end of this layer
         for (size_t i = start; i < start + temp[level].size(); i++) {
-            nodes[i].offset += start + temp[level].size();
+            //if (nodes[i].offset) {
+                nodes[i].offset += start + temp[level].size();
+            //}
         }
     }
 
@@ -195,6 +232,10 @@ void Pathfinding::build(Index index, const Vector3i& origin, const int level) {
             if (children & (1 << idx)) {
                 const auto childOrigin = idxToOffset<int>(idx, origin, nodeWidth);
                 build(node.offset + idx, childOrigin, level + 1);
+            } else {
+                auto& child = temp[level + 1][node.offset + idx];
+                child.offset = 0;
+                child.children = 0;
             }
         }
     }
@@ -226,44 +267,89 @@ Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
     return static_cast<Index>(offset);
 }
 
-void Pathfinding::getNeighbours(const NodeInfo& info) {
+void Pathfinding::getNeighbours(const NodeInfo& info, QueryData& data) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - info.level)));
-    const auto childWidth = nodeWidth / 2;
 
-    const auto found = findNearest(info.pos + Vector3i{nodeWidth, 0, 0}, info.level);
-    logger.info("Found nearest -x code: {:x} pos: {} level: {}", found.code, found.pos, found.level);
+    std::array<NodeInfo, 6> neighbours = {
+        findNearest(info.pos + Vector3i{nodeWidth, 0, 0}, info.level),
+        findNearest(info.pos + Vector3i{-nodeWidth, 0, 0}, info.level),
+        findNearest(info.pos + Vector3i{0, nodeWidth, 0}, info.level),
+        findNearest(info.pos + Vector3i{0, -nodeWidth, 0}, info.level),
+        findNearest(info.pos + Vector3i{0, 0, nodeWidth}, info.level),
+        findNearest(info.pos + Vector3i{0, 0, -nodeWidth}, info.level)
+    };
 
-    /*std::array<Vector3i, 6> neighbours = {
-        info.pos + Vector3i{childWidth, 0, 0},
-        info.pos + Vector3i{0, childWidth, 0},
+    for (size_t i = 0; i < neighbours.size(); i++) {
+        if (!neighbours[i]) {
+            continue;
+        }
 
-        info.pos + Vector3i{-childWidth, 0, 0},
-        info.pos + Vector3i{0, -childWidth, 0},
+        if (neighbours[i].level == depth) {
+            processNeighbour(neighbours[i], data);
+            continue;
+        }
 
-        info.pos + Vector3i{0, 0, childWidth},
-        info.pos + Vector3i{0, 0, -childWidth},
-    };*/
+        auto side = static_cast<int>(i);
+        if (side % 2 == 0) {
+            ++side;
+        } else {
+            --side;
+        }
+        /*if (neighbour) {
+            logger.info("Found neighbour code: {:x} pos: {} level: {}", neighbour.code, neighbour.pos, neighbour.level);
+        }*/
+        const auto& n = neighbours[i];
+        getNeighboursSide(n.offset, n.pos, n.level, n.code, side, data);
+    }
+
+    //const auto& n = neighbours[0];
+    // getNeighboursSide(n.offset, n.pos, n.level, n.code, 1, callback);
 }
 
-void Pathfinding::getNeighboursSide(const Vector3i& pos, const uint8_t side) {
-    logger.info("Looking for neighbours at: {} side: {}", pos, side);
-    getNeighboursSide(0, {0, 0, 0}, 0, HashCode{0}, pos, side);
+void Pathfinding::processNeighbour(const NodeInfo& next, QueryData& data) {
+    const auto newCost = data.costSoFar[data.current.info.code].cost + heuristic(data.current.info.pos, next.pos);
+    if (data.costSoFar.find(next.code) == data.costSoFar.end() || newCost < data.costSoFar[next.code].cost) {
+        data.costSoFar[next] = Info{.from = data.current.info.code, .cost = newCost,};
+        const auto priority = newCost + heuristic(next.pos, data.goal.pos);
+        data.frontier.push(NodeInfoDistance{next, priority});
+    }
 }
 
 void Pathfinding::getNeighboursSide(const Index index, const Vector3i& origin, const int level, const HashCode previous,
-                                    const Vector3i& pos, const uint8_t side) {
+                                    const uint8_t side, QueryData& data) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
-    const auto childWidth = nodeWidth / 2;
+    if (level + 1 == depth || !nodes[index].children) {
+        processNeighbour(NodeInfo{
+            .pos = origin,
+            .offset = index,
+            .code = previous,
+            .level = level,
+        }, data);
+        return;
+    }
 
     auto& node = nodes[index];
 
     for (int idx = 0; idx < 8; idx++) {
-        if (node.children & (1 << idx) && sidesMask[side]) {
+        if (sidesMask[side] & (1 << idx)) {
             const auto nextCode = previous | (((idx + 1) & 0x0F) << (level * 4));
             const auto childOrigin = idxToOffset(idx, origin, nodeWidth);
 
-
+            if (node.children & (1 << idx) && level + 1 < depth) {
+                getNeighboursSide(node.offset + idx, childOrigin, level + 1, nextCode, side, data);
+            } else if (node.children & (1 << idx)) {
+                // Occupied space
+                continue;
+            } else {
+                // Empty space
+                processNeighbour(NodeInfo{
+                    .pos = childOrigin,
+                    .offset = level + 1 == depth ? 0 : static_cast<Index>(node.offset + idx),
+                    .code = nextCode,
+                    .level = level + 1,
+                }, data);
+            }
         }
     }
 }

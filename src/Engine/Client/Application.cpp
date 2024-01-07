@@ -50,14 +50,14 @@ Application::Application(Config& config) :
             Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
             gui.createProfile->setEnabled(false);
 
-            guiManager.modalSuccess("Success", "User profile created!", [this](bool result) {
-                (void)result;
+            guiManager.modalSuccess("Success", "User profile created!", [this](const std::string& choice) {
+                (void)choice;
                 gui.mainMenu->setEnabled(true);
             });
 
         } catch (std::exception& e) {
-            guiManager.modalDanger("Error", "Failed to save profile!", [this](bool result) {
-                (void)result;
+            guiManager.modalDanger("Error", "Failed to save profile!", [this](const std::string& choice) {
+                (void)choice;
                 closeWindow();
             });
 
@@ -81,10 +81,18 @@ Application::Application(Config& config) :
         gui.mainMenu->setEnabled(false);
     });
 
-    gui.settings = guiManager.addWindow<GuiWindowSettings>(*this, config);
+    gui.settings = guiManager.addWindow<GuiWindowSettings>(*this, config, guiManager);
+    gui.settings->setOnApply([this]() {
+        this->setWindowResolution(this->config.graphics.windowSize);
+        this->setWindowFullScreen(this->config.graphics.fullscreen);
+    });
     gui.settings->setOnSubmit([this](bool value) {
         gui.settings->setEnabled(false);
         gui.mainMenu->setEnabled(true);
+
+        if (value) {
+            Xml::toFile(this->config.userdataPath / "settings.xml", this->config);
+        }
     });
 
     loadProfile();

@@ -37,7 +37,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
     addController<ControllerTurret>(dynamicsWorld, bullets);
     addController<ControllerShipControl>();
     addController<ControllerModel>();
-    addController<ControllerPathfinding>(dynamicsWorld);
+    // addController<ControllerPathfinding>(dynamicsWorld);
 
     if (voxelShapeCache) {
         addController<ControllerIconSelectable>();

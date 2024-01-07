@@ -6,6 +6,8 @@ GuiWidget::GuiWidget(GuiContext& ctx) : ctx{ctx} {
 }
 
 void GuiWidget::draw() {
+    beforeDraw();
+
     if (!tooltip.empty()) {
         ctx.tooltip(tooltip);
     }

@@ -6,8 +6,8 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 GuiWindowModal::GuiWindowModal(const FontFamily& fontFamily, int fontSize, std::string title, std::string text,
-                               const std::vector<std::string>& choices) :
-    GuiWindow{fontFamily, fontSize} {
+                               const std::vector<std::string>& choices, int timeout) :
+    GuiWindow{fontFamily, fontSize}, timeout{timeout} {
     setSize({350.0f, 200.0f});
     setTitle(std::move(title));
     setDynamic(true);
@@ -15,6 +15,14 @@ GuiWindowModal::GuiWindowModal(const FontFamily& fontFamily, int fontSize, std::
     {
         auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
         row.addWidget<GuiWidgetLabel>(std::move(text));
+    }
+
+    if (timeout) {
+        auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
+        progressBar = &row.addWidget<GuiWidgetProgressBar>();
+        progressBar->setMax(timeout);
+        progressBar->setValue(timeout);
+        start = std::chrono::steady_clock::now();
     }
 
     {
@@ -35,6 +43,24 @@ GuiWindowModal::GuiWindowModal(const FontFamily& fontFamily, int fontSize, std::
             });
         }
         row.addEmpty().setWidth(0.1f);
+    }
+}
+
+void GuiWindowModal::update(const Vector2i& viewport) {
+    GuiWindow::update(viewport);
+    if (progressBar) {
+        ctx.setDirty();
+
+        const auto now = std::chrono::steady_clock::now();
+        auto diff = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+        if (diff > timeout) {
+            diff = timeout;
+        }
+        progressBar->setValue(timeout - diff);
+
+        if (timeout - diff <= 0) {
+            onClickCallback("");
+        }
     }
 }
 

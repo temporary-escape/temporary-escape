@@ -58,6 +58,7 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
         actionBarSize + progressHeight * 2.0f + ctx.getPadding().y * 4.0f,
     });
     setTitle("Ship Status");
+    setCentered(false);
     setBackground(true);
     setNoScrollbar(true);
     setHeader(false);

@@ -5,6 +5,7 @@ using namespace Engine;
 GuiWindowContextMenu::GuiWindowContextMenu(const FontFamily& fontFamily, int fontSize) :
     GuiWindow{fontFamily, fontSize} {
     setSize({200.0f, 600.0f});
+    setCentered(false);
     setTitle("Context Menu");
     setDynamic(true);
     setHeader(false);

@@ -156,17 +156,16 @@ bool GuiManager::isContextMenuVisible() const {
 }
 
 GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std::vector<std::string>& choices,
-                                  const ModalCallback& callback) {
-    auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices);
+                                  const ModalCallback& callback, const int timeout) {
+    auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices, timeout);
     window->setEnabled(true);
     setFocused(*window);
     window->setOnClickCallback([this, window, callback](const std::string& choice) {
-        (void)choice;
         window->setEnabled(false);
         clearFocused();
         this->removeWindow(*window);
         if (callback) {
-            callback(false);
+            callback(choice);
         }
     });
     return window;
@@ -229,6 +228,10 @@ void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button
             continue;
         }
 
+        if (!window.ptr->isEnabled()) {
+            continue;
+        }
+
         const auto& p = Vector2i{window.ptr->getPos()};
         const auto& s = Vector2i{window.ptr->getSize()};
 
@@ -242,6 +245,10 @@ void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button
 void GuiManager::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
     for (auto& window : windows) {
         if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (!window.ptr->isEnabled()) {
             continue;
         }
 
@@ -275,6 +282,10 @@ void GuiManager::eventKeyPressed(const Key key, const Modifiers modifiers) {
             continue;
         }
 
+        if (!window.ptr->isEnabled()) {
+            continue;
+        }
+
         if (window.ptr->hasActiveInput()) {
             window.ptr->eventKeyPressed(key, modifiers);
         }
@@ -284,6 +295,10 @@ void GuiManager::eventKeyPressed(const Key key, const Modifiers modifiers) {
 void GuiManager::eventKeyReleased(const Key key, const Modifiers modifiers) {
     for (auto& window : windows) {
         if (focused != nullptr && focused != window.ptr.get()) {
+            continue;
+        }
+
+        if (!window.ptr->isEnabled()) {
             continue;
         }
 

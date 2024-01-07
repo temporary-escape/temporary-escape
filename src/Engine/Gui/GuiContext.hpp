@@ -67,6 +67,7 @@ public:
     void skip();
     bool button(const std::string& label, const ImagePtr& image = nullptr);
     bool buttonToggle(const std::string& label, bool& value);
+    bool contextButton(const std::string& label, const ImagePtr& image);
     bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label);
     bool textInput(std::string& text, size_t max);

@@ -4,6 +4,7 @@
 #include "../Math/Vector.hpp"
 #include <array>
 #include <functional>
+#include <queue>
 #include <vector>
 
 namespace Engine {
@@ -36,9 +37,28 @@ public:
         }
     };
 
+    using NodeInfoCallback = std::function<void(const NodeInfo&)>;
+
+    struct NodeInfoDistance {
+        NodeInfo info;
+        uint64_t distance;
+
+        bool operator<(const NodeInfoDistance& other) const {
+            return distance < other.distance;
+        }
+    };
+
     struct Info {
-        Index from;
-        uint32_t cost;
+        HashCode from;
+        uint64_t cost;
+    };
+
+    struct QueryData {
+        NodeInfo start;
+        NodeInfo goal;
+        std::priority_queue<NodeInfoDistance> frontier;
+        std::unordered_map<HashCode, Info> costSoFar;
+        NodeInfoDistance current;
     };
 
     explicit Pathfinding(Tester& tester, int depth, int scale);
@@ -76,9 +96,9 @@ private:
     Index allocateNodes(size_t num);
     void optimize();
     void build(Index index, const Vector3i& origin, int level);
-    void getNeighbours(const NodeInfo& info);
-    void getNeighboursSide(const Vector3i& pos, uint8_t side);
-    void getNeighboursSide(const Index index, const Vector3i& origin, int level, HashCode previous, const Vector3i& pos, uint8_t side);
+    void getNeighbours(const NodeInfo& info, QueryData& data);
+    void getNeighboursSide(const Index index, const Vector3i& origin, int level, HashCode previous, uint8_t side, QueryData& data);
+    void processNeighbour(const NodeInfo& next, QueryData& data);
     std::optional<HashCode> find(Index index, const Vector3i& origin, int level, HashCode previous, const Vector3& pos);
     NodeInfo findNearest(Index index, const Vector3i& origin, int level, HashCode previous, const Vector3& pos, int maxLevel);
 
@@ -93,7 +113,7 @@ private:
     //std::vector<Bucket> buckets;
 
     std::vector<Node> nodes;
-    std::vector<Info> infos;
+    //std::vector<Info> infos;
     Layers temp;
     std::array<size_t, 16> levels;
 };

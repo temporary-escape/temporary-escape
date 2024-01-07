@@ -14,10 +14,10 @@ public:
     void setChosen(size_t value);
     void clear();
 
-private:
+protected:
     void drawInternal() override;
 
-    OnSelectedCallback onClick;
+    OnSelectedCallback onSelected;
     std::vector<std::string> choices;
     size_t chosen{0};
 };
@@ -26,12 +26,15 @@ template <typename T> class ENGINE_API GuiWidgetComboTyped : public GuiWidgetCom
 public:
     using OnSelectedCallback = std::function<void(const T&)>;
 
-    GuiWidgetComboTyped(GuiContext& ctx) : GuiWidgetCombo{ctx} {
+    GuiWidgetComboTyped(GuiContext& ctx, T& value) : GuiWidgetCombo{ctx}, value{&value} {
         GuiWidgetCombo::setOnSelected([this](const size_t index, const std::string& label) {
             (void)label;
 
-            if (index < values.size() && onSelectedCallback) {
-                onSelectedCallback(values[index]);
+            if (index < values.size()) {
+                *this->value = values[index];
+                if (onSelectedCallback) {
+                    onSelectedCallback(*this->value);
+                }
             }
         });
     }
@@ -45,14 +48,14 @@ public:
         GuiWidgetCombo::addChoice(label);
     }
 
-    void setValue(const T& value) {
+    /*void setValue(const T& value) {
         for (size_t i = 0; i < values.size(); i++) {
             if (values[i] == value) {
                 GuiWidgetCombo::setChosen(i);
                 return;
             }
         }
-    }
+    }*/
 
     void clear() {
         GuiWidgetCombo::clear();
@@ -60,6 +63,16 @@ public:
     }
 
 private:
+    void beforeDraw() override {
+        for (size_t i = 0; i < values.size(); i++) {
+            if (values[i] == *value) {
+                GuiWidgetCombo::setChosen(i);
+                return;
+            }
+        }
+    }
+
+    T* value{nullptr};
     std::vector<T> values;
     OnSelectedCallback onSelectedCallback;
 };

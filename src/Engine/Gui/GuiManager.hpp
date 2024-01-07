@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API GuiManager {
 public:
-    using ModalCallback = std::function<void(bool)>;
+    using ModalCallback = std::function<void(const std::string&)>;
 
     explicit GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const FontFamily& fontFamily, int fontSize);
     virtual ~GuiManager();
@@ -34,7 +34,7 @@ public:
     GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
-                          const ModalCallback& callback = nullptr);
+                          const ModalCallback& callback = nullptr, int timeout = -1);
 
     bool isMousePosOverlap(const Vector2i& mousePos) const;
 

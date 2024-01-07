@@ -10,8 +10,7 @@ GuiWindow::GuiWindow(const FontFamily& fontFamily, const int fontSize) :
 }
 
 void GuiWindow::update(const Vector2i& viewport) {
-    if (updatePos) {
-        updatePos = false;
+    if (centered) {
         setPos(Vector2{viewport} / 2.0f - size / 2.0f);
     }
     GuiContext::update();
@@ -34,13 +33,16 @@ void GuiWindow::setSize(const Vector2& value) {
 }
 
 void GuiWindow::setPos(const Vector2& value) {
-    updatePos = false;
     pos = value;
 }
 
 void GuiWindow::setEnabled(const bool value) {
     enabled = value;
     setDirty();
+}
+
+void GuiWindow::setCentered(const bool value) {
+    centered = value;
 }
 
 void GuiWindow::setBordered(const bool value) {

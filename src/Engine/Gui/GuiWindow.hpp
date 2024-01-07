@@ -42,6 +42,7 @@ public:
         return enabled;
     }
 
+    void setCentered(bool value);
     void setBordered(bool value);
     void setBackground(bool value);
     void setNoScrollbar(bool value);
@@ -59,6 +60,6 @@ private:
     Vector2 pos;
     GuiContext::Flags flags{0};
     bool enabled{false};
-    bool updatePos{true};
+    bool centered{true};
 };
 } // namespace Engine

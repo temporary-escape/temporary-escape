@@ -17,6 +17,7 @@ void GuiWidgetCombo::drawInternal() {
         for (size_t i = 0; i < choices.size(); i++) {
             if (ctx.comboItem(choices[i])) {
                 chosen = i;
+                onSelected(chosen, choices[chosen]);
             }
         }
 
@@ -25,7 +26,7 @@ void GuiWidgetCombo::drawInternal() {
 }
 
 void GuiWidgetCombo::setOnSelected(OnSelectedCallback value) {
-    onClick = std::move(value);
+    onSelected = std::move(value);
 }
 
 void GuiWidgetCombo::addChoice(const std::string_view& value) {

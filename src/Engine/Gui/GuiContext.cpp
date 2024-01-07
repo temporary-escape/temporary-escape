@@ -506,6 +506,23 @@ bool GuiContext::buttonToggle(const std::string& label, bool& value) {
     return previous != value;
 }
 
+bool GuiContext::contextButton(const std::string& label, const ImagePtr& image) {
+    struct nk_image ni {};
+    ni.handle.ptr = image.get();
+
+    const auto bounds = nk_widget_bounds(nk.get());
+
+    const auto res = nk_button_label(nk.get(), label.c_str());
+
+    struct nk_rect icon;
+    
+    const auto midY = bounds.y + bounds.h / 2.0f;
+
+    nk_draw_image(&nk->current->buffer, icon, &ni, fromColor(Color4{1.0f}));
+
+    return res == nk_true;
+}
+
 bool GuiContext::checkbox(const std::string& label, bool& value) {
     auto previous = value;
     value = nk_check_label(nk.get(), label.c_str(), value ? nk_true : nk_false) == nk_true;

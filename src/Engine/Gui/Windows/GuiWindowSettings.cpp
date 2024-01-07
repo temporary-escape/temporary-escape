@@ -1,4 +1,5 @@
 #include "GuiWindowSettings.hpp"
+#include "../GuiManager.hpp"
 
 using namespace Engine;
 
@@ -8,10 +9,8 @@ static void addOption(GuiWidgetLayout& layout, const std::string& name, bool& va
     auto& label = row.addWidget<GuiWidgetLabel>(name);
     label.setWidth(0.5f);
 
-    auto& checkbox = row.addWidget<GuiWidgetCheckbox>("");
-    checkbox.setValue(value);
+    auto& checkbox = row.addWidget<GuiWidgetCheckbox>("", value);
     checkbox.setWidth(0.5f);
-    checkbox.setOnClick([&value](bool toggle) { value = toggle; });
 }
 
 template <typename T>
@@ -23,32 +22,37 @@ static GuiWidgetCombo& addOption(GuiWidgetLayout& layout, const std::string& nam
     auto& label = row.addWidget<GuiWidgetLabel>(name);
     label.setWidth(0.5f);
 
-    auto& combo = row.addWidget<GuiWidgetComboTyped<T>>();
+    auto& combo = row.addWidget<GuiWidgetComboTyped<T>>(value);
 
     for (const auto& [text, choice] : choices) {
         combo.addChoice(text, choice);
     }
-    combo.setValue(value);
 
     return combo;
 }
 
 static std::vector<std::tuple<std::string, Vector2i>> getVideoModes(VulkanRenderer& vulkan) {
-    const auto videoModes = vulkan.getSupportedResolutionModes();
+    auto videoModes = vulkan.getSupportedResolutionModes();
+    std::sort(videoModes.begin(), videoModes.end(), [](const Vector2i& a, const Vector2i& b) { return a.x > b.x; });
+
+    decltype(videoModes) videoModesFiltered;
+    std::copy_if(videoModes.begin(), videoModes.end(), std::back_inserter(videoModesFiltered), [](const Vector2i& a) {
+        return a.x >= 1360 && a.y >= 800;
+    });
 
     std::vector<std::tuple<std::string, Vector2i>> result;
 
-    result.reserve(videoModes.size());
-    for (auto videoMode : videoModes) {
+    result.reserve(videoModesFiltered.size());
+    for (auto videoMode : videoModesFiltered) {
         result.emplace_back(fmt::format("{}x{}", videoMode.x, videoMode.y), videoMode);
     }
 
     return result;
 }
 
-GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan,
-                                     Config& config) :
-    GuiWindow{fontFamily, fontSize}, vulkan{vulkan}, config{config} {
+GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan, Config& config,
+                                     GuiManager& guiManager) :
+    GuiWindow{fontFamily, fontSize}, vulkan{vulkan}, config{config}, guiManager{guiManager}, configBackup{config} {
 
     setSize({450.0f, 700.0f});
     setTitle("Settings");
@@ -128,28 +132,63 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
 
     auto& save = footer.addWidget<GuiWidgetButton>("Save");
     save.setWidth(0.25f);
-    save.setOnClick([this]() {
-        if (onSubmitCallback) {
-            onSubmitCallback(true);
-        }
-    });
+    save.setOnClick([this]() { onSave(); });
 
     auto& cancel = footer.addWidget<GuiWidgetButton>("Cancel");
     cancel.setWidth(0.25f);
-    cancel.setOnClick([this]() {
-        if (onSubmitCallback) {
-            onSubmitCallback(false);
-        }
-    });
+    cancel.setOnClick([this]() { onCancel(); });
 
     footer.addEmpty().setWidth(0.25f);
 }
 
-void GuiWindowSettings::setOnSubmit(GuiWindowSettings::OnSubmitCallback callback) {
+void GuiWindowSettings::onSave() {
+    if (onApplyCallback) {
+        onApplyCallback();
+    }
+
+    this->guiManager.modal(
+        "Confirm",
+        "Confirm the changes?",
+        {"Yes", "No"},
+        [this](const std::string& choice) { onModalClick(choice); },
+        15);
+}
+
+void GuiWindowSettings::onCancel() {
+    this->config = configBackup;
+    if (onSubmitCallback) {
+        onSubmitCallback(false);
+    }
+}
+
+void GuiWindowSettings::onModalClick(const std::string& choice) {
+    if (choice == "Yes") {
+        if (onSubmitCallback) {
+            onSubmitCallback(true);
+        }
+    } else {
+        this->config = configBackup;
+
+        if (onApplyCallback) {
+            onApplyCallback();
+        }
+
+        if (onSubmitCallback) {
+            onSubmitCallback(false);
+        }
+    }
+}
+
+void GuiWindowSettings::setOnApply(OnApplyCallback callback) {
+    onApplyCallback = std::move(callback);
+}
+
+void GuiWindowSettings::setOnSubmit(OnSubmitCallback callback) {
     onSubmitCallback = std::move(callback);
 }
 
 void GuiWindowSettings::reset() {
+    configBackup = config;
     /*size_t currentVideoMode{0};
     getVideoModes(vulkan, config, currentVideoMode);
     comboResolution->setChosen(currentVideoMode);*/

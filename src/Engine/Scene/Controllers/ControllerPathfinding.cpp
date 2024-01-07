@@ -7,7 +7,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 ControllerPathfinding::ControllerPathfinding(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
-    reg{reg}, dynamicsWorld{dynamicsWorld}, octree{*this, 12, 32} {
+    reg{reg}, dynamicsWorld{dynamicsWorld}, octree{*this, 6, 32} {
 }
 
 ControllerPathfinding::~ControllerPathfinding() = default;

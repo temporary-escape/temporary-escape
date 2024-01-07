@@ -21,11 +21,12 @@ public:
     void setTooltip(std::string value);
 
 protected:
+    virtual void beforeDraw() {}
+    virtual void drawInternal();
+
     GuiContext& ctx;
 
 private:
-    virtual void drawInternal();
-
     float width{1.0f};
     bool widthPixels{false};
     std::string tooltip;

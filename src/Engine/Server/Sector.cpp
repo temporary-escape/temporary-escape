@@ -65,7 +65,7 @@ void Sector::load() {
 
     // Build pathfinding
     scene->getController<ControllerDynamicsWorld>().updateAabbs();
-    scene->getController<ControllerPathfinding>().buildTree();
+    // scene->getController<ControllerPathfinding>().buildTree();
 
     loaded = true;
     logger.info("Sector is loaded: '{}'", sectorId);
