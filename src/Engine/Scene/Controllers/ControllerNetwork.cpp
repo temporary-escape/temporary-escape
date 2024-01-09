@@ -45,7 +45,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentTransform& component) {
     (void)handle;
 
-    reg.emplace<ComponentRemoteHandle>(handle, reg, handle, remoteId);
+    // reg.emplace<ComponentRemoteHandle>(handle, reg, handle, remoteId);
 
     while (true) {
         const auto match = std::find_if(transformChildParentMap.begin(),
@@ -322,12 +322,13 @@ void ControllerNetwork::receiveUpdate(const msgpack::object& obj) {
         }
         const auto id = child.ptr[0].as<uint32_t>();
         const auto op = child.ptr[1].as<SyncOperation>();
-        const auto handle = static_cast<entt::entity>(child.ptr[2].as<uint32_t>());
+        const auto handle = child.ptr[2].as<EntityId>();
 
         // Map the remote entity ID to a local one
         auto local = remoteToLocal.find(handle);
         if (local == remoteToLocal.end() && op == SyncOperation::Emplace) {
             local = remoteToLocal.emplace(handle, reg.create()).first;
+            localToRemote.emplace(local->second, handle);
         }
 
         if (local != remoteToLocal.end()) {
@@ -354,4 +355,12 @@ std::optional<Entity> ControllerNetwork::getRemoteToLocalEntity(const uint64_t i
         return Entity{reg, local->second};
     }
     return std::nullopt;
+}
+
+EntityId ControllerNetwork::getLocalToRemote(EntityId entity) const {
+    auto remote = localToRemote.find(entity);
+    if (remote != localToRemote.end()) {
+        return remote->second;
+    }
+    return {};
 }

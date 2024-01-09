@@ -12,8 +12,8 @@ public:
     virtual ~ComponentShipControl() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentShipControl);
 
-    void update(float delta, ComponentTransform& transform);
-    void setDirection(const Vector3& value);
+    void update(EntityRegistry& reg, float delta, ComponentTransform& transform);
+    /*void setDirection(const Vector3& value);
     void setDirectionRelative(int leftRight, int downUp);
     void setSpeed(float value);
     [[nodiscard]] float getSpeed() const {
@@ -26,7 +26,7 @@ public:
     void setSpeedBoost(bool value);
     [[nodiscard]] bool getSpeedBoost() const {
         return velocityBoost;
-    }
+    }*/
     void setActive(bool value);
     [[nodiscard]] bool isActive() const {
         return active;
@@ -37,19 +37,24 @@ public:
         return turrets;
     }
 
-    MSGPACK_DEFINE_ARRAY(velocityValue, velocityTarget, velocityMax, rotation, velocityBoost);
+    void actionApproach(EntityId target);
+
+    MSGPACK_DEFINE_ARRAY(/*velocityValue, velocityTarget, velocityMax, rotation, velocityBoost*/);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
-    float velocityValue{0.0f};
+    /*float velocityValue{0.0f};
     float velocityTarget{0.0f};
     float velocityMax{100.0f};
     Vector3 rotation{0.0f, 0.0f, 0.0f};
     bool velocityBoost{false};
-    bool directionRelative[4] = {false, false, false, false};
-    bool active{true};
+    bool directionRelative[4] = {false, false, false, false};*/
+    EntityId approachTarget{NullEntity};
+    Vector3 approachPos;
+    float angularVelocity{glm::radians(25.0f)};
+    bool active{false};
     std::vector<ComponentTurret*> turrets;
 };
 } // namespace Engine

@@ -11,11 +11,14 @@ GuiWindowContextMenu::GuiWindowContextMenu(const FontFamily& fontFamily, int fon
     setHeader(false);
     setNoScrollbar(true);
 
-    row = &addWidget<GuiWidgetRow>(fontSize, 1);
+    row = &addWidget<GuiWidgetRow>(static_cast<float>(fontSize) * 1.25f, 1);
 }
 
-GuiWidgetButton& GuiWindowContextMenu::addItem(std::string label) {
-    return row->addWidget<GuiWidgetButton>(std::move(label));
+GuiWidgetContextButton& GuiWindowContextMenu::addItem(ImagePtr image, std::string label,
+                                                      GuiWidgetContextButton::OnClickCallback callback) {
+    auto& button = row->addWidget<GuiWidgetContextButton>(std::move(image), std::move(label));
+    button.setOnClick(std::move(callback));
+    return button;
 }
 
 void GuiWindowContextMenu::clear() {

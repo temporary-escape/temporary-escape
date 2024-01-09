@@ -7,7 +7,8 @@ class GuiWindowContextMenu : public GuiWindow {
 public:
     GuiWindowContextMenu(const FontFamily& fontFamily, int fontSize);
 
-    GuiWidgetButton& addItem(std::string label);
+    GuiWidgetContextButton& addItem(ImagePtr image, std::string label,
+                                    GuiWidgetContextButton::OnClickCallback callback);
     void clear();
 
 private:

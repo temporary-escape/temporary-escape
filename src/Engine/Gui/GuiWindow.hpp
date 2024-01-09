@@ -5,6 +5,7 @@
 #include "Widgets/GuiWidgetButtonToggle.hpp"
 #include "Widgets/GuiWidgetCheckbox.hpp"
 #include "Widgets/GuiWidgetCombo.hpp"
+#include "Widgets/GuiWidgetContextButton.hpp"
 #include "Widgets/GuiWidgetImage.hpp"
 #include "Widgets/GuiWidgetImageToggle.hpp"
 #include "Widgets/GuiWidgetLabel.hpp"

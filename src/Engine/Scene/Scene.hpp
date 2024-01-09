@@ -12,6 +12,7 @@
 namespace Engine {
 class ENGINE_API Skybox;
 class ENGINE_API Lua;
+class ENGINE_API ControllerNetwork;
 
 class ENGINE_API Scene : public UserInput {
 public:
@@ -101,10 +102,24 @@ public:
         selectionEnabled = value;
     }
 
+    EntityId getRemoteId(EntityId entity) const;
+    EntityRegistry& getRegistry() {
+        return reg;
+    }
+    const EntityRegistry& getRegistry() const {
+        return reg;
+    }
+    template <typename T> T* tryGetComponent(const EntityId entity) const {
+        return reg.try_get<T>(entity);
+    }
+    template <typename T> T& getComponent(const EntityId entity) const {
+        return reg.get<T>(entity);
+    }
+
 private:
     void updateSelection();
 
-    entt::registry reg;
+    EntityRegistry reg;
     std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
     std::vector<UserInput*> userInputs;
 
@@ -116,5 +131,6 @@ private:
     Lua* lua{nullptr};
     std::unordered_map<std::string, std::unique_ptr<sol::table>> entityTemplates;
     bool selectionEnabled{true};
+    ControllerNetwork* network{nullptr};
 };
 } // namespace Engine

@@ -12,8 +12,7 @@ ControllerShipControl::~ControllerShipControl() = default;
 void ControllerShipControl::update(const float delta) {
     const auto& entities = reg.view<ComponentTransform, ComponentShipControl>(entt::exclude<TagDisabled>).each();
     for (const auto&& [handle, transform, component] : entities) {
-        component.update(delta, transform);
-        component.setDirty(true);
+        component.update(reg, delta, transform);
     }
 }
 

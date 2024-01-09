@@ -32,7 +32,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
     auto& dynamicsWorld = addController<ControllerDynamicsWorld>(config);
     addController<ControllerGrid>(dynamicsWorld, voxelShapeCache);
     addController<ControllerRigidBody>(dynamicsWorld);
-    addController<ControllerNetwork>();
+    network = &addController<ControllerNetwork>();
     auto& bullets = addController<ControllerBullets>(dynamicsWorld);
     addController<ControllerTurret>(dynamicsWorld, bullets);
     addController<ControllerShipControl>();
@@ -263,4 +263,8 @@ Vector2 Scene::worldToScreen(const Vector3& pos) const {
     }
 
     return camera->worldToScreen(pos, true);
+}
+
+EntityId Scene::getRemoteId(EntityId entity) const {
+    return network->getLocalToRemote(entity);
 }

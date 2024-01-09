@@ -114,16 +114,13 @@ struct MessagePlayerControlEvent {
 MESSAGE_DEFINE(MessagePlayerControlEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
-struct MessageControlMovementEvent {
-    float speed{0.0f};
-    int leftRight{0};
-    int upDown{0};
-    bool boost{false};
+struct MessageActionApproach {
+    EntityId entityId{0};
 
-    MSGPACK_DEFINE_ARRAY(speed, leftRight, upDown, boost);
+    MSGPACK_DEFINE_ARRAY(entityId);
 };
 
-MESSAGE_DEFINE(MessageControlMovementEvent);
+MESSAGE_DEFINE(MessageActionApproach);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageControlTargetEvent {

@@ -33,6 +33,7 @@ public:
 
 private:
     void doTargetEntity(const Entity& entity);
+    void doApproachEntity(const Entity& entity);
     void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
 
     const Config& config;
@@ -49,6 +50,8 @@ private:
 
     struct {
         ImagePtr approach;
+        ImagePtr info;
+        ImagePtr attack;
     } icons;
 
     /*struct {

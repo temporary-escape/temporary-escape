@@ -33,7 +33,7 @@ public:
     void handle(Request<MessagePlayerSpawnRequest> req);
     void handle(Request<MessageModManifestsRequest> req);
     void handle(Request<MessagePingResponse> req);
-    void handle(Request<MessageControlMovementEvent> req);
+    void handle(Request<MessageActionApproach> req);
     void handle(Request<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;

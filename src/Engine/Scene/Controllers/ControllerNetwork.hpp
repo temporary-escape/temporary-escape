@@ -29,6 +29,7 @@ public:
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
     std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
+    EntityId getLocalToRemote(EntityId entity) const;
 
 private:
     struct ChildParentValue {
@@ -83,7 +84,8 @@ private:
     void onDestroyEntity(entt::registry& r, entt::entity handle);
 
     entt::registry& reg;
-    std::unordered_map<entt::entity, entt::entity> remoteToLocal;
+    std::unordered_map<EntityId, EntityId> remoteToLocal;
+    std::unordered_map<EntityId, EntityId> localToRemote;
     std::unordered_map<entt::entity, uint64_t> updatedComponentsMap;
     size_t updatedComponentsCount{0};
     std::vector<ChildParentValue> transformChildParentMap;

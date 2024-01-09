@@ -25,16 +25,15 @@ public:
     void setFocused(const GuiWindow& window);
     void clearFocused();
 
-    void clearContextMenu();
-    void addContextMenuItem(std::string label, ImagePtr icon, GuiWidgetButton::OnClickCallback onClick);
-    void showContextMenu(const Vector2i& pos);
-    void hideContextMenu();
     bool isContextMenuVisible() const;
 
     GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
                           const ModalCallback& callback = nullptr, int timeout = -1);
+    GuiWindowContextMenu& getContextMenu() {
+        return *contextMenu;
+    }
 
     bool isMousePosOverlap(const Vector2i& mousePos) const;
 

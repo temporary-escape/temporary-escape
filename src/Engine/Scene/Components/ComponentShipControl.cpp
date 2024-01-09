@@ -10,12 +10,59 @@ static auto logger = createLogger(LOG_FILENAME);
 ComponentShipControl::ComponentShipControl(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
 }
 
-void ComponentShipControl::update(const float delta, ComponentTransform& transform) {
+void ComponentShipControl::update(EntityRegistry& reg, const float delta, ComponentTransform& transform) {
     if (!active) {
         return;
     }
 
-    float velocityDelta;
+    // Is the target entity valid?
+    if (!reg.valid(approachTarget)) {
+        approachTarget = NullEntity;
+        setActive(false);
+        return;
+    }
+
+    // Does the entity have transform component?
+    const auto* targetTransform = reg.try_get<ComponentTransform>(approachTarget);
+    if (!targetTransform) {
+        approachTarget = NullEntity;
+        setActive(false);
+        return;
+    }
+
+    const auto& targetPos = targetTransform->getPosition();
+
+    auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+    newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+
+    const auto targetOrientation = glm::quat_cast(newTransform);
+    const auto ourOrientation = glm::quat_cast(transform.getTransform());
+
+    const auto targetForward = glm::rotate(targetOrientation, Vector3{0.0f, 0.0f, 1.0f});
+    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
+    auto angle = glm::acos(glm::dot(targetForward, ourForward));
+    if (std::isnan(angle)) {
+        angle = 0.0f;
+    }
+
+    constexpr auto slowdownAngle = glm::radians(15.0f);
+    const auto minAVel = angularVelocity * 0.1f;
+    const auto aVel =
+        angle < slowdownAngle ? map(angle, 0.0f, slowdownAngle, minAVel, angularVelocity) : angularVelocity;
+
+    const auto slerpFactor = glm::clamp((aVel * delta) / angle, 0.0f, 1.0f);
+    const auto newOrientation = glm::slerp(ourOrientation, targetOrientation, slerpFactor);
+
+    auto shipTransform = glm::translate(Matrix4{1.0f}, transform.getPosition());
+    shipTransform = shipTransform * glm::toMat4(newOrientation);
+
+    transform.setTransform(shipTransform);
+    reg.patch<ComponentTransform>(getEntity());
+
+    // approachTarget = NullEntity;
+    // setActive(false);
+
+    /*float velocityDelta;
 
     if (velocityTarget > 0.001f && velocityValue < velocityTarget) {
         velocityDelta = delta * 0.2f;
@@ -96,43 +143,48 @@ void ComponentShipControl::update(const float delta, ComponentTransform& transfo
     updated = updated * glm::toMat4(orientation);
 
     // Update the transform
-    transform.setTransform(updated);
+    transform.setTransform(updated);*/
 }
 
-void ComponentShipControl::setSpeed(const float value) {
+void ComponentShipControl::actionApproach(EntityId target) {
+    approachTarget = target;
+    setActive(true);
+}
+
+/*void ComponentShipControl::setSpeed(const float value) {
     velocityTarget = value;
     if (velocityTarget > velocityMax) {
         velocityTarget = velocityMax;
     }
-}
+}*/
 
-void ComponentShipControl::setSpeedMax(const float value) {
+/*void ComponentShipControl::setSpeedMax(const float value) {
     velocityMax = value;
-}
+}*/
 
-void ComponentShipControl::setDirection(const Vector3& value) {
+/*void ComponentShipControl::setDirection(const Vector3& value) {
     (void)value;
     // TODO
-}
+}*/
 
 void ComponentShipControl::setActive(const bool value) {
     active = value;
 }
 
-void ComponentShipControl::setSpeedBoost(bool value) {
+/*void ComponentShipControl::setSpeedBoost(bool value) {
     velocityBoost = value;
-}
+}*/
 
 void ComponentShipControl::addTurret(ComponentTurret& turret) {
     turrets.push_back(&turret);
 }
 
-void ComponentShipControl::setDirectionRelative(const int leftRight, const int downUp) {
+/*void ComponentShipControl::setDirectionRelative(const int leftRight, const int downUp) {
     directionRelative[0] = leftRight == -1;
     directionRelative[1] = leftRight == 1;
     directionRelative[2] = downUp == -1;
     directionRelative[3] = downUp == 1;
-}
+}*/
 
 void ComponentShipControl::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentShipControl>(handle);

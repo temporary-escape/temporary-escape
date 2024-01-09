@@ -19,7 +19,9 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
 
     gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
 
-    icons.approach = assetsManager.getImages().find("icon_convergence_target");
+    icons.approach = assetsManager.getImages().find("icon_transform");
+    icons.info = assetsManager.getImages().find("icon_info");
+    icons.attack = assetsManager.getImages().find("icon_convergence_target");
 }
 
 void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
@@ -127,7 +129,7 @@ void ViewSpace::onExit() {
 }
 
 void ViewSpace::doTargetEntity(const Entity& entity) {
-    if (client.getCache().playerEntityId) {
+    /*if (client.getCache().playerEntityId) {
         const auto* remoteHandle = entity.tryGetComponent<ComponentRemoteHandle>();
         if (remoteHandle) {
             if (const auto remoteId = remoteHandle->getRemoteId(); remoteId != ComponentTransform::NullParentId) {
@@ -141,7 +143,14 @@ void ViewSpace::doTargetEntity(const Entity& entity) {
         } else {
             logger.warn("Can not target entity, no remote handle");
         }
-    }
+    }*/
+}
+
+void ViewSpace::doApproachEntity(const Engine::Entity& entity) {
+    auto& scene = *client.getScene();
+    MessageActionApproach msg{};
+    msg.entityId = scene.getRemoteId(entity.getHandle());
+    client.send(msg);
 }
 
 void ViewSpace::eventMouseMoved(const Vector2i& pos) {
@@ -153,7 +162,7 @@ void ViewSpace::eventMouseMoved(const Vector2i& pos) {
 
 void ViewSpace::eventMousePressed(const Vector2i& pos, const MouseButton button) {
     if (guiManager.isContextMenuVisible()) {
-        guiManager.hideContextMenu();
+        guiManager.getContextMenu().setEnabled(false);
     }
 
     auto scene = client.getScene();
@@ -171,19 +180,20 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
 
         const auto& camera = *scene->getPrimaryCamera();
         const auto selected = scene->getSelectedEntity();
-        if (selected.has_value() && !guiManager.isContextMenuVisible() && button == MouseButton::Right &&
-            !camera.isPanning()) {
-
+        if (selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
             const auto* transform = selected->tryGetComponent<ComponentTransform>();
             if (transform) {
-                guiManager.clearContextMenu();
-                guiManager.addContextMenuItem("Approach", icons.approach, []() {});
-                guiManager.addContextMenuItem("Info", icons.approach, []() {});
-                guiManager.addContextMenuItem("Attach", icons.approach, []() {});
-                guiManager.showContextMenu(pos);
+                auto& menu = guiManager.getContextMenu();
+                menu.clear();
+                menu.addItem(
+                    icons.approach, "Approach", [this, entity = selected.value()] { doApproachEntity(entity); });
+                menu.addItem(icons.info, "Info", []() {});
+                menu.addItem(icons.attack, "Attack", []() {});
+                menu.setEnabled(true);
+                menu.setPos(pos);
             }
         } else if (guiManager.isContextMenuVisible()) {
-            guiManager.hideContextMenu();
+            guiManager.getContextMenu().setEnabled(false);
         }
     }
 }
@@ -197,7 +207,7 @@ void ViewSpace::eventMouseScroll(const int xscroll, const int yscroll) {
 
 void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
     if (key == Key::Escape && guiManager.isContextMenuVisible()) {
-        guiManager.hideContextMenu();
+        guiManager.getContextMenu().setEnabled(false);
     }
 
     auto scene = client.getScene();

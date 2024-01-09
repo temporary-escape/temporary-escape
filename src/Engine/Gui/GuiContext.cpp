@@ -163,8 +163,15 @@ static nk_keys toNkKeys(const Key key) {
     }
 }
 
+struct GuiContext::CustomStyle {
+    nk_style_button context;
+};
+
 GuiContext::GuiContext(const FontFamily& fontFamily, const int fontSize) :
-    fontFamily{fontFamily}, fontSize{fontSize}, nk{std::make_unique<nk_context>()} {
+    fontFamily{fontFamily},
+    fontSize{fontSize},
+    nk{std::make_unique<nk_context>()},
+    custom{std::make_unique<CustomStyle>()} {
 
     for (size_t i = 0; i < FontFamily::total; i++) {
         auto& font = fonts.at(i);
@@ -510,15 +517,30 @@ bool GuiContext::contextButton(const std::string& label, const ImagePtr& image) 
     struct nk_image ni {};
     ni.handle.ptr = image.get();
 
+    auto& style = custom->context;
+
     const auto bounds = nk_widget_bounds(nk.get());
 
-    const auto res = nk_button_label(nk.get(), label.c_str());
+    struct nk_rect icon {};
 
-    struct nk_rect icon;
-    
-    const auto midY = bounds.y + bounds.h / 2.0f;
+    icon.w = bounds.h - 2.0f * style.padding.y;
+    icon.h = bounds.h - 2.0f * style.padding.y;
+    icon.y = bounds.y + (bounds.h / 2.0f) - (icon.h / 2.0f);
+    icon.x = bounds.x + style.image_padding.x;
 
-    nk_draw_image(&nk->current->buffer, icon, &ni, fromColor(Color4{1.0f}));
+    const auto temp = style.padding.x;
+    style.padding.x = icon.w + style.padding.x * 2.0f + style.image_padding.x;
+
+    auto* color = &custom->context.text_normal;
+    if (nk_input_is_mouse_hovering_rect(&nk->input, bounds) == nk_true) {
+        color = &custom->context.text_hover;
+    }
+
+    const auto res = nk_button_label_styled(nk.get(), &style, label.c_str());
+
+    style.padding.x = temp;
+
+    nk_draw_image(&nk->current->buffer, icon, &ni, *color);
 
     return res == nk_true;
 }
@@ -667,6 +689,7 @@ void GuiContext::applyTheme() {
     auto& combo = nk->style.combo;
     auto& contextual_button = nk->style.contextual_button;
     auto& progress = nk->style.progress;
+    auto& option = nk->style.option;
 
     text.color = TEXT_WHITE;
     text.padding.x = 0;
@@ -749,6 +772,20 @@ void GuiContext::applyTheme() {
     button.rounding = 0;
     // button.padding.x = 0;
     // button.padding.y = 0;
+
+    custom->context = button;
+    custom->context.border = 0;
+    custom->context.text_alignment = NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE;
+
+    option.text_background = TRANSPARENT_COLOR;
+    option.text_normal = TEXT_WHITE;
+    option.text_hover = TEXT_BLACK;
+    option.text_active = TEXT_BLACK;
+    option.normal.data.color = BACKGROUND_COLOR;
+    option.hover.data.color = WHITE;
+    option.active.data.color = ACTIVE_COLOR;
+    option.border = 0.0f;
+    option.border_color = BORDER_GREY;
 
     edit.normal.data.color = BACKGROUND_COLOR;
     edit.hover.data.color = BACKGROUND_COLOR;

@@ -159,11 +159,25 @@ Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
     return scene->createEntityFrom("player", table);
 }
 
-void Sector::handle(const SessionPtr& session, MessageControlMovementEvent req) {
+void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
     worker.postSafe([this, session, req]() {
         // Find the entity that the player controls
         const auto found = playerControl.find(session);
-        if (found != playerControl.end()) {
+        if (found == playerControl.end()) {
+            return;
+        }
+
+        // Get the ship control of the player's entity
+        const auto entity = scene->fromHandle(found->second);
+        auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
+        if (!shipControl) {
+            return;
+        }
+
+        logger.debug("Entity: {} approaching: {}", entity.getHandle(), req.entityId);
+        shipControl->actionApproach(req.entityId);
+
+        /*if (found != playerControl.end()) {
             const auto entity = scene->fromHandle(found->second);
             auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
             if (shipControl) {
@@ -171,7 +185,7 @@ void Sector::handle(const SessionPtr& session, MessageControlMovementEvent req) 
                 shipControl->setDirectionRelative(req.leftRight, req.upDown);
                 shipControl->setSpeedBoost(req.boost);
             }
-        }
+        }*/
     });
 }
 

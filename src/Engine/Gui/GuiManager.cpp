@@ -127,13 +127,12 @@ void GuiManager::clearFocused() {
     focused = nullptr;
 }
 
-void GuiManager::clearContextMenu() {
+/*void GuiManager::clearContextMenu() {
     contextMenu->clear();
 }
 
-void GuiManager::addContextMenuItem(std::string label, ImagePtr icon, GuiWidgetButton::OnClickCallback onClick) {
-    auto& button = contextMenu->addItem(std::move(label));
-    button.setImage(std::move(icon));
+void GuiManager::addContextMenuItem(ImagePtr icon, std::string label, GuiWidgetContextButton::OnClickCallback onClick) {
+    auto& button = contextMenu->addItem(std::move(icon), std::move(label));
     button.setOnClick([this, c = std::move(onClick)]() {
         contextMenu->setEnabled(false);
         if (c) {
@@ -149,7 +148,7 @@ void GuiManager::showContextMenu(const Vector2i& pos) {
 
 void GuiManager::hideContextMenu() {
     contextMenu->setEnabled(false);
-}
+}*/
 
 bool GuiManager::isContextMenuVisible() const {
     return contextMenu->isEnabled();

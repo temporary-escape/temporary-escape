@@ -5,6 +5,8 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 /*class EntityRefCounter : public Entity {
 public:
     EntityRefCounter(entt::registry& reg, size_t& counter) : Entity{reg}, counter{counter} {

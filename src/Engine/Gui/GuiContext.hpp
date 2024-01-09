@@ -108,6 +108,8 @@ public:
     }
 
 private:
+    struct CustomStyle;
+
     static inline const auto padding = 4.0f;
 
     void applyTheme();
@@ -118,6 +120,7 @@ private:
     std::array<std::unique_ptr<nk_user_font>, FontFamily::total> fonts;
     std::list<std::function<void()>> inputEvents;
     bool dirty{true};
+    std::unique_ptr<CustomStyle> custom;
 
     std::vector<char> editBuffer;
     bool activeInput{false};

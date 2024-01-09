@@ -36,7 +36,7 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessageModManifestsRequest);
     HANDLE_REQUEST(MessagePingResponse);
     HANDLE_REQUEST(MessagePlayerSpawnRequest);
-    HANDLE_REQUEST(MessageControlMovementEvent);
+    HANDLE_REQUEST(MessageActionApproach);
     HANDLE_REQUEST(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
@@ -404,7 +404,7 @@ void Server::handle(Request<MessagePingResponse> req) {
     session->clearFlag(Session::Flags::PingSent);
 }
 
-void Server::handle(Request<MessageControlMovementEvent> req) {
+void Server::handle(Request<MessageActionApproach> req) {
     const auto session = playerSessions.getSession(req.peer);
     const auto sector = getSectorForSession(session);
     if (!sector) {
