@@ -45,6 +45,8 @@ protected:
     void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
+    Vector3 getTargetPos(EntityRegistry& reg);
+
     /*float velocityValue{0.0f};
     float velocityTarget{0.0f};
     float velocityMax{100.0f};
@@ -52,8 +54,11 @@ private:
     bool velocityBoost{false};
     bool directionRelative[4] = {false, false, false, false};*/
     EntityId approachTarget{NullEntity};
-    Vector3 approachPos;
-    float angularVelocity{glm::radians(25.0f)};
+    float angularVelocity{glm::radians(45.0f)};
+    float forwardVelocity{0.0f};
+    float forwardVelocityTarget{0.0f};
+    float forwardVelocityMax{200.0f};
+    float forwardAcceleration{20.0f};
     bool active{false};
     std::vector<ComponentTurret*> turrets;
 };

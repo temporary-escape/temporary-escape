@@ -11,15 +11,115 @@ ComponentShipControl::ComponentShipControl(entt::registry& reg, entt::entity han
 }
 
 void ComponentShipControl::update(EntityRegistry& reg, const float delta, ComponentTransform& transform) {
+    constexpr auto accelerationAngleMin = glm::radians(30.0f);
+    constexpr auto slowdownAngle = glm::radians(15.0f);
+
     if (!active) {
         return;
     }
 
+    // Target information
+    const auto& targetPos = getTargetPos(reg);
+    const auto targetDistance = glm::distance(transform.getPosition(), targetPos);
+
+    // The orientation towards the target
+    auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+    newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+    auto targetOrientation = glm::quat_cast(newTransform);
+
+    // Our current orientation (directly forward)
+    const auto ourOrientation = glm::quat_cast(transform.getTransform());
+
+    // Calculate the angle between out forward and the target direction we should be facing
+    auto targetForward = glm::rotate(targetOrientation, Vector3{0.0f, 0.0f, 1.0f});
+    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
+    auto angle = glm::acos(glm::dot(targetForward, ourForward));
+    if (std::isnan(angle)) {
+        angle = 0.0f;
+    }
+
+    // Calculate the velocity we should apply in order to approach the target or stop
+    float velocityDiff;
+    auto slowing{false};
+    {
+        const auto secondsToStop = forwardVelocity / forwardAcceleration;
+        const auto distanceToStop = (1.0f / 2.0f) * forwardAcceleration * std::pow(secondsToStop, 2.0f);
+
+        // logger.info("secondsToStop: {} distanceToStop: {}", secondsToStop, distanceToStop);
+
+        if (targetDistance > distanceToStop + 100.0f && angle < accelerationAngleMin) {
+            forwardVelocityTarget = forwardVelocityMax;
+        } else {
+            forwardVelocityTarget = 0.0f;
+            slowing = true;
+            // forwardVelocity = 0.0f;
+        }
+
+        velocityDiff = forwardVelocityTarget - forwardVelocity;
+        if (glm::abs(velocityDiff) > forwardAcceleration) {
+            if (velocityDiff > 0.0f) {
+                velocityDiff = forwardAcceleration;
+            } else {
+                velocityDiff = forwardAcceleration * -2.0f;
+            }
+        }
+    }
+
+    // Align the ship horizontally if the ship is stopped
+    auto aligning{false};
+    if (std::abs(velocityDiff) < 0.1f && targetDistance < 100.0f) {
+        // Get vector towards the front of the ship, but horizontally aligned
+        const auto forwardAligned = glm::normalize(Vector3{ourForward.x, 0.0f, ourForward.z});
+
+        // Use that forward vector to get a new orientation
+        auto alignedTransform = glm::inverse(
+            glm::lookAt(transform.getPosition(), transform.getPosition() + forwardAligned, {0.0f, 1.0f, 0.0f}));
+        targetOrientation = glm::quat_cast(alignedTransform);
+
+        angle = glm::acos(glm::dot(forwardAligned, ourForward));
+        if (std::isnan(angle)) {
+            angle = 0.0f;
+        }
+
+        aligning = true;
+    }
+
+    // Calculate the new orientation, delta time adjusted, to rotate towards the target
+    Quaternion newOrientation;
+    {
+        const auto currentAngularVelocity = aligning ? angularVelocity * 0.2f : angularVelocity;
+        const auto minAVel = currentAngularVelocity * 0.2f;
+        const auto aVel = angle < slowdownAngle ? map(angle, 0.0f, slowdownAngle, minAVel, currentAngularVelocity)
+                                                : currentAngularVelocity;
+
+        const auto factor = glm::clamp((aVel * delta) / angle, 0.0f, 1.0f);
+        newOrientation = glm::slerp(ourOrientation, targetOrientation, factor);
+    }
+
+    // logger.info("velocityDiff: {}", velocityDiff);
+
+    forwardVelocity += velocityDiff * delta;
+
+    // The new ship transform
+    auto shipTransform = glm::translate(Matrix4{1.0f}, transform.getPosition());
+
+    // Apply the orientation towards the target
+    shipTransform = shipTransform * glm::toMat4(newOrientation);
+
+    // Apply the velocity
+    shipTransform = glm::translate(shipTransform, Vector3{0.0f, 0.0f, -1.0f} * forwardVelocity * delta);
+
+    // Update the ship transform
+    transform.setTransform(shipTransform);
+    reg.patch<ComponentTransform>(getEntity());
+}
+
+Vector3 ComponentShipControl::getTargetPos(EntityRegistry& reg) {
     // Is the target entity valid?
     if (!reg.valid(approachTarget)) {
         approachTarget = NullEntity;
         setActive(false);
-        return;
+        return {0.0f, 0.0f, 0.0f};
     }
 
     // Does the entity have transform component?
@@ -27,123 +127,10 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     if (!targetTransform) {
         approachTarget = NullEntity;
         setActive(false);
-        return;
+        return {0.0f, 0.0f, 0.0f};
     }
 
-    const auto& targetPos = targetTransform->getPosition();
-
-    auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
-    newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
-
-    const auto targetOrientation = glm::quat_cast(newTransform);
-    const auto ourOrientation = glm::quat_cast(transform.getTransform());
-
-    const auto targetForward = glm::rotate(targetOrientation, Vector3{0.0f, 0.0f, 1.0f});
-    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
-    auto angle = glm::acos(glm::dot(targetForward, ourForward));
-    if (std::isnan(angle)) {
-        angle = 0.0f;
-    }
-
-    constexpr auto slowdownAngle = glm::radians(15.0f);
-    const auto minAVel = angularVelocity * 0.1f;
-    const auto aVel =
-        angle < slowdownAngle ? map(angle, 0.0f, slowdownAngle, minAVel, angularVelocity) : angularVelocity;
-
-    const auto slerpFactor = glm::clamp((aVel * delta) / angle, 0.0f, 1.0f);
-    const auto newOrientation = glm::slerp(ourOrientation, targetOrientation, slerpFactor);
-
-    auto shipTransform = glm::translate(Matrix4{1.0f}, transform.getPosition());
-    shipTransform = shipTransform * glm::toMat4(newOrientation);
-
-    transform.setTransform(shipTransform);
-    reg.patch<ComponentTransform>(getEntity());
-
-    // approachTarget = NullEntity;
-    // setActive(false);
-
-    /*float velocityDelta;
-
-    if (velocityTarget > 0.001f && velocityValue < velocityTarget) {
-        velocityDelta = delta * 0.2f;
-    } else if (velocityTarget < 0.001f && velocityValue <= 0.0f) {
-        velocityDelta = delta * 0.1f;
-    } else {
-        velocityDelta = delta;
-    }
-
-    velocityValue = glm::mix(velocityValue, velocityBoost ? velocityTarget * 4.0f : velocityTarget, velocityDelta);
-
-    static const auto pi2 = glm::pi<float>() * 2.0f;
-    static const auto maxPitch = glm::radians(45.0f);
-    static const auto minPitch = -glm::radians(45.0f);
-    static const auto maxRoll = glm::radians(15.0f);
-    static const auto minRoll = -glm::radians(15.0f);
-
-    if (directionRelative[0] && !directionRelative[1]) {
-        rotation.y += glm::radians(25.0f * delta);
-        rotation.z += glm::radians(30.0f * delta);
-    } else if (!directionRelative[0] && directionRelative[1]) {
-        rotation.y -= glm::radians(25.0f * delta);
-        rotation.z -= glm::radians(30.0f * delta);
-    } else {
-        if (rotation.z > 0.0f) {
-            rotation.z -= glm::radians(std::min(rotation.z, 10.0f * delta));
-        } else if (rotation.z < 0.0f) {
-            rotation.z += glm::radians(std::min(-rotation.z, 10.0f * delta));
-        }
-    }
-
-    if (directionRelative[2] && !directionRelative[3]) {
-        rotation.x -= glm::radians(20.0f * delta);
-    } else if (!directionRelative[2] && directionRelative[3]) {
-        rotation.x += glm::radians(20.0f * delta);
-    } else {
-        if (rotation.x > 0.0f) {
-            rotation.x -= glm::radians(std::min(rotation.x, 20.0f * delta));
-        } else if (rotation.x < 0.0f) {
-            rotation.x += glm::radians(std::min(-rotation.x, 20.0f * delta));
-        }
-    }
-
-    if (rotation.x > maxPitch) {
-        rotation.x = maxPitch;
-    }
-    if (rotation.x < minPitch) {
-        rotation.x = minPitch;
-    }
-
-    if (rotation.z > maxRoll) {
-        rotation.z = maxRoll;
-    }
-    if (rotation.z < minRoll) {
-        rotation.z = minRoll;
-    }
-
-    while (rotation.y > pi2) {
-        rotation.y -= pi2;
-    }
-    while (rotation.y < 0.0f) {
-        rotation.y += pi2;
-    }
-
-    Vector3 forward{0.0f, 0.0f, 1.0f};
-    forward = glm::rotateX(forward, rotation.x);
-    forward = glm::rotateY(forward, rotation.y);
-
-    auto orientation = glm::quatLookAt(forward, {0.0f, 1.0f, 0.0f});
-    // orientation = glm::rotate(orientation, rotation.z, forward);
-
-    const auto modelMatrix = transform.getAbsoluteTransform();
-    const auto absolutePosition = Vector3{modelMatrix[3]};
-
-    // Translate forward based on the current speed
-    Matrix4 updated{1.0f};
-    updated = glm::translate(updated, absolutePosition + -forward * delta * velocityValue);
-    updated = updated * glm::toMat4(orientation);
-
-    // Update the transform
-    transform.setTransform(updated);*/
+    return targetTransform->getPosition();
 }
 
 void ComponentShipControl::actionApproach(EntityId target) {
