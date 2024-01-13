@@ -18,6 +18,7 @@ public:
         ShadowL2,
         ShadowL3,
         Entity,
+        Position,
         SSAO,
         FXAA,
         BloomL0,

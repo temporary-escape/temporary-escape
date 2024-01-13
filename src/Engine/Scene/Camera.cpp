@@ -25,18 +25,18 @@ void Camera::setViewport(const Vector2i& viewport) {
 }
 
 Camera::Uniform Camera::createUniform(bool zeroPos) const {
-    auto viewMatrix = getViewMatrix();
+    auto viewMatrixCopy = getViewMatrix();
     if (zeroPos) {
-        viewMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+        viewMatrixCopy[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
     }
-    const auto transformationProjectionMatrix = getProjectionMatrix() * viewMatrix;
-    const auto eyesPos = Vector3(glm::inverse(viewMatrix)[3]);
+    const auto transformationProjectionMatrix = getProjectionMatrix() * viewMatrixCopy;
+    const auto eyesPos = Vector3(glm::inverse(viewMatrixCopy)[3]);
     const auto projectionViewInverseMatrix = glm::inverse(transformationProjectionMatrix);
 
     Uniform uniform{};
     uniform.transformationProjectionMatrix = transformationProjectionMatrix;
     uniform.viewProjectionInverseMatrix = projectionViewInverseMatrix;
-    uniform.viewMatrix = viewMatrix;
+    uniform.viewMatrix = viewMatrixCopy;
     uniform.projectionMatrix = getProjectionMatrix();
     uniform.viewport = viewport;
     uniform.eyesPos = eyesPos;
@@ -58,8 +58,14 @@ void Camera::setProjectionMatrix(const Matrix4& value) {
     projectionMatrix = value;
 }
 
+void Camera::setViewMatrix(const Matrix4& value) {
+    viewMatrix = value;
+    *transform = glm::inverse(viewMatrix);
+}
+
 void Camera::lookAt(const Vector3& eye, const Vector3& target, const Vector3& up) {
-    *transform = glm::inverse(glm::lookAt(eye, target, up));
+    viewMatrix = glm::lookAt(eye, target, up);
+    *transform = glm::inverse(viewMatrix);
 }
 
 Vector3 Camera::screenToWorld(const Vector2& pos) const {

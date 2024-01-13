@@ -67,6 +67,10 @@ void RenderPipelinePbr::setTextureShadows(const VulkanTexture& texture) {
     textures[8] = {"texShadows", texture};
 }
 
+void RenderPipelinePbr::setTexturePosition(const VulkanTexture& texture) {
+    textures[9] = {"texPosition", texture};
+}
+
 void RenderPipelinePbr::flushDescriptors(VulkanCommandBuffer& vkb) {
     bindDescriptors(vkb, uniforms, textures, {});
 }

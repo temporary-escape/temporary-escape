@@ -3,7 +3,7 @@
 using namespace Engine;
 
 RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& vulkan) : RenderBuffer{vulkan} {
-    setAttachments(12 + bloomMipMaps);
+    setAttachments(13 + bloomMipMaps);
 
     { // Depth
         TextureInfo info{};
@@ -86,6 +86,18 @@ RenderBufferPbr::RenderBufferPbr(const RenderOptions& options, VulkanRenderer& v
         ViewInfo view{};
         view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
         createAttachment(Attachment::Entity, texture, view);
+    }
+
+    { // Position
+        TextureInfo info{};
+        info.size = options.viewport;
+        info.format = VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
+        info.usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        auto& texture = createTexture(info);
+
+        ViewInfo view{};
+        view.type = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+        createAttachment(Attachment::Position, texture, view);
     }
 
     if (options.shadowsSize) { // Shadows

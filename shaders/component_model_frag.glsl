@@ -18,7 +18,7 @@ layout (binding = 7) uniform sampler2D metallicRoughnessTexture;
 layout (location = 0) in VS_OUT {
     vec3 normal;
     vec2 texCoords;
-    vec3 worldpos;
+    vec3 worldPos;
     mat3 TBN;
     vec4 entityColor;
 } vs_out;
@@ -27,6 +27,7 @@ layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
 layout (location = 3) out vec4 outEntity;
+layout (location = 4) out vec4 outPosition;
 
 void main() {
     vec3 baseColor = pow(texture(baseColorTexture, vs_out.texCoords).rgb * material.baseColorFactor.rgb, vec3(2.2));
@@ -43,4 +44,5 @@ void main() {
     outEmissiveRoughness = vec4(emissive, metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
     outEntity = vs_out.entityColor;
+    outPosition = vec4(vs_out.worldPos, 1.0);
 }

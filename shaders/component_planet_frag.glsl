@@ -31,6 +31,7 @@ layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
 layout (location = 3) out vec4 outEntity;
+layout (location = 4) out vec4 outPosition;
 
 // ---------------------------------------------------------------------------------------------------------------------
 vec4 atmosphereColor() {
@@ -75,4 +76,5 @@ void main() {
     outEmissiveRoughness = vec4(emissive * 0.1, roughness);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallic);
     outEntity = vec4(1.0, 1.0, 1.0, 1.0);
+    outPosition = vec4(vs_out.worldPos, 1.0);
 }

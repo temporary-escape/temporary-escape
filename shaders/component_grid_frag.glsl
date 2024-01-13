@@ -20,7 +20,7 @@ layout (binding = 8) uniform sampler1D paletteTexture;
 layout (location = 0) in VS_OUT {
     vec3 normal;
     vec2 texCoords;
-    vec3 worldpos;
+    vec3 worldPos;
     mat3 TBN;
     float color;
 } vs_out;
@@ -35,6 +35,7 @@ layout (location = 0) out vec4 outColorAmbient;
 layout (location = 1) out vec4 outEmissiveRoughness;
 layout (location = 2) out vec4 outNormalMetallic;
 layout (location = 3) out vec4 outEntity;
+layout (location = 4) out vec4 outPosition;
 
 // Source: http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
 vec3 rgb2hsv(vec3 c) {
@@ -81,4 +82,5 @@ void main() {
     outEmissiveRoughness = vec4(mix(emissive, emissive * emissivePalette, mask), metallicRoughness.g);
     outNormalMetallic = vec4(normal * 0.5 + 0.5, metallicRoughness.b);
     outEntity = uniforms.entityColor;
+    outPosition = vec4(vs_out.worldPos, 1.0);
 }

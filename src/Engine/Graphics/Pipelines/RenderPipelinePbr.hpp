@@ -19,10 +19,11 @@ public:
     void setTextureNormalMetallic(const VulkanTexture& texture);
     void setTextureSSAO(const VulkanTexture& texture);
     void setTextureShadows(const VulkanTexture& texture);
+    void setTexturePosition(const VulkanTexture& texture);
     void flushDescriptors(VulkanCommandBuffer& vkb);
 
 private:
     std::array<UniformBindingRef, 3> uniforms;
-    std::array<SamplerBindingRef, 9> textures;
+    std::array<SamplerBindingRef, 10> textures;
 };
 } // namespace Engine

@@ -100,6 +100,7 @@ void RenderPassPbr::beforeRender(VulkanCommandBuffer& vkb) {
     if (options.shadowsSize) {
         transitionDepth(RenderBufferPbr::Attachment::ShadowL0);
     }
+    transitionRead(RenderBufferPbr::Attachment::Position);
 }
 
 void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -129,6 +130,7 @@ void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     const auto& texBaseColorAmbient = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::AlbedoAmbient);
     const auto& texEmissiveRoughness = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::EmissiveRoughness);
     const auto& texNormalMetallic = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::NormalMetallic);
+    const auto& texPosition = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::Position);
 
     pipelinePbr.setUniformCamera(camera.getUbo().getCurrentBuffer());
     pipelinePbr.setUniformDirectionalLights(controllerLights.getUboDirectionalLights().getCurrentBuffer());
@@ -142,6 +144,7 @@ void RenderPassPbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelinePbr.setTextureNormalMetallic(texNormalMetallic);
     pipelinePbr.setTextureSSAO(*texSsao);
     pipelinePbr.setTextureShadows(*texShadows);
+    pipelinePbr.setTexturePosition(texPosition);
     pipelinePbr.flushDescriptors(vkb);
 
     pipelinePbr.renderMesh(vkb, resources.getMeshFullScreenQuad());

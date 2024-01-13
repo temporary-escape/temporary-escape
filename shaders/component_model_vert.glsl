@@ -24,7 +24,7 @@ layout (location = 3) in vec4 in_Tangent;
 layout (location = 0) out VS_OUT {
     vec3 normal;
     vec2 texCoords;
-    vec3 worldpos;
+    vec3 worldPos;
     mat3 TBN;
     vec4 entityColor;
 } vs_out;
@@ -39,7 +39,7 @@ void main() {
     vec3 T = normalize(uniforms.modelMatrix * vec4(in_Tangent.xyz, 0.0)).xyz;
 
     vs_out.normal = N;
-    vs_out.worldpos = worldPos.xyz;
+    vs_out.worldPos = worldPos.xyz;
     vs_out.texCoords = in_TexCoords;
     vs_out.entityColor = uniforms.entityColor;
 

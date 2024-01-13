@@ -63,17 +63,22 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     std::array<Camera::Uniform, 4> uniforms{};
     ShadowsViewProj shadowsViewProj{};
 
-    const auto& viewport = camera->getViewport();
-    const auto nearClip = camera->getZNear();
-    const auto farClip = 2000.0f;
+    const auto& viewport = Vector2d{camera->getViewport()};
+    const auto nearClip = static_cast<double>(camera->getZNear());
+    const auto farClip = static_cast<double>(camera->getZFar());
     const auto clipRange = farClip - nearClip;
-    const auto cascadeSplitLambda = 0.95f;
-    const auto nearFarMul = 1.0f;
+    const auto cascadeSplitLambda = 0.95;
+    const auto nearFarMul = 1.0;
+    const auto eyesPos = Vector3d{camera->getEyesPos()};
 
-    const auto projectionMatrix = glm::perspective(glm::radians(camera->getFov()),
-                                                   static_cast<float>(viewport.x) / static_cast<float>(viewport.y),
-                                                   nearClip,
-                                                   farClip);
+    const auto projectionMatrix = Matrix4d{
+        glm::perspective<double>(glm::radians(camera->getFov()),
+                                 static_cast<double>(viewport.x) / static_cast<double>(viewport.y),
+                                 nearClip,
+                                 farClip),
+    };
+
+    const auto viewMatrix = Matrix4d{camera->getViewMatrix()};
 
     const auto minZ = nearClip;
     const auto maxZ = nearClip + clipRange;
@@ -84,11 +89,11 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     // Calculate split depths based on view camera frustum
     // Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
     for (size_t i = 0; i < shadowMapCascadeCount; i++) {
-        float p = static_cast<float>(i + 1) / static_cast<float>(shadowMapCascadeCount);
-        float log = minZ * std::pow(ratio, p);
-        float uniform = minZ + range * p;
-        float d = cascadeSplitLambda * (log - uniform) + uniform;
-        shadowsViewProj.cascadeSplits[i] = (d - nearClip) / clipRange;
+        double p = static_cast<double>(i + 1) / static_cast<double>(shadowMapCascadeCount);
+        double log = minZ * std::pow(ratio, p);
+        double uniform = minZ + range * p;
+        double d = cascadeSplitLambda * (log - uniform) + uniform;
+        shadowsViewProj.cascadeSplits[i] = static_cast<float>((d - nearClip) / clipRange);
     }
 
     auto systemDirLights = reg.view<ComponentTransform, ComponentDirectionalLight>();
@@ -100,26 +105,26 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
     // This should be the sun
     const auto&& [entity, transform, light] = *systemDirLights.each().begin();
 
-    const auto lightDir = -glm::normalize(transform.getAbsolutePosition());
+    const auto lightDir = Vector3d{-glm::normalize(transform.getAbsolutePosition())};
 
     // Calculate orthographic projection matrix for each cascade
-    float lastSplitDist = 0.0;
+    double lastSplitDist = 0.0;
     for (size_t c = 0; c < shadowMapCascadeCount; c++) {
         const auto splitDist = shadowsViewProj.cascadeSplits[c];
 
-        glm::vec3 frustumCorners[8] = {
-            glm::vec3(-1.0f, 1.0f, 0.0f),
-            glm::vec3(1.0f, 1.0f, 0.0f),
-            glm::vec3(1.0f, -1.0f, 0.0f),
-            glm::vec3(-1.0f, -1.0f, 0.0f),
-            glm::vec3(-1.0f, 1.0f, 1.0f),
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            glm::vec3(1.0f, -1.0f, 1.0f),
-            glm::vec3(-1.0f, -1.0f, 1.0f),
+        Vector3d frustumCorners[8] = {
+            {-1.0f, 1.0f, 0.0f},
+            {1.0f, 1.0f, 0.0f},
+            {1.0f, -1.0f, 0.0f},
+            {-1.0f, -1.0f, 0.0f},
+            {-1.0f, 1.0f, 1.0f},
+            {1.0f, 1.0f, 1.0f},
+            {1.0f, -1.0f, 1.0f},
+            {-1.0f, -1.0f, 1.0f},
         };
 
         // Project frustum corners into world space
-        const auto invCam = glm::inverse(projectionMatrix * camera->getViewMatrix());
+        const auto invCam = glm::inverse(projectionMatrix * viewMatrix);
         for (size_t i = 0; i < 8; i++) {
             const auto invCorner = invCam * Vector4(frustumCorners[i], 1.0f);
             frustumCorners[i] = invCorner / invCorner.w;
@@ -127,36 +132,38 @@ void ControllerLights::calculateShadowCamera(VulkanRenderer& vulkan) {
 
         for (size_t i = 0; i < 4; i++) {
             const auto dist = frustumCorners[i + 4] - frustumCorners[i];
-            frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
+            frustumCorners[i + 4] = frustumCorners[i] + (dist * static_cast<double>(splitDist));
             frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
         }
 
         // Get frustum center
-        auto frustumCenter = Vector3{0.0f};
+        auto frustumCenter = Vector3d{0.0};
         for (size_t i = 0; i < 8; i++) {
             frustumCenter += frustumCorners[i];
         }
-        frustumCenter /= 8.0f;
+        frustumCenter /= 8.0;
 
-        float radius = 0.0f;
+        double radius = 0.0;
         for (size_t i = 0; i < 8; i++) {
-            float distance = glm::length(frustumCorners[i] - frustumCenter);
+            double distance = glm::length(frustumCorners[i] - frustumCenter);
             radius = glm::max(radius, distance);
         }
-        radius = std::ceil(radius * 16.0f) / 16.0f;
+        radius = std::ceil(radius * 16.0) / 16.0;
 
-        const auto maxExtents = glm::vec3(radius);
+        const auto maxExtents = Vector3d(radius);
         const auto minExtents = -maxExtents;
 
         Matrix4 cameraModel{1.0f};
         Camera shadowCamera{cameraModel};
 
-        shadowCamera.lookAt(frustumCenter - lightDir * -minExtents.z * nearFarMul, frustumCenter, {0.0f, 1.0f, 0.0f});
+        auto view = glm::lookAt(eyesPos - lightDir * -minExtents.z, eyesPos, {0.0f, 1.0f, 0.0f});
+        shadowCamera.setViewMatrix(view);
 
-        shadowCamera.setProjectionMatrix(glm::orthoLH_ZO(
-            minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, (maxExtents.z - minExtents.z) * nearFarMul));
+        auto proj = glm::orthoLH_ZO(
+            minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0, (maxExtents.z - minExtents.z) * nearFarMul);
+        shadowCamera.setProjectionMatrix(proj);
 
-        shadowsViewProj.lightMat[c] = shadowCamera.getProjectionMatrix() * shadowCamera.getViewMatrix();
+        shadowsViewProj.lightMat[c] = proj * view;
         shadowsViewProj.cascadeSplits[c] = nearClip + splitDist * clipRange;
 
         uniforms[c] = shadowCamera.createUniform(false);

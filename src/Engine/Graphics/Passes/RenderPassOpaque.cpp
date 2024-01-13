@@ -83,6 +83,15 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
         addAttachment(RenderBufferPbr::Attachment::NormalMetallic, attachment);
     }
 
+    { // Position
+        AttachmentInfo attachment{};
+        attachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.stencilLoadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.finalLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachment.clearColor.color = {0.0f, 0.0f, 0.0f, 0.0f};
+        addAttachment(RenderBufferPbr::Attachment::Position, attachment);
+    }
+
     { // Entity
         AttachmentInfo attachment{};
         attachment.loadOp = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -99,6 +108,7 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
             RenderBufferPbr::Attachment::EmissiveRoughness,
             RenderBufferPbr::Attachment::NormalMetallic,
             RenderBufferPbr::Attachment::Entity,
+            RenderBufferPbr::Attachment::Position,
         },
         {});
 

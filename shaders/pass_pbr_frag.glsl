@@ -34,6 +34,7 @@ layout (binding = 8) uniform samplerCube texPrefilter;
 layout (binding = 9) uniform sampler2D texBrdf;
 layout (binding = 10) uniform sampler2D texSsao;
 layout (binding = 11) uniform sampler2DArray texShadows;
+layout (binding = 12) uniform sampler2D texPosition;
 
 layout (location = 0) out vec4 outColor;
 
@@ -108,12 +109,14 @@ vec4 getClipSpacePos(float depth, vec2 texCoords) {
 
 // ----------------------------------------------------------------------------
 vec3 getWorldPos(float depth, vec2 texCoords) {
-    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
-    vec4 clipSpaceLocation = getClipSpacePos(depth, texCoords);
-    vec4 homogenousLocation = camera.viewProjectionInverseMatrix * clipSpaceLocation;
-    vec3 worldPos = homogenousLocation.xyz / homogenousLocation.w;
+    return texture(texPosition, texCoords).xyz;
 
-    return worldPos;
+    // Source: https://stackoverflow.com/questions/22360810/reconstructing-world-coordinates-from-depth-buffer-and-arbitrary-view-projection
+    //vec4 clipSpaceLocation = getClipSpacePos(depth, texCoords);
+    //vec4 homogenousLocation = camera.viewProjectionInverseMatrix * clipSpaceLocation;
+    //vec3 worldPos = homogenousLocation.xyz / homogenousLocation.w;
+
+    //return worldPos;
 }
 
 // ----------------------------------------------------------------------------

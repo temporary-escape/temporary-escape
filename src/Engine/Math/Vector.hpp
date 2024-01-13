@@ -12,13 +12,16 @@
 #include <ostream>
 
 namespace Engine {
-using Vector2 = glm::vec2;
+using Vector2 = glm::f32vec2;
+using Vector2d = glm::f64vec2;
 using Vector2i = glm::i32vec2;
-using Vector3 = glm::vec3;
+using Vector3 = glm::f32vec3;
+using Vector3d = glm::f64vec3;
 using Vector3i = glm::i32vec3;
-using Vector4 = glm::vec4;
+using Vector4 = glm::f32vec4;
+using Vector4d = glm::f64vec4;
 using Vector4i = glm::i32vec4;
-using Color4 = glm::vec4;
+using Color4 = glm::f32vec4;
 
 inline Color4 alpha(float a) {
     return Color4{1.0f, 1.0f, 1.0f, a};
@@ -48,6 +51,16 @@ template <> struct fmt::formatter<Engine::Vector2> {
     }
 };
 
+template <> struct fmt::formatter<Engine::Vector2d> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+    
+    template <typename FormatContext> auto format(Engine::Vector2d const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}]", vec.x, vec.y);
+    }
+};
+
 template <> struct fmt::formatter<Engine::Vector2i> {
     template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
         return ctx.begin();
@@ -64,6 +77,16 @@ template <> struct fmt::formatter<Engine::Vector3> {
     }
 
     template <typename FormatContext> auto format(Engine::Vector3 const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.x, vec.y, vec.z);
+    }
+};
+
+template <> struct fmt::formatter<Engine::Vector3d> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(Engine::Vector3d const& vec, FormatContext& ctx) {
         return fmt::format_to(ctx.out(), "[{}, {}, {}]", vec.x, vec.y, vec.z);
     }
 };
@@ -88,6 +111,16 @@ template <> struct fmt::formatter<Engine::Vector4> {
     }
 };
 
+template <> struct fmt::formatter<Engine::Vector4d> {
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(Engine::Vector4d const& vec, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "[{}, {}, {}, {}]", vec.x, vec.y, vec.z, vec.w);
+    }
+};
+
 template <> struct fmt::formatter<Engine::Vector4i> {
     template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
         return ctx.begin();
@@ -107,7 +140,10 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 2)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<float>(), o.via.array.ptr[1].as<float>()};
+            v = {
+                o.via.array.ptr[0].as<double>(),
+                o.via.array.ptr[1].as<double>(),
+            };
             return o;
         }
     };
@@ -121,13 +157,39 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         }
     };
 
+    template <> struct convert<Engine::Vector2d> {
+        msgpack::object const& operator()(msgpack::object const& o, Engine::Vector2d& v) const {
+            if (o.type != msgpack::type::ARRAY)
+                throw msgpack::type_error();
+            if (o.via.array.size != 2)
+                throw msgpack::type_error();
+            v = {
+                o.via.array.ptr[0].as<double>(),
+                o.via.array.ptr[1].as<double>(),
+            };
+            return o;
+        }
+    };
+    template <> struct pack<Engine::Vector2d> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Vector2d const& v) const {
+            o.pack_array(2);
+            o.pack_double(v.x);
+            o.pack_double(v.y);
+            return o;
+        }
+    };
+
     template <> struct convert<Engine::Vector2i> {
         msgpack::object const& operator()(msgpack::object const& o, Engine::Vector2i& v) const {
             if (o.type != msgpack::type::ARRAY)
                 throw msgpack::type_error();
             if (o.via.array.size != 2)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<int>(), o.via.array.ptr[1].as<int>()};
+            v = {
+                o.via.array.ptr[0].as<int>(),
+                o.via.array.ptr[1].as<int>(),
+            };
             return o;
         }
     };
@@ -147,7 +209,11 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 3)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<float>(), o.via.array.ptr[1].as<float>(), o.via.array.ptr[2].as<float>()};
+            v = {
+                o.via.array.ptr[0].as<float>(),
+                o.via.array.ptr[1].as<float>(),
+                o.via.array.ptr[2].as<float>(),
+            };
             return o;
         }
     };
@@ -162,13 +228,42 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         }
     };
 
+    template <> struct convert<Engine::Vector3d> {
+        msgpack::object const& operator()(msgpack::object const& o, Engine::Vector3d& v) const {
+            if (o.type != msgpack::type::ARRAY)
+                throw msgpack::type_error();
+            if (o.via.array.size != 3)
+                throw msgpack::type_error();
+            v = {
+                o.via.array.ptr[0].as<double>(),
+                o.via.array.ptr[1].as<double>(),
+                o.via.array.ptr[2].as<double>(),
+            };
+            return o;
+        }
+    };
+    template <> struct pack<Engine::Vector3d> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Vector3d const& v) const {
+            o.pack_array(3);
+            o.pack_double(v.x);
+            o.pack_double(v.y);
+            o.pack_double(v.z);
+            return o;
+        }
+    };
+
     template <> struct convert<Engine::Vector3i> {
         msgpack::object const& operator()(msgpack::object const& o, Engine::Vector3i& v) const {
             if (o.type != msgpack::type::ARRAY)
                 throw msgpack::type_error();
             if (o.via.array.size != 3)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<int>(), o.via.array.ptr[1].as<int>(), o.via.array.ptr[2].as<int>()};
+            v = {
+                o.via.array.ptr[0].as<int>(),
+                o.via.array.ptr[1].as<int>(),
+                o.via.array.ptr[2].as<int>(),
+            };
             return o;
         }
     };
@@ -189,10 +284,12 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
                 throw msgpack::type_error();
             if (o.via.array.size != 4)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<float>(),
-                 o.via.array.ptr[1].as<float>(),
-                 o.via.array.ptr[2].as<float>(),
-                 o.via.array.ptr[3].as<float>()};
+            v = {
+                o.via.array.ptr[0].as<float>(),
+                o.via.array.ptr[1].as<float>(),
+                o.via.array.ptr[2].as<float>(),
+                o.via.array.ptr[3].as<float>(),
+            };
             return o;
         }
     };
@@ -208,16 +305,45 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         }
     };
 
+    template <> struct convert<Engine::Vector4d> {
+        msgpack::object const& operator()(msgpack::object const& o, Engine::Vector4d& v) const {
+            if (o.type != msgpack::type::ARRAY)
+                throw msgpack::type_error();
+            if (o.via.array.size != 4)
+                throw msgpack::type_error();
+            v = {
+                o.via.array.ptr[0].as<double>(),
+                o.via.array.ptr[1].as<double>(),
+                o.via.array.ptr[2].as<double>(),
+                o.via.array.ptr[3].as<double>(),
+            };
+            return o;
+        }
+    };
+    template <> struct pack<Engine::Vector4d> {
+        template <typename Stream>
+        packer<Stream>& operator()(msgpack::packer<Stream>& o, Engine::Vector4d const& v) const {
+            o.pack_array(4);
+            o.pack_double(v.x);
+            o.pack_double(v.y);
+            o.pack_double(v.z);
+            o.pack_double(v.w);
+            return o;
+        }
+    };
+
     template <> struct convert<Engine::Vector4i> {
         msgpack::object const& operator()(msgpack::object const& o, Engine::Vector4i& v) const {
             if (o.type != msgpack::type::ARRAY)
                 throw msgpack::type_error();
             if (o.via.array.size != 4)
                 throw msgpack::type_error();
-            v = {o.via.array.ptr[0].as<int>(),
-                 o.via.array.ptr[1].as<int>(),
-                 o.via.array.ptr[2].as<int>(),
-                 o.via.array.ptr[3].as<int>()};
+            v = {
+                o.via.array.ptr[0].as<int>(),
+                o.via.array.ptr[1].as<int>(),
+                o.via.array.ptr[2].as<int>(),
+                o.via.array.ptr[3].as<int>(),
+            };
             return o;
         }
     };

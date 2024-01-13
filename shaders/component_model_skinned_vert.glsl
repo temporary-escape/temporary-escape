@@ -31,7 +31,7 @@ layout (location = 5) in vec4 in_Weights;
 layout (location = 0) out VS_OUT {
     vec3 normal;
     vec2 texCoords;
-    vec3 worldpos;
+    vec3 worldPos;
     mat3 TBN;
     vec4 entityColor;
 } vs_out;
@@ -52,7 +52,7 @@ void main() {
     vec3 T = normalize(uniforms.normalMatrix * mat3(skinMat) * in_Tangent.xyz);
 
     vs_out.normal = N;
-    vs_out.worldpos = worldPos.xyz;
+    vs_out.worldPos = worldPos.xyz;
     vs_out.texCoords = in_TexCoords;
     vs_out.entityColor = uniforms.entityColor;
 

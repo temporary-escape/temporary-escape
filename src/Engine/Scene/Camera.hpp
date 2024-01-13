@@ -30,6 +30,7 @@ public:
     virtual void setProjection(float fov);
 
     void setProjectionMatrix(const Matrix4& value);
+    void setViewMatrix(const Matrix4& value);
 
     virtual void setOrthographic(float zoom);
 
@@ -45,8 +46,8 @@ public:
         return glm::normalize(Vector3{glm::row(getViewMatrix(), 0)});
     }
 
-    Matrix4 getViewMatrix() const {
-        return glm::inverse(*transform);
+    const Matrix4& getViewMatrix() const {
+        return viewMatrix;
     }
 
     const Matrix4& getProjectionMatrix() const {
@@ -109,6 +110,7 @@ public:
 private:
     Matrix4* transform{nullptr};
     Matrix4 projectionMatrix{1.0f};
+    Matrix4 viewMatrix{1.0f};
     Vector2i viewport;
     float fovOrZoom{1.0f};
     float zNear{0.0f};
