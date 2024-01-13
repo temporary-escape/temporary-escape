@@ -9,7 +9,8 @@ GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const F
     vulkan{vulkan}, renderer{renderer}, fontFamily{fontFamily}, fontSize{fontSize} {
     createRenderPass();
 
-    contextMenu = addWindow<GuiWindowContextMenu>();
+    auto nestedContextMenu = addWindow<GuiWindowContextMenu>(nullptr);
+    contextMenu = addWindow<GuiWindowContextMenu>(nestedContextMenu);
 }
 
 GuiManager::~GuiManager() = default;
@@ -21,31 +22,28 @@ void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
     windowsToRemove.clear();
 
     for (auto& window : windows) {
-        if (!window.ptr->isEnabled()) {
-            continue;
-        }
-
         window.ptr->update(viewport);
 
-        if (!window.ptr->isDirty()) {
+        if (!window.ptr->isEnabled() || !window.ptr->isDirty()) {
             continue;
         }
 
         const auto extent = getExtent(window);
 
         window.ptr->draw();
-
-        window.canvas->begin({extent.width, extent.height});
-        window.ptr->render(*window.canvas);
-        window.canvas->flush();
+        window.drawn = true;
     }
 
     for (auto& window : windows) {
-        if (!window.ptr->isDirty()) {
+        if (!window.ptr->isEnabled() || !window.ptr->isDirty() || !window.drawn) {
             continue;
         }
 
         const auto extent = getExtent(window);
+        window.canvas->begin({extent.width, extent.height});
+        window.ptr->render(*window.canvas);
+        window.canvas->flush();
+        window.drawn = false;
 
         if (fboNeedsResizing(window)) {
             logger.info("Creating FBO of size: {} for gui window: \"{}\"",
@@ -82,7 +80,7 @@ void GuiManager::blit(Canvas& canvas) {
     const Color4 colorDimmed{0.3f, 0.3f, 0.3f, 1.0f};
 
     for (auto& window : windows) {
-        if (!window.ptr->isEnabled()) {
+        if (!window.ptr->isEnabled() || !window.fboColor) {
             continue;
         }
 
@@ -182,6 +180,13 @@ GuiWindowModal* GuiManager::modalDanger(std::string title, std::string text, con
     auto window = modal(std::move(title), std::move(text), choices, callback);
     window->setHeaderDanger(true);
     return window;
+}
+
+void GuiManager::showContextMenu(const Vector2& pos, ContextMenuCallback callback) {
+    contextMenu->clear();
+    callback(*contextMenu);
+    contextMenu->setEnabled(true);
+    contextMenu->setPos(pos);
 }
 
 bool GuiManager::isMousePosOverlap(const Vector2i& mousePos) const {

@@ -17,6 +17,9 @@ public:
     }
     void clearWidgets();
     void removeWidget(GuiWidget& widget);
+    size_t getCount() const {
+        return widgets.size();
+    }
 
 protected:
     void drawInternal() override;

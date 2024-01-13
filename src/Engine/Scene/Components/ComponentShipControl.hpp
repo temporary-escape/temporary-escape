@@ -38,6 +38,7 @@ public:
     }
 
     void actionApproach(EntityId target);
+    void actionOrbit(EntityId target, float radius);
 
     MSGPACK_DEFINE_ARRAY(/*velocityValue, velocityTarget, velocityMax, rotation, velocityBoost*/);
 
@@ -59,6 +60,10 @@ private:
     float forwardVelocityTarget{0.0f};
     float forwardVelocityMax{200.0f};
     float forwardAcceleration{20.0f};
+    float extraDistanceOffset{10.0f};
+    float orbitRadius{0.0f};
+    Matrix4 orbitMatrix{1.0f};
+    bool orbitMatrixChosen{false};
     bool active{false};
     std::vector<ComponentTurret*> turrets;
 };

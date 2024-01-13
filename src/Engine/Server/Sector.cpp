@@ -159,8 +159,8 @@ Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
     return scene->createEntityFrom("player", table);
 }
 
-void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
-    worker.postSafe([this, session, req]() {
+void Sector::handleShipAction(const SessionPtr& session, std::function<void(Entity&, ComponentShipControl&)> callback) {
+    worker.postSafe([this, session, c = std::move(callback)]() {
         // Find the entity that the player controls
         const auto found = playerControl.find(session);
         if (found == playerControl.end()) {
@@ -168,24 +168,27 @@ void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
         }
 
         // Get the ship control of the player's entity
-        const auto entity = scene->fromHandle(found->second);
+        auto entity = scene->fromHandle(found->second);
         auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
         if (!shipControl) {
             return;
         }
 
-        logger.debug("Entity: {} approaching: {}", entity.getHandle(), req.entityId);
-        shipControl->actionApproach(req.entityId);
+        c(entity, *shipControl);
+    });
+}
 
-        /*if (found != playerControl.end()) {
-            const auto entity = scene->fromHandle(found->second);
-            auto* shipControl = entity.tryGetComponent<ComponentShipControl>();
-            if (shipControl) {
-                shipControl->setSpeed(req.speed);
-                shipControl->setDirectionRelative(req.leftRight, req.upDown);
-                shipControl->setSpeedBoost(req.boost);
-            }
-        }*/
+void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
+    handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
+        logger.debug("Entity: {} approaching: {}", entity.getHandle(), req.entityId);
+        shipControl.actionApproach(req.entityId);
+    });
+}
+
+void Sector::handle(const SessionPtr& session, MessageActionOrbit req) {
+    handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
+        logger.debug("Entity: {} orbiting: {}", entity.getHandle(), req.entityId);
+        shipControl.actionOrbit(req.entityId, req.radius);
     });
 }
 

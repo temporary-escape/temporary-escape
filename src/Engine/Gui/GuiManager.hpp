@@ -8,6 +8,7 @@ namespace Engine {
 class ENGINE_API GuiManager {
 public:
     using ModalCallback = std::function<void(const std::string&)>;
+    using ContextMenuCallback = std::function<void(GuiWindowContextMenu&)>;
 
     explicit GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const FontFamily& fontFamily, int fontSize);
     virtual ~GuiManager();
@@ -34,6 +35,7 @@ public:
     GuiWindowContextMenu& getContextMenu() {
         return *contextMenu;
     }
+    void showContextMenu(const Vector2& pos, ContextMenuCallback callback);
 
     bool isMousePosOverlap(const Vector2i& mousePos) const;
 
@@ -53,6 +55,7 @@ private:
         VulkanFramebuffer fbo;
         bool hover{false};
         uint64_t buttonMask{0};
+        bool drawn{false};
     };
 
     void removeWindowInternal(const GuiWindow* window);

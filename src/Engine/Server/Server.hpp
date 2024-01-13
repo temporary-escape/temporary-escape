@@ -34,6 +34,7 @@ public:
     void handle(Request<MessageModManifestsRequest> req);
     void handle(Request<MessagePingResponse> req);
     void handle(Request<MessageActionApproach> req);
+    void handle(Request<MessageActionOrbit> req);
     void handle(Request<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;
@@ -72,6 +73,7 @@ public:
     SectorPtr startSector(const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
     SectorPtr getSectorForSession(const SessionPtr& session);
+    template <typename T> void forwardMessageToSector(const Request<T>& req);
 
     static Server* instance;
 

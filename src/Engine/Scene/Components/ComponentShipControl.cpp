@@ -19,8 +19,73 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     }
 
     // Target information
-    const auto& targetPos = getTargetPos(reg);
-    const auto targetDistance = glm::distance(transform.getPosition(), targetPos);
+    auto targetPos = getTargetPos(reg);
+    auto targetDistance = glm::distance(transform.getPosition(), targetPos);
+
+    // If we should do an orbit, and the distance is too high, then calculate where to start the orbit from
+    if (orbitRadius > 0.1f && targetDistance > orbitRadius) {
+        if (!orbitMatrixChosen) {
+            // orbitMatrixChosen = true;
+            orbitMatrix = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+            orbitMatrix = glm::rotate(orbitMatrix, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+        }
+
+        // Get the orbit circle normal vector (up)
+        const auto orbitNormal = Vector3{orbitMatrix * Vector4{0.0f, 1.0f, 0.0f, 0.0f}};
+
+        // Calculate the forward vector
+        const auto forwardAxis = Vector3{orbitMatrix * Vector4{0.0f, 0.0f, -1.0f, 0.0f}};
+
+        // The distance where should we start the orbit
+        const auto startDistance = glm::sqrt(targetDistance * targetDistance - orbitRadius * orbitRadius);
+
+        // The angle between vector towards the target and vector towards the start of the orbit
+        const auto beta = glm::acos(startDistance / targetDistance);
+
+        logger.info("startDistance: {} beta: {}", startDistance, glm::degrees(beta));
+
+        // Rotate the targetVector by the angle beta along the orbitNormal
+        targetPos = transform.getPosition() + glm::rotate(forwardAxis, -beta, orbitNormal) * startDistance;
+        targetDistance = glm::distance(transform.getPosition(), targetPos);
+
+        // logger.info("targetDistance: {} startDistance: {} beta: {}", targetDistance, startDistance,
+        // glm::degrees(beta));
+
+        // The angle between vector towards the target and vector towards the start of the orbit
+        /*const auto beta = glm::acos(startDistance / targetDistance);
+
+        // Rotate the targetVector by the angle beta along the orbitNormal
+        targetPos = glm::rotate(targetVector, beta, orbitNormal) * startDistance;
+
+        // Recalculate the distance
+        targetDistance = glm::distance(transform.getPosition(), targetPos);
+        logger.info("targetPos: {} orbitNormal: {} startDistance: {} beta: {}",
+                    targetPos,
+                    orbitNormal,
+                    startDistance,
+                    glm::degrees(beta));
+        // approachTarget = NullEntity;
+
+        // Recalculate the orientation
+        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+        newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+        targetOrientation = glm::quat_cast(newTransform);*/
+
+        // The orientation towards the target
+        /*auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+        newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+        auto targetOrientation = glm::quat_cast(newTransform);
+
+        // The new ship transform
+        auto shipTransform = glm::translate(Matrix4{1.0f}, targetPos);
+        shipTransform = shipTransform * glm::toMat4(targetOrientation);
+        transform.setTransform(shipTransform);
+        reg.patch<ComponentTransform>(getEntity());
+
+        approachTarget = NullEntity;
+        active = false;
+        return;*/
+    }
 
     // The orientation towards the target
     auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
@@ -47,7 +112,7 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
 
         // logger.info("secondsToStop: {} distanceToStop: {}", secondsToStop, distanceToStop);
 
-        if (targetDistance > distanceToStop + 100.0f && angle < accelerationAngleMin) {
+        if (targetDistance > distanceToStop + extraDistanceOffset && angle < accelerationAngleMin) {
             forwardVelocityTarget = forwardVelocityMax;
         } else {
             forwardVelocityTarget = 0.0f;
@@ -67,7 +132,7 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
 
     // Align the ship horizontally if the ship is stopped
     auto aligning{false};
-    if (std::abs(velocityDiff) < 0.1f && targetDistance < 100.0f) {
+    if (std::abs(velocityDiff) < 1.0f && targetDistance < extraDistanceOffset) {
         // Get vector towards the front of the ship, but horizontally aligned
         const auto forwardAligned = glm::normalize(Vector3{ourForward.x, 0.0f, ourForward.z});
 
@@ -133,8 +198,16 @@ Vector3 ComponentShipControl::getTargetPos(EntityRegistry& reg) {
     return targetTransform->getPosition();
 }
 
-void ComponentShipControl::actionApproach(EntityId target) {
+void ComponentShipControl::actionApproach(const EntityId target) {
     approachTarget = target;
+    orbitRadius = 0.0f;
+    setActive(true);
+}
+
+void ComponentShipControl::actionOrbit(const EntityId target, const float radius) {
+    approachTarget = target;
+    orbitRadius = radius;
+    orbitMatrixChosen = false;
     setActive(true);
 }
 

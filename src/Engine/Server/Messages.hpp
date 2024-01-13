@@ -123,6 +123,26 @@ struct MessageActionApproach {
 MESSAGE_DEFINE(MessageActionApproach);
 
 // --------------------------------------------------------------------------------------------------------------------
+struct MessageActionOrbit {
+    EntityId entityId{0};
+    float radius{0};
+
+    MSGPACK_DEFINE_ARRAY(entityId, radius);
+};
+
+MESSAGE_DEFINE(MessageActionOrbit);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageActionKeepDistance {
+    EntityId entityId{0};
+    float distance{0};
+
+    MSGPACK_DEFINE_ARRAY(entityId, distance);
+};
+
+MESSAGE_DEFINE(MessageActionKeepDistance);
+
+// --------------------------------------------------------------------------------------------------------------------
 struct MessageControlTargetEvent {
     uint64_t entityId{0};
 

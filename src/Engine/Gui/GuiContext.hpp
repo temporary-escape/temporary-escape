@@ -67,7 +67,7 @@ public:
     void skip();
     bool button(const std::string& label, const ImagePtr& image = nullptr);
     bool buttonToggle(const std::string& label, bool& value);
-    bool contextButton(const std::string& label, const ImagePtr& image);
+    bool contextButton(const std::string& label, const ImagePtr& imageLeft, const ImagePtr& imageRight);
     bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label);
     bool textInput(std::string& text, size_t max);
@@ -106,6 +106,10 @@ public:
     bool hasActiveInput() const {
         return activeInput;
     }
+    int getFontSize() const {
+        return fontSize;
+    }
+    void setPadding(float value);
 
 private:
     struct CustomStyle;

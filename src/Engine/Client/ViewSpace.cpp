@@ -7,6 +7,17 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
+static const std::vector<std::tuple<std::string, float>> actionDistances = {
+    {"500 m", 500.0f},
+    {"1 Km", 1 * 1000.0f},
+    {"2 Km", 2 * 1000.0f},
+    {"5 Km", 5 * 1000.0f},
+    {"10 Km", 10 * 1000.0f},
+    {"20 Km", 20 * 1000.0f},
+    {"50 Km", 50 * 1000.0f},
+    {"100 Km", 100 * 1000.0f},
+};
+
 ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager, AssetsManager& assetsManager,
                      VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client) :
     config{config},
@@ -19,7 +30,10 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
 
     gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
 
+    icons.nested = assetsManager.getImages().find("icon_menu_nested");
     icons.approach = assetsManager.getImages().find("icon_transform");
+    icons.orbit = assetsManager.getImages().find("icon_orbit");
+    icons.distance = assetsManager.getImages().find("icon_distance");
     icons.info = assetsManager.getImages().find("icon_info");
     icons.attack = assetsManager.getImages().find("icon_convergence_target");
 }
@@ -128,6 +142,29 @@ void ViewSpace::onExit() {
     // guiContextMenu.setEnabled(false);
 }
 
+void ViewSpace::showContextMenu(const Vector2i& mousePos, const Entity& entity) {
+    const auto* transform = entity.tryGetComponent<ComponentTransform>();
+    if (!transform) {
+        return;
+    }
+
+    guiManager.showContextMenu(mousePos, [=](GuiWindowContextMenu& menu) {
+        menu.addItem(icons.info, "Info", []() {});
+        menu.addItem(icons.approach, "Approach", [=]() { doApproachEntity(entity); });
+        menu.addNested(icons.orbit, icons.nested, "Orbit", [=](GuiWindowContextMenu& menuOrbit) {
+            for (const auto& [label, distance] : actionDistances) {
+                menuOrbit.addItem(nullptr, label, [=, d = distance]() { doOrbitEntity(entity, d); });
+            }
+        });
+        menu.addNested(icons.distance, icons.nested, "Distance", [=](GuiWindowContextMenu& menuOrbit) {
+            for (const auto& [label, distance] : actionDistances) {
+                menuOrbit.addItem(nullptr, label, [=]() {});
+            }
+        });
+        menu.addItem(icons.attack, "Target", []() {});
+    });
+}
+
 void ViewSpace::doTargetEntity(const Entity& entity) {
     /*if (client.getCache().playerEntityId) {
         const auto* remoteHandle = entity.tryGetComponent<ComponentRemoteHandle>();
@@ -150,6 +187,14 @@ void ViewSpace::doApproachEntity(const Engine::Entity& entity) {
     auto& scene = *client.getScene();
     MessageActionApproach msg{};
     msg.entityId = scene.getRemoteId(entity.getHandle());
+    client.send(msg);
+}
+
+void ViewSpace::doOrbitEntity(const Entity& entity, float radius) {
+    auto& scene = *client.getScene();
+    MessageActionOrbit msg{};
+    msg.entityId = scene.getRemoteId(entity.getHandle());
+    msg.radius = radius;
     client.send(msg);
 }
 
@@ -181,17 +226,7 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
         const auto& camera = *scene->getPrimaryCamera();
         const auto selected = scene->getSelectedEntity();
         if (selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
-            const auto* transform = selected->tryGetComponent<ComponentTransform>();
-            if (transform) {
-                auto& menu = guiManager.getContextMenu();
-                menu.clear();
-                menu.addItem(
-                    icons.approach, "Approach", [this, entity = selected.value()] { doApproachEntity(entity); });
-                menu.addItem(icons.info, "Info", []() {});
-                menu.addItem(icons.attack, "Attack", []() {});
-                menu.setEnabled(true);
-                menu.setPos(pos);
-            }
+            showContextMenu(pos, selected.value());
         } else if (guiManager.isContextMenuVisible()) {
             guiManager.getContextMenu().setEnabled(false);
         }

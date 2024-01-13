@@ -12,7 +12,7 @@ set_target_properties(${PROJECT_NAME}Engine PROPERTIES CXX_STANDARD 17 CXX_EXTEN
 set_target_properties(${PROJECT_NAME}Engine PROPERTIES OUTPUT_NAME "${PROJECT_NAME}Engine")
 
 if (TEMPORARY_ESCAPE_LLVM_SYMBOLIZER_PATH)
-    target_compile_options(${PROJECT_NAME}Engine PUBLIC -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_options(${PROJECT_NAME}Engine PUBLIC -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
 endif ()
 
 # Inherit the common options

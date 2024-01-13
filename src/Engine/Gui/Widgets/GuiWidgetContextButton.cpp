@@ -2,12 +2,13 @@
 
 using namespace Engine;
 
-GuiWidgetContextButton::GuiWidgetContextButton(GuiContext& ctx, ImagePtr image, std::string label) :
-    GuiWidget{ctx}, image{std::move(image)}, label{std::move(label)} {
+GuiWidgetContextButton::GuiWidgetContextButton(GuiContext& ctx, ImagePtr imageLeft, ImagePtr imageRight,
+                                               std::string label) :
+    GuiWidget{ctx}, imageLeft{std::move(imageLeft)}, imageRight{std::move(imageRight)}, label{std::move(label)} {
 }
 
 void GuiWidgetContextButton::drawInternal() {
-    if (ctx.contextButton(label, image)) {
+    if (ctx.contextButton(label, imageLeft, imageRight)) {
         if (onClick) {
             onClick();
         }
@@ -19,8 +20,13 @@ void GuiWidgetContextButton::setLabel(std::string value) {
     ctx.setDirty();
 }
 
-void GuiWidgetContextButton::setImage(ImagePtr value) {
-    image = std::move(value);
+void GuiWidgetContextButton::setImageLeft(ImagePtr value) {
+    imageLeft = std::move(value);
+    ctx.setDirty();
+}
+
+void GuiWidgetContextButton::setImageRight(ImagePtr value) {
+    imageRight = std::move(value);
     ctx.setDirty();
 }
 

@@ -37,6 +37,7 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessagePingResponse);
     HANDLE_REQUEST(MessagePlayerSpawnRequest);
     HANDLE_REQUEST(MessageActionApproach);
+    HANDLE_REQUEST(MessageActionOrbit);
     HANDLE_REQUEST(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
@@ -303,6 +304,16 @@ SectorPtr Server::getSectorForSession(const SessionPtr& session) {
     return found->second;
 }
 
+template <typename T> void Server::forwardMessageToSector(const Request<T>& req) {
+    const auto session = playerSessions.getSession(req.peer);
+    const auto sector = getSectorForSession(session);
+    if (!sector) {
+        return;
+    }
+
+    sector->handle(session, req.get());
+}
+
 void Server::handle(Request<MessageLoginRequest> req) {
     logger.info("New login peer: {}", req.peer->getAddress());
 
@@ -405,14 +416,11 @@ void Server::handle(Request<MessagePingResponse> req) {
 }
 
 void Server::handle(Request<MessageActionApproach> req) {
-    const auto session = playerSessions.getSession(req.peer);
-    const auto sector = getSectorForSession(session);
-    if (!sector) {
-        return;
-    }
+    forwardMessageToSector(req);
+}
 
-    const auto data = req.get();
-    sector->handle(session, data);
+void Server::handle(Request<MessageActionOrbit> req) {
+    forwardMessageToSector(req);
 }
 
 void Server::handle(Request<MessageControlTargetEvent> req) {

@@ -513,9 +513,8 @@ bool GuiContext::buttonToggle(const std::string& label, bool& value) {
     return previous != value;
 }
 
-bool GuiContext::contextButton(const std::string& label, const ImagePtr& image) {
+bool GuiContext::contextButton(const std::string& label, const ImagePtr& imageLeft, const ImagePtr& imageRight) {
     struct nk_image ni {};
-    ni.handle.ptr = image.get();
 
     auto& style = custom->context;
 
@@ -523,13 +522,15 @@ bool GuiContext::contextButton(const std::string& label, const ImagePtr& image) 
 
     struct nk_rect icon {};
 
-    icon.w = bounds.h - 2.0f * style.padding.y;
-    icon.h = bounds.h - 2.0f * style.padding.y;
-    icon.y = bounds.y + (bounds.h / 2.0f) - (icon.h / 2.0f);
-    icon.x = bounds.x + style.image_padding.x;
-
     const auto temp = style.padding.x;
-    style.padding.x = icon.w + style.padding.x * 2.0f + style.image_padding.x;
+    if (imageLeft) {
+        icon.w = bounds.h - 2.0f * style.padding.y;
+        icon.h = bounds.h - 2.0f * style.padding.y;
+        icon.y = bounds.y + (bounds.h / 2.0f) - (icon.h / 2.0f);
+        icon.x = bounds.x + style.image_padding.x;
+
+        style.padding.x = icon.w + style.padding.x * 2.0f + style.image_padding.x;
+    }
 
     auto* color = &custom->context.text_normal;
     if (nk_input_is_mouse_hovering_rect(&nk->input, bounds) == nk_true) {
@@ -540,7 +541,20 @@ bool GuiContext::contextButton(const std::string& label, const ImagePtr& image) 
 
     style.padding.x = temp;
 
-    nk_draw_image(&nk->current->buffer, icon, &ni, *color);
+    if (imageLeft) {
+        ni.handle.ptr = imageLeft.get();
+        nk_draw_image(&nk->current->buffer, icon, &ni, *color);
+    }
+
+    if (imageRight) {
+        icon.w = bounds.h - 2.0f * style.padding.y;
+        icon.h = bounds.h - 2.0f * style.padding.y;
+        icon.y = bounds.y + (bounds.h / 2.0f) - (icon.h / 2.0f);
+        icon.x = bounds.x + bounds.w - icon.w - style.padding.x;
+
+        ni.handle.ptr = imageRight.get();
+        nk_draw_image(&nk->current->buffer, icon, &ni, *color);
+    }
 
     return res == nk_true;
 }
@@ -666,6 +680,10 @@ void GuiContext::eventKeyReleased(const Key key, const Modifiers modifiers) {
 void GuiContext::eventCharTyped(const uint32_t code) {
     inputEvents.emplace_back([=]() { nk_input_unicode(nk.get(), code); });
     setDirty();
+}
+
+void Engine::GuiContext::setPadding(const float value) {
+    nk->style.window.padding = {value, value};
 }
 
 static const auto BLACK = HEX(0x000000ff);

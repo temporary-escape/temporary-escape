@@ -11,7 +11,7 @@ function EntityScoutShip.new (entity, data)
     inst.entity = entity
 
     local transform = entity:add_component_transform()
-    transform:translate(engine.Vector3.new(250.0, 0.0, -150.0))
+    transform:translate(engine.Vector3.new(250.0, 0.0, -750.0))
 
     local rigid_body = entity:add_component_rigid_body()
     rigid_body.mass = 1.0

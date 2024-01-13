@@ -32,8 +32,10 @@ public:
     Scene* getScene() override;
 
 private:
+    void showContextMenu(const Vector2i& mousePos, const Entity& entity);
     void doTargetEntity(const Entity& entity);
     void doApproachEntity(const Entity& entity);
+    void doOrbitEntity(const Entity& entity, float radius);
     void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
 
     const Config& config;
@@ -49,7 +51,10 @@ private:
     } gui;
 
     struct {
+        ImagePtr nested;
         ImagePtr approach;
+        ImagePtr orbit;
+        ImagePtr distance;
         ImagePtr info;
         ImagePtr attack;
     } icons;

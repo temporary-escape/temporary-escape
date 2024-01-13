@@ -7,15 +7,19 @@ class ENGINE_API GuiWidgetContextButton : public GuiWidget {
 public:
     using OnClickCallback = std::function<void()>;
 
-    explicit GuiWidgetContextButton(GuiContext& ctx, ImagePtr image, std::string label);
+    explicit GuiWidgetContextButton(GuiContext& ctx, ImagePtr imageLeft, ImagePtr imageRight, std::string label);
 
     void setLabel(std::string value);
     const std::string& getLabel() const {
         return label;
     }
-    void setImage(ImagePtr value);
-    const ImagePtr& getImage() const {
-        return image;
+    void setImageLeft(ImagePtr value);
+    const ImagePtr& getImageLeft() const {
+        return imageLeft;
+    }
+    void setImageRight(ImagePtr value);
+    const ImagePtr& getImageRight() const {
+        return imageRight;
     }
     void setOnClick(OnClickCallback value);
 
@@ -23,7 +27,8 @@ private:
     void drawInternal() override;
 
     std::string label;
-    ImagePtr image;
+    ImagePtr imageLeft;
+    ImagePtr imageRight;
     OnClickCallback onClick;
 };
 } // namespace Engine

@@ -12,6 +12,16 @@ void GuiWidget::draw() {
         ctx.tooltip(tooltip);
     }
 
+    if (onHover) {
+        if (!hovered && ctx.isHovered()) {
+            hovered = true;
+            onHover(true);
+        } else if (hovered && !ctx.isHovered()) {
+            hovered = false;
+            onHover(false);
+        }
+    }
+
     drawInternal();
 }
 
@@ -28,4 +38,8 @@ void GuiWidget::setWidth(const float value, const bool pixels) {
 void GuiWidget::setTooltip(std::string value) {
     tooltip = std::move(value);
     ctx.setDirty();
+}
+
+void GuiWidget::setOnHover(OnHoverCallback value) {
+    onHover = std::move(value);
 }
