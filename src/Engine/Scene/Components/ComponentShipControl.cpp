@@ -19,72 +19,44 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     }
 
     // Target information
-    auto targetPos = getTargetPos(reg);
+    targetPos = getTargetPos(reg);
     auto targetDistance = glm::distance(transform.getPosition(), targetPos);
 
-    // If we should do an orbit, and the distance is too high, then calculate where to start the orbit from
-    if (orbitRadius > 0.1f && targetDistance > orbitRadius) {
+    if (orbitRadius > 0.1f) {
         if (!orbitMatrixChosen) {
-            // orbitMatrixChosen = true;
+            orbitMatrixChosen = true;
             orbitMatrix = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
             orbitMatrix = glm::rotate(orbitMatrix, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+            orbitMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
         }
+
+        orbitOrigin = targetPos;
 
         // Get the orbit circle normal vector (up)
         const auto orbitNormal = Vector3{orbitMatrix * Vector4{0.0f, 1.0f, 0.0f, 0.0f}};
 
-        // Calculate the forward vector
-        const auto forwardAxis = Vector3{orbitMatrix * Vector4{0.0f, 0.0f, -1.0f, 0.0f}};
+        // Get the direction to our ship
+        const auto orbitToShip = transform.getPosition() - targetPos;
 
-        // The distance where should we start the orbit
-        const auto startDistance = glm::sqrt(targetDistance * targetDistance - orbitRadius * orbitRadius);
+        // Get the distance of us towards the orbit plane
+        const auto dist = glm::dot(orbitToShip, orbitNormal);
 
-        // The angle between vector towards the target and vector towards the start of the orbit
-        const auto beta = glm::acos(startDistance / targetDistance);
+        // Project our position onto the orbit plane
+        auto orbitPlaneProjected = transform.getPosition() - dist * orbitNormal;
 
-        logger.info("startDistance: {} beta: {}", startDistance, glm::degrees(beta));
+        // More the projected point to match the orbit distance
+        orbitPlaneProjected = (targetPos + glm::normalize(orbitPlaneProjected - targetPos) * orbitRadius);
 
-        // Rotate the targetVector by the angle beta along the orbitNormal
-        targetPos = transform.getPosition() + glm::rotate(forwardAxis, -beta, orbitNormal) * startDistance;
-        targetDistance = glm::distance(transform.getPosition(), targetPos);
+        // Direction towards the projected point
+        const auto orbitToProjected = glm::normalize(orbitPlaneProjected - targetPos);
 
-        // logger.info("targetDistance: {} startDistance: {} beta: {}", targetDistance, startDistance,
-        // glm::degrees(beta));
+        // Forward direction along the orbit plane
+        const auto orbitForward = glm::rotate(Vector3{0.0f, 1.0f, 0.0f}, -glm::radians(90.0f), orbitToProjected);
 
-        // The angle between vector towards the target and vector towards the start of the orbit
-        /*const auto beta = glm::acos(startDistance / targetDistance);
-
-        // Rotate the targetVector by the angle beta along the orbitNormal
-        targetPos = glm::rotate(targetVector, beta, orbitNormal) * startDistance;
+        targetPos = orbitPlaneProjected + (orbitForward * 100.0f);
 
         // Recalculate the distance
         targetDistance = glm::distance(transform.getPosition(), targetPos);
-        logger.info("targetPos: {} orbitNormal: {} startDistance: {} beta: {}",
-                    targetPos,
-                    orbitNormal,
-                    startDistance,
-                    glm::degrees(beta));
-        // approachTarget = NullEntity;
-
-        // Recalculate the orientation
-        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
-        newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
-        targetOrientation = glm::quat_cast(newTransform);*/
-
-        // The orientation towards the target
-        /*auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
-        newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
-        auto targetOrientation = glm::quat_cast(newTransform);
-
-        // The new ship transform
-        auto shipTransform = glm::translate(Matrix4{1.0f}, targetPos);
-        shipTransform = shipTransform * glm::toMat4(targetOrientation);
-        transform.setTransform(shipTransform);
-        reg.patch<ComponentTransform>(getEntity());
-
-        approachTarget = NullEntity;
-        active = false;
-        return;*/
     }
 
     // The orientation towards the target
@@ -177,6 +149,7 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     // Update the ship transform
     transform.setTransform(shipTransform);
     reg.patch<ComponentTransform>(getEntity());
+    reg.patch<ComponentShipControl>(getEntity());
 }
 
 Vector3 ComponentShipControl::getTargetPos(EntityRegistry& reg) {

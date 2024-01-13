@@ -1,4 +1,5 @@
 #include "MeshUtils.hpp"
+#include "../Scene/Components/ComponentLines.hpp"
 #include "../Utils/Exceptions.hpp"
 
 using namespace Engine;
@@ -290,6 +291,38 @@ Mesh Engine::createBulletMesh(VulkanRenderer& vulkan) {
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sizeof(BulletVertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
+
+    mesh.count = vertices.size();
+
+    return mesh;
+}
+
+Mesh Engine::createCircleMesh(VulkanRenderer& vulkan) {
+    Mesh mesh{};
+
+    std::vector<ComponentLines::Vertex> vertices;
+    vertices.resize(1024 * 2);
+
+    const auto stepAngle = 360.0f / 1024.0f;
+    for (size_t i = 0; i < 1024; i++) {
+        const auto startAngle = static_cast<float>(i) * stepAngle;
+        const auto endAngle = static_cast<float>(i + 1) * stepAngle;
+
+        vertices[i * 2 + 0] = {glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, glm::radians(startAngle)), Color4{1.0f}};
+        vertices[i * 2 + 1] = {glm::rotateY(Vector3{1.0f, 0.0f, 0.0f}, glm::radians(endAngle)), Color4{1.0f}};
+    }
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ComponentLines::Vertex) * vertices.size();
     bufferInfo.usage =
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

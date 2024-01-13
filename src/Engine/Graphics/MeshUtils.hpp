@@ -54,4 +54,5 @@ Mesh ENGINE_API createFullScreenQuad(VulkanRenderer& vulkan);
 Mesh ENGINE_API createSkyboxCube(VulkanRenderer& vulkan);
 Mesh ENGINE_API createPlanetMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createBulletMesh(VulkanRenderer& vulkan);
+Mesh ENGINE_API createCircleMesh(VulkanRenderer& vulkan);
 } // namespace Engine

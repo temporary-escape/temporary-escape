@@ -27,6 +27,10 @@ public:
         return meshBullet;
     }
 
+    const Mesh& getMeshOrbit() const {
+        return meshOrbit;
+    }
+
     const SkyboxTextures& getDefaultSkybox() const {
         return defaultSkybox;
     }
@@ -75,6 +79,7 @@ private:
     Mesh meshPlanet;
     Mesh meshSkyboxCube;
     Mesh meshBullet;
+    Mesh meshOrbit;
     SkyboxTextures defaultSkybox;
     struct {
         VulkanBuffer ubo;

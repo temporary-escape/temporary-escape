@@ -2,6 +2,7 @@
 
 #include "../../Assets/Texture.hpp"
 #include "../Pipelines/RenderPipelineIcons.hpp"
+#include "../Pipelines/RenderPipelineLines.hpp"
 #include "../Pipelines/RenderPipelineOutline.hpp"
 #include "../Pipelines/RenderPipelineWorldText.hpp"
 #include "../RenderBufferPbr.hpp"
@@ -20,6 +21,7 @@ private:
     void renderOutline(VulkanCommandBuffer& vkb, Scene& scene);
     void renderIcons(VulkanCommandBuffer& vkb, Scene& scene);
     void renderWorldText(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderShipControls(VulkanCommandBuffer& vkb, Scene& scene);
 
     const RenderOptions& options;
     RenderBufferPbr& buffer;
@@ -27,5 +29,6 @@ private:
     RenderPipelineOutline pipelineOutline;
     RenderPipelineIcons pipelineIcons;
     RenderPipelineWorldText pipelineWorldText;
+    RenderPipelineLines pipelineLines;
 };
 } // namespace Engine

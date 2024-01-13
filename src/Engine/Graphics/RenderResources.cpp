@@ -75,6 +75,7 @@ RenderResources::RenderResources(VulkanRenderer& vulkan) :
     meshPlanet = createPlanetMesh(vulkan);
     meshSkyboxCube = createSkyboxCube(vulkan);
     meshBullet = createBulletMesh(vulkan);
+    meshOrbit = createCircleMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
     createPalette();

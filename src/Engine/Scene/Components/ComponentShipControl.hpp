@@ -37,10 +37,26 @@ public:
         return turrets;
     }
 
+    const Matrix4& getOrbitMatrix() const {
+        return orbitMatrix;
+    }
+
+    const Vector3& getOrbitOrigin() const {
+        return orbitOrigin;
+    }
+
+    float getOrbitRadius() const {
+        return orbitRadius;
+    }
+
+    const Vector3& getApproachPos() const {
+        return targetPos;
+    }
+
     void actionApproach(EntityId target);
     void actionOrbit(EntityId target, float radius);
 
-    MSGPACK_DEFINE_ARRAY(/*velocityValue, velocityTarget, velocityMax, rotation, velocityBoost*/);
+    MSGPACK_DEFINE_ARRAY(orbitMatrix, orbitRadius, orbitOrigin);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
@@ -63,8 +79,10 @@ private:
     float extraDistanceOffset{10.0f};
     float orbitRadius{0.0f};
     Matrix4 orbitMatrix{1.0f};
+    Vector3 orbitOrigin;
     bool orbitMatrixChosen{false};
     bool active{false};
+    Vector3 targetPos;
     std::vector<ComponentTurret*> turrets;
 };
 } // namespace Engine

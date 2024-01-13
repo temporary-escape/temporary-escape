@@ -13,7 +13,8 @@ RenderPassNonHDR::RenderPassNonHDR(const RenderOptions& options, VulkanRenderer&
     resources{resources},
     pipelineOutline{vulkan},
     pipelineIcons{vulkan},
-    pipelineWorldText{vulkan} {
+    pipelineWorldText{vulkan},
+    pipelineLines{vulkan} {
 
     { // Forward
         AttachmentInfo attachment{};
@@ -43,6 +44,7 @@ RenderPassNonHDR::RenderPassNonHDR(const RenderOptions& options, VulkanRenderer&
     addPipeline(pipelineOutline, 0);
     addPipeline(pipelineIcons, 0);
     addPipeline(pipelineWorldText, 0);
+    addPipeline(pipelineLines, 0);
 }
 
 void RenderPassNonHDR::beforeRender(VulkanCommandBuffer& vkb) {
@@ -56,6 +58,7 @@ void RenderPassNonHDR::render(VulkanCommandBuffer& vkb, Scene& scene) {
     renderOutline(vkb, scene);
     renderWorldText(vkb, scene);
     renderIcons(vkb, scene);
+    renderShipControls(vkb, scene);
 }
 
 void RenderPassNonHDR::renderOutline(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -143,5 +146,33 @@ void RenderPassNonHDR::renderWorldText(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineWorldText.flushDescriptors(vkb);
 
         pipelineWorldText.renderMesh(vkb, mesh);
+    }
+}
+
+void RenderPassNonHDR::renderShipControls(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto& camera = *scene.getPrimaryCamera();
+
+    pipelineLines.bind(vkb);
+
+    for (auto&& [entity, shipControl] : scene.getView<ComponentShipControl>().each()) {
+        pipelineLines.setModelMatrix(shipControl.getOrbitMatrix());
+
+        if (shipControl.getOrbitRadius() < 1.0f) {
+            continue;
+        }
+
+        Matrix4 modelMatrix{1.0f};
+        modelMatrix = glm::translate(modelMatrix, shipControl.getOrbitOrigin());
+        modelMatrix = glm::scale(modelMatrix, Vector3{shipControl.getOrbitRadius()});
+        modelMatrix *= shipControl.getOrbitMatrix();
+
+        pipelineLines.setModelMatrix(modelMatrix);
+        pipelineLines.setColor(Color4{0.0f, 0.0f, 1.0f, 1.0f});
+        pipelineLines.flushConstants(vkb);
+
+        pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+        pipelineLines.flushDescriptors(vkb);
+
+        pipelineLines.renderMesh(vkb, resources.getMeshOrbit());
     }
 }
