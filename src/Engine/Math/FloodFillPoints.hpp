@@ -7,14 +7,14 @@
 #include <vector>
 
 namespace Engine {
-class ENGINE_API FloodFill {
+class ENGINE_API FloodFillPoints {
 public:
     struct Result {
         size_t index{0};
         size_t point{0};
     };
 
-    FloodFill() = default;
+    FloodFillPoints() = default;
 
     void addPosition(const Vector2& pos, const std::vector<size_t>& conns) {
         connections.insert(std::make_pair(positions.size(), conns));

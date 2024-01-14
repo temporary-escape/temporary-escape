@@ -1,5 +1,5 @@
 #include "../../Math/DelaunayTriangulation.hpp"
-#include "../../Math/FloodFill.hpp"
+#include "../../Math/FloodFillPoints.hpp"
 #include "../../Math/GalaxyDistribution.hpp"
 #include "../../Math/MinimumSpanningTree.hpp"
 #include "../../Math/VolumeOccupancyTester.hpp"
@@ -38,20 +38,22 @@ LUA_BINDINGS(bindGalaxyDistribution);
 
 static void bindFloodFill(sol::table& m) {
     {
-        auto cls = m.new_usertype<FloodFill::Result>("FloodFillResult", sol::constructors<FloodFill::Result()>{});
-        cls["index"] = &FloodFill::Result::index;
-        cls["point"] = &FloodFill::Result::point;
+        auto cls =
+            m.new_usertype<FloodFillPoints::Result>("FloodFillResult", sol::constructors<FloodFillPoints::Result()>{});
+        cls["index"] = &FloodFillPoints::Result::index;
+        cls["point"] = &FloodFillPoints::Result::point;
     }
 
     { // FloodFill
-        auto cls = m.new_usertype<FloodFill>("FloodFill", sol::constructors<FloodFill()>{});
-        cls["calculate"] = &FloodFill::calculate;
-        cls["add_start_point"] = &FloodFill::addStartPoint;
-        cls["size"] = &FloodFill::size;
-        cls["get"] = &FloodFill::get;
-        cls["add_position"] = [](FloodFill& self, const Vector2& pos, sol::as_table_t<std::vector<size_t>> conns) {
-            self.addPosition(pos, conns.value());
-        };
+        auto cls = m.new_usertype<FloodFillPoints>("FloodFill", sol::constructors<FloodFillPoints()>{});
+        cls["calculate"] = &FloodFillPoints::calculate;
+        cls["add_start_point"] = &FloodFillPoints::addStartPoint;
+        cls["size"] = &FloodFillPoints::size;
+        cls["get"] = &FloodFillPoints::get;
+        cls["add_position"] =
+            [](FloodFillPoints& self, const Vector2& pos, sol::as_table_t<std::vector<size_t>> conns) {
+                self.addPosition(pos, conns.value());
+            };
     }
 }
 

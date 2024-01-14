@@ -1,6 +1,6 @@
 #include "Lua.hpp"
 #include "../Math/DelaunayTriangulation.hpp"
-#include "../Math/FloodFill.hpp"
+#include "../Math/FloodFillPoints.hpp"
 #include "../Math/GalaxyDistribution.hpp"
 #include "../Math/MinimumSpanningTree.hpp"
 #include "../Math/Random.hpp"

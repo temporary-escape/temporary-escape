@@ -1,6 +1,6 @@
 #include "Generator.hpp"
 #include "../Math/DelaunayTriangulation.hpp"
-#include "../Math/FloodFill.hpp"
+#include "../Math/FloodFillPoints.hpp"
 #include "../Math/GalaxyDistribution.hpp"
 #include "../Math/MinimumSpanningTree.hpp"
 #include "../Math/Random.hpp"
@@ -448,7 +448,7 @@ void Generator::fillGalaxyRegions(const std::string& galaxyId, const std::vector
 
     auto regions = db.seekAll<RegionData>(fmt::format("{}/", galaxyId));
 
-    auto floodFill = FloodFill{};
+    auto floodFill = FloodFillPoints{};
 
     for (size_t i = 0; i < regions.size(); i++) {
         floodFill.addStartPoint(regions.at(i).pos, i);
@@ -518,7 +518,7 @@ void Generator::fillGalaxyFactions(const std::string& galaxyId, const std::vecto
         EXCEPTION("Can not generate galaxy, no factions in the database");
     }
 
-    auto floodFill = FloodFill{};
+    auto floodFill = FloodFillPoints{};
 
     for (size_t i = 0; i < factions.size(); i++) {
         const auto& system = systems.at(indexes.at(factions.at(i).homeSystemId));

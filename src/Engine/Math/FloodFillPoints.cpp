@@ -1,10 +1,10 @@
-#include "FloodFill.hpp"
+#include "FloodFillPoints.hpp"
 #include "../Utils/Exceptions.hpp"
 #include <unordered_set>
 
 using namespace Engine;
 
-void FloodFill::calculate() {
+void FloodFillPoints::calculate() {
     const auto getNearestPoint = [&](const Vector2& pos) -> size_t {
         const Vector2* found = &positions.at(0);
         for (size_t i = 1; i < positions.size(); i++) {
