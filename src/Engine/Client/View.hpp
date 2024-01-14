@@ -15,7 +15,10 @@ class ENGINE_API Canvas;
 
 class ENGINE_API View : public UserInput {
 public:
+    View() = default;
     virtual ~View() = default;
+    NON_COPYABLE(View);
+    NON_MOVEABLE(View);
 
     virtual void update(float deltaTime, const Vector2i& viewport) = 0;
     virtual void renderCanvas(Canvas& canvas, const Vector2i& viewport) = 0;
@@ -28,6 +31,8 @@ class ENGINE_API ViewContext : public UserInput {
 public:
     ViewContext(const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager, GuiManager& guiManager,
                 RendererBackground& rendererBackground);
+    NON_COPYABLE(ViewContext);
+    NON_MOVEABLE(ViewContext);
 
     template <typename T, typename... Args> T* addView(Args&&... args) {
         auto ptr = new T(config, vulkan, guiManager, std::forward<Args>(args)...);
