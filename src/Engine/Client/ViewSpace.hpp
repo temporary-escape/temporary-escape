@@ -36,7 +36,12 @@ private:
     void doTargetEntity(const Entity& entity);
     void doApproachEntity(const Entity& entity);
     void doOrbitEntity(const Entity& entity, float radius);
-    void renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera);
+    void doKeepAtDistanceEntity(const Entity& entity, float disrance);
+    void doStopMovement();
+    void renderCanvasSelectedEntity(Canvas& canvas, const Vector2i& viewport, const Scene& scene,
+                                    const ComponentCamera& camera);
+    void renderCanvasApproaching(Canvas& canvas, const Vector2i& viewport, const Scene& scene,
+                                 const ComponentCamera& camera);
 
     const Config& config;
     VulkanRenderer& vulkan;

@@ -143,6 +143,7 @@ struct Colors {
     static constexpr Color4 background{0.02f, 0.02f, 0.02f, 1.0f};
     static constexpr Color4 border{hexColor(0x202020ff)};
     static constexpr Color4 text{0.9f, 0.9f, 0.9f, 1.0f};
+    static constexpr Color4 overlayText{0.9f, 0.9f, 0.9f, 0.7f};
     static constexpr Color4 transparent{0.0f, 0.0f, 0.0f, 0.0f};
 };
 

@@ -143,6 +143,15 @@ struct MessageActionKeepDistance {
 MESSAGE_DEFINE(MessageActionKeepDistance);
 
 // --------------------------------------------------------------------------------------------------------------------
+struct MessageActionStopMovement {
+    bool dummy{false};
+
+    MSGPACK_DEFINE_ARRAY(dummy);
+};
+
+MESSAGE_DEFINE(MessageActionStopMovement);
+
+// --------------------------------------------------------------------------------------------------------------------
 struct MessageControlTargetEvent {
     uint64_t entityId{0};
 
@@ -150,6 +159,17 @@ struct MessageControlTargetEvent {
 };
 
 MESSAGE_DEFINE(MessageControlTargetEvent);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageShipStatusEvent {
+    EntityId approaching;
+    float orbitRadius;
+    float keepAtDistance;
+
+    MSGPACK_DEFINE_ARRAY(approaching, orbitRadius, keepAtDistance);
+};
+
+MESSAGE_DEFINE(MessageShipStatusEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageSceneBulletsEvent {

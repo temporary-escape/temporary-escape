@@ -18,10 +18,28 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
         return;
     }
 
-    // Target information
-    targetPos = getTargetPos(reg);
-    auto targetDistance = glm::distance(transform.getPosition(), targetPos);
+    // Is the target entity valid?
+    if (!reg.valid(approachTarget)) {
+        actionStopMovement();
+    }
 
+    // Does the entity have transform component?
+    const auto* targetTransform = reg.try_get<ComponentTransform>(approachTarget);
+    if (!targetTransform) {
+        actionStopMovement();
+    }
+
+    // Remember the approach position
+    if (targetTransform) {
+        approachPos = targetTransform->getPosition();
+    }
+
+    // Target information
+    auto targetPos = approachPos;
+    approachDistance = glm::distance(transform.getPosition(), approachPos);
+    auto computedDistance = approachDistance;
+
+    // Should we do an orbit?
     if (orbitRadius > 0.1f) {
         if (!orbitMatrixChosen) {
             orbitMatrixChosen = true;
@@ -56,20 +74,48 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
         targetPos = orbitPlaneProjected + (orbitForward * 100.0f);
 
         // Recalculate the distance
-        targetDistance = glm::distance(transform.getPosition(), targetPos);
+        computedDistance = glm::distance(transform.getPosition(), targetPos);
     }
+    // Or should we keep at specific distance?
+    else if (approachMinDistance > 1.0f) {
+        // Get vector towards the target
+        const auto targetToShip = glm::normalize(transform.getPosition() - targetPos);
 
-    // The orientation towards the target
-    auto newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
-    newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
-    auto targetOrientation = glm::quat_cast(newTransform);
+        // Create a position that is at some specific distance from the target
+        targetPos = targetPos + targetToShip * approachMinDistance;
+
+        // Recalculate the distance
+        computedDistance = glm::distance(transform.getPosition(), targetPos);
+    }
 
     // Our current orientation (directly forward)
     const auto ourOrientation = glm::quat_cast(transform.getTransform());
+    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
+
+    // Our acceleration
+    const auto secondsToStop = forwardVelocity / forwardAcceleration;
+    const auto distanceToStop = (1.0f / 2.0f) * forwardAcceleration * std::pow(secondsToStop, 2.0f);
+
+    // Should we stop?
+    if (approachTarget == NullEntity) {
+        targetPos = transform.getPosition() + (-ourForward * distanceToStop * 0.5f);
+
+        // Recalculate the distance
+        computedDistance = glm::distance(transform.getPosition(), targetPos);
+    }
+
+    // The orientation towards the target
+    Matrix4 newTransform;
+    if (glm::distance2(transform.getPosition(), targetPos) == 0) {
+        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos + ourForward, {0.0f, 1.0f, 0.0f}));
+    } else {
+        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+    }
+    newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+    auto targetOrientation = glm::quat_cast(newTransform);
 
     // Calculate the angle between out forward and the target direction we should be facing
     auto targetForward = glm::rotate(targetOrientation, Vector3{0.0f, 0.0f, 1.0f});
-    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
     auto angle = glm::acos(glm::dot(targetForward, ourForward));
     if (std::isnan(angle)) {
         angle = 0.0f;
@@ -79,12 +125,9 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     float velocityDiff;
     auto slowing{false};
     {
-        const auto secondsToStop = forwardVelocity / forwardAcceleration;
-        const auto distanceToStop = (1.0f / 2.0f) * forwardAcceleration * std::pow(secondsToStop, 2.0f);
-
         // logger.info("secondsToStop: {} distanceToStop: {}", secondsToStop, distanceToStop);
 
-        if (targetDistance > distanceToStop + extraDistanceOffset && angle < accelerationAngleMin) {
+        if (computedDistance > distanceToStop + extraDistanceOffset && angle < accelerationAngleMin) {
             forwardVelocityTarget = forwardVelocityMax;
         } else {
             forwardVelocityTarget = 0.0f;
@@ -102,9 +145,14 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
         }
     }
 
+    // Did we arrive to the destination?
+    if (computedDistance < extraDistanceOffset && approachMinDistance < 1.0f) {
+        approachTarget = NullEntity;
+    }
+
     // Align the ship horizontally if the ship is stopped
     auto aligning{false};
-    if (std::abs(velocityDiff) < 1.0f && targetDistance < extraDistanceOffset) {
+    if (std::abs(velocityDiff) < 1.0f && computedDistance < extraDistanceOffset) {
         // Get vector towards the front of the ship, but horizontally aligned
         const auto forwardAligned = glm::normalize(Vector3{ourForward.x, 0.0f, ourForward.z});
 
@@ -119,6 +167,10 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
         }
 
         aligning = true;
+
+        if (angle < glm::radians(1.0f)) {
+            setActive(false);
+        }
     }
 
     // Calculate the new orientation, delta time adjusted, to rotate towards the target
@@ -152,72 +204,50 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     reg.patch<ComponentShipControl>(getEntity());
 }
 
-Vector3 ComponentShipControl::getTargetPos(EntityRegistry& reg) {
-    // Is the target entity valid?
-    if (!reg.valid(approachTarget)) {
-        approachTarget = NullEntity;
-        setActive(false);
-        return {0.0f, 0.0f, 0.0f};
-    }
-
-    // Does the entity have transform component?
-    const auto* targetTransform = reg.try_get<ComponentTransform>(approachTarget);
-    if (!targetTransform) {
-        approachTarget = NullEntity;
-        setActive(false);
-        return {0.0f, 0.0f, 0.0f};
-    }
-
-    return targetTransform->getPosition();
-}
-
 void ComponentShipControl::actionApproach(const EntityId target) {
     approachTarget = target;
     orbitRadius = 0.0f;
+    approachMinDistance = 0.0f;
     setActive(true);
 }
 
 void ComponentShipControl::actionOrbit(const EntityId target, const float radius) {
     approachTarget = target;
     orbitRadius = radius;
+    approachMinDistance = 0.0f;
     orbitMatrixChosen = false;
     setActive(true);
 }
 
-/*void ComponentShipControl::setSpeed(const float value) {
-    velocityTarget = value;
-    if (velocityTarget > velocityMax) {
-        velocityTarget = velocityMax;
-    }
-}*/
+void ComponentShipControl::actionKeepDistance(EntityId target, const float distance) {
+    approachTarget = target;
+    orbitRadius = 0.0f;
+    approachMinDistance = distance;
+    setActive(true);
+}
 
-/*void ComponentShipControl::setSpeedMax(const float value) {
-    velocityMax = value;
-}*/
-
-/*void ComponentShipControl::setDirection(const Vector3& value) {
-    (void)value;
-    // TODO
-}*/
+void ComponentShipControl::actionStopMovement() {
+    approachTarget = NullEntity;
+    approachPos = Vector3{0.0f};
+    orbitRadius = 0.0f;
+    approachMinDistance = 0.0f;
+}
 
 void ComponentShipControl::setActive(const bool value) {
     active = value;
 }
 
-/*void ComponentShipControl::setSpeedBoost(bool value) {
-    velocityBoost = value;
-}*/
+void ComponentShipControl::setForwardVelocityMax(const float value) {
+    forwardVelocityMax = value;
+}
+
+void ComponentShipControl::setAngularVelocity(const float radians) {
+    angularVelocity = radians;
+}
 
 void ComponentShipControl::addTurret(ComponentTurret& turret) {
     turrets.push_back(&turret);
 }
-
-/*void ComponentShipControl::setDirectionRelative(const int leftRight, const int downUp) {
-    directionRelative[0] = leftRight == -1;
-    directionRelative[1] = leftRight == 1;
-    directionRelative[2] = downUp == -1;
-    directionRelative[3] = downUp == 1;
-}*/
 
 void ComponentShipControl::patch(entt::registry& reg, entt::entity handle) {
     reg.patch<ComponentShipControl>(handle);

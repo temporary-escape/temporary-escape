@@ -40,6 +40,8 @@ public:
 
     void handle(const SessionPtr& session, MessageActionApproach req);
     void handle(const SessionPtr& session, MessageActionOrbit req);
+    void handle(const SessionPtr& session, MessageActionKeepDistance req);
+    void handle(const SessionPtr& session, MessageActionStopMovement req);
     void handle(const SessionPtr& session, MessageControlTargetEvent req);
 
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);

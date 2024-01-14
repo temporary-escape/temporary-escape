@@ -265,6 +265,10 @@ Vector2 Scene::worldToScreen(const Vector3& pos) const {
     return camera->worldToScreen(pos, true);
 }
 
-EntityId Scene::getRemoteId(EntityId entity) const {
+EntityId Scene::getRemoteId(const EntityId entity) const {
     return network->getLocalToRemote(entity);
+}
+
+EntityId Scene::getLocalId(const EntityId entity) const {
+    return network->getRemoteToLocal(entity);
 }

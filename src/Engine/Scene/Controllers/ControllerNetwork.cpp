@@ -357,7 +357,15 @@ std::optional<Entity> ControllerNetwork::getRemoteToLocalEntity(const uint64_t i
     return std::nullopt;
 }
 
-EntityId ControllerNetwork::getLocalToRemote(EntityId entity) const {
+EntityId ControllerNetwork::getRemoteToLocal(const EntityId id) const {
+    auto local = remoteToLocal.find(static_cast<entt::entity>(id));
+    if (local != remoteToLocal.end()) {
+        return local->second;
+    }
+    return NullEntity;
+}
+
+EntityId ControllerNetwork::getLocalToRemote(const EntityId entity) const {
     auto remote = localToRemote.find(entity);
     if (remote != localToRemote.end()) {
         return remote->second;

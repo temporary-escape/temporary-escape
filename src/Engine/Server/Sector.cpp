@@ -192,6 +192,20 @@ void Sector::handle(const SessionPtr& session, MessageActionOrbit req) {
     });
 }
 
+void Sector::handle(const SessionPtr& session, MessageActionKeepDistance req) {
+    handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
+        logger.debug("Entity: {} keeping distance: {}", entity.getHandle(), req.entityId);
+        shipControl.actionKeepDistance(req.entityId, req.distance);
+    });
+}
+
+void Sector::handle(const SessionPtr& session, MessageActionStopMovement req) {
+    handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
+        logger.debug("Entity: {} stopping", entity.getHandle());
+        shipControl.actionStopMovement();
+    });
+}
+
 void Sector::handle(const SessionPtr& session, MessageControlTargetEvent req) {
     worker.postSafe([this, session, req]() {
         // Find the entity that the player controls

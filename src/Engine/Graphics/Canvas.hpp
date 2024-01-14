@@ -38,6 +38,8 @@ public:
     void drawTexture(const Vector2& pos, const Vector2& size, const VulkanTexture& texture, const Color4& color);
     void drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
                   const Color4& color);
+    void drawText(const Vector2& pos, const std::string_view& text, const FontFace& fontFace, int size,
+                  const Color4& color);
     void drawImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color);
 
     bool hasData() const {

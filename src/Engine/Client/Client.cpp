@@ -62,12 +62,26 @@ void Client::update() {
     sync.poll();
 
     // Update player camera location
-    if (scene && cache.playerEntityId) {
-        const auto* transform = cache.playerEntityId.tryGetComponent<ComponentTransform>();
-        if (const auto* camera = scene->getPrimaryCamera(); camera) {
-            const auto cameraEntity = scene->fromHandle(camera->getHandle());
-            if (auto* cameraOrbital = cameraEntity.tryGetComponent<ComponentCameraOrbital>(); cameraOrbital) {
-                cameraOrbital->setTarget(transform->getAbsolutePosition());
+    if (scene && cache.player.entity != NullEntity) {
+        const auto* transform = scene->tryGetComponent<ComponentTransform>(cache.player.entity);
+        if (transform) {
+            cache.player.position = transform->getPosition();
+
+            if (const auto* camera = scene->getPrimaryCamera(); camera) {
+                auto* cameraOrbital = scene->tryGetComponent<ComponentCameraOrbital>(camera->getHandle());
+                if (cameraOrbital) {
+                    cameraOrbital->setTarget(transform->getAbsolutePosition());
+                }
+            }
+
+            const auto* shipControl = scene->tryGetComponent<ComponentShipControl>(cache.player.entity);
+            if (shipControl) {
+                cache.player.approaching = scene->getLocalId(shipControl->getApproachEntity());
+                cache.player.orbitRadius = shipControl->getOrbitRadius();
+                cache.player.keepAtDistance = shipControl->getApproachMinDistance();
+                cache.player.forwardVelocity = shipControl->getForwardVelocity();
+                cache.player.forwardVelocityMax = shipControl->getForwardVelocityMax();
+                cache.player.approachDistance = shipControl->getApproachDistance();
             }
         }
     }
@@ -310,9 +324,9 @@ void Client::handle(Request<MessageFetchSystemsResponse> req) {
 }
 
 void Client::handle(Request<MessageSceneUpdateEvent> req) {
-    sync.postSafe([=]() {
+    sync.postSafe([=, r = std::move(req)]() {
         // Update, create, or delete entities in a scene
-        scene->getController<ControllerNetwork>().receiveUpdate(req.object());
+        scene->getController<ControllerNetwork>().receiveUpdate(r.object());
     });
 }
 
@@ -329,7 +343,7 @@ void Client::handle(Request<MessagePlayerControlEvent> req) {
         logger.info("Switching player control to entity: {}", data.entityId);
         const auto entity = scene->getController<ControllerNetwork>().getRemoteToLocalEntity(data.entityId);
         if (entity) {
-            cache.playerEntityId = *entity;
+            cache.player.entity = entity->getHandle();
 
             const auto transform = entity->tryGetComponent<ComponentTransform>();
             const auto camera = scene->getPrimaryCamera();

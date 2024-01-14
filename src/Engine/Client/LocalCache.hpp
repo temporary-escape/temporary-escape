@@ -25,6 +25,15 @@ struct LocalCache {
     } galaxy;
 
     // Scene information
-    Entity playerEntityId;
+    struct {
+        EntityId entity{NullEntity};
+        Vector3 position;
+        EntityId approaching{NullEntity};
+        float approachDistance{0.0f};
+        float orbitRadius{0.0f};
+        float keepAtDistance{0.0f};
+        float forwardVelocity{0.0f};
+        float forwardVelocityMax{0.0f};
+    } player;
 };
 } // namespace Engine

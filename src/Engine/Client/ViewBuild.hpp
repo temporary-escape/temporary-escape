@@ -8,8 +8,8 @@
 namespace Engine {
 class ENGINE_API ViewBuild : public View {
 public:
-    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache);
+    explicit ViewBuild(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager, AudioContext& audio,
+                       AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font);
     ~ViewBuild() = default;
 
     void update(float deltaTime, const Vector2i& viewport) override;

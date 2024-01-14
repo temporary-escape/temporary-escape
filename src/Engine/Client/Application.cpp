@@ -5,6 +5,7 @@
 #include "../Graphics/RendererPlanetSurface.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
+#include "ViewBuild.hpp"
 #include "ViewSpace.hpp"
 #include <iosevka-aile-bold.ttf.h>
 #include <iosevka-aile-light.ttf.h>
@@ -97,48 +98,6 @@ Application::Application(Config& config) :
 
     loadProfile();
 
-    /*gui.mainMenu.setItems({
-        {"Singleplayer", [this]() { startSinglePlayer(); }},
-        {"Multiplayer", []() {}},
-        {"Settings",
-         [this]() {
-             gui.mainSettings.setSettings(this->config);
-             gui.mainSettings.setVideoModes(getSupportedResolutionModes());
-             gui.mainSettings.setEnabled(true);
-         }},
-        {"Editor", [this]() { startEditor(); }},
-        {"Mods", []() {}},
-        {"Exit", [this]() { closeWindow(); }},
-    });
-    gui.mainMenu.setFontSize(config.guiFontSize * 1.25f);*/
-
-    /*gui.createProfile.setOnSuccess([this](const GuiCreateProfile::Form& form) {
-        playerLocalProfile.name = form.name;
-        playerLocalProfile.secret = randomId();
-        Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
-
-        gui.mainMenu.setEnabled(true);
-    });*/
-
-    /*gui.keepSettings.setEnabled(false);
-    gui.mainSettings.setEnabled(false);
-    gui.mainSettings.setOnApply([this](const Config& updated) {
-        logger.info("Updated config");
-        this->setWindowFullScreen(updated.graphics.fullscreen);
-        this->setWindowResolution({updated.graphics.windowWidth, updated.graphics.windowHeight});
-        this->gui.keepSettings.setEnabled(true);
-        this->gui.keepSettings.reset();
-        this->gui.keepSettings.setOnResult([this, updated](bool result) {
-            if (result) {
-                this->config = updated;
-                Xml::toFile(this->config.userdataPath / "settings.xml", this->config);
-            } else {
-                this->setWindowFullScreen(this->config.graphics.fullscreen);
-                this->setWindowResolution({this->config.graphics.windowWidth, this->config.graphics.windowHeight});
-            }
-        });
-    });*/
-
     VkQueryPoolCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     createInfo.pNext = nullptr;
@@ -157,10 +116,6 @@ Application::~Application() {
             BACKTRACE(e, "fatal error");
         }
     }
-}
-
-bool Application::shouldBlit() const {
-    return shouldBlitCount <= 0;
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
@@ -242,12 +197,6 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         views->update(deltaTime, viewport);
         views->render(vkb, *renderer, viewport);
     }
-
-    /*if ((!game || !game->isReady()) && !editor) {
-        shouldBlitCount = 2;
-    } else {
-        --shouldBlitCount;
-    }*/
 
     // GUI
     guiManager.render(vkb, viewport);
@@ -368,11 +317,6 @@ void Application::renderFrameTime(const Vector2i& viewport) {
         canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 3.0}, text, font, config.guiFontSize, color);
     }
 
-    {
-        const auto text = fmt::format("render: {}", shouldBlit());
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
-    }
-
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
@@ -419,6 +363,11 @@ void Application::createEditor() {
     status.message = "Entering...";
     status.value = 1.0f;
     // editor = std::make_unique<Editor>(config, *this, audio, *assetsManager, *voxelShapeCache, font);
+
+    logger.info("Creating editor views");
+
+    view.editor = views->addView<ViewBuild>(audio, *assetsManager, *voxelShapeCache, font);
+    views->setCurrent(view.editor);
 }
 
 void Application::checkForClientScene() {

@@ -90,12 +90,12 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 
     auto& camera = *scene.getPrimaryCamera();
-    renderSceneBullets(vkb, camera, scene);
-    renderSceneBulletsTrail(vkb, camera, scene);
-    renderSceneDebug(vkb, camera, scene);
+    renderSceneBullets(vkb, scene, camera);
+    renderSceneBulletsTrail(vkb, scene, camera);
+    renderSceneDebug(vkb, scene, camera);
 }
 
-void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentPointCloud& component) {
     const auto& mesh = component.getMesh();
     if (mesh.count == 0) {
@@ -118,7 +118,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
     pipelinePointCloud.renderMesh(vkb, mesh);
 }
 
-void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentPolyShape& component) {
     const auto& mesh = component.getMesh();
     if (mesh.count == 0) {
@@ -140,7 +140,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
     pipelinePolyShape.renderMesh(vkb, mesh);
 }
 
-void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentLines& component) {
     const auto& mesh = component.getMesh();
     if (mesh.count == 0) {
@@ -163,25 +163,20 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
     pipelineLines.renderMesh(vkb, mesh);
 }
 
-void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
                                            ComponentTransform& transform, ComponentGrid& component) {
     const auto& particles = component.getParticles();
     if (particles.empty()) {
         return;
     }
 
-    /*const auto reg = component.getRegistry();
-    if (!reg) {
+    const auto* shipControl = scene.tryGetComponent<ComponentShipControl>(component.getHandle());
+    if (!shipControl) {
         return;
     }
 
-    const auto shipControl = reg->try_get<ComponentShipControl>(component.getHandle());
-    if (!shipControl) {
-        return;
-    }*/
-
-    /*auto strength = map(shipControl->getSpeed(), 0.0f, shipControl->getSpeedMax(), 0.0f, 1.0f);
-    auto alpha = map(shipControl->getSpeed(), 0.0f, shipControl->getSpeedMax() / 5.0f, 0.0f, 1.0f);
+    auto strength = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax(), 0.0f, 3.0f);
+    auto alpha = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax() / 5.0f, 0.0f, 1.0f);
     strength = glm::clamp(strength, 0.0f, 2.0f);
     alpha = glm::clamp(alpha, 0.0f, 1.0f);
 
@@ -207,10 +202,10 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, const Compo
 
             vkb.draw(4, particlesType->getCount(), 0, 0);
         }
-    }*/
+    }
 }
 
-void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
     const auto& controller = scene.getController<ControllerBullets>();
     const auto& vboInstances = controller.getVbo();
     const auto& meshBullet = resources.getMeshBullet();
@@ -233,7 +228,7 @@ void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, const Compo
     vkb.draw(meshBullet.count, count, 0, 0);
 }
 
-void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
     const auto& controller = scene.getController<ControllerBullets>();
     const auto& vboInstances = controller.getVbo();
     const auto& meshBullet = resources.getMeshBullet();
@@ -255,7 +250,7 @@ void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const 
     vkb.draw(2, count, 0, 0);
 }
 
-void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene) {
+void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
     const auto& controller = scene.getController<ControllerDynamicsWorld>();
     const auto& vbo = controller.getDebugDrawVbo();
     const auto count = controller.getDebugDrawCount();

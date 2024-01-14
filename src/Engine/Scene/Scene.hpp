@@ -40,6 +40,26 @@ public:
         return reg.view<Ts...>(exclude);
     }
 
+    bool isValid(const EntityId entity) const {
+        return reg.valid(entity);
+    }
+
+    template <typename T> T& getComponent(const EntityId entity) {
+        return reg.get<T>(entity);
+    }
+
+    template <typename T> T* tryGetComponent(const EntityId entity) {
+        return reg.try_get<T>(entity);
+    }
+
+    template <typename T> const T& getComponent(const EntityId entity) const {
+        return reg.get<T>(entity);
+    }
+
+    template <typename T> const T* tryGetComponent(const EntityId entity) const {
+        return reg.try_get<T>(entity);
+    }
+
     void feedbackSelectedEntity(uint32_t id);
     const std::optional<Entity>& getSelectedEntity() const {
         return selectedEntity;
@@ -103,18 +123,7 @@ public:
     }
 
     EntityId getRemoteId(EntityId entity) const;
-    EntityRegistry& getRegistry() {
-        return reg;
-    }
-    const EntityRegistry& getRegistry() const {
-        return reg;
-    }
-    template <typename T> T* tryGetComponent(const EntityId entity) const {
-        return reg.try_get<T>(entity);
-    }
-    template <typename T> T& getComponent(const EntityId entity) const {
-        return reg.get<T>(entity);
-    }
+    EntityId getLocalId(EntityId entity) const;
 
 private:
     void updateSelection();

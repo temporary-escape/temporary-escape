@@ -38,22 +38,22 @@ private:
 
             jobs.emplace_back(ForwardRenderJob{
                 dist,
-                [&, t = &transform, c = &component] { renderSceneForward(vkb, camera, *t, *c); },
+                [&, t = &transform, c = &component] { renderSceneForward(vkb, scene, camera, *t, *c); },
             });
         }
     }
 
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentPointCloud& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentPolyShape& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentLines& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, const ComponentCamera& camera, ComponentTransform& transform,
-                            ComponentGrid& component);
-    void renderSceneBullets(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
-    void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
-    void renderSceneDebug(VulkanCommandBuffer& vkb, const ComponentCamera& camera, Scene& scene);
+    void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
+                            ComponentTransform& transform, ComponentPointCloud& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
+                            ComponentTransform& transform, ComponentPolyShape& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
+                            ComponentTransform& transform, ComponentLines& component);
+    void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
+                            ComponentTransform& transform, ComponentGrid& component);
+    void renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
 
     VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;

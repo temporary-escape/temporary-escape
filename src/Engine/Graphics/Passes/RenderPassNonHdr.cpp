@@ -58,7 +58,7 @@ void RenderPassNonHDR::render(VulkanCommandBuffer& vkb, Scene& scene) {
     renderOutline(vkb, scene);
     renderWorldText(vkb, scene);
     renderIcons(vkb, scene);
-    renderShipControls(vkb, scene);
+    // renderShipControls(vkb, scene);
 }
 
 void RenderPassNonHDR::renderOutline(VulkanCommandBuffer& vkb, Scene& scene) {

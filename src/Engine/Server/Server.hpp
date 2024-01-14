@@ -35,6 +35,8 @@ public:
     void handle(Request<MessagePingResponse> req);
     void handle(Request<MessageActionApproach> req);
     void handle(Request<MessageActionOrbit> req);
+    void handle(Request<MessageActionKeepDistance> req);
+    void handle(Request<MessageActionStopMovement> req);
     void handle(Request<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;

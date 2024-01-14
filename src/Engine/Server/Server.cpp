@@ -38,6 +38,8 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     HANDLE_REQUEST(MessagePlayerSpawnRequest);
     HANDLE_REQUEST(MessageActionApproach);
     HANDLE_REQUEST(MessageActionOrbit);
+    HANDLE_REQUEST(MessageActionKeepDistance);
+    HANDLE_REQUEST(MessageActionStopMovement);
     HANDLE_REQUEST(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
@@ -420,6 +422,14 @@ void Server::handle(Request<MessageActionApproach> req) {
 }
 
 void Server::handle(Request<MessageActionOrbit> req) {
+    forwardMessageToSector(req);
+}
+
+void Server::handle(Request<MessageActionKeepDistance> req) {
+    forwardMessageToSector(req);
+}
+
+void Server::handle(Request<MessageActionStopMovement> req) {
     forwardMessageToSector(req);
 }
 

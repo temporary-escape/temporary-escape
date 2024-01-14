@@ -20,6 +20,7 @@ struct ENGINE_API Status {
 };
 
 class ENGINE_API ViewSpace;
+class ENGINE_API ViewBuild;
 class ENGINE_API Database;
 class ENGINE_API RendererBackground;
 class ENGINE_API RendererScenePbr;
@@ -69,7 +70,6 @@ private:
     void createBlockThumbnails(RendererThumbnail& thumbnailRenderer);
     void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
     void createPlanetThumbnails(RendererThumbnail& thumbnailRenderer);
-    bool shouldBlit() const;
 
     void nuklearOnClick(bool push) override;
 
@@ -92,6 +92,7 @@ private:
 
     struct {
         ViewSpace* space{nullptr};
+        ViewBuild* editor{nullptr};
     } view;
 
     std::unique_ptr<AssetsManager> assetsManager;
@@ -110,7 +111,6 @@ private:
     std::atomic<bool> shouldStop{false};
     Vector2i mousePos{0, 0};
     bool editorOnly{false};
-    int shouldBlitCount{0};
 
     struct {
         PerformanceRecord frameTime;

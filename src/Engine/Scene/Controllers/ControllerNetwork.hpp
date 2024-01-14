@@ -29,6 +29,7 @@ public:
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
     std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
+    EntityId getRemoteToLocal(EntityId entity) const;
     EntityId getLocalToRemote(EntityId entity) const;
 
 private:

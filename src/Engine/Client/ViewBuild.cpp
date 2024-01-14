@@ -11,8 +11,8 @@ static Path getBuildDir(const Config& config) {
     return config.assetsPath / "base" / "ships";
 }
 
-ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, AudioContext& audio, AssetsManager& assetsManager,
-                     VoxelShapeCache& voxelShapeCache) :
+ViewBuild::ViewBuild(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager, AudioContext& audio,
+                     AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font) :
     config{config},
     vulkan{vulkan},
     assetsManager{assetsManager},

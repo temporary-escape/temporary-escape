@@ -177,10 +177,15 @@ void Canvas::drawTexture(const Vector2& pos, const Vector2& size, const VulkanTe
     batches.back().length++;
 }
 
-void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, const int size,
+void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
+                      const Color4& color) {
+    drawText(pos, text, font.get(FontFace::Regular), size, color);
+}
+
+void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFace& fontFace, const int size,
                       const Color4& color) {
     const auto total = utf8::distance(text.begin(), text.end());
-    const auto& face = font.get(FontFace::Regular);
+    const auto& face = fontFace;
 
     auto* v = reserve(vertices, 4 * total);
     auto* i = reserve(indices, 6 * total);

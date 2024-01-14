@@ -18,6 +18,22 @@ static const std::vector<std::tuple<std::string, float>> actionDistances = {
     {"100 Km", 100 * 1000.0f},
 };
 
+static std::string formatDistance(float dist) {
+    dist = dist / 1000.0f;
+
+    const char* fmt;
+
+    if (dist < 1.0f) {
+        fmt = "{:.2f} km";
+    } else if (dist < 10.0f) {
+        fmt = "{:.1f} km";
+    } else {
+        fmt = "{:.0f} km";
+    }
+
+    return fmt::format(fmt, dist);
+}
+
 ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager, AssetsManager& assetsManager,
                      VoxelShapeCache& voxelShapeCache, FontFamily& font, Client& client) :
     config{config},
@@ -78,16 +94,71 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     auto scene = client.getScene();
     auto camera = scene ? scene->getPrimaryCamera() : nullptr;
     if (scene && camera) {
-        renderCanvasSelectedEntity(canvas, *scene, *camera);
+        renderCanvasSelectedEntity(canvas, viewport, *scene, *camera);
+        renderCanvasApproaching(canvas, viewport, *scene, *camera);
     }
 }
 
-void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, const ComponentCamera& camera) {
-    if (!client.getCache().playerEntityId) {
+void ViewSpace::renderCanvasApproaching(Canvas& canvas, const Vector2i& viewport, const Scene& scene,
+                                        const ComponentCamera& camera) {
+    const auto& cache = client.getCache();
+    const auto playerEntity = cache.player.entity;
+
+    if (playerEntity == NullEntity) {
         return;
     }
 
-    const auto* playerEntityTransform = client.getCache().playerEntityId.tryGetComponent<ComponentTransform>();
+    const auto mid = Vector2{viewport.x / 2.0f, 60.0f};
+
+    if (cache.player.approaching != NullEntity) {
+        { // What is the ship doing?
+            const char* keyword = "Approaching";
+
+            if (cache.player.orbitRadius > 0.0f) {
+                keyword = "Orbiting";
+            } else if (cache.player.keepAtDistance > 0.0f) {
+                keyword = "Keep at distance";
+            }
+
+            const auto& face = font.get(FontFace::Bold);
+            const auto bounds = face.getBounds(keyword, config.guiFontSize);
+            const auto pos = mid - bounds / 2.0f;
+            canvas.drawText(pos, keyword, face, config.guiFontSize, Colors::overlayText);
+        }
+
+        { // Entity Name
+            const auto entityLabel = scene.tryGetComponent<ComponentLabel>(cache.player.approaching);
+            std::string_view label = "";
+            if (entityLabel) {
+                label = entityLabel->getLabel();
+            }
+
+            const auto text = fmt::format("{} - {}", label, formatDistance(cache.player.approachDistance));
+            const auto& regular = font.get(FontFace::Regular);
+            const auto bounds = regular.getBounds(text, config.guiFontSize);
+            const auto pos = mid - bounds / 2.0f + Vector2{0.0f, config.guiFontSize};
+            canvas.drawText(pos, text, regular, config.guiFontSize, Colors::overlayText);
+        }
+
+        { // Our speed
+            const auto text = fmt::format("{:.0f} m/s", cache.player.forwardVelocity);
+            const auto& regular = font.get(FontFace::Regular);
+            const auto bounds = regular.getBounds(text, config.guiFontSize);
+            const auto pos = mid - bounds / 2.0f + Vector2{0.0f, config.guiFontSize} * 2.0f;
+            canvas.drawText(pos, text, regular, config.guiFontSize, Colors::overlayText);
+        }
+    }
+}
+
+void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Vector2i& viewport, const Scene& scene,
+                                           const ComponentCamera& camera) {
+    const auto playerEntity = client.getCache().player.entity;
+
+    if (playerEntity == NullEntity) {
+        return;
+    }
+
+    const auto* playerEntityTransform = scene.tryGetComponent<ComponentTransform>(playerEntity);
     if (!playerEntityTransform) {
         return;
     }
@@ -98,20 +169,10 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, c
         const auto worldPos = transform.getAbsolutePosition();
         const auto screenPos = scene.worldToScreen(worldPos);
 
-        const auto dist = glm::distance(playerEntityTransform->getAbsolutePosition(), worldPos) / 1000.0f;
-        const char* fmt;
+        const auto dist = glm::distance(playerEntityTransform->getAbsolutePosition(), worldPos);
+        const auto text = formatDistance(dist);
 
-        if (dist < 1.0f) {
-            fmt = "{:.2f} km";
-        } else if (dist < 10.0f) {
-            fmt = "{:.1f} km";
-        } else {
-            fmt = "{:.0f} km";
-        }
-
-        const auto text = fmt::format(fmt, dist);
-
-        canvas.drawText(screenPos + Vector2{20.0f, 0.0f}, text, font, config.guiFontSize, Color4{1.0f});
+        canvas.drawText(screenPos + Vector2{20.0f, 0.0f}, text, font, config.guiFontSize, Colors::text);
 
         const auto* label = selectedEntity->tryGetComponent<ComponentLabel>();
         if (label) {
@@ -119,7 +180,7 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Scene& scene, c
                             label->getLabel(),
                             font,
                             config.guiFontSize,
-                            Color4{1.0f});
+                            Colors::text);
         }
     }
 }
@@ -158,7 +219,7 @@ void ViewSpace::showContextMenu(const Vector2i& mousePos, const Entity& entity) 
         });
         menu.addNested(icons.distance, icons.nested, "Distance", [=](GuiWindowContextMenu& menuOrbit) {
             for (const auto& [label, distance] : actionDistances) {
-                menuOrbit.addItem(nullptr, label, [=]() {});
+                menuOrbit.addItem(nullptr, label, [=, d = distance]() { doKeepAtDistanceEntity(entity, d); });
             }
         });
         menu.addItem(icons.attack, "Target", []() {});
@@ -190,11 +251,24 @@ void ViewSpace::doApproachEntity(const Engine::Entity& entity) {
     client.send(msg);
 }
 
-void ViewSpace::doOrbitEntity(const Entity& entity, float radius) {
+void ViewSpace::doOrbitEntity(const Entity& entity, const float radius) {
     auto& scene = *client.getScene();
     MessageActionOrbit msg{};
     msg.entityId = scene.getRemoteId(entity.getHandle());
     msg.radius = radius;
+    client.send(msg);
+}
+
+void ViewSpace::doKeepAtDistanceEntity(const Entity& entity, const float distance) {
+    auto& scene = *client.getScene();
+    MessageActionKeepDistance msg{};
+    msg.entityId = scene.getRemoteId(entity.getHandle());
+    msg.distance = distance;
+    client.send(msg);
+}
+
+void ViewSpace::doStopMovement() {
+    MessageActionStopMovement msg{};
     client.send(msg);
 }
 
@@ -248,6 +322,10 @@ void ViewSpace::eventKeyPressed(const Key key, const Modifiers modifiers) {
     auto scene = client.getScene();
     if (scene) {
         scene->eventKeyPressed(key, modifiers);
+
+        if (key == Key::LetterS) {
+            doStopMovement();
+        }
 
         /*if (key == Key::LetterW) {
             control.forward = true;

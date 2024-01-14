@@ -13,20 +13,7 @@ public:
     COMPONENT_DEFAULTS(ComponentShipControl);
 
     void update(EntityRegistry& reg, float delta, ComponentTransform& transform);
-    /*void setDirection(const Vector3& value);
-    void setDirectionRelative(int leftRight, int downUp);
-    void setSpeed(float value);
-    [[nodiscard]] float getSpeed() const {
-        return velocityValue;
-    }
-    void setSpeedMax(float value);
-    [[nodiscard]] float getSpeedMax() const {
-        return velocityMax;
-    }
-    void setSpeedBoost(bool value);
-    [[nodiscard]] bool getSpeedBoost() const {
-        return velocityBoost;
-    }*/
+
     void setActive(bool value);
     [[nodiscard]] bool isActive() const {
         return active;
@@ -49,28 +36,48 @@ public:
         return orbitRadius;
     }
 
-    const Vector3& getApproachPos() const {
-        return targetPos;
+    float getApproachDistance() const {
+        return approachDistance;
     }
+
+    float getApproachMinDistance() const {
+        return approachMinDistance;
+    }
+
+    const Vector3& getApproachPos() const {
+        return approachPos;
+    }
+
+    float getForwardVelocity() const {
+        return forwardVelocity;
+    }
+
+    float getForwardVelocityMax() const {
+        return forwardVelocityMax;
+    }
+
+    EntityId getApproachEntity() const {
+        return approachTarget;
+    }
+
+    void setForwardVelocityMax(float value);
+    void setAngularVelocity(float radians);
 
     void actionApproach(EntityId target);
     void actionOrbit(EntityId target, float radius);
+    void actionKeepDistance(EntityId target, float distance);
+    void actionStopMovement();
 
-    MSGPACK_DEFINE_ARRAY(orbitMatrix, orbitRadius, orbitOrigin);
+    MSGPACK_DEFINE_ARRAY(approachTarget, approachMinDistance, approachDistance, forwardVelocity, forwardVelocityMax,
+                         orbitRadius, orbitMatrix, orbitOrigin, approachPos);
 
 protected:
     void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
-    Vector3 getTargetPos(EntityRegistry& reg);
-
-    /*float velocityValue{0.0f};
-    float velocityTarget{0.0f};
-    float velocityMax{100.0f};
-    Vector3 rotation{0.0f, 0.0f, 0.0f};
-    bool velocityBoost{false};
-    bool directionRelative[4] = {false, false, false, false};*/
     EntityId approachTarget{NullEntity};
+    float approachMinDistance{0.0f};
+    float approachDistance{0.0f};
     float angularVelocity{glm::radians(45.0f)};
     float forwardVelocity{0.0f};
     float forwardVelocityTarget{0.0f};
@@ -82,7 +89,7 @@ private:
     Vector3 orbitOrigin;
     bool orbitMatrixChosen{false};
     bool active{false};
-    Vector3 targetPos;
+    Vector3 approachPos;
     std::vector<ComponentTurret*> turrets;
 };
 } // namespace Engine
