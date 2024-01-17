@@ -36,7 +36,7 @@ void ClientServerFixture::clientConnect() {
     clientFlag.store(true);
     clientThread = std::thread([this]() {
         while (clientFlag.load()) {
-            client->update();
+            client->update(0.1f);
             std::this_thread::sleep_for(std::chrono::milliseconds{16});
         }
     });
