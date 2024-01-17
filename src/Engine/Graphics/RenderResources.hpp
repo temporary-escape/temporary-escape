@@ -31,6 +31,10 @@ public:
         return meshOrbit;
     }
 
+    const Mesh& getMeshSpaceDust() const {
+        return meshSpaceDust;
+    }
+
     const SkyboxTextures& getDefaultSkybox() const {
         return defaultSkybox;
     }
@@ -67,12 +71,17 @@ public:
         return skyboxStar;
     }
 
+    const VulkanTexture& getSpaceDust() const {
+        return spaceDust;
+    }
+
 private:
     void createSsaoNoise();
     void createSsaoSamples();
     void createPalette();
     void createBrdf();
     void createSkyboxStar();
+    void createSpaceDust();
 
     VulkanRenderer& vulkan;
     Mesh meshFullScreenQuad;
@@ -80,6 +89,7 @@ private:
     Mesh meshSkyboxCube;
     Mesh meshBullet;
     Mesh meshOrbit;
+    Mesh meshSpaceDust;
     SkyboxTextures defaultSkybox;
     struct {
         VulkanBuffer ubo;
@@ -91,5 +101,6 @@ private:
     VulkanTexture palette;
     VulkanTexture brdf;
     VulkanTexture skyboxStar;
+    VulkanTexture spaceDust;
 };
 } // namespace Engine

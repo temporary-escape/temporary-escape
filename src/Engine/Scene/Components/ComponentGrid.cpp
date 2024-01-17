@@ -126,6 +126,7 @@ void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
     }
 
     file.unpack(*this);
+    updateBounds();
 }
 
 void ComponentGrid::debugIterate(Grid::Iterator iterator) {

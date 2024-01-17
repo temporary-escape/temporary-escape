@@ -24,6 +24,7 @@ public:
     std::tuple<Vector3, Vector3> screenToWorld(const Vector2& mousePos, float length) const;
     Vector2 worldToScreen(const Vector3& pos) const;
     void update(float delta);
+    void interpolate(float delta);
     void recalculate(VulkanRenderer& vulkan);
 
     void removeEntity(Entity& entity);

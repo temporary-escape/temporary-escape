@@ -58,8 +58,12 @@ void Client::disconnect() {
     }
 }
 
-void Client::update() {
+void Client::update(const float deltaTime) {
     sync.poll();
+
+    if (scene) {
+        scene->interpolate(deltaTime);
+    }
 
     // Update player camera location
     if (scene && cache.player.entity != NullEntity) {
@@ -70,7 +74,7 @@ void Client::update() {
             if (const auto* camera = scene->getPrimaryCamera(); camera) {
                 auto* cameraOrbital = scene->tryGetComponent<ComponentCameraOrbital>(camera->getEntity());
                 if (cameraOrbital) {
-                    cameraOrbital->setTarget(transform->getAbsolutePosition());
+                    cameraOrbital->setTarget(transform->getInterpolatedPosition());
                 }
             }
 
@@ -84,6 +88,10 @@ void Client::update() {
                 cache.player.approachDistance = shipControl->getApproachDistance();
             }
         }
+    }
+
+    if (scene) {
+        scene->update(deltaTime);
     }
 }
 

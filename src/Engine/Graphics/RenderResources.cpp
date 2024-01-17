@@ -5,6 +5,7 @@
 #include <brdf.ktx2.h>
 #include <palette.ktx2.h>
 #include <skybox_star.ktx2.h>
+#include <space_dust.ktx2.h>
 
 using namespace Engine;
 
@@ -76,11 +77,13 @@ RenderResources::RenderResources(VulkanRenderer& vulkan) :
     meshSkyboxCube = createSkyboxCube(vulkan);
     meshBullet = createBulletMesh(vulkan);
     meshOrbit = createCircleMesh(vulkan);
+    meshSpaceDust = createSpaceDustMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
     createPalette();
     createBrdf();
     createSkyboxStar();
+    createSpaceDust();
     defaultSSAO = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 1);
     defaultShadow = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 4);
     defaultBloom = createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, 1);
@@ -195,7 +198,7 @@ static VulkanTexture::CreateInfo createCreateInfo(Ktx2FileReader& image) {
     textureInfo.image.format = VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
     textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
     textureInfo.image.extent = extent;
-    textureInfo.image.mipLevels = 1;
+    textureInfo.image.mipLevels = image.getMipMapsCount();
     textureInfo.image.arrayLayers = 1;
     textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
     textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -208,7 +211,7 @@ static VulkanTexture::CreateInfo createCreateInfo(Ktx2FileReader& image) {
     textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
     textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     textureInfo.view.subresourceRange.baseMipLevel = 0;
-    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.view.subresourceRange.levelCount = textureInfo.image.mipLevels;
     textureInfo.view.subresourceRange.baseArrayLayer = 0;
     textureInfo.view.subresourceRange.layerCount = 1;
 
@@ -231,12 +234,13 @@ static VulkanTexture::CreateInfo createCreateInfo(Ktx2FileReader& image) {
 }
 
 static VulkanTexture createTexture(VulkanRenderer& vulkan, Ktx2FileReader& image,
-                                   const VulkanTexture::CreateInfo& textureInfo) {
+                                   VulkanTexture::CreateInfo& textureInfo) {
     if (image.needsTranscoding()) {
-        image.transcode(vulkan.getCompressionType(), Ktx2CompressionTarget::RGBA);
+        image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);
     }
     image.readData();
 
+    textureInfo.image.format = image.getFormat();
     VulkanTexture texture = vulkan.createTexture(textureInfo);
 
     vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -275,6 +279,9 @@ void RenderResources::createBrdf() {
     Ktx2FileReader image{Embed::brdf_ktx2};
 
     auto textureInfo = createCreateInfo(image);
+    textureInfo.image.mipLevels = 1;
+    textureInfo.view.subresourceRange.levelCount = 1;
+    textureInfo.sampler.maxLod = 1.0f;
     brdf = createTexture(vulkan, image, textureInfo);
 }
 
@@ -283,4 +290,11 @@ void RenderResources::createSkyboxStar() {
 
     auto textureInfo = createCreateInfo(image);
     skyboxStar = createTexture(vulkan, image, textureInfo);
+}
+
+void RenderResources::createSpaceDust() {
+    Ktx2FileReader image{Embed::space_dust_ktx2};
+
+    auto textureInfo = createCreateInfo(image);
+    spaceDust = createTexture(vulkan, image, textureInfo);
 }

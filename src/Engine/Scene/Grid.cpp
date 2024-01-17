@@ -829,7 +829,7 @@ void Grid::updateBounds() {
     auto it = voxels.iterate();
     updateBounds(it);
     if (bbRadius > 0.0f) {
-        bbRadius = glm::sqrt(bbRadius);
+        bbRadius = glm::sqrt(bbRadius) + 0.5f;
     }
 }
 

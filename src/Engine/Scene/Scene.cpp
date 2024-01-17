@@ -114,6 +114,13 @@ void Scene::update(const float delta) {
     }
 }
 
+void Scene::interpolate(const float delta) {
+    const auto& entities = reg.view<ComponentTransform, ComponentShipControl>(entt::exclude<TagDisabled>).each();
+    for (const auto&& [handle, transform, component] : entities) {
+        transform.interpolate();
+    }
+}
+
 void Scene::updateSelection() {
     if (selectedEntityOpaque) {
         selectedEntity = selectedEntityOpaque;

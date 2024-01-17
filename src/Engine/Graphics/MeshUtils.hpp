@@ -50,9 +50,20 @@ struct ENGINE_API BulletVertex {
     };
 };
 
+struct ENGINE_API SpaceDustVertex {
+    Vector3 position;
+
+    static VulkanVertexLayoutMap getLayout() {
+        return {
+            {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(PlanetVertex, position)},
+        };
+    };
+};
+
 Mesh ENGINE_API createFullScreenQuad(VulkanRenderer& vulkan);
 Mesh ENGINE_API createSkyboxCube(VulkanRenderer& vulkan);
 Mesh ENGINE_API createPlanetMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createBulletMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createCircleMesh(VulkanRenderer& vulkan);
+Mesh ENGINE_API createSpaceDustMesh(VulkanRenderer& vulkan);
 } // namespace Engine

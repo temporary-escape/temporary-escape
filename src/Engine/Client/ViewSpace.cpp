@@ -161,7 +161,7 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Vector2i& viewp
     const auto selectedEntity = scene.getSelectedEntity();
     if (selectedEntity) {
         const auto& transform = selectedEntity->getComponent<ComponentTransform>();
-        const auto worldPos = transform.getAbsolutePosition();
+        const auto worldPos = transform.getAbsoluteInterpolatedPosition();
         const auto screenPos = scene.worldToScreen(worldPos);
 
         const auto dist = scene.getEntityDistance(playerEntity, selectedEntity->getHandle());

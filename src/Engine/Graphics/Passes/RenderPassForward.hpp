@@ -9,6 +9,7 @@
 #include "../Pipelines/RenderPipelineParticles.hpp"
 #include "../Pipelines/RenderPipelinePointCloud.hpp"
 #include "../Pipelines/RenderPipelinePolyShape.hpp"
+#include "../Pipelines/RenderPipelineSpaceDust.hpp"
 #include "../RenderBufferPbr.hpp"
 #include "../RenderPass.hpp"
 
@@ -54,6 +55,7 @@ private:
     void renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
 
     VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;
@@ -66,5 +68,7 @@ private:
     RenderPipelineBulletsTrail pipelineBulletsTrail;
     RenderPipelineParticles pipelineParticles;
     RenderPipelineDebug pipelineDebug;
+    RenderPipelineSpaceDust pipelineSpaceDust;
+    Vector3 eyesPosPrevious;
 };
 } // namespace Engine

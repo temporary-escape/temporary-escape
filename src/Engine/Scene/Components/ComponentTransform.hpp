@@ -45,7 +45,12 @@ public:
         return transform;
     }
 
+    [[nodiscard]] const Matrix4& getInterpolatedTransform() const {
+        return interpolated ? transformInterpolated : transform;
+    }
+
     [[nodiscard]] Matrix4 getAbsoluteTransform() const;
+    [[nodiscard]] Matrix4 getAbsoluteInterpolatedTransform() const;
 
     void setTransform(const Matrix4& value);
 
@@ -53,9 +58,14 @@ public:
         return {transform[3]};
     }
 
+    [[nodiscard]] Vector3 getInterpolatedPosition() const {
+        return getInterpolatedTransform()[3];
+    }
+
     Quaternion getOrientation() const;
 
     [[nodiscard]] Vector3 getAbsolutePosition() const;
+    [[nodiscard]] Vector3 getAbsoluteInterpolatedPosition() const;
 
     float getScaleUniform() const {
         return glm::length(transform[0]);
@@ -64,12 +74,16 @@ public:
     void setStatic(const bool value);
     bool isStatic() const;
 
+    void interpolate();
+
     MSGPACK_DEFINE_ARRAY(transform, flags, parentId);
 
 private:
     Matrix4 transform{1.0f};
+    Matrix4 transformInterpolated{1.0f};
     const ComponentTransform* parent{nullptr};
     uint64_t parentId{NullParentId};
     uint64_t flags{0};
+    bool interpolated{false};
 };
 } // namespace Engine

@@ -49,11 +49,18 @@ void ComponentTransform::scale(const Vector3& value) {
     setTransform(glm::scale(transform, value));
 }
 
-[[nodiscard]] Matrix4 ComponentTransform::getAbsoluteTransform() const {
+Matrix4 ComponentTransform::getAbsoluteTransform() const {
     if (const auto p = getParent()) {
         return p->getAbsoluteTransform() * getTransform();
     }
     return getTransform();
+}
+
+Matrix4 ComponentTransform::getAbsoluteInterpolatedTransform() const {
+    if (const auto p = getParent()) {
+        return p->getAbsoluteInterpolatedTransform() * getInterpolatedTransform();
+    }
+    return getInterpolatedTransform();
 }
 
 void ComponentTransform::setTransform(const Matrix4& value) {
@@ -65,6 +72,13 @@ Vector3 ComponentTransform::getAbsolutePosition() const {
         return Vector3{getAbsoluteTransform()[3]};
     }
     return getPosition();
+}
+
+Vector3 ComponentTransform::getAbsoluteInterpolatedPosition() const {
+    if (const auto p = getParent()) {
+        return Vector3{getAbsoluteInterpolatedTransform()[3]};
+    }
+    return getInterpolatedPosition();
 }
 
 Quaternion ComponentTransform::getOrientation() const {
@@ -81,4 +95,20 @@ void ComponentTransform::setStatic(const bool value) {
 
 bool ComponentTransform::isStatic() const {
     return flags & static_cast<uint64_t>(TransformFlags::Static);
+}
+
+void ComponentTransform::interpolate() {
+    if (glm::distance2(transformInterpolated[3], transform[3]) > 50 * 50) {
+        transformInterpolated = transform;
+    } else {
+        const auto previousPos = transformInterpolated[3];
+        const auto previousRot = glm::quat_cast(transformInterpolated);
+
+        const auto rotDiff = glm::slerp(previousRot, glm::quat_cast(transform), 0.5f);
+
+        transformInterpolated = glm::toMat4(rotDiff);
+        transformInterpolated[3] = glm::mix(previousPos, transform[3], 0.5f);
+        transformInterpolated[3].w = 1.0f;
+    }
+    interpolated = true;
 }

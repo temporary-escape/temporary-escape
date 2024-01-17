@@ -159,7 +159,7 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineGrid.bind(vkb);
 
     for (auto&& [entity, transform, grid] : systemGrids.each()) {
-        const auto modelMatrix = transform.getAbsoluteTransform();
+        const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineGrid.setModelMatrix(modelMatrix);
@@ -206,7 +206,7 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
             continue;
         }
 
-        const auto modelMatrix = transform.getAbsoluteTransform();
+        const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineModel.setModelMatrix(modelMatrix);
@@ -253,7 +253,7 @@ void RenderPassOpaque::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scen
     pipelineModelSkinned.bind(vkb);
 
     for (auto&& [entity, transform, component] : viewModelsSkinned.each()) {
-        const auto& modelMatrix = transform.getAbsoluteTransform();
+        const auto& modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineModelSkinned.setModelMatrix(modelMatrix);

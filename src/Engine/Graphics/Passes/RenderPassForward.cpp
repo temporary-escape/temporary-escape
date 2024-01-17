@@ -18,7 +18,8 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     pipelineBullets{vulkan},
     pipelineBulletsTrail{vulkan},
     pipelineParticles{vulkan},
-    pipelineDebug{vulkan} {
+    pipelineDebug{vulkan},
+    pipelineSpaceDust{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -70,6 +71,7 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     addPipeline(pipelineBulletsTrail, 0);
     addPipeline(pipelineParticles, 0);
     addPipeline(pipelineDebug, 0);
+    addPipeline(pipelineSpaceDust, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -93,6 +95,7 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     renderSceneBullets(vkb, scene, camera);
     renderSceneBulletsTrail(vkb, scene, camera);
     renderSceneDebug(vkb, scene, camera);
+    renderSceneSpaceDust(vkb, scene, camera);
 }
 
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
@@ -193,7 +196,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scen
         pipelineParticles.flushDescriptors(vkb);
 
         for (const auto& matrix : matrices) {
-            const auto modelMatrix = transform.getAbsoluteTransform() * matrix;
+            const auto modelMatrix = transform.getAbsoluteInterpolatedTransform() * matrix;
             pipelineParticles.setModelMatrix(modelMatrix);
             pipelineParticles.setTimeDelta(vulkan.getRenderTime());
             pipelineParticles.setOverrideStrength(strength);
@@ -273,4 +276,40 @@ void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene,
     vkb.bindBuffers(vboBindings);
 
     vkb.draw(count * 2, 1, 0, 0);
+}
+
+void RenderPassForward::renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
+    pipelineSpaceDust.bind(vkb);
+
+    const auto eyesPos = camera.getEyesPos();
+    if (eyesPosPrevious == Vector3{0.0f}) {
+        eyesPosPrevious = eyesPos;
+    }
+
+    const auto diff = eyesPos - eyesPosPrevious;
+    eyesPosPrevious = eyesPos;
+    const auto speed = glm::clamp(glm::length(diff), 0.0f, 10.0f);
+    const auto dir = speed > 0.0f ? glm::normalize(diff) : Vector3{0.0f};
+
+    const float scale = 64.0f;
+    const auto pos = Vector3{Vector3i{camera.getEyesPos()} / int(scale)} * Vector3{scale};
+
+    for (auto x = -1; x <= 1; x++) {
+        for (auto y = -1; y <= 1; y++) {
+            for (auto z = -1; z <= 1; z++) {
+                auto modelMatrix = glm::translate(Matrix4{1.0f}, pos + Vector3{x, y, z} * scale);
+                modelMatrix = glm::scale(modelMatrix, Vector3{scale});
+
+                pipelineSpaceDust.setModelMatrix(modelMatrix);
+                pipelineSpaceDust.setMoveDirection(dir * speed);
+                pipelineSpaceDust.flushConstants(vkb);
+
+                pipelineSpaceDust.setTextureColor(resources.getSpaceDust());
+                pipelineSpaceDust.setUniformCamera(camera.getUbo().getCurrentBuffer());
+                pipelineSpaceDust.flushDescriptors(vkb);
+
+                pipelineSpaceDust.renderMesh(vkb, resources.getMeshSpaceDust());
+            }
+        }
+    }
 }

@@ -441,7 +441,7 @@ void VulkanRenderer::copyDataToBuffer(VulkanBuffer& buffer, const void* data, si
         transferCommandBuffer.start(beginInfo);
 
         VkBufferCopy copyRegion{};
-        copyRegion.size = size;
+        copyRegion.size = alignedBytesToCopy;
         copyRegion.srcOffset = 0;
         copyRegion.dstOffset = dstOffset;
         transferCommandBuffer.copyBuffer(transferBuffer, buffer, copyRegion);

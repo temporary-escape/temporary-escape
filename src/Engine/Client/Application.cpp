@@ -145,7 +145,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }
 
     if (client) {
-        client->update();
+        client->update(deltaTime);
     }
 
     rendererCanvas.reset();
@@ -184,12 +184,12 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         editor->render(vkb, *renderer, viewport);
     }*/
 
-    if (client) {
+    /*if (client) {
         const auto scene = client->getScene();
         if (scene) {
             scene->update(deltaTime);
         }
-    }
+    }*/
 
     if (views) {
         views->update(deltaTime, viewport);

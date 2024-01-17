@@ -55,7 +55,7 @@ void ControllerIcon::recalculate(VulkanRenderer& vulkan) {
         auto* raw = found->second.insert(static_cast<uint64_t>(handle));
         auto* dst = reinterpret_cast<Point*>(raw);
 
-        dst->position = transform.getAbsolutePosition();
+        dst->position = transform.getAbsoluteInterpolatedPosition();
         dst->size = icon.getSize();
         dst->offset = icon.getOffset();
         dst->color = icon.getColor();
@@ -90,7 +90,7 @@ void ControllerIcon::addOrUpdate(entt::entity handle, const ComponentTransform& 
     auto* raw = found->second.insert(static_cast<uint64_t>(handle));
     auto* dst = reinterpret_cast<Point*>(raw);
 
-    dst->position = transform.getAbsolutePosition();
+    dst->position = transform.getAbsoluteInterpolatedPosition();
     dst->size = icon.getSize();
     dst->offset = icon.getOffset();
     dst->color = icon.getColor();

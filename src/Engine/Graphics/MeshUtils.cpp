@@ -336,3 +336,52 @@ Mesh Engine::createCircleMesh(VulkanRenderer& vulkan) {
 
     return mesh;
 }
+
+Mesh Engine::createSpaceDustMesh(VulkanRenderer& vulkan) {
+    Mesh mesh{};
+
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::random_device rd;
+    std::default_random_engine rng{rd()};
+    std::uniform_real_distribution<float> dist{-0.5f, 0.5f};
+
+    size_t count{1024};
+    size_t multiplier{16};
+    std::vector<SpaceDustVertex> vertices;
+    vertices.resize(count * 6 * multiplier);
+
+    // Create the random points
+    for (size_t i = 0; i < count * 6; i += 6) {
+        const auto pos = Vector3{
+            dist(rng),
+            dist(rng),
+            dist(rng),
+        };
+
+        for (size_t v = 0; v < 6; v++) {
+            vertices[i + v].position = pos;
+        }
+    }
+
+    // Duplicate again to create trains
+    for (size_t i = 1; i < multiplier; i++) {
+        std::memcpy(vertices.data() + i * count * 6, vertices.data(), count * 6 * sizeof(SpaceDustVertex));
+    }
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(SpaceDustVertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
+
+    // mesh.instances = vertices.size();
+    mesh.count = vertices.size();
+
+    return mesh;
+}

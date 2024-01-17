@@ -36,7 +36,7 @@ public:
                     VoxelShapeCache* voxelShapeCache, const std::string& address, int port);
     virtual ~Client();
 
-    void update();
+    void update(float deltaTime);
     void disconnect();
 
     Scene* getScene() const {

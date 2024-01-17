@@ -66,7 +66,7 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineGrid.bind(vkb);
 
     for (auto&& [entity, transform, grid] : systemGrids.each()) {
-        const auto modelMatrix = transform.getAbsoluteTransform();
+        const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineGrid.setModelMatrix(modelMatrix);
