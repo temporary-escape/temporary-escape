@@ -5,8 +5,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentCameraOrbital::ComponentCameraOrbital(entt::registry& reg, entt::entity handle, ComponentCamera& camera) :
-    Component{reg, handle}, camera{&camera} {
+ComponentCameraOrbital::ComponentCameraOrbital(EntityId entity, ComponentCamera& camera) :
+    Component{entity}, camera{&camera} {
 }
 
 void ComponentCameraOrbital::update(const float delta) {

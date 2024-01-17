@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-ControllerCameraPanning::ControllerCameraPanning(entt::registry& reg) : reg{reg} {
+ControllerCameraPanning::ControllerCameraPanning(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerCameraPanning::~ControllerCameraPanning() = default;

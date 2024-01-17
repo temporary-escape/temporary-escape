@@ -27,9 +27,7 @@ public:
     };
 
     ComponentWorldText() = default;
-    explicit ComponentWorldText(entt::registry& reg, entt::entity handle, const FontFace& fontFace, const Color4& color,
-                                const float height);
-    virtual ~ComponentWorldText() = default; // NOLINT(modernize-use-override)
+    explicit ComponentWorldText(EntityId entity, const FontFace& fontFace, const Color4& color, const float height);
     COMPONENT_DEFAULTS(ComponentWorldText);
 
     void recalculate(VulkanRenderer& vulkan);
@@ -61,6 +59,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     const FontFace* fontFace{nullptr};
     Color4 color;
     float height;

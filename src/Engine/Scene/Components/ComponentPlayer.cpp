@@ -2,6 +2,6 @@
 
 using namespace Engine;
 
-ComponentPlayer::ComponentPlayer(entt::registry& reg, entt::entity handle, std::string playerId) :
-    Component{reg, handle}, playerId{std::move(playerId)} {
+ComponentPlayer::ComponentPlayer(EntityId entity, std::string playerId) :
+    Component{entity}, playerId{std::move(playerId)} {
 }

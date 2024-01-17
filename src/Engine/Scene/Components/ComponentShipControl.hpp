@@ -5,14 +5,14 @@
 #include "ComponentTurret.hpp"
 
 namespace Engine {
+class ENGINE_API Scene;
 class ENGINE_API ComponentShipControl : public Component {
 public:
     ComponentShipControl() = default;
-    explicit ComponentShipControl(entt::registry& reg, entt::entity handle);
-    virtual ~ComponentShipControl() = default; // NOLINT(modernize-use-override)
+    ComponentShipControl(EntityId entity);
     COMPONENT_DEFAULTS(ComponentShipControl);
 
-    void update(EntityRegistry& reg, float delta, ComponentTransform& transform);
+    void update(Scene& scene, float delta, ComponentTransform& transform);
 
     void setActive(bool value);
     [[nodiscard]] bool isActive() const {
@@ -70,9 +70,6 @@ public:
 
     MSGPACK_DEFINE_ARRAY(approachTarget, approachMinDistance, approachDistance, forwardVelocity, forwardVelocityMax,
                          orbitRadius, orbitMatrix, orbitOrigin, approachPos);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     EntityId approachTarget{NullEntity};

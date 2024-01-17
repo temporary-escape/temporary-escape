@@ -5,7 +5,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerIcon::ControllerIcon(entt::registry& reg) : reg{reg} {
+ControllerIcon::ControllerIcon(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
     reg.on_construct<ComponentIcon>().connect<&ControllerIcon::onConstruct>(this);
     reg.on_update<ComponentIcon>().connect<&ControllerIcon::onUpdate>(this);
     reg.on_destroy<ComponentIcon>().connect<&ControllerIcon::onDestroy>(this);

@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerModelSkinned::ControllerModelSkinned(entt::registry& reg) : reg{reg} {
+ControllerModelSkinned::ControllerModelSkinned(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
     reg.on_construct<ComponentModelSkinned>().connect<&ControllerModelSkinned::onConstruct>(this);
     reg.on_update<ComponentModelSkinned>().connect<&ControllerModelSkinned::onUpdate>(this);
     reg.on_destroy<ComponentModelSkinned>().connect<&ControllerModelSkinned::onDestroy>(this);

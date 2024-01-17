@@ -7,7 +7,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 static constexpr size_t shadowMapCascadeCount = 4;
 
-ControllerLights::ControllerLights(entt::registry& reg, Scene& scene) : reg{reg}, scene{scene} {
+ControllerLights::ControllerLights(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerLights::~ControllerLights() = default;

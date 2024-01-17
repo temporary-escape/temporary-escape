@@ -68,7 +68,7 @@ void Client::update() {
             cache.player.position = transform->getPosition();
 
             if (const auto* camera = scene->getPrimaryCamera(); camera) {
-                auto* cameraOrbital = scene->tryGetComponent<ComponentCameraOrbital>(camera->getHandle());
+                auto* cameraOrbital = scene->tryGetComponent<ComponentCameraOrbital>(camera->getEntity());
                 if (cameraOrbital) {
                     cameraOrbital->setTarget(transform->getAbsolutePosition());
                 }
@@ -355,7 +355,7 @@ void Client::handle(Request<MessagePlayerControlEvent> req) {
                 EXCEPTION("Entity has no transform");
             }
 
-            auto cameraEntity = scene->fromHandle(camera->getHandle());
+            auto cameraEntity = scene->fromHandle(camera->getEntity());
             cameraEntity.getComponent<ComponentCameraOrbital>().setTarget(transform->getAbsolutePosition());
         } else {
             EXCEPTION("No local entity: {}", data.entityId);

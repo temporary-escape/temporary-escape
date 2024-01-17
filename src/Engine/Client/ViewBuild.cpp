@@ -138,7 +138,7 @@ void ViewBuild::createEntityShip() {
     entityShip.addComponent<ComponentTransform>();
     // auto& debug = entityShip.addComponent<ComponentDebug>();
     auto& grid = entityShip.addComponent<ComponentGrid>();
-    grid.setDirty(true);
+    grid.setDirty();
 
     auto block = assetsManager.getBlocks().find("block_hull_t1");
     grid.insert(Vector3i{0, 0, 0}, block, 0, 0, VoxelShape::Type::Cube);
@@ -152,7 +152,7 @@ void ViewBuild::addBlock() {
     const auto pos = raycastResult->pos + raycastResult->orientation;
     auto& grid = entityShip.getComponent<ComponentGrid>();
     grid.insert(pos, selected.block, currentRotation, selected.color, selected.shape);
-    grid.setDirty(true);
+    grid.setDirty();
 
     // Insert a new undo item
     if (historyPos < history.size()) {
@@ -208,7 +208,7 @@ void ViewBuild::removeBlock() {
     historyPos = static_cast<int64_t>(history.size());
 
     grid.remove(pos);
-    grid.setDirty(true);
+    grid.setDirty();
 
     uiAudioSource.bind(sound.destroy->getAudioBuffer());
     uiAudioSource.play();
@@ -230,7 +230,7 @@ void ViewBuild::doUndo() {
         grid.insert(action.pos, action.block, action.rotation, action.color, action.shape);
     }
 
-    grid.setDirty(true);
+    grid.setDirty();
 }
 
 void ViewBuild::doRedo() {
@@ -248,7 +248,7 @@ void ViewBuild::doRedo() {
     }
 
     ++historyPos;
-    grid.setDirty(true);
+    grid.setDirty();
 }
 
 void ViewBuild::doSave() {
@@ -326,7 +326,7 @@ void ViewBuild::updateSelectedBlock() {
     if (selected.block) {
         entityHelperAdd.setDisabled(false);
         grid.insert({0, 0, 0}, selected.block, currentRotation, selected.color, selected.shape);
-        grid.setDirty(true);
+        grid.setDirty();
     } else {
         entityHelperAdd.setDisabled(true);
     }

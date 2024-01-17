@@ -130,7 +130,8 @@ private:
     bool result{false};
 };
 
-ControllerDynamicsWorld::ControllerDynamicsWorld(entt::registry& reg, const Config& config) :
+ControllerDynamicsWorld::ControllerDynamicsWorld(Scene& scene, entt::registry& reg, const Config& config) :
+    scene{scene},
     reg{reg},
     config{config},
     collisionConfiguration{std::make_unique<btDefaultCollisionConfiguration>()},

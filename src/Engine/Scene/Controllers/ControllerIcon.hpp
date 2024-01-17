@@ -9,7 +9,7 @@ public:
     using Point = ComponentIcon::Point;
     using Buffers = std::unordered_map<const VulkanTexture*, VulkanArrayBuffer>;
 
-    explicit ControllerIcon(entt::registry& reg);
+    explicit ControllerIcon(Scene& scene, entt::registry& reg);
     ~ControllerIcon() override;
     NON_COPYABLE(ControllerIcon);
     NON_MOVEABLE(ControllerIcon);
@@ -33,6 +33,7 @@ private:
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     Buffers staticBuffers;
     Buffers dynamicBuffers;

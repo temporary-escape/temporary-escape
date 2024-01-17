@@ -7,8 +7,7 @@ namespace Engine {
 class ENGINE_API ComponentCamera : public Component, public Camera {
 public:
     ComponentCamera() = default;
-    explicit ComponentCamera(entt::registry& reg, entt::entity handle, ComponentTransform& transform);
-    virtual ~ComponentCamera() = default; // NOLINT(modernize-use-override)
+    explicit ComponentCamera(EntityId entity, ComponentTransform& transform);
     COMPONENT_DEFAULTS(ComponentCamera);
 
     void update(float delta);

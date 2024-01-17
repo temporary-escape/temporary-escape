@@ -2,6 +2,5 @@
 
 using namespace Engine;
 
-ComponentSkybox::ComponentSkybox(entt::registry& reg, entt::entity handle, uint64_t seed) :
-    Component{reg, handle}, seed{seed} {
+ComponentSkybox::ComponentSkybox(EntityId entity, uint64_t seed) : Component{entity}, seed{seed} {
 }

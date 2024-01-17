@@ -26,12 +26,12 @@ public:
     };
 
     ComponentTurret() = default;
-    explicit ComponentTurret(entt::registry& reg, entt::entity handle);
-    explicit ComponentTurret(entt::registry& reg, entt::entity handle, TurretPtr turret);
+    explicit ComponentTurret(EntityId entity);
+    explicit ComponentTurret(EntityId entity, TurretPtr turret);
     virtual ~ComponentTurret() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentTurret);
 
-    void update(float delta, const ComponentTransform& transform, ComponentModelSkinned& model);
+    void update(Scene& scene, float delta, const ComponentTransform& transform, ComponentModelSkinned& model);
 
     void setTurret(TurretPtr value);
     const TurretPtr& getTurret() const {
@@ -65,9 +65,6 @@ public:
     void resetShoot();
 
     MSGPACK_DEFINE_ARRAY(turret, targetPos, active, shootReady);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     TurretPtr turret;

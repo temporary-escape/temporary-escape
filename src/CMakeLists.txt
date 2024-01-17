@@ -104,8 +104,7 @@ target_link_libraries(${PROJECT_NAME}Engine
         ${BULLET_LIBRARIES}
         Vorbis::vorbis
         Vorbis::vorbisfile
-        MicroPather
-        libmorton::libmorton)
+        MicroPather)
 
 # The main target
 if (MSVC)

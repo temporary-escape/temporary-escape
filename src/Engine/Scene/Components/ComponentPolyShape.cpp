@@ -4,15 +4,15 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentPolyShape::ComponentPolyShape(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentPolyShape::ComponentPolyShape(EntityId entity) : Component{entity} {
 }
 
 void ComponentPolyShape::recalculate(VulkanRenderer& vulkan) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     logger.debug("Recreating with {} vertices", points.size());
 

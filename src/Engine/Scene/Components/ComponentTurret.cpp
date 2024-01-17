@@ -1,25 +1,26 @@
 #include "ComponentTurret.hpp"
-#include "../Entity.hpp"
+#include "../Scene.hpp"
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentTurret::ComponentTurret(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentTurret::ComponentTurret(EntityId entity) : Component{entity} {
 }
 
-ComponentTurret::ComponentTurret(entt::registry& reg, entt::entity handle, TurretPtr turret) : Component{reg, handle} {
+ComponentTurret::ComponentTurret(EntityId entity, TurretPtr turret) : Component{entity} {
     setTurret(std::move(turret));
 }
 
-void ComponentTurret::update(const float delta, const ComponentTransform& transform, ComponentModelSkinned& model) {
+void ComponentTurret::update(Scene& scene, const float delta, const ComponentTransform& transform,
+                             ComponentModelSkinned& model) {
     if (!active) {
         return;
     }
 
     if (target) {
         targetPos = target->getAbsolutePosition();
-        setDirty(true);
+        scene.setDirty(*this);
     }
 
     const auto absoluteTransform = transform.getAbsoluteTransform();
@@ -39,7 +40,7 @@ void ComponentTurret::update(const float delta, const ComponentTransform& transf
 
     model.setAdjustment(1, glm::mat4_cast(Quaternion{Vector3{0.0f, yaw, 0.0f}}));
     model.setAdjustment(2, glm::mat4_cast(Quaternion{Vector3{pitch, 0.0f, 0.0f}}));
-    model.setDirty(true);
+    scene.setDirty(model);
 
     if (counter == 20 && shootReady) {
         shootReady = false;
@@ -72,8 +73,4 @@ void ComponentTurret::setTarget(const ComponentTransform* value) {
 }
 
 void ComponentTurret::clearTarget() {
-}
-
-void ComponentTurret::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentTurret>(handle);
 }

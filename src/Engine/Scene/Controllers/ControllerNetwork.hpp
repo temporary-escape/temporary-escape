@@ -16,7 +16,7 @@ class ENGINE_API ControllerNetwork : public Controller {
 public:
     static constexpr const char* messageComponentSnapshotName = "MessageComponentSnapshot";
 
-    explicit ControllerNetwork(entt::registry& reg);
+    explicit ControllerNetwork(Scene& scene, entt::registry& reg);
     ~ControllerNetwork() override;
     NON_COPYABLE(ControllerNetwork);
     NON_MOVEABLE(ControllerNetwork);
@@ -84,6 +84,7 @@ private:
     }
     void onDestroyEntity(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     std::unordered_map<EntityId, EntityId> remoteToLocal;
     std::unordered_map<EntityId, EntityId> localToRemote;

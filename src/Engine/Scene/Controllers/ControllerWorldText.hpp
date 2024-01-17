@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerWorldText : public Controller {
 public:
-    explicit ControllerWorldText(entt::registry& reg);
+    explicit ControllerWorldText(Scene& scene, entt::registry& reg);
     ~ControllerWorldText() override;
     NON_COPYABLE(ControllerWorldText);
     NON_MOVEABLE(ControllerWorldText);
@@ -15,6 +15,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

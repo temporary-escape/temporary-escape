@@ -95,7 +95,7 @@ public:
             EXCEPTION("Invalid entity");
         }
 
-        return reg->template emplace<T>(handle, *reg, handle, std::forward<Args>(args)...);
+        return reg->template emplace<T>(handle, handle, std::forward<Args>(args)...);
     }
 
     [[nodiscard]] entt::entity getHandle() const {
@@ -128,7 +128,7 @@ inline Vector4 entityColor(const ComponentTransform& transform) {
     const auto* parent = &transform;
     while (true) {
         if (!parent->getParent()) {
-            return entityColor(parent->getHandle());
+            return entityColor(parent->getEntity());
         }
         parent = parent->getParent();
     }

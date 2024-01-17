@@ -45,7 +45,7 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerCamera>();
         addController<ControllerCameraOrbital>();
         addController<ControllerCameraPanning>();
-        addController<ControllerLights>(*this);
+        addController<ControllerLights>();
         addController<ControllerModelSkinned>();
         addController<ControllerStaticModel>();
         addController<ControllerText>();
@@ -199,6 +199,41 @@ Lua& Scene::getLua() const {
 bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {
     const auto& dynamicsWorld = getController<ControllerDynamicsWorld>();
     return dynamicsWorld.contactTestSphere(origin, radius);
+}
+
+float Scene::getEntityBounds(const EntityId a, const ComponentTransform& transform) const {
+    const auto* model = tryGetComponent<ComponentModel>(a);
+    if (model && model->getModel()) {
+        return model->getModel()->getRadius() * transform.getScaleUniform();
+    }
+
+    const auto* grid = tryGetComponent<ComponentGrid>(a);
+    if (grid) {
+        return grid->getRadius();
+    }
+
+    return 0.0f;
+}
+
+float Scene::getEntityDistance(const EntityId a, const EntityId b) const {
+    const auto* at = tryGetComponent<ComponentTransform>(a);
+    if (!at) {
+        return std::numeric_limits<float>::infinity();
+    }
+
+    const auto* bt = tryGetComponent<ComponentTransform>(b);
+    if (!bt) {
+        return std::numeric_limits<float>::infinity();
+    }
+
+    const auto dist = glm::distance(at->getAbsolutePosition(), bt->getAbsolutePosition()) - getEntityBounds(a, *at) -
+                      getEntityBounds(b, *bt);
+
+    return dist < 0.0f ? 0.0f : dist;
+}
+
+bool Scene::valid(const EntityId entity) const {
+    return reg.valid(entity);
 }
 
 void Scene::eventMouseMoved(const Vector2i& pos) {

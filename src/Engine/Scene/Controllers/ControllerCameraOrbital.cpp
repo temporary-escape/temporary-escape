@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-ControllerCameraOrbital::ControllerCameraOrbital(entt::registry& reg) : reg{reg} {
+ControllerCameraOrbital::ControllerCameraOrbital(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerCameraOrbital::~ControllerCameraOrbital() = default;

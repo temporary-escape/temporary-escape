@@ -5,7 +5,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerModel::ControllerModel(entt::registry& reg) : reg{reg} {
+ControllerModel::ControllerModel(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
     reg.on_construct<ComponentModel>().connect<&ControllerModel::onConstruct>(this);
     reg.on_update<ComponentModel>().connect<&ControllerModel::onUpdate>(this);
     reg.on_destroy<ComponentModel>().connect<&ControllerModel::onDestroy>(this);

@@ -43,6 +43,7 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     static constexpr auto in_place_delete = true;
 
 namespace Engine {
+class ENGINE_API Scene;
 using EntityRegistry = entt::registry;
 using EntityId = entt::entity;
 static const auto NullEntity = entt::null;
@@ -50,61 +51,29 @@ static const auto NullEntity = entt::null;
 class ENGINE_API Component {
 public:
     Component() = default;
-    explicit Component(entt::registry& reg, entt::entity handle) : reg{&reg}, handle{handle} {
+    explicit Component(EntityId entity) : entity{entity} {
     }
     virtual ~Component() = default;
 
     // Used by msgpack
-    void postUnpack(entt::registry& r, entt::entity h) {
-        reg = &r;
-        handle = h;
+    void postUnpack(EntityId value) {
+        entity = value;
     }
 
-    [[nodiscard]] bool isDirty() const {
-        return dirty;
-    }
-
-    void setDirty(const bool value) {
-        dirty = value;
-        if (value && reg) {
-            patch(*reg, handle);
-        }
-    }
-
-    entt::entity getHandle() const {
-        return handle;
-    }
     EntityId getEntity() const {
-        return handle;
+        return entity;
     }
 
 protected:
-    virtual void patch(entt::registry& r, entt::entity h) {
-        (void)r;
-        (void)h;
-    };
-
-    template <typename T> T* tryGet() {
-        return reg ? reg->try_get<T>(handle) : nullptr;
-    }
-
-private:
-    entt::registry* reg{nullptr};
-    entt::entity handle{0};
-
-    bool dirty{false};
+    EntityId entity{NullEntity};
 };
 
 class ENGINE_API TagDisabled : public Component {
 public:
     TagDisabled() = default;
+    explicit TagDisabled(EntityId entity) : Component{entity} {
+    }
     COMPONENT_DEFAULTS(TagDisabled);
-};
-
-class ENGINE_API TagStatic : public Component {
-public:
-    TagStatic() = default;
-    COMPONENT_DEFAULTS(TagStatic);
 };
 } // namespace Engine
 

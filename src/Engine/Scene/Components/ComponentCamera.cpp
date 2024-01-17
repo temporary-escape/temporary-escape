@@ -6,8 +6,8 @@ using namespace Engine;
 // TODO
 static const Config config{};
 
-ComponentCamera::ComponentCamera(entt::registry& reg, entt::entity handle, ComponentTransform& transform) :
-    Component{reg, handle}, Camera{transform.getTransform()} {
+ComponentCamera::ComponentCamera(EntityId entity, ComponentTransform& transform) :
+    Component{entity}, Camera{transform.getTransform()} {
 }
 
 void ComponentCamera::update(const float delta) {

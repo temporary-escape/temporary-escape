@@ -158,18 +158,13 @@ void ViewSpace::renderCanvasSelectedEntity(Canvas& canvas, const Vector2i& viewp
         return;
     }
 
-    const auto* playerEntityTransform = scene.tryGetComponent<ComponentTransform>(playerEntity);
-    if (!playerEntityTransform) {
-        return;
-    }
-
     const auto selectedEntity = scene.getSelectedEntity();
     if (selectedEntity) {
         const auto& transform = selectedEntity->getComponent<ComponentTransform>();
         const auto worldPos = transform.getAbsolutePosition();
         const auto screenPos = scene.worldToScreen(worldPos);
 
-        const auto dist = glm::distance(playerEntityTransform->getAbsolutePosition(), worldPos);
+        const auto dist = scene.getEntityDistance(playerEntity, selectedEntity->getHandle());
         const auto text = formatDistance(dist);
 
         canvas.drawText(screenPos + Vector2{20.0f, 0.0f}, text, font, config.guiFontSize, Colors::text);

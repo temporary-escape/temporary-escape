@@ -1,16 +1,16 @@
 #include "ComponentShipControl.hpp"
 #include "../../Utils/Exceptions.hpp"
-#include "../Entity.hpp"
+#include "../Scene.hpp"
 #include <glm/gtx/euler_angles.hpp>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentShipControl::ComponentShipControl(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentShipControl::ComponentShipControl(EntityId entity) : Component{entity} {
 }
 
-void ComponentShipControl::update(EntityRegistry& reg, const float delta, ComponentTransform& transform) {
+void ComponentShipControl::update(Scene& scene, const float delta, ComponentTransform& transform) {
     constexpr auto accelerationAngleMin = glm::radians(30.0f);
     constexpr auto slowdownAngle = glm::radians(15.0f);
 
@@ -19,12 +19,12 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     }
 
     // Is the target entity valid?
-    if (!reg.valid(approachTarget)) {
+    if (!scene.valid(approachTarget)) {
         actionStopMovement();
     }
 
     // Does the entity have transform component?
-    const auto* targetTransform = reg.try_get<ComponentTransform>(approachTarget);
+    const auto* targetTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
     if (!targetTransform) {
         actionStopMovement();
     }
@@ -37,6 +37,18 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
     // Target information
     auto targetPos = approachPos;
     approachDistance = glm::distance(transform.getPosition(), approachPos);
+
+    // Subtract target entity bounds (if it is an entity)
+    if (targetTransform) {
+        approachDistance -= scene.getEntityBounds(approachTarget, *targetTransform);
+    }
+
+    // Subtract our own bounds
+    approachDistance -= scene.getEntityBounds(entity, transform);
+
+    if (approachDistance < 0.0f) {
+        approachDistance = 0.0f;
+    }
     auto computedDistance = approachDistance;
 
     // Should we do an orbit?
@@ -200,8 +212,8 @@ void ComponentShipControl::update(EntityRegistry& reg, const float delta, Compon
 
     // Update the ship transform
     transform.setTransform(shipTransform);
-    reg.patch<ComponentTransform>(getEntity());
-    reg.patch<ComponentShipControl>(getEntity());
+    scene.setDirty(transform);
+    scene.setDirty(*this);
 }
 
 void ComponentShipControl::actionApproach(const EntityId target) {
@@ -247,8 +259,4 @@ void ComponentShipControl::setAngularVelocity(const float radians) {
 
 void ComponentShipControl::addTurret(ComponentTurret& turret) {
     turrets.push_back(&turret);
-}
-
-void ComponentShipControl::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentShipControl>(handle);
 }

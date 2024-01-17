@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerPointCloud : public Controller {
 public:
-    explicit ControllerPointCloud(entt::registry& reg);
+    explicit ControllerPointCloud(Scene& scene, entt::registry& reg);
     ~ControllerPointCloud() override;
     NON_COPYABLE(ControllerPointCloud);
     NON_MOVEABLE(ControllerPointCloud);
@@ -15,6 +15,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

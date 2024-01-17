@@ -15,7 +15,7 @@ public:
     };
 
     ComponentNebula() = default;
-    explicit ComponentNebula(entt::registry& reg, entt::entity handle);
+    explicit ComponentNebula(EntityId entity);
     virtual ~ComponentNebula() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentNebula);
 
@@ -66,6 +66,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     Uniform uniform;
     VulkanBuffer ubo;
 };

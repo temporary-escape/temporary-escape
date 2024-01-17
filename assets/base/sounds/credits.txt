@@ -5,9 +5,3 @@
   Source: https://gamesupply.itch.io/ultimate-space-game-mega-asset-package?download
   License: Creative Commons CC BY-SA 4.0
   Modified by: Matus Novak
-
-- ui_bong_01.ogg
-
-  Created by: Kenney
-  Source: https://www.kenney.nl/assets/interface-sounds
-  License: Creative Commons CC0

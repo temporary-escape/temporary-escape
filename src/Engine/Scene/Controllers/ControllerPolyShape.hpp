@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerPolyShape : public Controller {
 public:
-    explicit ControllerPolyShape(entt::registry& reg);
+    explicit ControllerPolyShape(Scene& scene, entt::registry& reg);
     ~ControllerPolyShape() override;
     NON_COPYABLE(ControllerPolyShape);
     NON_MOVEABLE(ControllerPolyShape);
@@ -15,6 +15,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

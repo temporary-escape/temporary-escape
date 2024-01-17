@@ -6,8 +6,7 @@ namespace Engine {
 class ComponentParticleEmitter : public Component {
 public:
     ComponentParticleEmitter() = default;
-    explicit ComponentParticleEmitter(entt::registry& reg, entt::entity handle);
-    virtual ~ComponentParticleEmitter() = default; // NOLINT(modernize-use-override)
+    explicit ComponentParticleEmitter(EntityId entity);
     COMPONENT_DEFAULTS(ComponentParticleEmitter);
 
     /*void setOffset(const Vector3& value) {

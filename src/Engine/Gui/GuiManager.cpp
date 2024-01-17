@@ -242,6 +242,9 @@ void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button
         if (p.x <= pos.x && p.x + s.x >= pos.x && p.y <= pos.y && p.y + s.y >= pos.y) {
             window.buttonMask |= 1 << static_cast<uint64_t>(button);
             window.ptr->eventMousePressed(pos - p, button);
+        } else if (window.ptr->hasActiveInput()) {
+            window.buttonMask |= 1 << static_cast<uint64_t>(button);
+            window.ptr->eventMousePressed({0, 0}, button);
         }
     }
 }

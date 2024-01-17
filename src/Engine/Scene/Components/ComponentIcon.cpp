@@ -2,12 +2,8 @@
 
 using namespace Engine;
 
-ComponentIcon::ComponentIcon(entt::registry& reg, entt::entity handle, ImagePtr image) :
-    Component{reg, handle}, image{std::move(image)}, color{Colors::primary} {
-}
-
-void ComponentIcon::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentIcon>(handle);
+ComponentIcon::ComponentIcon(EntityId entity, ImagePtr image) :
+    Component{entity}, image{std::move(image)}, color{Colors::primary} {
 }
 
 void ComponentIcon::setEnvironment(const bool value) {

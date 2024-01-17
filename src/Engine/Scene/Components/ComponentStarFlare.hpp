@@ -8,9 +8,7 @@ namespace Engine {
 class ENGINE_API ComponentStarFlare : public Component {
 public:
     ComponentStarFlare() = default;
-    explicit ComponentStarFlare(entt::registry& reg, entt::entity handle, TexturePtr texture, TexturePtr textureLow,
-                                TexturePtr textureHigh);
-    virtual ~ComponentStarFlare() = default; // NOLINT(modernize-use-override)
+    explicit ComponentStarFlare(EntityId entity, TexturePtr texture, TexturePtr textureLow, TexturePtr textureHigh);
     COMPONENT_DEFAULTS(ComponentStarFlare);
 
     const TexturePtr& getTexture() const {

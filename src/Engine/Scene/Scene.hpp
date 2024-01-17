@@ -83,7 +83,7 @@ public:
             EXCEPTION("Controller of type: {} already added!", typeid(T).name());
         }
 
-        auto controller = std::make_unique<T>(reg, std::forward<Args>(args)...);
+        auto controller = std::make_unique<T>(*this, reg, std::forward<Args>(args)...);
         auto ptr = dynamic_cast<T*>(controller.get());
 
         controllers.emplace(type, std::move(controller));
@@ -113,6 +113,12 @@ public:
     }
 
     bool contactTestSphere(const Vector3& origin, float radius) const;
+    float getEntityBounds(EntityId a, const ComponentTransform& transform) const;
+    float getEntityDistance(EntityId a, EntityId b) const;
+    bool valid(EntityId entity) const;
+    template <typename T> void setDirty(T& component) {
+        reg.patch<T>(component.getEntity());
+    }
 
     ComponentCamera* getPrimaryCamera() const;
     const ComponentSkybox* getSkybox();

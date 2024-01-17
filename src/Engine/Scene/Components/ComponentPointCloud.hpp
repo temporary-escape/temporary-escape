@@ -29,9 +29,8 @@ public:
     };
 
     ComponentPointCloud() = default;
-    explicit ComponentPointCloud(entt::registry& reg, entt::entity handle, TexturePtr texture);
-    explicit ComponentPointCloud(entt::registry& reg, entt::entity handle, const VulkanTexture& texture);
-    virtual ~ComponentPointCloud() = default; // NOLINT(modernize-use-override)
+    explicit ComponentPointCloud(EntityId entity, TexturePtr texture);
+    explicit ComponentPointCloud(EntityId entity, const VulkanTexture& texture);
     COMPONENT_DEFAULTS(ComponentPointCloud);
 
     void reserve(size_t count);
@@ -50,6 +49,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     TexturePtr texture;
     const VulkanTexture* texturePtr{nullptr};
     std::vector<Point> points;

@@ -2,16 +2,15 @@
 
 using namespace Engine;
 
-ComponentNebula::ComponentNebula(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
-    setDirty(true);
+ComponentNebula::ComponentNebula(EntityId entity) : Component{entity}, dirty{true} {
 }
 
 void ComponentNebula::recalculate(VulkanRenderer& vulkan) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     if (!ubo) {
         VulkanBuffer::CreateInfo bufferInfo{};

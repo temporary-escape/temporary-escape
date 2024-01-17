@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-ControllerCamera::ControllerCamera(entt::registry& reg) : reg{reg} {
+ControllerCamera::ControllerCamera(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerCamera::~ControllerCamera() = default;

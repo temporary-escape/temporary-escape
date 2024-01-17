@@ -34,8 +34,6 @@ Application::Application(Config& config) :
     canvas2{*this},
     guiManager{*this, rendererCanvas, font, config.guiFontSize} {
 
-    loadSounds();
-
     const std::string gpuName{getPhysicalDeviceProperties().deviceName};
     if (gpuName.find("UHD Graphics") != std::string::npos) {
         config.graphics.planetTextureSize = 512;
@@ -320,7 +318,7 @@ void Application::renderFrameTime(const Vector2i& viewport) {
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 5.0}, text, font, config.guiFontSize, color);
+        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
     }
 }
 
@@ -761,25 +759,4 @@ void Application::eventWindowBlur() {
 }
 
 void Application::eventWindowFocus() {
-}
-
-void Application::loadSounds() {
-    const auto load = [this](AudioBuffer& buffer, const Path& path) {
-        try {
-            OggFileReader file{path};
-            const auto freq = file.getFrequency();
-            const auto format = file.getFormat();
-            const auto data = file.readData();
-            buffer = audio.createBuffer(data.data(), data.size(), format, freq);
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to load sound: {}", path);
-        }
-    };
-
-    load(sounds.uiClick, config.assetsPath / "base" / "sounds" / "ui_click_01.ogg");
-}
-
-void Application::nuklearOnClick(const bool push) {
-    audioSource.bind(sounds.uiClick);
-    audioSource.play();
 }

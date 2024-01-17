@@ -23,13 +23,18 @@ using CollisionMask = int;
 class ENGINE_API ComponentRigidBody : public Component {
 public:
     ComponentRigidBody();
-    explicit ComponentRigidBody(entt::registry& reg, entt::entity handle);
+    explicit ComponentRigidBody(EntityId entity);
     virtual ~ComponentRigidBody(); // NOLINT(modernize-use-override)
     ComponentRigidBody(const ComponentRigidBody& other) = delete;
     ComponentRigidBody(ComponentRigidBody&& other) noexcept;
     ComponentRigidBody& operator=(const ComponentRigidBody& other) = delete;
     ComponentRigidBody& operator=(ComponentRigidBody&& other) noexcept;
     static constexpr auto in_place_delete = true;
+
+    void postUnpack(Scene& s, EntityId e) {
+        Component::postUnpack(e);
+        this->scene = &s;
+    }
 
     [[nodiscard]] btRigidBody* getRigidBody() const {
         return rigidBody.get();
@@ -71,6 +76,9 @@ public:
     void setDynamicsWorld(btDynamicsWorld& world) {
         dynamicsWorld = &world;
     }
+    void setScene(Scene& value) {
+        scene = &value;
+    }
 
     void setKinematic(const bool value) {
         kinematic = value;
@@ -82,10 +90,8 @@ public:
     [[nodiscard]] int32_t getFlags() const;
     void setFlags(int32_t value);
 
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
-
 private:
+    Scene* scene{nullptr};
     float mass{1.0f};
     float scale{1.0f};
     std::unique_ptr<btCollisionShape> shape;

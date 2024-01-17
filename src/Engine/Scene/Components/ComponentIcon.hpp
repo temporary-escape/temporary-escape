@@ -28,8 +28,7 @@ public:
     };
 
     ComponentIcon() = default;
-    explicit ComponentIcon(entt::registry& reg, entt::entity handle, ImagePtr image);
-    virtual ~ComponentIcon() = default; // NOLINT(modernize-use-override)
+    explicit ComponentIcon(EntityId entity, ImagePtr image);
     COMPONENT_DEFAULTS(ComponentIcon);
 
     const ImagePtr& getImage() const {
@@ -38,7 +37,6 @@ public:
 
     void setImage(const ImagePtr& value) {
         image = value;
-        setDirty(true);
     }
 
     const Vector2& getSize() const {
@@ -47,7 +45,6 @@ public:
 
     void setSize(const Vector2& value) {
         size = value;
-        setDirty(true);
     }
 
     const Color4& getColor() const {
@@ -56,7 +53,6 @@ public:
 
     void setColor(const Color4& value) {
         color = value;
-        setDirty(true);
     }
 
     const Vector2& getOffset() const {
@@ -65,7 +61,6 @@ public:
 
     void setOffset(const Vector2& value) {
         offset = value;
-        setDirty(true);
     }
 
     bool isSelectable() const {
@@ -83,9 +78,6 @@ public:
     void setEnvironment(bool value);
 
     MSGPACK_DEFINE_ARRAY(image, size, color, offset, selectable, environment);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     ImagePtr image;

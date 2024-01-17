@@ -17,7 +17,7 @@ public:
     using ParticlesMap = std::unordered_map<ParticlesTypePtr, std::vector<Matrix4>>;
 
     ComponentGrid();
-    explicit ComponentGrid(entt::registry& reg, entt::entity handle);
+    explicit ComponentGrid(EntityId entity);
     virtual ~ComponentGrid(); // NOLINT(*-use-override)
     ComponentGrid(const ComponentGrid& other) = delete;
     ComponentGrid(ComponentGrid&& other) noexcept;
@@ -40,10 +40,11 @@ public:
 
     [[nodiscard]] std::unique_ptr<btCollisionShape> createCollisionShape();
 
-    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
+    void setDirty() {
+        dirty = true;
+    }
 
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
+    MSGPACK_DEFINE_ARRAY(MSGPACK_BASE_ARRAY(Grid));
 
 private:
     struct BlockCache {
@@ -55,6 +56,7 @@ private:
     void createParticlesVertices(Grid::Iterator iterator);
     void createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) const;
 
+    bool dirty{false};
     ComponentDebug* debug{nullptr};
     VulkanRenderer* vulkanRenderer{nullptr};
     std::list<Primitive> primitives;

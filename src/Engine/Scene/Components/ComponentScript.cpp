@@ -10,8 +10,8 @@ struct ComponentScript::Data {
 
 ComponentScript::ComponentScript() = default;
 
-ComponentScript::ComponentScript(entt::registry& reg, entt::entity handle, const sol::table& instance) :
-    Component{reg, handle}, data{std::make_unique<Data>()} {
+ComponentScript::ComponentScript(EntityId entity, const sol::table& instance) :
+    Component{entity}, data{std::make_unique<Data>()} {
 
     data->instance = instance;
 }

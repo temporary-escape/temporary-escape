@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerCameraOrbital : public Controller, public UserInput {
 public:
-    explicit ControllerCameraOrbital(entt::registry& reg);
+    explicit ControllerCameraOrbital(Scene& scene, entt::registry& reg);
     ~ControllerCameraOrbital() override;
     NON_COPYABLE(ControllerCameraOrbital);
     NON_MOVEABLE(ControllerCameraOrbital);
@@ -23,6 +23,7 @@ public:
     void eventCharTyped(uint32_t code) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

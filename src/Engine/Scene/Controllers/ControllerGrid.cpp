@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerGrid::ControllerGrid(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+ControllerGrid::ControllerGrid(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
                                VoxelShapeCache* voxelShapeCache) :
-    reg{reg}, dynamicsWorld{dynamicsWorld}, voxelShapeCache{voxelShapeCache} {
+    scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld}, voxelShapeCache{voxelShapeCache} {
 
     reg.on_construct<ComponentGrid>().connect<&ControllerGrid::onConstruct>(this);
     reg.on_update<ComponentGrid>().connect<&ControllerGrid::onUpdate>(this);
@@ -30,10 +30,7 @@ void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
     }
 
     for (auto&& [_, grid] : reg.view<ComponentGrid>().each()) {
-        if (grid.isDirty()) {
-            grid.setDirty(false);
-            grid.recalculate(vulkan, *voxelShapeCache);
-        }
+        grid.recalculate(vulkan, *voxelShapeCache);
     }
 }
 

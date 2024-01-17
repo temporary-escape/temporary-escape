@@ -3,13 +3,13 @@
 
 using namespace Engine;
 
-ComponentTransform::ComponentTransform(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentTransform::ComponentTransform(EntityId entity) : Component{entity} {
 }
 
 void ComponentTransform::setParent(const ComponentTransform* value) {
     parent = value;
     if (parent) {
-        parentId = static_cast<uint64_t>(parent->getHandle());
+        parentId = static_cast<uint64_t>(parent->getEntity());
     } else {
         parentId = NullParentId;
     }
@@ -57,7 +57,6 @@ void ComponentTransform::scale(const Vector3& value) {
 }
 
 void ComponentTransform::setTransform(const Matrix4& value) {
-    setDirty(true);
     transform = value;
 }
 
@@ -70,10 +69,6 @@ Vector3 ComponentTransform::getAbsolutePosition() const {
 
 Quaternion ComponentTransform::getOrientation() const {
     return glm::quat_cast(transform);
-}
-
-void ComponentTransform::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentTransform>(handle);
 }
 
 void ComponentTransform::setStatic(const bool value) {

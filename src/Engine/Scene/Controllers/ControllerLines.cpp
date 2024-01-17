@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerLines::ControllerLines(entt::registry& reg) : reg{reg} {
+ControllerLines::ControllerLines(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerLines::~ControllerLines() = default;

@@ -10,7 +10,7 @@ class ENGINE_API Scene;
 
 class ENGINE_API ControllerPathfinding : public Controller, public Pathfinding::Tester {
 public:
-    explicit ControllerPathfinding(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld);
+    explicit ControllerPathfinding(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld);
     ~ControllerPathfinding() override;
     NON_COPYABLE(ControllerPathfinding);
     NON_MOVEABLE(ControllerPathfinding);
@@ -31,6 +31,7 @@ public:
     bool contactTestBox(const Vector3i& pos, int width) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
     ControllerDynamicsWorld& dynamicsWorld;
     Pathfinding octree;

@@ -12,7 +12,7 @@ public:
     static constexpr auto NullParentId = std::numeric_limits<uint64_t>::max();
 
     ComponentTransform() = default;
-    explicit ComponentTransform(entt::registry& reg, entt::entity handle);
+    explicit ComponentTransform(EntityId entity);
     virtual ~ComponentTransform() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentTransform);
 
@@ -57,13 +57,14 @@ public:
 
     [[nodiscard]] Vector3 getAbsolutePosition() const;
 
+    float getScaleUniform() const {
+        return glm::length(transform[0]);
+    }
+
     void setStatic(const bool value);
     bool isStatic() const;
 
     MSGPACK_DEFINE_ARRAY(transform, flags, parentId);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     Matrix4 transform{1.0f};

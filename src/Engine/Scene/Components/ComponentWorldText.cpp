@@ -5,17 +5,17 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentWorldText::ComponentWorldText(entt::registry& reg, entt::entity handle, const FontFace& fontFace,
-                                       const Color4& color, const float height) :
-    Component{reg, handle}, fontFace{&fontFace}, color{color}, height{height} {
+ComponentWorldText::ComponentWorldText(EntityId entity, const FontFace& fontFace, const Color4& color,
+                                       const float height) :
+    Component{entity}, fontFace{&fontFace}, color{color}, height{height} {
 }
 
 void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     logger.debug("Recreating with {} vertices", vertices.size());
 
@@ -37,7 +37,7 @@ void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
 
 void ComponentWorldText::reset() {
     vertices.clear();
-    setDirty(true);
+    dirty = true;
 }
 
 void ComponentWorldText::add(const Vector3& pos, const std::string& text) {
@@ -65,5 +65,5 @@ void ComponentWorldText::add(const Vector3& pos, const std::string& text) {
         pen += Vector2{glyph.advance * scale, 0.0f};
     }
 
-    setDirty(true);
+    dirty = true;
 }

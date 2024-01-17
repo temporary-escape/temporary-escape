@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerPolyShape::ControllerPolyShape(entt::registry& reg) : reg{reg} {
+ControllerPolyShape::ControllerPolyShape(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerPolyShape::~ControllerPolyShape() = default;

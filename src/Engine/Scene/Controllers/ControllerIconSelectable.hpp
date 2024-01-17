@@ -22,7 +22,7 @@ public:
 
     static_assert(sizeof(Output) == 32);
 
-    explicit ControllerIconSelectable(entt::registry& reg);
+    explicit ControllerIconSelectable(Scene& scene, entt::registry& reg);
     ~ControllerIconSelectable() override;
     NON_COPYABLE(ControllerIconSelectable);
     NON_MOVEABLE(ControllerIconSelectable);
@@ -70,6 +70,7 @@ private:
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     VulkanArrayBuffer staticBufferInput;
     VulkanArrayBuffer dynamicBufferInput;

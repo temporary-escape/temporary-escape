@@ -824,6 +824,34 @@ bool Grid::remove(const Vector3i& pos) {
     return voxels.remove(pos);
 }
 
+void Grid::updateBounds() {
+    bbRadius = 0.0f;
+    auto it = voxels.iterate();
+    updateBounds(it);
+    if (bbRadius > 0.0f) {
+        bbRadius = glm::sqrt(bbRadius);
+    }
+}
+
+void Grid::updateBounds(Iterator& iterator) {
+    if (!iterator) {
+        return;
+    }
+
+    while (iterator) {
+        auto pos = iterator.getPos();
+
+        if (!iterator.isVoxel()) {
+            auto children = iterator.children();
+            updateBounds(children);
+        } else {
+            bbRadius = std::max<float>(bbRadius, glm::distance2(Vector3{0, 0, 0}, Vector3{iterator.getPos()}));
+        }
+
+        iterator.next();
+    }
+}
+
 uint16_t Grid::insertBlock(const BlockPtr& block) {
     for (size_t i = 0; i < types.size(); i++) {
         auto& type = types.at(i);

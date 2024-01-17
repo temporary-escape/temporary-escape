@@ -91,7 +91,7 @@ void RendererThumbnail::render(const Engine::BlockPtr& block, const Engine::Voxe
         auto entity = scene.createEntity();
         entity.addComponent<ComponentTransform>();
         auto& grid = entity.addComponent<ComponentGrid>();
-        grid.setDirty(true);
+        grid.setDirty();
         grid.insert(Vector3i{0, 0, 0}, block, 0, 1, shape);
     }
 

@@ -43,8 +43,7 @@ public:
     static_assert(sizeof(Armature) % 64 == 0);
 
     ComponentModelSkinned() = default;
-    explicit ComponentModelSkinned(entt::registry& reg, entt::entity handle, const ModelPtr& model);
-    virtual ~ComponentModelSkinned() = default; // NOLINT(modernize-use-override)
+    explicit ComponentModelSkinned(EntityId entity, const ModelPtr& model);
     COMPONENT_DEFAULTS(ComponentModelSkinned);
 
     void setModel(ModelPtr value);
@@ -65,9 +64,6 @@ public:
     void setAdjustment(size_t joint, const Matrix4& value);
 
     MSGPACK_DEFINE_ARRAY(model);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     ModelPtr model{nullptr};

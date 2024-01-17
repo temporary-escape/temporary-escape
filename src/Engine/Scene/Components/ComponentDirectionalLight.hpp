@@ -6,8 +6,7 @@ namespace Engine {
 class ENGINE_API ComponentDirectionalLight : public Component {
 public:
     ComponentDirectionalLight() = default;
-    explicit ComponentDirectionalLight(entt::registry& reg, entt::entity handle, const Color4& color);
-    virtual ~ComponentDirectionalLight() = default; // NOLINT(modernize-use-override)
+    explicit ComponentDirectionalLight(EntityId entity, const Color4& color);
     COMPONENT_DEFAULTS(ComponentDirectionalLight);
 
     [[nodiscard]] const Color4& getColor() const {

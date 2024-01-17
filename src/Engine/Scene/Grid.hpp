@@ -348,6 +348,7 @@ public:
     void insert(const Vector3i& pos, const BlockPtr& block, uint8_t rotation, uint8_t color, uint8_t shape);
     void insert(const Vector3i& pos, const uint16_t type, uint8_t rotation, uint8_t color, uint8_t shape);
     bool remove(const Vector3i& pos);
+    void updateBounds();
 
     [[nodiscard]] std::optional<Voxel> find(const Vector3i& pos) const {
         return voxels.find(pos);
@@ -378,6 +379,10 @@ public:
         return types.size();
     }
 
+    float getRadius() const {
+        return bbRadius;
+    }
+
     MSGPACK_DEFINE_ARRAY(voxels, types);
 
 private:
@@ -387,10 +392,12 @@ private:
     void generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const;
     void build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
                RawPrimitiveData& map, const Vector3& offset);
+    void updateBounds(Iterator& iterator);
     // void buildBlock(const Voxel& voxel, BlockBuilder& blockBuilder, const Vector3i& pos, TypePrimitiveMap& map);
 
     Octree voxels;
     std::vector<Type> types;
+    float bbRadius;
 };
 
 inline bool Grid::Iterator::isVoxel() const {

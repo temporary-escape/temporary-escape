@@ -1,4 +1,5 @@
 #include "ComponentRigidBody.hpp"
+#include "../Scene.hpp"
 #include <btBulletDynamicsCommon.h>
 
 using namespace Engine;
@@ -7,9 +8,9 @@ static auto logger = createLogger(LOG_FILENAME);
 
 class ComponentTransformMotionState : public btMotionState {
 public:
-    explicit ComponentTransformMotionState(ComponentRigidBody& componentRigidBody,
+    explicit ComponentTransformMotionState(Scene& scene, ComponentRigidBody& componentRigidBody,
                                            ComponentTransform& componentTransform) :
-        componentRigidBody{componentRigidBody}, componentTransform{componentTransform} {
+        scene{scene}, componentRigidBody{componentRigidBody}, componentTransform{componentTransform} {
     }
 
     ~ComponentTransformMotionState() override = default;
@@ -28,17 +29,19 @@ public:
         worldTrans.getOpenGLMatrix(&mat[0][0]);
         mat = glm::scale(mat, Vector3{componentRigidBody.getScale()});
         componentTransform.setTransform(mat);
-        componentRigidBody.setDirty(true);
+        scene.setDirty(componentTransform);
+        scene.setDirty(componentRigidBody);
     }
 
 private:
+    Scene& scene;
     ComponentRigidBody& componentRigidBody;
     ComponentTransform& componentTransform;
 };
 
 ComponentRigidBody::ComponentRigidBody() = default;
 
-ComponentRigidBody::ComponentRigidBody(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentRigidBody::ComponentRigidBody(EntityId entity) : Component{entity} {
 }
 
 ComponentRigidBody::~ComponentRigidBody() = default;
@@ -52,7 +55,7 @@ void ComponentRigidBody::setShape(const CollisionShape& shape) {
 }
 
 void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
-    auto transform = tryGet<ComponentTransform>();
+    auto* transform = scene->tryGetComponent<ComponentTransform>(entity);
     if (!transform) {
         EXCEPTION("ComponentRigidBody added on entity with no ComponentTransform");
     }
@@ -69,7 +72,7 @@ void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
         rigidBody->setMassProps(mass, localInertia);
 
     } else {
-        motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(*this, *transform)};
+        motionState = std::unique_ptr<btMotionState>{new ComponentTransformMotionState(*scene, *this, *transform)};
 
         btVector3 localInertia{0.0f, 0.0f, 0.0f};
         if (mass != 0.0f) {
@@ -101,12 +104,6 @@ void ComponentRigidBody::setShape(std::unique_ptr<btCollisionShape> value) {
 
         dynamicsWorld->addRigidBody(rigidBody.get(), collisionGroup, CollisionGroup::Everything);
     }
-
-    setDirty(true);
-}
-
-void ComponentRigidBody::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentRigidBody>(handle);
 }
 
 void ComponentRigidBody::setLinearVelocity(const Vector3& value) {

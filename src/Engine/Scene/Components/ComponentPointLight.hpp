@@ -6,8 +6,7 @@ namespace Engine {
 class ENGINE_API ComponentPointLight : public Component {
 public:
     ComponentPointLight() = default;
-    explicit ComponentPointLight(entt::registry& reg, entt::entity handle, const Color4& color);
-    virtual ~ComponentPointLight() = default; // NOLINT(modernize-use-override)
+    explicit ComponentPointLight(EntityId entity, const Color4& color);
     COMPONENT_DEFAULTS(ComponentPointLight);
 
     [[nodiscard]] const Color4& getColor() const {

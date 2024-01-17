@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerShipControl : public Controller {
 public:
-    explicit ControllerShipControl(entt::registry& reg);
+    explicit ControllerShipControl(Scene& scene, entt::registry& reg);
     ~ControllerShipControl() override;
     NON_COPYABLE(ControllerShipControl);
     NON_MOVEABLE(ControllerShipControl);
@@ -16,6 +16,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

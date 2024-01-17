@@ -15,9 +15,6 @@
       "name": "glm"
     },
     {
-      "name": "glad"
-    },
-    {
       "name": "vulkan-headers"
     },
     {
@@ -127,9 +124,6 @@
     },
     {
       "name": "micro-pather"
-    },
-    {
-      "name": "libmorton"
     }
   ],
   "overrides": [
@@ -326,11 +320,6 @@
     {
       "name": "micro-pather",
       "version": "1.0.0",
-      "port-version": 0
-    },
-    {
-      "name": "libmorton",
-      "version": "0.2.11",
       "port-version": 0
     }
   ],

@@ -4,12 +4,12 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentPointCloud::ComponentPointCloud(entt::registry& reg, entt::entity handle, TexturePtr texture) :
-    Component{reg, handle}, texture{std::move(texture)}, texturePtr{&this->texture->getVulkanTexture()} {
+ComponentPointCloud::ComponentPointCloud(EntityId entity, TexturePtr texture) :
+    Component{entity}, texture{std::move(texture)}, texturePtr{&this->texture->getVulkanTexture()} {
 }
 
-ComponentPointCloud::ComponentPointCloud(entt::registry& reg, entt::entity handle, const VulkanTexture& texture) :
-    Component{reg, handle}, texturePtr{&texture} {
+ComponentPointCloud::ComponentPointCloud(EntityId entity, const VulkanTexture& texture) :
+    Component{entity}, texturePtr{&texture} {
 }
 
 void ComponentPointCloud::reserve(const size_t count) {
@@ -17,22 +17,22 @@ void ComponentPointCloud::reserve(const size_t count) {
 }
 
 void ComponentPointCloud::add(const Vector3& pos, const Vector2& size, const Color4& color) {
-    setDirty(true);
+    dirty = true;
     points.push_back({pos, size, color, {0.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}});
 }
 
 void ComponentPointCloud::clear() {
-    setDirty(true);
+    dirty = true;
     points.clear();
     points.shrink_to_fit();
 }
 
 void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = true;
 
     logger.debug("Recreating {} points", points.size());
 

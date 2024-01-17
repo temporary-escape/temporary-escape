@@ -21,8 +21,7 @@ public:
     };
 
     ComponentPolyShape() = default;
-    explicit ComponentPolyShape(entt::registry& reg, entt::entity handle);
-    virtual ~ComponentPolyShape() = default; // NOLINT(modernize-use-override)
+    explicit ComponentPolyShape(EntityId entity);
     COMPONENT_DEFAULTS(ComponentPolyShape);
 
     void recalculate(VulkanRenderer& vulkan);
@@ -32,16 +31,17 @@ public:
     }
 
     void add(const Vector3& pos, const Color4& color) {
-        setDirty(true);
+        dirty = true;
         points.push_back({pos, color});
     }
 
     void clear() {
-        setDirty(true);
+        dirty = true;
         points.clear();
     }
 
 private:
+    bool dirty{false};
     std::vector<Point> points;
     Mesh mesh;
 };

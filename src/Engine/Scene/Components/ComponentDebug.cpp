@@ -4,15 +4,15 @@
 
 using namespace Engine;
 
-ComponentDebug::ComponentDebug(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentDebug::ComponentDebug(EntityId entity) : Component{entity} {
 }
 
 void ComponentDebug::recalculate(VulkanRenderer& vulkan) {
-    if (vertices.empty() || !isDirty()) {
+    if (vertices.empty() || !dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     const auto vboSize = vertices.capacity() * sizeof(Vertex);
 
@@ -55,7 +55,7 @@ void ComponentDebug::recalculate(VulkanRenderer& vulkan) {
 void ComponentDebug::clear() {
     vertices.clear();
     indices.clear();
-    setDirty(true);
+    dirty = true;
 }
 
 void ComponentDebug::addBox(const Matrix4& transform, float width, const Color4& color) {
@@ -115,5 +115,5 @@ void ComponentDebug::addBox(const Matrix4& transform, float width, const Color4&
     indices.push_back(start + 3);
     indices.push_back(start + 7);
 
-    setDirty(true);
+    dirty = true;
 }

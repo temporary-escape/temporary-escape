@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerModel : public Controller {
 public:
-    explicit ControllerModel(entt::registry& reg);
+    explicit ControllerModel(Scene& scene, entt::registry& reg);
     ~ControllerModel() override;
     NON_COPYABLE(ControllerModel);
     NON_MOVEABLE(ControllerModel);
@@ -21,6 +21,7 @@ private:
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

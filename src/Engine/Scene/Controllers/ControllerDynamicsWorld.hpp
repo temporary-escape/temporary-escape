@@ -38,7 +38,7 @@ public:
         }
     };
 
-    explicit ControllerDynamicsWorld(entt::registry& reg, const Config& config);
+    explicit ControllerDynamicsWorld(Scene& scene, entt::registry& reg, const Config& config);
     ~ControllerDynamicsWorld() override;
     NON_COPYABLE(ControllerDynamicsWorld);
     NON_MOVEABLE(ControllerDynamicsWorld);
@@ -57,8 +57,9 @@ public:
     btDynamicsWorld& get();
 
 private:
-    const Config& config;
+    Scene& scene;
     entt::registry& reg;
+    const Config& config;
     std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration;
     std::unique_ptr<btCollisionDispatcher> dispatcher;
     std::unique_ptr<btBroadphaseInterface> overlappingPairCache;

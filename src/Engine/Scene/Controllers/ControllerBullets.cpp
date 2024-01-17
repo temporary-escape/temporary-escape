@@ -4,8 +4,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerBullets::ControllerBullets(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
-    reg{reg}, dynamicsWorld{dynamicsWorld} {
+ControllerBullets::ControllerBullets(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
+    scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld} {
 }
 
 ControllerBullets::~ControllerBullets() {

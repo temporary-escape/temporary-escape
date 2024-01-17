@@ -2,18 +2,16 @@
 
 using namespace Engine;
 
-ComponentText::ComponentText(entt::registry& reg, entt::entity handle, std::string text, const Color4& color,
-                             const float size) :
-    Component{reg, handle}, text{std::move(text)}, color{color}, size{size} {
-    setDirty(true);
+ComponentText::ComponentText(EntityId entity, std::string text, const Color4& color, const float size) :
+    Component{entity}, dirty{true}, text{std::move(text)}, color{color}, size{size} {
 }
 
 void ComponentText::recalculate(FontFace& font) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     bounds = font.getBounds(text, size);
 }

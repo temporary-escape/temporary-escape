@@ -6,8 +6,7 @@ namespace Engine {
 class ENGINE_API ComponentCameraPanning : public Component, public UserInput {
 public:
     ComponentCameraPanning() = default;
-    explicit ComponentCameraPanning(entt::registry& reg, entt::entity handle, ComponentCamera& camera);
-    virtual ~ComponentCameraPanning() = default; // NOLINT(modernize-use-override)
+    explicit ComponentCameraPanning(EntityId entity, ComponentCamera& camera);
     COMPONENT_DEFAULTS(ComponentCameraPanning);
 
     void update(float delta);

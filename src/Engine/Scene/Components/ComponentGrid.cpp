@@ -9,34 +9,9 @@ static auto logger = createLogger(LOG_FILENAME);
 
 static auto boxShape = std::make_unique<btBoxShape>(btVector3{0.5f, 0.5f, 0.5f});
 
-class ComponentGridMotionState : public btMotionState {
-public:
-    explicit ComponentGridMotionState(ComponentGrid& componentGrid, ComponentTransform& componentTransform) :
-        componentGrid{componentGrid}, componentTransform{componentTransform} {
-    }
-
-    ~ComponentGridMotionState() override = default;
-
-    void getWorldTransform(btTransform& worldTrans) const override {
-        const auto mat = componentTransform.getAbsoluteTransform();
-        worldTrans.setFromOpenGLMatrix(&mat[0][0]);
-    }
-
-    void setWorldTransform(const btTransform& worldTrans) override {
-        Matrix4 mat;
-        worldTrans.getOpenGLMatrix(&mat[0][0]);
-        componentTransform.setTransform(mat);
-        componentGrid.setDirty(true);
-    }
-
-private:
-    ComponentGrid& componentGrid;
-    ComponentTransform& componentTransform;
-};
-
 ComponentGrid::ComponentGrid() = default;
 
-ComponentGrid::ComponentGrid(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentGrid::ComponentGrid(EntityId entity) : Component{entity} {
 }
 
 ComponentGrid::~ComponentGrid() {
@@ -151,7 +126,6 @@ void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
     }
 
     file.unpack(*this);
-    setDirty(true);
 }
 
 void ComponentGrid::debugIterate(Grid::Iterator iterator) {
@@ -189,6 +163,12 @@ void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
 }
 
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
+    if (!dirty) {
+        return;
+    }
+
+    dirty = false;
+
     vulkanRenderer = &vulkan;
 
     blockCache.clear();
@@ -281,8 +261,4 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         primitive.mesh.count = data.indices.size();
         primitive.mesh.indexType = VkIndexType::VK_INDEX_TYPE_UINT32;
     }
-}
-
-void ComponentGrid::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentGrid>(handle);
 }

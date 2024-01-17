@@ -4,17 +4,15 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentLines::ComponentLines(entt::registry& reg, entt::entity handle, std::vector<Line> lines) :
-    Component{reg, handle}, lines(std::move(lines)) {
-    setDirty(true);
+ComponentLines::ComponentLines(EntityId entity, std::vector<Line> lines) : Component{entity}, lines(std::move(lines)) {
 }
 
 void ComponentLines::recalculate(VulkanRenderer& vulkan) {
-    if (!isDirty()) {
+    if (!dirty) {
         return;
     }
 
-    setDirty(false);
+    dirty = false;
 
     logger.debug("Recreating with {} lines", lines.size());
 

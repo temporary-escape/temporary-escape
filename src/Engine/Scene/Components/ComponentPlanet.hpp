@@ -8,8 +8,7 @@ namespace Engine {
 class ENGINE_API ComponentPlanet : public Component {
 public:
     ComponentPlanet() = default;
-    explicit ComponentPlanet(entt::registry& reg, entt::entity handle, PlanetTypePtr planetType, const uint64_t seed);
-    virtual ~ComponentPlanet() = default; // NOLINT(modernize-use-override)
+    explicit ComponentPlanet(EntityId entity, PlanetTypePtr planetType, const uint64_t seed);
     COMPONENT_DEFAULTS(ComponentPlanet);
 
     [[nodiscard]] const PlanetTypePtr& getPlanetType() const {

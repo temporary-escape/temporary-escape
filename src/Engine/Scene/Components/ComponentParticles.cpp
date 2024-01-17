@@ -2,7 +2,7 @@
 
 using namespace Engine;
 
-ComponentParticles::ComponentParticles(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentParticles::ComponentParticles(EntityId entity) : Component{entity} {
 }
 
 void ComponentParticles::recalculate(VulkanRenderer& vulkan) {

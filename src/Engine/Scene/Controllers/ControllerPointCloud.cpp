@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerPointCloud::ControllerPointCloud(entt::registry& reg) : reg{reg} {
+ControllerPointCloud::ControllerPointCloud(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
 }
 
 ControllerPointCloud::~ControllerPointCloud() = default;

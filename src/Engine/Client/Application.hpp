@@ -26,7 +26,7 @@ class ENGINE_API RendererBackground;
 class ENGINE_API RendererScenePbr;
 class ENGINE_API RendererThumbnail;
 
-class ENGINE_API Application : public VulkanRenderer, public Nuklear::EventCallback {
+class ENGINE_API Application : public VulkanRenderer {
 public:
     explicit Application(Config& config);
     virtual ~Application();
@@ -71,8 +71,6 @@ private:
     void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
     void createPlanetThumbnails(RendererThumbnail& thumbnailRenderer);
 
-    void nuklearOnClick(bool push) override;
-
     Config& config;
 
     AudioContext audio;
@@ -116,9 +114,5 @@ private:
         PerformanceRecord frameTime;
         PerformanceRecord renderTime;
     } perf;
-
-    struct {
-        AudioBuffer uiClick;
-    } sounds;
 };
 } // namespace Engine

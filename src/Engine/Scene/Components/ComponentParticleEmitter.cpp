@@ -2,5 +2,5 @@
 
 using namespace Engine;
 
-ComponentParticleEmitter::ComponentParticleEmitter(entt::registry& reg, entt::entity handle) : Component{reg, handle} {
+ComponentParticleEmitter::ComponentParticleEmitter(EntityId entity) : Component{entity} {
 }

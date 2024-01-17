@@ -58,8 +58,7 @@ public:
     };
 
     ComponentModel() = default;
-    explicit ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model);
-    virtual ~ComponentModel() = default; // NOLINT(modernize-use-override)
+    explicit ComponentModel(EntityId entity, const ModelPtr& model);
     COMPONENT_DEFAULTS(ComponentModel);
 
     void setModel(ModelPtr value) {
@@ -71,9 +70,6 @@ public:
     }
 
     MSGPACK_DEFINE_ARRAY(model);
-
-protected:
-    void patch(entt::registry& reg, entt::entity handle) override;
 
 private:
     ModelPtr model{nullptr};

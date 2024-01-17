@@ -8,8 +8,7 @@ namespace Engine {
 class ENGINE_API ComponentText : public Component {
 public:
     ComponentText() = default;
-    explicit ComponentText(entt::registry& reg, entt::entity handle, std::string text, const Color4& color,
-                           const float size);
+    explicit ComponentText(EntityId entity, std::string text, const Color4& color, const float size);
     virtual ~ComponentText() = default; // NOLINT(modernize-use-override)
     COMPONENT_DEFAULTS(ComponentText);
 
@@ -20,8 +19,8 @@ public:
     }
 
     void setText(std::string value) {
+        dirty = true;
         text = std::move(value);
-        setDirty(true);
     }
 
     [[nodiscard]] const Color4& getColor() const {
@@ -29,6 +28,7 @@ public:
     }
 
     void setColor(const Color4& value) {
+        dirty = true;
         color = value;
     }
 
@@ -37,8 +37,8 @@ public:
     }
 
     void setSize(const float value) {
+        dirty = true;
         size = value;
-        setDirty(true);
     }
 
     [[nodiscard]] bool getCentered() const {
@@ -46,6 +46,7 @@ public:
     }
 
     void setCentered(const bool value) {
+        dirty = true;
         centered = value;
     }
 
@@ -54,6 +55,7 @@ public:
     }
 
     void setOffset(const Vector2& value) {
+        dirty = true;
         offset = value;
     }
 
@@ -62,6 +64,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     std::string text;
     Color4 color;
     float size{18.0f};

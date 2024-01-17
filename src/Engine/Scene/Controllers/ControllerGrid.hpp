@@ -5,7 +5,7 @@
 namespace Engine {
 class ENGINE_API ControllerGrid : public Controller {
 public:
-    explicit ControllerGrid(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+    explicit ControllerGrid(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
                             VoxelShapeCache* voxelShapeCache);
     ~ControllerGrid() override;
     NON_COPYABLE(ControllerGrid);
@@ -20,6 +20,7 @@ private:
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     ControllerDynamicsWorld& dynamicsWorld;
     VoxelShapeCache* voxelShapeCache;

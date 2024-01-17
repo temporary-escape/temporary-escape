@@ -13,7 +13,7 @@ public:
         size_t offset;
     };
 
-    explicit ControllerModelSkinned(entt::registry& reg);
+    explicit ControllerModelSkinned(Scene& scene, entt::registry& reg);
     ~ControllerModelSkinned() override;
     NON_COPYABLE(ControllerModelSkinned);
     NON_MOVEABLE(ControllerModelSkinned);
@@ -34,6 +34,7 @@ private:
     void onUpdate(entt::registry& r, entt::entity handle);
     void onDestroy(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     VulkanArrayBuffer buffer;
 };

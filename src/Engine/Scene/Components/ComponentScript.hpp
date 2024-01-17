@@ -15,7 +15,7 @@ namespace Engine {
 class ENGINE_API ComponentScript : public Component {
 public:
     ComponentScript();
-    explicit ComponentScript(entt::registry& reg, entt::entity handle, const sol::table& instance);
+    explicit ComponentScript(EntityId entity, const sol::table& instance);
     virtual ~ComponentScript() noexcept; // NOLINT(modernize-use-override)
     NON_COPYABLE(ComponentScript);
     ComponentScript(ComponentScript&& other) noexcept;

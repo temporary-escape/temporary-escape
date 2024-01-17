@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerCamera : public Controller {
 public:
-    explicit ControllerCamera(entt::registry& reg);
+    explicit ControllerCamera(Scene& scene, entt::registry& reg);
     ~ControllerCamera() override;
     NON_COPYABLE(ControllerCamera);
     NON_MOVEABLE(ControllerCamera);
@@ -15,6 +15,7 @@ public:
     void recalculate(VulkanRenderer& vulkan) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

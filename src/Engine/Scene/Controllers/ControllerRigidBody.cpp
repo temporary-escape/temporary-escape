@@ -5,8 +5,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerRigidBody::ControllerRigidBody(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
-    reg{reg}, dynamicsWorld{dynamicsWorld} {
+ControllerRigidBody::ControllerRigidBody(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
+    scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld} {
 
     reg.on_construct<ComponentRigidBody>().connect<&ControllerRigidBody::onConstruct>(this);
     reg.on_destroy<ComponentRigidBody>().connect<&ControllerRigidBody::onDestroy>(this);
@@ -29,6 +29,7 @@ void ControllerRigidBody::onConstruct(entt::registry& r, const entt::entity hand
     auto& component = reg.get<ComponentRigidBody>(handle);
     auto rigidBody = component.getRigidBody();
     component.setDynamicsWorld(dynamicsWorld.get());
+    component.setScene(scene);
 }
 
 void ControllerRigidBody::onDestroy(entt::registry& r, const entt::entity handle) {

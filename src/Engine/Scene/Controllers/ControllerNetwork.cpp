@@ -1,6 +1,7 @@
 #include "ControllerNetwork.hpp"
 #include "../../Network/NetworkPeer.hpp"
 #include "../../Server/Messages.hpp"
+#include "../Scene.hpp"
 #include <bitset>
 #include <btBulletDynamicsCommon.h>
 
@@ -8,7 +9,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerNetwork::ControllerNetwork(entt::registry& reg) : reg{reg} {
+ControllerNetwork::ControllerNetwork(Scene& scene, entt::registry& reg) : scene{scene}, reg{reg} {
     registerComponent<ComponentTransform>();
     registerComponent<ComponentRigidBody>();
     registerComponent<ComponentTurret>();
@@ -37,7 +38,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     (void)component;
-    component.setDirty(true);
+    scene.setDirty(component);
 }
 
 template <>
@@ -86,7 +87,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
         }
     }
 
-    component.setDirty(true);
+    scene.setDirty(component);
 }
 
 template <>
@@ -106,7 +107,8 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentGrid& component) {
     (void)remoteId;
     (void)handle;
-    component.setDirty(true);
+    component.setDirty();
+    scene.setDirty(component);
 }
 
 template <>
@@ -114,7 +116,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentModel& component) {
     (void)remoteId;
     (void)handle;
-    component.setDirty(true);
+    scene.setDirty(component);
 }
 
 template <>
@@ -123,6 +125,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setModel(component.getModel());
+    scene.setDirty(component);
 }
 
 template <>
@@ -131,14 +134,14 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     (void)remoteId;
     (void)handle;
     component.setActive(false);
-    component.setDirty(true);
+    scene.setDirty(component);
 }
 
 template <typename Type>
 void ControllerNetwork::postPatchComponent(const uint64_t remoteId, const entt::entity handle, Type& component) {
     (void)remoteId;
     (void)handle;
-    component.setDirty(true);
+    scene.setDirty(component);
 }
 
 template <typename Packer, typename Type>
@@ -192,7 +195,11 @@ void ControllerNetwork::unpackComponent(const uint64_t remoteId, const entt::ent
                                         const SyncOperation op) {
     if (op == SyncOperation::Emplace) {
         auto& component = reg.emplace<T>(handle);
-        component.postUnpack(reg, handle);
+        if constexpr (std::is_same_v<T, ComponentRigidBody>) {
+            component.postUnpack(scene, handle);
+        } else {
+            component.postUnpack(handle);
+        }
         obj.convert(component);
         postEmplaceComponent(remoteId, handle, component);
     } else if (op == SyncOperation::Patch) {

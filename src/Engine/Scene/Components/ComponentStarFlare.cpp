@@ -4,9 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentStarFlare::ComponentStarFlare(entt::registry& reg, entt::entity handle, TexturePtr texture,
-                                       TexturePtr textureLow, TexturePtr textureHigh) :
-    Component{reg, handle},
+ComponentStarFlare::ComponentStarFlare(EntityId entity, TexturePtr texture, TexturePtr textureLow,
+                                       TexturePtr textureHigh) :
+    Component{entity},
     texture{std::move(texture)},
     textureLow{std::move(textureLow)},
     textureHigh{std::move(textureHigh)} {

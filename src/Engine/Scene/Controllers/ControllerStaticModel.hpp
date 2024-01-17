@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerStaticModel : public Controller {
 public:
-    explicit ControllerStaticModel(entt::registry& reg);
+    explicit ControllerStaticModel(Scene& scene, entt::registry& reg);
     ~ControllerStaticModel() override;
     NON_COPYABLE(ControllerStaticModel);
     NON_MOVEABLE(ControllerStaticModel);
@@ -28,6 +28,7 @@ private:
 
     // ModelMatrixBuffer& getBufferFor(const ModelPtr& model, VulkanRenderer& vulkan);
 
+    Scene& scene;
     entt::registry& reg;
     std::unordered_map<Model*, VulkanArrayBuffer> buffers;
 };

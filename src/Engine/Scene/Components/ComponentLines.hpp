@@ -25,29 +25,28 @@ public:
     };
 
     ComponentLines() = default;
-    explicit ComponentLines(entt::registry& reg, entt::entity handle, std::vector<Line> lines);
-    virtual ~ComponentLines() = default; // NOLINT(modernize-use-override)
+    explicit ComponentLines(EntityId entity, std::vector<Line> lines);
     COMPONENT_DEFAULTS(ComponentLines);
 
     void set(std::vector<Line> values) {
-        setDirty(true);
+        dirty = true;
         lines = std::move(values);
     }
 
     void append(const std::vector<Line>& values) {
-        setDirty(true);
+        dirty = true;
         const auto offset = lines.size();
         lines.resize(lines.size() + values.size());
         std::memcpy(lines.data() + offset, values.data(), values.size() * sizeof(Line));
     }
 
     void add(const Vector3& from, const Vector3& to, const Color4& color) {
-        setDirty(true);
+        dirty = true;
         lines.push_back({from, color, to, color});
     }
 
     void add(const Vector2& from, const Vector2& to, const Color4& color) {
-        setDirty(true);
+        dirty = true;
         lines.push_back({Vector3{from.x, 0.0f, from.y}, color, Vector3{to.x, 0.0f, to.y}, color});
     }
 
@@ -59,6 +58,7 @@ public:
 
     void setColor(const Color4& value) {
         color = value;
+        dirty = true;
     }
 
     [[nodiscard]] const Color4& getColor() const {
@@ -66,6 +66,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     std::vector<Line> lines;
     Color4 color{1.0f};
     Mesh mesh;

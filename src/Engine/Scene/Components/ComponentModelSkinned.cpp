@@ -2,8 +2,7 @@
 
 using namespace Engine;
 
-ComponentModelSkinned::ComponentModelSkinned(entt::registry& reg, entt::entity handle, const ModelPtr& model) :
-    Component{reg, handle} {
+ComponentModelSkinned::ComponentModelSkinned(EntityId entity, const ModelPtr& model) : Component{entity} {
     setModel(model);
 }
 
@@ -27,8 +26,6 @@ void ComponentModelSkinned::setModel(ModelPtr value) {
     for (size_t i = 0; i < cache.count; i++) {
         cache.adjustmentsMat[i] = Matrix4{1.0f};
     }
-
-    setDirty(true);
 }
 
 void ComponentModelSkinned::setAdjustment(size_t joint, const Matrix4& value) {
@@ -40,8 +37,4 @@ void ComponentModelSkinned::setAdjustment(size_t joint, const Matrix4& value) {
 
 void ComponentModelSkinned::setUboOffset(const size_t value) {
     uboOffset = value;
-}
-
-void ComponentModelSkinned::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentModelSkinned>(handle);
 }

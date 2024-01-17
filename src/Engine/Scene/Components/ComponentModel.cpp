@@ -2,11 +2,6 @@
 
 using namespace Engine;
 
-ComponentModel::ComponentModel(entt::registry& reg, entt::entity handle, const ModelPtr& model) :
-    Component{reg, handle} {
+ComponentModel::ComponentModel(EntityId entity, const ModelPtr& model) : Component{entity} {
     setModel(model);
-}
-
-void ComponentModel::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentModel>(handle);
 }

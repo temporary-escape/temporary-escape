@@ -6,7 +6,8 @@
 namespace Engine {
 class ENGINE_API ControllerTurret : public Controller {
 public:
-    explicit ControllerTurret(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld, ControllerBullets& bullets);
+    explicit ControllerTurret(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+                              ControllerBullets& bullets);
     ~ControllerTurret() override;
     NON_COPYABLE(ControllerTurret);
     NON_MOVEABLE(ControllerTurret);
@@ -18,6 +19,7 @@ public:
 private:
     void onDestroyTransform(entt::registry& r, entt::entity handle);
 
+    Scene& scene;
     entt::registry& reg;
     ControllerDynamicsWorld& dynamicsWorld;
     ControllerBullets& bullets;

@@ -2,10 +2,5 @@
 
 using namespace Engine;
 
-ComponentLabel::ComponentLabel(entt::registry& reg, entt::entity handle, std::string label) :
-    Component{reg, handle}, label{std::move(label)} {
-}
-
-void ComponentLabel::patch(entt::registry& reg, entt::entity handle) {
-    reg.patch<ComponentLabel>(handle);
+ComponentLabel::ComponentLabel(EntityId entity, std::string label) : Component{entity}, label{std::move(label)} {
 }

@@ -7,8 +7,7 @@ namespace Engine {
 class ENGINE_API ComponentSkybox : public Component {
 public:
     ComponentSkybox() = default;
-    explicit ComponentSkybox(entt::registry& reg, entt::entity handle, uint64_t seed);
-    virtual ~ComponentSkybox() = default; // NOLINT(modernize-use-override)
+    explicit ComponentSkybox(EntityId entity, uint64_t seed);
     COMPONENT_DEFAULTS(ComponentSkybox);
 
     [[nodiscard]] uint64_t getSeed() const {

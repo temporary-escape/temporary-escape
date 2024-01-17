@@ -4,9 +4,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerTurret::ControllerTurret(entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+ControllerTurret::ControllerTurret(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
                                    ControllerBullets& bullets) :
-    reg{reg}, dynamicsWorld{dynamicsWorld}, bullets{bullets} {
+    scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld}, bullets{bullets} {
     reg.on_destroy<ComponentTransform>().disconnect<&ControllerTurret::onDestroyTransform>(this);
 }
 
@@ -17,9 +17,9 @@ ControllerTurret::~ControllerTurret() {
 void ControllerTurret::update(const float delta) {
     const auto& entities =
         reg.view<ComponentTransform, ComponentTurret, ComponentModelSkinned>(entt::exclude<TagDisabled>).each();
-    for (const auto&& [handle, transform, turret, model] : entities) {
+    for (const auto&& [entity, transform, turret, model] : entities) {
         if (turret.isActive()) {
-            turret.update(delta, transform, model);
+            turret.update(scene, delta, transform, model);
 
             if (turret.shouldShoot()) {
                 turret.resetShoot();

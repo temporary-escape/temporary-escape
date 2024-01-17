@@ -22,8 +22,7 @@ public:
     };
 
     ComponentDebug() = default;
-    explicit ComponentDebug(entt::registry& reg, entt::entity handle);
-    virtual ~ComponentDebug() = default; // NOLINT(modernize-use-override)
+    explicit ComponentDebug(EntityId entity);
     COMPONENT_DEFAULTS(ComponentDebug);
 
     void recalculate(VulkanRenderer& vulkan);
@@ -35,6 +34,7 @@ public:
     }
 
 private:
+    bool dirty{false};
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     Mesh mesh;

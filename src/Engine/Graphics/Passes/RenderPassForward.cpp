@@ -170,7 +170,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scen
         return;
     }
 
-    const auto* shipControl = scene.tryGetComponent<ComponentShipControl>(component.getHandle());
+    const auto* shipControl = scene.tryGetComponent<ComponentShipControl>(component.getEntity());
     if (!shipControl) {
         return;
     }

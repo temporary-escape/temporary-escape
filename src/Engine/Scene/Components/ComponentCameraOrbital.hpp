@@ -6,8 +6,7 @@ namespace Engine {
 class ENGINE_API ComponentCameraOrbital : public Component, public UserInput {
 public:
     ComponentCameraOrbital() = default;
-    explicit ComponentCameraOrbital(entt::registry& reg, entt::entity handle, ComponentCamera& camera);
-    virtual ~ComponentCameraOrbital() = default; // NOLINT(modernize-use-override)
+    explicit ComponentCameraOrbital(EntityId entity, ComponentCamera& camera);
     COMPONENT_DEFAULTS(ComponentCameraOrbital);
 
     void update(float delta);

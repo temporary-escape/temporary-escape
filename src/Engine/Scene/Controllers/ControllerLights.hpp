@@ -17,7 +17,7 @@ public:
         float cascadeSplits[4];
     };
 
-    explicit ControllerLights(entt::registry& reg, Scene& scene);
+    explicit ControllerLights(Scene& scene, entt::registry& reg);
     ~ControllerLights() override;
     NON_COPYABLE(ControllerLights);
     NON_MOVEABLE(ControllerLights);
@@ -46,8 +46,8 @@ private:
     void calculateShadowCamera(VulkanRenderer& vulkan);
     void prepareUboShadow(VulkanRenderer& vulkan);
 
-    entt::registry& reg;
     Scene& scene;
+    entt::registry& reg;
     bool uboShadowReady{false};
     VulkanDoubleBuffer uboShadowCamera;
     VulkanDoubleBuffer uboShadowsViewProj;

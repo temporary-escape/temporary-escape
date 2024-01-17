@@ -3,8 +3,8 @@
 
 using namespace Engine;
 
-ComponentCameraPanning::ComponentCameraPanning(entt::registry& reg, entt::entity handle, ComponentCamera& camera) :
-    Component{reg, handle}, camera{&camera} {
+ComponentCameraPanning::ComponentCameraPanning(EntityId entity, ComponentCamera& camera) :
+    Component{entity}, camera{&camera} {
 }
 
 void ComponentCameraPanning::update(const float delta) {

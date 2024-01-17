@@ -6,7 +6,7 @@
 namespace Engine {
 class ENGINE_API ControllerCameraPanning : public Controller, public UserInput {
 public:
-    explicit ControllerCameraPanning(entt::registry& reg);
+    explicit ControllerCameraPanning(Scene& scene, entt::registry& reg);
     ~ControllerCameraPanning() override;
     NON_COPYABLE(ControllerCameraPanning);
     NON_MOVEABLE(ControllerCameraPanning);
@@ -23,6 +23,7 @@ public:
     void eventCharTyped(uint32_t code) override;
 
 private:
+    Scene& scene;
     entt::registry& reg;
 };
 } // namespace Engine

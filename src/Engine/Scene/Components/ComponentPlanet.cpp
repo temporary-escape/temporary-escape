@@ -2,7 +2,6 @@
 
 using namespace Engine;
 
-ComponentPlanet::ComponentPlanet(entt::registry& reg, entt::entity handle, PlanetTypePtr planetType,
-                                 const uint64_t seed) :
-    Component{reg, handle}, planetType{std::move(planetType)}, seed{seed} {
+ComponentPlanet::ComponentPlanet(EntityId entity, PlanetTypePtr planetType, const uint64_t seed) :
+    Component{entity}, planetType{std::move(planetType)}, seed{seed} {
 }
