@@ -190,8 +190,8 @@ void VulkanCommandBuffer::copyBufferToImage(const VulkanBuffer& src, const Vulka
                            regions.data());
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
-                                            const bool isCompute) {
+void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet,
+                                            const VkPipelineLayout pipelineLayout, const bool isCompute) {
     auto set = descriptorSet.getHandle();
     vkCmdBindDescriptorSets(commandBuffer,
                             isCompute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -203,38 +203,16 @@ void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descripto
                             nullptr);
 }
 
+void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet,
+                                            const VkPipelineBindPoint bindPoint, const VkPipelineLayout pipelineLayout,
+                                            const uint32_t setNumber) {
+    vkCmdBindDescriptorSets(
+        commandBuffer, bindPoint, pipelineLayout, setNumber, 1, &descriptorSet.getHandle(), 0, nullptr);
+}
+
 void VulkanCommandBuffer::pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                                           VkImageMemoryBarrier& barrier) {
     vkCmdPipelineBarrier(commandBuffer, source, destination, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-}
-
-void VulkanCommandBuffer::pipelineBarrier2(const VkImageMemoryBarrier2& barrier) {
-    VkDependencyInfo dependencyInfo{};
-    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    dependencyInfo.pImageMemoryBarriers = &barrier;
-    dependencyInfo.imageMemoryBarrierCount = 1;
-    vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
-}
-
-void VulkanCommandBuffer::bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
-                                          const Span<VulkanBufferBinding>& uniforms,
-                                          const Span<VulkanTextureBinding>& textures,
-                                          const Span<VulkanTextureBinding>& inputs) {
-
-    auto descriptorSet = descriptorPool->createDescriptorSet(layout);
-    descriptorSet.bind(uniforms, textures, inputs);
-
-    bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
-}
-
-void VulkanCommandBuffer::bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
-                                          VulkanDescriptorPool& pool, const Span<VulkanBufferBinding>& uniforms,
-                                          const Span<VulkanTextureBinding>& textures,
-                                          const Span<VulkanTextureBinding>& inputs) {
-    auto descriptorSet = pool.createDescriptorSet(layout);
-    descriptorSet.bind(uniforms, textures, inputs);
-
-    bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
 }
 
 void VulkanCommandBuffer::pushConstants(const VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage,

@@ -35,7 +35,11 @@ static const std::array<Vector3, 6> captureViewUp = {
 
 RendererSkybox::RendererSkybox(const Config& config, VulkanRenderer& vulkan, RenderResources& resources,
                                VoxelShapeCache& voxelShapeCache) :
-    RendererWork{config, vulkan, voxelShapeCache}, config{config}, vulkan{vulkan}, resources{resources}, renderBufferSkybox{config, vulkan} {
+    RendererWork{config, vulkan, voxelShapeCache},
+    config{config},
+    vulkan{vulkan},
+    resources{resources},
+    renderBufferSkybox{config, vulkan} {
 
     try {
         addRenderPass(std::make_unique<RenderPassSkyboxColor>(vulkan, renderBufferSkybox, resources));
@@ -94,10 +98,9 @@ void RendererSkybox::beforeRender(VulkanCommandBuffer& vkb, Scene& scene, const 
 
         prepareProperties(scene);
 
-        camera->setViewport({1.0f, 1.0f});
         camera->lookAt({0.0f, 0.0f, 0.0f}, captureViewCenter[job % 6], captureViewUp[job % 6]);
         camera->setProjection(90.0f);
-        camera->recalculate(vulkan, {1.0f, 1.0f});
+        camera->setViewport({1.0f, 1.0f});
     }
     // Post process
     else {
@@ -105,10 +108,9 @@ void RendererSkybox::beforeRender(VulkanCommandBuffer& vkb, Scene& scene, const 
         passSkyboxIrradiance.setExcluded(false);
         passSkyboxPrefilter.setExcluded(false);
 
-        camera->setViewport({1.0f, 1.0f});
         camera->lookAt({0.0f, 0.0f, 0.0f}, captureViewCenter[job % 6], captureViewUp[job % 6]);
         camera->setProjectionMatrix(captureProjectionMatrix);
-        camera->recalculate(vulkan, {1.0f, 1.0f});
+        camera->setViewport({1.0f, 1.0f});
 
         passSkyboxIrradiance.setTextureSkybox(skyboxTextures.getTexture());
         passSkyboxPrefilter.setTextureSkybox(skyboxTextures.getTexture());

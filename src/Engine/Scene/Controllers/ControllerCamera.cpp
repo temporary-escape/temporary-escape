@@ -15,4 +15,8 @@ void ControllerCamera::update(const float delta) {
 }
 
 void ControllerCamera::recalculate(VulkanRenderer& vulkan) {
+    auto entities = reg.view<ComponentCamera>(entt::exclude<TagDisabled>).each();
+    for (auto&& [entity, camera] : entities) {
+        camera.recalculate(vulkan);
+    }
 }

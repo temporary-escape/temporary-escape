@@ -25,7 +25,10 @@ public:
     Camera() = default;
     explicit Camera(Matrix4& transform);
 
-    void setViewport(const Vector2i& viewport);
+    void setViewport(const Vector2i& value);
+    const Vector2i& getViewport() const {
+        return viewport;
+    }
 
     virtual void setProjection(float fov);
 
@@ -62,10 +65,6 @@ public:
 
     Vector3 getEyesPos() const {
         return {(*transform)[3]};
-    }
-
-    const Vector2i& getViewport() const {
-        return viewport;
     }
 
     float getPitch() const {

@@ -78,16 +78,11 @@ public:
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const Span<VkBufferImageCopy>& regions);
     void bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
                            bool isCompute = false);
+    void bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineBindPoint bindPoint,
+                           VkPipelineLayout pipelineLayout, uint32_t setNumber);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,
                          VkImageMemoryBarrier& barrier);
-    void pipelineBarrier2(const VkImageMemoryBarrier2& barrier);
-    void bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
-                         const Span<VulkanBufferBinding>& uniforms, const Span<VulkanTextureBinding>& textures,
-                         const Span<VulkanTextureBinding>& inputs);
-    void bindDescriptors(const VulkanPipeline& pipeline, const VulkanDescriptorSetLayout& layout,
-                         VulkanDescriptorPool& pool, const Span<VulkanBufferBinding>& uniforms,
-                         const Span<VulkanTextureBinding>& textures, const Span<VulkanTextureBinding>& inputs);
-    void pushConstants(const VulkanPipeline& pipeline, const VkShaderStageFlags shaderStage, size_t offset, size_t size,
+    void pushConstants(const VulkanPipeline& pipeline, VkShaderStageFlags shaderStage, size_t offset, size_t size,
                        const void* data);
     void blitImage(const VulkanTexture& src, VkImageLayout srcLayout, const VulkanTexture& dst, VkImageLayout dstLayout,
                    const Span<VkImageBlit>& regions, VkFilter filter);

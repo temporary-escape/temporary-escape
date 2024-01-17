@@ -13,8 +13,7 @@ ComponentCamera::ComponentCamera(EntityId entity, ComponentTransform& transform)
 void ComponentCamera::update(const float delta) {
 }
 
-void ComponentCamera::recalculate(VulkanRenderer& vulkan, const Vector2i& viewport) {
-    setViewport(viewport);
+void ComponentCamera::recalculate(VulkanRenderer& vulkan) {
     auto uniform = createUniform(false);
 
     if (!ubo) {

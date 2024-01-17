@@ -11,7 +11,7 @@ public:
     COMPONENT_DEFAULTS(ComponentCamera);
 
     void update(float delta);
-    void recalculate(VulkanRenderer& vulkan, const Vector2i& viewport);
+    void recalculate(VulkanRenderer& vulkan);
 
     [[nodiscard]] const VulkanDoubleBuffer& getUbo() const {
         return ubo;

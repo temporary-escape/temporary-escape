@@ -84,7 +84,8 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
         EXCEPTION("Failed to render scene error: no primary camera");
     }
 
-    camera->recalculate(vulkan, getViewport());
+    camera->setViewport(getViewport());
+    camera->recalculate(vulkan);
 
     Renderer::render(vkb, scene);
 

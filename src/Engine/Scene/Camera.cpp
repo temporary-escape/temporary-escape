@@ -5,8 +5,8 @@ using namespace Engine;
 Camera::Camera(Matrix4& transform) : transform(&transform) {
 }
 
-void Camera::setViewport(const Vector2i& viewport) {
-    this->viewport = viewport;
+void Camera::setViewport(const Vector2i& value) {
+    viewport = value;
 
     if (isOrtho) {
         zNear = -1000.0f;
