@@ -402,7 +402,7 @@ static void bindSchemas(sol::table& m) {
         cls["seed"] = &SectorData::seed;
         cls["pos"] = &SectorData::pos;
         cls["icon"] = &SectorData::icon;
-        cls["type"] = &SectorData::type;
+        cls["entity"] = &SectorData::entity;
     }
 
     {

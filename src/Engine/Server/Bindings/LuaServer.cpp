@@ -19,13 +19,6 @@ static void bindServer(sol::table& m) {
      * @praam sector_id The ID of the sector
      */
     cls["move_player_to_sector"] = &Server::movePlayerToSector;
-    /**
-     * @function Server:add_sector_type
-     * Adds a new sector type, or overwrites an existing sector type, for the galaxy generator.
-     * @param name Name of the sector type
-     * @param type An instance of SectorType
-     */
-    cls["add_sector_type"] = &Server::addSectorType;
 }
 
 LUA_BINDINGS(bindServer);
@@ -36,137 +29,66 @@ static void bindSession(sol::table& m) {
 
 LUA_BINDINGS(bindSession);
 
-static void bindSpawner(sol::table& m) {
-    /**
-     * @module engine
-     */
-
-    /**
-     * @class Spawner
-     * A class that represents a weighted entity
-     */
-    /**
-     * @function Spawner.new
-     * Default constructor that initializes the weighted entity with no entity and the default weight.
-     */
-    /**
-     * @function Spawner.new
-     * Parametrized constructor that initializes the weighted entity
-     * @param entity string The name of the entity
-     * @param weight number The numerical weight of the entity
-     * @param count number How many of this entity we should spawn
-     */
-    auto cls = m.new_usertype<Spawner>("Spawner", sol::constructors<Spawner(), Spawner(std::string, float, int)>());
-    /**
-     * @field Spawner.entity
-     * The string name of the entity (not the Lua package name!)
-     * @type string
-     */
-    cls["entity"] = &Spawner::entity;
-    /**
-     * @field Spawner.weight
-     * The weight of the entity (default value is 1.0)
-     * @type number
-     */
-    cls["weight"] = &Spawner::weight;
-    /**
-     * @field Spawner.count
-     * How many of this entity we should spawn.
-     * @type number
-     */
-    cls["count"] = &Spawner::count;
+static void bindSystemHeuristics(sol::table& m) {
+    auto cls = m.new_usertype<SystemHeuristics>("SystemHeuristics");
+    cls["galaxy"] = sol::readonly_property(&SystemHeuristics::getGalaxy);
+    cls["system"] = sol::readonly_property(&SystemHeuristics::getSystem);
+    cls["faction"] = sol::readonly_property(
+        [](SystemHeuristics& self) { return self.getFaction() ? sol::optional(self.getFaction()) : sol::nullopt; });
+    cls["systems"] = sol::readonly_property(&SystemHeuristics::getSystems);
+    cls["sectors"] = sol::readonly_property(&SystemHeuristics::getSectors);
+    cls["systems"] = sol::readonly_property(&SystemHeuristics::getSystems);
+    cls["find_empty_pos"] = &SystemHeuristics::findEmptyPosition;
 }
 
-LUA_BINDINGS(bindSpawner);
+LUA_BINDINGS(bindSystemHeuristics);
 
-static void bindSectorType(sol::table& m) {
-    /**
-     * @module engine
-     */
-    /**
-     * @class SectorType
-     * A class that represents a some specific sector type with conditions
-     */
-    /**
-     * @function SectorType.new
-     * Default constructor
-     */
-    auto cls = m.new_usertype<SectorType>("SectorType", sol::constructors<SectorType()>());
-    /**
-     * @field SectorType.map_icon
-     * The image icon of this sector to show on the system map within the game
-     * @type Image
-     */
-    cls["map_icon"] = &SectorType::mapIcon;
-    /**
-     * @field SectorType.weight
-     * The weight of this type, when considering between many types to choose from
-     * when generating the sectors within a system.
-     * @type number
-     */
-    cls["weight"] = &SectorType::weight;
-    /**
-     * @field SectorType.min_count
-     * The minimum number of sectors with this type that should exist in a single system.
-     * Default value is 1.
-     * @type number
-     */
-    cls["min_count"] = &SectorType::minCount;
-    /**
-     * @field SectorType.max_count
-     * The maximum number of sectors with this type that can exist in a single system.
-     * Default value is 1.
-     * @type number
-     */
-    cls["max_count"] = &SectorType::maxCount;
-    /**
-     * @field SectorType.entities
-     * A list of entities (weighted entity) to spawn in this sector.
-     * @type <WeightedEntity>[] A list of WeightedEntity items
-     */
-    cls["entities"] = &SectorType::entities;
-    /**
-     * @field SectorType.conditions
-     * A list of sector conditions that should apply when considering this sector to generate.
-     * @type <SectorCondition>[] A list of SectorCondition items
-     */
-    cls["conditions"] = &SectorType::conditions;
+static void bindGenerator(sol::table& m) {
+    auto cls = m.new_usertype<Generator>("Generator");
+    cls["add_on_start"] = [](Generator& self, sol::function fn) {
+        self.addOnStart([fn](uint64_t seed) { LUA_CALL_FN(fn, seed) });
+    };
+    cls["add_on_galaxy_created"] = [](Generator& self, sol::function fn) {
+        self.addOnGalaxyCreated([fn](const GalaxyData& galaxy) { LUA_CALL_FN(fn, sol::as_table(galaxy)) });
+    };
+    cls["add_on_region_created"] = [](Generator& self, sol::function fn) {
+        self.addOnRegionCreated([fn](const GalaxyData& galaxy, const RegionData& region) {
+            LUA_CALL_FN(fn, sol::as_table(galaxy), sol::as_table(region))
+        });
+    };
+    cls["add_on_system_created"] = [](Generator& self, sol::function fn) {
+        self.addOnSystemCreated(
+            [fn](const GalaxyData& galaxy, const SystemData& system, const std::optional<FactionData>& faction) {
+                LUA_CALL_FN(fn, sol::as_table(galaxy), sol::as_table(system), sol::optional(faction))
+            });
+    };
+    cls["add_on_sector_created"] = [](Generator& self, sol::function fn) {
+        self.addOnSectorCreated([fn](const GalaxyData& galaxy,
+                                     const SystemData& system,
+                                     const std::optional<FactionData>& faction,
+                                     const SectorData& sector) {
+            LUA_CALL_FN(fn, sol::as_table(galaxy), sol::as_table(system), sol::optional(faction), sol::as_table(sector))
+        });
+    };
+    cls["add_on_end"] = [](Generator& self, sol::function fn) {
+        self.addOnEnd([fn](const GalaxyData& galaxy) { LUA_CALL_FN(fn, sol::as_table(galaxy)) });
+    };
+    cls["add_on_skipped"] = [](Generator& self, sol::function fn) {
+        self.addOnSkipped([fn](const GalaxyData& galaxy) { LUA_CALL_FN(fn, sol::as_table(galaxy)) });
+    };
+    cls["get_random_name"] = &Generator::getRandomName;
+    cls["add_sector_type"] = [](Generator& self, const std::string& name, sol::function fn0, sol::function fn1) {
+        self.addSectorType(
+            name,
+            [fn0](SystemHeuristics& h) {
+                LUA_CALL_FN(fn0, h)
+                return result.get<float>();
+            },
+            [fn1](SystemHeuristics& h, uint64_t seed) {
+                LUA_CALL_FN(fn1, h, seed)
+                return result.get<SectorData>();
+            });
+    };
 }
 
-LUA_BINDINGS(bindSectorType);
-
-static void bindSectorCondition(sol::table& m) {
-    /**
-     * @module engine
-     */
-    /**
-     * @class SectorCondition
-     * A class that represents a weighted entity
-     */
-    /**
-     * @function SectorCondition.new
-     * Default constructor that initializes the weighted entity with no entity and the default weight.
-     */
-    /**
-     * @function SectorCondition.new
-     * Parametrized constructor that initializes the weighted entity
-     * @param name string The name of the condition
-     * @param value any The value of such condition
-     */
-    auto cls = m.new_usertype<SectorCondition>(
-        "WeightedEntity", sol::constructors<SectorCondition(), SectorCondition(std::string, SectorCondition::Value)>());
-    /**
-     * @field SectorCondition.name
-     * The name of the condition
-     * @type string
-     */
-    cls["name"] = &SectorCondition::name;
-    /**
-     * @field SectorCondition.value
-     * The value of such condition
-     * @type any
-     */
-    cls["value"] = &SectorCondition::value;
-}
-
-LUA_BINDINGS(bindSectorCondition);
+LUA_BINDINGS(bindGenerator);

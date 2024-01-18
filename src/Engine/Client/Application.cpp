@@ -103,6 +103,11 @@ Application::Application(Config& config) :
     createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
     createInfo.queryCount = MAX_FRAMES_IN_FLIGHT;
     renderQueryPool = createQueryPool(createInfo);
+
+    if (config.autoStart) {
+        gui.mainMenu->setEnabled(false);
+        startSinglePlayer();
+    }
 }
 
 Application::~Application() {

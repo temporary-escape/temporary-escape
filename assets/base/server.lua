@@ -13,5 +13,8 @@ require("base.factions.faction_valas")
 require("base.events.event_server")
 require("base.events.event_player")
 
--- Sectors
+-- Generator
+require("base.generator")
+
+-- Sector types
 require("base.sectors.sector_asteroid_field")

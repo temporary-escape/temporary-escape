@@ -7,6 +7,7 @@
 #include "../Server/Lua.hpp"
 #include "../Utils/NameGenerator.hpp"
 #include "../Utils/Random.hpp"
+#include <queue>
 #include <sol/sol.hpp>
 
 using namespace Engine;
@@ -41,7 +42,7 @@ const std::vector<std::string> regionSuffixes = {
     "Area",
 };
 
-static const auto randomNameGenerator = NameGenerator{randomNamesData};
+static auto randomNameGenerator = NameGenerator{randomNamesData};
 
 static std::string randomRegionName(Rng& rng) {
     const auto pick = randomInt<size_t>(rng, 0, regionSuffixes.size() - 1);
@@ -96,8 +97,63 @@ static const SystemData& getNearestSystem(const std::vector<SystemData>& systems
     return *ptr;
 }
 
+template <typename T, typename... Args> static void callback(const std::vector<T>& fns, Args&&... args) {
+    for (const auto& fn : fns) {
+        fn(std::forward<Args>(args)...);
+    }
+}
+
+SystemHeuristics::SystemHeuristics(const GalaxyData& galaxy, const SystemData& system,
+                                   const std::vector<SystemData>& systems, const std::vector<SectorData>& sectors,
+                                   const std::vector<PlanetData>& planets, const std::optional<FactionData>& faction) :
+    galaxy{galaxy}, system{system}, systems{systems}, sectors{sectors}, planets{planets}, faction{faction} {
+}
+
 Generator::Generator(const Options& options, AssetsManager& assetsManager, Database& db) :
     options{options}, assetsManager{assetsManager}, db{db} {
+}
+
+Vector2 SystemHeuristics::findEmptyPosition(Rng& rng) const {
+    const auto systemRadius = getSystemRadius();
+    Vector2 test;
+
+    auto tries = 100;
+    while (tries-- > 0) {
+        const auto dist = randomReal<float>(rng, 5.0f, systemRadius);
+        const auto angle = randomReal<float>(rng, 0.0f, 360.0f);
+        test = glm::rotate(Vector2{dist, 0.0f}, glm::radians(angle));
+
+        auto success{true};
+        for (const auto& sector : sectors) {
+            if (glm::distance(test, sector.pos) < 2.0f) {
+                success = false;
+                break;
+            }
+        }
+
+        if (success) {
+            break;
+        }
+    }
+    return test;
+}
+
+float SystemHeuristics::getSystemRadius() const {
+    auto systemRadius{0.0f};
+    for (const auto& planet : planets) {
+        systemRadius = std::max<float>(glm::length(planet.pos), systemRadius);
+    }
+    // Add some extra space beyond planet orbits
+    systemRadius += 25.0f;
+    return systemRadius;
+}
+
+void Generator::addSectorType(const std::string& name, SystemHeuristicsCallback heuristics,
+                              OnCreateSystemCallback onCreate) {
+    systemTypes[name] = SystemType{
+        std::move(heuristics),
+        std::move(onCreate),
+    };
 }
 
 void Generator::generate(const uint64_t seed) {
@@ -107,6 +163,8 @@ void Generator::generate(const uint64_t seed) {
     if (!mainGalaxyId) {
         logger.info("Galaxy is not generated, creating one...");
 
+        callback(callbacks.onStart, seed);
+
         const auto galaxyId = uuid();
 
         mainGalaxyId = MetaData{};
@@ -114,21 +172,22 @@ void Generator::generate(const uint64_t seed) {
 
         Rng rng{seed};
 
-        createMainGalaxy(galaxyId, randomSeed(rng));
+        const auto galaxy = createMainGalaxy(galaxyId, randomSeed(rng));
         db.put<MetaData>("main_galaxy_id", *mainGalaxyId);
 
         createGalaxyRegions(galaxyId);
         createGalaxySystems(galaxyId);
         createGalaxySectors(galaxyId);
+
+        callback(callbacks.onEnd, galaxy);
+    } else {
+        const auto galaxy = db.get<GalaxyData>(std::get<std::string>(mainGalaxyId->value));
+
+        callback(callbacks.onSkipped, galaxy);
     }
 }
 
-void Generator::addSectorType(std::string name, SectorType type) {
-    const auto it = sectorTypes.emplace(std::move(name), std::move(type));
-    logger.info("Added sector type: {}", it.first->first);
-}
-
-void Generator::populate(const SectorData& sector, Scene& scene) {
+/*void Generator::populate(const SectorData& sector, Scene& scene) {
     std::mt19937_64 rng{sector.seed};
 
     const auto it = sectorTypes.find(sector.type);
@@ -146,9 +205,9 @@ void Generator::populate(const SectorData& sector, Scene& scene) {
             scene.createEntityFrom(we.entity, table);
         }
     }
-}
+}*/
 
-void Generator::createMainGalaxy(const std::string& galaxyId, const uint64_t seed) {
+GalaxyData Generator::createMainGalaxy(const std::string& galaxyId, const uint64_t seed) {
     auto galaxy = GalaxyData{};
     galaxy.id = galaxyId;
     galaxy.name = "Main Galaxy";
@@ -158,6 +217,10 @@ void Generator::createMainGalaxy(const std::string& galaxyId, const uint64_t see
     db.put<GalaxyData>(galaxyId, galaxy);
 
     logger.info("Galaxy was generated with id: {}", galaxyId);
+
+    callback(callbacks.onGalaxyCreated, galaxy);
+
+    return galaxy;
 }
 
 void Generator::createGalaxyRegions(const std::string& galaxyId) {
@@ -175,6 +238,8 @@ void Generator::createGalaxyRegions(const std::string& galaxyId) {
         region.name = randomRegionName(rng);
 
         db.put<RegionData>(fmt::format("{}/{}", galaxyId, region.id), region);
+
+        callback(callbacks.onRegionCreated, galaxy, region);
     }
 
     logger.info("Created {} regions in galaxy {}", positions.size(), galaxyId);
@@ -341,11 +406,22 @@ void Generator::createGalaxySystems(const std::string& galaxyId) {
     findFactionHomes(galaxyId, systems);
     fillGalaxyFactions(galaxyId, positions, connections, systems);
 
-    for (size_t i = 0; i < systems.size(); i++) {
-        fillSystemPlanets(galaxyId, systems.at(i));
+    auto factions = db.seekAll<FactionData>("");
 
-        const auto key = fmt::format("{}/{}", galaxyId, systems.at(i).id);
-        db.put<SystemData>(key, systems.at(i));
+    for (auto& system : systems) {
+        fillSystemPlanets(galaxyId, system);
+
+        const auto key = fmt::format("{}/{}", galaxyId, system.id);
+        db.put<SystemData>(key, system);
+
+        const auto found = system.factionId
+                               ? std::find_if(factions.begin(),
+                                              factions.end(),
+                                              [&](const FactionData& f) { return f.id == system.factionId; })
+                               : factions.end();
+
+        const auto faction = found != factions.end() ? std::optional<FactionData>{*found} : std::nullopt;
+        callback(callbacks.onSystemCreated, galaxy, system, faction);
     }
 
     logger.info("Created {} systems in galaxy {}", systems.size(), galaxyId);
@@ -354,24 +430,68 @@ void Generator::createGalaxySystems(const std::string& galaxyId) {
 void Generator::createGalaxySectors(const std::string& galaxyId) {
     const auto galaxy = db.get<GalaxyData>(galaxyId);
 
+    const auto systems = db.seekAll<SystemData>(fmt::format("{}/", galaxyId));
     size_t total{0};
-    auto it = db.seek<SystemData>(fmt::format("{}/", galaxyId));
-    while (it.next()) {
-        total += createGalaxySectors(galaxy, it.value());
+    for (const auto& system : systems) {
+        total += createGalaxySectors(galaxy, systems, system);
     }
 
     logger.info("Created {} sectors in galaxy {}", total, galaxyId);
 }
 
-size_t Generator::createGalaxySectors(const GalaxyData& galaxy, const SystemData& system) {
+size_t Generator::createGalaxySectors(const GalaxyData& galaxy, const std::vector<SystemData>& systems,
+                                      const SystemData& system) {
+    struct Probability {
+        float value;
+        std::string key;
+
+        bool operator<(const Probability& other) const {
+            return value < other.value;
+        }
+    };
+
     Rng rng{system.seed};
 
     size_t total{0};
 
     const auto planets = db.seekAll<PlanetData>(fmt::format("{}/{}/", galaxy.id, system.id), 0);
+    std::vector<SectorData> sectors;
+
+    const auto faction = system.factionId ? db.find<FactionData>(*system.factionId) : std::nullopt;
+
+    SystemHeuristics heuristics{galaxy, system, systems, sectors, planets, faction};
+
+    while (true) {
+        std::priority_queue<Probability> queue;
+
+        for (const auto& [key, type] : systemTypes) {
+            const auto probability = type.heuristics(heuristics);
+            if (probability > 0.0f) {
+                queue.push(Probability{probability, key});
+            }
+        }
+
+        if (queue.empty()) {
+            break;
+        }
+
+        const auto& top = queue.top();
+        const auto seed = randomSeed(rng);
+
+        auto sector = systemTypes[top.key].onCreate(heuristics, seed);
+        if (sector.id.empty()) {
+            EXCEPTION("Sector id is empty");
+        }
+
+        db.put(fmt::format("{}/{}/{}", galaxy.id, system.id, sector.id), sector);
+
+        callback(callbacks.onSectorCreated, galaxy, system, faction, sector);
+
+        sectors.push_back(std::move(sector));
+    }
 
     // Find the radius of the entire solar system
-    auto systemRadius{0.0f};
+    /*auto systemRadius{0.0f};
     for (const auto& planet : planets) {
         systemRadius = std::max<float>(glm::length(planet.pos), systemRadius);
     }
@@ -400,9 +520,9 @@ size_t Generator::createGalaxySectors(const GalaxyData& galaxy, const SystemData
             }
         }
         return std::nullopt;
-    };
+    };*/
 
-    for (const auto& [name, type] : sectorTypes) {
+    /*for (const auto& [name, type] : sectorTypes) {
         if (!type.checkConditions(rng, galaxy, system, planets)) {
             continue;
         }
@@ -437,7 +557,7 @@ size_t Generator::createGalaxySectors(const GalaxyData& galaxy, const SystemData
         }
 
         total += count;
-    }
+    }*/
 
     return total;
 }
@@ -612,4 +732,12 @@ void Generator::fillSystemPlanets(const std::string& galaxyId, const SystemData&
         orbitDistance += moonOrbitDistance;
         db.put<PlanetData>(fmt::format("{}/{}/{}", galaxyId, system.id, planet.id), planet);
     }
+}
+
+std::string Generator::getRandomName(Rng& rng) const {
+    return randomNameGenerator(rng);
+}
+
+NameGenerator& Generator::getNameGenerator() {
+    return randomNameGenerator;
 }

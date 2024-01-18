@@ -13,7 +13,7 @@ class ENGINE_API Server;
 class ENGINE_API Sector {
 public:
     explicit Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
-                    Generator& generator, std::string galaxyId, std::string systemId, std::string sectorId);
+                    std::string galaxyId, std::string systemId, std::string sectorId);
     virtual ~Sector();
 
     void load();
@@ -54,7 +54,6 @@ private:
     Database& db;
     AssetsManager& assetsManager;
     EventBus& eventBus;
-    Generator& generator;
     uint64_t tickCount{0};
     std::string galaxyId;
     std::string systemId;

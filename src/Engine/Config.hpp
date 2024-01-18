@@ -95,7 +95,8 @@ struct Config {
     std::filesystem::path userdataSavesPath;
 
     std::optional<std::string> saveFolderName;
-    bool saveFolderClean = false;
+    bool saveFolderClean{false};
+    bool autoStart{false};
     std::string serverPassword;
     int serverPort = 22443;
     float cameraFov = 75.0f;

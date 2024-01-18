@@ -65,8 +65,8 @@ public:
         return *dynamic_cast<T*>(it->second.get());
     }
 
-    void addSectorType(std::string name, SectorType type) {
-        generator.addSectorType(std::move(name), std::move(type));
+    Generator& getGenerator() {
+        return *generator;
     }
 
     // Sector functions
@@ -94,7 +94,6 @@ private:
     const Config& config;
     AssetsManager& assetsManager;
     Database& db;
-    Generator generator;
     PlayerSessions playerSessions;
     PeerLobby lobby;
     std::unique_ptr<EventBus> eventBus;
@@ -103,6 +102,7 @@ private:
     std::thread tickThread;
     std::atomic_bool tickFlag;
 
+    std::unique_ptr<Generator> generator;
     std::unique_ptr<Lua> lua;
     BackgroundWorker worker;
     BackgroundWorker loadQueue;

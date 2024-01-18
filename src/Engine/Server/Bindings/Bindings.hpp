@@ -43,3 +43,10 @@ template <typename T, typename O> static void metaArithemtic(sol::usertype<T>& c
     cls[sol::meta_function::equal_to] = &metaEq<T>;
 }
 } // namespace Engine
+
+#define LUA_CALL_FN(fn, ...)                                                                                           \
+    sol::protected_function_result result = fn(__VA_ARGS__);                                                           \
+    if (!result.valid()) {                                                                                             \
+        sol::error err = result;                                                                                       \
+        EXCEPTION("{}", err.what());                                                                                   \
+    }

@@ -91,6 +91,10 @@ Entity Scene::createEntityFrom(const std::string& name, const sol::table& data) 
     return entity;
 }
 
+Entity Scene::createEntityFrom(const std::string& name) {
+    return createEntityFrom(name, sol::table{});
+}
+
 void Scene::addEntityTemplate(const std::string& name, const sol::table& klass) {
     entityTemplates.emplace(name, std::make_unique<sol::table>(klass));
 }

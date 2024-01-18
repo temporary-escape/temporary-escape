@@ -10,12 +10,11 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Sector::Sector(const Config& config, Database& db, AssetsManager& assetsManager, EventBus& eventBus,
-               Generator& generator, std::string galaxyId, std::string systemId, std::string sectorId) :
+               std::string galaxyId, std::string systemId, std::string sectorId) :
     config{config},
     db{db},
     assetsManager{assetsManager},
     eventBus{eventBus},
-    generator{generator},
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
     sectorId{std::move(sectorId)},
@@ -54,7 +53,7 @@ void Sector::load() {
     };
 
     lua->require("base.sector");
-    generator.populate(sectorData, *scene);
+    // generator.populate(sectorData, *scene);
     /*lua->require(sectorData.luaTemplate, [&](sol::table& table) {
         auto res = table["populate"](table, rng, galaxyData, systemData, sectorData, scene.get());
         if (!res.valid()) {
@@ -66,6 +65,7 @@ void Sector::load() {
     // Build pathfinding
     scene->getController<ControllerDynamicsWorld>().updateAabbs();
     // scene->getController<ControllerPathfinding>().buildTree();
+    scene->createEntityFrom(sectorData.entity);
 
     loaded = true;
     logger.info("Sector is loaded: '{}'", sectorId);

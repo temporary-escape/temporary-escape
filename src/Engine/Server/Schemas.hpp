@@ -82,9 +82,9 @@ struct SectorData {
     Vector2 pos{0.0f, 0.0f};
     uint64_t seed{0};
     ImagePtr icon{nullptr};
-    std::string type;
+    std::string entity;
 
-    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, pos, seed, icon, type);
+    MSGPACK_DEFINE_MAP(id, galaxyId, systemId, name, pos, seed, icon, entity);
 };
 
 SCHEMA_DEFINE(SectorData);

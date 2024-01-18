@@ -29,6 +29,7 @@ public:
 
     void removeEntity(Entity& entity);
     Entity createEntity();
+    Entity createEntityFrom(const std::string& name);
     Entity createEntityFrom(const std::string& name, const sol::table& data);
     void addEntityTemplate(const std::string& name, const sol::table& klass);
     Entity fromHandle(entt::entity handle);

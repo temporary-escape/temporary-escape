@@ -90,7 +90,8 @@ static void bindScene(sol::table& m) {
     cls["create_entity"] = &Scene::createEntity;
     cls["contact_test_sphere"] = &Scene::contactTestSphere;
     cls["add_entity_template"] = &Scene::addEntityTemplate;
-    cls["create_entity_template"] = &Scene::createEntityFrom;
+    cls["create_entity_template"] =
+        static_cast<Entity (Scene::*)(const std::string&, const sol::table&)>(&Scene::createEntityFrom);
 }
 
 LUA_BINDINGS(bindScene);

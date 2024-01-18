@@ -43,6 +43,8 @@ int main(int argc, char** argv) {
         ->default_val(defaultRoot.string());
     parser.add_option("--width", config.graphics.windowSize.x, "Window width");
     parser.add_option("--height", config.graphics.windowSize.y, "Window height");
+    parser.add_flag("--clean-save", config.saveFolderClean, "Delete an already existing save");
+    parser.add_flag("--singleplayer", config.autoStart, "Auto start singleplayer");
 
     parser.add_subcommand("play", "Play the game")->fallthrough(true);
     parser.add_subcommand("compress-assets", "Compress all PNG textures into KTX2")->fallthrough(true);
@@ -68,13 +70,27 @@ int main(int argc, char** argv) {
         std::filesystem::create_directories(config.userdataPath);
         std::filesystem::create_directories(config.userdataSavesPath);
 
+        const auto settingsFile = config.userdataPath / "settings.xml";
+        if (std::filesystem::is_regular_file(settingsFile)) {
+            try {
+                Xml::fromFile(settingsFile, config);
+            } catch (std::exception& e) {
+                BACKTRACE(e, "Failed to load settings file: '{}'", settingsFile);
+
+                logger.info("Overwriting settings with defaults");
+
+                config.graphics = Config::Graphics{};
+                try {
+                    Xml::toFile(settingsFile, config);
+                } catch (std::exception& e) {
+                    BACKTRACE(e, "Failed to save settings file: '{}'", settingsFile);
+                }
+            }
+        }
+
         if (std::getenv("VK_LAYER_PATH") == nullptr && config.graphics.enableValidationLayers) {
             logger.warn("Vulkan validation layers requested but no env value 'VK_LAYER_PATH' provided");
             config.graphics.enableValidationLayers = false;
-        }
-
-        if (std::filesystem::is_regular_file(config.userdataPath / "settings.xml")) {
-            Xml::fromFile(config.userdataPath / "settings.xml", config);
         }
 
         // config.graphics.debugDraw = true;

@@ -11,6 +11,10 @@ static Server* getServerHelper() {
     return Server::instance;
 }
 
+static Generator* getGeneratorHelper() {
+    return &Server::instance->getGenerator();
+}
+
 static AssetsManager* getAssetManagerHelper() {
     return &Server::instance->getAssetManager();
 }
@@ -22,6 +26,7 @@ static Database* getDatabase() {
 static void bindGlobalFunctions(sol::table& m) {
     m["create_logger"] = &createLogger;
     m["get_server"] = &getServerHelper;
+    m["get_generator"] = &getGeneratorHelper;
     m["get_database"] = &getDatabase;
     m["get_assets_manager"] = &getAssetManagerHelper;
 }

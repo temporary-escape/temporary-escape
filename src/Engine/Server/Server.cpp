@@ -21,7 +21,6 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
     config{config},
     assetsManager{assetsManager},
     db{db},
-    generator{Generator::Options{}, assetsManager, db},
     playerSessions{config, db},
     lobby{config},
     tickFlag{true},
@@ -68,6 +67,7 @@ EventBus& Server::getEventBus() const {
 }
 
 void Server::load() {
+    generator = std::make_unique<Generator>(Generator::Options{}, assetsManager, db);
     eventBus = std::make_unique<EventBus>();
     lua = std::make_unique<Lua>(config, *eventBus);
 
@@ -79,7 +79,7 @@ void Server::load() {
 
     try {
         const auto t0 = std::chrono::high_resolution_clock::now();
-        generator.generate(123456789LL);
+        generator->generate(123456789LL);
         const auto t1 = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<float> duration = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
         logger.info("Universe has been generated in {} seconds and is ready", duration.count());
@@ -128,6 +128,9 @@ void Server::cleanup() {
 
     logger.info("Stopping event bus");
     eventBus.reset();
+
+    logger.info("Stopping generator");
+    generator.reset();
 
     logger.info("Stopping lua");
     lua.reset();
@@ -245,8 +248,8 @@ SectorPtr Server::startSector(const std::string& sectorId) {
 
     try {
         logger.info("Creating sector: '{}'", sectorId);
-        auto sectorPtr = std::make_shared<Sector>(
-            config, db, assetsManager, *eventBus, generator, sector.galaxyId, sector.systemId, sector.id);
+        auto sectorPtr =
+            std::make_shared<Sector>(config, db, assetsManager, *eventBus, sector.galaxyId, sector.systemId, sector.id);
         sectors.map.insert(std::make_pair(sector.id, sectorPtr));
 
         // Load the sector in a separate thread
