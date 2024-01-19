@@ -7,8 +7,16 @@ GuiWidgetGroup::GuiWidgetGroup(GuiContext& ctx) :
 }
 
 void GuiWidgetGroup::draw() {
-    if (ctx.groupBegin(name, true)) {
+    if (ctx.groupBegin(name, scrollbar, border)) {
         GuiWidgetLayout::drawInternal();
         ctx.groupEnd();
     }
+}
+
+void GuiWidgetGroup::setScrollbar(const bool value) {
+    scrollbar = value;
+}
+
+void GuiWidgetGroup::setBorder(const bool value) {
+    border = value;
 }

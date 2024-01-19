@@ -9,7 +9,12 @@ public:
 
     void draw() override;
 
+    void setScrollbar(bool value);
+    void setBorder(bool value);
+
 private:
     std::string name;
+    bool scrollbar{false};
+    bool border{true};
 };
 } // namespace Engine

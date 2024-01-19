@@ -10,6 +10,8 @@ class ENGINE_API Client;
 class ENGINE_API Game;
 class ENGINE_API GuiManager;
 class ENGINE_API GuiWindowShipToolbar;
+class ENGINE_API GuiWindowShipStatus;
+class ENGINE_API GuiWindowCurrentLocation;
 
 class ENGINE_API ViewSpace : public View {
 public:
@@ -32,6 +34,7 @@ public:
     Scene* getScene() override;
 
 private:
+    void updateGuiCurrentLocation();
     void showContextMenu(const Vector2i& mousePos, const Entity& entity);
     void doTargetEntity(const Entity& entity);
     void doApproachEntity(const Entity& entity);
@@ -53,6 +56,8 @@ private:
 
     struct {
         GuiWindowShipToolbar* toolbar{nullptr};
+        GuiWindowShipStatus* status{nullptr};
+        GuiWindowCurrentLocation* location{nullptr};
     } gui;
 
     struct {

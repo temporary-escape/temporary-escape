@@ -163,10 +163,12 @@ void Client::handle(Request<MessagePlayerLocationEvent> req) {
     auto data = req.get();
 
     logger.info("Player location has changed");
-    cache.location = data.location;
 
     sync.postSafe([this, data]() {
         logger.info("Sector has changed, creating a new scene");
+        cache.location = data.location;
+        cache.sector = data.sector;
+        cache.system = data.system;
         createScene(data.sector);
     });
 }

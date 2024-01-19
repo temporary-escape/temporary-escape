@@ -24,6 +24,9 @@ struct LocalCache {
         std::vector<const SystemData*> systemsOrdered;
     } galaxy;
 
+    std::optional<SystemData> system{std::nullopt};
+    std::optional<SectorData> sector{std::nullopt};
+
     // Scene information
     struct {
         EntityId entity{NullEntity};

@@ -91,8 +91,9 @@ MESSAGE_DEFINE(MessagePlayerSpawnRequest);
 struct MessagePlayerLocationEvent {
     PlayerLocationData location;
     SectorData sector;
+    SystemData system;
 
-    MSGPACK_DEFINE_ARRAY(location, sector);
+    MSGPACK_DEFINE_ARRAY(location, sector, system);
 };
 
 MESSAGE_DEFINE(MessagePlayerLocationEvent);

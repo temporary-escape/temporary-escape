@@ -1,5 +1,7 @@
 #include "ViewSpace.hpp"
 #include "../Gui/GuiManager.hpp"
+#include "../Gui/Windows/GuiWindowCurrentLocation.hpp"
+#include "../Gui/Windows/GuiWindowShipStatus.hpp"
 #include "../Gui/Windows/GuiWindowShipToolbar.hpp"
 #include "Client.hpp"
 
@@ -45,6 +47,8 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
     client{client} {
 
     gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
+    gui.status = guiManager.addWindow<GuiWindowShipStatus>(assetsManager);
+    gui.location = guiManager.addWindow<GuiWindowCurrentLocation>(assetsManager);
 
     icons.nested = assetsManager.getImages().find("icon_menu_nested");
     icons.approach = assetsManager.getImages().find("icon_transform");
@@ -56,38 +60,10 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
 
 void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
     gui.toolbar->updatePos(viewport);
+    gui.status->updatePos(viewport);
+    gui.location->updatePos(viewport);
 
-    /*if (client.getCache().playerEntityId && control.update) {
-        control.update = false;
-        MessageControlMovementEvent msg{};
-        msg.boost = control.boost;
-
-        if (control.forward && !control.backwards) {
-            msg.speed = 100.0f;
-        } else if (!control.forward && control.backwards) {
-            msg.speed = -20.0f;
-        } else {
-            msg.speed = 0.0f;
-        }
-
-        if (control.left && !control.right) {
-            msg.leftRight = -1;
-        } else if (!control.left && control.right) {
-            msg.leftRight = 1;
-        } else {
-            msg.leftRight = 0;
-        }
-
-        if (control.up && !control.down) {
-            msg.upDown = 1;
-        } else if (!control.up && control.down) {
-            msg.upDown = -1;
-        } else {
-            msg.upDown = 0;
-        }
-
-        client.send(msg);
-    }*/
+    updateGuiCurrentLocation();
 }
 
 void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
@@ -99,6 +75,18 @@ void ViewSpace::renderCanvas(Canvas& canvas, const Vector2i& viewport) {
     }
 }
 
+void ViewSpace::updateGuiCurrentLocation() {
+    const auto& cache = client.getCache();
+    if (cache.system) {
+        const auto& region = cache.galaxy.regions.find(cache.system->regionId);
+        gui.location->setSystemLabel(fmt::format(
+            "{} ({})", cache.system->name, region != cache.galaxy.regions.end() ? region->second.name : ""));
+    } else {
+        gui.location->setSystemLabel("");
+    }
+    gui.location->setSectorLabel(cache.sector ? cache.sector->name : "");
+}
+
 void ViewSpace::renderCanvasApproaching(Canvas& canvas, const Vector2i& viewport, const Scene& scene,
                                         const ComponentCamera& camera) {
     const auto& cache = client.getCache();
@@ -108,7 +96,7 @@ void ViewSpace::renderCanvasApproaching(Canvas& canvas, const Vector2i& viewport
         return;
     }
 
-    const auto mid = Vector2{viewport.x / 2.0f, 60.0f};
+    const auto mid = Vector2{viewport.x / 2.0f, viewport.y - 120.0f};
 
     if (cache.player.approaching != NullEntity) {
         { // What is the ship doing?
@@ -191,10 +179,14 @@ Scene* ViewSpace::getScene() {
 void ViewSpace::onEnter() {
     // guiContextMenu.setEnabled(false);
     gui.toolbar->setEnabled(true);
+    gui.status->setEnabled(true);
+    gui.location->setEnabled(true);
 }
 
 void ViewSpace::onExit() {
     gui.toolbar->setEnabled(false);
+    gui.status->setEnabled(false);
+    gui.location->setEnabled(true);
     // guiContextMenu.setEnabled(false);
 }
 

@@ -307,6 +307,7 @@ void GuiContext::render(Canvas& canvas) {
 bool GuiContext::windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
                              const Flags flags) {
     activeInput = false;
+    windowFlags = flags;
 
     if (flags & WindowFlag::Transparent) {
         nk_style_push_color(nk.get(), &nk->style.window.background, nk_rgba(0, 0, 0, 0));
@@ -339,13 +340,34 @@ void GuiContext::windowEnd(const Flags flags) {
     nk_end(nk.get());
 }
 
-bool GuiContext::groupBegin(const std::string& name, const bool scrollbar) {
-    auto flags = Flags{0} | WindowFlag::Border;
+bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const bool border) {
+    Flags flags{0};
     if (!scrollbar) {
         flags = flags | WindowFlag::NoScrollbar;
     }
+    if (border) {
+        flags = flags | WindowFlag::Border;
+        nk_style_push_vec2(nk.get(), &nk->style.window.group_padding, nk_vec2(0.0f, 0.0f));
+    }
 
-    return nk_group_begin_titled(nk.get(), name.c_str(), name.c_str(), flags) == nk_true;
+    if (windowFlags & WindowFlag::Transparent) {
+        nk_style_push_color(nk.get(), &nk->style.window.background, nk_rgba(0, 0, 0, 0));
+        nk_style_push_style_item(
+            nk.get(), &nk->style.window.fixed_background, nk_style_item_color(nk_rgba(0, 0, 0, 0)));
+    }
+
+    const auto res = nk_group_begin_titled(nk.get(), name.c_str(), name.c_str(), flags) == nk_true;
+
+    if (border) {
+        nk_style_pop_vec2(nk.get());
+    }
+
+    if (windowFlags & WindowFlag::Transparent) {
+        nk_style_pop_color(nk.get());
+        nk_style_pop_style_item(nk.get());
+    }
+
+    return res;
 }
 
 bool GuiContext::comboBegin(const Vector2& size, const std::string& label) {

@@ -119,6 +119,7 @@ void Sector::addPlayer(const SessionPtr& session) {
         msg.location.systemId = getSystemId();
         msg.location.sectorId = getSectorId();
         msg.sector = sectorData;
+        msg.system = systemData;
         session->send(msg);
 
         logger.info("Player: '{}' added to sector: '{}'", session->getPlayerId(), sectorId);

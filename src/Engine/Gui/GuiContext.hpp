@@ -51,7 +51,7 @@ public:
     bool windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
                      Flags flags);
     void windowEnd(Flags flags);
-    bool groupBegin(const std::string& name, bool scrollbar);
+    bool groupBegin(const std::string& name, bool scrollbar, bool border);
     void groupEnd();
 
     void layoutRowBegin(float height, int columns);
@@ -128,6 +128,7 @@ private:
 
     std::vector<char> editBuffer;
     bool activeInput{false};
+    Flags windowFlags{0};
 };
 
 inline GuiContext::Flags operator|(const GuiContext::WindowFlag a, const GuiContext::WindowFlag b) {
