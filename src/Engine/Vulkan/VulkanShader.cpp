@@ -2,7 +2,6 @@
 #include "../Utils/Exceptions.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/Md5.hpp"
-#include "GlslCompiler.hpp"
 #include "VulkanDevice.hpp"
 
 using namespace Engine;
@@ -44,27 +43,6 @@ VulkanShader::VulkanShader(VulkanDevice& device, const Path& path, VkShaderStage
     const auto binaryData = readFileBinary(path);
     spirv.resize(binaryData.size() / sizeof(uint32_t));
     std::memcpy(spirv.data(), binaryData.data(), binaryData.size());
-
-    createInfo.codeSize = spirv.size() * sizeof(uint32_t);
-    createInfo.pCode = spirv.data();
-
-    if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        EXCEPTION("Failed to create shader module!");
-    }
-}
-
-VulkanShader::VulkanShader(VulkanDevice& device, const std::string& glsl, VkShaderStageFlagBits stage) :
-    device{device.getDevice()}, stage{stage} {
-
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-    std::string infoLog;
-
-    logger.debug("Compiling GLSL code of size: {}", glsl.size());
-    if (!compileGLSL2SPIRV(stage, glsl, "main", spirv, infoLog)) {
-        EXCEPTION("Failed to compile shader error: {}", infoLog);
-    }
 
     createInfo.codeSize = spirv.size() * sizeof(uint32_t);
     createInfo.pCode = spirv.data();

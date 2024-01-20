@@ -1,6 +1,6 @@
-find_program(GLSL_COMPILER "glslangValidator" PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools")
+find_program(GLSL_COMPILER "glslc" PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools")
 if (NOT GLSL_COMPILER)
-    message(FATAL_ERROR "Failed to find glslangValidator in the vcpkg folder")
+    message(FATAL_ERROR "Failed to find glslc in the vcpkg folder")
 endif ()
 
 set(FILE_TO_SOURCE "${CMAKE_CURRENT_LIST_DIR}/FileToSource.cmake")
@@ -10,6 +10,8 @@ function(compile_shaders NAME DIRECTORY)
     file(MAKE_DIRECTORY "${OUTPUT_DIR}")
 
     file(GLOB SHADERS "${DIRECTORY}/*.glsl")
+    file(GLOB INCLUDES "${DIRECTORY}/includes/*.glsl")
+
     foreach (FILE ${SHADERS})
         get_filename_component(BASENAME ${FILE} NAME_WE)
 
@@ -26,9 +28,9 @@ function(compile_shaders NAME DIRECTORY)
         set(SPIRV_FILE "${OUTPUT_DIR}/${BASENAME}.spirv")
 
         add_custom_command(OUTPUT ${SPIRV_FILE}
-                COMMAND ${GLSL_COMPILER} -V "${FILE}" -o "${SPIRV_FILE}" -S "${SHADER_TYPE}" -w
+                COMMAND ${GLSL_COMPILER} -fshader-stage=${SHADER_TYPE} "${FILE}" -x glsl --target-env=vulkan1.2 -o "${SPIRV_FILE}"
                 WORKING_DIRECTORY ${OUTPUT_DIR}
-                DEPENDS ${FILE}
+                DEPENDS ${FILE} ${INCLUDES}
                 VERBATIM
         )
 

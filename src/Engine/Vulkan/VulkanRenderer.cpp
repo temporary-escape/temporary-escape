@@ -185,10 +185,6 @@ VulkanShader VulkanRenderer::createShaderModule(const Path& path, VkShaderStageF
     return VulkanShader{*this, path, stage};
 }
 
-VulkanShader VulkanRenderer::createShaderModule(const std::string& glsl, VkShaderStageFlagBits stage) {
-    return VulkanShader{*this, glsl, stage};
-}
-
 VulkanShader VulkanRenderer::createShaderModule(const Span<uint8_t>& spirv, VkShaderStageFlagBits stage) {
     return VulkanShader{*this, spirv, stage};
 }

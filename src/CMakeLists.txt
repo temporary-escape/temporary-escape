@@ -85,8 +85,6 @@ target_link_libraries(${PROJECT_NAME}Engine
         glfw
         volk::volk
         volk::volk_headers
-        glslang::glslang
-        glslang::SPIRV
         unofficial::vulkan-memory-allocator::vulkan-memory-allocator
         spirv-cross-glsl
         freetype

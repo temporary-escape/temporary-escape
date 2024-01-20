@@ -1,14 +1,10 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#include "includes/common.glsl"
 
 layout (std140, binding = 0) uniform Camera {
-    mat4 transformationProjectionMatrix;
-    mat4 viewProjectionInverseMatrix;
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    ivec2 viewport;
-    vec3 eyesPos;
-} camera;
+    SCamera camera;
+};
 
 layout (push_constant) uniform Uniforms {
     mat4 modelMatrix;
@@ -37,6 +33,8 @@ void geometrize(vec4 pos) {
     vec2 offset = in_Offset / camera.viewport;
 
     float dist = pos.z * uniforms.scale;
+
+    pos.xy = clamp(pos.xy / pos.w, vec2(-1.0) + particleSize, vec2(1.0) - particleSize) * pos.w;
 
     // a: left-bottom
     if (gl_VertexIndex == 0) {
