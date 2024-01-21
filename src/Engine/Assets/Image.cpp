@@ -30,7 +30,7 @@ void Image::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
         Ktx2FileReader image{path};
 
         if (image.needsTranscoding()) {
-            image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);
+            image.transcode(VulkanCompressionType::None, TextureCompressionTarget::RGBA);
         }
 
         image.readData();

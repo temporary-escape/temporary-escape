@@ -28,7 +28,7 @@ function(compile_shaders NAME DIRECTORY)
         set(SPIRV_FILE "${OUTPUT_DIR}/${BASENAME}.spirv")
 
         add_custom_command(OUTPUT ${SPIRV_FILE}
-                COMMAND ${GLSL_COMPILER} -fshader-stage=${SHADER_TYPE} "${FILE}" -x glsl --target-env=vulkan1.2 -o "${SPIRV_FILE}"
+                COMMAND ${GLSL_COMPILER} -fshader-stage=${SHADER_TYPE} "${FILE}" -x glsl --target-env=vulkan1.1 -o "${SPIRV_FILE}"
                 WORKING_DIRECTORY ${OUTPUT_DIR}
                 DEPENDS ${FILE} ${INCLUDES}
                 VERBATIM

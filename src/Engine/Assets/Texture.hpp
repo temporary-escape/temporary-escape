@@ -6,6 +6,8 @@
 #include "Asset.hpp"
 
 namespace Engine {
+class ENGINE_API Ktx2FileReader;
+
 class ENGINE_API Texture : public Asset {
 public:
     enum class Type {
@@ -101,14 +103,26 @@ public:
         return path;
     }
 
+    TextureUsage getUsage() const {
+        return usage;
+    }
+
+    void setUsage(TextureUsage value);
+    int getLayer() const {
+        return layer;
+    }
+
     static std::shared_ptr<Texture> from(const std::string& name);
 
 private:
-    void loadPng(const Options& options, VulkanRenderer& vulkan);
-    void loadKtx2(const Options& options, VulkanRenderer& vulkan);
+    void loadKtx2(AssetsManager& assetsManager, VulkanRenderer& vulkan);
+    void loadAsAny(const Texture::Options& options, VulkanRenderer& vulkan, Ktx2FileReader& image);
+    void loadAsLayer(AssetsManager& assetsManager, VulkanRenderer& vulkan, Ktx2FileReader& image);
 
     Path path;
+    TextureUsage usage{TextureUsage::Any};
     VulkanTexture texture;
+    int layer{-1};
 };
 
 XML_DEFINE(Texture::Options, "texture");

@@ -66,6 +66,11 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineGrid.bind(vkb);
 
     for (auto&& [entity, transform, grid] : systemGrids.each()) {
+        const auto& mesh = grid.getMesh();
+        if (!mesh) {
+            continue;
+        }
+
         const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
@@ -74,16 +79,10 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineGrid.setEntityColor(entityColor(entity));
         pipelineGrid.flushConstants(vkb);
 
-        for (auto& primitive : grid.getPrimitives()) {
-            if (!primitive.material) {
-                EXCEPTION("Primitive has no material");
-            }
+        pipelineGrid.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
+        pipelineGrid.flushDescriptors(vkb);
 
-            pipelineGrid.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-            pipelineGrid.flushDescriptors(vkb);
-
-            pipelineGrid.renderMesh(vkb, primitive.mesh);
-        }
+        pipelineGrid.renderMesh(vkb, mesh);
     }
 }
 

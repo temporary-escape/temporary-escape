@@ -19,24 +19,21 @@ struct ENGINE_API VoxelShape {
     struct VertexFinal {
         Vector3 position;
         Vector3 normal;
-        Vector2 texCoords;
+        Vector4 texCoords;
         Vector4 tangent;
-        float color;
-        float padding[3];
 
         static VulkanVertexLayoutMap getLayout() {
             return {
                 {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexFinal, position)},
                 {1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VertexFinal, normal)},
-                {2, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexFinal, texCoords)},
+                {2, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VertexFinal, texCoords)},
                 {3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VertexFinal, tangent)},
-                {4, VK_FORMAT_R32_SFLOAT, offsetof(VertexFinal, color)},
             };
         };
     };
 
     static_assert(sizeof(VertexCached) == sizeof(float) * 6, "struct Vertex must be tightly packed");
-    static_assert(sizeof(VertexFinal) == sizeof(float) * 16, "struct VertexFinal must be tightly packed");
+    static_assert(sizeof(VertexFinal) == sizeof(float) * 14, "struct VertexFinal must be tightly packed");
 
     enum Face : size_t {
         Default = 0,

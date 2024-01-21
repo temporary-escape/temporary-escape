@@ -14,9 +14,8 @@ layout (push_constant) uniform Uniforms {
 
 layout (location = 0) in vec3 in_Position;
 layout (location = 1) in vec3 in_Normal;
-layout (location = 2) in vec2 in_TexCoords;
+layout (location = 2) in vec4 in_TexCoords;
 layout (location = 3) in vec4 in_Tangent;
-layout (location = 4) in float in_Color;
 
 layout (location = 0) out VS_OUT {
     vec3 normal;
@@ -24,6 +23,7 @@ layout (location = 0) out VS_OUT {
     vec3 worldPos;
     mat3 TBN;
     float color;
+    float materialIndex;
 } vs_out;
 
 out gl_PerVertex {
@@ -37,8 +37,9 @@ void main() {
 
     vs_out.normal = N;
     vs_out.worldPos = worldPos.xyz;
-    vs_out.texCoords = in_TexCoords;
-    vs_out.color = in_Color;
+    vs_out.texCoords = in_TexCoords.xy;
+    vs_out.materialIndex = in_TexCoords.z;
+    vs_out.color = in_TexCoords.w;
 
     vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);

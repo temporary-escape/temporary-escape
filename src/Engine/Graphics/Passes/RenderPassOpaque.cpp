@@ -159,6 +159,11 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     pipelineGrid.bind(vkb);
 
     for (auto&& [entity, transform, grid] : systemGrids.each()) {
+        const auto& mesh = grid.getMesh();
+        if (!mesh) {
+            continue;
+        }
+
         const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
@@ -167,31 +172,21 @@ void RenderPassOpaque::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineGrid.setEntityColor(entityColor(transform));
         pipelineGrid.flushConstants(vkb);
 
-        for (auto& primitive : grid.getPrimitives()) {
-            if (!primitive.mesh) {
-                continue;
-            }
+        pipelineGrid.setUniformCamera(camera.getUbo().getCurrentBuffer());
+        pipelineGrid.setUniformMaterial(resources.getBlockMaterials());
 
-            if (!primitive.material) {
-                EXCEPTION("Primitive has no material");
-            }
+        pipelineGrid.setTextureBaseColor(resources.getMaterialTextures().get(TextureUsage::Diffuse).getTexture());
+        pipelineGrid.setTextureEmissive(resources.getMaterialTextures().get(TextureUsage::Emissive).getTexture());
+        pipelineGrid.setTextureNormal(resources.getMaterialTextures().get(TextureUsage::Normal).getTexture());
+        pipelineGrid.setTextureAmbientOcclusion(
+            resources.getMaterialTextures().get(TextureUsage::AmbientOcclusion).getTexture());
+        pipelineGrid.setTextureMetallicRoughness(
+            resources.getMaterialTextures().get(TextureUsage::MetallicRoughness).getTexture());
+        pipelineGrid.setTextureMask(resources.getMaterialTextures().get(TextureUsage::Mask).getTexture());
+        pipelineGrid.setTexturePalette(resources.getPalette());
+        pipelineGrid.flushDescriptors(vkb);
 
-            validateMaterial(*primitive.material);
-
-            pipelineGrid.setUniformCamera(camera.getUbo().getCurrentBuffer());
-            pipelineGrid.setUniformMaterial(primitive.material->ubo);
-
-            pipelineGrid.setTextureBaseColor(primitive.material->baseColorTexture->getVulkanTexture());
-            pipelineGrid.setTextureEmissive(primitive.material->emissiveTexture->getVulkanTexture());
-            pipelineGrid.setTextureNormal(primitive.material->normalTexture->getVulkanTexture());
-            pipelineGrid.setTextureAmbientOcclusion(primitive.material->ambientOcclusionTexture->getVulkanTexture());
-            pipelineGrid.setTextureMetallicRoughness(primitive.material->metallicRoughnessTexture->getVulkanTexture());
-            pipelineGrid.setTextureMask(primitive.material->maskTexture->getVulkanTexture());
-            pipelineGrid.setTexturePalette(resources.getPalette());
-            pipelineGrid.flushDescriptors(vkb);
-
-            pipelineGrid.renderMesh(vkb, primitive.mesh);
-        }
+        pipelineGrid.renderMesh(vkb, mesh);
     }
 }
 

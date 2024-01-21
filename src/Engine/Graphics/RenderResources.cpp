@@ -69,8 +69,12 @@ static VulkanTexture createTextureOfColor(VulkanRenderer& vulkan, const Color4& 
     return texture;
 }
 
-RenderResources::RenderResources(VulkanRenderer& vulkan) :
-    vulkan{vulkan}, defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}} {
+RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
+                                 const MaterialTextures& materialTextures) :
+    vulkan{vulkan},
+    blockMaterials{blockMaterials},
+    materialTextures{materialTextures},
+    defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}} {
 
     meshFullScreenQuad = createFullScreenQuad(vulkan);
     meshPlanet = createPlanetMesh(vulkan);
@@ -236,7 +240,7 @@ static VulkanTexture::CreateInfo createCreateInfo(Ktx2FileReader& image) {
 static VulkanTexture createTexture(VulkanRenderer& vulkan, Ktx2FileReader& image,
                                    VulkanTexture::CreateInfo& textureInfo) {
     if (image.needsTranscoding()) {
-        image.transcode(VulkanCompressionType::None, Ktx2CompressionTarget::RGBA);
+        image.transcode(VulkanCompressionType::None, TextureCompressionTarget::RGBA);
     }
     image.readData();
 

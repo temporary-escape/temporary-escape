@@ -40,6 +40,8 @@ void AssetsManager::compressAssets(const Config& config) {
 
 AssetsManager::AssetsManager(const Config& config) : config{config} {
     instance = this;
+    blockMaterials.reserve(1024);
+    std::memset(blockMaterials.data(), 0, sizeof(Block::MaterialUniform) * blockMaterials.size());
     findAssets();
 }
 
@@ -115,6 +117,77 @@ void AssetsManager::findAssets() {
         }
     } catch (...) {
         EXCEPTION_NESTED("Failed to initialize assetsManager");
+    }
+
+    // Mark the default textures with usage information
+    getTextures().find(defaultTextureDiffName)->setUsage(TextureUsage::Diffuse);
+    getTextures().find(defaultTextureNormName)->setUsage(TextureUsage::Normal);
+    getTextures().find(defaultTextureEmisName)->setUsage(TextureUsage::Emissive);
+    getTextures().find(defaultTextureMetaName)->setUsage(TextureUsage::MetallicRoughness);
+    getTextures().find(defaultTextureAoName)->setUsage(TextureUsage::AmbientOcclusion);
+    getTextures().find(defaultTextureMaskName)->setUsage(TextureUsage::Mask);
+
+    // Fill the asset load queue
+    addToLoadQueue(images);
+    addToLoadQueue(models);
+    addToLoadQueue(blocks);
+
+    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        // Find out the blocks texture usage
+        MaterialTextures::Counts counts{
+            {TextureUsage::Diffuse, 0},
+            {TextureUsage::Emissive, 0},
+            {TextureUsage::Normal, 0},
+            {TextureUsage::MetallicRoughness, 0},
+            {TextureUsage::AmbientOcclusion, 0},
+            {TextureUsage::Mask, 0},
+        };
+
+        for (const auto& [_, texture] : textures) {
+            if (const auto usage = texture->getUsage(); usage != TextureUsage::Any) {
+                counts.at(texture->getUsage())++;
+            }
+        }
+
+        materialTextures = std::make_unique<MaterialTextures>(*vulkan, config.graphics.textureArraySize, counts);
+    });
+
+    addToLoadQueue(textures);
+    addToLoadQueue(particlesTypes);
+    addToLoadQueue(planetTypes);
+    addToLoadQueue(sounds);
+    addToLoadQueue(turrets);
+    addToLoadQueue(shipTemplates);
+
+    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        for (const auto& [_, block] : blocks) {
+            block->allocateMaterials(*this);
+        }
+    });
+
+    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = blockMaterials.capacity() * sizeof(Block::MaterialUniform);
+        bufferInfo.usage =
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        blockMaterialsUbo = vulkan->createBuffer(bufferInfo);
+        vulkan->copyDataToBuffer(blockMaterialsUbo, blockMaterials.data(), bufferInfo.size);
+    });
+
+    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) { materialTextures->finalize(); });
+}
+
+template <typename T> void AssetsManager::addToLoadQueue(Category<T>& assets) {
+    for (const auto& pair : assets) {
+        loadQueue.emplace_back(
+            [this, name = pair.first, asset = pair.second](VulkanRenderer* vulkan, AudioContext* audio) {
+                logger.info("Loading asset: '{}'", name);
+                asset->load(*this, vulkan, audio);
+            });
     }
 }
 
@@ -219,10 +292,10 @@ template <typename T> std::shared_ptr<T> AssetsManager::addAsset(Category<T>& as
     // logger.info("Adding asset: '{}'", path);
     auto asset = std::make_shared<T>(path.stem().string(), path);
     assets.insert(asset->getName(), asset);
-    loadQueue.emplace_back([=](VulkanRenderer* vulkan, AudioContext* audio) {
+    /*loadQueue.emplace_back([=](VulkanRenderer* vulkan, AudioContext* audio) {
         logger.info("Loading asset: '{}'", path);
         asset->load(*this, vulkan, audio);
-    });
+    });*/
     return asset;
 }
 
@@ -234,4 +307,9 @@ ImagePtr AssetsManager::addImage(const std::string& name, const ImageAtlas::Allo
     auto asset = std::make_shared<Image>(name, allocation);
     images.insert(name, asset);
     return asset;
+}
+
+std::tuple<size_t, Block::MaterialUniform*> AssetsManager::addBlockMaterial() {
+    blockMaterials.emplace_back();
+    return {blockMaterials.size() - 1, &blockMaterials.back()};
 }

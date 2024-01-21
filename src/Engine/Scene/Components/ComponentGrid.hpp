@@ -30,8 +30,8 @@ public:
     void clear();
     void recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache);
 
-    [[nodiscard]] const std::list<Primitive>& getPrimitives() const {
-        return primitives;
+    [[nodiscard]] const Mesh& getMesh() const {
+        return mesh;
     }
 
     [[nodiscard]] const ParticlesMap& getParticles() const {
@@ -59,7 +59,7 @@ private:
     bool dirty{false};
     ComponentDebug* debug{nullptr};
     VulkanRenderer* vulkanRenderer{nullptr};
-    std::list<Primitive> primitives;
+    Mesh mesh;
     std::vector<BlockCache> blockCache;
     ParticlesMap particles;
 };

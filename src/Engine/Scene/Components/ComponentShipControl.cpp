@@ -11,6 +11,7 @@ ComponentShipControl::ComponentShipControl(EntityId entity) : Component{entity} 
 }
 
 void ComponentShipControl::update(Scene& scene, const float delta, ComponentTransform& transform) {
+    constexpr Vector3 upVector{0.0f, 1.0f, 0.0f};
     constexpr auto accelerationAngleMin = glm::radians(30.0f);
     constexpr auto slowdownAngle = glm::radians(15.0f);
 
@@ -116,12 +117,18 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
         computedDistance = glm::distance(transform.getPosition(), targetPos);
     }
 
+    // Fix nan if direction towards the target is equal to upVector
+    const auto d = glm::dot(glm::normalize(targetPos - transform.getPosition()), upVector);
+    if (glm::abs(d) > 0.99999f) {
+        targetPos.x += 1.0f;
+    }
+
     // The orientation towards the target
     Matrix4 newTransform;
     if (glm::distance2(transform.getPosition(), targetPos) == 0) {
-        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos + ourForward, {0.0f, 1.0f, 0.0f}));
+        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos + ourForward, upVector));
     } else {
-        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, {0.0f, 1.0f, 0.0f}));
+        newTransform = glm::inverse(glm::lookAt(transform.getPosition(), targetPos, upVector));
     }
     newTransform = glm::rotate(newTransform, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
     auto targetOrientation = glm::quat_cast(newTransform);

@@ -233,8 +233,6 @@ public:
         std::vector<uint32_t> indices;
     };
 
-    using RawPrimitiveData = std::unordered_map<const Material*, BlocksData>;
-
     static constexpr size_t maxNodesPerTree = 256 * 256 * 256;
     static constexpr size_t badIndex = 0xFFFFFF;
     static constexpr size_t meshBuildWidth = 16;
@@ -354,7 +352,7 @@ public:
         return voxels.find(pos);
     }
 
-    void generateMesh(const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
+    void generateMesh(const VoxelShapeCache& voxelShapeCache, BlocksData& data);
 
     [[nodiscard]] std::optional<RayCastResult> rayCast(const Vector3& from, const Vector3& to) const;
 
@@ -387,11 +385,11 @@ public:
 
 private:
     uint16_t insertBlock(const BlockPtr& block);
-    void generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
-    void generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map);
+    void generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, BlocksData& data);
+    void generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, BlocksData& data);
     void generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const;
     void build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
-               RawPrimitiveData& map, const Vector3& offset);
+               BlocksData& data, const Vector3& offset);
     void updateBounds(Iterator& iterator);
     // void buildBlock(const Voxel& voxel, BlockBuilder& blockBuilder, const Vector3i& pos, TypePrimitiveMap& map);
 

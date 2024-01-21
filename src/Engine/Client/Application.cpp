@@ -605,7 +605,8 @@ void Application::createRenderers() {
     status.message = "Creating renderer...";
     status.value = 0.5f;
 
-    renderResources = std::make_unique<RenderResources>(*this);
+    renderResources = std::make_unique<RenderResources>(
+        *this, assetsManager->getBlockMaterialsUbo(), assetsManager->getMaterialTextures());
 
     createSceneRenderer(config.graphics.windowSize);
 

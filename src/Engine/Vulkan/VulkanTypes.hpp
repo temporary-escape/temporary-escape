@@ -21,6 +21,23 @@ enum class VulkanCompressionType {
     BC3,
 };
 
+enum class TextureCompressionTarget {
+    R,
+    RG,
+    RGB,
+    RGBA,
+};
+
+enum class TextureUsage {
+    Any,
+    Diffuse,
+    Emissive,
+    Normal,
+    MetallicRoughness,
+    AmbientOcclusion,
+    Mask,
+};
+
 struct ENGINE_API VulkanQueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;

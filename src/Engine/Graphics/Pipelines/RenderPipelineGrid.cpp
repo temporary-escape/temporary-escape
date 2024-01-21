@@ -35,7 +35,7 @@ void RenderPipelineGrid::setUniformCamera(const VulkanBuffer& ubo) {
 }
 
 void RenderPipelineGrid::setUniformMaterial(const VulkanBuffer& ubo) {
-    uniforms[1] = {"Material", ubo};
+    uniforms[1] = {"Materials", ubo};
 }
 
 void RenderPipelineGrid::setTextureBaseColor(const VulkanTexture& texture) {

@@ -10,13 +10,6 @@ struct ktxTexture2;
 struct ktxStream;
 
 namespace Engine {
-enum class Ktx2CompressionTarget {
-    R,
-    RG,
-    RGB,
-    RGBA,
-};
-
 struct ENGINE_API Ktx2Chunk {
     Vector3 size;
     int level{0};
@@ -31,7 +24,7 @@ public:
     virtual ~Ktx2FileReader();
 
     [[nodiscard]] bool needsTranscoding() const;
-    void transcode(VulkanCompressionType type, Ktx2CompressionTarget target);
+    void transcode(VulkanCompressionType type, TextureCompressionTarget target);
     void readData();
 
     [[nodiscard]] VkFormat getFormat() const;

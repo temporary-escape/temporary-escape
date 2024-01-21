@@ -2,13 +2,15 @@
 
 #include "../Utils/Random.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
+#include "MaterialTextures.hpp"
 #include "Mesh.hpp"
 #include "SkyboxTextures.hpp"
 
 namespace Engine {
 class ENGINE_API RenderResources {
 public:
-    explicit RenderResources(VulkanRenderer& vulkan);
+    explicit RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
+                             const MaterialTextures& materialTextures);
     ~RenderResources();
 
     const Mesh& getMeshFullScreenQuad() const {
@@ -75,6 +77,14 @@ public:
         return spaceDust;
     }
 
+    const VulkanBuffer& getBlockMaterials() const {
+        return blockMaterials;
+    }
+
+    const MaterialTextures& getMaterialTextures() const {
+        return materialTextures;
+    }
+
 private:
     void createSsaoNoise();
     void createSsaoSamples();
@@ -84,6 +94,8 @@ private:
     void createSpaceDust();
 
     VulkanRenderer& vulkan;
+    const VulkanBuffer& blockMaterials;
+    const MaterialTextures& materialTextures;
     Mesh meshFullScreenQuad;
     Mesh meshPlanet;
     Mesh meshSkyboxCube;

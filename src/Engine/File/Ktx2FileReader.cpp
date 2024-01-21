@@ -167,18 +167,18 @@ Ktx2FileReader::Ktx2FileReader(const Span<uint8_t>& data) {
 
 Ktx2FileReader::~Ktx2FileReader() = default;
 
-static ktx_transcode_fmt_e getTranscodeTargetETC(Ktx2CompressionTarget target) {
+static ktx_transcode_fmt_e getTranscodeTargetETC(TextureCompressionTarget target) {
     switch (target) {
-    case Ktx2CompressionTarget::R: {
+    case TextureCompressionTarget::R: {
         return KTX_TTF_ETC1_RGB;
     }
-    case Ktx2CompressionTarget::RG: {
+    case TextureCompressionTarget::RG: {
         return KTX_TTF_ETC1_RGB;
     }
-    case Ktx2CompressionTarget::RGB: {
+    case TextureCompressionTarget::RGB: {
         return KTX_TTF_ETC1_RGB;
     }
-    case Ktx2CompressionTarget::RGBA: {
+    case TextureCompressionTarget::RGBA: {
         return KTX_TTF_ETC2_RGBA;
     }
     default: {
@@ -187,32 +187,32 @@ static ktx_transcode_fmt_e getTranscodeTargetETC(Ktx2CompressionTarget target) {
     }
 }
 
-static ktx_transcode_fmt_e getTranscodeTargetBC(Ktx2CompressionTarget target) {
+static ktx_transcode_fmt_e getTranscodeTargetBC(TextureCompressionTarget target) {
     switch (target) {
-    case Ktx2CompressionTarget::R: {
+    case TextureCompressionTarget::R: {
         return KTX_TTF_BC4_R;
     }
-    case Ktx2CompressionTarget::RG: {
+    case TextureCompressionTarget::RG: {
         return KTX_TTF_BC5_RG;
     }
-    case Ktx2CompressionTarget::RGB: {
+    case TextureCompressionTarget::RGB: {
         return KTX_TTF_BC1_RGB;
     }
-    case Ktx2CompressionTarget::RGBA: {
+    case TextureCompressionTarget::RGBA: {
         return KTX_TTF_BC3_RGBA;
     }
-    default:{
+    default: {
         EXCEPTION("Unknown compression target");
     }
     }
 }
 
-static ktx_transcode_fmt_e getTranscodeTargetDefault(Ktx2CompressionTarget target) {
+static ktx_transcode_fmt_e getTranscodeTargetDefault(TextureCompressionTarget target) {
     (void)target;
     return KTX_TTF_RGBA32;
 }
 
-static ktx_transcode_fmt_e getTranscodeTarget(VulkanCompressionType type, Ktx2CompressionTarget target) {
+static ktx_transcode_fmt_e getTranscodeTarget(VulkanCompressionType type, TextureCompressionTarget target) {
     switch (type) {
     case VulkanCompressionType::BC3: {
         return getTranscodeTargetBC(target);
@@ -230,7 +230,7 @@ bool Ktx2FileReader::needsTranscoding() const {
     return ktxTexture2_NeedsTranscoding(ktx.get()) == KTX_TRUE;
 }
 
-void Ktx2FileReader::transcode(VulkanCompressionType type, Ktx2CompressionTarget target) {
+void Ktx2FileReader::transcode(VulkanCompressionType type, TextureCompressionTarget target) {
     if (needsTranscoding()) {
         const auto tf = getTranscodeTarget(type, target);
 

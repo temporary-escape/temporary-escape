@@ -56,6 +56,7 @@ struct Config {
         int ssao = 32;
         int shadowsSize = 2048;
         int shadowsLevel = 1;
+        Vector2i textureArraySize{1024, 1024};
 
         void convert(const Xml::Node& xml) {
             xml.convert("windowSize", windowSize);

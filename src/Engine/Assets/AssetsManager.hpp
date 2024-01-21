@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Config.hpp"
+#include "../Graphics/MaterialTextures.hpp"
 #include "Block.hpp"
 #include "Image.hpp"
 #include "ImageAtlas.hpp"
@@ -18,6 +19,13 @@
 namespace Engine {
 class ENGINE_API AssetsManager {
 public:
+    static constexpr auto defaultTextureDiffName = "texture_default_diff";
+    static constexpr auto defaultTextureEmisName = "texture_default_emis";
+    static constexpr auto defaultTextureNormName = "texture_default_norm";
+    static constexpr auto defaultTextureMetaName = "texture_default_meta";
+    static constexpr auto defaultTextureAoName = "texture_default_ao";
+    static constexpr auto defaultTextureMaskName = "texture_default_mask";
+
     using LoadQueue = std::list<std::function<void(VulkanRenderer*, AudioContext*)>>;
 
     struct DefaultTextures {
@@ -31,6 +39,8 @@ public:
 
     template <typename T> class Category {
     public:
+        using Map = std::unordered_map<std::string, std::shared_ptr<T>>;
+
         void insert(const std::string& name, std::shared_ptr<T> asset) {
             assets.insert(std::make_pair(name, asset));
         }
@@ -64,8 +74,24 @@ public:
             return res;
         }
 
+        typename Map::iterator begin() {
+            return assets.begin();
+        }
+
+        typename Map::iterator end() {
+            return assets.end();
+        }
+
+        typename Map::const_iterator begin() const {
+            return assets.begin();
+        }
+
+        typename Map::const_iterator end() const {
+            return assets.end();
+        }
+
     private:
-        std::unordered_map<std::string, std::shared_ptr<T>> assets;
+        Map assets;
     };
 
     static void compressAssets(const Config& config);
@@ -140,15 +166,29 @@ public:
         return loadQueue;
     }
 
+    MaterialTextures& getMaterialTextures() {
+        return *materialTextures;
+    }
+    const MaterialTextures& getMaterialTextures() const {
+        return *materialTextures;
+    }
+    const VulkanBuffer& getBlockMaterialsUbo() const {
+        return blockMaterialsUbo;
+    }
+
+    std::tuple<size_t, Block::MaterialUniform*> addBlockMaterial();
+
 private:
     void addManifest(const Path& path);
     TexturePtr createTextureOfColor(VulkanRenderer& vulkan, const Color4& color, const std::string& name);
     template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext);
     template <typename T> std::shared_ptr<T> addAsset(Category<T>& assets, const Path& path);
+    template <typename T> void addToLoadQueue(Category<T>& assets);
 
     const Config& config;
     std::unique_ptr<ImageAtlas> atlas;
     std::unique_ptr<DefaultTextures> defaultTextures;
+    std::unique_ptr<MaterialTextures> materialTextures;
     Category<Texture> textures;
     Category<Block> blocks;
     Category<Image> images;
@@ -159,6 +199,8 @@ private:
     Category<ShipTemplate> shipTemplates;
     Category<Turret> turrets;
     std::vector<ModManifest> manifests;
+    std::vector<Block::MaterialUniform> blockMaterials;
+    VulkanBuffer blockMaterialsUbo;
     LoadQueue loadQueue;
 };
 } // namespace Engine

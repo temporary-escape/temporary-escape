@@ -2,7 +2,6 @@
 
 #include "Asset.hpp"
 #include "Image.hpp"
-#include "Material.hpp"
 #include "ParticlesType.hpp"
 #include "Texture.hpp"
 #include "VoxelShape.hpp"
@@ -14,6 +13,41 @@ public:
         None,
         Limited,
         Full,
+    };
+
+    struct Material {
+        TexturePtr baseColorTexture;
+        TexturePtr emissiveTexture;
+        TexturePtr normalTexture;
+        TexturePtr ambientOcclusionTexture;
+        TexturePtr metallicRoughnessTexture;
+        TexturePtr maskTexture;
+
+        Vector4 baseColorFactor;
+        Vector4 emissiveFactor;
+        Vector4 normalFactor;
+        Vector4 ambientOcclusionFactor;
+        Vector4 metallicRoughnessFactor;
+    };
+
+    struct MaterialUniform {
+        MaterialUniform() = default;
+        explicit MaterialUniform(const Material& material);
+
+        int baseColorTexture;
+        int emissiveTexture;
+        int normalTexture;
+        int ambientOcclusionTexture;
+        int metallicRoughnessTexture;
+        int maskTexture;
+
+        Vector4 baseColorFactor;
+        Vector4 emissiveFactor;
+        Vector4 normalFactor;
+        Vector4 ambientOcclusionFactor;
+        Vector4 metallicRoughnessFactor;
+
+        char padding[8]; // Uniform padding
     };
 
     struct Definition {
@@ -108,13 +142,14 @@ public:
     MOVEABLE(Block);
 
     void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
+    void allocateMaterials(AssetsManager& assetsManager);
 
-    [[nodiscard]] const Material& getMaterialForSide(const VoxelShape::Face side) const {
-        const auto* ptr = shapeSideToMaterial.at(side);
-        if (!ptr) {
+    [[nodiscard]] int getMaterialForSide(const VoxelShape::Face side) const {
+        const auto index = shapeSideToMaterial.at(side);
+        if (index < 0) {
             EXCEPTION("Block has no associated material for side: {}", int(side));
         }
-        return *ptr;
+        return index;
     }
 
     [[nodiscard]] const std::vector<VoxelShape::Type>& getShapes() const {
@@ -134,11 +169,11 @@ public:
     }
 
     [[nodiscard]] bool isSingular() const {
-        return materials.size() == 1;
+        return singular;
     }
 
-    [[nodiscard]] const Material& getMaterial() const {
-        return *materials.front();
+    [[nodiscard]] int getMaterial() const {
+        return shapeSideToMaterial[0];
     }
 
     void setThumbnail(const VoxelShape::Type shape, ImagePtr image) {
@@ -158,9 +193,10 @@ public:
 private:
     Path path;
     Definition definition;
-    std::array<Material*, 7> shapeSideToMaterial;
-    std::vector<std::unique_ptr<Material>> materials;
-    std::array<ImagePtr, VoxelShape::numOfShapes> thumbnails;
+    std::array<int, 7> shapeSideToMaterial{0};
+    std::array<ImagePtr, VoxelShape::numOfShapes> thumbnails{nullptr};
+    std::vector<Material> materials;
+    bool singular{false};
 };
 
 XML_DEFINE(Block::Definition, "block");

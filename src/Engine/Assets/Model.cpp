@@ -73,14 +73,16 @@ Model::~Model() = default;
 void Model::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) {
     (void)audio;
 
-    const auto resolveTexture = [this, &assetsManager](const Path& filename) -> TexturePtr {
+    const auto resolveTexture = [this, &assetsManager, vulkan, audio](const Path& filename) -> TexturePtr {
         const auto baseName = filename.stem().string();
         auto found = assetsManager.getTextures().findOrNull(baseName);
         if (found) {
             return found;
         }
         const auto file = path.parent_path() / fixFileNameExt(filename);
-        return assetsManager.addTexture(file);
+        auto texture = assetsManager.addTexture(file);
+        texture->load(assetsManager, vulkan, audio);
+        return texture;
     };
 
     try {

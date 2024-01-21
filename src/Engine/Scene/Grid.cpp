@@ -222,7 +222,7 @@ Vector2 boxProjection(Vector3 normal, Vector3 position) {
 }
 
 void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
-                 RawPrimitiveData& map, const Vector3& offset) {
+                 BlocksData& data, const Vector3& offset) {
     static const Vector3i neighbourOffset[6] = {
         Vector3i{1, 0, 0},
         Vector3i{-1, 0, 0},
@@ -305,10 +305,11 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
 
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
 
-    const auto appendShapeVertices = [&](RawPrimitiveData::mapped_type& data,
+    const auto appendShapeVertices = [&](BlocksData& data,
                                          const VoxelShapeCache::ShapePrebuilt& shape,
                                          const Vector3& pos,
-                                         const uint8_t color) {
+                                         const uint8_t color,
+                                         const int materialIndex) {
         auto vertexOffset = data.vertices.size();
         // std::cout << "vertexOffset: " << vertexOffset << " adding: " << shape.vertices.size() << std::endl;
         data.vertices.resize(vertexOffset + shape.vertices.size());
@@ -319,8 +320,15 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
             dst.normal = src.normal;
             dst.position += pos + offset;
             dst.tangent = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
-            dst.texCoords = boxProjection(dst.normal, dst.position);
-            dst.color = static_cast<float>(color) / 64.0f + (1.0f / 64.0f / 2.0f);
+
+            const auto texCoords = boxProjection(dst.normal, dst.position);
+
+            dst.texCoords = {
+                texCoords.x,
+                texCoords.y,
+                materialIndex,
+                static_cast<float>(color) / 64.0f + (1.0f / 64.0f / 2.0f),
+            };
         }
 
         const auto indexOffset = data.indices.size();
@@ -393,8 +401,8 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
 
                 if (block->isSingular()) {
                     const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(mask);
-                    auto& data = map[&block->getMaterial()];
-                    appendShapeVertices(data, shape, posf, item.color);
+                    const auto material = block->getMaterial();
+                    appendShapeVertices(data, shape, posf, item.color, material);
                 } else {
                     for (size_t n = 0; n < 6; n++) {
                         const auto shapeMask = mask & neighbourMasks[n];
@@ -403,10 +411,9 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
                         }
                         const auto& shape = voxelShapeCache.getShapes().at(item.shape).at(item.rotation).at(shapeMask);
 
-                        const auto& material = block->getMaterialForSide(neighbourSides[n]);
+                        const auto material = block->getMaterialForSide(neighbourSides[n]);
 
-                        auto& data = map[&material];
-                        appendShapeVertices(data, shape, posf, item.color);
+                        appendShapeVertices(data, shape, posf, item.color, material);
                     }
                 }
             }
@@ -893,12 +900,12 @@ size_t Grid::getTypeCount(const size_t index) const {
     return types.at(index).count;
 }
 
-void Grid::generateMesh(const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
+void Grid::generateMesh(const VoxelShapeCache& voxelShapeCache, BlocksData& data) {
     auto it = voxels.iterate();
-    generateMesh(it, voxelShapeCache, map);
+    generateMesh(it, voxelShapeCache, data);
 }
 
-void Grid::generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
+void Grid::generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, BlocksData& data) {
     if (!iterator) {
         return;
     }
@@ -908,10 +915,10 @@ void Grid::generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCac
 
         if (!iterator.isVoxel()) {
             if (iterator.getBranchWidth() <= meshBuildWidth) {
-                generateMeshBlock(iterator, voxelShapeCache, map);
+                generateMeshBlock(iterator, voxelShapeCache, data);
             } else {
                 auto children = iterator.children();
-                generateMesh(children, voxelShapeCache, map);
+                generateMesh(children, voxelShapeCache, data);
             }
         }
 
@@ -919,7 +926,7 @@ void Grid::generateMesh(Iterator& iterator, const VoxelShapeCache& voxelShapeCac
     }
 }
 
-void Grid::generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, RawPrimitiveData& map) {
+void Grid::generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, BlocksData& data) {
     if (!iterator) {
         return;
     }
@@ -935,7 +942,7 @@ void Grid::generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelSha
     generateMeshCache(children, cache.get(), min);
 
     // logger.debug("generateMeshBlock build min: {}", min);
-    build(voxelShapeCache, cache.get(), types, map, min);
+    build(voxelShapeCache, cache.get(), types, data, min);
 }
 
 void Grid::generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const {

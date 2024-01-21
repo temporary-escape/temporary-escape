@@ -1,20 +1,17 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#include "includes/common.glsl"
 
-layout (std140, binding = 1) uniform Material {
-    vec4 baseColorFactor;
-    vec4 emissiveFactor;
-    vec4 normalFactor;
-    vec4 ambientOcclusionFactor;
-    vec4 metallicRoughnessFactor;
-} material;
+layout (std140, binding = 1) uniform Materials {
+    SBlockMaterial materials[1024];
+};
 
-layout (binding = 2) uniform sampler2D baseColorTexture;
-layout (binding = 3) uniform sampler2D emissiveTexture;
-layout (binding = 4) uniform sampler2D normalTexture;
-layout (binding = 5) uniform sampler2D ambientOcclusionTexture;
-layout (binding = 6) uniform sampler2D metallicRoughnessTexture;
-layout (binding = 7) uniform sampler2D maskTexture;
+layout (binding = 2) uniform sampler2DArray baseColorTexture;
+layout (binding = 3) uniform sampler2DArray emissiveTexture;
+layout (binding = 4) uniform sampler2DArray normalTexture;
+layout (binding = 5) uniform sampler2DArray ambientOcclusionTexture;
+layout (binding = 6) uniform sampler2DArray metallicRoughnessTexture;
+layout (binding = 7) uniform sampler2DArray maskTexture;
 layout (binding = 8) uniform sampler1D paletteTexture;
 
 layout (location = 0) in VS_OUT {
@@ -23,6 +20,7 @@ layout (location = 0) in VS_OUT {
     vec3 worldPos;
     mat3 TBN;
     float color;
+    float materialIndex;
 } vs_out;
 
 layout (push_constant) uniform Uniforms {
@@ -61,10 +59,18 @@ vec3 paletteColorForEmissive(vec3 c) {
 }
 
 void main() {
-    float mask = texture(maskTexture, vs_out.texCoords).r;
-    vec4 baseColorRaw = texture(baseColorTexture, vs_out.texCoords);
+    SBlockMaterial material = materials[int(vs_out.materialIndex)];
+    vec3 maskTexCoords = vec3(vs_out.texCoords.xy, material.maskTexture);
+    vec3 baseColorTexCoords = vec3(vs_out.texCoords.xy, material.baseColorTexture);
+    vec3 normalTexCoords = vec3(vs_out.texCoords.xy, material.normalTexture);
+    vec3 emissiveTexCoords = vec3(vs_out.texCoords.xy, material.emissiveTexture);
+    vec3 metallicRoughnessTexCoords = vec3(vs_out.texCoords.xy, material.metallicRoughnessTexture);
+    vec3 ambientOcclusionTexCoords = vec3(vs_out.texCoords.xy, material.ambientOcclusionTexture);
+
+    float mask = texture(maskTexture, maskTexCoords).r;
+    vec4 baseColorRaw = texture(baseColorTexture, baseColorTexCoords);
     vec3 baseColor = pow(baseColorRaw.rgb * material.baseColorFactor.rgb, vec3(2.2));
-    vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
+    vec3 normalRaw = texture(normalTexture, normalTexCoords).xyz;
     normalRaw = vec3(normalRaw.x, normalRaw.y, 0.0) * 2.0 - 1.0;
 
     normalRaw.z = sqrt(1.0 - normalRaw.x * normalRaw.x - normalRaw.y * normalRaw.y);
@@ -72,9 +78,9 @@ void main() {
     vec3 normal = normalize(vs_out.TBN * normalRaw.xyz);
     vec3 paletteColor = pow(texture(paletteTexture, vs_out.color).rgb, vec3(2.2));
 
-    vec3 emissive = texture(emissiveTexture, vs_out.texCoords).rgb * material.emissiveFactor.rgb;
-    vec3 metallicRoughness = texture(metallicRoughnessTexture, vs_out.texCoords).rgb * material.metallicRoughnessFactor.rgb;
-    float ambient = texture(ambientOcclusionTexture, vs_out.texCoords).r * material.ambientOcclusionFactor.r;
+    vec3 emissive = texture(emissiveTexture, emissiveTexCoords).rgb * material.emissiveFactor.rgb;
+    vec3 metallicRoughness = texture(metallicRoughnessTexture, metallicRoughnessTexCoords).rgb * material.metallicRoughnessFactor.rgb;
+    float ambient = texture(ambientOcclusionTexture, ambientOcclusionTexCoords).r * material.ambientOcclusionFactor.r;
 
     vec3 emissivePalette = paletteColorForEmissive(paletteColor);
 
