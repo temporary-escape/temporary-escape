@@ -1,4 +1,4 @@
-#include "ControllerDynamicsWorld.hpp"
+#include "DynamicsWorld.hpp"
 #include <btBulletDynamicsCommon.h>
 
 using namespace Engine;
@@ -130,7 +130,7 @@ private:
     bool result{false};
 };
 
-ControllerDynamicsWorld::ControllerDynamicsWorld(Scene& scene, entt::registry& reg, const Config& config) :
+DynamicsWorld::DynamicsWorld(Scene& scene, entt::registry& reg, const Config& config) :
     scene{scene},
     reg{reg},
     config{config},
@@ -144,20 +144,19 @@ ControllerDynamicsWorld::ControllerDynamicsWorld(Scene& scene, entt::registry& r
     dynamicsWorld->setGravity(btVector3{0, 0, 0});
 }
 
-ControllerDynamicsWorld::~ControllerDynamicsWorld() = default;
+DynamicsWorld::~DynamicsWorld() = default;
 
-void ControllerDynamicsWorld::update(const float delta) {
+void DynamicsWorld::update(const float delta) {
     dynamicsWorld->stepSimulation(delta, 10);
 }
 
-bool ControllerDynamicsWorld::contactTest(ContactTestObject& object, const CollisionMask mask) const {
+bool DynamicsWorld::contactTest(ContactTestObject& object, const CollisionMask mask) const {
     SimpleContactResultCallback callback{mask};
     dynamicsWorld->contactTest(object.get(), callback);
     return callback.hasResult();
 }
 
-bool ControllerDynamicsWorld::contactTestSphere(const Vector3& origin, const float radius,
-                                                const CollisionMask mask) const {
+bool DynamicsWorld::contactTestSphere(const Vector3& origin, const float radius, const CollisionMask mask) const {
     btSphereShape shape{radius};
     btCollisionObject object{};
 
@@ -174,7 +173,7 @@ bool ControllerDynamicsWorld::contactTestSphere(const Vector3& origin, const flo
     return callback.hasResult();
 }
 
-bool ControllerDynamicsWorld::contactTestBox(const Vector3& origin, float width, const CollisionMask mask) const {
+bool DynamicsWorld::contactTestBox(const Vector3& origin, float width, const CollisionMask mask) const {
     const auto half = width / 2.0f;
     btBoxShape shape{{half, half, half}};
     btCollisionObject object{};
@@ -192,11 +191,11 @@ bool ControllerDynamicsWorld::contactTestBox(const Vector3& origin, float width,
     return callback.hasResult();
 }
 
-void ControllerDynamicsWorld::updateAabbs() {
+void DynamicsWorld::updateAabbs() {
     dynamicsWorld->updateAabbs();
 }
 
-void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {
+void DynamicsWorld::recalculate(VulkanRenderer& vulkan) {
     if (!debugDraw) {
         debugDraw = std::make_unique<CollisionDebugDraw>(vulkan);
         dynamicsWorld->setDebugDrawer(debugDraw.get());
@@ -207,21 +206,21 @@ void ControllerDynamicsWorld::recalculate(VulkanRenderer& vulkan) {
     }
 }
 
-const VulkanDoubleBuffer& ControllerDynamicsWorld::getDebugDrawVbo() const {
+const VulkanDoubleBuffer& DynamicsWorld::getDebugDrawVbo() const {
     if (!debugDraw) {
         EXCEPTION("No dynamics world debug draw setup");
     }
     return dynamic_cast<const CollisionDebugDraw*>(debugDraw.get())->getVbo();
 }
 
-size_t ControllerDynamicsWorld::getDebugDrawCount() const {
+size_t DynamicsWorld::getDebugDrawCount() const {
     if (!debugDraw) {
         EXCEPTION("No dynamics world debug draw setup");
     }
     return dynamic_cast<const CollisionDebugDraw*>(debugDraw.get())->getCount();
 }
 
-void ControllerDynamicsWorld::rayCast(const Vector3& start, const Vector3& end, RayCastResult& result) {
+void DynamicsWorld::rayCast(const Vector3& start, const Vector3& end, RayCastResult& result) {
     btVector3 transFrom{start.x, start.y, start.z};
     btVector3 transTo{end.x, end.y, end.z};
 
@@ -236,6 +235,6 @@ void ControllerDynamicsWorld::rayCast(const Vector3& start, const Vector3& end, 
     }
 }
 
-btDynamicsWorld& ControllerDynamicsWorld::get() {
+btDynamicsWorld& DynamicsWorld::get() {
     return *dynamicsWorld;
 }

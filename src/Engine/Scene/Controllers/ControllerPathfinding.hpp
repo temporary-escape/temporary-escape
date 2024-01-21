@@ -1,16 +1,16 @@
 #pragma once
 
 #include "../Controller.hpp"
+#include "../DynamicsWorld.hpp"
 #include "../Entity.hpp"
 #include "../Pathfinding.hpp"
-#include "ControllerDynamicsWorld.hpp"
 
 namespace Engine {
 class ENGINE_API Scene;
 
 class ENGINE_API ControllerPathfinding : public Controller, public Pathfinding::Tester {
 public:
-    explicit ControllerPathfinding(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld);
+    explicit ControllerPathfinding(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld);
     ~ControllerPathfinding() override;
     NON_COPYABLE(ControllerPathfinding);
     NON_MOVEABLE(ControllerPathfinding);
@@ -33,7 +33,7 @@ public:
 private:
     Scene& scene;
     entt::registry& reg;
-    ControllerDynamicsWorld& dynamicsWorld;
+    DynamicsWorld& dynamicsWorld;
     Pathfinding octree;
 
     VulkanDoubleBuffer vbo;

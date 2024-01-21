@@ -22,9 +22,7 @@ function EntitySectorAsteroidField.populate (self)
 
     for i = 0, 5 do
         local npc = scene:create_entity_template("scout_ship", data)
-        print(string.format("%s", npc))
-        local transform = npc:get_component_transform()
-        transform:translate(engine.Vector3.new(200.0 * i, 20.0, 0.0))
+        npc.transform:translate(engine.Vector3.new(200.0 * i, 20.0, 0.0))
     end
 end
 

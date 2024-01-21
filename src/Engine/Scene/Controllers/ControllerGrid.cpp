@@ -5,7 +5,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerGrid::ControllerGrid(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+ControllerGrid::ControllerGrid(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld,
                                VoxelShapeCache* voxelShapeCache) :
     scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld}, voxelShapeCache{voxelShapeCache} {
 
@@ -35,14 +35,16 @@ void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
 }
 
 void ControllerGrid::addOrUpdate(entt::entity handle, ComponentGrid& component) {
-    logger.warn("addOrUpdate start");
-    if (auto* rigidBody = reg.try_get<ComponentRigidBody>(handle); rigidBody) {
+    auto* transform = reg.try_get<ComponentTransform>(handle);
+    auto* rigidBody = reg.try_get<ComponentRigidBody>(handle);
+    if (rigidBody && transform) {
         auto shape = component.createCollisionShape();
         if (shape) {
-            rigidBody->setShape(std::move(shape));
+            transform->setScene(scene);
+            rigidBody->setShape(*transform, std::move(shape));
+            transform->setRigidBody(*rigidBody);
         }
     }
-    logger.warn("addOrUpdate end");
 }
 
 void ControllerGrid::onConstruct(entt::registry& r, entt::entity handle) {

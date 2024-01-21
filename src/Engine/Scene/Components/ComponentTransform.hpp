@@ -1,13 +1,19 @@
 #pragma once
 
 #include "../Camera.hpp"
+#include <bullet/LinearMath/btMotionState.h>
+
+class btRigidBody;
 
 namespace Engine {
+class ENGINE_API ComponentRigidBody;
+
 enum class TransformFlags : uint64_t {
     Static = 1ULL << 0,
+    Kinematic = 1ULL << 1,
 };
 
-class ENGINE_API ComponentTransform : public Component {
+class ENGINE_API ComponentTransform : public btMotionState, public Component {
 public:
     static constexpr auto NullParentId = std::numeric_limits<uint64_t>::max();
 
@@ -71,12 +77,22 @@ public:
         return glm::length(transform[0]);
     }
 
-    void setStatic(const bool value);
+    void setStatic(bool value);
     bool isStatic() const;
+
+    void setKinematic(bool value);
+    bool isKinematic() const;
 
     void interpolate();
 
+    void setScene(Scene& value);
+    void setRigidBody(ComponentRigidBody& value);
+
     MSGPACK_DEFINE_ARRAY(transform, flags, parentId);
+
+private:
+    void getWorldTransform(btTransform& worldTrans) const override;
+    void setWorldTransform(const btTransform& worldTrans) override;
 
 private:
     Matrix4 transform{1.0f};
@@ -85,5 +101,8 @@ private:
     uint64_t parentId{NullParentId};
     uint64_t flags{0};
     bool interpolated{false};
+
+    Scene* scene{nullptr};
+    ComponentRigidBody* rigidBody{nullptr};
 };
 } // namespace Engine

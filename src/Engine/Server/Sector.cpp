@@ -63,7 +63,7 @@ void Sector::load() {
     });*/
 
     // Build pathfinding
-    scene->getController<ControllerDynamicsWorld>().updateAabbs();
+    scene->getDynamicsWorld().updateAabbs();
     // scene->getController<ControllerPathfinding>().buildTree();
     scene->createEntityFrom(sectorData.entity);
 

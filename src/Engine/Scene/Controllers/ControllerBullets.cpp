@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerBullets::ControllerBullets(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld) :
+ControllerBullets::ControllerBullets(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld) :
     scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld} {
 }
 
@@ -21,7 +21,7 @@ void ControllerBullets::update(const float delta) {
 
         const auto advance = bullet.direction * bullet.speed * delta;
 
-        ControllerDynamicsWorld::RayCastResult rayCastResult;
+        DynamicsWorld::RayCastResult rayCastResult;
         dynamicsWorld.rayCast(bullet.origin, bullet.origin + advance, rayCastResult);
 
         if (rayCastResult) {

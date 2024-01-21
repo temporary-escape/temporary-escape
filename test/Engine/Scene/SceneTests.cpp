@@ -1,5 +1,4 @@
 #include "../../Common.hpp"
-#include <Engine/Scene/Controllers/ControllerDynamicsWorld.hpp>
 #include <Engine/Scene/Controllers/ControllerPathfinding.hpp>
 #include <Engine/Scene/Scene.hpp>
 
@@ -29,7 +28,7 @@ TEST_CASE_METHOD(SceneFixture, "Check if box overlaps with dynamics world", "[Sc
     auto& rigidBody = entity.addComponent<ComponentRigidBody>();
     rigidBody.setMass(0.0f);
 
-    auto& dynamicsWorld = scene->getController<ControllerDynamicsWorld>();
+    auto& dynamicsWorld = scene->getDynamicsWorld();
     dynamicsWorld.updateAabbs();
 
     SECTION("With radius 1.0f") {

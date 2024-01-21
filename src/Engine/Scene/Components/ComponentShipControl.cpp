@@ -19,7 +19,7 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
     }
 
     // Is the target entity valid?
-    if (!scene.valid(approachTarget)) {
+    if (approachTarget == entity || !scene.valid(approachTarget)) {
         actionStopMovement();
     }
 

@@ -76,6 +76,7 @@ target_link_libraries(${PROJECT_NAME}Engine
         glm::glm
         VulkanHeaders::VulkanHeaders
         EnTT::EnTT
+        ${BULLET_LIBRARIES}
         PRIVATE
         Png
         LibXml2::LibXml2
@@ -99,7 +100,6 @@ target_link_libraries(${PROJECT_NAME}Engine
         sol2
         AdMipMap
         KTX::ktx
-        ${BULLET_LIBRARIES}
         Vorbis::vorbis
         Vorbis::vorbisfile
         MicroPather)

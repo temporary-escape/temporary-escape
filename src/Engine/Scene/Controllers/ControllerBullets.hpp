@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ControllerRigidBody.hpp"
+#include "../Controller.hpp"
+#include "../DynamicsWorld.hpp"
 
 namespace Engine {
 class ENGINE_API ControllerBullets : public Controller {
 public:
-    explicit ControllerBullets(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld);
+    explicit ControllerBullets(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld);
     ~ControllerBullets() override;
     NON_COPYABLE(ControllerBullets);
     NON_MOVEABLE(ControllerBullets);
@@ -26,7 +27,7 @@ public:
 private:
     Scene& scene;
     entt::registry& reg;
-    ControllerDynamicsWorld& dynamicsWorld;
+    DynamicsWorld& dynamicsWorld;
 
     std::vector<ComponentTurret::BulletInstance> bullets;
     VulkanDoubleBuffer vbo;

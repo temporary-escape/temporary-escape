@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ControllerDynamicsWorld.hpp"
+#include "../Controller.hpp"
+#include "../DynamicsWorld.hpp"
 
 namespace Engine {
 class ENGINE_API ControllerGrid : public Controller {
 public:
-    explicit ControllerGrid(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+    explicit ControllerGrid(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld,
                             VoxelShapeCache* voxelShapeCache);
     ~ControllerGrid() override;
     NON_COPYABLE(ControllerGrid);
@@ -22,7 +23,7 @@ private:
 
     Scene& scene;
     entt::registry& reg;
-    ControllerDynamicsWorld& dynamicsWorld;
+    DynamicsWorld& dynamicsWorld;
     VoxelShapeCache* voxelShapeCache;
 };
 } // namespace Engine

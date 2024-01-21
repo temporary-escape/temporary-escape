@@ -26,8 +26,12 @@ void ControllerModel::recalculate(VulkanRenderer& vulkan) {
 }
 
 void ControllerModel::addOrUpdate(entt::entity handle, ComponentModel& component) {
-    if (auto* rigidBody = reg.try_get<ComponentRigidBody>(handle); rigidBody && component.getModel()) {
-        rigidBody->setShape(component.getModel()->getCollisionShape().clone());
+    auto* transform = reg.try_get<ComponentTransform>(handle);
+    auto* rigidBody = reg.try_get<ComponentRigidBody>(handle);
+    if (rigidBody && transform && component.getModel()) {
+        transform->setScene(scene);
+        rigidBody->setShape(*transform, component.getModel()->getCollisionShape().clone());
+        transform->setRigidBody(*rigidBody);
     }
 }
 

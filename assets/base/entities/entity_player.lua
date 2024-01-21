@@ -14,15 +14,16 @@ function EntityPlayer.new (entity, data)
 
     local transform = entity:add_component_transform()
     transform:translate(engine.Vector3.new(200.0, -20.0, 0.0))
+    transform.kinematic = true
 
     local ship_control = entity:add_component_ship_control()
 
     local rigid_body = entity:add_component_rigid_body()
     rigid_body.mass = 1.0
-    rigid_body.kinematic = true
 
     local grid = entity:add_component_grid()
     grid:set_from(assets_manager:find_ship_template("player_starter_ship"))
+    scene:patch_component_grid(grid)
 
     -- Get the player data
     local player = db.players:get(data.player_id)

@@ -4,7 +4,7 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ControllerTurret::ControllerTurret(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+ControllerTurret::ControllerTurret(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld,
                                    ControllerBullets& bullets) :
     scene{scene}, reg{reg}, dynamicsWorld{dynamicsWorld}, bullets{bullets} {
     reg.on_destroy<ComponentTransform>().disconnect<&ControllerTurret::onDestroyTransform>(this);

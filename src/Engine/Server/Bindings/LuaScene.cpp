@@ -60,12 +60,14 @@ static void bindComponentTransform(sol::table& m) {
     cls["move"] = &ComponentTransform::move;
     cls["translate"] = &ComponentTransform::translate;
     cls["scale"] = &ComponentTransform::scale;
+    cls["rotate"] = static_cast<void (ComponentTransform::*)(const Quaternion&)>(&ComponentTransform::rotate);
     cls["rotate_x"] = &ComponentTransform::rotateX;
     cls["rotate_y"] = &ComponentTransform::rotateY;
     cls["rotate_z"] = &ComponentTransform::rotateZ;
     cls["rotate_by_axis"] =
         static_cast<void (ComponentTransform::*)(const Vector3&, const float)>(&ComponentTransform::rotate);
     cls["static"] = sol::property(&ComponentTransform::isStatic, &ComponentTransform::setStatic);
+    cls["kinematic"] = sol::property(&ComponentTransform::isKinematic, &ComponentTransform::setKinematic);
     using GetTransformFunc = const Matrix4& (ComponentTransform::*)() const;
     auto GetTransform = static_cast<GetTransformFunc>(&ComponentTransform::getTransform);
     cls["transform"] = sol::property(GetTransform, &ComponentTransform::setTransform);
@@ -92,6 +94,9 @@ static void bindScene(sol::table& m) {
     cls["add_entity_template"] = &Scene::addEntityTemplate;
     cls["create_entity_template"] =
         static_cast<Entity (Scene::*)(const std::string&, const sol::table&)>(&Scene::createEntityFrom);
+
+    cls["patch_component_grid"] = [](Scene& scene, ComponentGrid& grid) { scene.setDirty(grid); };
+    cls["patch_component_model"] = [](Scene& scene, ComponentModel& grid) { scene.setDirty(grid); };
 }
 
 LUA_BINDINGS(bindScene);
@@ -112,11 +117,11 @@ static void bindComponentRigidBody(sol::table& m) {
         sol::property(&ComponentRigidBody::getAngularVelocity, &ComponentRigidBody::setAngularVelocity);
     cls["mass"] = sol::property(&ComponentRigidBody::getMass, &ComponentRigidBody::setMass);
     cls["scale"] = sol::property(&ComponentRigidBody::getScale, &ComponentRigidBody::setScale);
-    cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
-    cls["kinematic"] = sol::property(&ComponentRigidBody::getKinematic, &ComponentRigidBody::setKinematic);
-    cls["clear_forces"] = &ComponentRigidBody::clearForces;
-    cls["activate"] = &ComponentRigidBody::activate;
-    cls["reset_transform"] = &ComponentRigidBody::resetTransform;
+    // cls["transform"] = sol::property(&ComponentRigidBody::getWorldTransform, &ComponentRigidBody::setWorldTransform);
+    // cls["kinematic"] = sol::property(&ComponentRigidBody::getKinematic, &ComponentRigidBody::setKinematic);
+    // cls["clear_forces"] = &ComponentRigidBody::clearForces;
+    // cls["activate"] = &ComponentRigidBody::activate;
+    // cls["reset_transform"] = &ComponentRigidBody::resetTransform;
 }
 
 LUA_BINDINGS(bindComponentRigidBody);

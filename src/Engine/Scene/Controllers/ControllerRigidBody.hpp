@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ControllerDynamicsWorld.hpp"
+#include "../Controller.hpp"
+#include "../DynamicsWorld.hpp"
 
 namespace Engine {
 class ENGINE_API ControllerRigidBody : public Controller {
 public:
-    explicit ControllerRigidBody(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld);
+    explicit ControllerRigidBody(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld);
     ~ControllerRigidBody() override;
     NON_COPYABLE(ControllerRigidBody);
     NON_MOVEABLE(ControllerRigidBody);
@@ -19,6 +20,6 @@ private:
 
     Scene& scene;
     entt::registry& reg;
-    ControllerDynamicsWorld& dynamicsWorld;
+    DynamicsWorld& dynamicsWorld;
 };
 } // namespace Engine

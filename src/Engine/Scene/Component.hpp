@@ -48,6 +48,16 @@ using EntityRegistry = entt::registry;
 using EntityId = entt::entity;
 static const auto NullEntity = entt::null;
 
+using CollisionMask = int;
+struct CollisionGroup {
+    static constexpr int Default = 1;
+    static constexpr int Static = 2;
+    static constexpr int Kinematic = 4;
+    static constexpr int Debris = 8;
+    static constexpr int Sensor = 16;
+    static constexpr int Everything = 0x7FFFFFFF;
+};
+
 class ENGINE_API Component {
 public:
     Component() = default;

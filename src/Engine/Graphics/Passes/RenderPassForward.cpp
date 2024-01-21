@@ -254,9 +254,9 @@ void RenderPassForward::renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene&
 }
 
 void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
-    const auto& controller = scene.getController<ControllerDynamicsWorld>();
-    const auto& vbo = controller.getDebugDrawVbo();
-    const auto count = controller.getDebugDrawCount();
+    const auto& dynamicsWorld = scene.getDynamicsWorld();
+    const auto& vbo = dynamicsWorld.getDebugDrawVbo();
+    const auto count = dynamicsWorld.getDebugDrawCount();
 
     if (count == 0 || !vbo) {
         return;

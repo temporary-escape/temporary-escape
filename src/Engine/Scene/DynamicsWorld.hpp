@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Controller.hpp"
-#include "../Entity.hpp"
+#include "Entity.hpp"
 
 class btDefaultCollisionConfiguration;
 class btCollisionDispatcher;
@@ -11,6 +10,8 @@ class btDiscreteDynamicsWorld;
 class btIDebugDraw;
 class btRigidBody;
 class btCollisionObject;
+class btDynamicsWorld;
+class btTransform;
 
 namespace Engine {
 class ContactTestObject {
@@ -26,7 +27,7 @@ private:
     std::unique_ptr<btCollisionObject> object;
 };
 
-class ENGINE_API ControllerDynamicsWorld : public Controller {
+class ENGINE_API DynamicsWorld {
 public:
     class RayCastResult {
     public:
@@ -38,13 +39,13 @@ public:
         }
     };
 
-    explicit ControllerDynamicsWorld(Scene& scene, entt::registry& reg, const Config& config);
-    ~ControllerDynamicsWorld() override;
-    NON_COPYABLE(ControllerDynamicsWorld);
-    NON_MOVEABLE(ControllerDynamicsWorld);
+    explicit DynamicsWorld(Scene& scene, entt::registry& reg, const Config& config);
+    virtual ~DynamicsWorld();
+    NON_COPYABLE(DynamicsWorld);
+    NON_MOVEABLE(DynamicsWorld);
 
-    void update(float delta) override;
-    void recalculate(VulkanRenderer& vulkan) override;
+    void update(float delta);
+    void recalculate(VulkanRenderer& vulkan);
     bool contactTest(ContactTestObject& object, CollisionMask mask = CollisionGroup::Everything) const;
     bool contactTestBox(const Vector3& origin, float width, CollisionMask mask = CollisionGroup::Everything) const;
     bool contactTestSphere(const Vector3& origin, float radius, CollisionMask mask = CollisionGroup::Everything) const;

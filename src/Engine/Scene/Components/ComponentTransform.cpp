@@ -1,5 +1,7 @@
 #include "ComponentTransform.hpp"
-#include "../Entity.hpp"
+#include "../Scene.hpp"
+#include "ComponentRigidBody.hpp"
+#include <btBulletDynamicsCommon.h>
 
 using namespace Engine;
 
@@ -64,7 +66,12 @@ Matrix4 ComponentTransform::getAbsoluteInterpolatedTransform() const {
 }
 
 void ComponentTransform::setTransform(const Matrix4& value) {
-    transform = value;
+    if (rigidBody) {
+        rigidBody->setWorldTransform(value);
+        setWorldTransform(rigidBody->getRigidBody()->getWorldTransform());
+    } else {
+        transform = value;
+    }
 }
 
 Vector3 ComponentTransform::getAbsolutePosition() const {
@@ -97,6 +104,18 @@ bool ComponentTransform::isStatic() const {
     return flags & static_cast<uint64_t>(TransformFlags::Static);
 }
 
+void ComponentTransform::setKinematic(const bool value) {
+    if (value) {
+        flags |= static_cast<uint64_t>(TransformFlags::Kinematic);
+    } else {
+        flags &= ~static_cast<uint64_t>(TransformFlags::Kinematic);
+    }
+}
+
+bool ComponentTransform::isKinematic() const {
+    return flags & static_cast<uint64_t>(TransformFlags::Kinematic);
+}
+
 void ComponentTransform::interpolate() {
     if (glm::distance2(transformInterpolated[3], transform[3]) > 50 * 50) {
         transformInterpolated = transform;
@@ -111,4 +130,30 @@ void ComponentTransform::interpolate() {
         transformInterpolated[3].w = 1.0f;
     }
     interpolated = true;
+}
+
+void ComponentTransform::setScene(Scene& value) {
+    scene = &value;
+}
+
+void ComponentTransform::setRigidBody(ComponentRigidBody& value) {
+    rigidBody = &value;
+}
+
+void ComponentTransform::getWorldTransform(btTransform& worldTrans) const {
+    const auto mat = getAbsoluteTransform();
+    /*float scaleX = glm::length(glm::vec3(mat[0][0], mat[0][1], mat[0][2]));
+    float scaleY = glm::length(glm::vec3(mat[1][0], mat[1][1], mat[1][2]));
+    float scaleZ = glm::length(glm::vec3(mat[2][0], mat[2][1], mat[2][2]));
+    glm::mat4 matWithoutScale = glm::scale(mat, glm::vec3(1.0f / scaleX, 1.0f / scaleY, 1.0f / scaleZ));*/
+    worldTrans.setFromOpenGLMatrix(&mat[0][0]);
+}
+
+void ComponentTransform::setWorldTransform(const btTransform& worldTrans) {
+    Matrix4 mat{1.0f};
+    worldTrans.getOpenGLMatrix(&mat[0][0]);
+    mat = glm::scale(mat, Vector3{rigidBody->getScale()});
+    transform = mat;
+    scene->setDirty(*this);
+    scene->setDirty(*rigidBody);
 }

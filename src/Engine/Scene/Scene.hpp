@@ -3,7 +3,7 @@
 #include "../Utils/Exceptions.hpp"
 #include "../Vulkan/VulkanPipeline.hpp"
 #include "Controller.hpp"
-#include "Entity.hpp"
+#include "DynamicsWorld.hpp"
 
 #include <typeindex>
 #include <unordered_map>
@@ -133,6 +133,14 @@ public:
     EntityId getRemoteId(EntityId entity) const;
     EntityId getLocalId(EntityId entity) const;
 
+    DynamicsWorld& getDynamicsWorld() {
+        return dynamicsWorld;
+    }
+
+    const DynamicsWorld& getDynamicsWorld() const {
+        return dynamicsWorld;
+    }
+
 private:
     void updateSelection();
 
@@ -140,6 +148,7 @@ private:
     std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
     std::vector<UserInput*> userInputs;
 
+    DynamicsWorld dynamicsWorld;
     Entity primaryCamera;
     std::optional<Entity> selectedEntity{std::nullopt};
     std::optional<Entity> selectedEntityOpaque{std::nullopt};

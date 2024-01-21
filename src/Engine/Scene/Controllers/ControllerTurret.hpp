@@ -1,12 +1,12 @@
 #pragma once
 
+#include "../DynamicsWorld.hpp"
 #include "ControllerBullets.hpp"
-#include "ControllerRigidBody.hpp"
 
 namespace Engine {
 class ENGINE_API ControllerTurret : public Controller {
 public:
-    explicit ControllerTurret(Scene& scene, entt::registry& reg, ControllerDynamicsWorld& dynamicsWorld,
+    explicit ControllerTurret(Scene& scene, entt::registry& reg, DynamicsWorld& dynamicsWorld,
                               ControllerBullets& bullets);
     ~ControllerTurret() override;
     NON_COPYABLE(ControllerTurret);
@@ -21,7 +21,7 @@ private:
 
     Scene& scene;
     entt::registry& reg;
-    ControllerDynamicsWorld& dynamicsWorld;
+    DynamicsWorld& dynamicsWorld;
     ControllerBullets& bullets;
 };
 } // namespace Engine

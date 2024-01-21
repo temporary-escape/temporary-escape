@@ -90,17 +90,14 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
     scene.setDirty(component);
 }
 
-template <>
+/*template <>
 void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
                                              ComponentRigidBody& component) {
     (void)remoteId;
     (void)handle;
     // component.setup();
     // component.setDirty(true);
-    /*if (const auto* model = reg.try_get<ComponentModel>(handle); model && model->getModel()) {
-        component.setShape(model->getModel()->getCollisionShape().clone());
-    }*/
-}
+}*/
 
 template <>
 void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt::entity handle,
@@ -195,11 +192,7 @@ void ControllerNetwork::unpackComponent(const uint64_t remoteId, const entt::ent
                                         const SyncOperation op) {
     if (op == SyncOperation::Emplace) {
         auto& component = reg.emplace<T>(handle);
-        if constexpr (std::is_same_v<T, ComponentRigidBody>) {
-            component.postUnpack(scene, handle);
-        } else {
-            component.postUnpack(handle);
-        }
+        component.postUnpack(handle);
         obj.convert(component);
         postEmplaceComponent(remoteId, handle, component);
     } else if (op == SyncOperation::Patch) {

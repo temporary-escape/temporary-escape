@@ -4,7 +4,6 @@
 #include "Controllers/ControllerCamera.hpp"
 #include "Controllers/ControllerCameraOrbital.hpp"
 #include "Controllers/ControllerCameraPanning.hpp"
-#include "Controllers/ControllerDynamicsWorld.hpp"
 #include "Controllers/ControllerGrid.hpp"
 #include "Controllers/ControllerIcon.hpp"
 #include "Controllers/ControllerIconSelectable.hpp"
@@ -28,8 +27,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) : lua{lua} {
-    auto& dynamicsWorld = addController<ControllerDynamicsWorld>(config);
+Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
+    lua{lua}, dynamicsWorld{*this, reg, config} {
+
     addController<ControllerGrid>(dynamicsWorld, voxelShapeCache);
     addController<ControllerRigidBody>(dynamicsWorld);
     network = &addController<ControllerNetwork>();
@@ -109,6 +109,8 @@ Entity Scene::fromHandle(entt::entity handle) {
 }
 
 void Scene::update(const float delta) {
+    dynamicsWorld.update(delta);
+
     for (auto& [_, controller] : controllers) {
         controller->update(delta);
     }
@@ -163,6 +165,8 @@ void Scene::updateSelection() {
 }
 
 void Scene::recalculate(VulkanRenderer& vulkan) {
+    dynamicsWorld.recalculate(vulkan);
+
     for (auto& [_, controller] : controllers) {
         controller->recalculate(vulkan);
     }
@@ -208,7 +212,6 @@ Lua& Scene::getLua() const {
 }
 
 bool Scene::contactTestSphere(const Vector3& origin, const float radius) const {
-    const auto& dynamicsWorld = getController<ControllerDynamicsWorld>();
     return dynamicsWorld.contactTestSphere(origin, radius);
 }
 

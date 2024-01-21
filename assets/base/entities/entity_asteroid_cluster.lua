@@ -3,6 +3,8 @@ local AsteroidCluster = require("base.utils.asteroid_cluster")
 
 local EntityAsteroidCluster = {}
 
+local logger = engine.create_logger("base/entity/entity_asteroid_cluster.lua")
+
 function EntityAsteroidCluster.new (entity, data)
     local inst = {}
     setmetatable(inst, { __index = EntityAsteroidCluster })
@@ -28,12 +30,17 @@ function EntityAsteroidCluster.populate (self)
         }
 
         local entity = scene:create_entity_template("asteroid", data)
-        local rigid_body = entity:get_component_rigid_body()
+        --local rigid_body = entity:get_component_rigid_body()
         local model = entity:get_component_model()
         local radius = model.model.radius * size
 
         if cluster:next(radius) then
-            rigid_body:reset_transform(cluster.pos, cluster.orientation)
+            entity.transform:translate(cluster.pos)
+            entity.transform:rotate(cluster.orientation)
+            -- entity.transform:scale(engine.Vector3.new(size, size, size))
+            --rigid_body:reset_transform(cluster.pos, cluster.orientation)
+        else
+            logger:info(string.format("Skipped"))
         end
     end
 
@@ -46,8 +53,9 @@ function EntityAsteroidCluster.populate (self)
     local entity = scene:create_entity_template("asteroid", data)
     local transform = entity:get_component_transform()
     transform:translate(engine.Vector3.new(350.0, 20.0, 0.0))
+
     local rigid_body = entity:get_component_rigid_body()
-    rigid_body:reset_transform(transform.position, transform.orientation)
+    -- rigid_body:reset_transform(transform.position, transform.orientation)
     rigid_body.linear_velocity = engine.Vector3.new(-50.0, 0.0, 0.0)
 end
 
