@@ -33,7 +33,7 @@ TEST_CASE_METHOD(SceneFixture, "Check if box overlaps with dynamics world", "[Sc
 
     SECTION("With radius 1.0f") {
         rigidBody.setScale(1.0f);
-        rigidBody.setShape(sphere);
+        rigidBody.setShape(transform, sphere);
 
         REQUIRE(dynamicsWorld.contactTestSphere({5.0f, 1.0f, 0.0f}, 1.0f, CollisionGroup::Static) == true);
         REQUIRE(dynamicsWorld.contactTestSphere({5.0f, 1.0f, 0.0f}, 1.0f, CollisionGroup::Default) == false);
@@ -42,7 +42,7 @@ TEST_CASE_METHOD(SceneFixture, "Check if box overlaps with dynamics world", "[Sc
 
     SECTION("With radius 2.5f") {
         rigidBody.setScale(2.5f);
-        rigidBody.setShape(sphere);
+        rigidBody.setShape(transform, sphere);
 
         REQUIRE(dynamicsWorld.contactTestSphere({5.0f, 1.0f, 0.0f}, 1.0f, CollisionGroup::Static) == true);
         REQUIRE(dynamicsWorld.contactTestSphere({5.0f, 1.0f, 0.0f}, 1.0f, CollisionGroup::Default) == false);
