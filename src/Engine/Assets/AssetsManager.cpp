@@ -133,6 +133,10 @@ void AssetsManager::findAssets() {
     addToLoadQueue(blocks);
 
     loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        if (!vulkan) {
+            return;
+        }
+
         // Find out the blocks texture usage
         MaterialTextures::Counts counts{
             {TextureUsage::Diffuse, 0},
@@ -160,12 +164,20 @@ void AssetsManager::findAssets() {
     addToLoadQueue(shipTemplates);
 
     loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        if (!vulkan) {
+            return;
+        }
+
         for (const auto& [_, block] : blocks) {
             block->allocateMaterials(*this);
         }
     });
 
     loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        if (!vulkan) {
+            return;
+        }
+
         VulkanBuffer::CreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = blockMaterials.capacity() * sizeof(Block::MaterialUniform);
@@ -178,7 +190,13 @@ void AssetsManager::findAssets() {
         vulkan->copyDataToBuffer(blockMaterialsUbo, blockMaterials.data(), bufferInfo.size);
     });
 
-    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) { materialTextures->finalize(); });
+    loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
+        if (!vulkan) {
+            return;
+        }
+
+        materialTextures->finalize();
+    });
 }
 
 template <typename T> void AssetsManager::addToLoadQueue(Category<T>& assets) {
