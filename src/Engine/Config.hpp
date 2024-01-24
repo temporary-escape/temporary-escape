@@ -116,6 +116,17 @@ struct Config {
         float sideMenuSize{64.0f};
     } gui;
 
+    struct Network {
+        std::vector<std::string> stunServers = {
+            "stun.l.google.com:19302",
+            "stun1.l.google.com:19302",
+            "stun2.l.google.com:19302",
+            "stun3.l.google.com:19302",
+            "stun4.l.google.com:19302",
+        };
+        std::string serverBindAddress{"0.0.0.0"};
+    } network;
+
     struct Input {
         KeyBinding cameraForward{Key::LetterW};
         KeyBinding cameraBackwards{Key::LetterS};

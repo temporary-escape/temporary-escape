@@ -1,5 +1,6 @@
 #include <CLI/CLI.hpp>
 #include <Engine/Client/Application.hpp>
+#include <Engine/Client/DedicatedServer.hpp>
 #include <Engine/Utils/Exceptions.hpp>
 #include <Engine/Utils/Log.hpp>
 
@@ -11,6 +12,15 @@ static int commandPlay(Config& config) {
     {
         Application window{config};
         window.run();
+    }
+    logger.info("Exit success");
+    return EXIT_SUCCESS;
+}
+
+static int commandServer(Config& config) {
+    {
+        DedicatedServer server{config};
+        server.wait();
     }
     logger.info("Exit success");
     return EXIT_SUCCESS;
@@ -47,6 +57,7 @@ int main(int argc, char** argv) {
     parser.add_flag("--singleplayer", config.autoStart, "Auto start singleplayer");
 
     parser.add_subcommand("play", "Play the game")->fallthrough(true);
+    parser.add_subcommand("server", "Start a dedicated server")->fallthrough(true);
     parser.add_subcommand("compress-assets", "Compress all PNG textures into KTX2")->fallthrough(true);
 
 #if defined(_WIN32)
@@ -99,6 +110,8 @@ int main(int argc, char** argv) {
             return commandCompressAssets(config);
         } else if (parser.got_subcommand("play")) {
             return commandPlay(config);
+        } else if (parser.got_subcommand("server")) {
+            return commandServer(config);
         } else {
             return commandPlay(config);
         }
