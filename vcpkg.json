@@ -114,6 +114,9 @@
       "name": "libxml2"
     },
     {
+      "name": "nlohmann-json"
+    },
+    {
       "name": "ad-mipmap"
     },
     {
@@ -296,6 +299,11 @@
       "name": "libxml2",
       "version": "2.10.3",
       "port-version": 1
+    },
+    {
+      "name": "nlohmann-json",
+      "version": "3.11.2",
+      "port-version": 0
     },
     {
       "name": "ad-mipmap",

@@ -77,6 +77,8 @@ target_link_libraries(${PROJECT_NAME}Engine
         VulkanHeaders::VulkanHeaders
         EnTT::EnTT
         ${BULLET_LIBRARIES}
+        nlohmann_json::nlohmann_json
+        msgpackc-cxx
         PRIVATE
         Png
         LibXml2::LibXml2

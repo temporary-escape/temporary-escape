@@ -99,7 +99,6 @@ struct Config {
     bool saveFolderClean{false};
     bool autoStart{false};
     std::string serverPassword;
-    int serverPort = 22443;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 18;
@@ -125,6 +124,8 @@ struct Config {
             "stun4.l.google.com:19302",
         };
         std::string serverBindAddress{"0.0.0.0"};
+        uint16_t serverPort{22443};
+        std::string matchmakerUrl{"wss://matchmaker.lan:8443"};
     } network;
 
     struct Input {

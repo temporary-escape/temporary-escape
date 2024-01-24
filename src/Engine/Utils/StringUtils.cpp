@@ -16,12 +16,17 @@ std::vector<std::string> Engine::splitLast(const std::string_view& str, const st
 
 std::vector<std::string> Engine::split(const std::string_view& str, const std::string_view& delim) {
     std::vector<std::string> strings;
-    size_t start = 0;
-    size_t end = 0;
-    while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
-        end = str.find(delim, start);
-        strings.emplace_back(str.substr(start, end - start));
+    size_t pos = 0;
+    size_t next = 0;
+    while ((next = str.find(delim, pos)) != std::string::npos) {
+        strings.emplace_back(str.substr(pos, next - pos));
+        pos = next + delim.size();
     }
+
+    if (pos < str.size()) {
+        strings.emplace_back(str.substr(pos));
+    }
+
     return strings;
 }
 

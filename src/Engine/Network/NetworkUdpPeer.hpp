@@ -10,6 +10,9 @@ public:
 
     void sendHello();
     void close();
+    const asio::ip::udp::endpoint& getEndpoint() const {
+        return endpoint;
+    }
 
 private:
     asio::io_service& service;

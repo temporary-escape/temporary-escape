@@ -1,5 +1,6 @@
 #include "../../Common.hpp"
 #include <Engine/Client/DedicatedServer.hpp>
+#include <Engine/Network/NetworkMatchmaker.hpp>
 #include <Engine/Network/NetworkUdpClient.hpp>
 #include <Engine/Network/NetworkUdpServer.hpp>
 
@@ -11,6 +12,8 @@ class UdpServerFixture {
 public:
     UdpServerFixture() {
         config.network.serverBindAddress = "::1";
+        config.network.serverPort = 0;
+
         work = std::make_unique<asio::io_service::work>(service);
         for (auto i = 0; i < 4; i++) {
             threads.emplace_back([this]() {
@@ -55,6 +58,10 @@ public:
         server = std::make_unique<NetworkUdpServer>(config, service);
     }
 
+    void startMatchmaker() {
+        matchmaker = std::make_unique<NetworkMatchmaker>(config);
+    }
+
     std::shared_ptr<NetworkUdpClient> startClient(const std::string& address, const uint16_t port) {
         return std::make_shared<NetworkUdpClient>(service, address, port);
     }
@@ -64,11 +71,21 @@ public:
     std::unique_ptr<asio::io_service::work> work;
     std::list<std::thread> threads;
     std::unique_ptr<NetworkUdpServer> server;
+    std::unique_ptr<NetworkMatchmaker> matchmaker;
 };
 
 TEST_CASE_METHOD(UdpServerFixture, "Start UDP server", "[udp_server]") {
     startServer();
 
-    auto client = startClient("::1", config.serverPort);
+    auto client = startClient(server->getEndpoint().address().to_string(), server->getEndpoint().port());
     client.reset();
+}
+
+TEST_CASE_METHOD(UdpServerFixture, "Start UDP server with matchmaker", "[udp_server]") {
+    config.network.serverBindAddress = "::";
+    config.network.matchmakerUrl = "wss://matchmaker.lan:8443";
+    startMatchmaker();
+
+    std::this_thread::sleep_for(std::chrono::seconds{60});
+    matchmaker.reset();
 }

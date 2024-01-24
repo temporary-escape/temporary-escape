@@ -395,7 +395,7 @@ void Application::startClient() {
 
     future = std::async([this]() -> std::function<void()> {
         client = std::make_unique<Client>(
-            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), "localhost", config.serverPort);
+            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), "localhost", config.network.serverPort);
 
         return [this]() { checkForClientScene(); };
     });

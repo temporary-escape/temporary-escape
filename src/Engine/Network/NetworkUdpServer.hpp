@@ -11,6 +11,9 @@ public:
     virtual ~NetworkUdpServer();
     void receive();
     void stop();
+    const asio::ip::udp::endpoint& getEndpoint() const {
+        return localEndpoint;
+    }
 
 private:
     const Config& config;
@@ -18,7 +21,8 @@ private:
     asio::io_service::strand strand;
     asio::ip::udp::socket socket;
     NetworkStunClient stun;
-    asio::ip::udp::endpoint endpoint;
+    asio::ip::udp::endpoint localEndpoint;
+    asio::ip::udp::endpoint peerEndpoint;
     std::array<uint8_t, 1400> buffer{};
     std::mutex mutex;
     std::unordered_map<asio::ip::udp::endpoint, std::shared_ptr<NetworkUdpPeer>> peers{};

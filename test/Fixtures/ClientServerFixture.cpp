@@ -31,8 +31,8 @@ void ClientServerFixture::startServer() {
 }
 
 void ClientServerFixture::clientConnect() {
-    client =
-        std::make_unique<Client>(config, *assetsManager, playerLocalProfile, nullptr, "localhost", config.serverPort);
+    client = std::make_unique<Client>(
+        config, *assetsManager, playerLocalProfile, nullptr, "localhost", config.network.serverPort);
     clientFlag.store(true);
     clientThread = std::thread([this]() {
         while (clientFlag.load()) {

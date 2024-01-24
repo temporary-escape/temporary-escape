@@ -88,7 +88,7 @@ void Server::load() {
     }
 
     try {
-        networkServer = std::make_unique<NetworkTcpServer>(worker.getService(), *this, config.serverPort, true);
+        networkServer = std::make_unique<NetworkTcpServer>(worker.getService(), *this, config.network.serverPort, true);
         logger.info("TCP server started");
     } catch (...) {
         EXCEPTION_NESTED("Failed to start the server");

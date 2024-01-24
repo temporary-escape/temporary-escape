@@ -1,0 +1,50 @@
+log:
+  level: DEBUG
+
+api:
+  insecure: false
+  dashboard: false
+
+entryPoints:
+  http:
+    address: ":8000"
+  https:
+    address: ":8443"
+
+providers:
+  file:
+    filename: "/tmp/matchmaker/traefik-local.yaml"
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /tmp/matchmaker/certs/server.crt
+        keyFile: /tmp/matchmaker/certs/server.key
+  certificates:
+    - certFile: /tmp/matchmaker/certs/server.crt
+      keyFile: /tmp/matchmaker/certs/server.key
+#  domains:
+ #   - main: "matchmaker.lan"
+
+http:
+  routers:
+    matchmaker:
+      rule: "Host(`matchmaker.lan`)"
+      service: "matchmaker"
+      entryPoints:
+        - https
+      tls: true
+      middlewares:
+        - "sslheader"
+  services:
+    matchmaker:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3000"
+  middlewares:
+    sslheader:
+      headers:
+        customResponseHeaders:
+          "X-Forwarded-Proto": "https"
+          "X-Custom-Request-Header": "AACAA"
