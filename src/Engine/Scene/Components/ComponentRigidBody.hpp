@@ -92,7 +92,9 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
         msgpack::object const& operator()(msgpack::object const& o, btTransform& v) const {
             if (o.type != msgpack::type::BIN || o.via.bin.size != sizeof(btTransform))
                 throw msgpack::type_error();
-            v = *reinterpret_cast<const btTransform*>(o.via.bin.ptr);
+
+            const auto& data = *reinterpret_cast<const btTransformFloatData*>(o.via.bin.ptr);
+            v.deSerialize(data);
             return o;
         }
     };
@@ -100,8 +102,11 @@ MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
     template <> struct pack<btTransform> {
         template <typename Stream>
         msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, btTransform const& v) const {
-            o.pack_bin(sizeof(btTransform));
-            o.pack_bin_body(reinterpret_cast<const char*>(&v), sizeof(btTransform));
+            btTransformFloatData data{};
+            v.serialize(data);
+
+            o.pack_bin(sizeof(data));
+            o.pack_bin_body(reinterpret_cast<const char*>(&data), sizeof(data));
             return o;
         }
     };
