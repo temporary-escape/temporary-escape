@@ -15,6 +15,10 @@ public:
         return localEndpoint;
     }
 
+    void stunRequest(NetworkStunClient::Callback callback) {
+        stun.send(std::move(callback));
+    }
+
 private:
     const Config& config;
     asio::io_service& service;

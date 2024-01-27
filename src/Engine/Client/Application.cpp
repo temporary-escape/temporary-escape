@@ -69,6 +69,10 @@ Application::Application(Config& config) :
         gui.mainMenu->setEnabled(false);
         startSinglePlayer();
     });
+    gui.mainMenu->setOnClickMultiplayer([this]() {
+        gui.mainMenu->setEnabled(false);
+        gui.serverBrowser->setEnabled(true);
+    });
     gui.mainMenu->setOnClickEditor([this]() {
         gui.mainMenu->setEnabled(false);
         startEditor();
@@ -92,6 +96,12 @@ Application::Application(Config& config) :
         if (value) {
             Xml::toFile(this->config.userdataPath / "settings.xml", this->config);
         }
+    });
+
+    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>();
+    gui.serverBrowser->setOnClickClose([this]() {
+        gui.mainMenu->setEnabled(true);
+        gui.serverBrowser->setEnabled(false);
     });
 
     loadProfile();

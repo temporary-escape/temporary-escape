@@ -21,9 +21,9 @@ NetworkUdpServer::NetworkUdpServer(const Config& config, asio::io_service& servi
     logger.info("UDP server started on address: {}", localEndpoint);
 
     // Send STUN request only if we are not running on localhost
-    if (config.network.serverBindAddress != "::1" && config.network.serverBindAddress != "127.0.0.1") {
+    /*if (config.network.serverBindAddress != "::1" && config.network.serverBindAddress != "127.0.0.1") {
         stun.sendRequest();
-    }
+    }*/
 }
 
 NetworkUdpServer::~NetworkUdpServer() {
@@ -37,13 +37,13 @@ void NetworkUdpServer::receive() {
             logger.error("UDP server receive error: {}", ec.message());
             socket.close();
         } else {
-            logger.error("UDP server receive endpoint: {}", peerEndpoint);
+            // logger.error("UDP server receive endpoint: {}", peerEndpoint);
 
             if (stun.isRunning() && stun.isValid(buffer.data(), received)) {
                 stun.parse(buffer.data(), received);
-                if (stun.hasResult()) {
+                /*if (stun.hasResult()) {
                     logger.info("UDP server public mapped address: {}", stun.getResult());
-                }
+                }*/
             } else {
                 std::lock_guard lock{mutex};
                 auto found = peers.find(peerEndpoint);
@@ -73,6 +73,8 @@ void NetworkUdpServer::stop() {
             logger.error("UDP server close error: {}", ec.message());
         }
     });
+
+    logger.warn("NetworkUdpServer stop done");
 }
 
 /*asio::ip::udp::endpoint NetworkUdpServer::endpoint(uint32_t port, bool ipv6) {

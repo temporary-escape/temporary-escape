@@ -5,6 +5,7 @@
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
+#include "../Gui/Windows/GuiWindowServerBrowser.hpp"
 #include "../Gui/Windows/GuiWindowSettings.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
@@ -86,6 +87,7 @@ private:
         GuiWindowMainMenu* mainMenu;
         GuiWindowCreateProfile* createProfile;
         GuiWindowSettings* settings;
+        GuiWindowServerBrowser* serverBrowser;
     } gui;
 
     struct {

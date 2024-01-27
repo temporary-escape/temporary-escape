@@ -17,6 +17,7 @@
 #include <shared_mutex>
 
 namespace Engine {
+class ENGINE_API Matchmaker;
 class ENGINE_API Lua;
 class ENGINE_API NetworkTcpServer;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Future.hpp"
 #include "Log.hpp"
 #include <filesystem>
 #include <fmt/format.h>
@@ -24,3 +25,5 @@ ENGINE_API void backtrace(Logger& logger, const std::exception& e);
 #define BACKTRACE(EXP, MSG, ...)                                                                                       \
     logger.error(std::string{"Exception at {}:{} "} + MSG, __FILE__, __LINE__ EXCEPTION_VA_ARGS(__VA_ARGS__));         \
     Engine::backtrace(logger, EXP)
+
+#define REJECT(PROMISE, MSG, ...) PROMISE.reject<std::runtime_error>(fmt::format(MSG EXCEPTION_VA_ARGS(__VA_ARGS__)))

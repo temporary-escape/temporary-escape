@@ -15,17 +15,28 @@ template <typename T> static T toBigEndian(T value) {
 
 static constexpr int32_t magicCookie = 0x2112A442;
 static constexpr int16_t attrTypeMappedAddress = 0x0020;
-static const int16_t stunResponseTypeRev = toBigEndian(static_cast<int16_t>(StunMessageType::Response));
+static const int16_t stunResponseTypeRev =
+    toBigEndian(static_cast<int16_t>(NetworkStunClient::StunMessageType::Response));
 static const int32_t magicCookieRev = toBigEndian(magicCookie);
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkStunRequest Engine::createStunRequest() {
+static std::string createNonce() {
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<uint8_t> dist;
+    std::uniform_int_distribution<char> dist{'a', 'z'};
 
-    NetworkStunRequest req{};
+    std::string res;
+    res.resize(12);
+    for (auto& c : res) {
+        c = dist(rng);
+    }
+
+    return res;
+}
+
+NetworkStunClient::StunRequest NetworkStunClient::createStunRequest(const std::string& nonce) {
+    StunRequest req{};
     req.messageType = StunMessageType::Request;
     req.messageLength = 0;
     req.magicCookie = magicCookie;
@@ -34,8 +45,8 @@ NetworkStunRequest Engine::createStunRequest() {
     reverseEndianness(req.messageLength);
     reverseEndianness(req.magicCookie);
 
-    for (auto& b : req.transactionId) {
-        b = dist(rng);
+    for (size_t i = 0; i < 12; i++) {
+        req.transactionId[i] = nonce[i];
     }
 
     return req;
@@ -48,18 +59,36 @@ NetworkStunClient::NetworkStunClient(const Config& config, asio::io_service& ser
 
 NetworkStunClient::~NetworkStunClient() = default;
 
-void NetworkStunClient::sendRequest() {
-    strand.post([this]() {
+void NetworkStunClient::send(Callback callback) {
+    strand.post([this, c = std::move(callback)]() {
+        logger.info("STUN client sending request");
+
+        const auto nonce = createNonce();
+        auto req = std::make_shared<Request>(Request{std::move(c), nonce});
+        requests.emplace(nonce, req);
+
+        while (!servers.empty()) {
+            servers.pop();
+        }
+
         for (const auto& address : config.network.stunServers) {
             servers.push(address);
         }
 
-        doQuery();
+        doQuery(req);
     });
 }
 
-void NetworkStunClient::doQuery() {
+void NetworkStunClient::cancelRequest(const NetworkStunClient::RequestPtr& req) {
+    const auto it = requests.find(req->nonce);
+    if (it != requests.end()) {
+        requests.erase(it);
+    }
+}
+
+void NetworkStunClient::doQuery(const RequestPtr& req) {
     if (servers.empty()) {
+        cancelRequest(req);
         return;
     }
 
@@ -68,6 +97,7 @@ void NetworkStunClient::doQuery() {
     const auto tokens = splitLast(servers.front(), ":");
     if (tokens.size() != 2) {
         logger.error("Invalid STUN address: {}", servers.front());
+        cancelRequest(req);
         return;
     }
 
@@ -76,9 +106,10 @@ void NetworkStunClient::doQuery() {
     query = std::make_unique<asio::ip::udp::resolver::query>(asio::ip::udp::v4(), tokens[0], tokens[1]);
 
     using Result = asio::ip::udp::resolver::results_type;
-    resolver.async_resolve(*query, strand.wrap([this](const asio::error_code ec, Result result) {
+    resolver.async_resolve(*query, strand.wrap([this, req](const asio::error_code ec, const Result& result) {
         if (ec) {
             logger.error("STUN client failed to resolve query error: {}", ec.message());
+            cancelRequest(req);
         } else {
             endpoints.clear();
             for (const auto& e : result) {
@@ -88,22 +119,22 @@ void NetworkStunClient::doQuery() {
                 }
             }
 
-            doRequest();
+            doRequest(req);
         }
     }));
 }
 
-void NetworkStunClient::doRequest() {
+void NetworkStunClient::doRequest(const RequestPtr& req) {
     if (endpoints.empty()) {
-        doQuery();
+        doQuery(req);
         return;
     }
 
     endpoint = endpoints.back();
     endpoints.pop_back();
 
-    request = createStunRequest();
-    auto buff = asio::buffer(&request, sizeof(NetworkStunRequest));
+    request = createStunRequest(req->nonce);
+    auto buff = asio::buffer(&request, sizeof(StunRequest));
 
     if (deadline) {
         asio::error_code ec;
@@ -114,19 +145,20 @@ void NetworkStunClient::doRequest() {
     }
 
     deadline = std::make_unique<asio::steady_timer>(service, deadlineInterval);
-    deadline->async_wait(strand.wrap([this](const asio::error_code ec) {
+    deadline->async_wait(strand.wrap([this, req](const asio::error_code ec) {
         if (ec) {
             logger.error("STUN client deadline timer error: {}", ec.message());
+            cancelRequest(req);
         } else {
             if (!mapped) {
                 logger.warn("STUN client timeout waiting for response");
-                doRequest();
+                doRequest(req);
             }
         }
     }));
 
-    logger.info("STUN client sending request to: {}", endpoint);
-    socket.async_send_to(buff, endpoint, strand.wrap([this](const asio::error_code ec, const size_t sent) {
+    logger.debug("STUN client sending request to: {}", endpoint);
+    socket.async_send_to(buff, endpoint, strand.wrap([](const asio::error_code ec, const size_t sent) {
         if (ec) {
             logger.error("STUN client failed send request error: {}", ec.message());
         }
@@ -155,11 +187,11 @@ bool NetworkStunClient::isValid(const void* data, size_t size) const {
 
 // Adapted from: https://gist.github.com/jyaif/e0db3a680443730c05ca36be26f22c93
 void NetworkStunClient::parse(const void* data, size_t size) {
-    if (size < 32 || size > sizeof(NetworkStunResponse)) {
+    if (size < 32 || size > sizeof(StunResponse)) {
         return;
     }
 
-    NetworkStunResponse res{};
+    StunResponse res{};
     std::memcpy(&res, data, size);
 
     reverseEndianness(res.messageType);
@@ -200,11 +232,21 @@ void NetworkStunClient::parse(const void* data, size_t size) {
                             std::to_string(res.attributes[i + 11] ^ ((magicCookie & 0x000000ff) >> 0));
 
             logger.info("STUN client received address: {}:{}", ip, port);
-
             mapped = asio::ip::udp::endpoint{asio::ip::address::from_string(ip), port};
+            break;
         }
 
         i += 4 + length;
+    }
+
+    if (mapped) {
+        const auto nonce = std::string{reinterpret_cast<const char*>(res.transactionId.data()), 12};
+
+        const auto it = requests.find(nonce);
+        if (it != requests.end()) {
+            it->second->callback(Result{*mapped});
+            requests.erase(it);
+        }
     }
 }
 

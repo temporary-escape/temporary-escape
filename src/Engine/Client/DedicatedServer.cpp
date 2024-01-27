@@ -18,7 +18,18 @@ DedicatedServer::DedicatedServer(Config& config) : config{config} {
         });
     }
 
-    server = std::make_unique<NetworkUdpServer>(config, service);
+    try {
+        server = std::make_unique<NetworkUdpServer>(config, service);
+        matchmaker = std::make_unique<Matchmaker>(*this, config.network.matchmakerUrl);
+
+        /*server->stunRequest([this](NetworkStunClient::Result result) {
+            logger.info("Got STUN response endpoint: {}", result.endpoint);
+            matchmaker->serverRegister("Some Server Name", result.endpoint);
+        });*/
+    } catch (...) {
+        stop();
+        throw;
+    }
 }
 
 DedicatedServer::~DedicatedServer() {
@@ -26,8 +37,13 @@ DedicatedServer::~DedicatedServer() {
 }
 
 void DedicatedServer::stop() {
+    if (matchmaker) {
+        logger.info("Stopping matchmaker");
+        matchmaker->close();
+    }
+
     if (server) {
-        logger.info("Closing server");
+        logger.info("Stopping server");
         server->stop();
     }
 
@@ -46,6 +62,9 @@ void DedicatedServer::stop() {
         }
         threads.clear();
     }
+
+    matchmaker.reset();
+    server.reset();
 }
 
 void DedicatedServer::wait() {
@@ -55,4 +74,14 @@ void DedicatedServer::wait() {
 
     logger.info("Received signal: {}", res);
     stop();
+}
+
+void DedicatedServer::onMatchmakerConnect() {
+    server->stunRequest([this](NetworkStunClient::Result result) {
+        logger.info("Got STUN response endpoint: {}", result.endpoint);
+        matchmaker->serverRegister("Some Server Name", result.endpoint);
+    });
+}
+
+void DedicatedServer::onMatchmakerDisconnect() {
 }

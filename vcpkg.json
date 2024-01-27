@@ -117,6 +117,9 @@
       "name": "nlohmann-json"
     },
     {
+      "name": "date"
+    },
+    {
       "name": "ad-mipmap"
     },
     {
@@ -304,6 +307,11 @@
       "name": "nlohmann-json",
       "version": "3.11.2",
       "port-version": 0
+    },
+    {
+      "name": "date",
+      "version": "3.0.1",
+      "port-version": 2
     },
     {
       "name": "ad-mipmap",

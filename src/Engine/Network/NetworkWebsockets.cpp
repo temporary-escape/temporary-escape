@@ -1,4 +1,4 @@
-#include "NetworkMatchmaker.hpp"
+#include "NetworkWebsockets.hpp"
 #include "../Utils/Base64.hpp"
 #include "../Utils/StringUtils.hpp"
 
@@ -32,7 +32,7 @@ static Response parseResponse(asio::streambuf& buff) {
     Response res{};
 
     size_t pos{0};
-    size_t next{0};
+    size_t next;
     while ((next = raw.find("\r\n", pos)) != std::string::npos) {
         auto line = raw.substr(pos, next - pos);
         pos = next + 2;
@@ -40,8 +40,6 @@ static Response parseResponse(asio::streambuf& buff) {
         if (line.empty()) {
             break;
         }
-
-        logger.info("Header: {}", line);
 
         if (res.status == 0) {
             auto d = line.find(' ');
@@ -68,42 +66,48 @@ static Response parseResponse(asio::streambuf& buff) {
     return res;
 }
 
-NetworkMatchmaker::NetworkMatchmaker(const Config& config) :
-    config{config}, resolver{service}, ssl{asio::ssl::context::tls_client}, socket{service, ssl} {
+NetworkWebsockets::NetworkWebsockets(asio::io_context& service, Receiver& receiver, std::string url) :
+    service{service},
+    receiver{receiver},
+    url{std::move(url)},
+    resolver{service},
+    ssl{asio::ssl::context::tls_client},
+    socket{service, ssl} {
 
     // Ignore certificate
     socket.set_verify_mode(asio::ssl::verify_none);
-
-    work = std::make_unique<asio::io_context::work>(service);
-    thread = std::thread{[this]() {
-        try {
-            service.run();
-        } catch (std::exception& e) {
-            BACKTRACE(e, "NetworkMatchmaker thread fatal error");
-        }
-    }};
-
-    service.post([this]() { resolve(); });
 }
 
-NetworkMatchmaker::~NetworkMatchmaker() {
-    if (work) {
-        work.reset();
-        service.post([this]() {
-            asio::error_code ec;
-            socket.shutdown(ec);
+NetworkWebsockets::~NetworkWebsockets() = default;
+
+void NetworkWebsockets::start() {
+    auto self = shared_from_this();
+    service.post([self]() {
+        self->connected = false;
+        self->streambuf.consume(self->streambuf.size());
+        self->received.clear();
+        self->resolve();
+    });
+}
+
+void NetworkWebsockets::stop() {
+    if (!shutdownFlag.load()) {
+        shutdownFlag.store(true);
+        socket.async_shutdown([](const asio::error_code ec) {
             if (ec) {
-                logger.error("Matchmaker client failed to close socket error: {}", ec.message());
+                logger.error("WSS client stopping error: {}", ec.message());
             }
         });
-        thread.join();
     }
 }
 
-void NetworkMatchmaker::resolve() {
-    auto tokens = split(config.network.matchmakerUrl, "://");
+void NetworkWebsockets::resolve() {
+    logger.info("WSS client connecting to: '{}'", url);
+
+    auto tokens = split(url, "://");
     if (tokens.size() != 2 || tokens[0] != "wss") {
-        logger.error("Matchmaker client invalid address: {}", config.network.matchmakerUrl);
+        logger.error("WSS client invalid address: {}", url);
+        receiver.onConnectFailed();
         return;
     }
 
@@ -111,63 +115,71 @@ void NetworkMatchmaker::resolve() {
 
     tokens = split(host, ":");
     if (tokens.size() != 2) {
-        logger.error("Matchmaker client invalid address: {}", config.network.matchmakerUrl);
+        logger.error("WSS client invalid address: {}", url);
+        receiver.onConnectFailed();
         return;
     }
 
     query = std::make_unique<asio::ip::tcp::resolver::query>(asio::ip::tcp::v4(), tokens[0], tokens[1]);
+    auto self = shared_from_this();
 
     using Result = asio::ip::tcp::resolver::results_type;
-    resolver.async_resolve(*query, [this](const asio::error_code ec, Result result) {
+    resolver.async_resolve(*query, [self](const asio::error_code ec, const Result& result) {
         if (ec) {
-            logger.error("Matchmaker client failed to resolve query error: {}", ec.message());
+            logger.error("WSS client failed to resolve query error: {}", ec.message());
+            self->receiver.onConnectFailed();
         } else {
-            endpoints.clear();
+            self->endpoints.clear();
             for (const auto& e : result) {
                 if (e.endpoint().address().is_v4()) {
-                    logger.debug("Matchmaker client resolved host: {}", e.endpoint());
-                    endpoints.push_back(e.endpoint());
+                    logger.debug("WSS client resolved host: {}", e.endpoint());
+                    self->endpoints.push_back(e.endpoint());
                 }
             }
 
-            connect();
+            self->connect();
         }
     });
 }
 
-void NetworkMatchmaker::connect() {
+void NetworkWebsockets::connect() {
     if (endpoints.empty()) {
-        logger.error("Matchmaker client failed to connect");
+        logger.error("WSS client failed to connect");
+        receiver.onConnectFailed();
         return;
     }
 
-    socket.lowest_layer().async_connect(endpoints.back(), [this](const asio::error_code ec) {
+    logger.debug("WSS client trying address: '{}'", endpoints.back());
+
+    auto self = shared_from_this();
+    socket.lowest_layer().async_connect(endpoints.back(), [self](const asio::error_code ec) {
         if (ec) {
-            logger.warn("Matchmaker client connect error: {}", ec.message());
-            endpoints.pop_back();
-            connect();
+            logger.warn("WSS client connect error: {}", ec.message());
+            self->endpoints.pop_back();
+            self->connect();
         } else {
-            handshake();
-            // wsHandshakeSend();
+            self->handshake();
         }
     });
 }
 
-void NetworkMatchmaker::handshake() {
-    socket.async_handshake(asio::ssl::stream_base::client, [this](const asio::error_code ec) {
+void NetworkWebsockets::handshake() {
+    auto self = shared_from_this();
+    socket.async_handshake(asio::ssl::stream_base::client, [self](const asio::error_code ec) {
         if (ec) {
-            logger.error("Matchmaker client failed to perform handshake error: {}", ec.message());
+            logger.error("WSS client failed to perform handshake error: {}", ec.message());
+            self->close();
         } else {
-            logger.info("Matchmaker client connected");
-            wsHandshakeSend();
+            logger.debug("WSS client connected");
+            self->wsHandshakeSend();
         }
     });
 }
 
-void NetworkMatchmaker::wsHandshakeSend() {
+void NetworkWebsockets::wsHandshakeSend() {
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<uint8_t> dist;
+    std::uniform_int_distribution<uint32_t> dist{0x00, 0xFF};
     for (auto& n : nonce) {
         n = dist(rng);
     }
@@ -190,46 +202,49 @@ void NetworkMatchmaker::wsHandshakeSend() {
 
     auto msg = std::make_shared<std::string>(req.str());
     auto buff = asio::buffer(msg->data(), msg->size());
-    socket.async_write_some(buff, [this](const asio::error_code ec, const size_t written) {
+    auto self = shared_from_this();
+    socket.async_write_some(buff, [self](const asio::error_code ec, const size_t written) {
         if (ec) {
-            logger.error("Matchmaker client failed to send initial message error: {}", ec.message());
+            logger.error("WSS client failed to send initial message error: {}", ec.message());
+            self->close();
         } else {
-            wsHandshakeReceive();
+            self->wsHandshakeReceive();
         }
     });
 }
 
-void NetworkMatchmaker::wsHandshakeReceive() {
-    asio::async_read_until(socket, streambuf, "\r\n\r\n", [this](const asio::error_code ec, const std::size_t length) {
+void NetworkWebsockets::wsHandshakeReceive() {
+    auto self = shared_from_this();
+    asio::async_read_until(socket, streambuf, "\r\n\r\n", [self](const asio::error_code ec, const std::size_t length) {
         if (ec) {
-            logger.error("Matchmaker client failed to read initial message error: {}", ec.message());
+            logger.error("WSS client failed to read initial message error: {}", ec.message());
+            self->close();
         } else {
-            streambuf.commit(length);
-            const auto res = parseResponse(streambuf);
+            self->streambuf.commit(length);
+            const auto res = parseResponse(self->streambuf);
             if (res.status != 101 || !res.hasHeader("Upgrade", "websocket")) {
-                logger.error("Matchmaker client failed to perform handshake status: {}", res.status);
+                logger.error("WSS client failed to perform handshake status: {}", res.status);
+                self->close();
             } else {
-                logger.info("Matchmaker client received handshake");
+                logger.info("WSS client received handshake");
 
                 // Start receiving
-                receive();
+                self->receive();
+                self->receiver.onConnect();
 
-                // Send initial message
-                auto msg = Json::object();
-                msg["hello"] = std::string{"world"};
-                send(msg);
+                self->connected = true;
             }
-            streambuf.consume(length);
+            self->streambuf.consume(length);
         }
     });
 }
 
-void NetworkMatchmaker::send(const Json& json) {
+void NetworkWebsockets::send(const Json& json) {
     auto payload = json.dump();
     send(Frame::Opcode::Text, payload.data(), payload.size());
 }
 
-void NetworkMatchmaker::send(const Frame::Opcode opcode, const void* data, const size_t length) {
+void NetworkWebsockets::send(const Frame::Opcode opcode, const void* data, const size_t length) {
     auto msg = std::make_shared<std::vector<uint8_t>>();
 
     uint8_t op;
@@ -280,8 +295,8 @@ void NetworkMatchmaker::send(const Frame::Opcode opcode, const void* data, const
 
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<uint8_t> dist;
-    std::array<uint8_t, 4> mask;
+    std::uniform_int_distribution<uint32_t> dist{0x00, 0xFF};
+    std::array<uint8_t, 4> mask{};
     for (auto& n : mask) {
         n = dist(rng);
     }
@@ -295,57 +310,81 @@ void NetworkMatchmaker::send(const Frame::Opcode opcode, const void* data, const
     }
 
     auto buff = asio::buffer(msg->data(), msg->size());
-    socket.async_write_some(buff, [this](const asio::error_code ec, const std::size_t written) {
+    auto self = shared_from_this();
+    socket.async_write_some(buff, [self](const asio::error_code ec, const std::size_t written) {
         if (ec) {
-            logger.error("Matchmaker client failed to send message error: {}", ec.message());
+            logger.error("WSS client failed to send message error: {}", ec.message());
+            self->close();
         }
     });
 }
 
-void NetworkMatchmaker::close() {
-    asio::error_code ec;
-    socket.shutdown(ec);
-    if (ec) {
-        logger.error("Matchmaker client closing connection error: {}", ec.message());
+void NetworkWebsockets::close() {
+    if (shutdownFlag.load()) {
+        return;
     }
+
+    shutdownFlag.store(true);
+    logger.info("NetworkWebsockets::close async_shutdown");
+    socket.async_shutdown([](const asio::error_code ec) {
+        if (ec) {
+            logger.error("WSS client closing connection error: {}", ec.message());
+        }
+    });
+
+    if (connected) {
+        receiver.onClose();
+    } else {
+        receiver.onConnectFailed();
+    }
+
+    connected = false;
 }
 
-void NetworkMatchmaker::receive() {
+void NetworkWebsockets::receive() {
     auto buff = asio::buffer(buffer.data(), buffer.size());
-    socket.async_read_some(buff, [this](const asio::error_code ec, const std::size_t read) {
+    auto self = shared_from_this();
+    socket.async_read_some(buff, [self](const asio::error_code ec, const std::size_t read) {
         if (ec) {
-            logger.error("Matchmaker client failed to read message error: {}", ec.message());
+            logger.error("WSS client failed to read message error: {}", ec.message());
+            self->close();
         } else {
-            const auto offset = received.size();
-            received.resize(offset + read);
-            std::memcpy(received.data() + offset, buffer.data(), read);
+            const auto offset = self->received.size();
+            self->received.resize(offset + read);
+            std::memcpy(self->received.data() + offset, self->buffer.data(), read);
 
             try {
                 while (true) {
-                    const auto frame = tryDecode();
+                    const auto frame = self->tryDecode();
                     if (frame.opcode == Frame::Opcode::Text) {
-                        logger.info("Received message: {}", frame.body);
+                        Json json;
+                        try {
+                            json = Json::parse(frame.body);
+                        } catch (std::exception& e) {
+                            logger.error("Received malformed json error: {}", e.what());
+                        }
+                        self->receiver.onReceive(std::move(json));
                     } else if (frame.opcode == Frame::Opcode::Close) {
-                        logger.info("Received connection closed");
-                        close();
+                        logger.debug("WSS client received connection closed frame");
+                        self->close();
                         return;
                     } else if (frame.opcode == Frame::Opcode::Ping) {
-                        send(Frame::Opcode::Pong, frame.body.data(), frame.body.size());
+                        self->send(Frame::Opcode::Pong, frame.body.data(), frame.body.size());
                     } else {
                         break;
                     }
                 }
 
-                receive();
+                self->receive();
             } catch (std::exception& e) {
-                BACKTRACE(e, "Matchmaker client failed to parse message");
-                close();
+                BACKTRACE(e, "WSS client failed to parse message");
+                self->close();
             }
         }
     });
 }
 
-NetworkMatchmaker::Frame NetworkMatchmaker::tryDecode() {
+NetworkWebsockets::Frame NetworkWebsockets::tryDecode() {
     const uint8_t* src = received.data();
     auto read = received.size();
 
@@ -354,10 +393,10 @@ NetworkMatchmaker::Frame NetworkMatchmaker::tryDecode() {
     }
 
     if ((src[0] & WS_FIN) == 0) {
-        EXCEPTION("Not a FIN packet");
+        EXCEPTION("Not a FIN frame");
     }
 
-    Frame::Opcode opcode{Frame::Opcode::None};
+    Frame::Opcode opcode;
     if ((src[0] & WS_FR_OP_PING) == WS_FR_OP_PING) {
         opcode = Frame::Opcode::Ping;
     } else if ((src[0] & WS_FR_OP_PONG) == WS_FR_OP_PONG) {
@@ -366,6 +405,8 @@ NetworkMatchmaker::Frame NetworkMatchmaker::tryDecode() {
         opcode = Frame::Opcode::Close;
     } else if (src[0] & WS_FR_OP_TXT) {
         opcode = Frame::Opcode::Text;
+    } else {
+        EXCEPTION("Invalid frame opcode");
     }
 
     const auto masked = (src[1] & WS_MASK) != 0;
@@ -379,7 +420,6 @@ NetworkMatchmaker::Frame NetworkMatchmaker::tryDecode() {
             return {};
         }
 
-        read -= 2;
         src += 2;
     }
 
@@ -442,7 +482,7 @@ NetworkMatchmaker::Frame NetworkMatchmaker::tryDecode() {
 
         if (mask) {
             for (size_t i = 0; i < frame.body.size(); i++) {
-                frame.body[i] ^= mask[i % 4];
+                frame.body[i] = static_cast<char>(static_cast<uint8_t>(frame.body[i]) ^ mask[i % 4]);
             }
         }
     }
