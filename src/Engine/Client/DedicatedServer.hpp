@@ -8,7 +8,7 @@
 #include <thread>
 
 namespace Engine {
-class ENGINE_API DedicatedServer /* : public Matchmaker::Listener*/ {
+class ENGINE_API DedicatedServer : public NetworkDispatcher2 {
 public:
     explicit DedicatedServer(Config& config);
     ~DedicatedServer();

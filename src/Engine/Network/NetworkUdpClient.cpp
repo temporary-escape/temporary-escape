@@ -20,6 +20,7 @@ NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& servi
 }
 
 void NetworkUdpClient::start() {
+    startAckTimer();
     receive();
     logger.info("UDP client started on address: {}", socket.local_endpoint());
 }
@@ -32,6 +33,7 @@ void NetworkUdpClient::stop() {
     auto self = shared_from_this();
     strand.post([self]() {
         asio::error_code ec;
+        self->stopAckTimer();
         (void)self->socket.close(ec);
         if (ec) {
             logger.error("UDP client close error: {}", ec.message());
@@ -62,7 +64,10 @@ void NetworkUdpClient::receive() {
     socket.async_receive_from(
         buff, peerEndpoint, strand.wrap([self, packet](asio::error_code ec, const size_t received) {
             if (ec) {
-                logger.error("UDP client receive error: {}", ec.message());
+                // Cancelled?
+                if (ec != asio::error::operation_aborted) {
+                    logger.error("UDP client receive error: {}", ec.message());
+                }
                 (void)self->socket.close(ec);
             } else {
                 packet->length = received;
@@ -125,4 +130,7 @@ void NetworkUdpClient::onConnected() {
 
 std::shared_ptr<NetworkUdpConnection> NetworkUdpClient::makeShared() {
     return shared_from_this();
+}
+
+void NetworkUdpClient::onObjectReceived(msgpack::object_handle oh) {
 }

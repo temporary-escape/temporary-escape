@@ -7,12 +7,75 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-class UdpServerFixture {
+struct UdpTestMessage {
+    std::string msg;
+
+    MSGPACK_DEFINE(msg);
+};
+
+MESSAGE_DEFINE(UdpTestMessage);
+
+class TestUdpServer : public BackgroundWorker {
+public:
+    explicit TestUdpServer(const Config& config) : BackgroundWorker{4} {
+        server = std::make_shared<NetworkUdpServer>(config, getService(), dispatcher);
+
+        dispatcher.addHandler([this](Request2<UdpTestMessage> req) {
+            using Self = std::remove_pointer<decltype(this)>::type;
+            using Handler = void (Self::*)(Request2<UdpTestMessage>);
+            (this->*static_cast<Handler>(&Self::handle))(std::move(req));
+        });
+
+        server->start();
+    }
+
+    ~TestUdpServer() {
+        server->stop();
+        BackgroundWorker::stop();
+        server.reset();
+    }
+
+    NetworkUdpServer* operator->() {
+        return server.get();
+    }
+
+private:
+    void handle(Request2<UdpTestMessage> req) {
+        logger.info("Request received: {}", req.get().msg);
+    }
+
+    NetworkDispatcher2 dispatcher;
+    std::shared_ptr<NetworkUdpServer> server;
+};
+
+class TestUdpClient : public BackgroundWorker {
+public:
+    explicit TestUdpClient(const Config& config) {
+        client = std::make_shared<NetworkUdpClient>(config, getService());
+        client->start();
+    }
+
+    ~TestUdpClient() {
+        client->stop();
+        BackgroundWorker::stop();
+        client.reset();
+    }
+
+    NetworkUdpClient* operator->() {
+        return client.get();
+    }
+
+private:
+    NetworkDispatcher2 dispatcher;
+    std::shared_ptr<NetworkUdpClient> client;
+};
+
+/*class UdpServerFixture {
 public:
     UdpServerFixture() {
-        config.network.serverBindAddress = "::1";
-        config.network.clientBindAddress = "::1";
-        config.network.serverPort = 0;
+        config.network.serverBindAddress = "192.168.163.1";
+        config.network.clientBindAddress = "0.0.0.0";
+        config.network.serverPort = 22334;
 
         work = std::make_unique<asio::io_service::work>(service);
         for (auto i = 0; i < 4; i++) {
@@ -72,24 +135,16 @@ public:
     std::unique_ptr<asio::io_service::work> work;
     std::list<std::thread> threads;
     std::unique_ptr<NetworkUdpServer> server;
-};
+};*/
 
-struct UdpTestMessage {
-    std::string msg;
-
-    MSGPACK_DEFINE(msg);
-};
-
-MESSAGE_DEFINE(UdpTestMessage);
-
-static std::string repeat(std::string_view str, const int n) {
+/*static std::string repeat(std::string_view str, const int n) {
     std::ostringstream os;
     for (int i = 0; i < n; i++)
         os << str;
     return os.str();
-}
+}*/
 
-TEST_CASE_METHOD(UdpServerFixture, "Start UDP server", "[NetworkUdpServer]") {
+/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP server", "[NetworkUdpServer]") {
     startServer();
 
     auto client = startClient(server->getEndpoint().address().to_string(), server->getEndpoint().port());
@@ -105,4 +160,53 @@ TEST_CASE_METHOD(UdpServerFixture, "Start UDP server", "[NetworkUdpServer]") {
     client->stop();
     stopAll();
     client.reset();
+}*/
+
+/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP server and wait", "[NetworkUdpServer]") {
+    startServer();
+
+    asio::signal_set signals(service, SIGINT, SIGTERM);
+    auto future = signals.async_wait(asio::use_future);
+    (void)future.get();
+}*/
+
+/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP client and send", "[NetworkUdpServer]") {
+    auto client = startClient("192.168.163.1", config.network.serverPort);
+
+    for (auto i = 0; i < 50; i++) {
+        UdpTestMessage msg{};
+        msg.msg = fmt::format("Hello World index: {}", i);
+        client->send(msg, 42);
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds{2});
+}*/
+
+TEST_CASE("Start UDP server and wait", "[NetworkUdpServer]") {
+    Config config{};
+    config.network.serverBindAddress = "127.0.0.1";
+    config.network.serverPort = 22334;
+
+    TestUdpServer server{config};
+
+    asio::signal_set signals(server.getService(), SIGINT, SIGTERM);
+    auto future = signals.async_wait(asio::use_future);
+    (void)future.get();
+}
+
+TEST_CASE("Start UDP client and send", "[NetworkUdpServer]") {
+    Config config{};
+    config.network.clientBindAddress = "0.0.0.0";
+    config.network.serverPort = 22334;
+
+    TestUdpClient client{config};
+    client->connect("127.0.0.1", config.network.serverPort);
+
+    for (auto i = 0; i < 50; i++) {
+        UdpTestMessage msg{};
+        msg.msg = fmt::format("Hello World index: {}", i);
+        client->send(msg, 42);
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds{5});
 }

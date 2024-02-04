@@ -6,9 +6,10 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkUdpServer::NetworkUdpServer(const Config& config, asio::io_service& service) :
+NetworkUdpServer::NetworkUdpServer(const Config& config, asio::io_service& service, NetworkDispatcher2& dispatcher) :
     config{config},
     service{service},
+    dispatcher{dispatcher},
     strand{service},
     socket{
         service,
@@ -53,7 +54,10 @@ void NetworkUdpServer::receive() {
     socket.async_receive_from(
         buff, peerEndpoint, strand.wrap([this, packet](const asio::error_code ec, const size_t received) {
             if (ec) {
-                logger.error("UDP server receive error: {}", ec.message());
+                // Cancelled?
+                if (ec != asio::error::operation_aborted) {
+                    logger.error("UDP server receive error: {}", ec.message());
+                }
                 socket.close();
             } else {
                 packet->length = received;
@@ -65,7 +69,7 @@ void NetworkUdpServer::receive() {
                     auto found = peers.find(peerEndpoint);
                     if (found == peers.end() && peers.size() < 256) {
                         const auto address = socket.local_endpoint().address().to_string();
-                        auto peer = std::make_shared<NetworkUdpPeer>(service, socket, peerEndpoint);
+                        auto peer = std::make_shared<NetworkUdpPeer>(service, dispatcher, socket, peerEndpoint);
                         found = peers.emplace(peerEndpoint, std::move(peer)).first;
                         found->second->sendHello();
                     }

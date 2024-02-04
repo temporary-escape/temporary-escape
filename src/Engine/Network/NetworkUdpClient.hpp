@@ -1,5 +1,6 @@
 #pragma once
 
+#include "NetworkDispatcher.hpp"
 #include "NetworkStun.hpp"
 #include "NetworkUdpConnection.hpp"
 
@@ -21,6 +22,7 @@ private:
     void sendPacket(const PacketBytesPtr& packet) override;
     void onConnected() override;
     std::shared_ptr<NetworkUdpConnection> makeShared() override;
+    void onObjectReceived(msgpack::object_handle oh) override;
 
     void receive();
 

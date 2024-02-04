@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkUdpPeer::NetworkUdpPeer(asio::io_service& service, asio::ip::udp::socket& socket,
+NetworkUdpPeer::NetworkUdpPeer(asio::io_service& service, NetworkDispatcher2& dispatcher, asio::ip::udp::socket& socket,
                                asio::ip::udp::endpoint endpoint) :
-    NetworkUdpConnection{service}, socket{socket}, endpoint{endpoint} {
+    NetworkUdpConnection{service}, service{service}, dispatcher{dispatcher}, socket{socket}, endpoint{endpoint} {
 
     logger.info("UDP peer created on address: {} to remote: {}", socket.local_endpoint(), endpoint);
 }
@@ -19,6 +19,7 @@ void NetworkUdpPeer::close() {
     auto self = shared_from_this();
     strand.post([self]() {
         asio::error_code ec;
+        self->stopAckTimer();
         (void)self->socket.close(ec);
         if (ec) {
             logger.error("UDP peer close error: {}", ec.message());
@@ -66,4 +67,10 @@ void NetworkUdpPeer::onConnected() {
 
 std::shared_ptr<NetworkUdpConnection> NetworkUdpPeer::makeShared() {
     return shared_from_this();
+}
+
+void NetworkUdpPeer::onObjectReceived(msgpack::object_handle oh) {
+    auto o = std::make_shared<decltype(oh)>(std::move(oh));
+    auto self = shared_from_this();
+    service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
 }

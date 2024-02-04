@@ -19,7 +19,7 @@ DedicatedServer::DedicatedServer(Config& config) : config{config} {
     }
 
     try {
-        server = std::make_unique<NetworkUdpServer>(config, service);
+        server = std::make_unique<NetworkUdpServer>(config, service, *this);
         matchmaker = std::make_unique<Matchmaker>(config.network.matchmakerUrl);
         matchmaker->registerServerAndListen("Some server name", *server);
     } catch (...) {

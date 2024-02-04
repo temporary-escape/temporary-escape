@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API NetworkUdpServer {
 public:
-    explicit NetworkUdpServer(const Config& config, asio::io_service& service);
+    explicit NetworkUdpServer(const Config& config, asio::io_service& service, NetworkDispatcher2& dispatcher);
     virtual ~NetworkUdpServer();
 
     using NotifyCallback = std::function<void()>;
@@ -31,6 +31,7 @@ private:
 
     const Config& config;
     asio::io_service& service;
+    NetworkDispatcher2& dispatcher;
     asio::io_service::strand strand;
     asio::ip::udp::socket socket;
     NetworkStunClient stun;

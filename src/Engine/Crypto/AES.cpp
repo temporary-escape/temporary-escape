@@ -32,8 +32,7 @@ AES::AES(const std::vector<uint8_t>& sharedKey) : ctx{EVP_CIPHER_CTX_new(), &evp
     }
 }
 
-AES::~AES() {
-}
+AES::~AES() = default;
 
 size_t AES::encrypt(const void* src, void* dst, const size_t size) {
     std::memcpy(dst, ivec.data(), ivecLength);
@@ -63,7 +62,7 @@ size_t AES::encrypt(const void* src, void* dst, const size_t size) {
 }
 
 size_t AES::decrypt(const void* src, void* dst, const size_t size) {
-    if (size < ivecLength) {
+    if (size <= ivecLength) {
         return 0;
     }
 

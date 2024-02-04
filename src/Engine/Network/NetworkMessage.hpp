@@ -7,8 +7,10 @@
 
 namespace Engine {
 class ENGINE_API NetworkPeer;
+class ENGINE_API NetworkStream;
 
 using NetworkPeerPtr = std::shared_ptr<NetworkPeer>;
+using NetworkStreamPtr = std::shared_ptr<NetworkStream>;
 using ObjectHandlePtr = std::shared_ptr<msgpack::object_handle>;
 
 template <typename T> struct UseFuture {
@@ -44,8 +46,6 @@ template <> inline void packMessage<std::string>(MsgpackStream& stream, const st
 
 ENGINE_API bool validateMessageObject(const msgpack::object_handle& oh);
 } // namespace Detail
-
-class ENGINE_API NetworkPeer;
 
 class ENGINE_API BaseRequest {
 public:
@@ -102,6 +102,63 @@ public:
 
     COPYABLE(Request);
     MOVEABLE(Request);
+};
+
+class ENGINE_API BaseRequest2 {
+public:
+    explicit BaseRequest2(NetworkStreamPtr peer, ObjectHandlePtr oh) : peer{std::move(peer)}, oh{std::move(oh)} {
+        const auto& o = this->oh->get();
+        o.via.array.ptr[1].convert(xid);
+    }
+    virtual ~BaseRequest2() = default;
+    COPYABLE(BaseRequest2);
+    MOVEABLE(BaseRequest2);
+
+    template <typename T> void respond(const T& msg) const;
+
+    void respondError(const std::string& msg) const;
+
+    template <typename... Args> void respondError(const std::string& msg, Args&&... args) const {
+        respondError(fmt::format(msg, std::forward<Args>(args)...));
+    }
+
+    [[nodiscard]] bool isError() const {
+        return object().type == msgpack::type::STR;
+    }
+
+    [[nodiscard]] std::string getError() const {
+        return object().as<std::string>();
+    }
+
+    [[nodiscard]] const msgpack::object& object() const {
+        const auto& o = this->oh->get();
+        return o.via.array.ptr[2];
+    }
+
+    NetworkStreamPtr peer;
+
+protected:
+    ObjectHandlePtr oh;
+    uint64_t xid;
+};
+
+template <typename T> class Request2 : public BaseRequest2 {
+public:
+    using Type = T;
+
+    explicit Request2(NetworkStreamPtr peer, ObjectHandlePtr oh) : BaseRequest2{std::move(peer), std::move(oh)} {
+    }
+
+    [[nodiscard]] T get() const {
+        if (isError()) {
+            throw std::runtime_error(object().template as<std::string>());
+        }
+
+        return object().template as<T>();
+    }
+
+    COPYABLE(Request2);
+    MOVEABLE(Request2);
 };
 } // namespace Engine
 
