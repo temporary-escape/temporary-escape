@@ -11,7 +11,9 @@ from starlette.concurrency import run_in_threadpool
 
 NoArgsNoReturnFuncT = Callable[[], None]
 NoArgsNoReturnAsyncFuncT = Callable[[], Coroutine[Any, Any, None]]
-NoArgsNoReturnDecorator = Callable[[Union[NoArgsNoReturnFuncT, NoArgsNoReturnAsyncFuncT]], NoArgsNoReturnAsyncFuncT]
+NoArgsNoReturnDecorator = Callable[
+    [Union[NoArgsNoReturnFuncT, NoArgsNoReturnAsyncFuncT]], NoArgsNoReturnAsyncFuncT
+]
 
 
 # Source: https://github.com/dmontagu/fastapi-utils/blob/master/fastapi_utils/tasks.py
@@ -23,7 +25,9 @@ def repeat_every(
     raise_exceptions: bool = False,
     max_repetitions: int | None = None,
 ) -> NoArgsNoReturnDecorator:
-    def decorator(func: NoArgsNoReturnAsyncFuncT | NoArgsNoReturnFuncT) -> NoArgsNoReturnAsyncFuncT:
+    def decorator(
+        func: NoArgsNoReturnAsyncFuncT | NoArgsNoReturnFuncT,
+    ) -> NoArgsNoReturnAsyncFuncT:
         is_coroutine = asyncio.iscoroutinefunction(func)
 
         @wraps(func)
@@ -43,7 +47,9 @@ def repeat_every(
                         repetitions += 1
                     except Exception as exc:
                         if logger is not None:
-                            formatted_exception = "".join(format_exception(type(exc), exc, exc.__traceback__))
+                            formatted_exception = "".join(
+                                format_exception(type(exc), exc, exc.__traceback__)
+                            )
                             logger.error(formatted_exception)
                         if raise_exceptions:
                             raise exc

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "NetworkUtils.hpp"
+#include "NetworkUdpConnection.hpp"
 
 namespace Engine {
-class ENGINE_API NetworkUdpPeer : public std::enable_shared_from_this<NetworkUdpPeer> {
+class ENGINE_API NetworkUdpPeer : public std::enable_shared_from_this<NetworkUdpPeer>, public NetworkUdpConnection {
 public:
     NetworkUdpPeer(asio::io_service& service, asio::ip::udp::socket& socket, asio::ip::udp::endpoint endpoint);
     virtual ~NetworkUdpPeer();
@@ -14,12 +14,14 @@ public:
         return endpoint;
     }
 
+    void onReceivePeer(const PacketBytesPtr& packet);
+
 private:
-    asio::io_service& service;
+    void sendPacket(const PacketBytesPtr& packet) override;
+    void onConnected() override;
+    std::shared_ptr<NetworkUdpConnection> makeShared() override;
+
     asio::ip::udp::socket& socket;
     asio::ip::udp::endpoint endpoint;
-    asio::io_service::strand strand;
-    std::array<uint8_t, 1400> buffer{};
-    std::string helloMsg;
 };
 } // namespace Engine

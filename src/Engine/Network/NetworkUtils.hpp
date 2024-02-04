@@ -5,6 +5,17 @@
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 
+namespace Engine {
+struct UrlParts {
+    std::string proto;
+    std::string host;
+    uint16_t port;
+    std::string path;
+};
+
+ENGINE_API std::optional<UrlParts> parseUrl(const std::string_view& url);
+} // namespace Engine
+
 template <> struct fmt::formatter<asio::ip::tcp::endpoint> {
     template <typename ParseContext> constexpr auto parse(ParseContext& ctx) {
         return ctx.begin();

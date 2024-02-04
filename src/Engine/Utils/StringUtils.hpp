@@ -13,6 +13,7 @@ extern std::vector<std::string> ENGINE_API splitLast(const std::string_view& str
 extern std::vector<std::string> ENGINE_API split(const std::string_view& str, const std::string_view& delim);
 extern std::string ENGINE_API intToRomanNumeral(const int value);
 extern std::string ENGINE_API toLower(const std::string_view& str);
+extern std::string ENGINE_API toHexString(const void* src, size_t size);
 extern bool ENGINE_API endsWith(const std::string_view& str, const std::string_view& ending);
 extern bool ENGINE_API startsWith(const std::string_view& str, const std::string_view& start);
 

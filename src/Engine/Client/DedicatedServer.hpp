@@ -8,9 +8,9 @@
 #include <thread>
 
 namespace Engine {
-class ENGINE_API DedicatedServer : public Matchmaker::Listener {
+class ENGINE_API DedicatedServer /* : public Matchmaker::Listener*/ {
 public:
-    DedicatedServer(Config& config);
+    explicit DedicatedServer(Config& config);
     ~DedicatedServer();
 
     void wait();
@@ -19,8 +19,8 @@ private:
     void stop();
 
 public:
-    void onMatchmakerConnect() override;
-    void onMatchmakerDisconnect() override;
+    /*void onMatchmakerConnect() override;
+    void onMatchmakerDisconnect() override;*/
 
 private:
     Config& config;
@@ -29,5 +29,6 @@ private:
     std::list<std::thread> threads;
     std::unique_ptr<NetworkUdpServer> server;
     std::unique_ptr<Matchmaker> matchmaker;
+    std::string publicId;
 };
 } // namespace Engine

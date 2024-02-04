@@ -20,12 +20,14 @@ struct ENGINE_API Status {
     float value{0.0f};
 };
 
+class ENGINE_API Matchmaker;
 class ENGINE_API ViewSpace;
 class ENGINE_API ViewBuild;
 class ENGINE_API Database;
 class ENGINE_API RendererBackground;
 class ENGINE_API RendererScenePbr;
 class ENGINE_API RendererThumbnail;
+class ENGINE_API NetworkUdpClient;
 
 class ENGINE_API Application : public VulkanRenderer {
 public:
@@ -65,6 +67,7 @@ private:
     void startServer();
     void startClient();
     void startSinglePlayer();
+    void startConnectServer(const std::string& serverId);
     void startEditor();
     void createPlanetLowResTextures(RendererPlanetSurface& rendererPlanetSurface);
     void createPlanetLowResTextures();
@@ -95,8 +98,11 @@ private:
         ViewBuild* editor{nullptr};
     } view;
 
+    std::unique_ptr<Matchmaker> matchmaker;
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<Database> db;
+    std::unique_ptr<BackgroundWorker> worker;
+    std::shared_ptr<NetworkUdpClient> udpClient;
     std::unique_ptr<Server> server;
     std::unique_ptr<RendererBackground> rendererBackground;
     std::unique_ptr<RenderResources> renderResources;

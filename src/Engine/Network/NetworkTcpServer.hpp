@@ -1,6 +1,5 @@
 #pragma once
 
-#include "NetworkSslContext.hpp"
 #include "NetworkTcpPeer.hpp"
 #include <asio.hpp>
 

@@ -5,6 +5,7 @@
 #include "../Graphics/RendererPlanetSurface.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
+#include "../Network/NetworkUdpClient.hpp"
 #include "ViewBuild.hpp"
 #include "ViewSpace.hpp"
 #include <iosevka-aile-bold.ttf.h>
@@ -16,6 +17,11 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 static const auto profileFilename = "profile.xml";
+
+#define NEXT(expr)                                                                                                     \
+    promise = decltype(promise){};                                                                                     \
+    promise.set_value([=]() { (expr); });                                                                              \
+    future = promise.get_future()
 
 static FontFamily::Sources fontSources{
     Embed::iosevka_aile_regular_ttf,
@@ -40,6 +46,8 @@ Application::Application(Config& config) :
         config.graphics.skyboxSize = 1024;
         config.graphics.ssao = false;
     }
+
+    matchmaker = std::make_unique<Matchmaker>(config.network.matchmakerUrl);
 
     gui.createProfile = guiManager.addWindow<GuiWindowCreateProfile>();
     gui.createProfile->setOnCreateCallback([this](const GuiWindowCreateProfile::Result& result) {
@@ -72,6 +80,7 @@ Application::Application(Config& config) :
     gui.mainMenu->setOnClickMultiplayer([this]() {
         gui.mainMenu->setEnabled(false);
         gui.serverBrowser->setEnabled(true);
+        gui.serverBrowser->connect();
     });
     gui.mainMenu->setOnClickEditor([this]() {
         gui.mainMenu->setEnabled(false);
@@ -98,10 +107,14 @@ Application::Application(Config& config) :
         }
     });
 
-    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>();
-    gui.serverBrowser->setOnClickClose([this]() {
+    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>(*matchmaker, guiManager);
+    gui.serverBrowser->setOnClose([this]() {
         gui.mainMenu->setEnabled(true);
         gui.serverBrowser->setEnabled(false);
+    });
+    gui.serverBrowser->setOnConnect([this](const std::string& serverId) {
+        logger.info("Starting connection to the server id: {}", serverId);
+        startConnectServer(serverId);
     });
 
     loadProfile();
@@ -128,6 +141,13 @@ Application::~Application() {
         } catch (const std::exception& e) {
             BACKTRACE(e, "fatal error");
         }
+    }
+
+    if (worker) {
+        udpClient->stop();
+        worker->stop();
+        udpClient.reset();
+        worker.reset();
     }
 }
 
@@ -353,11 +373,6 @@ void Application::renderStatus(const Vector2i& viewport) {
                      {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
                      Colors::primary);
 }
-
-#define NEXT(expr)                                                                                                     \
-    promise = decltype(promise){};                                                                                     \
-    promise.set_value([=]() { (expr); });                                                                              \
-    future = promise.get_future()
 
 void Application::loadProfile() {
     const auto profilePath = config.userdataPath / profileFilename;
@@ -657,6 +672,41 @@ void Application::startSinglePlayer() {
     // gui.mainMenu.setEnabled(false);
 
     NEXT(compressAssets());
+}
+
+void Application::startConnectServer(const std::string& serverId) {
+    /*future = std::async([this, address, port]() -> std::function<void()> {
+        worker = std::make_unique<BackgroundWorker>();
+        udpClient = std::make_unique<NetworkUdpClient>(config, worker->getService());
+        udpClient->connect(address, port);
+        return [=]() {};
+    });*/
+
+    logger.info("Starting connection to the server: {}", serverId);
+    worker = std::make_unique<BackgroundWorker>();
+    udpClient = std::make_shared<NetworkUdpClient>(config, worker->getService());
+
+    logger.info("Sending STUN request");
+    udpClient->getStunClient().send([this, serverId](const NetworkStunClient::Result& result) {
+        Matchmaker::ServerConnectModel body{};
+        body.address = result.endpoint.address().to_string();
+        body.port = result.endpoint.port();
+
+        logger.info("Sending connection request to the matchmaker server");
+        matchmaker->apiServersConnect(serverId, body, [this](const Matchmaker::ServerConnectResponse& res) {
+            if (!res.error.empty()) {
+                logger.error("Connection request failed with error: {}", res.error);
+            } else {
+                logger.info("Got response from the matchmaker server");
+
+                future = std::async([this, endpoint = res.data]() -> std::function<void()> {
+                    udpClient->connect(endpoint.address, endpoint.port);
+
+                    return []() {};
+                });
+            }
+        });
+    });
 }
 
 void Application::startEditor() {

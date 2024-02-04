@@ -1,0 +1,8 @@
+build/
+*.egg-info
+certs/
+venv/
+deploy/
+*.db
+Makefile
+README.md

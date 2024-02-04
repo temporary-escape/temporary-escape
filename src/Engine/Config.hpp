@@ -123,9 +123,11 @@ struct Config {
             "stun3.l.google.com:19302",
             "stun4.l.google.com:19302",
         };
+        std::string clientBindAddress{"0.0.0.0"};
         std::string serverBindAddress{"0.0.0.0"};
         uint16_t serverPort{22443};
-        std::string matchmakerUrl{"wss://matchmaker.lan:8443"};
+        std::string matchmakerUrl{"https://server.temporaryescape.org"};
+        uint32_t pkeyLength{2048};
     } network;
 
     struct Input {

@@ -1,0 +1,14 @@
+http:
+  routers:
+    matchmaker:
+      rule: "Host(`server.temporaryescape.org`)"
+      service: "matchmaker"
+      entryPoints:
+        - "websecure"
+      tls:
+        certresolver: "letsencrypt"
+  services:
+    matchmaker:
+      loadBalancer:
+        servers:
+          - url: "http://matchmaker:8000"

@@ -66,9 +66,11 @@ static Response parseResponse(asio::streambuf& buff) {
     return res;
 }
 
-NetworkWebsockets::NetworkWebsockets(asio::io_context& service, Receiver& receiver, std::string url) :
+NetworkWebsockets::NetworkWebsockets(asio::io_context& service, Receiver& receiver, std::string url,
+                                     std::string token) :
     service{service},
     receiver{receiver},
+    token{std::move(token)},
     url{std::move(url)},
     resolver{service},
     ssl{asio::ssl::context::tls_client},
@@ -104,30 +106,24 @@ void NetworkWebsockets::stop() {
 void NetworkWebsockets::resolve() {
     logger.info("WSS client connecting to: '{}'", url);
 
-    auto tokens = split(url, "://");
-    if (tokens.size() != 2 || tokens[0] != "wss") {
+    const auto parts = parseUrl(url);
+    if (!parts) {
         logger.error("WSS client invalid address: {}", url);
-        receiver.onConnectFailed();
+        receiver.onWsConnectFailed();
         return;
     }
+    host = parts->host;
+    path = parts->path;
 
-    host = tokens[1];
-
-    tokens = split(host, ":");
-    if (tokens.size() != 2) {
-        logger.error("WSS client invalid address: {}", url);
-        receiver.onConnectFailed();
-        return;
-    }
-
-    query = std::make_unique<asio::ip::tcp::resolver::query>(asio::ip::tcp::v4(), tokens[0], tokens[1]);
+    query =
+        std::make_unique<asio::ip::tcp::resolver::query>(asio::ip::tcp::v4(), parts->host, std::to_string(parts->port));
     auto self = shared_from_this();
 
     using Result = asio::ip::tcp::resolver::results_type;
     resolver.async_resolve(*query, [self](const asio::error_code ec, const Result& result) {
         if (ec) {
             logger.error("WSS client failed to resolve query error: {}", ec.message());
-            self->receiver.onConnectFailed();
+            self->receiver.onWsConnectFailed();
         } else {
             self->endpoints.clear();
             for (const auto& e : result) {
@@ -145,7 +141,7 @@ void NetworkWebsockets::resolve() {
 void NetworkWebsockets::connect() {
     if (endpoints.empty()) {
         logger.error("WSS client failed to connect");
-        receiver.onConnectFailed();
+        receiver.onWsConnectFailed();
         return;
     }
 
@@ -185,7 +181,7 @@ void NetworkWebsockets::wsHandshakeSend() {
     }
 
     std::stringstream req;
-    req << "GET /ws HTTP/1.1\r\n";
+    req << "GET " << path << " HTTP/1.1\r\n";
     req << "Host: " << host << "\r\n";
     req << "User-Agent: TemporaryEscape Engine\r\n";
     req << "Accept: */*\r\n";
@@ -198,6 +194,9 @@ void NetworkWebsockets::wsHandshakeSend() {
     req << "Sec-WebSocket-Key: " << base64Encode(nonce.data(), nonce.size()) << "\r\n";
     req << "Upgrade: websocket\r\n";
     req << "Origin: https://" << host << "\r\n";
+    if (!token.empty()) {
+        req << "Cookie: Authorization=Bearer " << token << "\r\n";
+    }
     req << "\r\n";
 
     auto msg = std::make_shared<std::string>(req.str());
@@ -230,7 +229,7 @@ void NetworkWebsockets::wsHandshakeReceive() {
 
                 // Start receiving
                 self->receive();
-                self->receiver.onConnect();
+                self->receiver.onWsConnect();
 
                 self->connected = true;
             }
@@ -319,13 +318,12 @@ void NetworkWebsockets::send(const Frame::Opcode opcode, const void* data, const
     });
 }
 
-void NetworkWebsockets::close() {
+void NetworkWebsockets::close(const int code) {
     if (shutdownFlag.load()) {
         return;
     }
 
     shutdownFlag.store(true);
-    logger.info("NetworkWebsockets::close async_shutdown");
     socket.async_shutdown([](const asio::error_code ec) {
         if (ec) {
             logger.error("WSS client closing connection error: {}", ec.message());
@@ -333,9 +331,9 @@ void NetworkWebsockets::close() {
     });
 
     if (connected) {
-        receiver.onClose();
+        receiver.onWsClose(code);
     } else {
-        receiver.onConnectFailed();
+        receiver.onWsConnectFailed();
     }
 
     connected = false;
@@ -363,10 +361,10 @@ void NetworkWebsockets::receive() {
                         } catch (std::exception& e) {
                             logger.error("Received malformed json error: {}", e.what());
                         }
-                        self->receiver.onReceive(std::move(json));
+                        self->receiver.onWsReceive(std::move(json));
                     } else if (frame.opcode == Frame::Opcode::Close) {
                         logger.debug("WSS client received connection closed frame");
-                        self->close();
+                        self->close(frame.code);
                         return;
                     } else if (frame.opcode == Frame::Opcode::Ping) {
                         self->send(Frame::Opcode::Pong, frame.body.data(), frame.body.size());
@@ -415,16 +413,22 @@ NetworkWebsockets::Frame NetworkWebsockets::tryDecode() {
     read -= 2;
     src += 2;
 
+    int code{0};
+
     if (opcode == Frame::Opcode::Close) {
         if (read < 2) {
             return {};
         }
+
+        code = *reinterpret_cast<const uint16_t*>(src);
+        code = ((code & 0xFF00) >> 8) | ((code & 0x00FF) << 8);
 
         src += 2;
     }
 
     Frame frame{};
     frame.opcode = opcode;
+    frame.code = code;
 
     if (opcode != Frame::Opcode::Close) {
         // More header data?

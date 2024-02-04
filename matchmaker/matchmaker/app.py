@@ -1,25 +1,44 @@
 import json
 import logging
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, APIRouter
+from fastapi.responses import RedirectResponse
 from starlette.websockets import WebSocketDisconnect
 
 from matchmaker.db import SessionLocal, Base, engine
 from matchmaker.models import BaseModel
-from matchmaker.client import Client
-from matchmaker.router import Router
-from matchmaker.api.servers import router as server_router, do_server_cleanup
-from matchmaker.utils import repeat_every
 
-app = FastAPI()
+from matchmaker.routers.auth import router as auth_router
+from matchmaker.routers.servers import router as servers_router
+
+app = FastAPI(
+    title="Temporary Escape Game Matchmaker API",
+    version="0.1.0",
+    contact={
+        "name": "Matus Novak",
+        "email": "email@matusnovak.com",
+    },
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+)
+api = APIRouter(prefix="/api")
+api.include_router(auth_router)
+api.include_router(servers_router)
+app.include_router(api)
 
 logger = logging.getLogger(__name__)
 
-router = Router()
-router.add(server_router)
+# = Router()
+# router.add(server_router)
 
-db = SessionLocal()
 Base.metadata.create_all(bind=engine)
 
+
+@app.get("/api")
+async def redirect_to_docs():
+    return RedirectResponse(url="/api/docs")
+
+
+"""
 
 class MessageHello(BaseModel):
     __type__ = "hello"
@@ -56,3 +75,4 @@ async def websocket_endpoint(websocket: WebSocket):
             break
 
     await router.disconnect(client, db)
+"""

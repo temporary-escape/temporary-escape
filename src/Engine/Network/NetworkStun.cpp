@@ -18,18 +18,19 @@ static constexpr int16_t attrTypeMappedAddress = 0x0020;
 static const int16_t stunResponseTypeRev =
     toBigEndian(static_cast<int16_t>(NetworkStunClient::StunMessageType::Response));
 static const int32_t magicCookieRev = toBigEndian(magicCookie);
+static constexpr asio::chrono::milliseconds deadlineInterval{1000};
 
 static auto logger = createLogger(LOG_FILENAME);
 
 static std::string createNonce() {
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<char> dist{'a', 'z'};
+    std::uniform_int_distribution<int> dist{'a', 'z'};
 
     std::string res;
     res.resize(12);
     for (auto& c : res) {
-        c = dist(rng);
+        c = static_cast<char>(dist(rng));
     }
 
     return res;

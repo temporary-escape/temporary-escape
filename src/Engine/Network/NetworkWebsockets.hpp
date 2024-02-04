@@ -10,13 +10,13 @@ public:
     public:
         virtual ~Receiver() = default;
 
-        virtual void onReceive(Json json) = 0;
-        virtual void onConnect() = 0;
-        virtual void onConnectFailed() = 0;
-        virtual void onClose() = 0;
+        virtual void onWsReceive(Json json) = 0;
+        virtual void onWsConnect() = 0;
+        virtual void onWsConnectFailed() = 0;
+        virtual void onWsClose(int code) = 0;
     };
 
-    NetworkWebsockets(asio::io_context& service, Receiver& receiver, std::string url);
+    NetworkWebsockets(asio::io_context& service, Receiver& receiver, std::string url, std::string token);
     virtual ~NetworkWebsockets();
 
     void start();
@@ -35,6 +35,7 @@ private:
 
         Opcode opcode{Opcode::None};
         std::string body;
+        int code{0};
 
         operator bool() const {
             return opcode != Opcode::None;
@@ -49,14 +50,16 @@ private:
     void wsHandshakeReceive();
     void receive();
     Frame tryDecode();
-    void close();
+    void close(int code = 0);
 
     asio::io_context& service;
     Receiver& receiver;
     std::string url;
+    std::string token;
     bool connected{false};
     asio::ip::tcp::resolver resolver;
     std::string host;
+    std::string path;
     std::array<uint8_t, 16> nonce{};
     std::unique_ptr<asio::ip::tcp::resolver::query> query;
     std::vector<asio::ip::tcp::endpoint> endpoints;

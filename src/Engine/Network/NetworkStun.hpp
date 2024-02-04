@@ -11,7 +11,7 @@ public:
         asio::ip::udp::endpoint endpoint;
     };
 
-    using Callback = std::function<void(Result)>;
+    using Callback = std::function<void(const Result&)>;
 
     enum class StunMessageType : uint16_t {
         Request = 0x0001,
@@ -61,8 +61,6 @@ private:
     static_assert(sizeof(StunResponse) == 2 + 2 + 4 + 12 + 1000);
 
     static StunRequest createStunRequest(const std::string& nonce);
-
-    static constexpr asio::chrono::milliseconds deadlineInterval{500};
 
     void doQuery(const RequestPtr& req);
     void doRequest(const RequestPtr& req);

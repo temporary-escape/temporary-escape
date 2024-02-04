@@ -1,0 +1,34 @@
+services:
+  matchmaker:
+    image: "temporary-escape-matchmaker:latest"
+    restart: on-failure
+    user: "1000:1000"
+    env_file:
+      - ".env"
+      - "/etc/matchmaker.env"
+    volumes:
+      - "./matchmaker:/app/data"
+    logging:
+      driver: "journald"
+      options:
+        tag: "{{.Name}}"
+  traefik:
+    image: "library/traefik:v2.10"
+    restart: on-failure
+    user: "1000:1000"
+    command:
+      - "--configFile=/etc/traefik/traefik.yaml"
+    ports:
+      - "80:8080"
+      - "443:8443"
+    env_file:
+      - ".env"
+      - "/etc/letsencrypt.env"
+    volumes:
+      - "./traefik/traefik.yaml:/etc/traefik/traefik.yaml"
+      - "./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml"
+      - "./traefik/acme.json:/acme/acme.json"
+    logging:
+      driver: "journald"
+      options:
+        tag: "{{.Name}}"

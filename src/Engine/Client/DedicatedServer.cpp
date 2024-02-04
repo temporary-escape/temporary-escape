@@ -20,12 +20,8 @@ DedicatedServer::DedicatedServer(Config& config) : config{config} {
 
     try {
         server = std::make_unique<NetworkUdpServer>(config, service);
-        matchmaker = std::make_unique<Matchmaker>(*this, config.network.matchmakerUrl);
-
-        /*server->stunRequest([this](NetworkStunClient::Result result) {
-            logger.info("Got STUN response endpoint: {}", result.endpoint);
-            matchmaker->serverRegister("Some Server Name", result.endpoint);
-        });*/
+        matchmaker = std::make_unique<Matchmaker>(config.network.matchmakerUrl);
+        matchmaker->registerServerAndListen("Some server name", *server);
     } catch (...) {
         stop();
         throw;
@@ -73,10 +69,11 @@ void DedicatedServer::wait() {
     const auto res = future.get();
 
     logger.info("Received signal: {}", res);
+    // std::this_thread::sleep_for(std::chrono::seconds{1});
     stop();
 }
 
-void DedicatedServer::onMatchmakerConnect() {
+/*void DedicatedServer::onMatchmakerConnect() {
     server->stunRequest([this](NetworkStunClient::Result result) {
         logger.info("Got STUN response endpoint: {}", result.endpoint);
         matchmaker->serverRegister("Some Server Name", result.endpoint);
@@ -84,4 +81,4 @@ void DedicatedServer::onMatchmakerConnect() {
 }
 
 void DedicatedServer::onMatchmakerDisconnect() {
-}
+}*/

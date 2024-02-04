@@ -588,7 +588,7 @@ bool GuiContext::checkbox(const std::string& label, bool& value) {
 }
 
 void GuiContext::label(const std::string& label) {
-    nk_label(nk.get(), label.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT);
+    nk_label(nk.get(), label.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT | nk_text_align::NK_TEXT_ALIGN_MIDDLE);
 }
 
 bool GuiContext::textInput(std::string& text, size_t max) {

@@ -9,17 +9,26 @@ class ENGINE_API NetworkUdpServer {
 public:
     explicit NetworkUdpServer(const Config& config, asio::io_service& service);
     virtual ~NetworkUdpServer();
-    void receive();
+
+    using NotifyCallback = std::function<void()>;
+
+    void start();
     void stop();
+
     const asio::ip::udp::endpoint& getEndpoint() const {
         return localEndpoint;
     }
 
-    void stunRequest(NetworkStunClient::Callback callback) {
-        stun.send(std::move(callback));
+    NetworkStunClient& getStunClient() {
+        return stun;
     }
 
+    void notifyClientConnection(const std::string& address, uint16_t port, NotifyCallback callback);
+
 private:
+    void receive();
+    PacketBytesPtr allocatePacket();
+
     const Config& config;
     asio::io_service& service;
     asio::io_service::strand strand;
@@ -27,8 +36,11 @@ private:
     NetworkStunClient stun;
     asio::ip::udp::endpoint localEndpoint;
     asio::ip::udp::endpoint peerEndpoint;
-    std::array<uint8_t, 1400> buffer{};
+
     std::mutex mutex;
     std::unordered_map<asio::ip::udp::endpoint, std::shared_ptr<NetworkUdpPeer>> peers{};
+
+    std::mutex packetPoolMutex;
+    MemoryPool<PacketBytes, 64 * 1024> packetPool{};
 };
 } // namespace Engine

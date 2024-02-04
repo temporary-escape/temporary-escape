@@ -1,20 +1,36 @@
 #pragma once
 
-#include "NetworkUtils.hpp"
+#include "NetworkStun.hpp"
+#include "NetworkUdpConnection.hpp"
 
 namespace Engine {
-class ENGINE_API NetworkUdpClient {
+class ENGINE_API NetworkUdpClient : public std::enable_shared_from_this<NetworkUdpClient>, public NetworkUdpConnection {
 public:
-    NetworkUdpClient(asio::io_service& service, const std::string& address, uint16_t port);
+    NetworkUdpClient(const Config& config, asio::io_service& service);
     virtual ~NetworkUdpClient();
 
-private:
     void connect(const std::string& address, uint16_t port);
+    void start();
+    void stop();
 
-    asio::io_service& service;
-    std::unique_ptr<asio::ip::udp::socket> socket;
-    asio::io_service::strand strand;
+    NetworkStunClient& getStunClient() {
+        return stun;
+    }
+
+private:
+    void sendPacket(const PacketBytesPtr& packet) override;
+    void onConnected() override;
+    std::shared_ptr<NetworkUdpConnection> makeShared() override;
+
+    void receive();
+
+    asio::ip::udp::socket socket;
+    NetworkStunClient stun;
     asio::ip::udp::endpoint endpoint;
-    std::array<uint8_t, 1400> buffer{};
+    asio::ip::udp::endpoint peerEndpoint;
+
+    std::condition_variable connectedCv;
+    std::mutex connectedLock;
+    bool connected{false};
 };
 } // namespace Engine

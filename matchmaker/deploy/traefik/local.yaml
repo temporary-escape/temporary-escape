@@ -1,13 +1,15 @@
 log:
   level: DEBUG
 
+access: {}
+
 api:
   insecure: false
   dashboard: false
 
 entryPoints:
   http:
-    address: ":8000"
+    address: ":8080"
   https:
     address: ":8443"
 
@@ -35,16 +37,8 @@ http:
       entryPoints:
         - https
       tls: true
-      middlewares:
-        - "sslheader"
   services:
     matchmaker:
       loadBalancer:
         servers:
-          - url: "http://127.0.0.1:3000"
-  middlewares:
-    sslheader:
-      headers:
-        customResponseHeaders:
-          "X-Forwarded-Proto": "https"
-          "X-Custom-Request-Header": "AACAA"
+          - url: "http://127.0.0.1:8000"

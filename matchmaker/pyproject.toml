@@ -2,14 +2,22 @@
 name = "matchmaker"
 version = "0.1.0"
 description = "Temporary Escape Matchmaker Server"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 authors = [
     { name = "Matus Novak", email = "email@matusnovak.com" }
 ]
 dependencies = [
     "fastapi[all]",
-    "sqlalchemy"
+    "sqlalchemy",
+    "passlib[bcrypt]",
+    "pydantic-settings",
+    "python-jose[cryptography]",
+    "pyinstaller",
+    "black",
 ]
+
+[tool.setuptools]
+py-modules = []
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]

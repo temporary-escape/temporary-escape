@@ -85,10 +85,7 @@ public:
     std::shared_ptr<NetworkTcpClient> createClient(NetworkDispatcher& d) {
         return std::make_shared<NetworkTcpClient>(service, d, "localhost", 22334);
     }
-
-    PrivateKey pkey{};
-    DiffieHellmanKey dh{};
-    X509Cert cert{pkey};
+    
     TestNetworkDispatcher dispatcher{};
     asio::io_service service;
     std::unique_ptr<asio::io_service::work> work;

@@ -2,7 +2,6 @@
 
 #include "../Future.hpp"
 #include "../Utils/Exceptions.hpp"
-#include "NetworkSslContext.hpp"
 #include "NetworkTcpPeer.hpp"
 #include <asio.hpp>
 

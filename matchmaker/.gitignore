@@ -1,4 +1,7 @@
 /venv/
 *.egg-info/
 /build/
-/traefik/certs/
+/dist/
+certs/
+*.db
+*.spec

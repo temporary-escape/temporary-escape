@@ -52,6 +52,21 @@ std::string Engine::toLower(const std::string_view& str) {
     return res;
 }
 
+std::string Engine::toHexString(const void* src, const size_t size) {
+    static const std::string_view chars = "0123456789abcdef";
+
+    std::string res;
+    res.resize(size * 2);
+
+    const auto* ptr = reinterpret_cast<const char*>(src);
+    for (size_t i = 0; i < size; i++) {
+        res[i * 2 + 0] = chars[(ptr[i] & 0xF0) >> 4];
+        res[i * 2 + 1] = chars[(ptr[i] & 0x0F) >> 0];
+    }
+
+    return res;
+}
+
 bool Engine::endsWith(const std::string_view& str, const std::string_view& ending) {
     if (str.length() >= ending.length()) {
         return (0 == str.compare(str.length() - ending.length(), ending.length(), ending));

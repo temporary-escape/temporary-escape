@@ -28,14 +28,12 @@ void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
             continue;
         }
 
-        const auto extent = getExtent(window);
-
         window.ptr->draw();
         window.drawn = true;
     }
 
     for (auto& window : windows) {
-        if (!window.ptr->isEnabled() || !window.ptr->isDirty() || !window.drawn) {
+        if (!window.drawn) {
             continue;
         }
 
