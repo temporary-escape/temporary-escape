@@ -33,7 +33,7 @@ public:
 
     using Packer = msgpack::packer<Writer>;
 
-    class Writer : public Packer {
+    class ENGINE_API Writer : public Packer {
     public:
         Writer(NetworkStream& stream, PacketType type);
 
