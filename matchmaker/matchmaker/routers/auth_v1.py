@@ -1,13 +1,12 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
 
-from fastapi import APIRouter, Response, Depends
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 from matchmaker.auth import authenticate_user, JwtAuth
 
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/v1/auth", tags=["Authentication"])
 
 
 class LoginModel(BaseModel):
@@ -15,7 +14,11 @@ class LoginModel(BaseModel):
     password: str
 
 
-@router.post("/login", summary="Public login endpoint")
+@router.post(
+    "/login",
+    summary="Public login endpoint",
+    status_code=201,
+)
 async def auth_login(body: LoginModel):
     token, expires = authenticate_user(body.username, body.password)
 
@@ -26,8 +29,12 @@ async def auth_login(body: LoginModel):
     return response
 
 
-@router.post("/logout", summary="Public logout endpoint")
-async def auth_login(user: JwtAuth):
+@router.post(
+    "/logout",
+    summary="Public logout endpoint",
+    status_code=201,
+)
+async def auth_logout(user: JwtAuth):
     response = Response(status_code=201)
     response.set_cookie(
         "Authorization", "", httponly=True, expires=datetime.now(tz=timezone.utc)

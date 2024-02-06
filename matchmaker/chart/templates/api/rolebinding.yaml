@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ .Chart.Name }}-api"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-api"
+subjects:
+  - kind: ServiceAccount
+    namespace: "{{ .Release.Namespace }}"
+    name: "{{ .Chart.Name }}-api"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ .Chart.Name }}-api"

@@ -22,9 +22,11 @@ COPY --from=builder /build/dist/matchmaker/ /app/
 COPY ./log_conf.yaml /app/
 
 EXPOSE 8000
+
 ENV DATABASE_URL="sqlite:////app/data/data.db"
 ENV WEB_PORT=8000
 ENV WEB_HOST=0.0.0.0
+
 WORKDIR /app
 VOLUME /app/data
 ENTRYPOINT ["/app/matchmaker"]

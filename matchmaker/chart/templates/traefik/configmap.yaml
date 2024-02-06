@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Chart.Name }}-traefik"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+data:
+  hello: "world"
+  traefik.yml: |
+    log:
+      level: "INFO"
+
+    api:
+      insecure: false
+      dashboard: false
+    
+    ping:
+      entryPoint: traefik
+
+    entryPoints:
+      traefik:
+        address: ":3000"
+      web:
+        address: ":8080"
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+              permanent: true
+      websecure:
+        address: ":8443"
+        http:
+          tls:
+            domains:
+              - main: "{{ .Values.domain }}"
+
+    {{- if .Values.traefik.acme.enabled }}
+    certificatesResolvers:
+      letsencrypt:
+        acme:
+          email: "{{ .Values.traefik.acme.email }}"
+          storage: "/data/acme.json"
+          caServer: "{{ .Values.traefik.acme.server }}"
+          dnsChallenge:
+            provider: "{{ .Values.traefik.acme.provider }}"
+            resolvers:
+              {{ toYaml .Values.traefik.acme.dnsResolvers | nindent 14 }}
+    {{- end }}
+    
+    providers:
+      kubernetesCRD:
+        namespaces:
+          - "{{ .Release.Namespace }}"
+        allowCrossNamespace: false

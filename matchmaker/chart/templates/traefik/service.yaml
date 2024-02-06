@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Chart.Name }}-traefik"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+spec:
+  type: {{ .Values.traefik.service.type }}
+  selector:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+  ports:
+    - port: {{ .Values.traefik.http.port }}
+      targetPort: web
+      protocol: TCP
+      name: web
+    - port: {{ .Values.traefik.https.port }}
+      targetPort: websecure
+      protocol: TCP
+      name: websecure
+  externalTrafficPolicy: Local

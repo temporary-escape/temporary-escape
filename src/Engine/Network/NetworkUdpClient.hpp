@@ -2,10 +2,10 @@
 
 #include "NetworkDispatcher.hpp"
 #include "NetworkStun.hpp"
-#include "NetworkUdpConnection.hpp"
+#include "NetworkUdpStream.hpp"
 
 namespace Engine {
-class ENGINE_API NetworkUdpClient : public std::enable_shared_from_this<NetworkUdpClient>, public NetworkUdpConnection {
+class ENGINE_API NetworkUdpClient : public std::enable_shared_from_this<NetworkUdpClient>, public NetworkUdpStream {
 public:
     NetworkUdpClient(const Config& config, asio::io_service& service);
     virtual ~NetworkUdpClient();
@@ -21,7 +21,7 @@ public:
 private:
     void sendPacket(const PacketBytesPtr& packet) override;
     void onConnected() override;
-    std::shared_ptr<NetworkUdpConnection> makeShared() override;
+    std::shared_ptr<NetworkUdpStream> makeShared() override;
     void onObjectReceived(msgpack::object_handle oh) override;
 
     void receive();

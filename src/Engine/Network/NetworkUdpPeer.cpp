@@ -7,7 +7,7 @@ static auto logger = createLogger(LOG_FILENAME);
 
 NetworkUdpPeer::NetworkUdpPeer(asio::io_service& service, NetworkDispatcher2& dispatcher, asio::ip::udp::socket& socket,
                                asio::ip::udp::endpoint endpoint) :
-    NetworkUdpConnection{service}, service{service}, dispatcher{dispatcher}, socket{socket}, endpoint{endpoint} {
+    NetworkUdpStream{service}, service{service}, dispatcher{dispatcher}, socket{socket}, endpoint{endpoint} {
 
     logger.info("UDP peer created on address: {} to remote: {}", socket.local_endpoint(), endpoint);
 }
@@ -27,7 +27,7 @@ void NetworkUdpPeer::close() {
     });
 }
 
-void NetworkUdpPeer::sendHello() {
+void NetworkUdpPeer::sendPublicKey() {
     auto self = shared_from_this();
     const auto& publicKey = getPublicKey();
     auto buff = asio::buffer(publicKey.data(), publicKey.size());
@@ -57,7 +57,7 @@ void NetworkUdpPeer::sendPacket(const PacketBytesPtr& packet) {
 void NetworkUdpPeer::onReceivePeer(const PacketBytesPtr& packet) {
     auto self = shared_from_this();
     strand.post([self, packet]() {
-        logger.info("UDP peer received {} bytes", packet->size());
+        // logger.info("UDP peer received {} bytes", packet->size());
         self->onReceive(packet);
     });
 }
@@ -65,7 +65,7 @@ void NetworkUdpPeer::onReceivePeer(const PacketBytesPtr& packet) {
 void NetworkUdpPeer::onConnected() {
 }
 
-std::shared_ptr<NetworkUdpConnection> NetworkUdpPeer::makeShared() {
+std::shared_ptr<NetworkUdpStream> NetworkUdpPeer::makeShared() {
     return shared_from_this();
 }
 

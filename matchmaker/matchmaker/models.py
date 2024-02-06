@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, UUID
+from sqlalchemy import Column, Integer, String, DateTime
 from matchmaker.db import Base
 
 

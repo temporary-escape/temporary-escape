@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Chart.Name }}-api"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-api"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      "app.kubernetes.io/name": "{{ .Chart.Name }}"
+      "app.kubernetes.io/instance": "{{ .Chart.Name }}-api"
+  template:
+    metadata:
+      name: "{{ .Chart.Name }}-api"
+      namespace: "{{ .Release.Namespace }}"
+      labels:
+        "app.kubernetes.io/name": "{{ .Chart.Name }}"
+        "app.kubernetes.io/instance": "{{ .Chart.Name }}-api"
+    spec:
+      serviceAccountName: "{{ .Chart.Name }}-api"
+      securityContext:
+        runAsUser: {{ .Values.api.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.api.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.api.fsGroup }}
+      containers:
+        - name: "{{ .Chart.Name }}-api"
+          image: "{{ .Values.api.image.name }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: "{{ .Values.api.image.pullPolicy }}"
+          ports:
+            - name: api
+              containerPort: 8000
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: "/app/data"
+      volumes:
+        - name: data
+          emptyDir: {}

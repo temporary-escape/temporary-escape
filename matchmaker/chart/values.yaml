@@ -1,0 +1,68 @@
+domain: "server.temporaryescape.org"
+
+traefik:
+  image:
+    name: docker.io/library/traefik
+    tag: v2.10
+    pullPolicy: IfNotPresent
+
+  http:
+    port: 80
+  https:
+    port: 443
+
+  acme:
+    aws:
+      accessKey: ""
+      secretKey: ""
+      region: ""
+      hostedZone: ""
+    enabled: false
+    email: ""
+    challenge: dns
+    provider: route53
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+    duration: 2160 # 90 days
+    dnsResolvers:
+      - 1.1.1.1:53
+      - 8.8.8.8:53
+
+  storage:
+    path: /etc/traefik/data
+
+  fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+
+  service:
+    type: LoadBalancer
+
+api:
+  image:
+    name: docker.io/temporary-escape/temporary-escape-matchmaker
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  http:
+    port: 8000
+
+  fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+
+  service:
+    type: ClusterIP

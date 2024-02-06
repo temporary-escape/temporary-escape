@@ -8,7 +8,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& service) :
-    NetworkUdpConnection{service},
+    NetworkUdpStream{service},
     socket{
         service,
         asio::ip::udp::endpoint{
@@ -75,7 +75,7 @@ void NetworkUdpClient::receive() {
                 if (self->stun.isRunning() && self->stun.isValid(packet->data(), packet->size())) {
                     self->stun.parse(packet->data(), packet->size());
                 } else if (self->peerEndpoint == self->endpoint) {
-                    logger.info("UDP client received {} bytes", packet->size());
+                    // logger.info("UDP client received {} bytes", packet->size());
                     self->onReceive(packet);
                 }
 
@@ -128,7 +128,7 @@ void NetworkUdpClient::onConnected() {
     connectedCv.notify_one();
 }
 
-std::shared_ptr<NetworkUdpConnection> NetworkUdpClient::makeShared() {
+std::shared_ptr<NetworkUdpStream> NetworkUdpClient::makeShared() {
     return shared_from_this();
 }
 

@@ -1,4 +1,4 @@
-#include "NetworkUdpConnection.hpp"
+#include "NetworkUdpStream.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/StringUtils.hpp"
 
@@ -9,7 +9,7 @@ static auto ackTimerInterval = std::chrono::milliseconds{10};
 static auto ackTimerResentInterval = 25;
 static auto ackTimerDeadline = 100;
 
-NetworkUdpConnection::NetworkUdpConnection(asio::io_service& service) :
+NetworkUdpStream::NetworkUdpStream(asio::io_service& service) :
     service{service},
     strand{service},
     publicKey{ecdh.getPublicKey()},
@@ -17,7 +17,7 @@ NetworkUdpConnection::NetworkUdpConnection(asio::io_service& service) :
     ackTimer{service, ackTimerInterval} {
 }
 
-void NetworkUdpConnection::startAckTimer() {
+void NetworkUdpStream::startAckTimer() {
     auto self = makeShared();
     ackTimer.expires_at(ackTimer.expires_at() + ackTimerInterval);
     ackTimer.async_wait(strand.wrap([self](const asio::error_code ec) {
@@ -33,7 +33,7 @@ void NetworkUdpConnection::startAckTimer() {
     }));
 }
 
-void NetworkUdpConnection::stopAckTimer() {
+void NetworkUdpStream::stopAckTimer() {
     asio::error_code ec;
     (void)ackTimer.cancel(ec);
 }
@@ -46,7 +46,7 @@ void NetworkUdpConnection::stopAckTimer() {
     releasePacket(packet);
 }*/
 
-void NetworkUdpConnection::onReceive(const PacketBytesPtr& packet) {
+void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
     // Is it public key?
     if (ECDH::isPublicKey({reinterpret_cast<const char*>(packet->data()), packet->size()})) {
         if (sharedSecret.empty()) {
@@ -90,8 +90,9 @@ void NetworkUdpConnection::onReceive(const PacketBytesPtr& packet) {
     }
 }
 
-void NetworkUdpConnection::receivePacket(const PacketBytesPtr& packet) {
+void NetworkUdpStream::receivePacket(const PacketBytesPtr& packet) {
     const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
+    // logger.info("Received: {}", header.sequence);
 
     if (header.sequence < receiveNum || header.sequence >= receiveNum + packetQueueSize) {
         // Out of bounds
@@ -109,7 +110,7 @@ void NetworkUdpConnection::receivePacket(const PacketBytesPtr& packet) {
     // Read the packet contents
     item.length =
         decrypt(packet->data() + sizeof(PacketHeader), item.buffer.data(), packet->size() - sizeof(PacketHeader));
-    logger.info("Decrypted: {} bytes", item.length);
+    // logger.info("Decrypted: {} bytes", item.length);
 
     // Process receive queue
     for (uint32_t i = receiveNum; i < receiveNum + packetQueueSize; i++) {
@@ -126,20 +127,20 @@ void NetworkUdpConnection::receivePacket(const PacketBytesPtr& packet) {
     }
 }
 
-void NetworkUdpConnection::consumePacket(const ReceiveQueueItem& packet) {
+void NetworkUdpStream::consumePacket(const ReceiveQueueItem& packet) {
     unp.reserve_buffer(packet.length);
     std::memcpy(unp.buffer(), packet.buffer.data(), packet.length);
     unp.buffer_consumed(packet.length);
 
     msgpack::object_handle oh{};
     while (unp.next(oh)) {
-        logger.info("Got msgpack object!");
+        // logger.info("Got msgpack object!");
         receiveObject(std::move(oh));
         oh = msgpack::object_handle{};
     }
 }
 
-void NetworkUdpConnection::receiveObject(msgpack::object_handle oh) {
+void NetworkUdpStream::receiveObject(msgpack::object_handle oh) {
     if (!Detail::validateMessageObject(oh)) {
         logger.error("Received malformed message");
     } else {
@@ -147,16 +148,16 @@ void NetworkUdpConnection::receiveObject(msgpack::object_handle oh) {
     }
 }
 
-void NetworkUdpConnection::sendAck(const PacketBytesPtr& packet) {
+void NetworkUdpStream::sendAck(const PacketBytesPtr& packet) {
     auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
     header.type = PacketType::Ack;
     packet->length = sizeof(PacketHeader);
     sendPacket(packet);
 }
 
-void NetworkUdpConnection::onAckReceived(const PacketBytesPtr& packet) {
+void NetworkUdpStream::onAckReceived(const PacketBytesPtr& packet) {
     const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
-    logger.info("UDP connection got ack: {}", header.sequence);
+    // logger.info("UDP connection got ack: {}", header.sequence);
 
     // Out of the window?
     if (header.sequence < ackNum || header.sequence >= ackNum + packetWindowSize) {
@@ -170,7 +171,7 @@ void NetworkUdpConnection::onAckReceived(const PacketBytesPtr& packet) {
         ++it;
     }
 
-    logger.info("Dequeue packet index: {}", index);
+    // logger.info("Dequeue packet index: {}", index);
     auto& ptr = it->at(index);
     if (!ptr.buffer) {
         logger.warn("UDP connection got duplicate ack: {}", header.sequence);
@@ -182,7 +183,7 @@ void NetworkUdpConnection::onAckReceived(const PacketBytesPtr& packet) {
 
     // Move the ack position forward
     if (header.sequence == ackNum) {
-        logger.info("Advancing ackNum: {}", ackNum);
+        // logger.info("Advancing ackNum: {}", ackNum);
         while (!it->at(index).buffer && it != sendQueueList.end() && ackNum < sendNum) {
             index++;
             ackNum++;
@@ -194,7 +195,7 @@ void NetworkUdpConnection::onAckReceived(const PacketBytesPtr& packet) {
             }
         }
 
-        logger.info("Advanced ackNum to: {}", ackNum);
+        // logger.info("Advanced ackNum to: {}", ackNum);
         startSendQueue();
     }
 
@@ -220,20 +221,21 @@ void NetworkUdpConnection::onAckReceived(const PacketBytesPtr& packet) {
     sendPacket(packet);
 }*/
 
-PacketBytesPtr NetworkUdpConnection::allocatePacket() {
+PacketBytesPtr NetworkUdpStream::allocatePacket() {
     std::lock_guard<std::mutex> lock{packetPoolMutex};
     const auto ptr = packetPool.allocate();
     new (ptr) PacketBytes();
     return PacketBytesPtr{
         ptr,
-        [pool = &packetPool](PacketBytes* p) {
+        [self = makeShared(), pool = &packetPool](PacketBytes* p) {
             p->~PacketBytes();
+            std::lock_guard<std::mutex> lock{self->packetPoolMutex};
             pool->deallocate(p);
         },
     };
 }
 
-void NetworkUdpConnection::enqueuePacket(const PacketBytesPtr& packet) {
+void NetworkUdpStream::enqueuePacket(const PacketBytesPtr& packet) {
     if (packet->size() < sizeof(PacketHeader)) {
         EXCEPTION("Packet is too small");
     }
@@ -252,7 +254,7 @@ void NetworkUdpConnection::enqueuePacket(const PacketBytesPtr& packet) {
 
         // Remember the packet
         const auto index = header.sequence % packetQueueSize;
-        logger.info("Enqueue packet: {} index: {}", header.sequence, index);
+        // logger.info("Enqueue packet: {} index: {}", header.sequence, index);
         self->enqueuePos->at(index).buffer = packet;
         self->enqueuePos->at(index).time = 0;
 
@@ -268,11 +270,11 @@ void NetworkUdpConnection::enqueuePacket(const PacketBytesPtr& packet) {
     });
 }
 
-void NetworkUdpConnection::onPacketSent(const PacketBytesPtr& packet) {
+void NetworkUdpStream::onPacketSent(const PacketBytesPtr& packet) {
     auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
     if (header.type == PacketType::DataReliable) {
-        logger.info("Sent packet: {} sendNum: {}", header.sequence, sendNum);
-        // assert(header.sequence == sendNum);
+        // logger.info("Sent packet: {} sendNum: {}", header.sequence, sendNum);
+        //  assert(header.sequence == sendNum);
 
         sending = false;
         // ++sendNum;
@@ -280,7 +282,7 @@ void NetworkUdpConnection::onPacketSent(const PacketBytesPtr& packet) {
     }
 }
 
-void NetworkUdpConnection::startSendQueue() {
+void NetworkUdpStream::startSendQueue() {
     /*const auto jump = sendNum / packetQueueSize;
     const auto index = sendNum % packetQueueSize;
 
@@ -305,7 +307,7 @@ void NetworkUdpConnection::startSendQueue() {
     }
 
     auto& header = *reinterpret_cast<PacketHeader*>(packet.buffer->data());
-    logger.info("UDP client Sending packet: {}", header.sequence);
+    // logger.info("UDP client Sending packet: {}", header.sequence);
 
     sending = true;
     ++sendNum;
@@ -313,7 +315,7 @@ void NetworkUdpConnection::startSendQueue() {
     sendPacket(packet.buffer);
 }
 
-void NetworkUdpConnection::processQueue() {
+void NetworkUdpStream::processQueue() {
     for (uint32_t i = ackNum; i < std::min<uint32_t>(ackNum + packetWindowSize, sendNum); i++) {
         const auto index = i % packetQueueSize;
         auto it = sendQueueList.begin();

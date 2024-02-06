@@ -32,6 +32,10 @@ private:
     const Config& config;
     asio::io_service& service;
     NetworkDispatcher2& dispatcher;
+
+    std::mutex packetPoolMutex;
+    MemoryPool<PacketBytes, 256 * sizeof(PacketBytes)> packetPool{};
+
     asio::io_service::strand strand;
     asio::ip::udp::socket socket;
     NetworkStunClient stun;
@@ -40,8 +44,5 @@ private:
 
     std::mutex mutex;
     std::unordered_map<asio::ip::udp::endpoint, std::shared_ptr<NetworkUdpPeer>> peers{};
-
-    std::mutex packetPoolMutex;
-    MemoryPool<PacketBytes, 64 * 1024> packetPool{};
 };
 } // namespace Engine

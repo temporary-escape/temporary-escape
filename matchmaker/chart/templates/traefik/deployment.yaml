@@ -1,0 +1,116 @@
+{{ $configMapHash := include (print $.Template.BasePath "/traefik/configmap.yaml") . | sha256sum }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Chart.Name }}-traefik"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    "app.kubernetes.io/name": "{{ .Chart.Name }}"
+    "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+  annotations:
+    "checksum/config": "{{ $configMapHash }}"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      "app.kubernetes.io/name": "{{ .Chart.Name }}"
+      "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+  template:
+    metadata:
+      name: "{{ .Chart.Name }}-traefik"
+      namespace: "{{ .Release.Namespace }}"
+      labels:
+        "app.kubernetes.io/name": "{{ .Chart.Name }}"
+        "app.kubernetes.io/instance": "{{ .Chart.Name }}-traefik"
+      annotations:
+        "checksum/config": "{{ $configMapHash }}"
+    spec:
+      serviceAccountName: "{{ .Chart.Name }}-traefik"
+      securityContext:
+        runAsUser: {{ .Values.traefik.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.traefik.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.traefik.fsGroup }}
+      containers:
+        - name: "{{ .Chart.Name }}-traefik"
+          image: "{{ .Values.traefik.image.name }}:{{ .Values.traefik.image.tag }}"
+          imagePullPolicy: "{{ .Values.traefik.image.pullPolicy }}"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Chart.Name }}-traefik"
+                  key: AWS_ACCESS_KEY_ID
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Chart.Name }}-traefik"
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: false
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Chart.Name }}-traefik"
+                  key: AWS_REGION
+                  optional: false
+            - name: AWS_HOSTED_ZONE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Chart.Name }}-traefik"
+                  key: AWS_HOSTED_ZONE_ID
+                  optional: false
+          {{- with .Values.traefik.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: traefik
+              containerPort: 3000
+              protocol: TCP
+            - name: web
+              containerPort: 8080
+              protocol: TCP
+            - name: websecure
+              containerPort: 8443
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: traefik
+            failureThreshold: 1
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: traefik
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: config
+              mountPath: "/etc/traefik/traefik.yml"
+              readOnly: true
+              subPath: "traefik.yml"
+            - name: data
+              mountPath: "/data"
+      volumes:
+        - name: config
+          configMap:
+            name: "{{ .Chart.Name }}-traefik"
+            optional: false
+            items:
+              - key: "traefik.yml"
+                path: "traefik.yml"
+        - name: data
+          hostPath:
+            type: Directory
+            path: "{{ .Values.traefik.storage.path }}"

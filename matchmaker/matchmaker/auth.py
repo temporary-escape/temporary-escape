@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone, timedelta
-from typing import Optional, Tuple, Annotated
+from typing import Tuple, Annotated
 
 from fastapi import Request, HTTPException, Depends
 from jose import JWTError, jwt

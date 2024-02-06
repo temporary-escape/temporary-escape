@@ -9,15 +9,15 @@
 #include <list>
 
 namespace Engine {
-static constexpr size_t packetQueueSize = 32;
-static constexpr size_t packetWindowSize = 8;
+static constexpr size_t packetQueueSize = 256;
+static constexpr size_t packetWindowSize = 64;
 
 using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
-class NetworkUdpConnection : public NetworkStream {
+class NetworkUdpStream : public NetworkStream {
 public:
-    NetworkUdpConnection(asio::io_service& service);
-    virtual ~NetworkUdpConnection() = default;
+    NetworkUdpStream(asio::io_service& service);
+    virtual ~NetworkUdpStream() = default;
 
     [[nodiscard]] const std::string& getPublicKey() const {
         return publicKey;
@@ -72,7 +72,7 @@ private:
 
     virtual void sendPacket(const PacketBytesPtr& packet) = 0;
     virtual void onConnected() = 0;
-    virtual std::shared_ptr<NetworkUdpConnection> makeShared() = 0;
+    virtual std::shared_ptr<NetworkUdpStream> makeShared() = 0;
     virtual void onObjectReceived(msgpack::object_handle oh) = 0;
 
     ECDH ecdh{};
@@ -80,7 +80,7 @@ private:
     std::vector<uint8_t> sharedSecret;
 
     std::mutex packetPoolMutex;
-    MemoryPool<PacketBytes, 256 * 1024> packetPool{};
+    MemoryPool<PacketBytes, 256 * sizeof(PacketBytes)> packetPool{};
 
     uint32_t sequenceNum{0};
     uint32_t ackNum{0};

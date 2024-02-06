@@ -39,13 +39,24 @@ public:
         return server.get();
     }
 
+    const std::vector<UdpTestMessage>& getReceived() const {
+        return received;
+    }
+
+    uint64_t getReceivedCount() const {
+        return receivedCount.load();
+    }
+
 private:
     void handle(Request2<UdpTestMessage> req) {
-        logger.info("Request received: {}", req.get().msg);
+        // received.push_back(req.get());
+        receivedCount++;
     }
 
     NetworkDispatcher2 dispatcher;
     std::shared_ptr<NetworkUdpServer> server;
+    std::vector<UdpTestMessage> received;
+    std::atomic<uint64_t> receivedCount{0};
 };
 
 class TestUdpClient : public BackgroundWorker {
@@ -70,121 +81,29 @@ private:
     std::shared_ptr<NetworkUdpClient> client;
 };
 
-/*class UdpServerFixture {
-public:
-    UdpServerFixture() {
-        config.network.serverBindAddress = "192.168.163.1";
-        config.network.clientBindAddress = "0.0.0.0";
-        config.network.serverPort = 22334;
-
-        work = std::make_unique<asio::io_service::work>(service);
-        for (auto i = 0; i < 4; i++) {
-            threads.emplace_back([this]() {
-                try {
-                    service.run();
-                } catch (std::exception& e) {
-                    BACKTRACE(e, "Exception caught in TcpServerFixture thread");
-                }
-            });
-        }
-    }
-
-    ~UdpServerFixture() {
-        stopAll();
-    }
-
-    void stopAll() {
-        if (server) {
-            logger.info("Closing server");
-            server->stop();
-        }
-
-        if (work) {
-            logger.info("Stopping io_service");
-            work.reset();
-            service.stop();
-        }
-
-        if (!threads.empty()) {
-            logger.info("Joining threads");
-            for (auto& thread : threads) {
-                if (thread.joinable()) {
-                    thread.join();
-                }
-            }
-            threads.clear();
-        }
-
-        server.reset();
-    }
-
-    void startServer() {
-        server = std::make_unique<NetworkUdpServer>(config, service);
-        server->start();
-    }
-
-    std::shared_ptr<NetworkUdpClient> startClient(const std::string& address, const uint16_t port) {
-        auto client = std::make_shared<NetworkUdpClient>(config, service);
-        client->start();
-        client->connect(address, port);
-        return client;
-    }
-
+TEST_CASE("Start UDP server with client and exchange data", "[NetworkUdpServer]") {
     Config config{};
-    asio::io_service service;
-    std::unique_ptr<asio::io_service::work> work;
-    std::list<std::thread> threads;
-    std::unique_ptr<NetworkUdpServer> server;
-};*/
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
+    config.network.serverPort = 0;
 
-/*static std::string repeat(std::string_view str, const int n) {
-    std::ostringstream os;
-    for (int i = 0; i < n; i++)
-        os << str;
-    return os.str();
-}*/
+    TestUdpServer server{config};
 
-/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP server", "[NetworkUdpServer]") {
-    startServer();
+    TestUdpClient client{config};
+    client->connect(server->getEndpoint().address().to_string(), server->getEndpoint().port());
 
-    auto client = startClient(server->getEndpoint().address().to_string(), server->getEndpoint().port());
-
-    for (auto i = 0; i < 50; i++) {
+    for (auto i = 0; i < 1000; i++) {
         UdpTestMessage msg{};
         msg.msg = fmt::format("Hello World index: {}", i);
         client->send(msg, 42);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds{2});
+    REQUIRE_EVENTUALLY_S(server.getReceivedCount() == 1000, 2);
+}
 
-    client->stop();
-    stopAll();
-    client.reset();
-}*/
-
-/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP server and wait", "[NetworkUdpServer]") {
-    startServer();
-
-    asio::signal_set signals(service, SIGINT, SIGTERM);
-    auto future = signals.async_wait(asio::use_future);
-    (void)future.get();
-}*/
-
-/*TEST_CASE_METHOD(UdpServerFixture, "Start UDP client and send", "[NetworkUdpServer]") {
-    auto client = startClient("192.168.163.1", config.network.serverPort);
-
-    for (auto i = 0; i < 50; i++) {
-        UdpTestMessage msg{};
-        msg.msg = fmt::format("Hello World index: {}", i);
-        client->send(msg, 42);
-    }
-
-    std::this_thread::sleep_for(std::chrono::seconds{2});
-}*/
-
-TEST_CASE("Start UDP server and wait", "[NetworkUdpServer]") {
+/*TEST_CASE("Start UDP server and wait", "[NetworkUdpServer]") {
     Config config{};
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.serverBindAddress = "192.168.163.1";
     config.network.serverPort = 22334;
 
     TestUdpServer server{config};
@@ -192,21 +111,24 @@ TEST_CASE("Start UDP server and wait", "[NetworkUdpServer]") {
     asio::signal_set signals(server.getService(), SIGINT, SIGTERM);
     auto future = signals.async_wait(asio::use_future);
     (void)future.get();
-}
+}*/
 
-TEST_CASE("Start UDP client and send", "[NetworkUdpServer]") {
+// delay 200ms 40ms 25% loss 15.3% 25% duplicate 1% corrupt 0.1% reorder 5% 50%
+// iperf3: 315Kbps send 193Kbps receive
+// rudp:
+/*TEST_CASE("Start UDP client and send", "[NetworkUdpServer]") {
     Config config{};
     config.network.clientBindAddress = "0.0.0.0";
     config.network.serverPort = 22334;
 
     TestUdpClient client{config};
-    client->connect("127.0.0.1", config.network.serverPort);
+    client->connect("192.168.163.1", config.network.serverPort);
 
-    for (auto i = 0; i < 50; i++) {
+    for (auto i = 0; i < 200; i++) {
         UdpTestMessage msg{};
         msg.msg = fmt::format("Hello World index: {}", i);
         client->send(msg, 42);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds{5});
-}
+}*/

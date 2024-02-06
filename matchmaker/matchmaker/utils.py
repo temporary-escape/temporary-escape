@@ -7,6 +7,7 @@ from functools import wraps
 from traceback import format_exception
 from typing import Any, Callable, Coroutine, Union
 
+from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 NoArgsNoReturnFuncT = Callable[[], None]
@@ -60,3 +61,12 @@ def repeat_every(
         return wrapped
 
     return decorator
+
+
+class HTTPError(BaseModel):
+    detail: str
+
+    class Config:
+        schema_extra = {
+            "example": {"detail": "HTTPException raised."},
+        }

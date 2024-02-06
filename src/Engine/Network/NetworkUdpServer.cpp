@@ -52,13 +52,13 @@ void NetworkUdpServer::receive() {
     auto buff = asio::buffer(packet->data(), packet->size());
 
     socket.async_receive_from(
-        buff, peerEndpoint, strand.wrap([this, packet](const asio::error_code ec, const size_t received) {
+        buff, peerEndpoint, strand.wrap([this, packet](asio::error_code ec, const size_t received) {
             if (ec) {
                 // Cancelled?
                 if (ec != asio::error::operation_aborted) {
                     logger.error("UDP server receive error: {}", ec.message());
                 }
-                socket.close();
+                (void)socket.close(ec);
             } else {
                 packet->length = received;
 
@@ -71,7 +71,7 @@ void NetworkUdpServer::receive() {
                         const auto address = socket.local_endpoint().address().to_string();
                         auto peer = std::make_shared<NetworkUdpPeer>(service, dispatcher, socket, peerEndpoint);
                         found = peers.emplace(peerEndpoint, std::move(peer)).first;
-                        found->second->sendHello();
+                        found->second->sendPublicKey();
                     }
 
                     if (found != peers.end()) {
@@ -91,8 +91,9 @@ PacketBytesPtr NetworkUdpServer::allocatePacket() {
     new (ptr) PacketBytes();
     return PacketBytesPtr{
         ptr,
-        [pool = &packetPool](PacketBytes* p) {
+        [this, pool = &packetPool](PacketBytes* p) {
             p->~PacketBytes();
+            std::lock_guard<std::mutex> lock{packetPoolMutex};
             pool->deallocate(p);
         },
     };
