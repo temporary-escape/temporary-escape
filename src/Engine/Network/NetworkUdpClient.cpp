@@ -107,10 +107,12 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
     const auto buff = asio::buffer(publicKey.data(), publicKey.size());
 
     auto self = shared_from_this();
-    socket.async_send_to(buff, endpoints.begin()->endpoint(), [self](const asio::error_code ec, const size_t sent) {
+    socket.async_send_to(buff, endpoint, [self](const asio::error_code ec, const size_t sent) {
         (void)self;
         if (ec) {
             logger.error("Failed to sent public key to the server error: {}", ec.message());
+        } else {
+            logger.info("UDP client sent public key to remote: {}", self->endpoint);
         }
     });
 

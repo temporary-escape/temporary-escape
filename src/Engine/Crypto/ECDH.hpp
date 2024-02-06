@@ -9,7 +9,7 @@
 typedef struct evp_pkey_st EVP_PKEY;
 
 namespace Engine {
-class ECDH {
+class ENGINE_API ECDH {
 public:
     ECDH(const std::string_view& curve = "secp384r1");
     ~ECDH();

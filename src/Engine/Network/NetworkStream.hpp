@@ -6,7 +6,7 @@
 #include <mutex>
 
 namespace Engine {
-struct PacketBytes {
+struct ENGINE_API PacketBytes {
     std::array<uint8_t, maxPacketSize> buffer;
     size_t length;
 
@@ -27,7 +27,7 @@ using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
 static constexpr size_t maxPacketDataSize = maxPacketSize - AES::getEncryptSize(0) - sizeof(PacketHeader);
 
-class NetworkStream {
+class ENGINE_API NetworkStream {
 public:
     class Writer;
 
@@ -52,7 +52,7 @@ public:
     virtual ~NetworkStream() = default;
 
     template <typename T> void send(const T& msg, const uint64_t xid) {
-        Writer writer{*this, PacketType::DataReliable};
+        Writer writer{*this, Detail::MessageHelper<T>::reliable ? PacketType::DataReliable : PacketType::Data};
 
         writer.pack_array(3);
         if constexpr (std::is_same_v<T, std::string>) {

@@ -4,62 +4,6 @@
 
 using namespace Engine;
 
-static const std::string vertexShaderSource = R"(#version 450
-layout(location = 0) in vec2 in_Position;
-layout(location = 1) in vec4 in_TexCoords;
-layout(location = 2) in vec4 in_Color;
-
-layout(location = 0) out VS_OUT {
-    vec4 color;
-    vec4 texCoords;
-} vs_out;
-
-out gl_PerVertex {
-    vec4 gl_Position;
-};
-
-layout(push_constant) uniform Constants {
-	mat4 mvp;
-} constants;
-
-void main() {
-    vs_out.color = in_Color;
-    vs_out.texCoords = in_TexCoords;
-    gl_Position = constants.mvp * vec4(in_Position, 0.0, 1.0);
-}
-)";
-
-static const std::string fragmentShaderSource = R"(#version 450
-
-layout(location = 0) in VS_OUT {
-    vec4 color;
-    vec4 texCoords;
-} ps_in;
-
-layout(push_constant) uniform Constants {
-	mat4 mvp;
-} constants;
-
-layout(binding = 0) uniform sampler2D texSampler[16];
-
-layout(location = 0) out vec4 outColor;
-
-void main() {
-    int mode = int(floor(ps_in.texCoords.z));
-    int index = int(floor(ps_in.texCoords.w));
-
-    if (mode == 1) {
-        vec4 raw = texture(texSampler[index], ps_in.texCoords.xy);
-        outColor = raw * ps_in.color;
-    } else if (mode == 2) {
-        vec4 raw = texture(texSampler[index], ps_in.texCoords.xy);
-        outColor = ps_in.color * vec4(1.0, 1.0, 1.0, raw.r);
-    } else {
-        outColor = ps_in.color;
-    }
-}
-)";
-
 RendererCanvas::RendererCanvas(VulkanRenderer& vulkan) : vulkan{vulkan} {
     try {
         create();

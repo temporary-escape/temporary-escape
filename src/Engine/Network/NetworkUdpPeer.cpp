@@ -36,7 +36,7 @@ void NetworkUdpPeer::sendPublicKey() {
             logger.error("UDP peer failed to send to remote: {} error: {}", self->endpoint, ec.message());
             self->close();
         } else {
-            logger.info("UDP peer sent hello to remote: {}", self->endpoint);
+            logger.info("UDP peer sent public key to remote: {}", self->endpoint);
         }
     }));
 }

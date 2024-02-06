@@ -7,22 +7,30 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-struct UdpTestMessage {
+struct UdpTestReliableMessage {
     std::string msg;
 
     MSGPACK_DEFINE(msg);
 };
 
-MESSAGE_DEFINE(UdpTestMessage);
+MESSAGE_DEFINE_RELIABLE(UdpTestReliableMessage);
+
+struct UdpTestUnreliableMessage {
+    std::string msg;
+
+    MSGPACK_DEFINE(msg);
+};
+
+MESSAGE_DEFINE_UNRELIABLE(UdpTestUnreliableMessage);
 
 class TestUdpServer : public BackgroundWorker {
 public:
     explicit TestUdpServer(const Config& config) : BackgroundWorker{4} {
         server = std::make_shared<NetworkUdpServer>(config, getService(), dispatcher);
 
-        dispatcher.addHandler([this](Request2<UdpTestMessage> req) {
+        dispatcher.addHandler([this](Request2<UdpTestReliableMessage> req) {
             using Self = std::remove_pointer<decltype(this)>::type;
-            using Handler = void (Self::*)(Request2<UdpTestMessage>);
+            using Handler = void (Self::*)(Request2<UdpTestReliableMessage>);
             (this->*static_cast<Handler>(&Self::handle))(std::move(req));
         });
 
@@ -39,7 +47,7 @@ public:
         return server.get();
     }
 
-    const std::vector<UdpTestMessage>& getReceived() const {
+    const std::vector<UdpTestReliableMessage>& getReceived() const {
         return received;
     }
 
@@ -48,14 +56,14 @@ public:
     }
 
 private:
-    void handle(Request2<UdpTestMessage> req) {
+    void handle(Request2<UdpTestReliableMessage> req) {
         // received.push_back(req.get());
         receivedCount++;
     }
 
     NetworkDispatcher2 dispatcher;
     std::shared_ptr<NetworkUdpServer> server;
-    std::vector<UdpTestMessage> received;
+    std::vector<UdpTestReliableMessage> received;
     std::atomic<uint64_t> receivedCount{0};
 };
 
@@ -93,7 +101,7 @@ TEST_CASE("Start UDP server with client and exchange data", "[NetworkUdpServer]"
     client->connect(server->getEndpoint().address().to_string(), server->getEndpoint().port());
 
     for (auto i = 0; i < 1000; i++) {
-        UdpTestMessage msg{};
+        UdpTestReliableMessage msg{};
         msg.msg = fmt::format("Hello World index: {}", i);
         client->send(msg, 42);
     }

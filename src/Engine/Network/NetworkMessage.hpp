@@ -162,8 +162,18 @@ public:
 };
 } // namespace Engine
 
-#define MESSAGE_DEFINE(Type)                                                                                           \
+#define MESSAGE_DEFINE_RELIABLE(Type)                                                                                  \
     template <> struct Engine::Detail::MessageHelper<Type> {                                                           \
         static inline const uint64_t hash = Engine::Detail::getMessageHash(#Type);                                     \
         static inline const char* name = #Type;                                                                        \
+        static inline const bool reliable = true;                                                                      \
+    }
+
+#define MESSAGE_DEFINE(Type) MESSAGE_DEFINE_RELIABLE(Type)
+
+#define MESSAGE_DEFINE_UNRELIABLE(Type)                                                                                \
+    template <> struct Engine::Detail::MessageHelper<Type> {                                                           \
+        static inline const uint64_t hash = Engine::Detail::getMessageHash(#Type);                                     \
+        static inline const char* name = #Type;                                                                        \
+        static inline const bool reliable = false;                                                                     \
     }

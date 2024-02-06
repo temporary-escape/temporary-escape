@@ -9,7 +9,7 @@
 typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
 
 namespace Engine {
-class AES {
+class ENGINE_API AES {
 public:
     AES(const std::vector<uint8_t>& sharedKey);
     ~AES();
@@ -32,10 +32,6 @@ public:
 
     size_t encrypt(const void* src, void* dst, size_t size);
     size_t decrypt(const void* src, void* dst, size_t size);
-
-    const std::array<uint8_t, 16>& getIvec() const {
-        return ivec;
-    }
 
 private:
     static constexpr size_t ivecLength = 16;

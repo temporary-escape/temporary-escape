@@ -14,7 +14,7 @@ static constexpr size_t packetWindowSize = 64;
 
 using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
-class NetworkUdpStream : public NetworkStream {
+class ENGINE_API NetworkUdpStream : public NetworkStream {
 public:
     NetworkUdpStream(asio::io_service& service);
     virtual ~NetworkUdpStream() = default;
@@ -64,7 +64,8 @@ private:
 
     void onAckReceived(const PacketBytesPtr& packet);
     void sendAck(const PacketBytesPtr& packet);
-    void receivePacket(const PacketBytesPtr& packet);
+    void receivePacketReliable(const PacketBytesPtr& packet);
+    void receivePacketUnreliable(const PacketBytesPtr& packet);
     void consumePacket(const ReceiveQueueItem& packet);
     void startSendQueue();
     void processQueue();

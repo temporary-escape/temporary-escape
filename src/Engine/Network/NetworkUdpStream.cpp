@@ -52,8 +52,8 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
         if (sharedSecret.empty()) {
             logger.info("UDP connection received public key from the server");
             sharedSecret = ecdh.deriveSharedSecret({reinterpret_cast<const char*>(packet->data()), packet->size()});
-            logger.debug("UDP connection shared secret computed: {}",
-                         toHexString(sharedSecret.data(), sharedSecret.size()));
+            // logger.debug("UDP connection shared secret computed: {}",
+            //              toHexString(sharedSecret.data(), sharedSecret.size()));
             onSharedSecret(sharedSecret);
 
             onConnected();
@@ -67,30 +67,23 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
         if (header.type == PacketType::Ack) {
             onAckReceived(packet);
         } else if (header.type == PacketType::DataReliable) {
-            receivePacket(packet);
+            receivePacketReliable(packet);
             sendAck(packet);
-
-            /*if (header.sequence != receiveNum) {
-                return;
-            }*/
-
-            /*const auto index = header.sequence % receiveQueue.size();
-            if (!receiveQueue[index]) {
-                receiveQueue[index] =
-            }*/
+        } else if (header.type == PacketType::Data) {
+            receivePacketUnreliable(packet);
         }
-
-        /*const auto* encSrc = reinterpret_cast<const uint8_t*>(data) + sizeof(PacketHeader);
-        const auto encLength = length - sizeof(PacketHeader);
-        if (encLength > 0) {
-            const auto read = aes->decrypt(encSrc, plaintext.data(), encLength);
-            logger.info("UDP connection decrypted: {}", read);
-        }*/
-        //}
     }
 }
 
-void NetworkUdpStream::receivePacket(const PacketBytesPtr& packet) {
+void NetworkUdpStream::receivePacketUnreliable(const PacketBytesPtr& packet) {
+    const auto length =
+        decrypt(packet->data() + sizeof(PacketHeader), plaintext.data(), packet->size() - sizeof(PacketHeader));
+
+    auto oh = msgpack::unpack(reinterpret_cast<const char*>(plaintext.data()), length);
+    receiveObject(std::move(oh));
+}
+
+void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
     const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
     // logger.info("Received: {}", header.sequence);
 
