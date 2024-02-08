@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-latest
 
     needs:
-      - build
+      - publish
 
     env:
       AWS_ACCESS_KEY_ID: "${{ secrets.RELEASES_AWS_ACCESS_KEY_ID }}"
