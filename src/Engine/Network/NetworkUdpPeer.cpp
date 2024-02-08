@@ -9,22 +9,15 @@ NetworkUdpPeer::NetworkUdpPeer(asio::io_service& service, NetworkDispatcher2& di
                                asio::ip::udp::endpoint endpoint) :
     NetworkUdpStream{service}, service{service}, dispatcher{dispatcher}, socket{socket}, endpoint{endpoint} {
 
-    logger.info("UDP peer created on address: {} to remote: {}", socket.local_endpoint(), endpoint);
+    logger.info("UDP peer created local: {} remote: {}", socket.local_endpoint(), endpoint);
 }
 
 NetworkUdpPeer::~NetworkUdpPeer() {
+    logger.info("UDP peer destroyed remote: {}", endpoint);
 }
 
 void NetworkUdpPeer::close() {
-    auto self = shared_from_this();
-    strand.post([self]() {
-        asio::error_code ec;
-        self->stopAckTimer();
-        (void)self->socket.close(ec);
-        if (ec) {
-            logger.error("UDP peer close error: {}", ec.message());
-        }
-    });
+    forceClosed();
 }
 
 void NetworkUdpPeer::sendPublicKey() {
@@ -47,7 +40,7 @@ void NetworkUdpPeer::sendPacket(const PacketBytesPtr& packet) {
     socket.async_send_to(buff, endpoint, strand.wrap([self, packet](asio::error_code ec, const size_t sent) {
         if (ec) {
             logger.error("UDP peer send error: {}", ec.message());
-            (void)self->socket.close(ec);
+            self->close();
         } else {
             self->onPacketSent(packet);
         }
@@ -63,6 +56,17 @@ void NetworkUdpPeer::onReceivePeer(const PacketBytesPtr& packet) {
 }
 
 void NetworkUdpPeer::onConnected() {
+    logger.info("UDP peer connected remote: {}", endpoint);
+
+    auto self = shared_from_this();
+    service.post([self]() { self->dispatcher.onAcceptSuccess(self); });
+}
+
+void NetworkUdpPeer::onDisconnected() {
+    logger.warn("UDP peer disconnected remote: {}", endpoint);
+
+    auto self = shared_from_this();
+    service.post([self]() { self->dispatcher.onDisconnect(self); });
 }
 
 std::shared_ptr<NetworkUdpStream> NetworkUdpPeer::makeShared() {
@@ -70,6 +74,10 @@ std::shared_ptr<NetworkUdpStream> NetworkUdpPeer::makeShared() {
 }
 
 void NetworkUdpPeer::onObjectReceived(msgpack::object_handle oh) {
+    if (!isEstablished()) {
+        return;
+    }
+
     auto o = std::make_shared<decltype(oh)>(std::move(oh));
     auto self = shared_from_this();
     service.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });

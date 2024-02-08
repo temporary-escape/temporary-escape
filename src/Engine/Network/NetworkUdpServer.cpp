@@ -7,7 +7,6 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 NetworkUdpServer::NetworkUdpServer(const Config& config, asio::io_service& service, NetworkDispatcher2& dispatcher) :
-    config{config},
     service{service},
     dispatcher{dispatcher},
     strand{service},

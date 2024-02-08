@@ -274,22 +274,22 @@ void NetworkWebsockets::send(const Frame::Opcode opcode, const void* data, const
         auto* frame = msg->data();
         frame[0] = WS_FIN | op;
         frame[1] = WS_MASK | 126;
-        frame[2] = (length >> 8) & 255;
-        frame[3] = length & 255;
+        frame[2] = (length >> 8) & 0xFF;
+        frame[3] = length & 0xFF;
     } else {
         header = 10;
         msg->resize(header + 4 + length);
         auto* frame = msg->data();
         frame[0] = WS_FIN | op;
         frame[1] = WS_MASK | 127;
-        frame[2] = (unsigned char)((length >> 56) & 255);
-        frame[3] = (unsigned char)((length >> 48) & 255);
-        frame[4] = (unsigned char)((length >> 40) & 255);
-        frame[5] = (unsigned char)((length >> 32) & 255);
-        frame[6] = (unsigned char)((length >> 24) & 255);
-        frame[7] = (unsigned char)((length >> 16) & 255);
-        frame[8] = (unsigned char)((length >> 8) & 255);
-        frame[9] = (unsigned char)(length & 255);
+        frame[2] = (unsigned char)((length >> 56) & 0xFF);
+        frame[3] = (unsigned char)((length >> 48) & 0xFF);
+        frame[4] = (unsigned char)((length >> 40) & 0xFF);
+        frame[5] = (unsigned char)((length >> 32) & 0xFF);
+        frame[6] = (unsigned char)((length >> 24) & 0xFF);
+        frame[7] = (unsigned char)((length >> 16) & 0xFF);
+        frame[8] = (unsigned char)((length >> 8) & 0xFF);
+        frame[9] = (unsigned char)(length & 0xFF);
     }
 
     std::random_device dev;

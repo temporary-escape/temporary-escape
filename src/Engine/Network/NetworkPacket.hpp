@@ -8,6 +8,9 @@ namespace Engine {
 enum class PacketType : uint8_t {
     None,
     Ack,
+    Ping,
+    Pong,
+    Close,
     Data,
     DataReliable,
 };

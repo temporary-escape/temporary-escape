@@ -23,16 +23,13 @@ struct UdpTestUnreliableMessage {
 
 MESSAGE_DEFINE_UNRELIABLE(UdpTestUnreliableMessage);
 
-class TestUdpServer : public BackgroundWorker {
+class TestUdpServer : public BackgroundWorker, public NetworkDispatcher2 {
 public:
     explicit TestUdpServer(const Config& config) : BackgroundWorker{4} {
-        server = std::make_shared<NetworkUdpServer>(config, getService(), dispatcher);
+        server = std::make_shared<NetworkUdpServer>(config, getService(), *this);
 
-        dispatcher.addHandler([this](Request2<UdpTestReliableMessage> req) {
-            using Self = std::remove_pointer<decltype(this)>::type;
-            using Handler = void (Self::*)(Request2<UdpTestReliableMessage>);
-            (this->*static_cast<Handler>(&Self::handle))(std::move(req));
-        });
+        auto& dispatcher = static_cast<NetworkDispatcher2&>(*this);
+        HANDLE_REQUEST2(UdpTestReliableMessage);
 
         server->start();
     }
@@ -55,19 +52,42 @@ public:
         return receivedCount.load();
     }
 
+    const std::unordered_set<NetworkStreamPtr>& getPeers() const {
+        return peers;
+    }
+
+    std::mutex& getMutex() {
+        return mutex;
+    }
+
 private:
     void handle(Request2<UdpTestReliableMessage> req) {
-        // received.push_back(req.get());
+        std::lock_guard<std::mutex> lock{mutex};
+        received.push_back(req.get());
         receivedCount++;
     }
 
-    NetworkDispatcher2 dispatcher;
+public:
+    void onAcceptSuccess(const NetworkStreamPtr& peer) override {
+        std::lock_guard<std::mutex> lock{mutex};
+        peers.emplace(peer);
+    }
+
+    void onDisconnect(const NetworkStreamPtr& peer) override {
+        std::lock_guard<std::mutex> lock{mutex};
+        peers.erase(peer);
+    }
+
+private:
     std::shared_ptr<NetworkUdpServer> server;
+
+    std::mutex mutex;
     std::vector<UdpTestReliableMessage> received;
     std::atomic<uint64_t> receivedCount{0};
+    std::unordered_set<NetworkStreamPtr> peers;
 };
 
-class TestUdpClient : public BackgroundWorker {
+class TestUdpClient : public BackgroundWorker, public NetworkDispatcher2 {
 public:
     explicit TestUdpClient(const Config& config) {
         client = std::make_shared<NetworkUdpClient>(config, getService());
@@ -85,7 +105,6 @@ public:
     }
 
 private:
-    NetworkDispatcher2 dispatcher;
     std::shared_ptr<NetworkUdpClient> client;
 };
 

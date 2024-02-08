@@ -29,7 +29,6 @@ private:
     void receive();
     PacketBytesPtr allocatePacket();
 
-    const Config& config;
     asio::io_service& service;
     NetworkDispatcher2& dispatcher;
 

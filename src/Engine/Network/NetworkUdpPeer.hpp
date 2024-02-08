@@ -21,6 +21,7 @@ public:
 private:
     void sendPacket(const PacketBytesPtr& packet) override;
     void onConnected() override;
+    void onDisconnected() override;
     std::shared_ptr<NetworkUdpStream> makeShared() override;
     void onObjectReceived(msgpack::object_handle oh) override;
 

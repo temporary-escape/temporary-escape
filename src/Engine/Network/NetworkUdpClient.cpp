@@ -20,7 +20,6 @@ NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& servi
 }
 
 void NetworkUdpClient::start() {
-    startAckTimer();
     receive();
     logger.info("UDP client started on address: {}", socket.local_endpoint());
 }
@@ -31,9 +30,9 @@ NetworkUdpClient::~NetworkUdpClient() {
 
 void NetworkUdpClient::stop() {
     auto self = shared_from_this();
+    forceClosed();
     strand.post([self]() {
         asio::error_code ec;
-        self->stopAckTimer();
         (void)self->socket.close(ec);
         if (ec) {
             logger.error("UDP client close error: {}", ec.message());
@@ -47,7 +46,7 @@ void NetworkUdpClient::sendPacket(const PacketBytesPtr& packet) {
     socket.async_send_to(buff, endpoint, strand.wrap([self, packet](asio::error_code ec, const size_t sent) {
         if (ec) {
             logger.error("UDP client send error: {}", ec.message());
-            (void)self->socket.close(ec);
+            self->stop();
         } else {
             self->onPacketSent(packet);
         }
@@ -68,7 +67,7 @@ void NetworkUdpClient::receive() {
                 if (ec != asio::error::operation_aborted) {
                     logger.error("UDP client receive error: {}", ec.message());
                 }
-                (void)self->socket.close(ec);
+                self->stop();
             } else {
                 packet->length = received;
 
@@ -123,6 +122,8 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
 }
 
 void NetworkUdpClient::onConnected() {
+    logger.info("UDP client connected remote: {}", endpoint);
+
     {
         std::lock_guard lock{connectedLock};
         connected = true;
@@ -130,9 +131,16 @@ void NetworkUdpClient::onConnected() {
     connectedCv.notify_one();
 }
 
+void NetworkUdpClient::onDisconnected() {
+    logger.warn("UDP client disconnected remote: {}", endpoint);
+}
+
 std::shared_ptr<NetworkUdpStream> NetworkUdpClient::makeShared() {
     return shared_from_this();
 }
 
 void NetworkUdpClient::onObjectReceived(msgpack::object_handle oh) {
+    if (!isEstablished()) {
+        return;
+    }
 }

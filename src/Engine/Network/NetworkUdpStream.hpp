@@ -16,28 +16,18 @@ using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
 class ENGINE_API NetworkUdpStream : public NetworkStream {
 public:
-    NetworkUdpStream(asio::io_service& service);
-    virtual ~NetworkUdpStream() = default;
+    explicit NetworkUdpStream(asio::io_service& service);
 
     [[nodiscard]] const std::string& getPublicKey() const {
         return publicKey;
     }
 
-    [[nodiscard]] size_t getSequenceNum() const {
-        return sequenceNum;
-    }
-
-    [[nodiscard]] size_t getSendNum() const {
-        return sendNum;
-    }
-
-    [[nodiscard]] size_t getAckNum() const {
-        return ackNum;
+    bool isEstablished() const {
+        return established.load();
     }
 
 protected:
-    void stopAckTimer();
-    void startAckTimer();
+    void forceClosed();
     void onReceive(const PacketBytesPtr& packet);
     void onPacketSent(const PacketBytesPtr& packet);
 
@@ -54,7 +44,7 @@ private:
     };
 
     struct ReceiveQueueItem {
-        std::array<uint8_t, maxPacketDataSize> buffer;
+        std::array<uint8_t, maxPacketDataSize> buffer{};
         uint32_t length{0};
     };
 
@@ -62,7 +52,9 @@ private:
     using ReceiveQueue = std::array<ReceiveQueueItem, packetQueueSize>;
     using SendQueueList = std::list<SendQueue>;
 
-    void onAckReceived(const PacketBytesPtr& packet);
+    void stopAckTimer();
+    void startAckTimer();
+    void ackReceived(const PacketBytesPtr& packet);
     void sendAck(const PacketBytesPtr& packet);
     void receivePacketReliable(const PacketBytesPtr& packet);
     void receivePacketUnreliable(const PacketBytesPtr& packet);
@@ -73,6 +65,7 @@ private:
 
     virtual void sendPacket(const PacketBytesPtr& packet) = 0;
     virtual void onConnected() = 0;
+    virtual void onDisconnected() = 0;
     virtual std::shared_ptr<NetworkUdpStream> makeShared() = 0;
     virtual void onObjectReceived(msgpack::object_handle oh) = 0;
 
@@ -82,6 +75,8 @@ private:
 
     std::mutex packetPoolMutex;
     MemoryPool<PacketBytes, 256 * sizeof(PacketBytes)> packetPool{};
+
+    std::atomic<bool> established{false};
 
     uint32_t sequenceNum{0};
     uint32_t ackNum{0};

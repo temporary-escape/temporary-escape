@@ -18,6 +18,10 @@ NetworkUdpStream::NetworkUdpStream(asio::io_service& service) :
 }
 
 void NetworkUdpStream::startAckTimer() {
+    if (!established.load()) {
+        return;
+    }
+
     auto self = makeShared();
     ackTimer.expires_at(ackTimer.expires_at() + ackTimerInterval);
     ackTimer.async_wait(strand.wrap([self](const asio::error_code ec) {
@@ -31,6 +35,14 @@ void NetworkUdpStream::startAckTimer() {
             self->processQueue();
         }
     }));
+}
+
+void NetworkUdpStream::forceClosed() {
+    stopAckTimer();
+    if (established.load()) {
+        onDisconnected();
+    }
+    established.store(false);
 }
 
 void NetworkUdpStream::stopAckTimer() {
@@ -50,13 +62,15 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
     // Is it public key?
     if (ECDH::isPublicKey({reinterpret_cast<const char*>(packet->data()), packet->size()})) {
         if (sharedSecret.empty()) {
-            logger.info("UDP connection received public key from the server");
+            // logger.info("UDP connection received public key from the remote");
             sharedSecret = ecdh.deriveSharedSecret({reinterpret_cast<const char*>(packet->data()), packet->size()});
             // logger.debug("UDP connection shared secret computed: {}",
             //              toHexString(sharedSecret.data(), sharedSecret.size()));
             onSharedSecret(sharedSecret);
 
+            established.store(true);
             onConnected();
+            startAckTimer();
         }
         return;
     } else if (!sharedSecret.empty() && packet->size() >= sizeof(PacketHeader) &&
@@ -64,8 +78,10 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
 
         const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
 
-        if (header.type == PacketType::Ack) {
-            onAckReceived(packet);
+        if (header.type == PacketType::Close) {
+            forceClosed();
+        } else if (header.type == PacketType::Ack) {
+            ackReceived(packet);
         } else if (header.type == PacketType::DataReliable) {
             receivePacketReliable(packet);
             sendAck(packet);
@@ -148,7 +164,7 @@ void NetworkUdpStream::sendAck(const PacketBytesPtr& packet) {
     sendPacket(packet);
 }
 
-void NetworkUdpStream::onAckReceived(const PacketBytesPtr& packet) {
+void NetworkUdpStream::ackReceived(const PacketBytesPtr& packet) {
     const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
     // logger.info("UDP connection got ack: {}", header.sequence);
 
@@ -233,6 +249,10 @@ void NetworkUdpStream::enqueuePacket(const PacketBytesPtr& packet) {
         EXCEPTION("Packet is too small");
     }
 
+    if (!established.load()) {
+        return;
+    }
+
     auto self = makeShared();
     strand.post([self, packet]() {
         auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
@@ -276,6 +296,10 @@ void NetworkUdpStream::onPacketSent(const PacketBytesPtr& packet) {
 }
 
 void NetworkUdpStream::startSendQueue() {
+    if (!established.load()) {
+        return;
+    }
+
     /*const auto jump = sendNum / packetQueueSize;
     const auto index = sendNum % packetQueueSize;
 
@@ -299,7 +323,7 @@ void NetworkUdpStream::startSendQueue() {
         return;
     }
 
-    auto& header = *reinterpret_cast<PacketHeader*>(packet.buffer->data());
+    // auto& header = *reinterpret_cast<PacketHeader*>(packet.buffer->data());
     // logger.info("UDP client Sending packet: {}", header.sequence);
 
     sending = true;
@@ -325,6 +349,8 @@ void NetworkUdpStream::processQueue() {
         if (packet.time == ackTimerDeadline) {
             // Deadline
             logger.error("UDP deadline has been reached on ack: {}", i);
+            forceClosed();
+            return;
         } else if (packet.time == ackTimerResentInterval) {
             // Resend!
             logger.warn("Resending packet: {}", i);
@@ -334,30 +360,3 @@ void NetworkUdpStream::processQueue() {
 
     startAckTimer();
 }
-
-/*NetworkPacketRingBuffer::NetworkPacketRingBuffer() {
-    chunks.push_back(std::make_unique<Chunk>());
-    head.chunk = chunks.back().get();
-    head.it = head.chunk->items.begin();
-
-    tail.chunk = chunks.back().get();
-    tail.it = tail.chunk->items.begin();
-}
-
-uint8_t* NetworkPacketRingBuffer::allocate() {
-    if (head.it == head.chunk->items.end()) {
-        chunks.push_back(std::make_unique<Chunk>());
-        head.chunk = chunks.back().get();
-        head.it = head.chunk->items.begin();
-    }
-
-    head.it->used = true;
-    auto* res = head.it->buffer.data();
-
-    head.it++;
-
-    return res;
-}*/
-
-/*void NetworkUdpConnection::onSent(const uint32_t sequence) {
-}*/
