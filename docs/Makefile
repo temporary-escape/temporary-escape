@@ -34,4 +34,4 @@ genapi_py: pyenv
 %: Makefile releases_py genapi_py
 	source ./venv/bin/activate
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-	echo "temporaryescape.org" > "$(BUILDDIR)/CNAME"
+	echo "temporaryescape.org" > "$(BUILDDIR)/html/CNAME"
