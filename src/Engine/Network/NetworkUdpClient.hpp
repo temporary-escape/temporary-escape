@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API NetworkUdpClient : public std::enable_shared_from_this<NetworkUdpClient>, public NetworkUdpStream {
 public:
-    NetworkUdpClient(const Config& config, asio::io_service& service);
+    NetworkUdpClient(const Config& config, asio::io_service& service, NetworkDispatcher2& dispatcher);
     virtual ~NetworkUdpClient();
 
     void connect(const std::string& address, uint16_t port);
@@ -19,6 +19,7 @@ public:
     }
 
 private:
+    void stopInternal();
     void sendPacket(const PacketBytesPtr& packet) override;
     void onConnected() override;
     void onDisconnected() override;
@@ -27,6 +28,7 @@ private:
 
     void receive();
 
+    NetworkDispatcher2& dispatcher;
     asio::ip::udp::socket socket;
     NetworkStunClient stun;
     asio::ip::udp::endpoint endpoint;

@@ -3,7 +3,7 @@
 
 using namespace Engine;
 
-TEST_CASE("Parse url", "[network_utils]") {
+TEST_CASE("Parse url", "[Network]") {
     auto parts = parseUrl("http://hello.world.com");
     REQUIRE(parts.has_value());
     REQUIRE(parts->proto == "http");

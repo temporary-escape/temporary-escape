@@ -7,8 +7,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& service) :
-    NetworkUdpStream{service},
+NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& service, NetworkDispatcher2& dispatcher) :
+    NetworkUdpStream{service, true},
+    dispatcher{dispatcher},
     socket{
         service,
         asio::ip::udp::endpoint{
@@ -29,6 +30,11 @@ NetworkUdpClient::~NetworkUdpClient() {
 }
 
 void NetworkUdpClient::stop() {
+    sendClosePacket();
+    stopInternal();
+}
+
+void NetworkUdpClient::stopInternal() {
     auto self = shared_from_this();
     forceClosed();
     strand.post([self]() {
@@ -46,7 +52,7 @@ void NetworkUdpClient::sendPacket(const PacketBytesPtr& packet) {
     socket.async_send_to(buff, endpoint, strand.wrap([self, packet](asio::error_code ec, const size_t sent) {
         if (ec) {
             logger.error("UDP client send error: {}", ec.message());
-            self->stop();
+            self->stopInternal();
         } else {
             self->onPacketSent(packet);
         }
@@ -67,7 +73,7 @@ void NetworkUdpClient::receive() {
                 if (ec != asio::error::operation_aborted) {
                     logger.error("UDP client receive error: {}", ec.message());
                 }
-                self->stop();
+                self->stopInternal();
             } else {
                 packet->length = received;
 
@@ -89,7 +95,7 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
         connected = false;
     }
 
-    logger.info("Connecting to address: {} port: {}", address, port);
+    logger.info("UDP client connecting to address: {} port: {}", address, port);
 
     const asio::ip::udp::resolver::query query(address, std::to_string(port));
     asio::ip::udp::resolver resolver{service};
@@ -129,10 +135,16 @@ void NetworkUdpClient::onConnected() {
         connected = true;
     }
     connectedCv.notify_one();
+
+    auto self = shared_from_this();
+    strand.post([self]() { self->dispatcher.onAcceptSuccess(self); });
 }
 
 void NetworkUdpClient::onDisconnected() {
     logger.warn("UDP client disconnected remote: {}", endpoint);
+
+    auto self = shared_from_this();
+    strand.post([self]() { self->dispatcher.onDisconnect(self); });
 }
 
 std::shared_ptr<NetworkUdpStream> NetworkUdpClient::makeShared() {
@@ -143,4 +155,8 @@ void NetworkUdpClient::onObjectReceived(msgpack::object_handle oh) {
     if (!isEstablished()) {
         return;
     }
+
+    auto o = std::make_shared<decltype(oh)>(std::move(oh));
+    auto self = shared_from_this();
+    strand.post([self, o]() { self->dispatcher.onObjectReceived(self, o); });
 }

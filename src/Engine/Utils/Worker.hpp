@@ -136,7 +136,7 @@ private:
 class ENGINE_API BackgroundWorker {
 public:
     explicit BackgroundWorker(size_t numTheads = 1);
-    ~BackgroundWorker();
+    virtual ~BackgroundWorker();
 
     void stop();
 

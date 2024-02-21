@@ -16,18 +16,35 @@ using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
 class ENGINE_API NetworkUdpStream : public NetworkStream {
 public:
-    explicit NetworkUdpStream(asio::io_service& service);
-
-    [[nodiscard]] const std::string& getPublicKey() const {
-        return publicKey;
-    }
+    explicit NetworkUdpStream(asio::io_service& service, bool isClient);
 
     bool isEstablished() const {
         return established.load();
     }
 
+    uint64_t getLastPingTime() const {
+        return lastPingTime.load();
+    }
+
+    uint64_t getSendQueueSize() const {
+        return sendQueueSize.load();
+    }
+
+    uint64_t getTotalSent() const {
+        return totalSent.load();
+    }
+
+    uint64_t getTotalReceived() const {
+        return totalReceived.load();
+    }
+
 protected:
+    [[nodiscard]] const std::string& getPublicKey() const {
+        return publicKey;
+    }
+
     void forceClosed();
+    void sendClosePacket();
     void onReceive(const PacketBytesPtr& packet);
     void onPacketSent(const PacketBytesPtr& packet);
 
@@ -36,6 +53,7 @@ protected:
 
     asio::io_service& service;
     asio::io_service::strand strand;
+    bool isClient;
 
 private:
     struct SendQueueItem {
@@ -53,9 +71,13 @@ private:
     using SendQueueList = std::list<SendQueue>;
 
     void stopAckTimer();
+    void stopPingTimer();
     void startAckTimer();
+    void startPingTimer();
     void ackReceived(const PacketBytesPtr& packet);
     void sendAck(const PacketBytesPtr& packet);
+    void sendPing();
+    void sendPong(const PacketBytesPtr& packet);
     void receivePacketReliable(const PacketBytesPtr& packet);
     void receivePacketUnreliable(const PacketBytesPtr& packet);
     void consumePacket(const ReceiveQueueItem& packet);
@@ -77,6 +99,10 @@ private:
     MemoryPool<PacketBytes, 256 * sizeof(PacketBytes)> packetPool{};
 
     std::atomic<bool> established{false};
+    std::atomic<uint64_t> lastPingTime{0};
+    std::atomic<uint64_t> sendQueueSize{0};
+    std::atomic<uint64_t> totalSent{0};
+    std::atomic<uint64_t> totalReceived{0};
 
     uint32_t sequenceNum{0};
     uint32_t ackNum{0};
@@ -90,6 +116,7 @@ private:
 
     uint32_t receiveNum{0};
     asio::steady_timer ackTimer;
+    asio::steady_timer pingTimer;
     msgpack::unpacker unp;
 };
 } // namespace Engine

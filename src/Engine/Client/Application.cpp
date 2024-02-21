@@ -684,7 +684,7 @@ void Application::startConnectServer(const std::string& serverId) {
 
     logger.info("Starting connection to the server: {}", serverId);
     worker = std::make_unique<BackgroundWorker>();
-    udpClient = std::make_shared<NetworkUdpClient>(config, worker->getService());
+    // udpClient = std::make_shared<NetworkUdpClient>(config, worker->getService());
 
     logger.info("Sending STUN request");
     udpClient->getStunClient().send([this, serverId](const NetworkStunClient::Result& result) {

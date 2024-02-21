@@ -42,7 +42,7 @@ void Matchmaker::close() {
 }
 
 void Matchmaker::apiAuthLogin(Callback<LoginResponse> callback) {
-    static const auto path = "/api/auth/login";
+    static const auto path = "/api/v1/auth/login";
 
     LoginModel body{};
     body.username = uuid();
@@ -57,7 +57,7 @@ void Matchmaker::apiAuthLogin(Callback<LoginResponse> callback) {
 }
 
 void Matchmaker::apiAuthLogout(Callback<LogoutResponse> callback) {
-    static const auto path = "/api/auth/logout";
+    static const auto path = "/api/v1/auth/logout";
     api->request(HttpMethod::Post, path, nullptr, [this, c = std::move(callback)](const HttpResponse& res) {
         if (res.status == 201) {
             authorized.store(false);
@@ -67,29 +67,29 @@ void Matchmaker::apiAuthLogout(Callback<LogoutResponse> callback) {
 }
 
 void Matchmaker::apiServersGet(const int page, Callback<ServerGetResponse> callback) {
-    const auto path = fmt::format("/api/servers?page={}", page);
+    const auto path = fmt::format("/api/v1/servers?page={}", page);
     api->request(HttpMethod::Get, path, nullptr, [c = std::move(callback)](const HttpResponse& res) {
         c(ServerGetResponse{res});
     });
 }
 
 void Matchmaker::apiServersRegister(const RegisterServerModel& body, Callback<ServerRegisterResponse> callback) {
-    static const auto path = "/api/servers/register";
+    static const auto path = "/api/v1/servers/register";
     api->request(HttpMethod::Post, path, body, [c = std::move(callback)](const HttpResponse& res) {
         c(ServerRegisterResponse{res});
     });
 }
 
 void Matchmaker::apiServersPing(const std::string& id, Callback<ServerPingResponse> callback) {
-    const auto path = fmt::format("/api/servers/{}/ping", id);
+    /*const auto path = fmt::format("/api/v1/servers/{}/ping", id);
     api->request(HttpMethod::Put, path, nullptr, [c = std::move(callback)](const HttpResponse& res) {
         c(ServerPingResponse{res});
-    });
+    });*/
 }
 
 void Matchmaker::apiServersConnect(const std::string& id, const ServerConnectModel& body,
                                    Matchmaker::Callback<Matchmaker::ServerConnectResponse> callback) {
-    const auto path = fmt::format("/api/servers/{}/connect", id);
+    const auto path = fmt::format("/api/v1/servers/{}/connect", id);
     api->request(HttpMethod::Post, path, body, [c = std::move(callback)](const HttpResponse& res) {
         c(ServerConnectResponse{res});
     });

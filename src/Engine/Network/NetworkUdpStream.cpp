@@ -5,16 +5,25 @@
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
-static auto ackTimerInterval = std::chrono::milliseconds{10};
-static auto ackTimerResentInterval = 25;
-static auto ackTimerDeadline = 100;
+static auto ackTimerInterval = std::chrono::milliseconds{100};
+static auto ackTimerResentInterval = 3;
+static auto ackTimerDeadline = 10;
+static auto pingTimerInterval = std::chrono::milliseconds{1000};
+static auto pingTimeoutMs = std::chrono::milliseconds{3000};
 
-NetworkUdpStream::NetworkUdpStream(asio::io_service& service) :
+static uint64_t getTimeNowMs() {
+    const auto now = std::chrono::steady_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+}
+
+NetworkUdpStream::NetworkUdpStream(asio::io_service& service, const bool isClient) :
     service{service},
     strand{service},
+    isClient{isClient},
     publicKey{ecdh.getPublicKey()},
     enqueuePos{sendQueueList.end()},
-    ackTimer{service, ackTimerInterval} {
+    ackTimer{service, ackTimerInterval},
+    pingTimer{service, pingTimerInterval} {
 }
 
 void NetworkUdpStream::startAckTimer() {
@@ -37,17 +46,62 @@ void NetworkUdpStream::startAckTimer() {
     }));
 }
 
+void NetworkUdpStream::startPingTimer() {
+    if (!established.load()) {
+        return;
+    }
+
+    auto self = makeShared();
+    pingTimer.expires_at(ackTimer.expires_at() + pingTimerInterval);
+    pingTimer.async_wait(strand.wrap([self](const asio::error_code ec) {
+        if (ec) {
+            // Cancelled?
+            if (ec == asio::error::operation_aborted) {
+                return;
+            }
+            logger.error("UDP connection ack timer failed error: {}", ec.message());
+        } else {
+            if (self->isClient) {
+                // As a client we should send ping periodically
+                self->sendPing();
+            }
+
+            // And we should check if we got a ping response.
+            // And as a server peer we should check if the ping has been received.
+            if (self->lastPingTime.load() + pingTimeoutMs.count() < getTimeNowMs()) {
+                logger.error("UDP connection ping timeout");
+                self->forceClosed();
+            }
+        }
+    }));
+}
+
 void NetworkUdpStream::forceClosed() {
     stopAckTimer();
+    stopPingTimer();
     if (established.load()) {
+        established.store(false);
         onDisconnected();
     }
-    established.store(false);
+}
+
+void NetworkUdpStream::sendClosePacket() {
+    auto packet = allocatePacket();
+    auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
+    header.type = PacketType::Close;
+    header.sequence = 0;
+    packet->length = sizeof(PacketHeader);
+    sendPacket(packet);
 }
 
 void NetworkUdpStream::stopAckTimer() {
     asio::error_code ec;
     (void)ackTimer.cancel(ec);
+}
+
+void NetworkUdpStream::stopPingTimer() {
+    asio::error_code ec;
+    (void)pingTimer.cancel(ec);
 }
 
 /*void NetworkUdpConnection::releasePacket(PacketData* packet) {
@@ -69,17 +123,29 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
             onSharedSecret(sharedSecret);
 
             established.store(true);
+            lastPingTime = getTimeNowMs();
             onConnected();
             startAckTimer();
+            startPingTimer();
         }
         return;
     } else if (!sharedSecret.empty() && packet->size() >= sizeof(PacketHeader) &&
                AES::getDecryptSize(packet->size() - sizeof(PacketHeader)) <= maxPacketDataSize) {
 
+        using Ms = std::chrono::milliseconds;
+
         const auto& header = *reinterpret_cast<const PacketHeader*>(packet->data());
 
         if (header.type == PacketType::Close) {
+            logger.info("UDP connection received close packet");
             forceClosed();
+        } else if (header.type == PacketType::Ping) {
+            // logger.info("UDP connection received ping packet");
+            sendPong(packet);
+            lastPingTime = getTimeNowMs();
+        } else if (header.type == PacketType::Pong) {
+            // logger.info("UDP connection received pong packet");
+            lastPingTime = getTimeNowMs();
         } else if (header.type == PacketType::Ack) {
             ackReceived(packet);
         } else if (header.type == PacketType::DataReliable) {
@@ -92,6 +158,8 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
 }
 
 void NetworkUdpStream::receivePacketUnreliable(const PacketBytesPtr& packet) {
+    ++totalReceived;
+
     const auto length =
         decrypt(packet->data() + sizeof(PacketHeader), plaintext.data(), packet->size() - sizeof(PacketHeader));
 
@@ -126,6 +194,7 @@ void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
         index = i % packetQueueSize;
         auto& p = receiveQueue.at(index);
         if (p.length) {
+            ++totalReceived;
             consumePacket(p);
         } else {
             break;
@@ -162,6 +231,24 @@ void NetworkUdpStream::sendAck(const PacketBytesPtr& packet) {
     header.type = PacketType::Ack;
     packet->length = sizeof(PacketHeader);
     sendPacket(packet);
+}
+
+void NetworkUdpStream::sendPong(const PacketBytesPtr& packet) {
+    auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
+    header.type = PacketType::Pong;
+    packet->length = sizeof(PacketHeader);
+    sendPacket(packet);
+}
+
+void NetworkUdpStream::sendPing() {
+    auto packet = allocatePacket();
+    auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
+    header.type = PacketType::Ping;
+    header.sequence = 0;
+    packet->length = sizeof(PacketHeader);
+    sendPacket(packet);
+
+    startPingTimer();
 }
 
 void NetworkUdpStream::ackReceived(const PacketBytesPtr& packet) {
@@ -253,6 +340,9 @@ void NetworkUdpStream::enqueuePacket(const PacketBytesPtr& packet) {
         return;
     }
 
+    ++sendQueueSize;
+    ++totalSent;
+
     auto self = makeShared();
     strand.post([self, packet]() {
         auto& header = *reinterpret_cast<PacketHeader*>(packet->data());
@@ -289,6 +379,7 @@ void NetworkUdpStream::onPacketSent(const PacketBytesPtr& packet) {
         // logger.info("Sent packet: {} sendNum: {}", header.sequence, sendNum);
         //  assert(header.sequence == sendNum);
 
+        --sendQueueSize;
         sending = false;
         // ++sendNum;
         startSendQueue();
@@ -316,6 +407,10 @@ void NetworkUdpStream::startSendQueue() {
     auto it = sendQueueList.begin();
     if (index < ackNum % packetQueueSize) {
         ++it;
+    }
+
+    if (it == sendQueueList.end()) {
+        return;
     }
 
     auto& packet = it->at(index);
@@ -351,7 +446,7 @@ void NetworkUdpStream::processQueue() {
             logger.error("UDP deadline has been reached on ack: {}", i);
             forceClosed();
             return;
-        } else if (packet.time == ackTimerResentInterval) {
+        } else if (packet.time % ackTimerResentInterval == (ackTimerResentInterval - 1)) {
             // Resend!
             logger.warn("Resending packet: {}", i);
             sendPacket(packet.buffer);

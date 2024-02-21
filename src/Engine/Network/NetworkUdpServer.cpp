@@ -111,10 +111,4 @@ void NetworkUdpServer::stop() {
             logger.error("UDP server close error: {}", ec.message());
         }
     });
-
-    logger.warn("NetworkUdpServer stop done");
 }
-
-/*asio::ip::udp::endpoint NetworkUdpServer::endpoint(uint32_t port, bool ipv6) {
-    return asio::ip::udp::endpoint();
-}*/
