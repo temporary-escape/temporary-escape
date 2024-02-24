@@ -41,12 +41,12 @@ MESSAGE_DEFINE(MessageFetchSystemsResponse);
 
 class ServiceSystems : public Service {
 public:
-    explicit ServiceSystems(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServiceSystems(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServiceSystems();
 
 private:
-    void handle(Request<MessageFetchSystemRequest> req);
-    void handle(Request<MessageFetchSystemsRequest> req);
+    void handle(Request2<MessageFetchSystemRequest> req);
+    void handle(Request2<MessageFetchSystemsRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

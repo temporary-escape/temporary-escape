@@ -24,7 +24,7 @@ MESSAGE_DEFINE(MessagePlayerLocationResponse);
 
 class ServicePlayers : public Service {
 public:
-    explicit ServicePlayers(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServicePlayers(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServicePlayers();
 
     std::optional<std::string> secretToId(const uint64_t secret);
@@ -32,7 +32,7 @@ public:
     PlayerLocationData getSpawnLocation(const std::string& id);
 
 private:
-    void handle(Request<MessagePlayerLocationRequest> req);
+    void handle(Request2<MessagePlayerLocationRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

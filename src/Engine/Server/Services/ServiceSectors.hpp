@@ -43,12 +43,12 @@ MESSAGE_DEFINE(MessageFetchSectorsResponse);
 
 class ServiceSectors : public Service {
 public:
-    explicit ServiceSectors(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServiceSectors(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServiceSectors();
 
 private:
-    void handle(Request<MessageFetchSectorRequest> req);
-    void handle(Request<MessageFetchSectorsRequest> req);
+    void handle(Request2<MessageFetchSectorRequest> req);
+    void handle(Request2<MessageFetchSectorsRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

@@ -19,26 +19,30 @@
 namespace Engine {
 class ENGINE_API Matchmaker;
 class ENGINE_API Lua;
-class ENGINE_API NetworkTcpServer;
+class ENGINE_API NetworkUdpServer;
 
-class ENGINE_API Server : public NetworkDispatcher {
+class ENGINE_API Server : public NetworkDispatcher2 {
 public:
     explicit Server(const Config& config, AssetsManager& assetsManager, Database& db);
     virtual ~Server();
 
-    void onAcceptSuccess(const NetworkPeerPtr& peer) override;
-    void onDisconnect(const NetworkPeerPtr& peer) override;
+    void onAcceptSuccess(const NetworkStreamPtr& peer) override;
+    void onDisconnect(const NetworkStreamPtr& peer) override;
+
+    uint16_t getPort() const {
+        return port;
+    }
 
     // Player specific requests
-    void handle(Request<MessageLoginRequest> req);
-    void handle(Request<MessagePlayerSpawnRequest> req);
-    void handle(Request<MessageModManifestsRequest> req);
-    void handle(Request<MessagePingResponse> req);
-    void handle(Request<MessageActionApproach> req);
-    void handle(Request<MessageActionOrbit> req);
-    void handle(Request<MessageActionKeepDistance> req);
-    void handle(Request<MessageActionStopMovement> req);
-    void handle(Request<MessageControlTargetEvent> req);
+    void handle(Request2<MessageLoginRequest> req);
+    void handle(Request2<MessagePlayerSpawnRequest> req);
+    void handle(Request2<MessageModManifestsRequest> req);
+    void handle(Request2<MessagePingResponse> req);
+    void handle(Request2<MessageActionApproach> req);
+    void handle(Request2<MessageActionOrbit> req);
+    void handle(Request2<MessageActionKeepDistance> req);
+    void handle(Request2<MessageActionStopMovement> req);
+    void handle(Request2<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;
     AssetsManager& getAssetManager() const {
@@ -76,7 +80,7 @@ public:
     SectorPtr startSector(const std::string& sectorId);
     void addPlayerToSector(const SessionPtr& session, const std::string& sectorId);
     SectorPtr getSectorForSession(const SessionPtr& session);
-    template <typename T> void forwardMessageToSector(const Request<T>& req);
+    template <typename T> void forwardMessageToSector(const Request2<T>& req);
 
     static Server* instance;
 
@@ -108,7 +112,8 @@ private:
     BackgroundWorker worker;
     BackgroundWorker loadQueue;
     Worker::Strand strand;
-    std::unique_ptr<NetworkTcpServer> networkServer;
+    std::shared_ptr<NetworkUdpServer> network;
+    uint16_t port;
 
     struct {
         std::shared_mutex mutex;

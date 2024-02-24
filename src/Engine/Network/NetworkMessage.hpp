@@ -160,6 +160,10 @@ public:
     COPYABLE(Request2);
     MOVEABLE(Request2);
 };
+
+template <> struct Detail::MessageHelper<std::string> {
+    static inline const bool reliable = true;
+};
 } // namespace Engine
 
 #define MESSAGE_DEFINE_RELIABLE(Type)                                                                                  \

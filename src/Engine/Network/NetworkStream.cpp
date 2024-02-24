@@ -13,6 +13,7 @@ void NetworkStream::Writer::write(const char* data, size_t length) {
         std::memcpy(&temp[written], data, toWrite);
         length -= toWrite;
         written += toWrite;
+        data += toWrite;
 
         if (written == temp.size()) {
             flush();
@@ -21,6 +22,10 @@ void NetworkStream::Writer::write(const char* data, size_t length) {
 }
 
 void NetworkStream::Writer::flush() {
+    if (written == 0) {
+        return;
+    }
+
     if (!stream.aes) {
         EXCEPTION("NetworkStream has not been initialized");
     }

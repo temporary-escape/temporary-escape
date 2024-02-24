@@ -40,12 +40,12 @@ MESSAGE_DEFINE(MessageFetchFactionsResponse);
 
 class ServiceFactions : public Service {
 public:
-    explicit ServiceFactions(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServiceFactions(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServiceFactions();
 
 private:
-    void handle(Request<MessageFetchFactionRequest> req);
-    void handle(Request<MessageFetchFactionsRequest> req);
+    void handle(Request2<MessageFetchFactionRequest> req);
+    void handle(Request2<MessageFetchFactionsRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

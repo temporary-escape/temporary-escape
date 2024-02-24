@@ -172,9 +172,12 @@ void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
     // logger.info("Received: {}", header.sequence);
 
     if (header.sequence < receiveNum || header.sequence >= receiveNum + packetQueueSize) {
+        // logger.warn("Out of bounds packet: {}", header.sequence);
         // Out of bounds
         return;
     }
+
+    // logger.info("Received packet sequence: {} size: {}", header.sequence, packet->size());
 
     auto index = header.sequence % packetQueueSize;
     auto& item = receiveQueue.at(index);
@@ -190,6 +193,7 @@ void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
     // logger.info("Decrypted: {} bytes", item.length);
 
     // Process receive queue
+    const auto prev = receiveNum;
     for (uint32_t i = receiveNum; i < receiveNum + packetQueueSize; i++) {
         index = i % packetQueueSize;
         auto& p = receiveQueue.at(index);
@@ -203,9 +207,15 @@ void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
         p.length = 0;
         receiveNum++;
     }
+
+    /*if (prev == receiveNum) {
+        logger.warn("Receive num not advanced! Current: {}", receiveNum);
+    }*/
 }
 
 void NetworkUdpStream::consumePacket(const ReceiveQueueItem& packet) {
+    // logger.debug("Consume packet size: {}", packet.length);
+
     unp.reserve_buffer(packet.length);
     std::memcpy(unp.buffer(), packet.buffer.data(), packet.length);
     unp.buffer_consumed(packet.length);

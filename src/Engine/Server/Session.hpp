@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Network/NetworkPeer.hpp"
+#include "../Network/NetworkStream.hpp"
 
 namespace Engine {
 class ENGINE_API Session {
@@ -9,7 +9,7 @@ public:
         PingSent,
     };
 
-    explicit Session(std::string playerId, const NetworkPeerPtr& stream) :
+    explicit Session(std::string playerId, const NetworkStreamPtr& stream) :
         playerId{std::move(playerId)}, stream{stream}, lastPingTime{}, flags{0} {
     }
 
@@ -52,13 +52,13 @@ public:
         connected = false;
     }
 
-    [[nodiscard]] std::shared_ptr<NetworkPeer> getStream() const {
+    [[nodiscard]] std::shared_ptr<NetworkStream> getStream() const {
         return stream.lock();
     }
 
 private:
     std::string playerId;
-    std::weak_ptr<NetworkPeer> stream;
+    std::weak_ptr<NetworkStream> stream;
     std::chrono::steady_clock::time_point lastPingTime;
     uint64_t flags;
     bool connected{true};

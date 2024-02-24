@@ -4,15 +4,15 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ServiceGalaxy::ServiceGalaxy(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions) :
+ServiceGalaxy::ServiceGalaxy(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions) :
     db{db}, sessions{sessions} {
 
-    HANDLE_REQUEST(MessageFetchGalaxyRequest);
+    HANDLE_REQUEST2(MessageFetchGalaxyRequest);
 }
 
 ServiceGalaxy::~ServiceGalaxy() = default;
 
-void ServiceGalaxy::handle(Request<MessageFetchGalaxyRequest> req) {
+void ServiceGalaxy::handle(Request2<MessageFetchGalaxyRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 

@@ -4,15 +4,15 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ServicePlanets::ServicePlanets(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions) :
+ServicePlanets::ServicePlanets(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions) :
     db{db}, sessions{sessions} {
 
-    HANDLE_REQUEST(MessageFetchPlanetsRequest);
+    HANDLE_REQUEST2(MessageFetchPlanetsRequest);
 }
 
 ServicePlanets::~ServicePlanets() = default;
 
-void ServicePlanets::handle(Request<MessageFetchPlanetsRequest> req) {
+void ServicePlanets::handle(Request2<MessageFetchPlanetsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 

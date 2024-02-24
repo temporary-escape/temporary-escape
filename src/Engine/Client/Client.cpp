@@ -16,25 +16,33 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     voxelShapeCache{voxelShapeCache},
     worker{1} {
 
-    auto& dispatcher = static_cast<NetworkDispatcher&>(*this);
-    HANDLE_REQUEST(MessagePlayerLocationEvent);
-    HANDLE_REQUEST(MessagePingRequest);
-    HANDLE_REQUEST(MessageModManifestsResponse);
-    HANDLE_REQUEST(MessageLoginResponse);
-    HANDLE_REQUEST(MessageFetchGalaxyResponse);
-    HANDLE_REQUEST(MessageFetchRegionsResponse);
-    HANDLE_REQUEST(MessageFetchFactionsResponse);
-    HANDLE_REQUEST(MessageFetchSystemsResponse);
-    HANDLE_REQUEST(MessageSceneUpdateEvent);
+    auto& dispatcher = static_cast<NetworkDispatcher2&>(*this);
+    HANDLE_REQUEST2(MessagePlayerLocationEvent);
+    HANDLE_REQUEST2(MessagePingRequest);
+    HANDLE_REQUEST2(MessageModManifestsResponse);
+    HANDLE_REQUEST2(MessageLoginResponse);
+    HANDLE_REQUEST2(MessageFetchGalaxyResponse);
+    HANDLE_REQUEST2(MessageFetchRegionsResponse);
+    HANDLE_REQUEST2(MessageFetchFactionsResponse);
+    HANDLE_REQUEST2(MessageFetchSystemsResponse);
+    HANDLE_REQUEST2(MessageSceneUpdateEvent);
     // HANDLE_REQUEST(MessageSceneBulletsEvent);
-    HANDLE_REQUEST(MessagePlayerControlEvent);
+    HANDLE_REQUEST2(MessagePlayerControlEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
-    networkClient = std::make_unique<NetworkTcpClient>(worker.getService(), *this, address, port);
+    network = std::make_shared<NetworkUdpClient>(config, worker.getService(), dispatcher);
 
-    // Start login sequence by sending manifest request
-    MessageModManifestsRequest req{};
-    networkClient->send(req);
+    try {
+        network->start();
+        network->connect(address, port);
+
+        // Start login sequence by sending manifest request
+        MessageModManifestsRequest req{};
+        network->send(req);
+    } catch (...) {
+        network->stop();
+        EXCEPTION_NESTED("Failed to connect to the server");
+    }
 
     try {
         auto future = promiseLogin.future();
@@ -46,15 +54,15 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
 
 Client::~Client() {
     logger.info("Stopping client");
-    networkClient->close();
+    network->stop();
     worker.stop();
-    networkClient.reset();
+    network.reset();
 }
 
 void Client::disconnect() {
     logger.info("Disconnecting client");
-    if (networkClient) {
-        networkClient->close();
+    if (network) {
+        network->stop();
     }
 }
 
@@ -97,7 +105,7 @@ void Client::update(const float deltaTime) {
 
 void Client::startCacheSync() {
     MessageFetchGalaxyRequest msg{};
-    networkClient->send(msg);
+    network->send(msg);
 }
 
 void Client::createScene(const SectorData& sector) {
@@ -159,7 +167,7 @@ void Client::createScene(const SectorData& sector) {
     grid.insert(Vector3i{2, 1, 2}, block, 0, 1, VoxelShape::Type::Cube);*/
 }
 
-void Client::handle(Request<MessagePlayerLocationEvent> req) {
+void Client::handle(Request2<MessagePlayerLocationEvent> req) {
     auto data = req.get();
 
     logger.info("Player location has changed");
@@ -182,14 +190,14 @@ void Client::handle(Request<MessagePlayerLocationEvent> req) {
     });
 }*/
 
-void Client::handle(Request<MessagePingRequest> req) {
+void Client::handle(Request2<MessagePingRequest> req) {
     auto data = req.get();
     MessagePingResponse res;
     res.time = data.time;
     req.respond(res);
 }
 
-void Client::handle(Request<MessageModManifestsResponse> req) {
+void Client::handle(Request2<MessageModManifestsResponse> req) {
     if (req.isError()) {
         promiseLogin.reject<std::runtime_error>(req.getError());
         return;
@@ -224,10 +232,10 @@ void Client::handle(Request<MessageModManifestsResponse> req) {
     MessageLoginRequest msg{};
     msg.secret = localProfile.secret;
     msg.name = localProfile.name;
-    networkClient->send(msg);
+    network->send(msg);
 }
 
-void Client::handle(Request<MessageLoginResponse> req) {
+void Client::handle(Request2<MessageLoginResponse> req) {
     if (req.isError()) {
         promiseLogin.reject<std::runtime_error>(req.getError());
         return;
@@ -243,7 +251,7 @@ void Client::handle(Request<MessageLoginResponse> req) {
     startCacheSync();
 }
 
-void Client::handle(Request<MessageFetchGalaxyResponse> req) {
+void Client::handle(Request2<MessageFetchGalaxyResponse> req) {
     auto data = req.get();
 
     logger.debug("Received galaxy data");
@@ -254,10 +262,10 @@ void Client::handle(Request<MessageFetchGalaxyResponse> req) {
     // Fetch galaxy regions
     MessageFetchRegionsRequest msg{};
     msg.galaxyId = cache.galaxy.id;
-    networkClient->send(msg);
+    network->send(msg);
 }
 
-void Client::handle(Request<MessageFetchRegionsResponse> req) {
+void Client::handle(Request2<MessageFetchRegionsResponse> req) {
     auto data = req.get();
 
     logger.debug("Received region data count: {}", data.items.size());
@@ -271,16 +279,16 @@ void Client::handle(Request<MessageFetchRegionsResponse> req) {
         MessageFetchRegionsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
         msg.token = data.page.token;
-        networkClient->send(msg);
+        network->send(msg);
     } else {
         // Fetch galaxy factions
         MessageFetchFactionsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
-        networkClient->send(msg);
+        network->send(msg);
     }
 }
 
-void Client::handle(Request<MessageFetchFactionsResponse> req) {
+void Client::handle(Request2<MessageFetchFactionsResponse> req) {
     auto data = req.get();
 
     logger.debug("Received faction data count: {}", data.items.size());
@@ -294,16 +302,16 @@ void Client::handle(Request<MessageFetchFactionsResponse> req) {
         MessageFetchFactionsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
         msg.token = data.page.token;
-        networkClient->send(msg);
+        network->send(msg);
     } else {
         // Fetch galaxy factions
         MessageFetchSystemsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
-        networkClient->send(msg);
+        network->send(msg);
     }
 }
 
-void Client::handle(Request<MessageFetchSystemsResponse> req) {
+void Client::handle(Request2<MessageFetchSystemsResponse> req) {
     auto data = req.get();
 
     logger.debug("Received system data count: {}", data.items.size());
@@ -317,7 +325,7 @@ void Client::handle(Request<MessageFetchSystemsResponse> req) {
         MessageFetchSystemsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
         msg.token = data.page.token;
-        networkClient->send(msg);
+        network->send(msg);
     } else {
         // Construct an ordered list of systems
         for (auto& [_, system] : cache.galaxy.systems) {
@@ -329,11 +337,12 @@ void Client::handle(Request<MessageFetchSystemsResponse> req) {
 
         // Request spawn location
         MessagePlayerSpawnRequest msg{};
-        networkClient->send(msg);
+        network->send(msg);
     }
 }
 
-void Client::handle(Request<MessageSceneUpdateEvent> req) {
+void Client::handle(Request2<MessageSceneUpdateEvent> req) {
+    // logger.debug("MessageSceneUpdateEvent received");
     sync.postSafe([=, r = std::move(req)]() {
         // Update, create, or delete entities in a scene
         scene->getController<ControllerNetwork>().receiveUpdate(r.object());
@@ -347,7 +356,7 @@ void Client::handle(Request<MessageSceneUpdateEvent> req) {
     });
 }*/
 
-void Client::handle(Request<MessagePlayerControlEvent> req) {
+void Client::handle(Request2<MessagePlayerControlEvent> req) {
     sync.postSafe([=]() {
         const auto data = req.get();
         logger.info("Switching player control to entity: {}", data.entityId);

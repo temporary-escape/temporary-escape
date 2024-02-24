@@ -419,8 +419,12 @@ void Application::startClient() {
     status.value = 0.9f;
 
     future = std::async([this]() -> std::function<void()> {
-        client = std::make_unique<Client>(
-            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), "localhost", config.network.serverPort);
+        client = std::make_unique<Client>(config,
+                                          *assetsManager,
+                                          playerLocalProfile,
+                                          voxelShapeCache.get(),
+                                          config.network.serverBindAddress,
+                                          server->getPort());
 
         return [this]() { checkForClientScene(); };
     });
@@ -664,6 +668,9 @@ void Application::compressAssets() {
 }
 
 void Application::startSinglePlayer() {
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
+
     logger.info("Starting single player mode");
 
     status.message = "Loading...";

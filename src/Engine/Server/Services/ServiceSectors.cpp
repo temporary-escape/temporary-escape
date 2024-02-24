@@ -4,16 +4,16 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ServiceSectors::ServiceSectors(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions) :
+ServiceSectors::ServiceSectors(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions) :
     db{db}, sessions{sessions} {
 
-    HANDLE_REQUEST(MessageFetchSectorRequest);
-    HANDLE_REQUEST(MessageFetchSectorsRequest);
+    HANDLE_REQUEST2(MessageFetchSectorRequest);
+    HANDLE_REQUEST2(MessageFetchSectorsRequest);
 }
 
 ServiceSectors::~ServiceSectors() = default;
 
-void ServiceSectors::handle(Request<MessageFetchSectorRequest> req) {
+void ServiceSectors::handle(Request2<MessageFetchSectorRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
@@ -32,7 +32,7 @@ void ServiceSectors::handle(Request<MessageFetchSectorRequest> req) {
     req.respond(res);
 }
 
-void ServiceSectors::handle(Request<MessageFetchSectorsRequest> req) {
+void ServiceSectors::handle(Request2<MessageFetchSectorsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 

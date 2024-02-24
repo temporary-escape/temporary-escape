@@ -8,7 +8,7 @@ static auto logger = createLogger(LOG_FILENAME);
 PlayerSessions::PlayerSessions(const Config& config, Database& db) : config{config}, db{db} {
 }
 
-SessionPtr PlayerSessions::createSession(const NetworkPeerPtr& peer, const std::string& playerId) {
+SessionPtr PlayerSessions::createSession(const NetworkStreamPtr& peer, const std::string& playerId) {
     logger.info("Creating session peer: {} player: {}", peer->getAddress(), playerId);
     std::unique_lock<std::shared_mutex> lock{mutex};
     auto session = std::make_shared<Session>(playerId, peer);
@@ -26,7 +26,7 @@ SessionPtr PlayerSessions::getSession(const std::string& playerId) {
     return nullptr;
 }
 
-SessionPtr PlayerSessions::getSession(const NetworkPeerPtr& peer) {
+SessionPtr PlayerSessions::getSession(const NetworkStreamPtr& peer) {
     std::shared_lock<std::shared_mutex> lock{mutex};
     const auto it = map.find(peer.get());
     if (it == map.end()) {
@@ -59,7 +59,7 @@ std::vector<SessionPtr> PlayerSessions::getAllSessions() {
     }
 }*/
 
-void PlayerSessions::removeSession(const NetworkPeerPtr& peer) {
+void PlayerSessions::removeSession(const NetworkStreamPtr& peer) {
     std::unique_lock<std::shared_mutex> lock{mutex};
     if (const auto it = map.find(peer.get()); it != map.end()) {
         logger.info("Removing session peer: {} player: {}", peer->getAddress(), it->second->getPlayerId());

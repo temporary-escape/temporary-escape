@@ -148,8 +148,16 @@ private:
     std::atomic<uint64_t> receivedCount{0};
 };
 
+static std::string repeat(const std::string_view& str, const size_t num) {
+    std::stringstream ss;
+    for (size_t i = 0; i < num; i++) {
+        ss << str;
+    }
+    return ss.str();
+}
+
 TEST_CASE("Start UDP server with client and exchange data", "[Network]") {
-    const auto count = 500;
+    const auto count = 10;
 
     Config config{};
     config.network.clientBindAddress = "::1";
@@ -163,7 +171,7 @@ TEST_CASE("Start UDP server with client and exchange data", "[Network]") {
 
     for (auto i = 0; i < count; i++) {
         UdpTestReliableMessage msg{};
-        msg.msg = fmt::format("Hello World index: {}", i);
+        msg.msg = repeat(fmt::format("Hello World index: {}", i), 500);
         client->send(msg, 42);
     }
 
@@ -173,13 +181,17 @@ TEST_CASE("Start UDP server with client and exchange data", "[Network]") {
     auto received = server.getReceived();
     REQUIRE(received.size() == count);
     for (auto i = 0; i < count; i++) {
-        REQUIRE(received.at(i).msg == fmt::format("Hello World index: {}", i));
+        const auto expected = repeat(fmt::format("Hello World index: {}", i), 500);
+        REQUIRE(expected.size() == received.at(i).msg.size());
+        REQUIRE(std::strncmp(expected.c_str(), received.at(i).msg.c_str(), expected.size()) == 0);
     }
 
     received = client.getReceived();
     REQUIRE(received.size() == count);
     for (auto i = 0; i < count; i++) {
-        REQUIRE(received.at(i).msg == fmt::format("Response for: Hello World index: {}", i));
+        const auto expected = fmt::format("Response for: {}", repeat(fmt::format("Hello World index: {}", i), 500));
+        REQUIRE(expected.size() == received.at(i).msg.size());
+        REQUIRE(std::strncmp(expected.c_str(), received.at(i).msg.c_str(), expected.size()) == 0);
     }
 }
 

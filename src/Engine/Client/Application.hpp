@@ -49,7 +49,6 @@ public:
 
 private:
     void loadProfile();
-    void loadSounds();
     void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
     void renderFrameTime(const Vector2i& viewport);

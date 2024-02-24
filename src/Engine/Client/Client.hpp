@@ -4,7 +4,7 @@
 #include "../Config.hpp"
 #include "../Future.hpp"
 #include "../Library.hpp"
-#include "../Network/NetworkTcpClient.hpp"
+#include "../Network/NetworkUdpClient.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Sector.hpp"
 #include "../Utils/ReturnType.hpp"
@@ -30,7 +30,7 @@ struct PlayerLocalProfile {
 
 XML_DEFINE(PlayerLocalProfile, "profile");
 
-class ENGINE_API Client : public NetworkDispatcher {
+class ENGINE_API Client : public NetworkDispatcher2 {
 public:
     explicit Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
                     VoxelShapeCache* voxelShapeCache, const std::string& address, int port);
@@ -56,20 +56,20 @@ public:
     }
 
     bool isConnected() const {
-        return networkClient && networkClient->isConnected();
+        return network && network->isEstablished();
     }
 
-    void handle(Request<MessagePlayerLocationEvent> req);
-    void handle(Request<MessagePingRequest> req);
-    void handle(Request<MessageModManifestsResponse> req);
-    void handle(Request<MessageLoginResponse> req);
-    void handle(Request<MessageFetchGalaxyResponse> req);
-    void handle(Request<MessageFetchSystemsResponse> req);
-    void handle(Request<MessageFetchFactionsResponse> req);
-    void handle(Request<MessageFetchRegionsResponse> req);
-    void handle(Request<MessageSceneUpdateEvent> req);
+    void handle(Request2<MessagePlayerLocationEvent> req);
+    void handle(Request2<MessagePingRequest> req);
+    void handle(Request2<MessageModManifestsResponse> req);
+    void handle(Request2<MessageLoginResponse> req);
+    void handle(Request2<MessageFetchGalaxyResponse> req);
+    void handle(Request2<MessageFetchSystemsResponse> req);
+    void handle(Request2<MessageFetchFactionsResponse> req);
+    void handle(Request2<MessageFetchRegionsResponse> req);
+    void handle(Request2<MessageSceneUpdateEvent> req);
     // void handle(Request<MessageSceneBulletsEvent> req);
-    void handle(Request<MessagePlayerControlEvent> req);
+    void handle(Request2<MessagePlayerControlEvent> req);
 
     // Used by unit tests for synchronized assertions
     template <typename Fn> bool check(Fn&& fn) {
@@ -79,8 +79,8 @@ public:
     }
 
     template <typename T> void send(const T& msg) {
-        if (networkClient) {
-            networkClient->send(msg);
+        if (network) {
+            network->send(msg);
         }
     }
 
@@ -98,7 +98,7 @@ private:
     // Promise<void> loggedIn;
     BackgroundWorker worker;
     SynchronizedWorker sync;
-    std::unique_ptr<NetworkTcpClient> networkClient;
+    std::shared_ptr<NetworkUdpClient> network;
 
     std::unique_ptr<Scene> scene;
 

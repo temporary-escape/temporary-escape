@@ -40,6 +40,16 @@ public:
         void write(const char* data, size_t length);
         void flush();
 
+        template <typename T> void start(const uint64_t xid) {
+            pack_array(3);
+            if constexpr (std::is_same_v<T, std::string>) {
+                pack_uint64(0);
+            } else {
+                pack_uint64(Detail::MessageHelper<T>::hash);
+            }
+            pack_uint64(xid);
+        }
+
     private:
         NetworkStream& stream;
         PacketType type;
@@ -51,16 +61,14 @@ public:
     NetworkStream() = default;
     virtual ~NetworkStream() = default;
 
-    template <typename T> void send(const T& msg, const uint64_t xid) {
+    virtual bool isConnected() const = 0;
+    virtual const std::string& getAddress() const = 0;
+    virtual void close() = 0;
+
+    template <typename T> void send(const T& msg, const uint64_t xid = 1) {
         Writer writer{*this, Detail::MessageHelper<T>::reliable ? PacketType::DataReliable : PacketType::Data};
 
-        writer.pack_array(3);
-        if constexpr (std::is_same_v<T, std::string>) {
-            writer.pack_uint64(0);
-        } else {
-            writer.pack_uint64(Detail::MessageHelper<T>::hash);
-        }
-        writer.pack_uint64(xid);
+        writer.start<T>(xid);
         writer.pack(msg);
         writer.flush();
     }
@@ -75,4 +83,12 @@ private:
     std::mutex mutex;
     std::unique_ptr<AES> aes;
 };
+
+template <typename T> inline void BaseRequest2::respond(const T& msg) const {
+    peer->send(msg, xid);
+}
+
+inline void BaseRequest2::respondError(const std::string& msg) const {
+    peer->send(msg, xid);
+}
 } // namespace Engine

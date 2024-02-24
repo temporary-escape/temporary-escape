@@ -7,7 +7,12 @@ static auto logger = createLogger(LOG_FILENAME);
 
 NetworkUdpPeer::NetworkUdpPeer(asio::io_service& service, NetworkDispatcher2& dispatcher, asio::ip::udp::socket& socket,
                                asio::ip::udp::endpoint endpoint) :
-    NetworkUdpStream{service, false}, service{service}, dispatcher{dispatcher}, socket{socket}, endpoint{endpoint} {
+    NetworkUdpStream{service, false},
+    service{service},
+    dispatcher{dispatcher},
+    socket{socket},
+    endpoint{endpoint},
+    address{fmt::format("{}", endpoint)} {
 
     logger.info("UDP peer created local: {} remote: {}", socket.local_endpoint(), endpoint);
 }

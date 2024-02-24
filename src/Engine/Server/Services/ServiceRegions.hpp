@@ -41,12 +41,12 @@ MESSAGE_DEFINE(MessageFetchRegionsResponse);
 
 class ServiceRegions : public Service {
 public:
-    explicit ServiceRegions(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServiceRegions(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServiceRegions();
 
 private:
-    void handle(Request<MessageFetchRegionRequest> req);
-    void handle(Request<MessageFetchRegionsRequest> req);
+    void handle(Request2<MessageFetchRegionRequest> req);
+    void handle(Request2<MessageFetchRegionsRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

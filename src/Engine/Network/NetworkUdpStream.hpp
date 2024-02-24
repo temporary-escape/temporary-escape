@@ -38,6 +38,10 @@ public:
         return totalReceived.load();
     }
 
+    bool isConnected() const override {
+        return isEstablished();
+    }
+
 protected:
     [[nodiscard]] const std::string& getPublicKey() const {
         return publicKey;

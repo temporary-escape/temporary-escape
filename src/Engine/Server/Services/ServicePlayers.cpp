@@ -5,10 +5,10 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ServicePlayers::ServicePlayers(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions) :
+ServicePlayers::ServicePlayers(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions) :
     db{db}, sessions{sessions} {
 
-    HANDLE_REQUEST(MessagePlayerLocationRequest);
+    HANDLE_REQUEST2(MessagePlayerLocationRequest);
 }
 
 ServicePlayers::~ServicePlayers() = default;
@@ -80,7 +80,7 @@ PlayerLocationData ServicePlayers::getSpawnLocation(const std::string& id) {
     return *location;
 }
 
-void ServicePlayers::handle(Request<MessagePlayerLocationRequest> req) {
+void ServicePlayers::handle(Request2<MessagePlayerLocationRequest> req) {
     MessagePlayerLocationResponse res{};
 
     const auto session = sessions.getSession(req.peer);

@@ -25,11 +25,11 @@ MESSAGE_DEFINE(MessageFetchPlanetsResponse);
 
 class ServicePlanets : public Service {
 public:
-    explicit ServicePlanets(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServicePlanets(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServicePlanets();
 
 private:
-    void handle(Request<MessageFetchPlanetsRequest> req);
+    void handle(Request2<MessageFetchPlanetsRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

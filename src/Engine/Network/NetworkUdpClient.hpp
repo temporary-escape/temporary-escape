@@ -13,9 +13,14 @@ public:
     void connect(const std::string& address, uint16_t port);
     void start();
     void stop();
+    void close() override;
 
     NetworkStunClient& getStunClient() {
         return stun;
+    }
+
+    const std::string& getAddress() const override {
+        return address;
     }
 
 private:
@@ -31,8 +36,10 @@ private:
     NetworkDispatcher2& dispatcher;
     asio::ip::udp::socket socket;
     NetworkStunClient stun;
+    asio::ip::udp::endpoint localEndpoint;
     asio::ip::udp::endpoint endpoint;
     asio::ip::udp::endpoint peerEndpoint;
+    std::string address;
 
     std::condition_variable connectedCv;
     std::mutex connectedLock;

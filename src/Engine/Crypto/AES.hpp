@@ -38,7 +38,6 @@ private:
 
     static void evpDeleter(EVP_CIPHER_CTX* p);
 
-    std::unique_ptr<EVP_CIPHER_CTX, decltype(&evpDeleter)> ctx;
     std::array<uint8_t, 64> key{};
     std::array<uint8_t, ivecLength> ivec{};
 };

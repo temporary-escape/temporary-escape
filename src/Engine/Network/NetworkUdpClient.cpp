@@ -17,7 +17,8 @@ NetworkUdpClient::NetworkUdpClient(const Config& config, asio::io_service& servi
             0,
         },
     },
-    stun{config, service, strand, socket} {
+    stun{config, service, strand, socket},
+    localEndpoint{socket.local_endpoint()} {
 }
 
 void NetworkUdpClient::start() {
@@ -32,6 +33,10 @@ NetworkUdpClient::~NetworkUdpClient() {
 void NetworkUdpClient::stop() {
     sendClosePacket();
     stopInternal();
+}
+
+void NetworkUdpClient::close() {
+    stop();
 }
 
 void NetworkUdpClient::stopInternal() {
@@ -105,8 +110,24 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
         EXCEPTION("Failed to resolve address: {}", address);
     }
 
-    const auto endpoints = future.get();
-    endpoint = endpoints.begin()->endpoint();
+    // Find the endpoint that matches our protocol
+    auto found = false;
+    for (const auto& e : future.get()) {
+        // Skip IPv6 endpoint if our socket is IPv4
+        if (localEndpoint.protocol() == asio::ip::udp::v4() && e.endpoint().protocol() != asio::ip::udp::v4()) {
+            continue;
+        }
+
+        endpoint = e.endpoint();
+        found = true;
+        break;
+    }
+
+    if (!found) {
+        EXCEPTION("Failed to resolve server address: {}", address);
+    }
+
+    this->address = fmt::format("{}", endpoint);
 
     const auto& publicKey = getPublicKey();
     const auto buff = asio::buffer(publicKey.data(), publicKey.size());

@@ -4,7 +4,7 @@
 #include "../Entity.hpp"
 
 namespace Engine {
-class ENGINE_API NetworkPeer;
+class ENGINE_API NetworkStream;
 
 enum class SyncOperation {
     Patch,
@@ -24,8 +24,8 @@ public:
     void update(float delta) override;
     void recalculate(VulkanRenderer& vulkan) override;
 
-    void sendFullSnapshot(NetworkPeer& peer);
-    void sendUpdate(NetworkPeer& peer);
+    void sendFullSnapshot(NetworkStream& peer);
+    void sendUpdate(NetworkStream& peer);
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
     std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
@@ -53,9 +53,9 @@ private:
     template <typename Packer, typename Type>
     void packComponent(Packer& packer, entt::entity handle, const Type& component, const SyncOperation op);
     template <typename Type>
-    void sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components, const size_t count,
+    void sendComponents(NetworkStream& peer, const ComponentReferences<Type>& components, const size_t count,
                         const SyncOperation op);
-    template <typename View> void packComponents(NetworkPeer& peer, const View& view, const SyncOperation op);
+    template <typename View> void packComponents(NetworkStream& peer, const View& view, const SyncOperation op);
 
     template <typename T> void registerComponent() {
         reg.on_update<T>().template connect<&ControllerNetwork::onUpdateComponent<T>>(this);

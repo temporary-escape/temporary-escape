@@ -1,5 +1,5 @@
 #include "Server.hpp"
-#include "../Network/NetworkTcpServer.hpp"
+#include "../Network/NetworkUdpServer.hpp"
 #include "../Utils/Random.hpp"
 #include "Lua.hpp"
 #include "Services/ServiceFactions.hpp"
@@ -30,16 +30,16 @@ Server::Server(const Config& config, AssetsManager& assetsManager, Database& db)
 
     instance = this;
 
-    auto& dispatcher = static_cast<NetworkDispatcher&>(*this);
-    HANDLE_REQUEST(MessageLoginRequest);
-    HANDLE_REQUEST(MessageModManifestsRequest);
-    HANDLE_REQUEST(MessagePingResponse);
-    HANDLE_REQUEST(MessagePlayerSpawnRequest);
-    HANDLE_REQUEST(MessageActionApproach);
-    HANDLE_REQUEST(MessageActionOrbit);
-    HANDLE_REQUEST(MessageActionKeepDistance);
-    HANDLE_REQUEST(MessageActionStopMovement);
-    HANDLE_REQUEST(MessageControlTargetEvent);
+    auto& dispatcher = static_cast<NetworkDispatcher2&>(*this);
+    HANDLE_REQUEST2(MessageLoginRequest);
+    HANDLE_REQUEST2(MessageModManifestsRequest);
+    HANDLE_REQUEST2(MessagePingResponse);
+    HANDLE_REQUEST2(MessagePlayerSpawnRequest);
+    HANDLE_REQUEST2(MessageActionApproach);
+    HANDLE_REQUEST2(MessageActionOrbit);
+    HANDLE_REQUEST2(MessageActionKeepDistance);
+    HANDLE_REQUEST2(MessageActionStopMovement);
+    HANDLE_REQUEST2(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
     addService<ServiceGalaxy>();
@@ -88,7 +88,9 @@ void Server::load() {
     }
 
     try {
-        networkServer = std::make_unique<NetworkTcpServer>(worker.getService(), *this, config.network.serverPort, true);
+        network = std::make_shared<NetworkUdpServer>(config, worker.getService(), *this);
+        network->start();
+        port = network->getEndpoint().port();
         logger.info("TCP server started");
     } catch (...) {
         EXCEPTION_NESTED("Failed to start the server");
@@ -109,8 +111,8 @@ void Server::cleanup() {
     playerSessions.clear();
 
     logger.info("Waiting for network to stop");
-    if (networkServer) {
-        networkServer->stop();
+    if (network) {
+        network->stop();
     }
 
     logger.info("Waiting for load queue to stop");
@@ -118,7 +120,7 @@ void Server::cleanup() {
 
     logger.info("Waiting for workers to stop");
     worker.stop();
-    networkServer.reset();
+    network.reset();
 
     logger.info("Clearing sectors");
     {
@@ -204,12 +206,12 @@ void Server::tick() {
     logger.info("Stopped tick");
 }
 
-void Server::onAcceptSuccess(const NetworkPeerPtr& peer) {
+void Server::onAcceptSuccess(const NetworkStreamPtr& peer) {
     logger.info("New connection peer: {}", peer->getAddress());
     lobby.addPeer(peer);
 }
 
-void Server::onDisconnect(const NetworkPeerPtr& peer) {
+void Server::onDisconnect(const NetworkStreamPtr& peer) {
     logger.info("Disconnected connection peer: {}", peer->getAddress());
     lobby.removePeer(peer);
     playerSessions.removeSession(peer);
@@ -309,7 +311,7 @@ SectorPtr Server::getSectorForSession(const SessionPtr& session) {
     return found->second;
 }
 
-template <typename T> void Server::forwardMessageToSector(const Request<T>& req) {
+template <typename T> void Server::forwardMessageToSector(const Request2<T>& req) {
     const auto session = playerSessions.getSession(req.peer);
     const auto sector = getSectorForSession(session);
     if (!sector) {
@@ -319,7 +321,7 @@ template <typename T> void Server::forwardMessageToSector(const Request<T>& req)
     sector->handle(session, req.get());
 }
 
-void Server::handle(Request<MessageLoginRequest> req) {
+void Server::handle(Request2<MessageLoginRequest> req) {
     logger.info("New login peer: {}", req.peer->getAddress());
 
     auto data = req.get();
@@ -373,7 +375,7 @@ void Server::handle(Request<MessageLoginRequest> req) {
     eventBus->enqueue("player_logged_in", event);
 }
 
-void Server::handle(Request<MessagePlayerSpawnRequest> req) {
+void Server::handle(Request2<MessagePlayerSpawnRequest> req) {
     auto session = playerSessions.getSession(req.peer);
 
     if (const auto location = playerSessions.getLocation(session); location.has_value()) {
@@ -399,7 +401,7 @@ void Server::handle(Request<MessagePlayerSpawnRequest> req) {
     addPlayerToSector(session, location.sectorId);
 }
 
-void Server::handle(Request<MessageModManifestsRequest> req) {
+void Server::handle(Request2<MessageModManifestsRequest> req) {
     logger.info("Peer {} has requested mod manifest", req.peer->getAddress());
 
     MessageModManifestsResponse res{};
@@ -414,29 +416,29 @@ void Server::handle(Request<MessageModManifestsRequest> req) {
     req.respond(res);
 }
 
-void Server::handle(Request<MessagePingResponse> req) {
+void Server::handle(Request2<MessagePingResponse> req) {
     const auto session = playerSessions.getSession(req.peer);
     session->setLastPingTime(std::chrono::steady_clock::now());
     session->clearFlag(Session::Flags::PingSent);
 }
 
-void Server::handle(Request<MessageActionApproach> req) {
+void Server::handle(Request2<MessageActionApproach> req) {
     forwardMessageToSector(req);
 }
 
-void Server::handle(Request<MessageActionOrbit> req) {
+void Server::handle(Request2<MessageActionOrbit> req) {
     forwardMessageToSector(req);
 }
 
-void Server::handle(Request<MessageActionKeepDistance> req) {
+void Server::handle(Request2<MessageActionKeepDistance> req) {
     forwardMessageToSector(req);
 }
 
-void Server::handle(Request<MessageActionStopMovement> req) {
+void Server::handle(Request2<MessageActionStopMovement> req) {
     forwardMessageToSector(req);
 }
 
-void Server::handle(Request<MessageControlTargetEvent> req) {
+void Server::handle(Request2<MessageControlTargetEvent> req) {
     const auto session = playerSessions.getSession(req.peer);
     const auto sector = getSectorForSession(session);
     if (!sector) {

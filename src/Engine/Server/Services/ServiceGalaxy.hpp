@@ -26,11 +26,11 @@ MESSAGE_DEFINE(MessageFetchGalaxyResponse);
 
 class ServiceGalaxy : public Service {
 public:
-    explicit ServiceGalaxy(NetworkDispatcher& dispatcher, Database& db, PlayerSessions& sessions);
+    explicit ServiceGalaxy(NetworkDispatcher2& dispatcher, Database& db, PlayerSessions& sessions);
     virtual ~ServiceGalaxy();
 
 private:
-    void handle(Request<MessageFetchGalaxyRequest> req);
+    void handle(Request2<MessageFetchGalaxyRequest> req);
 
     Database& db;
     PlayerSessions& sessions;

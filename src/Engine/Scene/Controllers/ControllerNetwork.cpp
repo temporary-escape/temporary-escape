@@ -1,5 +1,5 @@
 #include "ControllerNetwork.hpp"
-#include "../../Network/NetworkPeer.hpp"
+#include "../../Network/NetworkStream.hpp"
 #include "../../Server/Messages.hpp"
 #include "../Scene.hpp"
 #include <bitset>
@@ -153,20 +153,20 @@ void ControllerNetwork::packComponent(Packer& packer, entt::entity handle, const
 }
 
 template <typename Type>
-void ControllerNetwork::sendComponents(NetworkPeer& peer, const ComponentReferences<Type>& components,
+void ControllerNetwork::sendComponents(NetworkStream& peer, const ComponentReferences<Type>& components,
                                        const size_t count, const SyncOperation op) {
 
-    NetworkPeer::LockGuard lock{peer};
-    peer.prepareSend<MessageSceneUpdateEvent>(0);
-    peer.pack_array(count);
+    NetworkStream::Writer writer{peer, PacketType::DataReliable};
+    writer.start<MessageSceneUpdateEvent>(0);
+    writer.pack_array(count);
     for (size_t i = 0; i < count; i++) {
-        packComponent(peer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
+        packComponent(writer, std::get<0>(components.at(i)), *std::get<1>(components.at(i)), op);
     }
-    peer.flush();
+    writer.flush();
 }
 
 template <typename View>
-void ControllerNetwork::packComponents(NetworkPeer& peer, const View& view, const SyncOperation op) {
+void ControllerNetwork::packComponents(NetworkStream& peer, const View& view, const SyncOperation op) {
     using Iterable = typename View::iterable::value_type;
     using Type = typename std::remove_reference<typename std::tuple_element<1, Iterable>::type>::type;
 
@@ -228,7 +228,7 @@ void ControllerNetwork::unpackComponentId(const uint32_t id, const uint64_t remo
     }
 }
 
-void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
+void ControllerNetwork::sendFullSnapshot(NetworkStream& peer) {
     packComponents(peer, reg.view<ComponentTransform>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentRigidBody>(), SyncOperation::Emplace);
     packComponents(peer, reg.view<ComponentModel>(), SyncOperation::Emplace);
@@ -240,26 +240,21 @@ void ControllerNetwork::sendFullSnapshot(NetworkPeer& peer) {
     packComponents(peer, reg.view<ComponentShipControl>(), SyncOperation::Emplace);
 }
 
-void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
+void ControllerNetwork::sendUpdate(NetworkStream& peer) {
     size_t count{0};
     size_t arraySize{0};
     auto total{updatedComponentsCount};
 
-    std::unique_ptr<NetworkPeer::LockGuard> lock;
+    NetworkStream::Writer writer{peer, PacketType::DataReliable};
 
     const auto prepareNext = [&]() {
         if (count >= arraySize) {
-            if (lock) {
-                peer.flush();
-                lock.reset();
-            }
-
-            lock = std::make_unique<NetworkPeer::LockGuard>(peer);
+            writer.flush();
 
             arraySize = std::min<size_t>(total, 64);
             count = 0;
-            peer.prepareSend<MessageSceneUpdateEvent>(0);
-            peer.pack_array(arraySize);
+            writer.start<MessageSceneUpdateEvent>(0);
+            writer.pack_array(arraySize);
         }
         ++count;
         --total;
@@ -270,26 +265,26 @@ void ControllerNetwork::sendUpdate(NetworkPeer& peer) {
         if (pair.second & componentMaskId<ComponentTransform>()) {
             const auto& component = reg.get<ComponentTransform>(handle);
             prepareNext();
-            packComponent(peer, handle, component, SyncOperation::Patch);
+            packComponent(writer, handle, component, SyncOperation::Patch);
         }
         if (pair.second & componentMaskId<ComponentRigidBody>()) {
             const auto& component = reg.get<ComponentRigidBody>(handle);
             prepareNext();
-            packComponent(peer, handle, component, SyncOperation::Patch);
+            packComponent(writer, handle, component, SyncOperation::Patch);
         }
         if (pair.second & componentMaskId<ComponentTurret>()) {
             const auto& component = reg.get<ComponentTurret>(handle);
             prepareNext();
-            packComponent(peer, handle, component, SyncOperation::Patch);
+            packComponent(writer, handle, component, SyncOperation::Patch);
         }
         if (pair.second & componentMaskId<ComponentShipControl>()) {
             const auto& component = reg.get<ComponentShipControl>(handle);
             prepareNext();
-            packComponent(peer, handle, component, SyncOperation::Patch);
+            packComponent(writer, handle, component, SyncOperation::Patch);
         }
     }
 
-    peer.flush();
+    writer.flush();
 
     if (total != 0) {
         EXCEPTION("Something went wrong while packing scene updates, error: total != 0");

@@ -13,10 +13,10 @@ public:
     virtual ~PlayerSessions() = default;
 
     // Session functions
-    SessionPtr createSession(const NetworkPeerPtr& peer, const std::string& playerId);
-    void removeSession(const NetworkPeerPtr& peer);
+    SessionPtr createSession(const NetworkStreamPtr& peer, const std::string& playerId);
+    void removeSession(const NetworkStreamPtr& peer);
     SessionPtr getSession(const std::string& playerId);
-    SessionPtr getSession(const NetworkPeerPtr& peer);
+    SessionPtr getSession(const NetworkStreamPtr& peer);
     bool isLoggedIn(const std::string& playerId);
     std::optional<std::string> getLocation(const SessionPtr& session);
     void setLocation(const SessionPtr& session, const std::optional<std::string>& sectorId);
@@ -29,7 +29,7 @@ private:
     Database& db;
 
     std::shared_mutex mutex;
-    std::unordered_map<NetworkPeer*, SessionPtr> map;
-    std::unordered_map<NetworkPeer*, std::string> locations;
+    std::unordered_map<NetworkStream*, SessionPtr> map;
+    std::unordered_map<NetworkStream*, std::string> locations;
 };
 } // namespace Engine
