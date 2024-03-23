@@ -7,7 +7,9 @@
 #include "../Graphics/RendererThumbnail.hpp"
 #include "../Network/NetworkUdpClient.hpp"
 #include "ViewBuild.hpp"
+#include "ViewGalaxy.hpp"
 #include "ViewSpace.hpp"
+#include "ViewSystem.hpp"
 #include <iosevka-aile-bold.ttf.h>
 #include <iosevka-aile-light.ttf.h>
 #include <iosevka-aile-regular.ttf.h>
@@ -75,7 +77,7 @@ Application::Application(Config& config) :
     gui.mainMenu = guiManager.addWindow<GuiWindowMainMenu>();
     gui.mainMenu->setOnClickSingleplayer([this]() {
         gui.mainMenu->setEnabled(false);
-        startSinglePlayer();
+        gui.singlePlayer->setEnabled(true);
     });
     gui.mainMenu->setOnClickMultiplayer([this]() {
         gui.mainMenu->setEnabled(false);
@@ -115,6 +117,45 @@ Application::Application(Config& config) :
     gui.serverBrowser->setOnConnect([this](const std::string& serverId) {
         logger.info("Starting connection to the server id: {}", serverId);
         startConnectServer(serverId);
+    });
+
+    gui.singlePlayer = guiManager.addWindow<GuiWindowSinglePlayerMenu>();
+    gui.singlePlayer->setOnClose([this]() {
+        gui.mainMenu->setEnabled(true);
+        gui.singlePlayer->setEnabled(false);
+    });
+    gui.singlePlayer->setOnCreate([this]() {
+        gui.createSave->setEnabled(true);
+        gui.singlePlayer->setEnabled(false);
+    });
+    gui.singlePlayer->setOnLoad([this]() {
+        gui.loadSave->setEnabled(true);
+        gui.singlePlayer->setEnabled(false);
+        gui.loadSave->loadInfos();
+    });
+
+    gui.createSave = guiManager.addWindow<GuiWindowCreateSave>(guiManager, config.userdataSavesPath);
+    gui.createSave->setOnClose([this]() {
+        gui.singlePlayer->setEnabled(true);
+        gui.createSave->setEnabled(false);
+    });
+    gui.createSave->setOnCreate([this](const GuiWindowCreateSave::Form& form) {
+        gui.createSave->setEnabled(false);
+        serverOptions.seed = form.seed;
+        serverOptions.savePath = form.path;
+        startSinglePlayer();
+    });
+
+    gui.loadSave = guiManager.addWindow<GuiWindowLoadSave>(guiManager, config.userdataSavesPath);
+    gui.loadSave->setOnClose([this]() {
+        gui.singlePlayer->setEnabled(true);
+        gui.loadSave->setEnabled(false);
+    });
+    gui.loadSave->setOnLoad([this](const Path& path) {
+        gui.loadSave->setEnabled(false);
+        serverOptions.seed = 0;
+        serverOptions.savePath = path;
+        startSinglePlayer();
     });
 
     loadProfile();
@@ -406,6 +447,7 @@ void Application::checkForClientScene() {
         logger.info("Client has a scene, creating game views");
 
         view.space = views->addView<ViewSpace>(*assetsManager, *voxelShapeCache, font, *client);
+        view.galaxy = views->addView<ViewGalaxy>(*assetsManager, *voxelShapeCache, font, *client);
         views->setCurrent(view.space);
     } else {
         NEXT(checkForClientScene());
@@ -437,46 +479,9 @@ void Application::startServer() {
     status.value = 0.8f;
 
     future = std::async([this]() -> std::function<void()> {
-        server = std::make_unique<Server>(config, *assetsManager, *db);
+        server = std::make_unique<Server>(config, *assetsManager, serverOptions);
 
         return [this]() { startClient(); };
-    });
-}
-
-void Application::startDatabase() {
-    logger.info("Starting database");
-
-    status.message = "Starting world database...";
-    status.value = 0.7f;
-
-    future = std::async([this]() -> std::function<void()> {
-        try {
-            auto path = config.userdataSavesPath;
-            if (config.saveFolderName) {
-                path /= config.saveFolderName.value();
-            } else {
-                path /= "Universe 1";
-            }
-            if (config.saveFolderClean) {
-                logger.warn("Deleting save: '{}'", path);
-                Fs::remove_all(path);
-            }
-            if (!Fs::exists(path)) {
-                logger.info("Creating save: '{}'", path);
-                Fs::create_directories(path);
-            }
-            logger.info("Starting database with save: '{}'", path);
-
-            DatabaseRocksDB::Options options{};
-            options.cacheSizeMb = config.server.dbCacheSize;
-            options.debugLogging = config.server.dbDebug;
-            options.compression = config.server.dbCompression;
-            db = std::make_unique<DatabaseRocksDB>(path, DatabaseRocksDB::Options{});
-        } catch (...) {
-            EXCEPTION_NESTED("Failed to start the database");
-        }
-
-        return [this]() { startServer(); };
     });
 }
 
@@ -559,7 +564,7 @@ void Application::createThumbnails() {
     if (editorOnly) {
         NEXT(createEditor());
     } else {
-        NEXT(startDatabase());
+        NEXT(startServer());
     }
 }
 
@@ -783,7 +788,14 @@ void Application::eventMouseScroll(const int xscroll, const int yscroll) {
 
 void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     guiManager.eventKeyPressed(key, modifiers);
-    if (views) {
+
+    if (modifiers == 0 && key == Key::LetterM && !view.editor) {
+        if (views->getCurrent() == view.galaxy) {
+            views->setCurrent(view.space);
+        } else {
+            views->setCurrent(view.galaxy);
+        }
+    } else if (views) {
         views->eventKeyPressed(key, modifiers);
     }
     /*if (!nuklear.isInputActive()) {

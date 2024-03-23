@@ -337,6 +337,32 @@ Mesh Engine::createCircleMesh(VulkanRenderer& vulkan) {
     return mesh;
 }
 
+Mesh Engine::createLineForwardMesh(VulkanRenderer& vulkan) {
+    Mesh mesh{};
+
+    std::vector<ComponentLines::Vertex> vertices;
+    vertices.resize(2);
+
+    vertices[0] = {Vector3{0.0f, 0.0f, 0.0f}, Color4{1.0f}};
+    vertices[1] = {Vector3{0.0f, 0.0f, 1.0f}, Color4{1.0f}};
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ComponentLines::Vertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
+
+    mesh.count = vertices.size();
+
+    return mesh;
+}
+
 Mesh Engine::createSpaceDustMesh(VulkanRenderer& vulkan) {
     Mesh mesh{};
 

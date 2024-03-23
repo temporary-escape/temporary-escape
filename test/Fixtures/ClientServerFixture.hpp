@@ -19,7 +19,6 @@ public:
     TmpDir tmpDir;
     PlayerLocalProfile playerLocalProfile{};
     std::unique_ptr<AssetsManager> assetsManager;
-    std::unique_ptr<Database> db;
     std::unique_ptr<Server> server;
     std::unique_ptr<Client> client;
     std::atomic_bool clientFlag;

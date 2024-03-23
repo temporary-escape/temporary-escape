@@ -2,7 +2,7 @@
 
 #include "../Assets/AssetsManager.hpp"
 #include "../Config.hpp"
-#include "../Database/Database.hpp"
+#include "../Database/DatabaseRocksdb.hpp"
 #include "../Future.hpp"
 #include "../Library.hpp"
 #include "../Network/NetworkDispatcher.hpp"
@@ -23,7 +23,12 @@ class ENGINE_API NetworkUdpServer;
 
 class ENGINE_API Server : public NetworkDispatcher2 {
 public:
-    explicit Server(const Config& config, AssetsManager& assetsManager, Database& db);
+    struct Options {
+        Path savePath;
+        uint64_t seed{123456789LL};
+    };
+
+    explicit Server(const Config& config, AssetsManager& assetsManager, const Options& options);
     virtual ~Server();
 
     void onAcceptSuccess(const NetworkStreamPtr& peer) override;
@@ -91,6 +96,7 @@ private:
     void cleanup();
     void pollEvents();
     void updateSectors();
+    void updateSaveInfo();
     template <typename T, typename... Args> void addService(Args&&... args) {
         services.emplace(typeid(T).hash_code(),
                          std::make_unique<T>(*this, db, playerSessions, std::forward<Args>(args)...));
@@ -98,7 +104,8 @@ private:
 
     const Config& config;
     AssetsManager& assetsManager;
-    Database& db;
+    Options options;
+    DatabaseRocksDB db;
     PlayerSessions playerSessions;
     PeerLobby lobby;
     std::unique_ptr<EventBus> eventBus;
@@ -113,7 +120,7 @@ private:
     BackgroundWorker loadQueue;
     Worker::Strand strand;
     std::shared_ptr<NetworkUdpServer> network;
-    uint16_t port;
+    uint16_t port{0};
 
     struct {
         std::shared_mutex mutex;

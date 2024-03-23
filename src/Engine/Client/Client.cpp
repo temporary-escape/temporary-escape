@@ -129,6 +129,9 @@ void Client::createScene(const SectorData& sector) {
     auto skybox = scene->createEntity();
     skybox.addComponent<ComponentSkybox>(sector.seed).setStars(true);
 
+    auto dust = scene->createEntity();
+    dust.addComponent<ComponentSpaceDust>();
+
     auto planet = scene->createEntity();
     planet.addComponent<ComponentTransform>().translate(Vector3{-1.0f, 0.0f, 0.0f} * 1.0f);
     planet.getComponent<ComponentTransform>().scale(Vector3{1.0f});

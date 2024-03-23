@@ -1,6 +1,7 @@
 #include "RenderPassForward.hpp"
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Scene/Controllers/ControllerBullets.hpp"
+#include "../../Scene/Controllers/ControllerIcon.hpp"
 #include "../../Scene/Controllers/ControllerTurret.hpp"
 #include "../../Scene/Scene.hpp"
 
@@ -19,7 +20,9 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     pipelineBulletsTrail{vulkan},
     pipelineParticles{vulkan},
     pipelineDebug{vulkan},
-    pipelineSpaceDust{vulkan} {
+    pipelineSpaceDust{vulkan},
+    pipelineTacticalOverlayLines{vulkan},
+    pipelineTacticalOverlaySpots{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -72,6 +75,8 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     addPipeline(pipelineParticles, 0);
     addPipeline(pipelineDebug, 0);
     addPipeline(pipelineSpaceDust, 0);
+    addPipeline(pipelineTacticalOverlayLines, 0);
+    addPipeline(pipelineTacticalOverlaySpots, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -96,6 +101,8 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     renderSceneBulletsTrail(vkb, scene, camera);
     renderSceneDebug(vkb, scene, camera);
     renderSceneSpaceDust(vkb, scene, camera);
+    renderSceneTacticalOverlay(vkb, scene, camera);
+    renderSceneShipControls(vkb, scene, camera);
 }
 
 void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
@@ -281,6 +288,11 @@ void RenderPassForward::renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene,
 void RenderPassForward::renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
     pipelineSpaceDust.bind(vkb);
 
+    const auto components = scene.getView<ComponentSpaceDust>();
+    if (components.begin() == components.end()) {
+        return;
+    }
+
     const auto eyesPos = camera.getEyesPos();
     if (eyesPosPrevious == Vector3{0.0f}) {
         eyesPosPrevious = eyesPos;
@@ -310,6 +322,133 @@ void RenderPassForward::renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& sc
 
                 pipelineSpaceDust.renderMesh(vkb, resources.getMeshSpaceDust());
             }
+        }
+    }
+}
+
+void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
+    pipelineLines.bind(vkb);
+
+    for (auto&& [entity, transform, shipControl] : scene.getView<ComponentTransform, ComponentShipControl>().each()) {
+        pipelineLines.setModelMatrix(shipControl.getOrbitMatrix());
+
+        if (shipControl.getApproachEntity() == NullEntity) {
+            continue;
+        }
+
+        if (shipControl.getOrbitRadius() > 1.0f) {
+            Matrix4 modelMatrix{1.0f};
+            modelMatrix = glm::translate(modelMatrix, shipControl.getOrbitOrigin());
+            modelMatrix = glm::scale(modelMatrix, Vector3{shipControl.getOrbitRadius()});
+            modelMatrix *= shipControl.getOrbitMatrix();
+
+            pipelineLines.setModelMatrix(modelMatrix);
+            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 0.2f});
+            pipelineLines.flushConstants(vkb);
+
+            pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+            pipelineLines.flushDescriptors(vkb);
+
+            pipelineLines.renderMesh(vkb, resources.getMeshOrbit());
+        } else {
+            const auto target = shipControl.getApproachPos();
+            const auto origin = transform.getAbsolutePosition();
+
+            auto modelMatrix = glm::lookAt(origin, target, Vector3{0.0f, 1.0f, 0.0f});
+            modelMatrix = glm::inverse(modelMatrix);
+            modelMatrix = glm::scale(modelMatrix, Vector3{glm::distance(target, origin)});
+            // modelMatrix = glm::translate(modelMatrix, origin);
+
+            pipelineLines.setModelMatrix(modelMatrix);
+            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 0.2f});
+            pipelineLines.flushConstants(vkb);
+
+            pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+            pipelineLines.flushDescriptors(vkb);
+
+            pipelineLines.renderMesh(vkb, resources.getMeshLineForward());
+        }
+    }
+}
+
+void RenderPassForward::renderSceneTacticalOverlay(VulkanCommandBuffer& vkb, Scene& scene,
+                                                   const ComponentCamera& camera) {
+    auto& controllerIcons = scene.getController<ControllerIcon>();
+
+    auto* cameraOrbital = scene.tryGetComponent<ComponentCameraOrbital>(camera.getEntity());
+    if (!cameraOrbital) {
+        return;
+    }
+
+    IconsBufferArray buffers{};
+    buffers[0] = &controllerIcons.getStaticBuffers();
+    buffers[1] = &controllerIcons.getDynamicBuffers();
+
+    if (buffers[0]->empty() && buffers[1]->empty()) {
+        return;
+    }
+
+    renderSceneTacticalOverlaySpots(vkb, buffers, camera, *cameraOrbital);
+    renderSceneTacticalOverlayLines(vkb, buffers, camera, *cameraOrbital);
+}
+
+void RenderPassForward::renderSceneTacticalOverlayLines(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
+                                                        const ComponentCamera& camera,
+                                                        const ComponentCameraOrbital& cameraOrbital) {
+    pipelineTacticalOverlayLines.bind(vkb);
+
+    const auto modelMatrix = Matrix4{1.0f};
+
+    pipelineTacticalOverlayLines.setModelMatrix(modelMatrix);
+    pipelineTacticalOverlayLines.setColor(Color4{1.0f, 1.0f, 1.0f, 0.05f});
+    pipelineTacticalOverlayLines.setPlayerPos(cameraOrbital.getTarget());
+    pipelineTacticalOverlayLines.flushConstants(vkb);
+
+    for (const auto* b : buffers) {
+        for (const auto& pair : *b) {
+            if (pair.second.count() == 0) {
+                continue;
+            }
+
+            pipelineTacticalOverlayLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+            pipelineTacticalOverlayLines.flushDescriptors(vkb);
+
+            std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+            vboBindings[0] = {&pair.second.getCurrentBuffer(), 0};
+            vkb.bindBuffers(vboBindings);
+
+            vkb.draw(4, pair.second.count(), 0, 0);
+        }
+    }
+}
+
+void RenderPassForward::renderSceneTacticalOverlaySpots(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
+                                                        const ComponentCamera& camera,
+                                                        const ComponentCameraOrbital& cameraOrbital) {
+    pipelineTacticalOverlaySpots.bind(vkb);
+
+    const auto modelMatrix = Matrix4{1.0f};
+
+    pipelineTacticalOverlaySpots.setModelMatrix(modelMatrix);
+    pipelineTacticalOverlaySpots.setColor(Color4{1.0f, 1.0f, 1.0f, 0.1f});
+    pipelineTacticalOverlaySpots.setPlayerPos(cameraOrbital.getTarget());
+    pipelineTacticalOverlaySpots.flushConstants(vkb);
+    pipelineTacticalOverlaySpots.setScale(5.0f);
+
+    for (const auto* b : buffers) {
+        for (const auto& pair : *b) {
+            if (pair.second.count() == 0) {
+                continue;
+            }
+
+            pipelineTacticalOverlaySpots.setUniformCamera(camera.getUbo().getCurrentBuffer());
+            pipelineTacticalOverlaySpots.flushDescriptors(vkb);
+
+            std::array<VulkanVertexBufferBindRef, 1> vboBindings{};
+            vboBindings[0] = {&pair.second.getCurrentBuffer(), 0};
+            vkb.bindBuffers(vboBindings);
+
+            vkb.draw(4, pair.second.count(), 0, 0);
         }
     }
 }

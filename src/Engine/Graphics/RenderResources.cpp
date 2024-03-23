@@ -82,6 +82,7 @@ RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blo
     meshBullet = createBulletMesh(vulkan);
     meshOrbit = createCircleMesh(vulkan);
     meshSpaceDust = createSpaceDustMesh(vulkan);
+    meshLineForward = createLineForwardMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
     createPalette();

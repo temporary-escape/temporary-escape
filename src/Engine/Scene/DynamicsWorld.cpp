@@ -147,7 +147,7 @@ DynamicsWorld::DynamicsWorld(Scene& scene, entt::registry& reg, const Config& co
 DynamicsWorld::~DynamicsWorld() = default;
 
 void DynamicsWorld::update(const float delta) {
-    dynamicsWorld->stepSimulation(delta, 10);
+    dynamicsWorld->stepSimulation(delta);
 }
 
 bool DynamicsWorld::contactTest(ContactTestObject& object, const CollisionMask mask) const {

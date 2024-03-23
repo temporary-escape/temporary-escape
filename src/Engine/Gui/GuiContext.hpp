@@ -65,11 +65,11 @@ public:
     void layoutTemplateEnd();
 
     void skip();
-    bool button(const std::string& label, const ImagePtr& image = nullptr);
+    bool button(const std::string& label, const GuiStyleButton& style, const ImagePtr& image = nullptr);
     bool buttonToggle(const std::string& label, bool& value);
     bool contextButton(const std::string& label, const ImagePtr& imageLeft, const ImagePtr& imageRight);
     bool checkbox(const std::string& label, bool& value);
-    void label(const std::string& label);
+    void label(const std::string& label, const Color4& color);
     bool textInput(std::string& text, size_t max);
     bool comboBegin(const Vector2& size, const std::string& label);
     void comboEnd();

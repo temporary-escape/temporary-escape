@@ -27,6 +27,10 @@ public:
         return panning;
     }
 
+    const Vector3& getTarget() const {
+        return target;
+    }
+
 private:
     ComponentCamera* camera{nullptr};
     bool rotationStarted{false};

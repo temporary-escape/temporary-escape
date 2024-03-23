@@ -1,4 +1,5 @@
 #include "ViewGalaxy.hpp"
+#include "../Gui/GuiManager.hpp"
 #include "../Math/ConvexHull.hpp"
 #include "Client.hpp"
 
@@ -9,19 +10,23 @@ static auto logger = createLogger(LOG_FILENAME);
 static const Vector2 systemStarSelectable{48.0f, 48.0f};
 static const Vector2 systemStarSize{32.0f, 32.0f};
 
-ViewGalaxy::ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                       VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font) :
-    parent{parent},
+ViewGalaxy::ViewGalaxy(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager,
+                       AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font,
+                       Client& client) :
     config{config},
     vulkan{vulkan},
+    guiManager{guiManager},
     assetsManager{assetsManager},
     voxelShapeCache{voxelShapeCache},
     client{client},
     font{font} {
 
     textures.systemStar = assetsManager.getTextures().find("star_flare");
-    images.iconSelect = assetsManager.getImages().find("icon_target");
-    images.iconCurrentPos = assetsManager.getImages().find("icon_position_marker");
+    icons.select = assetsManager.getImages().find("icon_target");
+    icons.currentPos = assetsManager.getImages().find("icon_position_marker");
+    icons.info = assetsManager.getImages().find("icon_info");
+    icons.view = assetsManager.getImages().find("icon_magnifying_glass");
+    icons.travel = assetsManager.getImages().find("icon_vortex");
 }
 
 ViewGalaxy::~ViewGalaxy() {
@@ -45,7 +50,7 @@ void ViewGalaxy::update(const float deltaTime, const Vector2i& viewport) {
         }
     }
 
-    if (loading) {
+    if (loading || !scene) {
         return;
     }
 
@@ -82,6 +87,10 @@ void ViewGalaxy::eventMouseMoved(const Vector2i& pos) {
 }
 
 void ViewGalaxy::eventMousePressed(const Vector2i& pos, const MouseButton button) {
+    if (guiManager.isContextMenuVisible()) {
+        guiManager.getContextMenu().setEnabled(false);
+    }
+
     if (!loading) {
         scene->eventMousePressed(pos, button);
     }
@@ -97,7 +106,10 @@ void ViewGalaxy::eventMouseReleased(const Vector2i& pos, const MouseButton butto
             const auto it = entities.icons.find(selected->getHandle());
             if (it != entities.icons.end()) {
                 logger.info("Selected system: {}", it->second);
+                showContextMenu(pos, it->second);
             }
+        } else if (guiManager.isContextMenuVisible()) {
+            guiManager.getContextMenu().setEnabled(false);
         }
     }
 }
@@ -109,6 +121,10 @@ void ViewGalaxy::eventMouseScroll(const int xscroll, const int yscroll) {
 }
 
 void ViewGalaxy::eventKeyPressed(const Key key, const Modifiers modifiers) {
+    if (key == Key::Escape && guiManager.isContextMenuVisible()) {
+        guiManager.getContextMenu().setEnabled(false);
+    }
+
     if (!loading) {
         scene->eventKeyPressed(key, modifiers);
     }
@@ -131,6 +147,15 @@ Scene* ViewGalaxy::getScene() {
         return nullptr;
     }
     return scene.get();
+}
+
+void ViewGalaxy::showContextMenu(const Vector2i& pos, const std::string& systemId) {
+    guiManager.showContextMenu(pos, [=](GuiWindowContextMenu& menu) {
+        //
+        menu.addItem(icons.info, "Info", []() {});
+        menu.addItem(icons.view, "View", []() {});
+        menu.addItem(icons.travel, "Travel to", []() {});
+    });
 }
 
 void ViewGalaxy::load() {
@@ -249,7 +274,7 @@ void ViewGalaxy::load() {
         entities.currentPos = scene->createEntity();
         auto& transform = entities.currentPos.addComponent<ComponentTransform>();
         transform.move(Vector3{currentSystem.pos.x, 0.0f, currentSystem.pos.y});
-        auto& icon = entities.currentPos.addComponent<ComponentIcon>(images.iconCurrentPos);
+        auto& icon = entities.currentPos.addComponent<ComponentIcon>(icons.currentPos);
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
         icon.setColor(Colors::primary);
@@ -263,10 +288,11 @@ void ViewGalaxy::load() {
             auto& transform = entity.addComponent<ComponentTransform>();
             transform.translate({system.pos.x, 0.0f, system.pos.y});
             transform.setStatic(true);
-            auto& icon = entity.addComponent<ComponentIcon>(images.iconSelect);
+            auto& icon = entity.addComponent<ComponentIcon>(icons.select);
             icon.setSelectable(true);
             icon.setSize(systemStarSelectable);
             icon.setColor(Color4{1.0f, 1.0f, 1.0f, 0.0f});
+            scene->setDirty(icon);
 
             entities.icons.emplace(entity.getHandle(), systemId);
         }

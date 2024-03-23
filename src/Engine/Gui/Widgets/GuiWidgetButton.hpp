@@ -5,6 +5,10 @@
 namespace Engine {
 class ENGINE_API GuiWidgetButton : public GuiWidget {
 public:
+    static const GuiStyleButton defaultStyle;
+    static const GuiStyleButton successStyle;
+    static const GuiStyleButton dangerStyle;
+
     using OnClickCallback = std::function<void()>;
 
     explicit GuiWidgetButton(GuiContext& ctx, std::string label);
@@ -19,11 +23,17 @@ public:
     }
     void setOnClick(OnClickCallback value);
 
+    void setStyle(const GuiStyleButton* value);
+    const GuiStyleButton* getStyle() const {
+        return style ? style : &defaultStyle;
+    }
+
 private:
     void drawInternal() override;
 
     std::string label;
     ImagePtr image;
     OnClickCallback onClick;
+    const GuiStyleButton* style{nullptr};
 };
 } // namespace Engine

@@ -32,7 +32,7 @@ void ComponentPointCloud::recalculate(VulkanRenderer& vulkan) {
         return;
     }
 
-    dirty = true;
+    dirty = false;
 
     logger.debug("Recreating {} points", points.size());
 

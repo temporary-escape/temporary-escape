@@ -25,6 +25,7 @@
 #include "Components/ComponentScript.hpp"
 #include "Components/ComponentShipControl.hpp"
 #include "Components/ComponentSkybox.hpp"
+#include "Components/ComponentSpaceDust.hpp"
 #include "Components/ComponentStarFlare.hpp"
 #include "Components/ComponentText.hpp"
 #include "Components/ComponentTurret.hpp"
@@ -43,7 +44,8 @@ using EntityComponentIds =
                 ComponentCameraOrbital, ComponentCameraPanning, ComponentGrid, ComponentModel, ComponentModelSkinned,
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
                 ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
-                ComponentStarFlare, ComponentSkybox, ComponentNebula, ComponentTurret, ComponentShipControl>;
+                ComponentStarFlare, ComponentSkybox, ComponentSpaceDust, ComponentNebula, ComponentTurret,
+                ComponentShipControl>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;

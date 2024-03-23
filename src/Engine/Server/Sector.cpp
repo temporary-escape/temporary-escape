@@ -79,6 +79,8 @@ void Sector::update() {
         scene->update(tickF);
 
         // if (tickCount % 2 == 0 && tickCount != 0) {
+        // const auto t0 = std::chrono::steady_clock::now();
+
         auto& networkController = scene->getController<ControllerNetwork>();
         for (const auto& player : players) {
             if (const auto stream = player->getStream(); stream) {
@@ -87,6 +89,10 @@ void Sector::update() {
         }
         networkController.resetUpdates();
         //}
+
+        // const auto t1 = std::chrono::steady_clock::now();
+        // const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        // logger.info("Network update took: {} ms", ms);
 
         ++tickCount;
     } catch (...) {

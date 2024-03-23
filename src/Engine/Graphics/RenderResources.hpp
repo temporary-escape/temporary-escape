@@ -33,6 +33,10 @@ public:
         return meshOrbit;
     }
 
+    const Mesh& getMeshLineForward() const {
+        return meshLineForward;
+    }
+
     const Mesh& getMeshSpaceDust() const {
         return meshSpaceDust;
     }
@@ -102,6 +106,7 @@ private:
     Mesh meshBullet;
     Mesh meshOrbit;
     Mesh meshSpaceDust;
+    Mesh meshLineForward;
     SkyboxTextures defaultSkybox;
     struct {
         VulkanBuffer ubo;

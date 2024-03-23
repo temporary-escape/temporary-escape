@@ -65,5 +65,6 @@ Mesh ENGINE_API createSkyboxCube(VulkanRenderer& vulkan);
 Mesh ENGINE_API createPlanetMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createBulletMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createCircleMesh(VulkanRenderer& vulkan);
+Mesh ENGINE_API createLineForwardMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createSpaceDustMesh(VulkanRenderer& vulkan);
 } // namespace Engine

@@ -14,7 +14,7 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
     startServer();
 
     // There should be no player data present
-    auto players = db->seekAll<PlayerData>("");
+    auto players = server->getDatabase().seekAll<PlayerData>("");
     REQUIRE(players.empty());
 
     // There should be no player logged in
@@ -30,7 +30,7 @@ TEST_CASE_METHOD(ClientServerFixture, "Connect and disconnect from the server", 
     REQUIRE_EVENTUALLY(server->getPlayerSessions().getAllSessions().size() == 1);
 
     // The player data should be stored in the database
-    players = db->seekAll<PlayerData>("");
+    players = server->getDatabase().seekAll<PlayerData>("");
     REQUIRE(!players.empty());
     REQUIRE(players.front().name == "Test Player");
     REQUIRE(players.front().secret != 0);
@@ -63,7 +63,7 @@ TEST_CASE_METHOD(ClientServerFixture, "Force disconnect client from the server",
     clientConnect();
 
     // Disconnect the player
-    const auto playerId = db->seekAll<PlayerData>("").front().id;
+    const auto playerId = server->getDatabase().seekAll<PlayerData>("").front().id;
     server->disconnectPlayer(playerId);
 
     // There should be no player logged in

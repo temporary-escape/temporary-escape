@@ -14,8 +14,9 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewGalaxy : public View {
 public:
-    explicit ViewGalaxy(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                        VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font);
+    explicit ViewGalaxy(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager,
+                        AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font,
+                        Client& client);
     ~ViewGalaxy();
 
     void update(float deltaTime, const Vector2i& viewport) override;
@@ -35,10 +36,11 @@ private:
     void load();
     void finalize();
     void clearEntities();
+    void showContextMenu(const Vector2i& pos, const std::string& systemId);
 
-    Game& parent;
     const Config& config;
     VulkanRenderer& vulkan;
+    GuiManager& guiManager;
     AssetsManager& assetsManager;
     VoxelShapeCache& voxelShapeCache;
     Client& client;
@@ -53,7 +55,7 @@ private:
         Entity voronoi;
         Entity names;
         Entity currentPos;
-        std::unordered_map<Entity::Handle, std::string> icons;
+        std::unordered_map<EntityId, std::string> icons;
     } entities;
 
     struct {
@@ -61,9 +63,12 @@ private:
     } textures;
 
     struct {
-        ImagePtr iconSelect;
-        ImagePtr iconCurrentPos;
-    } images;
+        ImagePtr select;
+        ImagePtr currentPos;
+        ImagePtr info;
+        ImagePtr view;
+        ImagePtr travel;
+    } icons;
 
     bool loading{false};
     Future<void> futureLoad;

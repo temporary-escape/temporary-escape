@@ -12,9 +12,15 @@ public:
         return label;
     }
 
+    void setColor(const Color4& value);
+    const Color4& getColor() const {
+        return color;
+    }
+
 private:
     void drawInternal() override;
 
     std::string label;
+    Color4 color;
 };
 } // namespace Engine

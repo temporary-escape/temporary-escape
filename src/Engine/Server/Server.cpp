@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "../Database/SaveInfo.hpp"
 #include "../Network/NetworkUdpServer.hpp"
 #include "../Utils/Random.hpp"
 #include "Lua.hpp"
@@ -17,10 +18,19 @@ static auto logger = createLogger(LOG_FILENAME);
 
 Server* Server::instance;
 
-Server::Server(const Config& config, AssetsManager& assetsManager, Database& db) :
+static DatabaseRocksDB::Options getDatabaseOptions(const Config& config) {
+    DatabaseRocksDB::Options options{};
+    options.cacheSizeMb = config.server.dbCacheSize;
+    options.debugLogging = config.server.dbDebug;
+    options.compression = config.server.dbCompression;
+    return options;
+}
+
+Server::Server(const Config& config, AssetsManager& assetsManager, const Options& options) :
     config{config},
     assetsManager{assetsManager},
-    db{db},
+    options{options},
+    db{options.savePath, getDatabaseOptions(config)},
     playerSessions{config, db},
     lobby{config},
     tickFlag{true},
@@ -67,6 +77,16 @@ EventBus& Server::getEventBus() const {
 }
 
 void Server::load() {
+    auto seed = db.find<MetaData>("seed");
+    if (!seed) {
+        if (options.seed == 0) {
+            EXCEPTION("Unable to start a new save file with zero seed");
+        }
+
+        seed = MetaData{static_cast<int64_t>(options.seed)};
+        db.put("seed", *seed);
+    }
+
     generator = std::make_unique<Generator>(Generator::Options{}, assetsManager, db);
     eventBus = std::make_unique<EventBus>();
     lua = std::make_unique<Lua>(config, *eventBus);
@@ -79,7 +99,7 @@ void Server::load() {
 
     try {
         const auto t0 = std::chrono::high_resolution_clock::now();
-        generator->generate(123456789LL);
+        generator->generate(std::get<int64_t>(seed->value));
         const auto t1 = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<float> duration = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
         logger.info("Universe has been generated in {} seconds and is ready", duration.count());
@@ -96,12 +116,31 @@ void Server::load() {
         EXCEPTION_NESTED("Failed to start the server");
     }
 
+    try {
+        updateSaveInfo();
+    } catch (std::exception& e) {
+        EXCEPTION_NESTED("Failed to create save info");
+    }
+
     EventData eventData{};
-    eventData["seed"] = 123456789LL;
+    eventData["seed"] = std::get<int64_t>(seed->value);
     eventBus->enqueue("server_started", eventData);
 }
 
+void Server::updateSaveInfo() {
+    SaveInfo saveInfo{};
+    saveInfo.version = GAME_VERSION;
+    saveInfo.timestamp = std::chrono::system_clock::now();
+    Xml::toFile(options.savePath / "info.xml", saveInfo);
+}
+
 void Server::cleanup() {
+    try {
+        updateSaveInfo();
+    } catch (std::exception& e) {
+        logger.error("Failed to update save file info error: {}", e.what());
+    }
+
     logger.info("Cleanup started");
 
     logger.info("Clearing lobby");

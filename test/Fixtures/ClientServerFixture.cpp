@@ -21,13 +21,11 @@ void ClientServerFixture::startServer() {
         loadFn(nullptr, nullptr);
     }
 
-    DatabaseRocksDB::Options options{};
-    options.cacheSizeMb = config.server.dbCacheSize;
-    options.debugLogging = config.server.dbDebug;
-    options.compression = config.server.dbCompression;
-    db = std::make_unique<DatabaseRocksDB>(tmpDir.value(), DatabaseRocksDB::Options{});
+    Server::Options options{};
+    options.seed = 123456789ULL;
+    options.savePath = tmpDir.value();
 
-    server = std::make_unique<Server>(config, *assetsManager, *db);
+    server = std::make_unique<Server>(config, *assetsManager, options);
 }
 
 void ClientServerFixture::clientConnect() {

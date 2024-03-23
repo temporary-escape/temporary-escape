@@ -149,7 +149,7 @@ void RenderPassNonHDR::renderWorldText(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 }
 
-void RenderPassNonHDR::renderShipControls(VulkanCommandBuffer& vkb, Scene& scene) {
+/*void RenderPassNonHDR::renderShipControls(VulkanCommandBuffer& vkb, Scene& scene) {
     auto& camera = *scene.getPrimaryCamera();
 
     pipelineLines.bind(vkb);
@@ -175,4 +175,4 @@ void RenderPassNonHDR::renderShipControls(VulkanCommandBuffer& vkb, Scene& scene
 
         pipelineLines.renderMesh(vkb, resources.getMeshOrbit());
     }
-}
+}*/

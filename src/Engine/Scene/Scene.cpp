@@ -109,7 +109,13 @@ Entity Scene::fromHandle(entt::entity handle) {
 }
 
 void Scene::update(const float delta) {
+    // const auto t0 = std::chrono::steady_clock::now();
+
     dynamicsWorld.update(delta);
+
+    // const auto t1 = std::chrono::steady_clock::now();
+    // const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    // logger.info("dynamicsWorld update took: {} ms", ms);
 
     for (auto& [_, controller] : controllers) {
         controller->update(delta);
@@ -148,6 +154,7 @@ void Scene::updateSelection() {
                 auto color = icon->getColor();
                 color.a = 0.0f;
                 icon->setColor(color);
+                setDirty(*icon);
             }
         }
 
@@ -159,6 +166,7 @@ void Scene::updateSelection() {
                 auto color = icon->getColor();
                 color.a = 1.0f;
                 icon->setColor(color);
+                setDirty(*icon);
             }
         }
     }

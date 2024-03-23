@@ -58,7 +58,6 @@ public:
 
     void setColor(const Color4& value) {
         color = value;
-        dirty = true;
     }
 
     [[nodiscard]] const Color4& getColor() const {

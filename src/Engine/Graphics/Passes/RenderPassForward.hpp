@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Assets/Texture.hpp"
+#include "../../Scene/Controllers/ControllerIcon.hpp"
 #include "../../Scene/Scene.hpp"
 #include "../Pipelines/RenderPipelineBullets.hpp"
 #include "../Pipelines/RenderPipelineBulletsTrail.hpp"
@@ -10,6 +11,8 @@
 #include "../Pipelines/RenderPipelinePointCloud.hpp"
 #include "../Pipelines/RenderPipelinePolyShape.hpp"
 #include "../Pipelines/RenderPipelineSpaceDust.hpp"
+#include "../Pipelines/RenderPipelineTacticalOverlayLines.hpp"
+#include "../Pipelines/RenderPipelineTacticalOverlaySpots.hpp"
 #include "../RenderBufferPbr.hpp"
 #include "../RenderPass.hpp"
 
@@ -22,6 +25,8 @@ public:
     void render(VulkanCommandBuffer& vkb, Scene& scene) override;
 
 private:
+    using IconsBufferArray = std::array<const ControllerIcon::Buffers*, 2>;
+
     struct ForwardRenderJob {
         float order{0.0f};
         std::function<void()> fn;
@@ -56,6 +61,12 @@ private:
     void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneShipControls(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneTacticalOverlay(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
+    void renderSceneTacticalOverlayLines(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
+                                         const ComponentCamera& camera, const ComponentCameraOrbital& cameraOrbital);
+    void renderSceneTacticalOverlaySpots(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
+                                         const ComponentCamera& camera, const ComponentCameraOrbital& cameraOrbital);
 
     VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;
@@ -69,6 +80,8 @@ private:
     RenderPipelineParticles pipelineParticles;
     RenderPipelineDebug pipelineDebug;
     RenderPipelineSpaceDust pipelineSpaceDust;
+    RenderPipelineTacticalOverlayLines pipelineTacticalOverlayLines;
+    RenderPipelineTacticalOverlaySpots pipelineTacticalOverlaySpots;
     Vector3 eyesPosPrevious;
 };
 } // namespace Engine

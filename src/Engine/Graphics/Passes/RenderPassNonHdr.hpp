@@ -21,7 +21,7 @@ private:
     void renderOutline(VulkanCommandBuffer& vkb, Scene& scene);
     void renderIcons(VulkanCommandBuffer& vkb, Scene& scene);
     void renderWorldText(VulkanCommandBuffer& vkb, Scene& scene);
-    void renderShipControls(VulkanCommandBuffer& vkb, Scene& scene);
+    // void renderShipControls(VulkanCommandBuffer& vkb, Scene& scene);
 
     const RenderOptions& options;
     RenderBufferPbr& buffer;

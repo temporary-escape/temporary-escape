@@ -347,7 +347,7 @@ bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const
     }
     if (border) {
         flags = flags | WindowFlag::Border;
-        nk_style_push_vec2(nk.get(), &nk->style.window.group_padding, nk_vec2(0.0f, 0.0f));
+        // nk_style_push_vec2(nk.get(), &nk->style.window.group_padding, nk_vec2(0.0f, 0.0f));
     }
 
     if (windowFlags & WindowFlag::Transparent) {
@@ -359,7 +359,7 @@ bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const
     const auto res = nk_group_begin_titled(nk.get(), name.c_str(), name.c_str(), flags) == nk_true;
 
     if (border) {
-        nk_style_pop_vec2(nk.get());
+        // nk_style_pop_vec2(nk.get());
     }
 
     if (windowFlags & WindowFlag::Transparent) {
@@ -493,16 +493,19 @@ void GuiContext::skip() {
     nk_widget(&bounds, nk.get());
 }
 
-bool GuiContext::button(const std::string& label, const ImagePtr& image) {
+bool GuiContext::button(const std::string& label, const GuiStyleButton& style, const ImagePtr& image) {
+    nk->style.button = *style.nk;
+
     if (image) {
         struct nk_image ni {};
         ni.handle.ptr = image.get();
 
-        if (nk_button_image_label(nk.get(), ni, label.c_str(), NK_TEXT_ALIGN_LEFT)) {
+        if (nk_button_image_text_styled(
+                nk.get(), style.nk.get(), ni, label.c_str(), label.size(), NK_TEXT_ALIGN_LEFT)) {
             return true;
         }
     } else {
-        if (nk_button_label(nk.get(), label.c_str())) {
+        if (nk_button_text_styled(nk.get(), style.nk.get(), label.c_str(), label.size())) {
             return true;
         }
     }
@@ -587,8 +590,9 @@ bool GuiContext::checkbox(const std::string& label, bool& value) {
     return previous != value;
 }
 
-void GuiContext::label(const std::string& label) {
-    nk_label(nk.get(), label.c_str(), nk_text_align::NK_TEXT_ALIGN_LEFT | nk_text_align::NK_TEXT_ALIGN_MIDDLE);
+void GuiContext::label(const std::string& label, const Color4& color) {
+    const auto flags = nk_text_align::NK_TEXT_ALIGN_LEFT | nk_text_align::NK_TEXT_ALIGN_MIDDLE;
+    nk_text_colored(nk.get(), label.c_str(), label.size(), flags, fromColor(color));
 }
 
 bool GuiContext::textInput(std::string& text, size_t max) {
@@ -887,3 +891,20 @@ void GuiContext::applyTheme() {
     progress.padding.x = 0;
     progress.padding.y = 0;
 }
+
+GuiStyleButton::GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& text) {
+    nk = std::make_unique<nk_style_button>();
+    nk->text_background = fromColor(hexColor(0x00000000));
+    nk->text_normal = fromColor(text.normal);
+    nk->text_hover = fromColor(text.hover);
+    nk->text_active = fromColor(text.active);
+    nk->normal.data.color = fromColor(color.normal);
+    nk->hover.data.color = fromColor(color.hover);
+    nk->active.data.color = fromColor(color.active);
+    nk->border = 1.0f;
+    nk->border_color = fromColor(Colors::border);
+    nk->rounding = 0;
+    nk->text_alignment = NK_TEXT_ALIGN_MIDDLE | NK_TEXT_ALIGN_CENTERED;
+}
+
+GuiStyleButton::~GuiStyleButton() = default;

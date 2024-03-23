@@ -4,9 +4,12 @@
 #include "../Graphics/RendererCanvas.hpp"
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
+#include "../Gui/Windows/GuiWindowCreateSave.hpp"
+#include "../Gui/Windows/GuiWindowLoadSave.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Gui/Windows/GuiWindowServerBrowser.hpp"
 #include "../Gui/Windows/GuiWindowSettings.hpp"
+#include "../Gui/Windows/GuiWindowSinglePlayerMenu.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
@@ -22,6 +25,8 @@ struct ENGINE_API Status {
 
 class ENGINE_API Matchmaker;
 class ENGINE_API ViewSpace;
+class ENGINE_API ViewGalaxy;
+class ENGINE_API ViewSystem;
 class ENGINE_API ViewBuild;
 class ENGINE_API Database;
 class ENGINE_API RendererBackground;
@@ -62,7 +67,6 @@ private:
     void createSceneRenderer(const Vector2i& viewport);
     void createRenderers();
     void loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next);
-    void startDatabase();
     void startServer();
     void startClient();
     void startSinglePlayer();
@@ -90,16 +94,20 @@ private:
         GuiWindowCreateProfile* createProfile;
         GuiWindowSettings* settings;
         GuiWindowServerBrowser* serverBrowser;
+        GuiWindowLoadSave* loadSave;
+        GuiWindowSinglePlayerMenu* singlePlayer;
+        GuiWindowCreateSave* createSave;
     } gui;
 
     struct {
         ViewSpace* space{nullptr};
+        ViewGalaxy* galaxy{nullptr};
+        ViewSystem* system{nullptr};
         ViewBuild* editor{nullptr};
     } view;
 
     std::unique_ptr<Matchmaker> matchmaker;
     std::unique_ptr<AssetsManager> assetsManager;
-    std::unique_ptr<Database> db;
     std::unique_ptr<BackgroundWorker> worker;
     std::shared_ptr<NetworkUdpClient> udpClient;
     std::unique_ptr<Server> server;
@@ -121,5 +129,7 @@ private:
         PerformanceRecord frameTime;
         PerformanceRecord renderTime;
     } perf;
+
+    Server::Options serverOptions;
 };
 } // namespace Engine
