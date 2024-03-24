@@ -67,4 +67,5 @@ Mesh ENGINE_API createBulletMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createCircleMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createLineForwardMesh(VulkanRenderer& vulkan);
 Mesh ENGINE_API createSpaceDustMesh(VulkanRenderer& vulkan);
+Mesh ENGINE_API createTacticalOverlayMesh(VulkanRenderer& vulkan);
 } // namespace Engine

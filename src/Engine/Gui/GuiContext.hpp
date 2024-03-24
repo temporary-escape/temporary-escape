@@ -37,9 +37,13 @@ public:
         ScaleLeft = (1 << (9)),
         NoInput = (1 << (10)),
         Dynamic = (1 << (11)),
-        Transparent = (1 << (28)),
         HeaderSuccess = (1 << (29)),
         HeaderDanger = (1 << (30)),
+    };
+
+    struct WindowOptions {
+        Flags flags;
+        float opacity;
     };
 
     explicit GuiContext(const FontFamily& fontFamily, int fontSize);
@@ -49,7 +53,7 @@ public:
     void render(Canvas& canvas);
 
     bool windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
-                     Flags flags);
+                     const WindowOptions& options);
     void windowEnd(Flags flags);
     bool groupBegin(const std::string& name, bool scrollbar, bool border);
     void groupEnd();

@@ -17,7 +17,7 @@ void Camera::setViewport(const Vector2i& value) {
         projectionMatrix = glm::ortho(-(zoom * ratio), zoom * ratio, -(zoom), zoom, zNear, zFar);
     } else {
         zNear = 0.1f;
-        zFar = 50000.0f;
+        zFar = 100000.0f;
 
         projectionMatrix =
             glm::perspective(glm::radians(fovOrZoom), viewport.x / static_cast<float>(viewport.y), zNear, zFar);

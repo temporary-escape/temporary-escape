@@ -13,6 +13,7 @@
 #include "../Pipelines/RenderPipelineSpaceDust.hpp"
 #include "../Pipelines/RenderPipelineTacticalOverlayLines.hpp"
 #include "../Pipelines/RenderPipelineTacticalOverlaySpots.hpp"
+#include "../Pipelines/RenderPipelineWorldText.hpp"
 #include "../RenderBufferPbr.hpp"
 #include "../RenderPass.hpp"
 
@@ -67,6 +68,10 @@ private:
                                          const ComponentCamera& camera, const ComponentCameraOrbital& cameraOrbital);
     void renderSceneTacticalOverlaySpots(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
                                          const ComponentCamera& camera, const ComponentCameraOrbital& cameraOrbital);
+    void renderSceneTacticalOverlayRings(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                         const ComponentCameraOrbital& cameraOrbital);
+    void renderSceneTacticalOverlayText(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                        const ComponentCameraOrbital& cameraOrbital);
 
     VulkanRenderer& vulkan;
     RenderBufferPbr& buffer;
@@ -82,6 +87,7 @@ private:
     RenderPipelineSpaceDust pipelineSpaceDust;
     RenderPipelineTacticalOverlayLines pipelineTacticalOverlayLines;
     RenderPipelineTacticalOverlaySpots pipelineTacticalOverlaySpots;
+    RenderPipelineWorldText pipelineWorldText;
     Vector3 eyesPosPrevious;
 };
 } // namespace Engine

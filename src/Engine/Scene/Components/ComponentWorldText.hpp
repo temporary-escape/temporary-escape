@@ -2,29 +2,14 @@
 
 #include "../../Font/FontFace.hpp"
 #include "../../Graphics/Mesh.hpp"
+#include "../../Graphics/WorldSpaceText.hpp"
 #include "../../Library.hpp"
 #include "../Component.hpp"
 
 namespace Engine {
 class ENGINE_API ComponentWorldText : public Component {
 public:
-    struct Vertex {
-        Vector3 position;
-        Vector2 offset;
-        Vector2 size;
-        Vector2 uv;
-        Vector2 st;
-
-        static VulkanVertexLayoutMap getLayout() {
-            return {
-                {0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                {1, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, offset)},
-                {2, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, size)},
-                {3, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)},
-                {4, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, st)},
-            };
-        };
-    };
+    using Vertex = WorldSpaceText::Vertex;
 
     ComponentWorldText() = default;
     explicit ComponentWorldText(EntityId entity, const FontFace& fontFace, const Color4& color, const float height);

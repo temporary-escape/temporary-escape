@@ -80,7 +80,7 @@ void ComponentCameraOrbital::eventMouseReleased(const Vector2i& pos, const Mouse
 }
 
 void ComponentCameraOrbital::eventMouseScroll(const int xscroll, const int yscroll) {
-    const auto factor = map(distanceTarget, 1.0f, distanceRange.y, 1.0f, 250.0f);
+    const auto factor = map(distanceTarget, 1.0f, 5000.0f, 1.0f, 250.0f);
     distanceTarget += static_cast<float>(yscroll) * factor;
 
     if (distanceTarget < distanceRange.x) {

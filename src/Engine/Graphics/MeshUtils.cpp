@@ -411,3 +411,59 @@ Mesh Engine::createSpaceDustMesh(VulkanRenderer& vulkan) {
 
     return mesh;
 }
+
+Mesh Engine::createTacticalOverlayMesh(VulkanRenderer& vulkan) {
+    Mesh mesh{};
+
+    static std::array<float, 8> ranges = {
+        1.0f,
+        2.0f,
+        5.0f,
+        10.0f,
+        20.0f,
+        30.0f,
+        40.0f,
+        50.0f,
+    };
+
+    static const auto steps = 1024;
+
+    std::vector<ComponentLines::Vertex> vertices;
+    vertices.resize(steps * 2 * ranges.size() + 4);
+
+    for (size_t r = 0; r < ranges.size(); r++) {
+        auto* dst = vertices.data() + r * steps * 2;
+
+        const auto stepAngle = 360.0 / static_cast<double>(steps);
+        for (size_t i = 0; i < steps; i++) {
+            const auto startAngle = static_cast<float>(static_cast<double>(i) * stepAngle);
+            const auto endAngle = static_cast<float>(static_cast<double>(i + 1) * stepAngle);
+
+            const auto range = ranges.at(r) * 1000.0f;
+            dst[i * 2 + 0] = {glm::rotateY(Vector3{range, 0.0f, 0.0f}, glm::radians(startAngle)), Color4{1.0f}};
+            dst[i * 2 + 1] = {glm::rotateY(Vector3{range, 0.0f, 0.0f}, glm::radians(endAngle)), Color4{1.0f}};
+        }
+    }
+
+    auto* dst = vertices.data() + ranges.size() * steps * 2;
+    dst[0] = {Vector3{ranges.back() * 1000.0f, 0.0f, 0.0f}, Color4{1.0f}};
+    dst[1] = {Vector3{ranges.back() * -1000.0f, 0.0f, 0.0f}, Color4{1.0f}};
+    dst[2] = {Vector3{0.0f, 0.0f, ranges.back() * 1000.0f}, Color4{1.0f}};
+    dst[3] = {Vector3{0.0f, 0.0f, ranges.back() * -1000.0f}, Color4{1.0f}};
+
+    VulkanBuffer::CreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(ComponentLines::Vertex) * vertices.size();
+    bufferInfo.usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+    bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    mesh.vbo = vulkan.createBuffer(bufferInfo);
+    vulkan.copyDataToBuffer(mesh.vbo, vertices.data(), bufferInfo.size);
+
+    mesh.count = vertices.size();
+
+    return mesh;
+}

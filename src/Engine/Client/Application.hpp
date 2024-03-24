@@ -90,13 +90,13 @@ private:
     GuiManager guiManager;
 
     struct {
-        GuiWindowMainMenu* mainMenu;
-        GuiWindowCreateProfile* createProfile;
-        GuiWindowSettings* settings;
-        GuiWindowServerBrowser* serverBrowser;
-        GuiWindowLoadSave* loadSave;
-        GuiWindowSinglePlayerMenu* singlePlayer;
-        GuiWindowCreateSave* createSave;
+        GuiWindowMainMenu* mainMenu{nullptr};
+        GuiWindowCreateProfile* createProfile{nullptr};
+        GuiWindowSettings* settings{nullptr};
+        GuiWindowServerBrowser* serverBrowser{nullptr};
+        GuiWindowLoadSave* loadSave{nullptr};
+        GuiWindowSinglePlayerMenu* singlePlayer{nullptr};
+        GuiWindowCreateSave* createSave{nullptr};
     } gui;
 
     struct {

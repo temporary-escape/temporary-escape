@@ -12,6 +12,7 @@ class ENGINE_API GuiManager;
 class ENGINE_API GuiWindowShipToolbar;
 class ENGINE_API GuiWindowShipStatus;
 class ENGINE_API GuiWindowCurrentLocation;
+class ENGINE_API GuiWindowSceneOverview;
 
 class ENGINE_API ViewSpace : public View {
 public:
@@ -58,6 +59,7 @@ private:
         GuiWindowShipToolbar* toolbar{nullptr};
         GuiWindowShipStatus* status{nullptr};
         GuiWindowCurrentLocation* location{nullptr};
+        GuiWindowSceneOverview* overview{nullptr};
     } gui;
 
     struct {

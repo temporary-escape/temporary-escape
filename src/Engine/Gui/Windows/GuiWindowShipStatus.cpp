@@ -50,7 +50,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(const FontFamily& fontFamily, int fontS
     setBackground(true);
     setNoScrollbar(true);
     setHeader(false);
-    setTransparent(true);
+    setOpacity(0.0f);
     //   setNoInput(true);
 
     const auto totalWidth = getSize().x - ctx.getPadding().x * 2.0f;

@@ -1,19 +1,12 @@
 #include "Application.hpp"
-#include "../Database/DatabaseRocksdb.hpp"
-#include "../File/OggFileReader.hpp"
+#include "../Font/FontFamilyDefault.hpp"
 #include "../Graphics/RendererBackground.hpp"
-#include "../Graphics/RendererPlanetSurface.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
-#include "../Network/NetworkUdpClient.hpp"
 #include "ViewBuild.hpp"
 #include "ViewGalaxy.hpp"
 #include "ViewSpace.hpp"
 #include "ViewSystem.hpp"
-#include <iosevka-aile-bold.ttf.h>
-#include <iosevka-aile-light.ttf.h>
-#include <iosevka-aile-regular.ttf.h>
-#include <iosevka-aile-thin.ttf.h>
 
 using namespace Engine;
 
@@ -25,19 +18,12 @@ static const auto profileFilename = "profile.xml";
     promise.set_value([=]() { (expr); });                                                                              \
     future = promise.get_future()
 
-static FontFamily::Sources fontSources{
-    Embed::iosevka_aile_regular_ttf,
-    Embed::iosevka_aile_bold_ttf,
-    Embed::iosevka_aile_light_ttf,
-    Embed::iosevka_aile_thin_ttf,
-};
-
 Application::Application(Config& config) :
     VulkanRenderer{config},
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    font{*this, fontSources, config.guiFontSize * 2},
+    font{*this, defaultFontSources, config.guiFontSize * 2},
     rendererCanvas{*this},
     canvas2{*this},
     guiManager{*this, rendererCanvas, font, config.guiFontSize} {
@@ -370,7 +356,7 @@ void Application::renderVersion(const Vector2i& viewport) {
 void Application::renderFrameTime(const Vector2i& viewport) {
     static const Color4 color{Colors::text * alpha(0.5f)};
 
-    const auto posX = static_cast<float>(viewport.x) - 170.0f;
+    const auto posX = static_cast<float>(viewport.x) - 450.0f;
     const auto fontSize = static_cast<float>(config.guiFontSize);
 
     {
@@ -640,7 +626,7 @@ void Application::createRenderers() {
     status.value = 0.5f;
 
     renderResources = std::make_unique<RenderResources>(
-        *this, assetsManager->getBlockMaterialsUbo(), assetsManager->getMaterialTextures());
+        *this, assetsManager->getBlockMaterialsUbo(), assetsManager->getMaterialTextures(), font, config.guiFontSize);
 
     createSceneRenderer(config.graphics.windowSize);
 

@@ -30,34 +30,38 @@ out gl_PerVertex {
 };
 
 void geometrize(vec4 pos) {
-    vec2 particleSize = in_Size / camera.viewport;
-    vec2 offset = in_Offset / camera.viewport;
+    vec2 glyphSize = in_Size / camera.viewport / 0.5f;
+    vec2 offset = in_Offset / camera.viewport / 0.5f;
 
     // a: left-bottom
     if (gl_VertexIndex == 0) {
-        vec2 va = pos.xy + vec2(0.0, 0.0) * particleSize;
-        gl_Position = vec4(va + offset, pos.zw);
+        pos.xy = pos.xy / pos.w;
+        vec2 va = pos.xy + vec2(0.0, 0.0) * glyphSize + offset;
+        gl_Position = vec4(va * pos.w, pos.zw);
         vs_out.texCoords = in_Uv;
     }
 
     // b: left-top
     if (gl_VertexIndex == 1) {
-        vec2 vb = pos.xy + vec2(0.0, 1.0) * particleSize;
-        gl_Position = vec4(vb + offset, pos.zw);
+        pos.xy = pos.xy / pos.w;
+        vec2 vb = pos.xy + vec2(0.0, 1.0) * glyphSize + offset;
+        gl_Position = vec4(vb * pos.w, pos.zw);
         vs_out.texCoords = vec2(in_Uv.x, in_Uv.y + in_St.y);
     }
 
     // d: right-bottom
     if (gl_VertexIndex == 2) {
-        vec2 vd = pos.xy + vec2(1.0, 0.0) * particleSize;
-        gl_Position = vec4(vd + offset, pos.zw);
+        pos.xy = pos.xy / pos.w;
+        vec2 vd = pos.xy + vec2(1.0, 0.0) * glyphSize + offset;
+        gl_Position = vec4(vd * pos.w, pos.zw);
         vs_out.texCoords = vec2(in_Uv.x + in_St.x, in_Uv.y);
     }
 
     // c: right-top
     if (gl_VertexIndex == 3) {
-        vec2 vc = pos.xy + vec2(1.0, 1.0) * particleSize;
-        gl_Position = vec4(vc + offset, pos.zw);
+        pos.xy = pos.xy / pos.w;
+        vec2 vc = pos.xy + vec2(1.0, 1.0) * glyphSize + offset;
+        gl_Position = vec4(vc * pos.w, pos.zw);
         vs_out.texCoords = vec2(in_Uv.x + in_St.x, in_Uv.y + in_St.y);
     }
 }

@@ -18,7 +18,11 @@ void GuiWindow::update(const Vector2i& viewport) {
 
 void GuiWindow::draw() {
     // We are rendering into an FBO, therefore the position is always at [0, 0]
-    if (GuiContext::windowBegin(id, title, {0.0f, 0.0f}, size, flags)) {
+    WindowOptions options{
+        flags,
+        opacity,
+    };
+    if (GuiContext::windowBegin(id, title, {0.0f, 0.0f}, size, options)) {
         GuiWidgetLayout::draw();
     }
     GuiContext::windowEnd(flags);
@@ -43,6 +47,10 @@ void GuiWindow::setEnabled(const bool value) {
 
 void GuiWindow::setCentered(const bool value) {
     centered = value;
+}
+
+void GuiWindow::setOpacity(const float value) {
+    opacity = value;
 }
 
 void GuiWindow::setBordered(const bool value) {
@@ -74,14 +82,6 @@ void GuiWindow::setHeader(const bool value) {
         flags |= WindowFlag::Title;
     } else {
         flags &= ~WindowFlag::Title;
-    }
-}
-
-void GuiWindow::setTransparent(const bool value) {
-    if (value) {
-        flags |= WindowFlag::Transparent;
-    } else {
-        flags &= ~WindowFlag::Transparent;
     }
 }
 

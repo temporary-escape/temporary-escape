@@ -40,6 +40,6 @@ private:
     float distanceValue{5.0f};
     Vector2 rotation{0.0f, 0.0f};
     Vector2 mousePosOld;
-    Vector2 distanceRange{3.0f, 5000.0f};
+    Vector2 distanceRange{3.0f, 50000.0f};
 };
 } // namespace Engine

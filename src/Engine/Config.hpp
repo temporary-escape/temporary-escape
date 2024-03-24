@@ -163,6 +163,7 @@ struct Colors {
     static constexpr Color4 transparent{0.0f, 0.0f, 0.0f, 0.0f};
     static constexpr Color4 white{hexColor(0xe5e5e3ff)};
     static constexpr Color4 black{hexColor(0x030303ff)};
+    static constexpr Color4 tacticalOverview{0.7f, 0.7f, 0.7f, 0.2f};
 };
 
 XML_DEFINE(Config, "settings");

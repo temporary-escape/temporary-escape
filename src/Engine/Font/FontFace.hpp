@@ -31,7 +31,6 @@ public:
     enum Type {
         Regular = 0,
         Bold,
-        Thin,
         Light,
     };
 

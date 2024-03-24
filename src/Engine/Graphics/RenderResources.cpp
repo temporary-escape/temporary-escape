@@ -70,10 +70,11 @@ static VulkanTexture createTextureOfColor(VulkanRenderer& vulkan, const Color4& 
 }
 
 RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
-                                 const MaterialTextures& materialTextures) :
+                                 const MaterialTextures& materialTextures, const FontFamily& font, const int fontSize) :
     vulkan{vulkan},
     blockMaterials{blockMaterials},
     materialTextures{materialTextures},
+    textTacticalOverlay{font},
     defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}} {
 
     meshFullScreenQuad = createFullScreenQuad(vulkan);
@@ -83,12 +84,14 @@ RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blo
     meshOrbit = createCircleMesh(vulkan);
     meshSpaceDust = createSpaceDustMesh(vulkan);
     meshLineForward = createLineForwardMesh(vulkan);
+    meshTacticalOverlay = createTacticalOverlayMesh(vulkan);
     createSsaoNoise();
     createSsaoSamples();
     createPalette();
     createBrdf();
     createSkyboxStar();
     createSpaceDust();
+    createTextTacticalOverlay(fontSize);
     defaultSSAO = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 1);
     defaultShadow = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 4);
     defaultBloom = createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, 1);
@@ -302,4 +305,33 @@ void RenderResources::createSpaceDust() {
 
     auto textureInfo = createCreateInfo(image);
     spaceDust = createTexture(vulkan, image, textureInfo);
+}
+
+void RenderResources::createTextTacticalOverlay(const int fontSize) {
+    static std::array<float, 8> ranges = {
+        1.0f,
+        2.0f,
+        5.0f,
+        10.0f,
+        20.0f,
+        30.0f,
+        40.0f,
+        50.0f,
+    };
+
+    static std::array<float, 4> angles = {
+        0.0f,
+        90.0f,
+        180.0f,
+        270.0f,
+    };
+
+    for (const auto range : ranges) {
+        for (const auto angle : angles) {
+            const auto pos = glm::rotateY(Vector3{range * 1000.0f, 0.0f, 0.0f}, glm::radians(angle));
+            textTacticalOverlay.add(pos, fmt::format("{}km", static_cast<int>(range)), fontSize);
+        }
+    }
+
+    textTacticalOverlay.recalculate(vulkan);
 }

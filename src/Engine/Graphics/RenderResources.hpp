@@ -5,12 +5,13 @@
 #include "MaterialTextures.hpp"
 #include "Mesh.hpp"
 #include "SkyboxTextures.hpp"
+#include "WorldSpaceText.hpp"
 
 namespace Engine {
 class ENGINE_API RenderResources {
 public:
     explicit RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
-                             const MaterialTextures& materialTextures);
+                             const MaterialTextures& materialTextures, const FontFamily& font, int fontSize);
     ~RenderResources();
 
     const Mesh& getMeshFullScreenQuad() const {
@@ -39,6 +40,10 @@ public:
 
     const Mesh& getMeshSpaceDust() const {
         return meshSpaceDust;
+    }
+
+    const Mesh& getMeshTacticalOverlay() const {
+        return meshTacticalOverlay;
     }
 
     const SkyboxTextures& getDefaultSkybox() const {
@@ -89,6 +94,10 @@ public:
         return materialTextures;
     }
 
+    const WorldSpaceText& getTextTacticalOverlay() const {
+        return textTacticalOverlay;
+    }
+
 private:
     void createSsaoNoise();
     void createSsaoSamples();
@@ -96,10 +105,12 @@ private:
     void createBrdf();
     void createSkyboxStar();
     void createSpaceDust();
+    void createTextTacticalOverlay(int fontSize);
 
     VulkanRenderer& vulkan;
     const VulkanBuffer& blockMaterials;
     const MaterialTextures& materialTextures;
+    WorldSpaceText textTacticalOverlay;
     Mesh meshFullScreenQuad;
     Mesh meshPlanet;
     Mesh meshSkyboxCube;
@@ -107,6 +118,7 @@ private:
     Mesh meshOrbit;
     Mesh meshSpaceDust;
     Mesh meshLineForward;
+    Mesh meshTacticalOverlay;
     SkyboxTextures defaultSkybox;
     struct {
         VulkanBuffer ubo;

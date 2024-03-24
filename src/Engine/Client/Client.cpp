@@ -95,6 +95,13 @@ void Client::update(const float deltaTime) {
                 cache.player.forwardVelocityMax = shipControl->getForwardVelocityMax();
                 cache.player.approachDistance = shipControl->getApproachDistance();
             }
+
+            auto* shipIcon = scene->tryGetComponent<ComponentIcon>(cache.player.entity);
+            if (shipIcon && shipIcon->isSelectable()) {
+                shipIcon->setColor(Color4{0.0f});
+                shipIcon->setSelectable(false);
+                scene->setDirty(*shipIcon);
+            }
         }
     }
 

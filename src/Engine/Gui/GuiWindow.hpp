@@ -43,12 +43,16 @@ public:
         return enabled;
     }
 
+    void setOpacity(float value);
+    float getOpacity() const {
+        return opacity;
+    }
+
     void setCentered(bool value);
     void setBordered(bool value);
     void setBackground(bool value);
     void setNoScrollbar(bool value);
     void setHeader(bool value);
-    void setTransparent(bool value);
     void setDynamic(bool value);
     void setNoInput(bool value);
     void setHeaderSuccess(bool value);
@@ -62,5 +66,6 @@ private:
     GuiContext::Flags flags{0};
     bool enabled{false};
     bool centered{true};
+    float opacity{1.0f};
 };
 } // namespace Engine

@@ -17,7 +17,7 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
     setBackground(true);
     setNoScrollbar(true);
     setHeader(false);
-    setTransparent(true);
+    setOpacity(0.0f);
     //   setNoInput(true);
 
     { // Action bar

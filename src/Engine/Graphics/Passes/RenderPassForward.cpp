@@ -1,5 +1,6 @@
 #include "RenderPassForward.hpp"
 #include "../../Assets/AssetsManager.hpp"
+#include "../../Font/FontFamily.hpp"
 #include "../../Scene/Controllers/ControllerBullets.hpp"
 #include "../../Scene/Controllers/ControllerIcon.hpp"
 #include "../../Scene/Controllers/ControllerTurret.hpp"
@@ -22,7 +23,8 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     pipelineDebug{vulkan},
     pipelineSpaceDust{vulkan},
     pipelineTacticalOverlayLines{vulkan},
-    pipelineTacticalOverlaySpots{vulkan} {
+    pipelineTacticalOverlaySpots{vulkan},
+    pipelineWorldText{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -77,6 +79,7 @@ RenderPassForward::RenderPassForward(const RenderOptions& options, VulkanRendere
     addPipeline(pipelineSpaceDust, 0);
     addPipeline(pipelineTacticalOverlayLines, 0);
     addPipeline(pipelineTacticalOverlaySpots, 0);
+    addPipeline(pipelineWorldText, 0);
 }
 
 void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
@@ -330,8 +333,6 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
     pipelineLines.bind(vkb);
 
     for (auto&& [entity, transform, shipControl] : scene.getView<ComponentTransform, ComponentShipControl>().each()) {
-        pipelineLines.setModelMatrix(shipControl.getOrbitMatrix());
-
         if (shipControl.getApproachEntity() == NullEntity) {
             continue;
         }
@@ -390,6 +391,8 @@ void RenderPassForward::renderSceneTacticalOverlay(VulkanCommandBuffer& vkb, Sce
 
     renderSceneTacticalOverlaySpots(vkb, buffers, camera, *cameraOrbital);
     renderSceneTacticalOverlayLines(vkb, buffers, camera, *cameraOrbital);
+    renderSceneTacticalOverlayRings(vkb, camera, *cameraOrbital);
+    renderSceneTacticalOverlayText(vkb, camera, *cameraOrbital);
 }
 
 void RenderPassForward::renderSceneTacticalOverlayLines(VulkanCommandBuffer& vkb, const IconsBufferArray& buffers,
@@ -400,7 +403,7 @@ void RenderPassForward::renderSceneTacticalOverlayLines(VulkanCommandBuffer& vkb
     const auto modelMatrix = Matrix4{1.0f};
 
     pipelineTacticalOverlayLines.setModelMatrix(modelMatrix);
-    pipelineTacticalOverlayLines.setColor(Color4{1.0f, 1.0f, 1.0f, 0.05f});
+    pipelineTacticalOverlayLines.setColor(alpha(0.1f));
     pipelineTacticalOverlayLines.setPlayerPos(cameraOrbital.getTarget());
     pipelineTacticalOverlayLines.flushConstants(vkb);
 
@@ -430,10 +433,10 @@ void RenderPassForward::renderSceneTacticalOverlaySpots(VulkanCommandBuffer& vkb
     const auto modelMatrix = Matrix4{1.0f};
 
     pipelineTacticalOverlaySpots.setModelMatrix(modelMatrix);
-    pipelineTacticalOverlaySpots.setColor(Color4{1.0f, 1.0f, 1.0f, 0.1f});
+    pipelineTacticalOverlaySpots.setColor(alpha(0.25f));
     pipelineTacticalOverlaySpots.setPlayerPos(cameraOrbital.getTarget());
     pipelineTacticalOverlaySpots.flushConstants(vkb);
-    pipelineTacticalOverlaySpots.setScale(5.0f);
+    pipelineTacticalOverlaySpots.setScale(10.0f);
 
     for (const auto* b : buffers) {
         for (const auto& pair : *b) {
@@ -451,4 +454,42 @@ void RenderPassForward::renderSceneTacticalOverlaySpots(VulkanCommandBuffer& vkb
             vkb.draw(4, pair.second.count(), 0, 0);
         }
     }
+}
+
+void RenderPassForward::renderSceneTacticalOverlayRings(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                                        const ComponentCameraOrbital& cameraOrbital) {
+    pipelineLines.bind(vkb);
+
+    Matrix4 modelMatrix{1.0f};
+    modelMatrix[3] = Vector4{cameraOrbital.getTarget(), 1.0f};
+
+    pipelineLines.setModelMatrix(modelMatrix);
+    pipelineLines.setColor(Colors::tacticalOverview);
+    pipelineLines.flushConstants(vkb);
+
+    pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineLines.flushDescriptors(vkb);
+
+    pipelineLines.renderMesh(vkb, resources.getMeshTacticalOverlay());
+}
+
+void RenderPassForward::renderSceneTacticalOverlayText(VulkanCommandBuffer& vkb, const ComponentCamera& camera,
+                                                       const ComponentCameraOrbital& cameraOrbital) {
+    pipelineWorldText.bind(vkb);
+
+    Matrix4 modelMatrix{1.0f};
+    modelMatrix[3] = Vector4{cameraOrbital.getTarget(), 1.0f};
+
+    const auto& worldText = resources.getTextTacticalOverlay();
+    const auto& fontFace = worldText.getFont().get(FontFace::Regular);
+
+    pipelineWorldText.setModelMatrix(modelMatrix);
+    pipelineWorldText.setColor(Colors::tacticalOverview);
+    pipelineWorldText.flushConstants(vkb);
+
+    pipelineWorldText.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineWorldText.setTextureColor(fontFace.getTexture());
+    pipelineWorldText.flushDescriptors(vkb);
+
+    pipelineWorldText.renderMesh(vkb, worldText.getMesh());
 }
