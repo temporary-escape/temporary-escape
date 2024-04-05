@@ -59,8 +59,8 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
 Scene::~Scene() = default;
 
 void Scene::feedbackSelectedEntity(const uint32_t id) {
-    if (reg.valid(entt::entity{id})) {
-        selectedEntityOpaque = Entity{reg, entt::entity{id}};
+    if (reg.valid(EntityId{id})) {
+        selectedEntityOpaque = Entity{reg, EntityId{id}};
     } else {
         selectedEntityOpaque = std::nullopt;
     }
@@ -70,13 +70,13 @@ Entity Scene::createEntity() {
     return fromHandle(reg.create());
 }
 
-Entity Scene::createEntityFrom(const std::string& name, const sol::table& data) {
+EntityId Scene::createEntityFrom(const std::string& name, const sol::table& data) {
     const auto it = entityTemplates.find(name);
     if (it == entityTemplates.end()) {
         throw std::runtime_error(fmt::format("No such entity template named: '{}'", name));
     }
 
-    auto entity = createEntity();
+    auto entity = fromHandle(reg.create());
 
     auto res = (*it->second)["new"](entity, data);
     if (!res.valid()) {
@@ -86,12 +86,11 @@ Entity Scene::createEntityFrom(const std::string& name, const sol::table& data) 
 
     auto inst = res.get<sol::table>();
 
-    entity.addComponent<ComponentScript>(inst);
-
-    return entity;
+    addComponent<ComponentScript>(entity.getHandle(), inst);
+    return entity.getHandle();
 }
 
-Entity Scene::createEntityFrom(const std::string& name) {
+EntityId Scene::createEntityFrom(const std::string& name) {
     return createEntityFrom(name, sol::table{});
 }
 
@@ -104,7 +103,7 @@ void Scene::removeEntity(Entity& entity) {
     entity.reset();
 }
 
-Entity Scene::fromHandle(entt::entity handle) {
+Entity Scene::fromHandle(EntityId handle) {
     return Entity{reg, handle};
 }
 

@@ -47,6 +47,8 @@ public:
     void handle(Request2<MessageActionOrbit> req);
     void handle(Request2<MessageActionKeepDistance> req);
     void handle(Request2<MessageActionStopMovement> req);
+    void handle(Request2<MessageActionGoDirection> req);
+    void handle(Request2<MessageActionWarpTo> req);
     void handle(Request2<MessageControlTargetEvent> req);
 
     EventBus& getEventBus() const;

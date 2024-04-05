@@ -24,6 +24,8 @@ public:
         Vertex b;
     };
 
+    static std::vector<Line> createCircle(float radius, const Color4& color);
+
     ComponentLines() = default;
     explicit ComponentLines(EntityId entity, std::vector<Line> lines);
     COMPONENT_DEFAULTS(ComponentLines);

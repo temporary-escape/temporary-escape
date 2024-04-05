@@ -26,6 +26,8 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     HANDLE_REQUEST2(MessageFetchFactionsResponse);
     HANDLE_REQUEST2(MessageFetchSystemsResponse);
     HANDLE_REQUEST2(MessageSceneUpdateEvent);
+    HANDLE_REQUEST2(MessageFetchPlanetsResponse);
+    HANDLE_REQUEST2(MessageFetchSectorsResponse);
     // HANDLE_REQUEST(MessageSceneBulletsEvent);
     HANDLE_REQUEST2(MessagePlayerControlEvent);
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
@@ -116,6 +118,8 @@ void Client::startCacheSync() {
 }
 
 void Client::createScene(const SectorData& sector) {
+    logger.info("Creating new scene");
+
     scene.reset();
     scene = std::make_unique<Scene>(config, voxelShapeCache);
 
@@ -183,11 +187,17 @@ void Client::handle(Request2<MessagePlayerLocationEvent> req) {
     logger.info("Player location has changed");
 
     sync.postSafe([this, data]() {
-        logger.info("Sector has changed, creating a new scene");
         cache.location = data.location;
         cache.sector = data.sector;
         cache.system = data.system;
+
         createScene(data.sector);
+
+        // Fetch planets for the system we are currently in
+        MessageFetchPlanetsRequest msg{};
+        msg.galaxyId = cache.galaxy.id;
+        msg.systemId = cache.system->id;
+        network->send(msg);
     });
 }
 
@@ -314,7 +324,7 @@ void Client::handle(Request2<MessageFetchFactionsResponse> req) {
         msg.token = data.page.token;
         network->send(msg);
     } else {
-        // Fetch galaxy factions
+        // Fetch galaxy systems
         MessageFetchSystemsRequest msg{};
         msg.galaxyId = cache.galaxy.id;
         network->send(msg);
@@ -349,6 +359,49 @@ void Client::handle(Request2<MessageFetchSystemsResponse> req) {
         MessagePlayerSpawnRequest msg{};
         network->send(msg);
     }
+}
+
+void Client::handle(Request2<MessageFetchPlanetsResponse> req) {
+    sync.postSafe([this, r = std::move(req)]() {
+        auto data = r.get();
+
+        logger.debug("Received planets data count: {}", data.items.size());
+
+        cache.planets.insert(cache.planets.end(), data.items.begin(), data.items.end());
+
+        if (data.page.hasNext && !data.page.token.empty()) {
+            // Continue fetching the next page
+            MessageFetchPlanetsRequest msg{};
+            msg.galaxyId = cache.galaxy.id;
+            msg.systemId = cache.system->id;
+            msg.token = data.page.token;
+            network->send(msg);
+        } else {
+            MessageFetchSectorsRequest msg{};
+            msg.galaxyId = cache.galaxy.id;
+            msg.systemId = cache.system->id;
+            network->send(msg);
+        }
+    });
+}
+
+void Client::handle(Request2<MessageFetchSectorsResponse> req) {
+    sync.postSafe([this, r = std::move(req)]() {
+        auto data = r.get();
+
+        logger.debug("Received sectors data count: {}", data.items.size());
+
+        cache.sectors.insert(cache.sectors.end(), data.items.begin(), data.items.end());
+
+        if (data.page.hasNext && !data.page.token.empty()) {
+            // Continue fetching the next page
+            MessageFetchSectorsRequest msg{};
+            msg.galaxyId = cache.galaxy.id;
+            msg.systemId = cache.system->id;
+            msg.token = data.page.token;
+            network->send(msg);
+        }
+    });
 }
 
 void Client::handle(Request2<MessageSceneUpdateEvent> req) {

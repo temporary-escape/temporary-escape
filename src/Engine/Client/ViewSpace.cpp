@@ -1,9 +1,9 @@
 #include "ViewSpace.hpp"
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCurrentLocation.hpp"
+#include "../Gui/Windows/GuiWindowSceneOverview.hpp"
 #include "../Gui/Windows/GuiWindowShipStatus.hpp"
 #include "../Gui/Windows/GuiWindowShipToolbar.hpp"
-#include "../Gui/Windows/GuiWindowSceneOverview.hpp"
 #include "Client.hpp"
 
 using namespace Engine;
@@ -195,6 +195,24 @@ void ViewSpace::onExit() {
     // guiContextMenu.setEnabled(false);
 }
 
+void ViewSpace::showContextMenu(const Vector2i& mousePos) {
+    guiManager.showContextMenu(mousePos, [=](GuiWindowContextMenu& menu) {
+        menu.addItem(icons.approach, "Go Here", [=]() {
+            auto& scene = *client.getScene();
+            const auto [_, pos] = scene.screenToWorld(mousePos, 10000.0f);
+
+            const auto playerEntity = client.getCache().player.entity;
+            if (scene.valid(playerEntity)) {
+                const auto* transform = scene.tryGetComponent<ComponentTransform>(playerEntity);
+                if (transform) {
+                    const auto direction = glm::normalize(pos - transform->getAbsolutePosition());
+                    doGoHere(direction);
+                }
+            }
+        });
+    });
+}
+
 void ViewSpace::showContextMenu(const Vector2i& mousePos, const Entity& entity) {
     const auto* transform = entity.tryGetComponent<ComponentTransform>();
     if (!transform) {
@@ -234,6 +252,13 @@ void ViewSpace::doTargetEntity(const Entity& entity) {
             logger.warn("Can not target entity, no remote handle");
         }
     }*/
+}
+
+void ViewSpace::doGoHere(const Vector3& direction) {
+    auto& scene = *client.getScene();
+    MessageActionGoDirection msg{};
+    msg.direction = direction;
+    client.send(msg);
 }
 
 void ViewSpace::doApproachEntity(const Engine::Entity& entity) {
@@ -291,8 +316,12 @@ void ViewSpace::eventMouseReleased(const Vector2i& pos, const MouseButton button
 
         const auto& camera = *scene->getPrimaryCamera();
         const auto selected = scene->getSelectedEntity();
-        if (selected.has_value() && button == MouseButton::Right && !camera.isPanning()) {
-            showContextMenu(pos, selected.value());
+        if (button == MouseButton::Right && !camera.isPanning()) {
+            if (selected.has_value()) {
+                showContextMenu(pos, selected.value());
+            } else {
+                showContextMenu(pos);
+            }
         } else if (guiManager.isContextMenuVisible()) {
             guiManager.getContextMenu().setEnabled(false);
         }

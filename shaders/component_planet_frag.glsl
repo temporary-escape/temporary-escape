@@ -23,7 +23,7 @@ layout (std140, binding = 1) uniform Atmosphere {
     float strength;
 } atmosphere;
 
-layout (binding = 2) uniform samplerCube albedoTexture;
+layout (binding = 2) uniform samplerCube baseColorTexture;
 layout (binding = 3) uniform samplerCube normalTexture;
 layout (binding = 4) uniform samplerCube metallicRoughnessTexture;
 
@@ -47,11 +47,11 @@ vec4 atmosphereColor() {
     vec3 eyesDir = vec3(0.0, -1.0, 0.0);
 
     float f = 1.0 - clamp(dot(vs_out.normal, eyesDir), 0.0, 1.0);
-    f = pow(f, 4.5) + 0.05;
+    f = pow(f, 3.5) + 0.05;
 
     float factor = clamp(f * d, 0.0, 1.0);
 
-    vec4 atmosphereColor = mix(pow(atmosphere.start, vec4(2.2)), pow(atmosphere.end, vec4(2.2)), pow(f, 1.5));
+    vec4 atmosphereColor = mix(pow(atmosphere.start, vec4(2.2)), pow(atmosphere.end, vec4(2.2)), pow(f, 1.0));
     // atmosphereColor *= vec4(radiance, 1.0);
 
     return atmosphereColor * vec4(factor * 1.0) * atmosphere.strength;
@@ -59,7 +59,7 @@ vec4 atmosphereColor() {
 
 // ---------------------------------------------------------------------------------------------------------------------
 void main() {
-    vec3 albedo = pow(texture(albedoTexture, vs_out.texCoords).rgb, vec3(2.2));
+    vec3 albedo = pow(texture(baseColorTexture, vs_out.texCoords).rgb, vec3(2.2));
     vec3 normalRaw = texture(normalTexture, vs_out.texCoords).xyz;
     normalRaw.z = sqrt(1.0 - normalRaw.x * normalRaw.x - normalRaw.y * normalRaw.y);
     normalRaw = vec3(normalRaw.x, 1.0 - normalRaw.y, normalRaw.z) * 2.0 - 1.0;

@@ -18,7 +18,8 @@ Sector::Sector(const Config& config, Database& db, AssetsManager& assetsManager,
     galaxyId{std::move(galaxyId)},
     systemId{std::move(systemId)},
     sectorId{std::move(sectorId)},
-    loaded{false} {
+    loaded{false},
+    rng{std::random_device()()} {
 
     logger.info("Started sector: '{}'", this->sectorId);
 }
@@ -112,12 +113,11 @@ void Sector::addPlayer(const SessionPtr& session) {
         auto sectorData = db.get<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
 
         // Spawn player entity
-        auto playerEntity = spawnPlayerEntity(session);
+        auto playerEntityId = spawnPlayerEntity(session);
         // playerEntity.addComponent<ComponentShipControl>();
-        const auto playerEntityId = playerEntity.getId();
 
         // Remember that this player controls this entity
-        playerControl.emplace(session, playerEntity.getHandle());
+        playerControl.emplace(session, playerEntityId);
 
         // Send a message to the player that their location has changed
         MessagePlayerLocationEvent msg{};
@@ -160,10 +160,17 @@ void Sector::removePlayer(const SessionPtr& session) {
     });
 }
 
-Entity Sector::spawnPlayerEntity(const SessionPtr& session) {
+EntityId Sector::spawnPlayerEntity(const SessionPtr& session) {
     auto table = scene->getLua().getState().create_table();
     table["player_id"] = session->getPlayerId();
-    return scene->createEntityFrom("player", table);
+
+    auto entity = scene->createEntityFrom("player", table);
+    auto* transform = scene->tryGetComponent<ComponentTransform>(entity);
+    if (transform) {
+        transform->move(Vector3{10000.0f, 0.0f, 0.0f});
+    }
+
+    return entity;
 }
 
 void Sector::handleShipAction(const SessionPtr& session, std::function<void(Entity&, ComponentShipControl&)> callback) {
@@ -210,6 +217,29 @@ void Sector::handle(const SessionPtr& session, MessageActionStopMovement req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} stopping", entity.getHandle());
         shipControl.actionStopMovement();
+    });
+}
+
+void Sector::handle(const SessionPtr& session, MessageActionGoDirection req) {
+    handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
+        logger.debug("Entity: {} going direction: {}", entity.getHandle(), req.direction);
+        shipControl.actionGoDirection(req.direction);
+    });
+}
+
+void Sector::handle(const SessionPtr& session, MessageActionWarpTo req) {
+    handleShipAction(session, [this, req](Entity& entity, ComponentShipControl& shipControl) {
+        if (req.sectorId != sectorId) {
+            const auto thisSector = db.find<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, sectorId));
+            const auto targetSector = db.find<SectorData>(fmt::format("{}/{}/{}", galaxyId, systemId, req.sectorId));
+
+            if (thisSector && targetSector) {
+                const auto dir = targetSector->pos - thisSector->pos;
+
+                logger.debug("Entity: {} warping to: {}", entity.getHandle(), req.sectorId);
+                shipControl.actionWarpTo(Vector3{dir.x, 0.0f, dir.y});
+            }
+        }
     });
 }
 

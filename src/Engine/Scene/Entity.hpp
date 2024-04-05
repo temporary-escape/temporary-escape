@@ -53,10 +53,8 @@ template <typename T> static inline constexpr uint64_t componentMaskId() {
 
 class ENGINE_API Entity {
 public:
-    using Handle = entt::entity;
-
     Entity() = default;
-    explicit Entity(entt::registry& reg, entt::entity handle) : reg{&reg}, handle{handle} {
+    explicit Entity(entt::registry& reg, const EntityId handle) : reg{&reg}, handle{handle} {
     }
     ~Entity() = default;
 
@@ -100,7 +98,7 @@ public:
         return reg->template emplace<T>(handle, handle, std::forward<Args>(args)...);
     }
 
-    [[nodiscard]] entt::entity getHandle() const {
+    [[nodiscard]] EntityId getHandle() const {
         return handle;
     }
 
@@ -114,10 +112,10 @@ public:
 
 private:
     entt::registry* reg{nullptr};
-    entt::entity handle;
+    EntityId handle;
 };
 
-inline Vector4 entityColor(entt::entity handle) {
+inline Vector4 entityColor(const EntityId handle) {
     const auto i = static_cast<uint32_t>(handle);
     const auto r = static_cast<float>((i & 0x000000FF) >> 0);
     const auto g = static_cast<float>((i & 0x0000FF00) >> 8);

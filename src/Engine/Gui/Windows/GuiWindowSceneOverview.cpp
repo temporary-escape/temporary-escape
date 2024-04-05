@@ -5,7 +5,7 @@ using namespace Engine;
 GuiWindowSceneOverview::GuiWindowSceneOverview(const FontFamily& fontFamily, int fontSize) :
     GuiWindow{fontFamily, fontSize} {
     setSize({350.0f, 500.0f});
-    setOpacity(0.7f);
+    setOpacity(0.5f);
     setCentered(false);
     setTitle("Overview");
 }

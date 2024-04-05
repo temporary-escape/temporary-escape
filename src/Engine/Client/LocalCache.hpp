@@ -26,6 +26,8 @@ struct LocalCache {
 
     std::optional<SystemData> system{std::nullopt};
     std::optional<SectorData> sector{std::nullopt};
+    std::vector<PlanetData> planets;
+    std::vector<SectorData> sectors;
 
     // Scene information
     struct {

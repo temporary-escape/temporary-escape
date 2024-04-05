@@ -7,6 +7,8 @@
 #include "../Network/NetworkUdpClient.hpp"
 #include "../Scene/Scene.hpp"
 #include "../Server/Sector.hpp"
+#include "../Server/Services/ServicePlanets.hpp"
+#include "../Server/Services/ServiceSectors.hpp"
 #include "../Utils/ReturnType.hpp"
 #include "../Utils/Worker.hpp"
 #include "LocalCache.hpp"
@@ -67,6 +69,8 @@ public:
     void handle(Request2<MessageFetchSystemsResponse> req);
     void handle(Request2<MessageFetchFactionsResponse> req);
     void handle(Request2<MessageFetchRegionsResponse> req);
+    void handle(Request2<MessageFetchPlanetsResponse> req);
+    void handle(Request2<MessageFetchSectorsResponse> req);
     void handle(Request2<MessageSceneUpdateEvent> req);
     // void handle(Request<MessageSceneBulletsEvent> req);
     void handle(Request2<MessagePlayerControlEvent> req);

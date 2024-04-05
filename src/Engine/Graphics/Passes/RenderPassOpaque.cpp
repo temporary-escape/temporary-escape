@@ -44,7 +44,8 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
     pipelineGrid{vulkan},
     pipelineModel{vulkan},
     pipelineModelSkinned{vulkan},
-    pipelineModelInstanced{vulkan} {
+    pipelineModelInstanced{vulkan},
+    pipelinePlanet{vulkan} {
 
     { // Depth
         AttachmentInfo attachment{};
@@ -126,6 +127,7 @@ RenderPassOpaque::RenderPassOpaque(const RenderOptions& options, VulkanRenderer&
     addPipeline(pipelineModel, 0);
     addPipeline(pipelineModelSkinned, 0);
     addPipeline(pipelineModelInstanced, 0);
+    addPipeline(pipelinePlanet, 0);
 
     VulkanBuffer::CreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -148,6 +150,7 @@ void RenderPassOpaque::render(VulkanCommandBuffer& vkb, Scene& scene) {
 
     renderGrids(vkb, scene);
     renderModels(vkb, scene);
+    renderPlanets(vkb, scene);
     renderModelsSkinned(vkb, scene);
     renderModelsInstanced(vkb, scene);
 }
@@ -237,6 +240,37 @@ void RenderPassOpaque::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
                 pipelineModel.renderMesh(vkb, primitive.mesh);
             }
         }
+    }
+}
+
+void RenderPassOpaque::renderPlanets(VulkanCommandBuffer& vkb, Scene& scene) {
+    auto systemPlanets = scene.getView<ComponentTransform, ComponentPlanet>(entt::exclude<TagDisabled>);
+    auto& camera = *scene.getPrimaryCamera();
+
+    pipelinePlanet.bind(vkb);
+
+    for (auto&& [entity, transform, planet] : systemPlanets.each()) {
+        if (planet.isBackground()) {
+            continue;
+        }
+
+        const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
+        const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
+        const auto& planetTextures = planet.getPlanetType()->getLowResTextures();
+
+        pipelinePlanet.setModelMatrix(modelMatrix);
+        pipelinePlanet.setNormalMatrix(normalMatrix);
+        pipelinePlanet.flushConstants(vkb);
+
+        pipelinePlanet.setUniformCamera(camera.getUbo().getCurrentBuffer());
+        pipelinePlanet.setUniformAtmosphere(planet.getPlanetType()->getUbo());
+
+        pipelinePlanet.setTextureBaseColor(planetTextures.getColor());
+        pipelinePlanet.setTextureNormal(planetTextures.getNormal());
+        pipelinePlanet.setTextureMetallicRoughness(planetTextures.getMetallicRoughness());
+        pipelinePlanet.flushDescriptors(vkb);
+
+        pipelinePlanet.renderMesh(vkb, resources.getMeshPlanet());
     }
 }
 

@@ -29,10 +29,10 @@ public:
 
     void removeEntity(Entity& entity);
     Entity createEntity();
-    Entity createEntityFrom(const std::string& name);
-    Entity createEntityFrom(const std::string& name, const sol::table& data);
+    EntityId createEntityFrom(const std::string& name);
+    EntityId createEntityFrom(const std::string& name, const sol::table& data);
     void addEntityTemplate(const std::string& name, const sol::table& klass);
-    Entity fromHandle(entt::entity handle);
+    Entity fromHandle(EntityId handle);
 
     template <typename... Ts> auto getView() {
         return reg.view<Ts...>();
@@ -44,6 +44,10 @@ public:
 
     bool isValid(const EntityId entity) const {
         return reg.valid(entity);
+    }
+
+    template <typename T, typename... Args> T& addComponent(const EntityId entity, Args&&... args) {
+        return reg.template emplace<T>(entity, entity, std::forward<Args>(args)...);
     }
 
     template <typename T> T& getComponent(const EntityId entity) {

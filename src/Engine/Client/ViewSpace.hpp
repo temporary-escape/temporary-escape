@@ -7,7 +7,6 @@
 
 namespace Engine {
 class ENGINE_API Client;
-class ENGINE_API Game;
 class ENGINE_API GuiManager;
 class ENGINE_API GuiWindowShipToolbar;
 class ENGINE_API GuiWindowShipStatus;
@@ -37,8 +36,10 @@ public:
 private:
     void updateGuiCurrentLocation();
     void showContextMenu(const Vector2i& mousePos, const Entity& entity);
+    void showContextMenu(const Vector2i& mousePos);
     void doTargetEntity(const Entity& entity);
     void doApproachEntity(const Entity& entity);
+    void doGoHere(const Vector3& direction);
     void doOrbitEntity(const Entity& entity, float radius);
     void doKeepAtDistanceEntity(const Entity& entity, float disrance);
     void doStopMovement();

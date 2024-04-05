@@ -721,6 +721,8 @@ void Generator::fillSystemPlanets(const std::string& galaxyId, const SystemData&
         }
 
         const auto randDistance = randomReal<float>(rng, options.planetDistanceMin, options.planetDistanceMax);
+        orbitDistance += moonOrbitDistance + randDistance;
+
         planet.pos = glm::rotate(Vector2{orbitDistance, 0.0f}, randomReal<float>(rng, 0.0f, 6.28318530718f));
 
         for (auto& moon : moons) {

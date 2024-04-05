@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../Assets/Texture.hpp"
-#include "../Pipelines/RenderPipelinePlanet.hpp"
 #include "../Pipelines/RenderPipelineSkybox.hpp"
+#include "../Pipelines/RenderPipelineSkyboxPlanet.hpp"
 #include "../Pipelines/RenderPipelineStarFlare.hpp"
 #include "../RenderBufferPbr.hpp"
 #include "../RenderPass.hpp"
@@ -23,7 +23,7 @@ private:
 
     RenderResources& resources;
     RenderPipelineSkybox pipelineSkybox;
-    RenderPipelinePlanet pipelinePlanet;
+    RenderPipelineSkyboxPlanet pipelinePlanet;
     RenderPipelineStarFlare pipelineStarFlare;
 };
 } // namespace Engine

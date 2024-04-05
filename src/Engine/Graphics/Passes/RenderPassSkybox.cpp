@@ -134,7 +134,11 @@ void RenderPassSkybox::renderStarFlare(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineStarFlare.setTemp(component.getTemperature());
         pipelineStarFlare.flushConstants(vkb);
 
-        pipelineStarFlare.setUniformCamera(camera.getUboZeroPos().getCurrentBuffer());
+        if (component.isBackground()) {
+            pipelineStarFlare.setUniformCamera(camera.getUboZeroPos().getCurrentBuffer());
+        } else {
+            pipelineStarFlare.setUniformCamera(camera.getUbo().getCurrentBuffer());
+        }
         pipelineStarFlare.setTextureColor(component.getTexture()->getVulkanTexture());
         pipelineStarFlare.setTextureSpectrumLow(component.getTextureLow()->getVulkanTexture());
         pipelineStarFlare.setTextureSpectrumHigh(component.getTextureHigh()->getVulkanTexture());

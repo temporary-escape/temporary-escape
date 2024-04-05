@@ -107,7 +107,7 @@ MESSAGE_DEFINE(MessageSceneUpdateEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessagePlayerControlEvent {
-    uint64_t entityId{0};
+    EntityId entityId{0};
 
     MSGPACK_DEFINE_ARRAY(entityId);
 };
@@ -151,6 +151,24 @@ struct MessageActionStopMovement {
 };
 
 MESSAGE_DEFINE(MessageActionStopMovement);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageActionGoDirection {
+    Vector3 direction;
+
+    MSGPACK_DEFINE_ARRAY(direction);
+};
+
+MESSAGE_DEFINE(MessageActionGoDirection);
+
+// --------------------------------------------------------------------------------------------------------------------
+struct MessageActionWarpTo {
+    std::string sectorId;
+
+    MSGPACK_DEFINE_ARRAY(sectorId);
+};
+
+MESSAGE_DEFINE(MessageActionWarpTo);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageControlTargetEvent {

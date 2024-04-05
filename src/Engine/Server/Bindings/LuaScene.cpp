@@ -92,9 +92,10 @@ static void bindScene(sol::table& m) {
     cls["create_entity"] = &Scene::createEntity;
     cls["contact_test_sphere"] = &Scene::contactTestSphere;
     cls["add_entity_template"] = &Scene::addEntityTemplate;
-    cls["create_entity_template"] =
-        static_cast<Entity (Scene::*)(const std::string&, const sol::table&)>(&Scene::createEntityFrom);
-
+    cls["create_entity_template"] = [](Scene& scene, const std::string& name, const sol::table& data) {
+        auto handle = scene.createEntityFrom(name, data);
+        return scene.fromHandle(handle);
+    };
     cls["patch_component_grid"] = [](Scene& scene, ComponentGrid& grid) { scene.setDirty(grid); };
     cls["patch_component_model"] = [](Scene& scene, ComponentModel& grid) { scene.setDirty(grid); };
 }

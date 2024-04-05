@@ -11,17 +11,13 @@ public:
     void setNormalMatrix(const Matrix3& value);
     void setUniformCamera(const VulkanBuffer& ubo);
     void setUniformAtmosphere(const VulkanBuffer& ubo);
-    void setUniformDirectionalLights(const VulkanBuffer& ubo);
-    void setTextureAlbedo(const VulkanTexture& texture);
-    void setTextureNormal(const VulkanTexture& texture);
+    void setTextureBaseColor(const VulkanTexture& texture);
     void setTextureMetallicRoughness(const VulkanTexture& texture);
-    void setTextureSkyboxIrradiance(const VulkanTexture& texture);
-    void setTextureSkyboxPrefilter(const VulkanTexture& texture);
-    void setTextureBrdf(const VulkanTexture& texture);
+    void setTextureNormal(const VulkanTexture& texture);
     void flushDescriptors(VulkanCommandBuffer& vkb);
 
 private:
-    std::array<UniformBindingRef, 3> uniforms{};
-    std::array<SamplerBindingRef, 6> textures{};
+    std::array<UniformBindingRef, 2> uniforms;
+    std::array<SamplerBindingRef, 3> textures;
 };
 } // namespace Engine

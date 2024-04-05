@@ -7,7 +7,7 @@ local map_icon = assets_manager:find_image("icon_asteroid_field")
 local module = {}
 
 function module.heuristics_callback (heuristics)
-    if #heuristics.sectors > 0 then
+    if #heuristics.sectors > 5 then
         return 0.0
     end
     return 1.0

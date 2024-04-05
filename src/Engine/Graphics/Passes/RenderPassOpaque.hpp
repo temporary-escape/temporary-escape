@@ -5,6 +5,7 @@
 #include "../Pipelines/RenderPipelineModel.hpp"
 #include "../Pipelines/RenderPipelineModelInstanced.hpp"
 #include "../Pipelines/RenderPipelineModelSkinned.hpp"
+#include "../Pipelines/RenderPipelinePlanet.hpp"
 #include "../RenderBufferPbr.hpp"
 #include "../RenderPass.hpp"
 
@@ -25,6 +26,7 @@ public:
 private:
     void renderGrids(VulkanCommandBuffer& vkb, Scene& scene);
     void renderModels(VulkanCommandBuffer& vkb, Scene& scene);
+    void renderPlanets(VulkanCommandBuffer& vkb, Scene& scene);
     void renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scene);
     void renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& scene);
 
@@ -34,6 +36,7 @@ private:
     RenderPipelineModel pipelineModel;
     RenderPipelineModelSkinned pipelineModelSkinned;
     RenderPipelineModelInstanced pipelineModelInstanced;
+    RenderPipelinePlanet pipelinePlanet;
     Vector2i mousePos;
     VulkanDoubleBuffer entityColorBuffer;
 };

@@ -344,16 +344,16 @@ void ControllerNetwork::onDestroyEntity(entt::registry& r, entt::entity handle) 
     }
 }
 
-std::optional<Entity> ControllerNetwork::getRemoteToLocalEntity(const uint64_t id) const {
-    auto local = remoteToLocal.find(static_cast<entt::entity>(id));
+std::optional<Entity> ControllerNetwork::getRemoteToLocalEntity(const EntityId entity) const {
+    auto local = remoteToLocal.find(entity);
     if (local != remoteToLocal.end()) {
         return Entity{reg, local->second};
     }
     return std::nullopt;
 }
 
-EntityId ControllerNetwork::getRemoteToLocal(const EntityId id) const {
-    auto local = remoteToLocal.find(static_cast<entt::entity>(id));
+EntityId ControllerNetwork::getRemoteToLocal(const EntityId entity) const {
+    auto local = remoteToLocal.find(entity);
     if (local != remoteToLocal.end()) {
         return local->second;
     }
@@ -365,5 +365,5 @@ EntityId ControllerNetwork::getLocalToRemote(const EntityId entity) const {
     if (remote != localToRemote.end()) {
         return remote->second;
     }
-    return {};
+    return NullEntity;
 }

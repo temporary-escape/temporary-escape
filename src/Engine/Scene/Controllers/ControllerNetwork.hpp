@@ -28,7 +28,7 @@ public:
     void sendUpdate(NetworkStream& peer);
     void receiveUpdate(const msgpack::object& obj);
     void resetUpdates();
-    std::optional<Entity> getRemoteToLocalEntity(uint64_t id) const;
+    std::optional<Entity> getRemoteToLocalEntity(EntityId entity) const;
     EntityId getRemoteToLocal(EntityId entity) const;
     EntityId getLocalToRemote(EntityId entity) const;
 
@@ -88,7 +88,7 @@ private:
     entt::registry& reg;
     std::unordered_map<EntityId, EntityId> remoteToLocal;
     std::unordered_map<EntityId, EntityId> localToRemote;
-    std::unordered_map<entt::entity, uint64_t> updatedComponentsMap;
+    std::unordered_map<EntityId, uint64_t> updatedComponentsMap;
     size_t updatedComponentsCount{0};
     std::vector<ChildParentValue> transformChildParentMap;
 };

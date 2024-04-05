@@ -19,38 +19,44 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
         return;
     }
 
+    // Do we have an arbitrary approach direction?
+    const auto hasApproachDir = glm::length2(approachDir) > 0;
+    Vector3 targetPos = approachPos;
+    float computedDistance{0.0f};
+
     // Is the target entity valid?
-    if (approachTarget == entity || !scene.valid(approachTarget)) {
+    if (approachTarget != entity && scene.valid(approachTarget)) {
+        // Does the entity have transform component?
+        const auto* targetTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
+        if (!targetTransform) {
+            // Invalid entity, stop the ship
+            actionStopMovement();
+        } else {
+            // Remember the approach position
+            approachPos = targetTransform->getPosition();
+
+            // Target information
+            targetPos = approachPos;
+            approachDistance = glm::distance(transform.getPosition(), approachPos);
+
+            // Subtract target entity bounds (if it is an entity)
+            approachDistance -= scene.getEntityBounds(approachTarget, *targetTransform);
+
+            // Subtract our own bounds
+            approachDistance -= scene.getEntityBounds(entity, transform);
+
+            if (approachDistance < 0.0f) {
+                approachDistance = 0.0f;
+            }
+            computedDistance = approachDistance;
+        }
+    } else if (hasApproachDir) {
+        computedDistance = 10000.0f;
+        targetPos = transform.getPosition() + approachDir * computedDistance;
+    } else {
+        // Invalid entity or no target, stop the ship
         actionStopMovement();
     }
-
-    // Does the entity have transform component?
-    const auto* targetTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
-    if (!targetTransform) {
-        actionStopMovement();
-    }
-
-    // Remember the approach position
-    if (targetTransform) {
-        approachPos = targetTransform->getPosition();
-    }
-
-    // Target information
-    auto targetPos = approachPos;
-    approachDistance = glm::distance(transform.getPosition(), approachPos);
-
-    // Subtract target entity bounds (if it is an entity)
-    if (targetTransform) {
-        approachDistance -= scene.getEntityBounds(approachTarget, *targetTransform);
-    }
-
-    // Subtract our own bounds
-    approachDistance -= scene.getEntityBounds(entity, transform);
-
-    if (approachDistance < 0.0f) {
-        approachDistance = 0.0f;
-    }
-    auto computedDistance = approachDistance;
 
     // Should we do an orbit?
     if (orbitRadius > 0.1f) {
@@ -110,7 +116,7 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
     const auto distanceToStop = (1.0f / 2.0f) * forwardAcceleration * std::pow(secondsToStop, 2.0f);
 
     // Should we stop?
-    if (approachTarget == NullEntity) {
+    if (approachTarget == NullEntity && !hasApproachDir) {
         targetPos = transform.getPosition() + (-ourForward * distanceToStop * 0.5f);
 
         // Recalculate the distance
@@ -224,23 +230,22 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
 }
 
 void ComponentShipControl::actionApproach(const EntityId target) {
+    actionStopMovement();
     approachTarget = target;
-    orbitRadius = 0.0f;
-    approachMinDistance = 0.0f;
     setActive(true);
 }
 
 void ComponentShipControl::actionOrbit(const EntityId target, const float radius) {
+    actionStopMovement();
     approachTarget = target;
     orbitRadius = radius;
-    approachMinDistance = 0.0f;
     orbitMatrixChosen = false;
     setActive(true);
 }
 
 void ComponentShipControl::actionKeepDistance(EntityId target, const float distance) {
+    actionStopMovement();
     approachTarget = target;
-    orbitRadius = 0.0f;
     approachMinDistance = distance;
     setActive(true);
 }
@@ -248,8 +253,19 @@ void ComponentShipControl::actionKeepDistance(EntityId target, const float dista
 void ComponentShipControl::actionStopMovement() {
     approachTarget = NullEntity;
     approachPos = Vector3{0.0f};
+    approachDir = Vector3{0.0f};
     orbitRadius = 0.0f;
     approachMinDistance = 0.0f;
+}
+
+void ComponentShipControl::actionGoDirection(const Vector3& value) {
+    actionStopMovement();
+    approachDir = value;
+    setActive(true);
+}
+
+void ComponentShipControl::actionWarpTo(const Vector3& direction) {
+    actionGoDirection(direction);
 }
 
 void ComponentShipControl::setActive(const bool value) {

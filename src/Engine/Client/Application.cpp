@@ -434,6 +434,7 @@ void Application::checkForClientScene() {
 
         view.space = views->addView<ViewSpace>(*assetsManager, *voxelShapeCache, font, *client);
         view.galaxy = views->addView<ViewGalaxy>(*assetsManager, *voxelShapeCache, font, *client);
+        view.system = views->addView<ViewSystem>(*assetsManager, *voxelShapeCache, font, *client);
         views->setCurrent(view.space);
     } else {
         NEXT(checkForClientScene());
@@ -780,6 +781,12 @@ void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
             views->setCurrent(view.space);
         } else {
             views->setCurrent(view.galaxy);
+        }
+    } else if (modifiers == 0 && key == Key::LetterN && !view.editor) {
+        if (views->getCurrent() == view.system) {
+            views->setCurrent(view.space);
+        } else {
+            views->setCurrent(view.system);
         }
     } else if (views) {
         views->eventKeyPressed(key, modifiers);

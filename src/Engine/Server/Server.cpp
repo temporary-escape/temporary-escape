@@ -49,6 +49,8 @@ Server::Server(const Config& config, AssetsManager& assetsManager, const Options
     HANDLE_REQUEST2(MessageActionOrbit);
     HANDLE_REQUEST2(MessageActionKeepDistance);
     HANDLE_REQUEST2(MessageActionStopMovement);
+    HANDLE_REQUEST2(MessageActionGoDirection);
+    HANDLE_REQUEST2(MessageActionWarpTo);
     HANDLE_REQUEST2(MessageControlTargetEvent);
 
     addService<ServicePlayers>();
@@ -474,6 +476,14 @@ void Server::handle(Request2<MessageActionKeepDistance> req) {
 }
 
 void Server::handle(Request2<MessageActionStopMovement> req) {
+    forwardMessageToSector(req);
+}
+
+void Server::handle(Request2<MessageActionGoDirection> req) {
+    forwardMessageToSector(req);
+}
+
+void Server::handle(Request2<MessageActionWarpTo> req) {
     forwardMessageToSector(req);
 }
 

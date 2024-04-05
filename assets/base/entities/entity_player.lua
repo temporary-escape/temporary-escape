@@ -13,7 +13,7 @@ function EntityPlayer.new (entity, data)
     inst.entity = entity
 
     local transform = entity:add_component_transform()
-    transform:translate(engine.Vector3.new(200.0, -20.0, 0.0))
+    --transform:translate(engine.Vector3.new(200.0, -20.0, 0.0))
     transform.kinematic = true
 
     local ship_control = entity:add_component_ship_control()

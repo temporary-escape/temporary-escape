@@ -13,9 +13,10 @@ class ENGINE_API Game;
 
 class ENGINE_API ViewSystem : public View {
 public:
-    explicit ViewSystem(Game& parent, const Config& config, VulkanRenderer& vulkan, AssetsManager& assetsManager,
-                        VoxelShapeCache& voxelShapeCache, Client& client, FontFamily& font);
-    ~ViewSystem() = default;
+    explicit ViewSystem(const Config& config, VulkanRenderer& vulkan, GuiManager& guiManager,
+                        AssetsManager& assetsManager, VoxelShapeCache& voxelShapeCache, FontFamily& font,
+                        Client& client);
+    ~ViewSystem();
 
     void update(float deltaTime, const Vector2i& viewport) override;
     void renderCanvas(Canvas& canvas, const Vector2i& viewport) override;
@@ -30,17 +31,16 @@ public:
     void onExit() override;
     Scene* getScene() override;
 
-    void reset();
-    void reset(const std::string& galaxyId, const std::string& systemId);
-
 private:
     void load();
     void finalize();
     void clearEntities();
+    void showContextMenu(const Vector2i& pos, const std::string& sectorId);
+    void doWarpTo(const std::string& sectorId);
 
-    Game& parent;
     const Config& config;
     VulkanRenderer& vulkan;
+    GuiManager& guiManager;
     AssetsManager& assetsManager;
     VoxelShapeCache& voxelShapeCache;
     Client& client;
@@ -48,38 +48,19 @@ private:
     std::unique_ptr<Scene> scene;
 
     struct {
-        std::string galaxyId;
-        std::string systemId;
-        std::string sectorId;
-        bool isCurrent{false};
-    } location;
-
-    struct {
-        std::string name;
-        std::unordered_map<std::string, PlanetData> planets;
-        std::unordered_map<std::string, SectorData> sectors;
-        std::vector<std::variant<PlanetData*, SectorData*>> bodies;
-    } system;
-
-    struct {
-        std::string name;
-    } galaxy;
-
-    struct {
         Entity camera;
-        std::vector<Entity> bodies;
-        std::vector<Entity> orbits;
-        Entity icons;
-        Entity cursor;
-        Entity positions;
-        Entity names;
+        std::unordered_map<EntityId, std::string> icons;
     } entities;
 
     struct {
         ImagePtr systemPlanet;
         ImagePtr systemMoon;
         ImagePtr iconSelect;
-    } images;
+        ImagePtr currentPos;
+        ImagePtr info;
+        ImagePtr view;
+        ImagePtr travel;
+    } icons;
 
     struct {
         TexturePtr star;
@@ -87,14 +68,7 @@ private:
         TexturePtr starHigh;
     } textures;
 
-    struct {
-        const SystemData* hover{nullptr};
-        const SystemData* selected{nullptr};
-    } input;
-
     bool loading{false};
-    std::atomic<float> loadingValue{0.0f};
-    StopToken stopToken;
     Future<void> futureLoad;
 };
 } // namespace Engine

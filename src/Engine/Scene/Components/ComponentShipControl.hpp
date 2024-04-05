@@ -67,9 +67,11 @@ public:
     void actionOrbit(EntityId target, float radius);
     void actionKeepDistance(EntityId target, float distance);
     void actionStopMovement();
+    void actionGoDirection(const Vector3& value);
+    void actionWarpTo(const Vector3& direction);
 
     MSGPACK_DEFINE_ARRAY(approachTarget, approachMinDistance, approachDistance, forwardVelocity, forwardVelocityMax,
-                         orbitRadius, orbitMatrix, orbitOrigin, approachPos);
+                         orbitRadius, orbitMatrix, orbitOrigin, approachPos, approachDir);
 
 private:
     EntityId approachTarget{NullEntity};
@@ -78,7 +80,7 @@ private:
     float angularVelocity{glm::radians(45.0f)};
     float forwardVelocity{0.0f};
     float forwardVelocityTarget{0.0f};
-    float forwardVelocityMax{200.0f};
+    float forwardVelocityMax{300.0f};
     float forwardAcceleration{20.0f};
     float extraDistanceOffset{10.0f};
     float orbitRadius{0.0f};
@@ -87,6 +89,7 @@ private:
     bool orbitMatrixChosen{false};
     bool active{false};
     Vector3 approachPos;
+    Vector3 approachDir;
     std::vector<ComponentTurret*> turrets;
 };
 } // namespace Engine

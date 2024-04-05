@@ -42,12 +42,14 @@ public:
     void handle(const SessionPtr& session, MessageActionOrbit req);
     void handle(const SessionPtr& session, MessageActionKeepDistance req);
     void handle(const SessionPtr& session, MessageActionStopMovement req);
+    void handle(const SessionPtr& session, MessageActionGoDirection req);
+    void handle(const SessionPtr& session, MessageActionWarpTo req);
     void handle(const SessionPtr& session, MessageControlTargetEvent req);
 
     // void handle(const SessionPtr& session, MessageShipMovement::Request req, MessageShipMovement::Response& res);
 
 private:
-    Entity spawnPlayerEntity(const SessionPtr& session);
+    EntityId spawnPlayerEntity(const SessionPtr& session);
     void handleShipAction(const SessionPtr& session, std::function<void(Entity&, ComponentShipControl&)> callback);
 
     const Config& config;
@@ -62,8 +64,9 @@ private:
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Lua> lua;
     std::vector<SessionPtr> players;
-    std::unordered_map<SessionPtr, entt::entity> playerControl;
+    std::unordered_map<SessionPtr, EntityId> playerControl;
     SynchronizedWorker worker;
+    std::mt19937_64 rng;
 };
 
 using SectorPtr = std::shared_ptr<Sector>;
