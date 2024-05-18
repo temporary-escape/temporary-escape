@@ -91,11 +91,16 @@ void Client::update(const float deltaTime) {
             const auto* shipControl = scene->tryGetComponent<ComponentShipControl>(cache.player.entity);
             if (shipControl) {
                 cache.player.approaching = scene->getLocalId(shipControl->getApproachEntity());
-                cache.player.orbitRadius = shipControl->getOrbitRadius();
+                cache.player.autopilotAction = shipControl->getAction();
+                cache.player.forwardVelocity = shipControl->getForwardVelocity();
+                cache.player.forwardVelocityMax = shipControl->getForwardVelocityMax();
+                cache.player.targetDistance = shipControl->getTargetDistance();
+                cache.player.keepAtDistance = shipControl->getKeepAtDistance();
+                /*cache.player.orbitRadius = shipControl->getOrbitRadius();
                 cache.player.keepAtDistance = shipControl->getApproachMinDistance();
                 cache.player.forwardVelocity = shipControl->getForwardVelocity();
                 cache.player.forwardVelocityMax = shipControl->getForwardVelocityMax();
-                cache.player.approachDistance = shipControl->getApproachDistance();
+                cache.player.approachDistance = shipControl->getApproachDistance();*/
             }
 
             auto* shipIcon = scene->tryGetComponent<ComponentIcon>(cache.player.entity);

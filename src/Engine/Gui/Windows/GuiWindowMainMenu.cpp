@@ -4,11 +4,12 @@ using namespace Engine;
 
 GuiWindowMainMenu::GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize) : GuiWindow{fontFamily, fontSize} {
     setSize({250.0f, 600.0f});
-    setTitle("Main Menu");
-    setDynamic(true);
+    setTitle("MAIN MENU");
+    // setDynamic(true);
 
     auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
-    buttonSingleplayer = &row.addWidget<GuiWidgetButton>("Singleplayer");
+    buttonNewGame = &row.addWidget<GuiWidgetButton>("New Game");
+    buttonLoadSave = &row.addWidget<GuiWidgetButton>("Load Save");
     buttonMultiplayer = &row.addWidget<GuiWidgetButton>("Multiplayer");
     buttonEditor = &row.addWidget<GuiWidgetButton>("Editor");
     buttonSettings = &row.addWidget<GuiWidgetButton>("Settings");
@@ -24,8 +25,12 @@ void GuiWindowMainMenu::setOnClickSettings(GuiWidgetButton::OnClickCallback call
     buttonSettings->setOnClick(std::move(callback));
 }
 
-void GuiWindowMainMenu::setOnClickSingleplayer(GuiWidgetButton::OnClickCallback callback) {
-    buttonSingleplayer->setOnClick(std::move(callback));
+void GuiWindowMainMenu::setOnClickNewGame(GuiWidgetButton::OnClickCallback callback) {
+    buttonNewGame->setOnClick(std::move(callback));
+}
+
+void GuiWindowMainMenu::setOnClickLoadSave(GuiWidgetButton::OnClickCallback callback) {
+    buttonLoadSave->setOnClick(std::move(callback));
 }
 
 void GuiWindowMainMenu::setOnClickMultiplayer(GuiWidgetButton::OnClickCallback callback) {

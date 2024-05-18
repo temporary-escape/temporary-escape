@@ -5,37 +5,52 @@
 namespace Engine {
 ENGINE_API Vector2 textAlignToVector(TextAlign textAlign);
 
+enum class FontType {
+    Regular = 0,
+    RegularItalic,
+    Bold,
+    BoldItalic,
+    Light,
+    LightItalic,
+};
+
 class ENGINE_API FontFamily {
 public:
-    struct Sources {
-        Span<uint8_t> regular;
-        Span<uint8_t> bold;
-        Span<uint8_t> light;
-    };
+    static constexpr size_t total = 6;
+    static_assert(static_cast<int>(FontType::LightItalic) + 1 == total);
 
-    static constexpr size_t total = 3;
-
-    static_assert(FontFace::Type::Light + 1 == total);
+    using Sources = std::array<Span<uint8_t>, total>;
 
     explicit FontFamily(VulkanRenderer& vulkan, const Sources& sources, int size);
+    virtual ~FontFamily() = default;
 
-    FontFace& get(FontFace::Type type) {
-        return faces.at(type);
+    FontFace& get(const FontType type) {
+        return *faces.at(static_cast<size_t>(type));
     }
 
-    const FontFace& get(const FontFace::Type type) const {
-        return faces.at(type);
+    [[nodiscard]] const FontFace& get(const FontType type) const {
+        return *faces.at(static_cast<size_t>(type));
     }
 
     int getSize() const {
         return size;
     }
 
-    Vector2 getBounds(const std::string_view& text, float height) const;
-    Vector2 getPenOffset(const std::string_view& text, float height, TextAlign textAlign) const;
+    [[nodiscard]] Vector2 getBounds(const std::string_view& text, float height) const;
+    [[nodiscard]] Vector2 getPenOffset(const std::string_view& text, float height, TextAlign textAlign) const;
+
+    [[nodiscard]] VulkanTexture& getTexture() {
+        return texture;
+    }
+
+    [[nodiscard]] const VulkanTexture& getTexture() const {
+        return texture;
+    }
 
 private:
-    std::array<FontFace, total> faces;
+    static inline const Vector2i atlasSize{4096, 4096};
+    std::array<std::unique_ptr<FontFace>, total> faces;
     int size;
+    VulkanTexture texture;
 };
 } // namespace Engine

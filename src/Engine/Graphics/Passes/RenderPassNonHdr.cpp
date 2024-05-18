@@ -142,7 +142,7 @@ void RenderPassNonHDR::renderWorldText(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineWorldText.flushConstants(vkb);
 
         pipelineWorldText.setUniformCamera(camera.getUbo().getCurrentBuffer());
-        pipelineWorldText.setTextureColor(worldText.getFontFace().getTexture());
+        pipelineWorldText.setTextureColor(worldText.getFont().getTexture());
         pipelineWorldText.flushDescriptors(vkb);
 
         pipelineWorldText.renderMesh(vkb, mesh);

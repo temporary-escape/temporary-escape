@@ -11,7 +11,7 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(const FontFamily& fontFamily, int
     GuiWindow{fontFamily, fontSize}, matchmaker{matchmaker}, guiManager{guiManager} {
 
     setSize({1100.0f, 600.0f});
-    setTitle("Server Browser");
+    setTitle("SERVER BROWSER");
     setNoScrollbar(true);
 
     const auto height = getSize().y - 30.0 - 30.0f * 3.0f - ctx.getPadding().y * 5.0f;
@@ -57,6 +57,7 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(const FontFamily& fontFamily, int
 
         buttonClose = &row.addWidget<GuiWidgetButton>("Close");
         buttonClose->setWidth(100.0f, true);
+        buttonClose->setStyle(&GuiWidgetButton::dangerStyle);
     }
 }
 

@@ -167,7 +167,7 @@ EntityId Sector::spawnPlayerEntity(const SessionPtr& session) {
     auto entity = scene->createEntityFrom("player", table);
     auto* transform = scene->tryGetComponent<ComponentTransform>(entity);
     if (transform) {
-        transform->move(Vector3{10000.0f, 0.0f, 0.0f});
+        transform->move(Vector3{5000.0f, 0.0f, 0.0f});
     }
 
     return entity;
@@ -202,13 +202,13 @@ void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
 void Sector::handle(const SessionPtr& session, MessageActionOrbit req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} orbiting: {}", entity.getHandle(), req.entityId);
-        shipControl.actionOrbit(req.entityId, req.radius);
+        // shipControl.actionOrbit(req.entityId, req.radius);
     });
 }
 
 void Sector::handle(const SessionPtr& session, MessageActionKeepDistance req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
-        logger.debug("Entity: {} keeping distance: {}", entity.getHandle(), req.entityId);
+        logger.debug("Entity: {} keeping distance: {} target: {}", entity.getHandle(), req.distance, req.entityId);
         shipControl.actionKeepDistance(req.entityId, req.distance);
     });
 }
@@ -216,14 +216,14 @@ void Sector::handle(const SessionPtr& session, MessageActionKeepDistance req) {
 void Sector::handle(const SessionPtr& session, MessageActionStopMovement req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} stopping", entity.getHandle());
-        shipControl.actionStopMovement();
+        // shipControl.actionStopMovement();
     });
 }
 
 void Sector::handle(const SessionPtr& session, MessageActionGoDirection req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} going direction: {}", entity.getHandle(), req.direction);
-        shipControl.actionGoDirection(req.direction);
+        // shipControl.actionGoDirection(req.direction);
     });
 }
 
@@ -237,7 +237,7 @@ void Sector::handle(const SessionPtr& session, MessageActionWarpTo req) {
                 const auto dir = targetSector->pos - thisSector->pos;
 
                 logger.debug("Entity: {} warping to: {}", entity.getHandle(), req.sectorId);
-                shipControl.actionWarpTo(Vector3{dir.x, 0.0f, dir.y});
+                // shipControl.actionWarpTo(Vector3{dir.x, 0.0f, dir.y});
             }
         }
     });
@@ -258,9 +258,9 @@ void Sector::handle(const SessionPtr& session, MessageControlTargetEvent req) {
             }
 
             if (const auto* targetTransform = target.tryGetComponent<ComponentTransform>(); targetTransform) {
-                for (auto* turret : shipControl->getTurrets()) {
+                /*for (auto* turret : shipControl->getTurrets()) {
                     turret->setTarget(targetTransform);
-                }
+                }*/
             } else {
                 logger.warn("Can not target entity: {} no transform found", req.entityId);
             }

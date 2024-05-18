@@ -5,40 +5,43 @@ using namespace Engine;
 const GuiStyleButton GuiWidgetButton::defaultStyle{
     {
         .normal = Colors::background,
-        .hover = Colors::white,
-        .active = Colors::primary,
+        .hover = Colors::background,
+        .active = Colors::primaryBackground,
     },
     {
-        .normal = Colors::text,
-        .hover = Colors::black,
-        .active = Colors::black,
+        .normal = Colors::white,
+        .hover = Colors::primary,
+        .active = Colors::primary,
     },
+    Colors::white,
 };
 
 const GuiStyleButton GuiWidgetButton::successStyle{
     {
-        .normal = Colors::secondary,
-        .hover = Colors::white,
-        .active = Colors::primary,
+        .normal = Colors::successBackground,
+        .hover = Colors::successBackground,
+        .active = Colors::primaryBackground,
     },
     {
-        .normal = Colors::black,
-        .hover = Colors::black,
-        .active = Colors::black,
+        .normal = Colors::success,
+        .hover = Colors::white,
+        .active = Colors::white,
     },
+    Colors::success,
 };
 
 const GuiStyleButton GuiWidgetButton::dangerStyle{
     {
-        .normal = Colors::ternary,
-        .hover = Colors::white,
-        .active = Colors::primary,
+        .normal = Colors::dangerBackground,
+        .hover = Colors::dangerBackground,
+        .active = Colors::primaryBackground,
     },
     {
-        .normal = Colors::black,
-        .hover = Colors::black,
-        .active = Colors::black,
+        .normal = Colors::danger,
+        .hover = Colors::white,
+        .active = Colors::white,
     },
+    Colors::danger,
 };
 
 GuiWidgetButton::GuiWidgetButton(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {

@@ -171,14 +171,13 @@ void ViewGalaxy::load() {
 
     entities.names = scene->createEntity();
     entities.names.addComponent<ComponentTransform>();
-    auto& names = entities.names.addComponent<ComponentWorldText>(
-        font.get(FontFace::Regular), Colors::text * alpha(0.5f), config.guiFontSize / 2);
+    auto& names =
+        entities.names.addComponent<ComponentWorldText>(font, Colors::text * alpha(0.5f), config.guiFontSize / 2);
     names.setOffset(Vector2{0, -config.guiFontSize});
 
     entities.regions = scene->createEntity();
     entities.regions.addComponent<ComponentTransform>();
-    auto& regionsNames = entities.regions.addComponent<ComponentWorldText>(
-        font.get(FontFace::Regular), Colors::text * alpha(0.1f), 32.0f / 2);
+    auto& regionsNames = entities.regions.addComponent<ComponentWorldText>(font, Colors::text * alpha(0.1f), 32.0f / 2);
 
     { // Create entities for regions
         logger.info("Creating regions");

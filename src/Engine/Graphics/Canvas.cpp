@@ -1,4 +1,5 @@
 #include "Canvas.hpp"
+#include "../Font/TextShaper.hpp"
 #include <utf8cpp/utf8.h>
 
 using namespace Engine;
@@ -177,55 +178,51 @@ void Canvas::drawTexture(const Vector2& pos, const Vector2& size, const VulkanTe
     batches.back().length++;
 }
 
-void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, int size,
-                      const Color4& color) {
-    drawText(pos, text, font.get(FontFace::Regular), size, color);
-}
+class Canvas::CanvasTextShaper : public TextShaper {
+public:
+    CanvasTextShaper(Canvas& canvas, const Color4& color, const FontFamily& font, float size, const Vector2& pos) :
+        TextShaper{font, size, pos, color}, canvas{canvas} {
+        tex = static_cast<float>(canvas.addTexture(font.getTexture()));
+    }
 
-void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFace& fontFace, const int size,
-                      const Color4& color) {
-    const auto total = utf8::distance(text.begin(), text.end());
-    const auto& face = fontFace;
+    void write(const std::string_view& text) override {
+        const auto total = utf8::distance(text.begin(), text.end());
 
-    auto* v = reserve(vertices, 4 * total);
-    auto* i = reserve(indices, 6 * total);
-    auto* c = reserve(commands, 1);
-    const auto tex = static_cast<float>(addTexture(face.getTexture()));
+        v = canvas.reserve(canvas.vertices, 4 * total);
+        i = canvas.reserve(canvas.indices, 6 * total);
+        c = canvas.reserve(canvas.commands, 1);
 
-    c->firstIndex = getOffset(indices, i);
-    c->firstInstance = 0;
-    c->instanceCount = 1;
-    c->vertexOffset = 0;
-    c->indexCount = 6 * total;
+        c->firstIndex = canvas.getOffset(canvas.indices, i);
+        c->firstInstance = 0;
+        c->instanceCount = 1;
+        c->vertexOffset = 0;
+        c->indexCount = 0;
 
-    auto pen = pos;
+        TextShaper::write(text);
 
-    const auto scale = static_cast<float>(size) / static_cast<float>(face.getSize());
+        canvas.batches.back().length++;
+    }
 
-    auto it = text.begin();
-    while (it < text.end()) {
-        const auto code = utf8::next(it, text.end());
-        const auto& glyph = face.getGlyph(code);
-
-        const auto p = pen + Vector2{0.0f, glyph.ascend * scale};
-
-        v[0].pos = p + Vector2{0.0f, -glyph.size.y * scale};
+private:
+    void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
+                 const Color4& color) override {
+        v[0].pos = quad.vertices[0].pos;
         v[0].color = color;
-        v[0].uv = Vector4{glyph.uv.x, glyph.uv.y, 2.0f, tex};
+        v[0].uv = Vector4{quad.vertices[0].uv, 2.0f, tex};
 
-        v[1].pos = p + Vector2{glyph.size.x * scale, -glyph.size.y * scale};
+        v[1].pos = quad.vertices[1].pos;
         v[1].color = color;
-        v[1].uv = Vector4{glyph.uv.x + glyph.st.x, glyph.uv.y, 2.0f, tex};
+        v[1].uv = Vector4{quad.vertices[1].uv, 2.0f, tex};
 
-        v[2].pos = p + Vector2{glyph.size.x * scale, 0.0f};
+        v[2].pos = quad.vertices[2].pos;
         v[2].color = color;
-        v[2].uv = Vector4{glyph.uv.x + glyph.st.x, glyph.uv.y + glyph.st.y, 2.0f, tex};
+        v[2].uv = Vector4{quad.vertices[2].uv, 2.0f, tex};
 
-        v[3].pos = p;
+        v[3].pos = quad.vertices[3].pos;
         v[3].color = color;
-        v[3].uv = Vector4{glyph.uv.x, glyph.uv.y + glyph.st.y, 2.0f, tex};
+        v[3].uv = Vector4{quad.vertices[3].uv, 2.0f, tex};
 
-        const auto offset = getOffset(vertices, v);
+        const auto offset = canvas.getOffset(canvas.vertices, v);
         i[0] = offset;
         i[1] = offset + 1;
         i[2] = offset + 2;
@@ -236,10 +233,20 @@ void Canvas::drawText(const Vector2& pos, const std::string_view& text, const Fo
         v += 4;
         i += 6;
 
-        pen += Vector2{glyph.advance * scale, 0.0f};
+        c->indexCount += 6;
     }
 
-    batches.back().length++;
+    Canvas& canvas;
+    Canvas::Vertex* v{nullptr};
+    unsigned int* i{nullptr};
+    VkDrawIndexedIndirectCommand* c{nullptr};
+    float tex{0.0f};
+};
+
+void Canvas::drawText(const Vector2& pos, const std::string_view& text, const FontFamily& font, const int size,
+                      const Color4& color) {
+    CanvasTextShaper textShaper{*this, color, font, static_cast<float>(size), pos};
+    textShaper.write(text);
 }
 
 void Canvas::drawImage(const Vector2& pos, const Vector2& size, const Image& image, const Color4& color) {

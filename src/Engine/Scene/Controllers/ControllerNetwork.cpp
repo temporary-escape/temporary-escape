@@ -130,7 +130,7 @@ void ControllerNetwork::postEmplaceComponent(const uint64_t remoteId, const entt
                                              ComponentShipControl& component) {
     (void)remoteId;
     (void)handle;
-    component.setActive(false);
+    component.setReplicated(true);
     scene.setDirty(component);
 }
 

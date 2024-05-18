@@ -3,5 +3,8 @@
 #include "FontFamily.hpp"
 
 namespace Engine {
-extern ENGINE_API const FontFamily::Sources defaultFontSources;
+class ENGINE_API FontFamilyDefault : public FontFamily {
+public:
+    FontFamilyDefault(VulkanRenderer& vulkan, int size);
+};
 }

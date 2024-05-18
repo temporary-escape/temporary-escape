@@ -108,12 +108,12 @@ static nk_color HEX(const uint32_t v) {
     return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
 }
 
-static nk_color fromColor(const Color4& color) {
+static constexpr nk_color fromColor(const Color4& color) {
     return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
 }
 
 static float getTextWidth(const nk_handle handle, const float height, const char* str, const int len) {
-    auto& font = *static_cast<const FontFace*>(handle.ptr);
+    auto& font = *static_cast<const FontFamily*>(handle.ptr);
     return font.getBounds({str, static_cast<size_t>(len)}, height).x;
 }
 
@@ -168,22 +168,14 @@ struct GuiContext::CustomStyle {
 };
 
 GuiContext::GuiContext(const FontFamily& fontFamily, const int fontSize) :
-    fontFamily{fontFamily},
-    fontSize{fontSize},
-    nk{std::make_unique<nk_context>()},
-    custom{std::make_unique<CustomStyle>()} {
+    fontSize{fontSize}, nk{std::make_unique<nk_context>()}, custom{std::make_unique<CustomStyle>()} {
 
-    for (size_t i = 0; i < FontFamily::total; i++) {
-        auto& font = fonts.at(i);
-        auto& face = fontFamily.get(static_cast<FontFace::Type>(i));
-        font = std::make_unique<nk_user_font>();
+    font = std::make_unique<nk_user_font>();
+    font->height = static_cast<float>(fontSize);
+    font->width = &getTextWidth;
+    font->userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&fontFamily));
 
-        font->height = static_cast<float>(fontSize);
-        font->width = &getTextWidth;
-        font->userdata.ptr = const_cast<void*>(reinterpret_cast<const void*>(&face));
-    }
-
-    nk_init_default(nk.get(), fonts.at(0).get());
+    nk_init_default(nk.get(), font.get());
     applyTheme();
 }
 
@@ -309,16 +301,18 @@ bool GuiContext::windowBegin(const std::string& id, const std::string& title, co
     activeInput = false;
     windowFlags = options.flags;
 
-    auto bgColor = nk->style.window.background;
-    bgColor.a = options.opacity * 255.0f;
+    // auto bgColor = nk->style.window.background;
+    // bgColor.a = options.opacity * 255.0f;
 
-    nk_style_push_color(nk.get(), &nk->style.window.background, bgColor);
-    nk_style_push_style_item(nk.get(), &nk->style.window.fixed_background, nk_style_item_color(bgColor));
+    // nk_style_push_color(nk.get(), &nk->style.window.background, bgColor);
+    // nk_style_push_style_item(nk.get(), &nk->style.window.fixed_background, nk_style_item_color(bgColor));
 
     if (options.flags & WindowFlag::HeaderSuccess) {
-        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::secondary));
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::success));
     } else if (options.flags & WindowFlag::HeaderDanger) {
-        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::ternary));
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::danger));
+    } else {
+        nk_style_push_color(nk.get(), &nk->style.window.header.active.data.color, fromColor(Colors::primary));
     }
 
     // const auto* titleStr = flags & WindowFlag::Title ? title.c_str() : nullptr;
@@ -326,12 +320,10 @@ bool GuiContext::windowBegin(const std::string& id, const std::string& title, co
     const auto res =
         nk_begin_titled(nk.get(), id.c_str(), title.c_str(), nk_rect(pos.x, pos.y, size.x, size.y), options.flags);
 
-    nk_style_pop_color(nk.get());
-    nk_style_pop_style_item(nk.get());
+    // nk_style_pop_color(nk.get());
+    // nk_style_pop_style_item(nk.get());
 
-    if (options.flags & WindowFlag::HeaderSuccess || options.flags & WindowFlag::HeaderDanger) {
-        nk_style_pop_color(nk.get());
-    }
+    nk_style_pop_color(nk.get());
 
     return res == nk_true;
 }
@@ -709,16 +701,22 @@ void Engine::GuiContext::setPadding(const float value) {
 
 static const auto BLACK = HEX(0x000000ff);
 static const auto PRIMARY_COLOR = fromColor(Colors::primary);
-static const auto WHITE = HEX(0xe5e5e3ff);
+static const auto WHITE = fromColor(Colors::white);
 static const auto TEXT_WHITE = fromColor(Colors::text);
 static const auto TEXT_BLACK = HEX(0x030303ff);
 static const auto TEXT_GREY = HEX(0x393939ff);
 static const auto BACKGROUND_COLOR = fromColor(Colors::background);
-static const auto BORDER_GREY = HEX(0x202020ff);
-static const auto TRANSPARENT_COLOR = HEX(0x00000000);
+static const auto BORDER_GREY = fromColor(Colors::border);
+static const auto TRANSPARENT_COLOR = fromColor(Colors::transparent);
 static const auto ACTIVE_COLOR = PRIMARY_COLOR;
 
+static const auto colorButtonBackground = fromColor(hexColor(0x224f64ff));
+static const auto colorButtonText = fromColor(hexColor(0x224f64ff));
+static const auto colorButtonBorder = fromColor(hexColor(0x224f64ff));
+
 void GuiContext::applyTheme() {
+    static constexpr float border = 2.0f;
+
     auto& window = nk->style.window;
     auto& button = nk->style.button;
     auto& edit = nk->style.edit;
@@ -735,8 +733,6 @@ void GuiContext::applyTheme() {
     text.padding.y = 2;
 
     // window.background = PRIMARY_COLOR;
-    window.border = 1.0f;
-    window.border_color = BORDER_GREY;
     window.rounding = 0;
     window.fixed_background.data.color = BACKGROUND_COLOR;
     window.header.normal.data.color = ACTIVE_COLOR;
@@ -754,14 +750,30 @@ void GuiContext::applyTheme() {
     window.header.padding = nk_vec2(2, 1);
     window.group_padding = nk_vec2(padding, padding);
     window.padding = nk_vec2(padding, padding);
-    window.group_border = 1.0f;
+    window.group_border = 2.0f;
     window.background = BACKGROUND_COLOR;
     window.min_row_height_padding = 0;
     window.combo_border_color = ACTIVE_COLOR;
-    window.combo_border = 1.0f;
+    window.combo_border = 2.0f;
     window.group_border_color = BORDER_GREY;
 
-    combo.border = 1.0f;
+    window.border = border;
+    window.combo_border = border;
+    window.contextual_border = border;
+    window.menu_border = border;
+    window.group_border = border;
+    window.tooltip_border = border;
+    window.popup_border = border;
+
+    window.border_color = fromColor(Colors::primary);
+    window.popup_border_color = fromColor(Colors::primary);
+    window.combo_border_color = fromColor(Colors::primary);
+    window.contextual_border_color = fromColor(Colors::primary);
+    window.menu_border_color = fromColor(Colors::primary);
+    window.group_border_color = fromColor(Colors::border);
+    window.tooltip_border_color = fromColor(Colors::border);
+
+    combo.border = border;
     combo.border_color = BORDER_GREY;
     combo.rounding = 0;
     combo.normal.data.color = BACKGROUND_COLOR;
@@ -806,7 +818,7 @@ void GuiContext::applyTheme() {
     button.normal.data.color = BACKGROUND_COLOR;
     button.hover.data.color = WHITE;
     button.active.data.color = ACTIVE_COLOR;
-    button.border = 1.0f;
+    button.border = border;
     button.border_color = BORDER_GREY;
     button.rounding = 0;
     // button.padding.x = 0;
@@ -829,7 +841,7 @@ void GuiContext::applyTheme() {
     edit.normal.data.color = BACKGROUND_COLOR;
     edit.hover.data.color = BACKGROUND_COLOR;
     edit.active.data.color = BACKGROUND_COLOR;
-    edit.border = 1.0f;
+    edit.border = border;
     edit.border_color = BORDER_GREY;
     edit.text_normal = TEXT_WHITE;
     edit.text_hover = TEXT_WHITE;
@@ -845,7 +857,7 @@ void GuiContext::applyTheme() {
     checkbox.text_hover = TEXT_WHITE;
     checkbox.text_active = TEXT_WHITE;
     checkbox.text_background = TRANSPARENT_COLOR;
-    checkbox.border = 1.0f;
+    checkbox.border = border;
     checkbox.border_color = TEXT_WHITE;
     checkbox.normal.data.color = BACKGROUND_COLOR;
     checkbox.hover.data.color = TEXT_GREY;
@@ -872,7 +884,7 @@ void GuiContext::applyTheme() {
     selectable.padding.x = 0;
     selectable.padding.y = 0;
 
-    progress.border = 1.0f;
+    progress.border = border;
     progress.rounding = 0;
     progress.normal.data.color = TRANSPARENT_COLOR;
     progress.border_color = BORDER_GREY;
@@ -887,7 +899,7 @@ void GuiContext::applyTheme() {
     progress.padding.y = 0;
 }
 
-GuiStyleButton::GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& text) {
+GuiStyleButton::GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& text, const Color4& border) {
     nk = std::make_unique<nk_style_button>();
     nk->text_background = fromColor(hexColor(0x00000000));
     nk->text_normal = fromColor(text.normal);
@@ -896,8 +908,8 @@ GuiStyleButton::GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& 
     nk->normal.data.color = fromColor(color.normal);
     nk->hover.data.color = fromColor(color.hover);
     nk->active.data.color = fromColor(color.active);
-    nk->border = 1.0f;
-    nk->border_color = fromColor(Colors::border);
+    nk->border = 2.0f;
+    nk->border_color = fromColor(border);
     nk->rounding = 0;
     nk->text_alignment = NK_TEXT_ALIGN_MIDDLE | NK_TEXT_ALIGN_CENTERED;
 }

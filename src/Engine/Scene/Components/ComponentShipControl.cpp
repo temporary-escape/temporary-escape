@@ -10,7 +10,218 @@ static auto logger = createLogger(LOG_FILENAME);
 ComponentShipControl::ComponentShipControl(EntityId entity) : Component{entity} {
 }
 
-void ComponentShipControl::update(Scene& scene, const float delta, ComponentTransform& transform) {
+void ComponentShipControl::update(Scene& scene, const float delta, ComponentTransform& ourTransform) {
+    constexpr Vector3 upVector{0.0f, 1.0f, 0.0f};
+    constexpr auto accelerationAngleMin = glm::radians(30.0f);
+    constexpr auto slowdownAngle = glm::radians(15.0f);
+
+    if (replicated || action == ShipAutopilotAction::Idle) {
+        return;
+    }
+
+    // Get our position
+    const auto ourPos = ourTransform.getAbsolutePosition();
+
+    // Our current orientation (directly forward)
+    const auto ourOrientation = glm::quat_cast(ourTransform.getTransform());
+    const auto ourForward = glm::rotate(ourOrientation, Vector3{0.0f, 0.0f, 1.0f});
+
+    std::optional<Vector3> res;
+    if (action == ShipAutopilotAction::Approach) {
+        res = getSteeringApproach(scene, delta, ourTransform);
+    } else if (action == ShipAutopilotAction::KeepDistance) {
+        res = getSteeringKeepAtDistance(scene, delta, ourTransform);
+    } else if (action == ShipAutopilotAction::Orbit) {
+        res = getSteeringOrbit(scene, delta, ourTransform);
+    }
+
+    Vector3 targetPos;
+    if (!res) {
+        actionCancelMovement();
+        targetPos = ourPos + ourForward;
+    } else {
+        targetPos = *res;
+    }
+
+    // Distance to the target position we need to arrive to
+    const auto distance = glm::distance(targetPos, ourPos);
+    targetDistance = distance;
+
+    // When do we need to slow down?
+    const auto secondsToStop = forwardVelocityMax / forwardAcceleration;
+    const auto slowDownRadius = 0.5f * forwardAcceleration * glm::pow(secondsToStop, 2.0f);
+
+    float targetSpeed;
+    if (distance > slowDownRadius) {
+        targetSpeed = forwardVelocityMax;
+    } else {
+        targetSpeed = forwardVelocityMax * distance / slowDownRadius;
+    }
+
+    if (targetSpeed < 0.5f) {
+        targetSpeed = 0.0f;
+    }
+
+    // Did we arrive to the destination?
+    if (action == ShipAutopilotAction::Approach && distance < 10.0f) {
+        actionCancelMovement();
+    }
+
+    // Do not move forward if we are entering an idle state
+    if (action == ShipAutopilotAction::CancellingRotation) {
+        targetSpeed = 0.0f;
+    }
+
+    // Figure out which direction we should be facing
+    const auto lookAtPos = ourPos - (targetPos - ourPos);
+    const auto alignedTransform = glm::inverse(glm::lookAt(ourPos, lookAtPos, {0.0f, 1.0f, 0.0f}));
+    const auto targetOrientation = glm::quat_cast(alignedTransform);
+
+    // Get vector towards the front of the ship, but horizontally aligned
+    // const auto forwardAligned = glm::normalize(Vector3{ourForward.x, 0.0f, ourForward.z});
+
+    // Calculate the angle between out forward and the target direction we should be facing
+    auto targetForward = glm::rotate(targetOrientation, Vector3{0.0f, 0.0f, 1.0f});
+    auto angle = glm::acos(glm::dot(targetForward, ourForward));
+    if (std::isnan(angle)) {
+        angle = 0.0f;
+    }
+
+    // Calculate the new orientation, delta time adjusted, to rotate towards the target
+    Quaternion newOrientation;
+    if (distance > 10.0f) {
+        const auto currentAngularVelocity = /*aligning ? angularVelocity * 0.2f : */ angularVelocity;
+        const auto minAVel = currentAngularVelocity * 0.2f;
+        const auto aVel = angle < slowdownAngle ? map(angle, 0.0f, slowdownAngle, minAVel, currentAngularVelocity)
+                                                : currentAngularVelocity;
+
+        const auto factor = glm::clamp((aVel * delta) / angle, 0.0f, 1.0f);
+        newOrientation = glm::slerp(ourOrientation, targetOrientation, factor);
+    } else {
+        newOrientation = ourOrientation;
+    }
+
+    // Do not accelerate, if the angle towards the target is too big
+    if (angle > accelerationAngleMin) {
+        targetSpeed = 0.0f;
+
+        // Do not rotate if the current velocity is too fast
+        /*if (forwardVelocity > forwardVelocityMax * 0.25f) {
+            newOrientation = ourOrientation;
+        }*/
+    }
+
+    // Update our current acceleration
+    float velocityDiff;
+    if (forwardVelocity < targetSpeed) {
+        velocityDiff = glm::clamp(targetSpeed - forwardVelocity, 0.0f, forwardAcceleration) * delta;
+    } else {
+        velocityDiff = -glm::clamp(forwardVelocity - targetSpeed, 0.0f, forwardAcceleration) * delta;
+    }
+    forwardVelocity += velocityDiff;
+
+    /*logger.debug("targetPos: {} secondsToStop: {} slowDownRadius: {} forwardVelocity: {}",
+                 targetPos,
+                 secondsToStop,
+                 slowDownRadius,
+                 forwardVelocity);*/
+
+    // The new ship transform
+    auto shipTransform = glm::translate(Matrix4{1.0f}, ourPos);
+    shipTransform = shipTransform * glm::toMat4(newOrientation);
+
+    // Apply the velocity
+    shipTransform = glm::translate(shipTransform, Vector3{0.0f, 0.0f, -1.0f} * forwardVelocity * delta);
+
+    // Update the ship transform
+    ourTransform.setTransform(shipTransform);
+    scene.setDirty(ourTransform);
+    scene.setDirty(*this);
+}
+
+void ComponentShipControl::addTurret(ComponentTurret& turret) {
+    turrets.push_back(&turret);
+}
+
+std::optional<Vector3> ComponentShipControl::getSteeringApproach(Scene& scene, const float delta,
+                                                                 ComponentTransform& ourTransform) {
+    (void)delta;
+
+    // Cancel approach action if invalid entity
+    if (approachTarget == entity || !scene.valid(approachTarget)) {
+        return std::nullopt;
+    }
+
+    // Cancel approach if the entity has no transform
+    const auto* theirTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
+    if (!theirTransform) {
+        return std::nullopt;
+    }
+
+    // Their position
+    auto targetPos = theirTransform->getAbsolutePosition();
+
+    // Get vector towards the target
+    auto direction = targetPos - ourTransform.getAbsolutePosition();
+    direction = glm::normalize(direction);
+
+    // Subtract entity size from the approach pos
+    const auto bounds = scene.getEntityBounds(approachTarget, *theirTransform);
+    targetPos -= direction * bounds;
+
+    // The target pos is the position we need to arrive to
+    return targetPos;
+}
+
+std::optional<Vector3> ComponentShipControl::getSteeringKeepAtDistance(Scene& scene, float delta,
+                                                                       ComponentTransform& ourTransform) {
+    const auto res = getSteeringApproach(scene, delta, ourTransform);
+    if (!res) {
+        return std::nullopt;
+    }
+
+    // Get vector towards the target
+    const auto ourPos = ourTransform.getAbsolutePosition();
+    auto direction = *res - ourPos;
+    direction = glm::normalize(direction);
+
+    // Use the direction towards the target as the line at which we should keep the distance at
+    return *res - direction * keepAtDistance;
+}
+
+std::optional<Vector3> ComponentShipControl::getSteeringOrbit(Scene& scene, const float delta,
+                                                              ComponentTransform& ourTransform) {
+    (void)delta;
+}
+
+void ComponentShipControl::actionApproach(const EntityId target) {
+    action = ShipAutopilotAction::Approach;
+    approachTarget = target;
+}
+
+void ComponentShipControl::actionKeepDistance(const EntityId target, const float distance) {
+    action = ShipAutopilotAction::KeepDistance;
+    approachTarget = target;
+    keepAtDistance = distance;
+}
+
+void ComponentShipControl::actionCancelMovement() {
+    action = ShipAutopilotAction::CancellingRotation;
+    approachTarget = NullEntity;
+    targetDistance = 0.0f;
+}
+
+void ComponentShipControl::actionOrbit(const EntityId target, const float radius) {
+    action = ShipAutopilotAction::Orbit;
+    approachTarget = target;
+    keepAtDistance = radius;
+}
+
+void ComponentShipControl::setReplicated(const bool value) {
+    replicated = value;
+}
+
+/*void ComponentShipControl::update(Scene& scene, const float delta, ComponentTransform& transform) {
     constexpr Vector3 upVector{0.0f, 1.0f, 0.0f};
     constexpr auto accelerationAngleMin = glm::radians(30.0f);
     constexpr auto slowdownAngle = glm::radians(15.0f);
@@ -282,4 +493,4 @@ void ComponentShipControl::setAngularVelocity(const float radians) {
 
 void ComponentShipControl::addTurret(ComponentTurret& turret) {
     turrets.push_back(&turret);
-}
+}*/

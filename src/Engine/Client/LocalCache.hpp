@@ -34,7 +34,8 @@ struct LocalCache {
         EntityId entity{NullEntity};
         Vector3 position;
         EntityId approaching{NullEntity};
-        float approachDistance{0.0f};
+        ShipAutopilotAction autopilotAction{ShipAutopilotAction::Idle};
+        float targetDistance{0.0f};
         float orbitRadius{0.0f};
         float keepAtDistance{0.0f};
         float forwardVelocity{0.0f};

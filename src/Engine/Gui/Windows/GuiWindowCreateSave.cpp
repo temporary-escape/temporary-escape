@@ -1,6 +1,8 @@
 #include "GuiWindowCreateSave.hpp"
+
 #include "../../Utils/Random.hpp"
 #include "../GuiManager.hpp"
+#include <utility>
 
 using namespace Engine;
 
@@ -21,12 +23,11 @@ std::string createNewSeed() {
     return std::to_string(randomSeed(rng));
 }
 
-GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager,
-                                         const Path& dir) :
-    GuiWindow{fontFamily, fontSize}, guiManager{guiManager}, dir{dir} {
+GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, Path dir) :
+    GuiWindow{fontFamily, fontSize}, guiManager{guiManager}, dir{std::move(dir)} {
 
-    setSize({500.0f, 350.0f});
-    setTitle("Create Game");
+    setSize({500.0f, 355.0f});
+    setTitle("CREATE GAME");
     setNoScrollbar(true);
 
     { // Label: name

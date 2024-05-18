@@ -17,7 +17,7 @@ public:
     using OnCreateCallback = std::function<void(const Form&)>;
     using OnCloseCallback = GuiWidgetButton::OnClickCallback;
 
-    explicit GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, const Path& dir);
+    explicit GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, Path dir);
 
     void setOnCreate(OnCreateCallback callback);
     void setOnClose(OnCloseCallback callback);

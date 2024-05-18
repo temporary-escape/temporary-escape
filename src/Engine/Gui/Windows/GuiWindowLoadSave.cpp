@@ -10,7 +10,7 @@ GuiWindowLoadSave::GuiWindowLoadSave(const FontFamily& fontFamily, int fontSize,
     GuiWindow{fontFamily, fontSize}, dir{dir} {
 
     setSize({500.0f, 600.0f});
-    setTitle("Load Game");
+    setTitle("LOAD GAME");
     setNoScrollbar(true);
 
     const auto height = getSize().y - 30.0 - 30.0f * 3.0f - ctx.getPadding().y * 5.0f;
@@ -48,6 +48,7 @@ GuiWindowLoadSave::GuiWindowLoadSave(const FontFamily& fontFamily, int fontSize,
 
         buttonClose = &row.addWidget<GuiWidgetButton>("Close");
         buttonClose->setWidth(100.0f, true);
+        buttonClose->setStyle(&GuiWidgetButton::dangerStyle);
     }
 }
 
@@ -79,12 +80,15 @@ void GuiWindowLoadSave::loadInfos() {
 
         {
             auto& row = child.addWidget<GuiWidgetTemplateRow>(30.0f);
-            auto& label = row.addWidget<GuiWidgetLabel>(fmt::format("Name: {}", info.path.stem().string()));
-            label.setWidth(0.0f);
+
             if (info.compatible) {
-                label.setColor(Colors::primary);
+                auto& label =
+                    row.addWidget<GuiWidgetLabel>(fmt::format("<b><p>Name: {}</b></p>", info.path.stem().string()));
+                label.setWidth(0.0f);
             } else {
-                label.setColor(Colors::ternary);
+                auto& label =
+                    row.addWidget<GuiWidgetLabel>(fmt::format("<b><s>Name: {}</b></s>", info.path.stem().string()));
+                label.setWidth(0.0f);
                 label.setTooltip("Incompatible game version!");
             }
 
@@ -102,9 +106,8 @@ void GuiWindowLoadSave::loadInfos() {
         {
             auto& row = child.addWidget<GuiWidgetRow>(30.0f, 1);
 
-            const auto text = fmt::format("Last played: {}", timePointToLocalString(info.timestamp));
+            const auto text = fmt::format("<i><g>Last played: {}</g></i>", timePointToLocalString(info.timestamp));
             auto& label = row.addWidget<GuiWidgetLabel>(text);
-            label.setColor(Colors::text * alpha(0.5f));
         }
     }
 }

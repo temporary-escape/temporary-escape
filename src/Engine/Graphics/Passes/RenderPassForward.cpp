@@ -188,7 +188,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scen
         return;
     }
 
-    auto strength = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax(), 0.0f, 3.0f);
+    /*auto strength = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax(), 0.0f, 3.0f);
     auto alpha = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax() / 5.0f, 0.0f, 1.0f);
     strength = glm::clamp(strength, 0.0f, 2.0f);
     alpha = glm::clamp(alpha, 0.0f, 1.0f);
@@ -215,7 +215,7 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scen
 
             vkb.draw(4, particlesType->getCount(), 0, 0);
         }
-    }
+    }*/
 }
 
 void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
@@ -330,7 +330,7 @@ void RenderPassForward::renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& sc
 }
 
 void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
-    pipelineLines.bind(vkb);
+    /*pipelineLines.bind(vkb);
 
     for (auto&& [entity, transform, shipControl] : scene.getView<ComponentTransform, ComponentShipControl>().each()) {
         if (shipControl.getApproachEntity() == NullEntity) {
@@ -369,7 +369,7 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
 
             pipelineLines.renderMesh(vkb, resources.getMeshLineForward());
         }
-    }
+    }*/
 }
 
 void RenderPassForward::renderSceneTacticalOverlay(VulkanCommandBuffer& vkb, Scene& scene,
@@ -481,14 +481,13 @@ void RenderPassForward::renderSceneTacticalOverlayText(VulkanCommandBuffer& vkb,
     modelMatrix[3] = Vector4{cameraOrbital.getTarget(), 1.0f};
 
     const auto& worldText = resources.getTextTacticalOverlay();
-    const auto& fontFace = worldText.getFont().get(FontFace::Regular);
 
     pipelineWorldText.setModelMatrix(modelMatrix);
     pipelineWorldText.setColor(Colors::tacticalOverview);
     pipelineWorldText.flushConstants(vkb);
 
     pipelineWorldText.setUniformCamera(camera.getUbo().getCurrentBuffer());
-    pipelineWorldText.setTextureColor(fontFace.getTexture());
+    pipelineWorldText.setTextureColor(worldText.getFont().getTexture());
     pipelineWorldText.flushDescriptors(vkb);
 
     pipelineWorldText.renderMesh(vkb, worldText.getMesh());

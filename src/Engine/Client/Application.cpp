@@ -1,5 +1,4 @@
 #include "Application.hpp"
-#include "../Font/FontFamilyDefault.hpp"
 #include "../Graphics/RendererBackground.hpp"
 #include "../Graphics/RendererScenePbr.hpp"
 #include "../Graphics/RendererThumbnail.hpp"
@@ -23,7 +22,7 @@ Application::Application(Config& config) :
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    font{*this, defaultFontSources, config.guiFontSize * 2},
+    font{*this, config.guiFontSize * 2},
     rendererCanvas{*this},
     canvas2{*this},
     guiManager{*this, rendererCanvas, font, config.guiFontSize} {
@@ -61,9 +60,14 @@ Application::Application(Config& config) :
     });
 
     gui.mainMenu = guiManager.addWindow<GuiWindowMainMenu>();
-    gui.mainMenu->setOnClickSingleplayer([this]() {
+    gui.mainMenu->setOnClickNewGame([this]() {
         gui.mainMenu->setEnabled(false);
-        gui.singlePlayer->setEnabled(true);
+        gui.createSave->setEnabled(true);
+    });
+    gui.mainMenu->setOnClickLoadSave([this]() {
+        gui.mainMenu->setEnabled(false);
+        gui.loadSave->setEnabled(true);
+        gui.loadSave->loadInfos();
     });
     gui.mainMenu->setOnClickMultiplayer([this]() {
         gui.mainMenu->setEnabled(false);
@@ -105,24 +109,9 @@ Application::Application(Config& config) :
         startConnectServer(serverId);
     });
 
-    gui.singlePlayer = guiManager.addWindow<GuiWindowSinglePlayerMenu>();
-    gui.singlePlayer->setOnClose([this]() {
-        gui.mainMenu->setEnabled(true);
-        gui.singlePlayer->setEnabled(false);
-    });
-    gui.singlePlayer->setOnCreate([this]() {
-        gui.createSave->setEnabled(true);
-        gui.singlePlayer->setEnabled(false);
-    });
-    gui.singlePlayer->setOnLoad([this]() {
-        gui.loadSave->setEnabled(true);
-        gui.singlePlayer->setEnabled(false);
-        gui.loadSave->loadInfos();
-    });
-
     gui.createSave = guiManager.addWindow<GuiWindowCreateSave>(guiManager, config.userdataSavesPath);
     gui.createSave->setOnClose([this]() {
-        gui.singlePlayer->setEnabled(true);
+        gui.mainMenu->setEnabled(true);
         gui.createSave->setEnabled(false);
     });
     gui.createSave->setOnCreate([this](const GuiWindowCreateSave::Form& form) {
@@ -134,7 +123,7 @@ Application::Application(Config& config) :
 
     gui.loadSave = guiManager.addWindow<GuiWindowLoadSave>(guiManager, config.userdataSavesPath);
     gui.loadSave->setOnClose([this]() {
-        gui.singlePlayer->setEnabled(true);
+        gui.mainMenu->setEnabled(true);
         gui.loadSave->setEnabled(false);
     });
     gui.loadSave->setOnLoad([this](const Path& path) {

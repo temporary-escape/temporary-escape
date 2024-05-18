@@ -5,48 +5,84 @@
 #include "ComponentTurret.hpp"
 
 namespace Engine {
+enum class ShipAutopilotAction {
+    Idle = 0,
+    CancellingRotation,
+    Approach,
+    KeepDistance,
+    Align,
+    Orbit,
+    Direction,
+    WarpingOut,
+    WarpingIn,
+};
+}
+
+MSGPACK_ADD_ENUM(Engine::ShipAutopilotAction)
+
+namespace Engine {
 class ENGINE_API Scene;
 class ENGINE_API ComponentShipControl : public Component {
 public:
     ComponentShipControl() = default;
-    ComponentShipControl(EntityId entity);
+    explicit ComponentShipControl(EntityId entity);
     COMPONENT_DEFAULTS(ComponentShipControl);
 
-    void update(Scene& scene, float delta, ComponentTransform& transform);
-
-    void setActive(bool value);
-    [[nodiscard]] bool isActive() const {
-        return active;
-    }
+    void update(Scene& scene, float delta, ComponentTransform& ourTransform);
 
     void addTurret(ComponentTurret& turret);
+
     const std::vector<ComponentTurret*>& getTurrets() const {
         return turrets;
     }
 
-    const Matrix4& getOrbitMatrix() const {
+    void actionApproach(EntityId target);
+    void actionKeepDistance(EntityId target, float distance);
+    void actionOrbit(EntityId target, float radius);
+    void actionCancelMovement();
+
+    bool isReplicated() const {
+        return replicated;
+    }
+
+    void setReplicated(bool value);
+
+    MSGPACK_DEFINE_ARRAY(approachTarget, action, forwardVelocity, forwardAcceleration, forwardVelocityMax,
+                         angularVelocity, targetDistance, keepAtDistance);
+
+    /*void setActive(bool value);
+    [[nodiscard]] bool isActive() const {
+        return active;
+    }*/
+
+    /*void addTurret(ComponentTurret& turret);
+    const std::vector<ComponentTurret*>& getTurrets() const {
+        return turrets;
+    }*/
+
+    /*const Matrix4& getOrbitMatrix() const {
         return orbitMatrix;
-    }
+    }*/
 
-    const Vector3& getOrbitOrigin() const {
+    /*const Vector3& getOrbitOrigin() const {
         return orbitOrigin;
-    }
+    }*/
 
-    float getOrbitRadius() const {
+    /*float getOrbitRadius() const {
         return orbitRadius;
-    }
+    }*/
 
-    float getApproachDistance() const {
+    /*float getApproachDistance() const {
         return approachDistance;
-    }
+    }*/
 
-    float getApproachMinDistance() const {
+    /*float getApproachMinDistance() const {
         return approachMinDistance;
-    }
+    }*/
 
-    const Vector3& getApproachPos() const {
+    /*const Vector3& getApproachPos() const {
         return approachPos;
-    }
+    }*/
 
     float getForwardVelocity() const {
         return forwardVelocity;
@@ -60,7 +96,19 @@ public:
         return approachTarget;
     }
 
-    void setForwardVelocityMax(float value);
+    ShipAutopilotAction getAction() const {
+        return action;
+    }
+
+    float getTargetDistance() const {
+        return targetDistance;
+    }
+
+    float getKeepAtDistance() const {
+        return keepAtDistance;
+    }
+
+    /*void setForwardVelocityMax(float value);
     void setAngularVelocity(float radians);
 
     void actionApproach(EntityId target);
@@ -68,13 +116,29 @@ public:
     void actionKeepDistance(EntityId target, float distance);
     void actionStopMovement();
     void actionGoDirection(const Vector3& value);
-    void actionWarpTo(const Vector3& direction);
+    void actionWarpTo(const Vector3& direction);*/
 
-    MSGPACK_DEFINE_ARRAY(approachTarget, approachMinDistance, approachDistance, forwardVelocity, forwardVelocityMax,
-                         orbitRadius, orbitMatrix, orbitOrigin, approachPos, approachDir);
+    /*MSGPACK_DEFINE_ARRAY(approachTarget, approachMinDistance, approachDistance, forwardVelocity, forwardVelocityMax,
+                         orbitRadius, orbitMatrix, orbitOrigin, approachPos, approachDir);*/
 
 private:
+    std::optional<Vector3> getSteeringApproach(Scene& scene, float delta, ComponentTransform& ourTransform);
+    std::optional<Vector3> getSteeringKeepAtDistance(Scene& scene, float delta, ComponentTransform& ourTransform);
+    std::optional<Vector3> getSteeringOrbit(Scene& scene, float delta, ComponentTransform& ourTransform);
+
+    bool replicated{false};
     EntityId approachTarget{NullEntity};
+    ShipAutopilotAction action{ShipAutopilotAction::Idle};
+    float forwardVelocity{0.0f};
+    float forwardAcceleration{20.0f};
+    float forwardVelocityMax{300.0f};
+    float angularVelocity{glm::radians(45.0f)};
+    float targetDistance{0.0f};
+    float keepAtDistance{0.0f};
+
+    std::vector<ComponentTurret*> turrets;
+
+    /*EntityId approachTarget{NullEntity};
     float approachMinDistance{0.0f};
     float approachDistance{0.0f};
     float angularVelocity{glm::radians(45.0f)};
@@ -90,6 +154,6 @@ private:
     bool active{false};
     Vector3 approachPos;
     Vector3 approachDir;
-    std::vector<ComponentTurret*> turrets;
+    std::vector<ComponentTurret*> turrets;*/
 };
 } // namespace Engine

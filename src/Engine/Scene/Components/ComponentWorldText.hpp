@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Font/FontFace.hpp"
+#include "../../Font/FontFamily.hpp"
 #include "../../Graphics/Mesh.hpp"
 #include "../../Graphics/WorldSpaceText.hpp"
 #include "../../Library.hpp"
@@ -12,7 +12,7 @@ public:
     using Vertex = WorldSpaceText::Vertex;
 
     ComponentWorldText() = default;
-    explicit ComponentWorldText(EntityId entity, const FontFace& fontFace, const Color4& color, const float height);
+    explicit ComponentWorldText(EntityId entity, const FontFamily& font, const Color4& color, const float height);
     COMPONENT_DEFAULTS(ComponentWorldText);
 
     void recalculate(VulkanRenderer& vulkan);
@@ -31,8 +31,8 @@ public:
         return mesh;
     }
 
-    [[nodiscard]] const FontFace& getFontFace() const {
-        return *fontFace;
+    [[nodiscard]] const FontFamily& getFont() const {
+        return *font;
     }
 
     void setOffset(const Vector2& value) {
@@ -45,7 +45,7 @@ public:
 
 private:
     bool dirty{false};
-    const FontFace* fontFace{nullptr};
+    const FontFamily* font{nullptr};
     Color4 color;
     float height;
     Mesh mesh;

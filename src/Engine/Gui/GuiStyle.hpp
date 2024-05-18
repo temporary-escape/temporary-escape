@@ -17,7 +17,7 @@ struct GuiStyleProgress {
 };
 
 struct GuiStyleButton {
-    GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& text);
+    GuiStyleButton(const GuiStyleColor& color, const GuiStyleColor& text, const Color4& border);
     ~GuiStyleButton();
 
     std::unique_ptr<nk_style_button> nk;

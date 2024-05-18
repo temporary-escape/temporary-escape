@@ -12,7 +12,7 @@ static bool isValid(const std::string& value) {
 GuiWindowCreateProfile::GuiWindowCreateProfile(const FontFamily& fontFamily, int fontSize) :
     GuiWindow{fontFamily, fontSize} {
     setSize({350.0f, 200.0f});
-    setTitle("Create New Profile");
+    setTitle("CREATE NEW PROFILE");
     setDynamic(true);
 
     {

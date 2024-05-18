@@ -6,7 +6,7 @@ GuiWindow::GuiWindow(const FontFamily& fontFamily, const int fontSize) :
     GuiContext{fontFamily, fontSize},
     GuiWidgetLayout{static_cast<GuiContext&>(*this)},
     id{std::to_string(reinterpret_cast<uint64_t>(this))},
-    flags{WindowFlag::Title | WindowFlag::NoScrollbar} {
+    flags{WindowFlag::Title | WindowFlag::NoScrollbar | WindowFlag::Border} {
 }
 
 void GuiWindow::update(const Vector2i& viewport) {
@@ -28,8 +28,8 @@ void GuiWindow::draw() {
     GuiContext::windowEnd(flags);
 }
 
-void GuiWindow::setTitle(std::string value) {
-    title = std::move(value);
+void GuiWindow::setTitle(const std::string_view& value) {
+    title = fmt::format("<b>{}</b>", value);
 }
 
 void GuiWindow::setSize(const Vector2& value) {

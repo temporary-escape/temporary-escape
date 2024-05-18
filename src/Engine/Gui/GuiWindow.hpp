@@ -25,7 +25,7 @@ public:
     virtual void update(const Vector2i& viewport);
     void draw() override;
 
-    void setTitle(std::string value);
+    void setTitle(const std::string_view& value);
     const std::string& getTitle() const {
         return title;
     }

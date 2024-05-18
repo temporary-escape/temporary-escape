@@ -55,7 +55,7 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
     GuiWindow{fontFamily, fontSize}, vulkan{vulkan}, config{config}, guiManager{guiManager}, configBackup{config} {
 
     setSize({450.0f, 700.0f});
-    setTitle("Settings");
+    setTitle("SETTINGS");
     setNoScrollbar(true);
 
     auto& tabs = addWidget<GuiWidgetTabs>(600.0f);

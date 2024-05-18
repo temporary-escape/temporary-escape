@@ -5,9 +5,9 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-ComponentWorldText::ComponentWorldText(EntityId entity, const FontFace& fontFace, const Color4& color,
+ComponentWorldText::ComponentWorldText(EntityId entity, const FontFamily& font, const Color4& color,
                                        const float height) :
-    Component{entity}, fontFace{&fontFace}, color{color}, height{height} {
+    Component{entity}, font{&font}, color{color}, height{height} {
 }
 
 void ComponentWorldText::recalculate(VulkanRenderer& vulkan) {
@@ -44,14 +44,16 @@ void ComponentWorldText::add(const Vector3& pos, const std::string& text) {
     auto it = text.c_str();
     const auto end = it + text.size();
 
-    auto pen = -fontFace->getPenOffset(text, fontFace->getSize(), textAlign);
+    const auto& fontFace = font->get(FontType::Regular);
+
+    auto pen = -fontFace.getPenOffset(text, font->getSize(), textAlign);
     pen += offset;
 
-    const auto scale = (static_cast<float>(height) / static_cast<float>(fontFace->getSize())) * 2.0f;
+    const auto scale = (static_cast<float>(height) / static_cast<float>(font->getSize())) * 2.0f;
 
     while (it < end) {
         const auto code = utf8::next(it, end);
-        const auto& glyph = fontFace->getGlyph(code);
+        const auto& glyph = fontFace.getGlyph(code);
 
         vertices.emplace_back();
         auto& dst = vertices.back();

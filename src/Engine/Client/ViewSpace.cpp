@@ -101,42 +101,41 @@ void ViewSpace::renderCanvasApproaching(Canvas& canvas, const Vector2i& viewport
 
     const auto mid = Vector2{viewport.x / 2.0f, viewport.y - 120.0f};
 
-    if (cache.player.approaching != NullEntity) {
+    if (cache.player.autopilotAction != ShipAutopilotAction::Idle &&
+        cache.player.autopilotAction != ShipAutopilotAction::CancellingRotation) {
         { // What is the ship doing?
-            const char* keyword = "Approaching";
+            std::string keyword = "Idle";
 
-            if (cache.player.orbitRadius > 0.0f) {
-                keyword = "Orbiting";
-            } else if (cache.player.keepAtDistance > 0.0f) {
-                keyword = "Keep at distance";
+            if (cache.player.autopilotAction == ShipAutopilotAction::Approach) {
+                keyword = "Approach";
+            } else if (cache.player.autopilotAction == ShipAutopilotAction::KeepDistance) {
+                keyword = fmt::format("Keep at distance of {}", formatDistance(cache.player.keepAtDistance));
             }
 
-            const auto& face = font.get(FontFace::Bold);
-            const auto bounds = face.getBounds(keyword, config.guiFontSize);
+            const auto bounds = font.getBounds(keyword, config.guiFontSize);
             const auto pos = mid - bounds / 2.0f;
-            canvas.drawText(pos, keyword, face, config.guiFontSize, Colors::overlayText);
+            canvas.drawText(pos, keyword, font, config.guiFontSize, Colors::overlayText);
         }
 
-        { // Entity Name
+        if (cache.player.approaching != NullEntity) { // Entity Name
             const auto entityLabel = scene.tryGetComponent<ComponentLabel>(cache.player.approaching);
             std::string_view label = "";
             if (entityLabel) {
                 label = entityLabel->getLabel();
             }
 
-            const auto text = fmt::format("{} - {}", label, formatDistance(cache.player.approachDistance));
-            const auto& regular = font.get(FontFace::Regular);
-            const auto bounds = regular.getBounds(text, config.guiFontSize);
+            const auto distance = scene.getEntityDistance(cache.player.entity, cache.player.approaching);
+            const auto text = fmt::format("{} - {}", label, formatDistance(distance));
+            const auto bounds = font.getBounds(text, config.guiFontSize);
             const auto pos = mid - bounds / 2.0f + Vector2{0.0f, config.guiFontSize};
-            canvas.drawText(pos, text, regular, config.guiFontSize, Colors::overlayText);
+            canvas.drawText(pos, text, font, config.guiFontSize, Colors::overlayText);
         }
 
         { // Our speed
             const auto text = fmt::format("{:.0f} m/s", cache.player.forwardVelocity);
-            const auto& regular = font.get(FontFace::Regular);
-            const auto bounds = regular.getBounds(text, config.guiFontSize);
+            const auto bounds = font.getBounds(text, config.guiFontSize);
             const auto pos = mid - bounds / 2.0f + Vector2{0.0f, config.guiFontSize} * 2.0f;
-            canvas.drawText(pos, text, regular, config.guiFontSize, Colors::overlayText);
+            canvas.drawText(pos, text, font, config.guiFontSize, Colors::overlayText);
         }
     }
 }

@@ -19,11 +19,11 @@ void main() {
 
     if (mode == 1) {
         vec4 raw = texture(texSampler[index], ps_in.texCoords.xy);
-        outColor = raw * ps_in.color;
+        outColor = raw * pow(ps_in.color, vec4(2.2));
     } else if (mode == 2) {
         vec4 raw = texture(texSampler[index], ps_in.texCoords.xy);
-        outColor = ps_in.color * vec4(1.0, 1.0, 1.0, raw.r);
+        outColor = pow(ps_in.color, vec4(2.2)) * vec4(1.0, 1.0, 1.0, raw.r);
     } else {
-        outColor = ps_in.color;
+        outColor = pow(ps_in.color, vec4(2.2));
     }
 }

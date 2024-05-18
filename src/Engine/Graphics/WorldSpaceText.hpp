@@ -31,8 +31,8 @@ public:
         TextVertexShaper(Vertices& vertices, const FontFamily& font, float size, const Vector3& pos);
 
     private:
-        void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen,
-                     const Quad& quad) override;
+        void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
+                     const Color4& color) override;
 
         Vertices& vertices;
         Vector3 pos;

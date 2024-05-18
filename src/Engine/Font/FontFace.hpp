@@ -19,6 +19,8 @@ enum class TextAlign {
 
 class ENGINE_API FontFace {
 public:
+    static inline const Vector2i atlasSize{2048, 1024};
+
     struct Glyph {
         Vector2 uv;
         Vector2 st;
@@ -28,13 +30,8 @@ public:
         float ascend;
     };
 
-    enum Type {
-        Regular = 0,
-        Bold,
-        Light,
-    };
-
-    explicit FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& data, int size);
+    explicit FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& source, VulkanTexture& texture,
+                      const Vector2i& offset, int size);
     ~FontFace();
 
     const Glyph& getGlyph(const uint32_t code) const {
@@ -52,19 +49,10 @@ public:
     Vector2 getBounds(const std::string_view& text, float height) const;
     Vector2 getPenOffset(const std::string_view& text, float height, const TextAlign textAlign) const;
 
-    [[nodiscard]] VulkanTexture& getTexture() {
-        return texture;
-    }
-
-    [[nodiscard]] const VulkanTexture& getTexture() const {
-        return texture;
-    }
-
 private:
     static inline const Vector2i padding{2, 2};
     const int size;
     std::unordered_map<uint32_t, Glyph> glyphs;
     const Glyph* unknown;
-    VulkanTexture texture;
 };
 } // namespace Engine

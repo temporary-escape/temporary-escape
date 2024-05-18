@@ -8,6 +8,7 @@ public:
     static const GuiStyleButton defaultStyle;
     static const GuiStyleButton successStyle;
     static const GuiStyleButton dangerStyle;
+    static const GuiStyleButton infoStyle;
 
     using OnClickCallback = std::function<void()>;
 

@@ -153,17 +153,25 @@ struct Config {
 };
 
 struct Colors {
-    static constexpr Color4 primary{0.99f, 0.86f, 0.05f, 1.0f};
-    static constexpr Color4 secondary{0.024f, 0.81f, 0.69f, 1.0f};
-    static constexpr Color4 ternary{0.91f, 0.0f, 0.05f, 1.0f};
-    static constexpr Color4 background{0.02f, 0.02f, 0.02f, 1.0f};
-    static constexpr Color4 border{hexColor(0x202020ff)};
-    static constexpr Color4 text{0.9f, 0.9f, 0.9f, 1.0f};
-    static constexpr Color4 overlayText{0.9f, 0.9f, 0.9f, 0.7f};
+    static constexpr Color4 primary{hexColor(0xf5b149ff)};
+    static constexpr Color4 primaryBackground{hexColor(0x59431bff)};
+    static constexpr Color4 success{hexColor(0x4fe56dff)};
+    static constexpr Color4 successBackground{hexColor(0x203b1fff)};
+    static constexpr Color4 danger{hexColor(0xe56865ff)};
+    static constexpr Color4 dangerBackground{hexColor(0x471617ff)};
+    static constexpr Color4 info{hexColor(0x55e2e5ff)};
+    static constexpr Color4 infoBackground{hexColor(0x314141ff)};
+    static constexpr Color4 link{hexColor(0xac66e5ff)};
+    static constexpr Color4 linkBackground{hexColor(0x311b34ff)};
+    static constexpr Color4 background{hexColor(0x323b44ff)};
+    static constexpr Color4 border{hexColor(0x455a64ff)};
+    static constexpr Color4 text{0.97f, 0.97f, 0.97f, 1.0f};
+    static constexpr Color4 textGray{0.6f, 0.6f, 0.6f, 1.0f};
+    static constexpr Color4 overlayText{0.97f, 0.97f, 0.97f, 0.7f};
     static constexpr Color4 transparent{0.0f, 0.0f, 0.0f, 0.0f};
     static constexpr Color4 white{hexColor(0xe5e5e3ff)};
     static constexpr Color4 black{hexColor(0x030303ff)};
-    static constexpr Color4 tacticalOverview{0.7f, 0.7f, 0.7f, 0.2f};
+    static constexpr Color4 tacticalOverview{0.8f, 0.8f, 0.8f, 0.2f};
 };
 
 XML_DEFINE(Config, "settings");

@@ -10,7 +10,9 @@ WorldSpaceText::TextVertexShaper::TextVertexShaper(Vertices& vertices, const Fon
 }
 
 void WorldSpaceText::TextVertexShaper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph,
-                                               const Vector2& pen, const Quad& quad) {
+                                               const Vector2& pen, const Quad& quad, const Color4& color) {
+    (void)color;
+
     vertices.emplace_back();
     auto& dst = vertices.back();
 

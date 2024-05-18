@@ -7,7 +7,8 @@ class GuiWindowMainMenu : public GuiWindow {
 public:
     GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize);
 
-    void setOnClickSingleplayer(GuiWidgetButton::OnClickCallback callback);
+    void setOnClickNewGame(GuiWidgetButton::OnClickCallback callback);
+    void setOnClickLoadSave(GuiWidgetButton::OnClickCallback callback);
     void setOnClickMultiplayer(GuiWidgetButton::OnClickCallback callback);
     void setOnClickEditor(GuiWidgetButton::OnClickCallback callback);
     void setOnClickSettings(GuiWidgetButton::OnClickCallback callback);
@@ -15,7 +16,8 @@ public:
     void setOnClickQuit(GuiWidgetButton::OnClickCallback callback);
 
 private:
-    GuiWidgetButton* buttonSingleplayer;
+    GuiWidgetButton* buttonNewGame;
+    GuiWidgetButton* buttonLoadSave;
     GuiWidgetButton* buttonMultiplayer;
     GuiWidgetButton* buttonEditor;
     GuiWidgetButton* buttonSettings;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Audio/AudioContext.hpp"
+#include "../Font/FontFamilyDefault.hpp"
 #include "../Graphics/RendererCanvas.hpp"
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
@@ -9,7 +10,6 @@
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Gui/Windows/GuiWindowServerBrowser.hpp"
 #include "../Gui/Windows/GuiWindowSettings.hpp"
-#include "../Gui/Windows/GuiWindowSinglePlayerMenu.hpp"
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
@@ -82,7 +82,7 @@ private:
 
     AudioContext audio;
     AudioSource audioSource;
-    FontFamily font;
+    FontFamilyDefault font;
     Status status;
     VulkanQueryPool renderQueryPool;
     RendererCanvas rendererCanvas;
@@ -95,7 +95,6 @@ private:
         GuiWindowSettings* settings{nullptr};
         GuiWindowServerBrowser* serverBrowser{nullptr};
         GuiWindowLoadSave* loadSave{nullptr};
-        GuiWindowSinglePlayerMenu* singlePlayer{nullptr};
         GuiWindowCreateSave* createSave{nullptr};
     } gui;
 

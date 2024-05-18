@@ -122,10 +122,9 @@ private:
 
     void applyTheme();
 
-    const FontFamily& fontFamily;
     const int fontSize;
     std::unique_ptr<nk_context> nk;
-    std::array<std::unique_ptr<nk_user_font>, FontFamily::total> fonts;
+    std::unique_ptr<nk_user_font> font;
     std::list<std::function<void()>> inputEvents;
     bool dirty{true};
     std::unique_ptr<CustomStyle> custom;
