@@ -5,7 +5,7 @@
 namespace Engine {
 class GuiWindowMainMenu : public GuiWindow {
 public:
-    GuiWindowMainMenu(const FontFamily& fontFamily, int fontSize);
+    GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFamily, int fontSize);
 
     void setOnClickNewGame(GuiWidgetButton::OnClickCallback callback);
     void setOnClickLoadSave(GuiWidgetButton::OnClickCallback callback);

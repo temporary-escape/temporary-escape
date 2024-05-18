@@ -8,11 +8,11 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-FontFace::FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& source, VulkanTexture& texture, const Vector2i& offset,
+FontFace::FontFace(VulkanRenderer& vulkan, const Path& path, VulkanTexture& texture, const Vector2i& offset,
                    const int size) :
     size{size} {
 
-    auto loader = FontLoader{source, size};
+    auto loader = FontLoader{path, size};
 
     std::vector<std::tuple<int, FontLoader::Glyph>> raw;
 
@@ -82,6 +82,12 @@ FontFace::FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& source, VulkanTe
 }
 
 FontFace::~FontFace() = default;
+
+float FontFace::getGlyphAdvance(const uint32_t code, const float height) const {
+    const auto& glyph = getGlyph(code);
+    const auto scale = height / static_cast<float>(getSize());
+    return glyph.advance * scale;
+}
 
 Vector2 FontFace::getBounds(const std::string_view& text, const float height) const {
     auto it = text.data();

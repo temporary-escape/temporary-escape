@@ -38,8 +38,9 @@ const GuiStyleProgress GuiWindowShipStatus::styleProgressEnergy = {
         },
 };
 
-GuiWindowShipStatus::GuiWindowShipStatus(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager) :
-    GuiWindow{fontFamily, fontSize} {
+GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                         AssetsManager& assetsManager) :
+    GuiWindow{ctx, fontFamily, fontSize} {
 
     setSize({
         350.0f,
@@ -51,6 +52,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(const FontFamily& fontFamily, int fontS
     setNoScrollbar(true);
     setHeader(false);
     setOpacity(0.0f);
+    setBordered(false);
     //   setNoInput(true);
 
     const auto totalWidth = getSize().x - ctx.getPadding().x * 2.0f;
@@ -120,7 +122,9 @@ GuiWindowShipStatus::GuiWindowShipStatus(const FontFamily& fontFamily, int fontS
     }
 }
 
-void GuiWindowShipStatus::updatePos(const Vector2i& viewport) {
+void GuiWindowShipStatus::update(const Vector2i& viewport) {
+    GuiWindow::update(viewport);
+    
     const auto size = getSize();
     setPos({
         25.0f,

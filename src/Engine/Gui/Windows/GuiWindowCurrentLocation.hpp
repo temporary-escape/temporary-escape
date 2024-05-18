@@ -7,9 +7,10 @@ class ENGINE_API AssetsManager;
 
 class ENGINE_API GuiWindowCurrentLocation : public GuiWindow {
 public:
-    explicit GuiWindowCurrentLocation(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager);
+    explicit GuiWindowCurrentLocation(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                      AssetsManager& assetsManager);
 
-    void updatePos(const Vector2i& viewport);
+    void update(const Vector2i& viewport) override;
 
     void setSystemLabel(const std::string& value);
     void setSectorLabel(const std::string& value);

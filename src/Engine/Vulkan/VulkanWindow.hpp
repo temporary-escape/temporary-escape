@@ -6,6 +6,13 @@
 struct GLFWwindow;
 
 namespace Engine {
+struct MonitorInfo {
+    std::string name;
+    bool primary;
+};
+
+ENGINE_API std::vector<MonitorInfo> listSystemMonitors();
+
 class ENGINE_API VulkanWindow : public Window {
 public:
     explicit VulkanWindow(const Config& config);
@@ -15,8 +22,7 @@ public:
     Vector2i getFramebufferSize();
     void waitUntilValidFramebufferSize();
     void closeWindow();
-    void setWindowFullScreen(bool value);
-    void setWindowResolution(const Vector2i& size);
+    void setWindowMode(WindowMode value, const Vector2i& size, const std::string& monitorName);
     std::vector<Vector2i> getSupportedResolutionModes();
 
 protected:
@@ -37,6 +43,6 @@ private:
     std::shared_ptr<GLFWwindow> window;
     Vector2i mousePos{};
     Vector2i currentWindowSize;
-    bool isFullScreen{false};
+    WindowMode windowMode{WindowMode::Windowed};
 };
 } // namespace Engine

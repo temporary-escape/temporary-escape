@@ -17,17 +17,14 @@ void GuiWidgetContextButton::drawInternal() {
 
 void GuiWidgetContextButton::setLabel(std::string value) {
     label = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetContextButton::setImageLeft(ImagePtr value) {
     imageLeft = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetContextButton::setImageRight(ImagePtr value) {
     imageRight = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetContextButton::setOnClick(OnClickCallback value) {

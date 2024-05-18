@@ -103,6 +103,10 @@ FontFamily::FontFamily(VulkanRenderer& vulkan, const Sources& sources, const int
     logger.info("Loaded font of size: {} with atlas size: {}", size, atlasSize);
 }
 
+float FontFamily::getGlyphAdvance(const uint32_t code, const float height) const {
+    return faces[static_cast<size_t>(FontType::Regular)]->getGlyphAdvance(code, height);
+}
+
 Vector2 FontFamily::getBounds(const std::string_view& text, float height) const {
     TextShaper shaper{*this, height};
     shaper.write(text);

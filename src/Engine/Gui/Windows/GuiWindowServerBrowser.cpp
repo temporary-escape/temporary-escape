@@ -6,15 +6,16 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-GuiWindowServerBrowser::GuiWindowServerBrowser(const FontFamily& fontFamily, int fontSize, Matchmaker& matchmaker,
-                                               GuiManager& guiManager) :
-    GuiWindow{fontFamily, fontSize}, matchmaker{matchmaker}, guiManager{guiManager} {
+GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                               Matchmaker& matchmaker, GuiManager& guiManager) :
+    GuiWindow{ctx, fontFamily, fontSize}, matchmaker{matchmaker}, guiManager{guiManager} {
 
     setSize({1100.0f, 600.0f});
     setTitle("SERVER BROWSER");
     setNoScrollbar(true);
+    setCloseable(true);
 
-    const auto height = getSize().y - 30.0 - 30.0f * 3.0f - ctx.getPadding().y * 5.0f;
+    const auto height = getSize().y - 30.0 - 30.0f * 2.0f - ctx.getPadding().y * 4.0f;
 
     { // Top row
         auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
@@ -47,28 +48,12 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(const FontFamily& fontFamily, int
         group->setScrollbar(true);
         group->setBorder(true);
     }
-
-    { // Bottom row
-        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
-        row.addEmpty().setWidth(0.0f);
-
-        /*auto& connect = row.addWidget<GuiWidgetButton>("Connect");
-        connect.setWidth(100.0f, true);*/
-
-        buttonClose = &row.addWidget<GuiWidgetButton>("Close");
-        buttonClose->setWidth(100.0f, true);
-        buttonClose->setStyle(&GuiWidgetButton::dangerStyle);
-    }
 }
 
 void GuiWindowServerBrowser::update(const Vector2i& viewport) {
     tasks.reset();
     tasks.run();
     GuiWindow::update(viewport);
-}
-
-void GuiWindowServerBrowser::setOnClose(GuiWidgetButton::OnClickCallback callback) {
-    buttonClose->setOnClick(std::move(callback));
 }
 
 void GuiWindowServerBrowser::setOnConnect(OnConnectCallback callback) {

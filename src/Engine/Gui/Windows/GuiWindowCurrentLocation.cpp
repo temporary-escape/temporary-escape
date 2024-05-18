@@ -3,9 +3,9 @@
 
 using namespace Engine;
 
-GuiWindowCurrentLocation::GuiWindowCurrentLocation(const FontFamily& fontFamily, int fontSize,
+GuiWindowCurrentLocation::GuiWindowCurrentLocation(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
                                                    AssetsManager& assetsManager) :
-    GuiWindow{fontFamily, fontSize} {
+    GuiWindow{ctx, fontFamily, fontSize} {
 
     setSize({
         350.0f,
@@ -17,6 +17,7 @@ GuiWindowCurrentLocation::GuiWindowCurrentLocation(const FontFamily& fontFamily,
     setNoScrollbar(true);
     setHeader(false);
     setOpacity(0.0f);
+    setBordered(false);
     //   setNoInput(true);
 
     const auto totalWidth = getSize().x - ctx.getPadding().x * 2.0f;
@@ -54,7 +55,9 @@ void GuiWindowCurrentLocation::setSectorLabel(const std::string& value) {
     sectorLabel->setLabel(value);
 }
 
-void GuiWindowCurrentLocation::updatePos(const Vector2i& viewport) {
+void GuiWindowCurrentLocation::update(const Vector2i& viewport) {
+    GuiWindow::update(viewport);
+    
     const auto size = getSize();
     setPos({
         25.0f,

@@ -9,6 +9,7 @@ public:
     static const GuiStyleButton successStyle;
     static const GuiStyleButton dangerStyle;
     static const GuiStyleButton infoStyle;
+    static const GuiStyleButton menuStyle;
 
     using OnClickCallback = std::function<void()>;
 

@@ -7,7 +7,7 @@ class GuiWindowContextMenu : public GuiWindow {
 public:
     using NestedCallback = std::function<void(GuiWindowContextMenu&)>;
 
-    GuiWindowContextMenu(const FontFamily& fontFamily, int fontSize, GuiWindowContextMenu* child);
+    GuiWindowContextMenu(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, GuiWindowContextMenu* child);
 
     void update(const Vector2i& viewport) override;
 

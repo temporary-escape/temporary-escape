@@ -10,7 +10,8 @@ public:
     using OnApplyCallback = std::function<void()>;
     using OnSubmitCallback = std::function<void(bool)>;
 
-    explicit GuiWindowSettings(const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan, Config& config, GuiManager& guiManager);
+    explicit GuiWindowSettings(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan,
+                               Config& config, GuiManager& guiManager);
 
     void setOnApply(OnApplyCallback callback);
     void setOnSubmit(OnSubmitCallback callback);

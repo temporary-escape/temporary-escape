@@ -12,6 +12,10 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 static const auto profileFilename = "profile.xml";
 
+static void saveSettings(Config& config) {
+    Xml::toFile(config.userdataPath / "settings.xml", config);
+}
+
 #define NEXT(expr)                                                                                                     \
     promise = decltype(promise){};                                                                                     \
     promise.set_value([=]() { (expr); });                                                                              \
@@ -22,10 +26,23 @@ Application::Application(Config& config) :
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    font{*this, config.guiFontSize * 2},
+    font{config, *this, 40},
     rendererCanvas{*this},
-    canvas2{*this},
-    guiManager{*this, rendererCanvas, font, config.guiFontSize} {
+    canvas{*this},
+    guiManager{config, *this, font, config.guiFontSize} {
+
+    // Fix monitor name
+    const auto monitors = listSystemMonitors();
+    const auto found = std::find_if(monitors.begin(), monitors.end(), [&](const MonitorInfo& monitor) {
+        return monitor.name == config.graphics.monitorName;
+    });
+    const auto primary =
+        std::find_if(monitors.begin(), monitors.end(), [&](const MonitorInfo& monitor) { return monitor.primary; });
+
+    if (found == monitors.end()) {
+        config.graphics.monitorName = primary->name;
+        saveSettings(config);
+    }
 
     const std::string gpuName{getPhysicalDeviceProperties().deviceName};
     if (gpuName.find("UHD Graphics") != std::string::npos) {
@@ -87,15 +104,15 @@ Application::Application(Config& config) :
 
     gui.settings = guiManager.addWindow<GuiWindowSettings>(*this, config, guiManager);
     gui.settings->setOnApply([this]() {
-        this->setWindowResolution(this->config.graphics.windowSize);
-        this->setWindowFullScreen(this->config.graphics.fullscreen);
+        this->setWindowMode(
+            this->config.graphics.windowMode, this->config.graphics.windowSize, this->config.graphics.monitorName);
     });
     gui.settings->setOnSubmit([this](bool value) {
         gui.settings->setEnabled(false);
         gui.mainMenu->setEnabled(true);
 
         if (value) {
-            Xml::toFile(this->config.userdataPath / "settings.xml", this->config);
+            saveSettings(this->config);
         }
     });
 
@@ -248,7 +265,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }
 
     // GUI
-    guiManager.render(vkb, viewport);
+    guiManager.draw(viewport);
 
     // HUD
     VulkanRenderPassBeginInfo renderPassInfo{};
@@ -274,13 +291,13 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     // canvas.begin(viewport);
 
-    canvas2.begin(viewport);
+    canvas.begin(viewport);
 
     renderVersion(viewport);
     renderFrameTime(viewport);
 
     if (views) {
-        views->renderCanvas(canvas2, viewport);
+        views->renderCanvas(canvas, viewport);
     }
 
     /*if (shouldBlit()) {
@@ -303,19 +320,18 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         gui.keepSettings.draw(nuklear, viewport);
         nuklear.end();*/
 
-        /*canvas2.begin();
-        canvas2.drawRect({200.0f, 200.0f}, {300.0f, 100.0f}, {1.0f, 0.0f, 0.0f, 1.0f});
-        canvas2.drawRect({500.0f, 500.0f}, {50.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f});
-        canvas2.flush();
+        /*canvas.begin();
+        canvas.drawRect({200.0f, 200.0f}, {300.0f, 100.0f}, {1.0f, 0.0f, 0.0f, 1.0f});
+        canvas.drawRect({500.0f, 500.0f}, {50.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f});
+        canvas.flush();
 
-        rendererCanvas.render(vkb, canvas2, viewport);*/
+        rendererCanvas.render(vkb, canvas, viewport);*/
     }
 
-    // canvas.end(vkb);
+    canvas.flush();
+    rendererCanvas.render(vkb, canvas, viewport);
 
-    guiManager.blit(canvas2);
-    canvas2.flush();
-    rendererCanvas.render(vkb, canvas2, viewport);
+    guiManager.render(vkb, rendererCanvas, viewport);
 
     vkb.endRenderPass();
 
@@ -339,7 +355,7 @@ void Application::renderVersion(const Vector2i& viewport) {
 
     static const Color4 color{Colors::text * alpha(0.5f)};
     const Vector2 pos{5.0f, 5.0f + static_cast<float>(config.guiFontSize)};
-    canvas2.drawText(pos, GAME_VERSION, font, config.guiFontSize, color);
+    canvas.drawText(pos, GAME_VERSION, font, config.guiFontSize, color);
 }
 
 void Application::renderFrameTime(const Vector2i& viewport) {
@@ -351,43 +367,43 @@ void Application::renderFrameTime(const Vector2i& viewport) {
     {
         const auto renderTimeMs = static_cast<float>(perf.renderTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Render: {:.1f}ms", renderTimeMs);
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Frame: {:.1f}ms", frameTimeMs);
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 2.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 2.0}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto vRamMB = static_cast<float>(getAllocator().getUsedBytes()) / 1048576.0f;
         const auto text = fmt::format("VRAM: {:.0f}MB", vRamMB);
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 3.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 3.0}, text, font, config.guiFontSize, color);
     }
 
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
-        canvas2.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
     }
 }
 
 void Application::renderStatus(const Vector2i& viewport) {
-    const auto fontHeight = static_cast<float>(config.guiFontSize) * 1.25f;
-    canvas2.drawText(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight},
-                     status.message,
-                     font,
-                     config.guiFontSize,
-                     Colors::text);
+    const auto fontHeight = static_cast<float>(config.guiFontSize) * 2.0f;
+    canvas.drawText(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight},
+                    status.message,
+                    font,
+                    config.guiFontSize * 2,
+                    Colors::text);
 
-    canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                     {static_cast<float>(viewport.x) - 100.0f, 25.0f},
-                     Colors::background);
+    canvas.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                    {static_cast<float>(viewport.x) - 100.0f, 25.0f},
+                    Colors::background);
 
-    canvas2.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                     {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
-                     Colors::primary);
+    canvas.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
+                    {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
+                    Colors::primary);
 }
 
 void Application::loadProfile() {
@@ -820,6 +836,14 @@ void Application::eventCharTyped(const uint32_t code) {
             editor->eventCharTyped(code);
         }
     }*/
+}
+
+void Application::eventWindowInputBegin() {
+    guiManager.eventInputBegin();
+}
+
+void Application::eventWindowInputEnd() {
+    guiManager.eventInputEnd();
 }
 
 void Application::eventWindowBlur() {

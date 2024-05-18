@@ -155,8 +155,39 @@ static void errorCallback(const int error, const char* description) {
 
 static const char* name = "TemporaryEscape";
 
+static GLFWmonitor* findMonitorByName(const std::string& name) {
+    if (!name.empty()) {
+        int count;
+        const auto monitors = glfwGetMonitors(&count);
+        for (auto i = 0; i < count; i++) {
+            const auto test = glfwGetMonitorName(monitors[i]);
+            if (name == test) {
+                return monitors[i];
+            }
+        }
+    }
+
+    return glfwGetPrimaryMonitor();
+}
+
+std::vector<MonitorInfo> Engine::listSystemMonitors() {
+    std::vector<MonitorInfo> results;
+
+    int count;
+    const auto monitors = glfwGetMonitors(&count);
+    const auto primary = glfwGetPrimaryMonitor();
+
+    for (auto i = 0; i < count; i++) {
+        auto& result = results.emplace_back();
+        result.name = glfwGetMonitorName(monitors[i]);
+        result.primary = monitors[i] == primary;
+    }
+
+    return results;
+}
+
 VulkanWindow::VulkanWindow(const Engine::Config& config) :
-    currentWindowSize{config.graphics.windowSize}, mousePos{}, isFullScreen{config.graphics.fullscreen} {
+    currentWindowSize{config.graphics.windowSize}, mousePos{}, windowMode{config.graphics.windowMode} {
 
     if (volkInitialize() != VK_SUCCESS) {
         EXCEPTION("Failed to initialize Vulkan");
@@ -177,10 +208,23 @@ VulkanWindow::VulkanWindow(const Engine::Config& config) :
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
 
     GLFWmonitor* monitor{nullptr};
-    if (isFullScreen) {
-        monitor = glfwGetPrimaryMonitor();
+    std::optional<Vector2i> moveToPos;
+
+    if (windowMode == WindowMode::FullScreen) {
+        monitor = findMonitorByName(config.graphics.monitorName);
         const auto* mode = glfwGetVideoMode(monitor);
+
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    } else if (windowMode == WindowMode::Borderless) {
+        auto m = findMonitorByName(config.graphics.monitorName);
+        // const auto* mode = glfwGetVideoMode(m);
+
+        // currentWindowSize = {mode->width, mode->height};
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+
+        moveToPos = Vector2i{};
+        glfwGetMonitorWorkarea(m, &moveToPos->x, &moveToPos->y, &currentWindowSize.x, &currentWindowSize.y);
     }
 
     auto windowPtr = glfwCreateWindow(currentWindowSize.x, currentWindowSize.y, name, monitor, nullptr);
@@ -189,6 +233,13 @@ VulkanWindow::VulkanWindow(const Engine::Config& config) :
     }
 
     window = std::shared_ptr<GLFWwindow>(windowPtr, [](auto* w) { glfwDestroyWindow(w); });
+
+    if (moveToPos) {
+        // const auto primary = glfwGetPrimaryMonitor();
+        // Vector2i pos;
+        // glfwGetMonitorPos(primary, &pos.x, &pos.y);
+        glfwSetWindowPos(window.get(), moveToPos->x, moveToPos->y);
+    }
 
     glfwSetWindowUserPointer(window.get(), this);
     glfwSetKeyCallback(window.get(), &keyCallback);
@@ -215,6 +266,7 @@ void VulkanWindow::run() {
         onNextFrame();
 
         // Check for window messages to process.
+        eventWindowInputBegin();
         glfwPollEvents();
 
         const auto windowSize = getFramebufferSize();
@@ -223,6 +275,7 @@ void VulkanWindow::run() {
             currentWindowSize = windowSize;
             eventWindowResized(windowSize);
         }
+        eventWindowInputEnd();
 
         const auto now = std::chrono::high_resolution_clock::now();
         const auto timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(now - timePoint);
@@ -357,7 +410,55 @@ std::vector<Vector2i> VulkanWindow::getSupportedResolutionModes() {
     return result;
 }
 
-void VulkanWindow::setWindowFullScreen(const bool value) {
+void VulkanWindow::setWindowMode(const WindowMode value, const Vector2i& size, const std::string& monitorName) {
+    currentWindowSize = size;
+
+    if (value == WindowMode::Windowed) {
+        logger.info("Setting window to windowed of size: {}", currentWindowSize);
+
+        auto* monitor = findMonitorByName(monitorName);
+        const auto* mode = glfwGetVideoMode(monitor);
+        const auto pos = Vector2i{mode->width, mode->height} / 2 - currentWindowSize / 2;
+
+        glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_TRUE);
+        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
+        glfwSetWindowMonitor(window.get(), nullptr, pos.x, pos.y, currentWindowSize.x, currentWindowSize.y, 0);
+    }
+
+    else if (value == WindowMode::FullScreen) {
+        logger.info("Setting window to fullscreen of size: {}", currentWindowSize);
+
+        auto* monitor = findMonitorByName(monitorName);
+        const auto* mode = glfwGetVideoMode(monitor);
+
+        glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_TRUE);
+        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
+        glfwSetWindowMonitor(window.get(), monitor, 0, 0, currentWindowSize.x, currentWindowSize.y, mode->refreshRate);
+    }
+
+    else if (value == WindowMode::Borderless) {
+        auto* monitor = findMonitorByName(monitorName);
+        // const auto* mode = glfwGetVideoMode(primary);
+
+        Vector2i moveToPos;
+        glfwGetMonitorWorkarea(monitor, &moveToPos.x, &moveToPos.y, &currentWindowSize.x, &currentWindowSize.y);
+
+        logger.info("Setting window to borderless of size: {}", currentWindowSize);
+
+        glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_TRUE);
+        glfwSetWindowMonitor(
+            window.get(), nullptr, moveToPos.x, moveToPos.y, currentWindowSize.x, currentWindowSize.y, 0);
+
+        // Vector2i pos;
+        // glfwGetMonitorPos(primary, &pos.x, &pos.y);
+        // glfwSetWindowPos(window.get(), pos.x, pos.y);
+    }
+
+    windowMode = value;
+}
+
+/*void VulkanWindow::setWindowFullScreen(const bool value) {
     if (value) {
         logger.info("Setting window to fullscreen");
         if (!isFullScreen) {
@@ -379,10 +480,10 @@ void VulkanWindow::setWindowFullScreen(const bool value) {
             glfwSetWindowMonitor(window.get(), nullptr, pos.x, pos.y, currentWindowSize.x, currentWindowSize.y, 0);
         }
     }
-}
+}*/
 
-void VulkanWindow::setWindowResolution(const Vector2i& size) {
+/*void VulkanWindow::setWindowResolution(const Vector2i& size) {
     logger.info("Setting window resolution to: {}", size);
     currentWindowSize = size;
     glfwSetWindowSize(window.get(), currentWindowSize.x, currentWindowSize.y);
-}
+}*/

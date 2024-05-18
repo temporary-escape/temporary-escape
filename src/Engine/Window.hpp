@@ -11,5 +11,7 @@ public:
     virtual void eventWindowResized(const Vector2i& size) = 0;
     virtual void eventWindowBlur() = 0;
     virtual void eventWindowFocus() = 0;
+    virtual void eventWindowInputBegin() = 0;
+    virtual void eventWindowInputEnd() = 0;
 };
 } // namespace Engine

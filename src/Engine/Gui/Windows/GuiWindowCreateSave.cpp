@@ -2,6 +2,7 @@
 
 #include "../../Utils/Random.hpp"
 #include "../GuiManager.hpp"
+#include <regex>
 #include <utility>
 
 using namespace Engine;
@@ -23,12 +24,20 @@ std::string createNewSeed() {
     return std::to_string(randomSeed(rng));
 }
 
-GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, Path dir) :
-    GuiWindow{fontFamily, fontSize}, guiManager{guiManager}, dir{std::move(dir)} {
+static bool isValid(const std::string& value) {
+    static std::regex re{"^[a-zA-Z0-9\\s]+$"};
+    std::smatch m;
+    return std::regex_match(value, m, re);
+}
+
+GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                         GuiManager& guiManager, Path dir) :
+    GuiWindow{ctx, fontFamily, fontSize}, guiManager{guiManager}, dir{std::move(dir)} {
 
     setSize({500.0f, 355.0f});
     setTitle("CREATE GAME");
     setNoScrollbar(true);
+    setCloseable(true);
 
     { // Label: name
         auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
@@ -47,6 +56,31 @@ GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontS
                 break;
             }
         }
+
+        inputName->setOnModify([this]() {
+            const auto& val = inputName->getValue();
+            if (val.size() < 3) {
+                labelError->setLabel("<t>Must have at least 3 characters</t>");
+                valid = false;
+            } else if (val.front() == ' ') {
+                labelError->setLabel("<t>Must not start with a space</t>");
+                valid = false;
+            } else if (val.back() == ' ') {
+                labelError->setLabel("<t>Must not end with a space</t>");
+                valid = false;
+            } else if (!isValid(val)) {
+                labelError->setLabel("<t>Contains invalid characters</t>");
+                valid = false;
+            } else {
+                labelError->setLabel("");
+                valid = true;
+            }
+        });
+    }
+
+    {
+        auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
+        labelError = &row.addWidget<GuiWidgetLabel>("");
     }
 
     { // Label: seed
@@ -66,16 +100,21 @@ GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontS
     }
 
     { // Padding
-        addWidget<GuiWidgetTemplateRow>(145.0f);
+        addWidget<GuiWidgetTemplateRow>(110.0f);
     }
 
     { // Bottom row
-        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
+        auto& row = addWidget<GuiWidgetRow>(30.0f, 3);
+        row.addEmpty().setWidth(0.25f);
 
         buttonCreate = &row.addWidget<GuiWidgetButton>("Done");
-        buttonCreate->setWidth(100.0f, true);
+        buttonCreate->setWidth(0.50f);
         buttonCreate->setStyle(&GuiWidgetButton::successStyle);
         buttonCreate->setOnClick([this]() {
+            if (!valid) {
+                return;
+            }
+
             Form form{};
             form.seed = convertToSeed(inputSeed->getValue());
 
@@ -103,17 +142,10 @@ GuiWindowCreateSave::GuiWindowCreateSave(const FontFamily& fontFamily, int fontS
             this->onCreate(form);
         });
 
-        row.addEmpty().setWidth(0.0f);
-
-        buttonClose = &row.addWidget<GuiWidgetButton>("Close");
-        buttonClose->setWidth(100.0f, true);
+        row.addEmpty().setWidth(0.25f);
     }
 }
 
 void GuiWindowCreateSave::setOnCreate(OnCreateCallback callback) {
     onCreate = std::move(callback);
-}
-
-void GuiWindowCreateSave::setOnClose(OnCloseCallback callback) {
-    buttonClose->setOnClick(std::move(callback));
 }

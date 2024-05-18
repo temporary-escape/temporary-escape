@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Graphics/Nuklear.hpp"
+#include "GuiContext.hpp"
 #include "Widgets/GuiWidgetButton.hpp"
 #include "Widgets/GuiWidgetButtonToggle.hpp"
 #include "Widgets/GuiWidgetCheckbox.hpp"
@@ -17,9 +18,11 @@
 #include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {
-class ENGINE_API GuiWindow : public GuiContext, public GuiWidgetLayout {
+class ENGINE_API GuiWindow : public GuiWidgetLayout {
 public:
-    GuiWindow(const FontFamily& fontFamily, int fontSize);
+    using OnCloseCallback = std::function<void()>;
+
+    GuiWindow(GuiContext& ctx, const FontFamily& fontFamily, int fontSize);
     virtual ~GuiWindow() = default;
 
     virtual void update(const Vector2i& viewport);
@@ -28,6 +31,9 @@ public:
     void setTitle(const std::string_view& value);
     const std::string& getTitle() const {
         return title;
+    }
+    const std::string& getId() const {
+        return id;
     }
 
     void setSize(const Vector2& value);
@@ -55,17 +61,34 @@ public:
     void setHeader(bool value);
     void setDynamic(bool value);
     void setNoInput(bool value);
+    void setHeaderPrimary(bool value);
     void setHeaderSuccess(bool value);
     void setHeaderDanger(bool value);
+    void setCloseable(bool value);
+    int getFontSize() const {
+        return ctx.getFontSize();
+    }
+    float getPadding() const {
+        return padding;
+    }
+    void setPadding(float value) {
+        padding = value;
+    }
+    void close();
+    void setOnClose(OnCloseCallback value);
 
 private:
+    GuiContext& ctx;
     std::string id;
     std::string title{"Window"};
-    Vector2 size;
-    Vector2 pos;
+    Vector2 size{200.0f, 200.0f};
+    Vector2 pos{100.0f, 100.0f};
     GuiContext::Flags flags{0};
     bool enabled{false};
     bool centered{true};
     float opacity{1.0f};
+    float padding{2.0f};
+    int ignoreInput{0};
+    OnCloseCallback onCloseCallback;
 };
 } // namespace Engine

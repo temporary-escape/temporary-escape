@@ -7,9 +7,10 @@ class ENGINE_API AssetsManager;
 
 class ENGINE_API GuiWindowShipStatus : public GuiWindow {
 public:
-    explicit GuiWindowShipStatus(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager);
+    explicit GuiWindowShipStatus(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                 AssetsManager& assetsManager);
 
-    void updatePos(const Vector2i& viewport);
+    void update(const Vector2i& viewport) override;
 
 private:
     GuiWidgetProgressBar* progressShields{nullptr};

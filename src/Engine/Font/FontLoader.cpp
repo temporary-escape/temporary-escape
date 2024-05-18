@@ -23,11 +23,11 @@ static FT_Library getFreeType() {
     return ft.get();
 }
 
-FontLoader::FontLoader(const Span<uint8_t>& data, int size) {
+FontLoader::FontLoader(const Path& path, int size) {
     auto ft = getFreeType();
 
     FT_Face f;
-    if (FT_New_Memory_Face(ft, data.data(), data.size(), 0, &f)) {
+    if (FT_New_Face(ft, path.c_str(), 0, &f)) {
         EXCEPTION("Failed to open font from memory");
     }
 

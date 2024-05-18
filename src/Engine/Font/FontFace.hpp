@@ -30,8 +30,8 @@ public:
         float ascend;
     };
 
-    explicit FontFace(VulkanRenderer& vulkan, const Span<uint8_t>& source, VulkanTexture& texture,
-                      const Vector2i& offset, int size);
+    explicit FontFace(VulkanRenderer& vulkan, const Path& path, VulkanTexture& texture, const Vector2i& offset,
+                      int size);
     ~FontFace();
 
     const Glyph& getGlyph(const uint32_t code) const {
@@ -46,6 +46,7 @@ public:
         return size;
     }
 
+    float getGlyphAdvance(uint32_t code, float height) const;
     Vector2 getBounds(const std::string_view& text, float height) const;
     Vector2 getPenOffset(const std::string_view& text, float height, const TextAlign textAlign) const;
 

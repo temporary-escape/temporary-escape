@@ -19,7 +19,7 @@ public:
         float ascend;
     };
 
-    explicit FontLoader(const Span<uint8_t>& data, int size);
+    explicit FontLoader(const Path& path, int size);
     Glyph getGlyph(int code);
 
 private:

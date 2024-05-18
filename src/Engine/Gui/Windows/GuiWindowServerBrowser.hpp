@@ -12,12 +12,11 @@ public:
     using OnCloseCallback = GuiWidgetButton::OnClickCallback;
     using OnConnectCallback = std::function<void(const std::string&)>;
 
-    explicit GuiWindowServerBrowser(const FontFamily& fontFamily, int fontSize, Matchmaker& matchmaker,
+    explicit GuiWindowServerBrowser(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, Matchmaker& matchmaker,
                                     GuiManager& guiManager);
 
     void connect();
     void fetchServers(int page);
-    void setOnClose(OnCloseCallback callback);
     void setOnConnect(OnConnectCallback callback);
     void update(const Vector2i& viewport) override;
 
@@ -26,7 +25,6 @@ private:
 
     Matchmaker& matchmaker;
     GuiManager& guiManager;
-    GuiWidgetButton* buttonClose;
     GuiWidgetGroup* group;
     asio::io_service tasks;
     std::vector<Matchmaker::ServerModel> servers;

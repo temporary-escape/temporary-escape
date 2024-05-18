@@ -19,7 +19,7 @@ public:
     static constexpr size_t total = 6;
     static_assert(static_cast<int>(FontType::LightItalic) + 1 == total);
 
-    using Sources = std::array<Span<uint8_t>, total>;
+    using Sources = std::array<Path, total>;
 
     explicit FontFamily(VulkanRenderer& vulkan, const Sources& sources, int size);
     virtual ~FontFamily() = default;
@@ -36,6 +36,7 @@ public:
         return size;
     }
 
+    [[nodiscard]] float getGlyphAdvance(uint32_t code, float height) const;
     [[nodiscard]] Vector2 getBounds(const std::string_view& text, float height) const;
     [[nodiscard]] Vector2 getPenOffset(const std::string_view& text, float height, TextAlign textAlign) const;
 

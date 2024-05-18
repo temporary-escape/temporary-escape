@@ -2,8 +2,8 @@
 
 using namespace Engine;
 
-GuiWindowSceneOverview::GuiWindowSceneOverview(const FontFamily& fontFamily, int fontSize) :
-    GuiWindow{fontFamily, fontSize} {
+GuiWindowSceneOverview::GuiWindowSceneOverview(GuiContext& ctx, const FontFamily& fontFamily, int fontSize) :
+    GuiWindow{ctx, fontFamily, fontSize} {
     setSize({350.0f, 500.0f});
     setOpacity(0.7f);
     setCentered(false);

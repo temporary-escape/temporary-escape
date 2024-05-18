@@ -32,12 +32,10 @@ void GuiWidget::drawInternal() {
 void GuiWidget::setWidth(const float value, const bool pixels) {
     width = value;
     widthPixels = pixels;
-    ctx.setDirty();
 }
 
 void GuiWidget::setTooltip(std::string value) {
     tooltip = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidget::setOnHover(OnHoverCallback value) {

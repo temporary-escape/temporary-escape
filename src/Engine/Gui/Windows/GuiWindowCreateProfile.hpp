@@ -11,7 +11,7 @@ public:
 
     using OnCreateCallback = std::function<void(const Result&)>;
 
-    GuiWindowCreateProfile(const FontFamily& fontFamily, int fontSize);
+    GuiWindowCreateProfile(GuiContext& ctx, const FontFamily& fontFamily, int fontSize);
 
     void setOnCreateCallback(OnCreateCallback value);
 

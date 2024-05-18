@@ -5,15 +5,16 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-GuiWindowLoadSave::GuiWindowLoadSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager,
-                                     const Path& dir) :
-    GuiWindow{fontFamily, fontSize}, dir{dir} {
+GuiWindowLoadSave::GuiWindowLoadSave(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                     GuiManager& guiManager, const Path& dir) :
+    GuiWindow{ctx, fontFamily, fontSize}, dir{dir} {
 
     setSize({500.0f, 600.0f});
     setTitle("LOAD GAME");
     setNoScrollbar(true);
+    setCloseable(true);
 
-    const auto height = getSize().y - 30.0 - 30.0f * 3.0f - ctx.getPadding().y * 5.0f;
+    const auto height = getSize().y - 30.0 - 30.0f * 2.0f - ctx.getPadding().y * 4.0f;
 
     { // Top row
         auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
@@ -38,26 +39,10 @@ GuiWindowLoadSave::GuiWindowLoadSave(const FontFamily& fontFamily, int fontSize,
         group->setScrollbar(true);
         group->setBorder(true);
     }
-
-    { // Bottom row
-        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
-        row.addEmpty().setWidth(0.0f);
-
-        /*auto& connect = row.addWidget<GuiWidgetButton>("Connect");
-        connect.setWidth(100.0f, true);*/
-
-        buttonClose = &row.addWidget<GuiWidgetButton>("Close");
-        buttonClose->setWidth(100.0f, true);
-        buttonClose->setStyle(&GuiWidgetButton::dangerStyle);
-    }
 }
 
 void GuiWindowLoadSave::setOnLoad(OnLoadCallback callback) {
     onLoad = std::move(callback);
-}
-
-void GuiWindowLoadSave::setOnClose(OnCloseCallback callback) {
-    buttonClose->setOnClick(std::move(callback));
 }
 
 void GuiWindowLoadSave::loadInfos() {
@@ -82,12 +67,10 @@ void GuiWindowLoadSave::loadInfos() {
             auto& row = child.addWidget<GuiWidgetTemplateRow>(30.0f);
 
             if (info.compatible) {
-                auto& label =
-                    row.addWidget<GuiWidgetLabel>(fmt::format("<b><p>Name: {}</b></p>", info.path.stem().string()));
+                auto& label = row.addWidget<GuiWidgetLabel>(fmt::format("<b><p>{}</b></p>", info.path.stem().string()));
                 label.setWidth(0.0f);
             } else {
-                auto& label =
-                    row.addWidget<GuiWidgetLabel>(fmt::format("<b><s>Name: {}</b></s>", info.path.stem().string()));
+                auto& label = row.addWidget<GuiWidgetLabel>(fmt::format("<b><s>{}</b></s>", info.path.stem().string()));
                 label.setWidth(0.0f);
                 label.setTooltip("Incompatible game version!");
             }

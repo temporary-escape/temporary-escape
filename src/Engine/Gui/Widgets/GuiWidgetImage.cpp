@@ -15,5 +15,4 @@ void GuiWidgetImage::setImage(ImagePtr value) {
 
 void GuiWidgetImage::setColor(const Color4& value) {
     color = value;
-    ctx.setDirty();
 }

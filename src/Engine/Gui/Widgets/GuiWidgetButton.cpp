@@ -44,6 +44,20 @@ const GuiStyleButton GuiWidgetButton::dangerStyle{
     Colors::danger,
 };
 
+const GuiStyleButton GuiWidgetButton::menuStyle{
+    {
+        .normal = Colors::border,
+        .hover = Colors::border,
+        .active = Colors::primaryBackground,
+    },
+    {
+        .normal = Colors::white,
+        .hover = Colors::primary,
+        .active = Colors::primary,
+    },
+    Colors::transparent,
+};
+
 GuiWidgetButton::GuiWidgetButton(GuiContext& ctx, std::string label) : GuiWidget{ctx}, label{std::move(label)} {
 }
 
@@ -57,12 +71,10 @@ void GuiWidgetButton::drawInternal() {
 
 void GuiWidgetButton::setLabel(std::string value) {
     label = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetButton::setImage(ImagePtr value) {
     image = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetButton::setOnClick(OnClickCallback value) {

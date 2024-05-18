@@ -9,8 +9,8 @@ static bool isValid(const std::string& value) {
     return std::regex_match(value, m, re);
 }
 
-GuiWindowCreateProfile::GuiWindowCreateProfile(const FontFamily& fontFamily, int fontSize) :
-    GuiWindow{fontFamily, fontSize} {
+GuiWindowCreateProfile::GuiWindowCreateProfile(GuiContext& ctx, const FontFamily& fontFamily, int fontSize) :
+    GuiWindow{ctx, fontFamily, fontSize} {
     setSize({350.0f, 200.0f});
     setTitle("CREATE NEW PROFILE");
     setDynamic(true);

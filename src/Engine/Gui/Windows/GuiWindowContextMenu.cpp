@@ -4,15 +4,16 @@ using namespace Engine;
 
 static int menuIndex{0};
 
-GuiWindowContextMenu::GuiWindowContextMenu(const FontFamily& fontFamily, int fontSize, GuiWindowContextMenu* child) :
-    GuiWindow{fontFamily, fontSize}, child{child} {
+GuiWindowContextMenu::GuiWindowContextMenu(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                           GuiWindowContextMenu* child) :
+    GuiWindow{ctx, fontFamily, fontSize}, child{child} {
     setSize({200.0f, 600.0f});
     setCentered(false);
     setTitle(fmt::format("Context Menu {}", menuIndex++));
-    setPadding(0.0f);
     setDynamic(true);
     setHeader(false);
     setNoScrollbar(true);
+    setPadding(0.0f);
 
     row = &addWidget<GuiWidgetRow>(static_cast<float>(fontSize) * 1.25f, 1);
 }

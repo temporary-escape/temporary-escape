@@ -51,6 +51,8 @@ public:
     void eventCharTyped(uint32_t code) override;
     void eventWindowBlur() override;
     void eventWindowFocus() override;
+    void eventWindowInputBegin() override;
+    void eventWindowInputEnd() override;
 
 private:
     void loadProfile();
@@ -86,7 +88,7 @@ private:
     Status status;
     VulkanQueryPool renderQueryPool;
     RendererCanvas rendererCanvas;
-    Canvas canvas2;
+    Canvas canvas;
     GuiManager guiManager;
 
     struct {

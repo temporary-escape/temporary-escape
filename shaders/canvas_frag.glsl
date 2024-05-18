@@ -22,7 +22,8 @@ void main() {
         outColor = raw * pow(ps_in.color, vec4(2.2));
     } else if (mode == 2) {
         vec4 raw = texture(texSampler[index], ps_in.texCoords.xy);
-        outColor = pow(ps_in.color, vec4(2.2)) * vec4(1.0, 1.0, 1.0, raw.r);
+        outColor = vec4(1.0, 1.0, 1.0, raw.r) * pow(ps_in.color, vec4(2.2));
+        // outColor = pow(ps_in.color, vec4(2.2)) * vec4(1.0, 1.0, 1.0, pow(raw.r, 1.0 / 2.2));
     } else {
         outColor = pow(ps_in.color, vec4(2.2));
     }

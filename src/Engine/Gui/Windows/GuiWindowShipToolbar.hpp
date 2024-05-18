@@ -7,8 +7,9 @@ class ENGINE_API AssetsManager;
 
 class ENGINE_API GuiWindowShipToolbar : public GuiWindow {
 public:
-    explicit GuiWindowShipToolbar(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager);
+    explicit GuiWindowShipToolbar(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                  AssetsManager& assetsManager);
 
-    void updatePos(const Vector2i& viewport);
+    void update(const Vector2i& viewport) override;
 };
 } // namespace Engine

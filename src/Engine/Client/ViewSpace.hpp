@@ -60,7 +60,6 @@ private:
         GuiWindowShipToolbar* toolbar{nullptr};
         GuiWindowShipStatus* status{nullptr};
         GuiWindowCurrentLocation* location{nullptr};
-        GuiWindowSceneOverview* overview{nullptr};
     } gui;
 
     struct {

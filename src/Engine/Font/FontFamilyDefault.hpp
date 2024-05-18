@@ -5,6 +5,6 @@
 namespace Engine {
 class ENGINE_API FontFamilyDefault : public FontFamily {
 public:
-    FontFamilyDefault(VulkanRenderer& vulkan, int size);
+    FontFamilyDefault(const Config& config, VulkanRenderer& vulkan, int size);
 };
-}
+} // namespace Engine

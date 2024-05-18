@@ -5,7 +5,7 @@
 namespace Engine {
 class GuiWindowSceneOverview : public GuiWindow {
 public:
-    GuiWindowSceneOverview(const FontFamily& fontFamily, int fontSize);
+    GuiWindowSceneOverview(GuiContext& ctx, const FontFamily& fontFamily, int fontSize);
 
     void updatePos(const Vector2i& viewport);
 

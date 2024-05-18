@@ -4,7 +4,7 @@
 using namespace Engine;
 
 static void addOption(GuiWidgetLayout& layout, const std::string& name, bool& value) {
-    auto& row = layout.addWidget<GuiWidgetRow>(30.0f, 2);
+    auto& row = layout.addWidget<GuiWidgetRow>(25.0f, 2);
 
     auto& label = row.addWidget<GuiWidgetLabel>(name);
     label.setWidth(0.5f);
@@ -17,7 +17,7 @@ template <typename T>
 static GuiWidgetCombo& addOption(GuiWidgetLayout& layout, const std::string& name, T& value,
                                  const std::vector<std::tuple<std::string, T>>& choices) {
 
-    auto& row = layout.addWidget<GuiWidgetRow>(30.0f, 2);
+    auto& row = layout.addWidget<GuiWidgetRow>(25.0f, 2);
 
     auto& label = row.addWidget<GuiWidgetLabel>(name);
     label.setWidth(0.5f);
@@ -50,29 +50,56 @@ static std::vector<std::tuple<std::string, Vector2i>> getVideoModes(VulkanRender
     return result;
 }
 
-GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize, VulkanRenderer& vulkan, Config& config,
-                                     GuiManager& guiManager) :
-    GuiWindow{fontFamily, fontSize}, vulkan{vulkan}, config{config}, guiManager{guiManager}, configBackup{config} {
+static std::vector<std::tuple<std::string, std::string>> getMonitorNames() {
+    std::vector<std::tuple<std::string, std::string>> results;
 
-    setSize({450.0f, 700.0f});
+    for (const auto& info : listSystemMonitors()) {
+        results.emplace_back(info.name, info.name);
+    }
+
+    return results;
+}
+
+GuiWindowSettings::GuiWindowSettings(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                     VulkanRenderer& vulkan, Config& config, GuiManager& guiManager) :
+    GuiWindow{ctx, fontFamily, fontSize}, vulkan{vulkan}, config{config}, guiManager{guiManager}, configBackup{config} {
+
+    setSize({450.0f, 500.0f});
     setTitle("SETTINGS");
     setNoScrollbar(true);
+    setCloseable(true);
 
-    auto& tabs = addWidget<GuiWidgetTabs>(600.0f);
+    auto& tabs = addWidget<GuiWidgetTabs>(getSize().y - 75.0f);
 
-    tabs.addTab("General");
+    { // General tab
+        auto& tab = tabs.addTab("General");
+
+        addOption(tab, "Monitor", config.graphics.monitorName, getMonitorNames());
+        addOption(tab,
+                  "Window Mode",
+                  config.graphics.windowMode,
+                  {
+                      {"Fullscreen", WindowMode::FullScreen},
+                      {"Windowed", WindowMode::Windowed},
+                      {"Borderless", WindowMode::Borderless},
+                  });
+        addOption(tab, "Resolution", config.graphics.windowSize, getVideoModes(vulkan));
+        addOption(tab,
+                  "UI Scale",
+                  config.gui.scale,
+                  {
+                      {"100%", 1.0f},
+                      {"150%", 0.75f},
+                      {"200%", 0.5f},
+                  });
+    }
 
     { // Graphics tab
         auto& tab = tabs.addTab("Graphics");
 
-        addOption(tab, "Fullscreen", config.graphics.fullscreen);
         addOption(tab, "V-Sync", config.graphics.vsync);
-
-        addOption(tab, "Resolution", config.graphics.windowSize, getVideoModes(vulkan));
-
         addOption(tab, "Bloom", config.graphics.bloom);
         addOption(tab, "Anti-Aliasing", config.graphics.fxaa);
-
         addOption(tab,
                   "Texture filtering",
                   config.graphics.anisotropy,
@@ -82,7 +109,6 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 8},
                       {"High", 16},
                   });
-
         addOption(tab,
                   "Background",
                   config.graphics.skyboxSize,
@@ -91,7 +117,6 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 2048},
                       {"High", 4096},
                   });
-
         addOption(tab,
                   "Planets",
                   config.graphics.planetTextureSize,
@@ -100,7 +125,6 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 1024},
                       {"High", 2048},
                   });
-
         addOption(tab,
                   "SSAO",
                   config.graphics.ssao,
@@ -110,7 +134,6 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 32},
                       {"High", 64},
                   });
-
         addOption(tab,
                   "Shadows",
                   config.graphics.shadowsSize,
@@ -120,25 +143,23 @@ GuiWindowSettings::GuiWindowSettings(const FontFamily& fontFamily, int fontSize,
                       {"Medium", 2048},
                       {"High", 4096},
                   });
-
         addOption(tab, "Debug Draw", config.graphics.debugDraw);
     }
 
     tabs.addTab("Audio");
     tabs.addTab("Keyboard");
 
-    auto& footer = addWidget<GuiWidgetRow>(30.0f, 4);
-    footer.addEmpty().setWidth(0.25f);
+    auto& footer = addWidget<GuiWidgetRow>(30.0f, 3);
+    footer.addEmpty().setWidth(0.375f);
 
     auto& save = footer.addWidget<GuiWidgetButton>("Save");
+    save.setStyle(&GuiWidgetButton::successStyle);
     save.setWidth(0.25f);
     save.setOnClick([this]() { onSave(); });
 
-    auto& cancel = footer.addWidget<GuiWidgetButton>("Cancel");
-    cancel.setWidth(0.25f);
-    cancel.setOnClick([this]() { onCancel(); });
+    setOnClose([this]() { onCancel(); });
 
-    footer.addEmpty().setWidth(0.25f);
+    footer.addEmpty().setWidth(0.375f);
 }
 
 void GuiWindowSettings::onSave() {
@@ -146,12 +167,13 @@ void GuiWindowSettings::onSave() {
         onApplyCallback();
     }
 
-    this->guiManager.modal(
+    auto* modal = this->guiManager.modal(
         "Confirm",
         "Confirm the changes?",
         {"Yes", "No"},
         [this](const std::string& choice) { onModalClick(choice); },
-        15);
+        10);
+    modal->setHeaderPrimary(true);
 }
 
 void GuiWindowSettings::onCancel() {

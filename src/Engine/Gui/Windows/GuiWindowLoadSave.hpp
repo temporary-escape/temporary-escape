@@ -13,16 +13,15 @@ public:
     using OnCreateCallback = GuiWidgetButton::OnClickCallback;
     using OnCloseCallback = GuiWidgetButton::OnClickCallback;
 
-    explicit GuiWindowLoadSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, const Path& dir);
+    explicit GuiWindowLoadSave(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, GuiManager& guiManager,
+                               const Path& dir);
 
     void loadInfos();
     void setOnLoad(OnLoadCallback callback);
-    void setOnClose(OnCloseCallback callback);
 
 private:
     Path dir;
     GuiWidgetTextInput* inputSearch;
-    GuiWidgetButton* buttonClose;
     GuiWidgetGroup* group;
     OnLoadCallback onLoad;
 };

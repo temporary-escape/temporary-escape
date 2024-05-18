@@ -5,8 +5,9 @@ using namespace Engine;
 
 static const auto actionBarSize = 64.0f;
 
-GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fontSize, AssetsManager& assetsManager) :
-    GuiWindow{fontFamily, fontSize} {
+GuiWindowShipToolbar::GuiWindowShipToolbar(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                           AssetsManager& assetsManager) :
+    GuiWindow{ctx, fontFamily, fontSize} {
 
     setSize({
         actionBarSize * 10.0f + ctx.getPadding().x * 11.0f,
@@ -18,6 +19,7 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
     setNoScrollbar(true);
     setHeader(false);
     setOpacity(0.0f);
+    setBordered(false);
     //   setNoInput(true);
 
     { // Action bar
@@ -31,7 +33,9 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(const FontFamily& fontFamily, int fon
     }
 }
 
-void GuiWindowShipToolbar::updatePos(const Vector2i& viewport) {
+void GuiWindowShipToolbar::update(const Vector2i& viewport) {
+    GuiWindow::update(viewport);
+
     const auto size = getSize();
     setPos({
         static_cast<float>(viewport.x) / 2.0f - size.x / 2.0f,

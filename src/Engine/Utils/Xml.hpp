@@ -163,6 +163,32 @@ template <> struct Adaptor<double> {
     }
 };
 
+template <> struct Adaptor<int16_t> {
+    static void pack(Node& node, const int16_t& value) {
+        node.setText(fmt::format("{}", value));
+    }
+    static void convert(const Node& node, int16_t& value) {
+        const auto text = node.getText();
+        auto result = std::from_chars(text.data(), text.data() + text.size(), value);
+        if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
+            node.throwWith("invalid int16_t value");
+        }
+    }
+};
+
+template <> struct Adaptor<uint16_t> {
+    static void pack(Node& node, const uint16_t& value) {
+        node.setText(fmt::format("{}", value));
+    }
+    static void convert(const Node& node, uint16_t& value) {
+        const auto text = node.getText();
+        auto result = std::from_chars(text.data(), text.data() + text.size(), value);
+        if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
+            node.throwWith("invalid uint16_t value");
+        }
+    }
+};
+
 template <> struct Adaptor<int32_t> {
     static void pack(Node& node, const int32_t& value) {
         node.setText(fmt::format("{}", value));

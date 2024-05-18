@@ -17,18 +17,19 @@ public:
     using OnCreateCallback = std::function<void(const Form&)>;
     using OnCloseCallback = GuiWidgetButton::OnClickCallback;
 
-    explicit GuiWindowCreateSave(const FontFamily& fontFamily, int fontSize, GuiManager& guiManager, Path dir);
+    explicit GuiWindowCreateSave(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, GuiManager& guiManager,
+                                 Path dir);
 
     void setOnCreate(OnCreateCallback callback);
-    void setOnClose(OnCloseCallback callback);
 
 private:
     GuiManager& guiManager;
     Path dir;
-    GuiWidgetButton* buttonClose;
     GuiWidgetButton* buttonCreate;
     OnCreateCallback onCreate;
     GuiWidgetTextInput* inputName;
     GuiWidgetTextInput* inputSeed;
+    GuiWidgetLabel* labelError;
+    bool valid{true};
 };
 } // namespace Engine

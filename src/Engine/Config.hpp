@@ -26,6 +26,14 @@ struct KeyBinding {
 
 #define GAME_VERSION_STR(V) #V
 
+enum class WindowMode {
+    Windowed,
+    FullScreen,
+    Borderless,
+};
+
+XML_DEFINE_ENUM(WindowMode, Windowed, FullScreen, Borderless);
+
 struct Config {
     std::chrono::microseconds tickLengthUs = 50000us;
 
@@ -34,7 +42,8 @@ struct Config {
 
     struct Graphics {
         Vector2i windowSize = {1920, 1080};
-        bool fullscreen = false;
+        WindowMode windowMode = WindowMode::Windowed;
+        std::string monitorName;
         bool enableValidationLayers = true;
         bool vsync = true;
         float bloomStrength = 0.10f;
@@ -60,7 +69,8 @@ struct Config {
 
         void convert(const Xml::Node& xml) {
             xml.convert("windowSize", windowSize);
-            xml.convert("fullscreen", fullscreen);
+            xml.convert("windowMode", windowMode);
+            xml.convert("monitorName", monitorName);
             xml.convert("vsync", vsync);
             xml.convert("anisotropy", anisotropy);
             xml.convert("skyboxSize", skyboxSize);
@@ -75,7 +85,8 @@ struct Config {
 
         void pack(Xml::Node& xml) const {
             xml.pack("windowSize", windowSize);
-            xml.pack("fullscreen", fullscreen);
+            xml.pack("windowMode", windowMode);
+            xml.pack("monitorName", monitorName);
             xml.pack("vsync", vsync);
             xml.pack("anisotropy", anisotropy);
             xml.pack("skyboxSize", skyboxSize);
@@ -91,6 +102,7 @@ struct Config {
 
     // Paths of interests
     std::filesystem::path assetsPath;
+    std::filesystem::path fontsPath;
     std::filesystem::path userdataPath;
     std::filesystem::path cwdPath;
     std::filesystem::path userdataSavesPath;
@@ -101,18 +113,39 @@ struct Config {
     std::string serverPassword;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
-    int guiFontSize = 18;
+    int guiFontSize = 16;
 
     struct Server {
         size_t dbCacheSize{256};
         bool dbDebug{false};
         bool dbCompression{true};
+
+        void convert(const Xml::Node& xml) {
+            xml.convert("dbCacheSize", dbCacheSize);
+            xml.convert("dbDebug", dbDebug);
+            xml.convert("dbCompression", dbCompression);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("dbCacheSize", dbCacheSize);
+            xml.pack("dbDebug", dbDebug);
+            xml.pack("dbCompression", dbCompression);
+        }
     } server;
 
     struct Gui {
+        float scale{1.0f};
         float dragAndDropSize{64.0f};
         float actionBarSize{64.0f};
         float sideMenuSize{64.0f};
+
+        void convert(const Xml::Node& xml) {
+            xml.convert("scale", scale);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("scale", scale);
+        }
     } gui;
 
     struct Network {
@@ -128,6 +161,14 @@ struct Config {
         uint16_t serverPort{22443};
         std::string matchmakerUrl{"https://server.temporaryescape.org"};
         uint32_t pkeyLength{2048};
+
+        void convert(const Xml::Node& xml) {
+            xml.convert("serverPort", serverPort);
+        }
+
+        void pack(Xml::Node& xml) const {
+            xml.pack("serverPort", serverPort);
+        }
     } network;
 
     struct Input {
@@ -145,18 +186,24 @@ struct Config {
 
     void convert(const Xml::Node& xml) {
         xml.convert("graphics", graphics);
+        xml.convert("gui", gui);
+        xml.convert("server", server);
+        xml.convert("network", network);
     }
 
     void pack(Xml::Node& xml) const {
         xml.pack("graphics", graphics);
+        xml.pack("gui", gui);
+        xml.pack("server", server);
+        xml.pack("network", network);
     }
 };
 
 struct Colors {
     static constexpr Color4 primary{hexColor(0xf5b149ff)};
     static constexpr Color4 primaryBackground{hexColor(0x59431bff)};
-    static constexpr Color4 success{hexColor(0x4fe56dff)};
-    static constexpr Color4 successBackground{hexColor(0x203b1fff)};
+    static constexpr Color4 success{hexColor(0x5acca4ff)};
+    static constexpr Color4 successBackground{hexColor(0x1f3b31ff)};
     static constexpr Color4 danger{hexColor(0xe56865ff)};
     static constexpr Color4 dangerBackground{hexColor(0x471617ff)};
     static constexpr Color4 info{hexColor(0x55e2e5ff)};

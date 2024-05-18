@@ -26,20 +26,16 @@ void GuiWidgetProgressBar::drawInternal() {
 
 void GuiWidgetProgressBar::setValue(const float value) {
     progress = value;
-    ctx.setDirty();
 }
 
 void GuiWidgetProgressBar::setMax(const float value) {
     max = value;
-    ctx.setDirty();
 }
 
 void GuiWidgetProgressBar::setHeight(const float value) {
     height = value;
-    ctx.setDirty();
 }
 
 void GuiWidgetProgressBar::setStyle(const GuiStyleProgress* value) {
     style = value;
-    ctx.setDirty();
 }

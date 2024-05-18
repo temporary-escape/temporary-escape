@@ -2,7 +2,8 @@
 
 using namespace Engine;
 
-GuiWidgetCheckbox::GuiWidgetCheckbox(GuiContext& ctx, std::string label, bool& value) : GuiWidget{ctx}, label{std::move(label)}, value{&value} {
+GuiWidgetCheckbox::GuiWidgetCheckbox(GuiContext& ctx, std::string label, bool& value) :
+    GuiWidget{ctx}, label{std::move(label)}, value{&value} {
 }
 
 void GuiWidgetCheckbox::drawInternal() {
@@ -15,7 +16,6 @@ void GuiWidgetCheckbox::drawInternal() {
 
 void GuiWidgetCheckbox::setLabel(std::string value) {
     label = std::move(value);
-    ctx.setDirty();
 }
 
 void GuiWidgetCheckbox::setOnClick(OnClickCallback value) {

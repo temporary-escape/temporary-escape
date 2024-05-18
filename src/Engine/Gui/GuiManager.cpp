@@ -4,10 +4,13 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const FontFamily& fontFamily,
-                       const int fontSize) :
-    vulkan{vulkan}, renderer{renderer}, fontFamily{fontFamily}, fontSize{fontSize} {
-    createRenderPass();
+GuiManager::GuiManager(const Config& config, VulkanRenderer& vulkan, const FontFamily& fontFamily, const int fontSize) :
+    config{config},
+    vulkan{vulkan},
+    fontFamily{fontFamily},
+    fontSize{fontSize},
+    canvas{vulkan},
+    ctx{fontFamily, fontSize} {
 
     auto nestedContextMenu = addWindow<GuiWindowContextMenu>(nullptr);
     contextMenu = addWindow<GuiWindowContextMenu>(nestedContextMenu);
@@ -15,113 +18,60 @@ GuiManager::GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const F
 
 GuiManager::~GuiManager() = default;
 
-void GuiManager::render(VulkanCommandBuffer& vkb, const Vector2i& viewport) {
+void GuiManager::draw(const Vector2i& viewport) {
+    const auto scaledViewport = getScaledViewport(viewport);
+
     for (const auto window : windowsToRemove) {
         removeWindowInternal(window);
     }
     windowsToRemove.clear();
 
-    for (auto& window : windows) {
-        window.ptr->update(viewport);
+    ctx.update();
 
-        if (!window.ptr->isEnabled() || !window.ptr->isDirty()) {
+    for (auto& window : windows) {
+        window->update(scaledViewport);
+
+        if (!window->isEnabled()) {
             continue;
         }
 
-        window.ptr->draw();
-        window.drawn = true;
+        if (window.get() == focused) {
+            ctx.setFocused(window->getId());
+            ctx.setInputEnabled(true);
+        } else if (focused) {
+            ctx.setInputEnabled(false);
+        } else {
+            ctx.setInputEnabled(true);
+        }
+
+        window->draw();
     }
 
-    for (auto& window : windows) {
-        if (!window.drawn) {
-            continue;
-        }
-
-        const auto extent = getExtent(window);
-        window.canvas->begin({extent.width, extent.height});
-        window.ptr->render(*window.canvas);
-        window.canvas->flush();
-        window.drawn = false;
-
-        if (fboNeedsResizing(window)) {
-            logger.info("Creating FBO of size: {} for gui window: \"{}\"",
-                        Vector2i{extent.width, extent.height},
-                        window.ptr->getTitle());
-
-            createFboTexture(window);
-            createFbo(window);
-        }
-
-        VulkanRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.framebuffer = &window.fbo;
-        renderPassInfo.renderPass = &renderPass;
-        renderPassInfo.offset = {0, 0};
-        renderPassInfo.size = {extent.width, extent.height};
-
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 0.0f}}};
-        renderPassInfo.clearValues = {clearColor};
-
-        vkb.beginRenderPass(renderPassInfo);
-        vkb.setViewport({0, 0}, renderPassInfo.size);
-        // vkb.setScissor({0, 0}, renderPassInfo.size);
-
-        renderer.render(vkb, *window.canvas, renderPassInfo.size);
-
-        vkb.endRenderPass();
-
-        { // Barrier for using the texture
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = window.fboColor.getHandle();
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = window.fboColor.getMipMaps();
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = window.fboColor.getLayerCount();
-            barrier.oldLayout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            barrier.newLayout = VkImageLayout::VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                    VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            barrier.dstAccessMask = VkAccessFlagBits::VK_ACCESS_SHADER_READ_BIT;
-
-            vkb.pipelineBarrier(VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                barrier);
-        }
-
-        window.ptr->clearDirty();
-    }
+    canvas.begin(scaledViewport);
+    ctx.render(canvas);
+    canvas.flush();
 }
 
-void GuiManager::blit(Canvas& canvas) {
-    const Color4 colorDefault{1.0f, 1.0f, 1.0f, 1.0f};
-    const Color4 colorDimmed{0.3f, 0.3f, 0.3f, 1.0f};
+Vector2i GuiManager::getScaledViewport(const Vector2i& viewport) const {
+    return Vector2i{Vector2{viewport} * config.gui.scale};
+}
 
-    for (auto& window : windows) {
-        if (!window.ptr->isEnabled() || !window.fboColor) {
-            continue;
-        }
+void GuiManager::render(VulkanCommandBuffer& vkb, RendererCanvas& renderer, const Vector2i& viewport) {
+    const auto scaledViewport = getScaledViewport(viewport);
 
-        const auto extent = getExtent(window);
-        const Vector2 size{extent.width, extent.height};
-        const auto dimmed = focused != nullptr && focused != window.ptr.get();
-        canvas.drawTexture(window.ptr->getPos(), size, window.fboColor, dimmed ? colorDimmed : colorDefault);
-    }
+    renderer.render(vkb, canvas, scaledViewport);
 }
 
 void GuiManager::removeWindowInternal(const GuiWindow* window) {
-    auto it = std::find_if(
-        windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == window; });
+    auto it = std::find_if(windows.begin(), windows.end(), [&window](const std::shared_ptr<GuiWindow>& ptr) {
+        return ptr.get() == window;
+    });
 
     if (window == focused) {
         clearFocused();
     }
 
     if (it != windows.end()) {
-        vulkan.dispose(std::move(it->fboColor));
-        vulkan.dispose(std::move(it->fbo));
         windows.erase(it);
     }
 }
@@ -131,8 +81,9 @@ void GuiManager::removeWindow(const GuiWindow& window) {
 }
 
 void GuiManager::setFocused(const GuiWindow& window) {
-    auto it = std::find_if(
-        windows.begin(), windows.end(), [&window](const WindowData& data) { return data.ptr.get() == &window; });
+    auto it = std::find_if(windows.begin(), windows.end(), [&window](const std::shared_ptr<GuiWindow>& ptr) {
+        return ptr.get() == &window;
+    });
 
     if (it == windows.end()) {
         return;
@@ -144,29 +95,6 @@ void GuiManager::setFocused(const GuiWindow& window) {
 void GuiManager::clearFocused() {
     focused = nullptr;
 }
-
-/*void GuiManager::clearContextMenu() {
-    contextMenu->clear();
-}
-
-void GuiManager::addContextMenuItem(ImagePtr icon, std::string label, GuiWidgetContextButton::OnClickCallback onClick) {
-    auto& button = contextMenu->addItem(std::move(icon), std::move(label));
-    button.setOnClick([this, c = std::move(onClick)]() {
-        contextMenu->setEnabled(false);
-        if (c) {
-            c();
-        }
-    });
-}
-
-void GuiManager::showContextMenu(const Vector2i& pos) {
-    contextMenu->setPos(pos);
-    contextMenu->setEnabled(true);
-}
-
-void GuiManager::hideContextMenu() {
-    contextMenu->setEnabled(false);
-}*/
 
 bool GuiManager::isContextMenuVisible() const {
     return contextMenu->isEnabled();
@@ -188,6 +116,13 @@ GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std
     return window;
 }
 
+GuiWindowModal* GuiManager::modalPrimary(std::string title, std::string text, const ModalCallback& callback) {
+    static std::vector<std::string> choices{"Ok"};
+    auto window = modal(std::move(title), std::move(text), choices, callback);
+    window->setHeaderPrimary(true);
+    return window;
+}
+
 GuiWindowModal* GuiManager::modalSuccess(std::string title, std::string text, const ModalCallback& callback) {
     static std::vector<std::string> choices{"Ok"};
     auto window = modal(std::move(title), std::move(text), choices, callback);
@@ -206,20 +141,21 @@ void GuiManager::showContextMenu(const Vector2& pos, ContextMenuCallback callbac
     contextMenu->clear();
     callback(*contextMenu);
     contextMenu->setEnabled(true);
-    contextMenu->setPos(pos);
+    contextMenu->setPos(pos * config.gui.scale);
 }
 
 bool GuiManager::isMousePosOverlap(const Vector2i& mousePos) const {
+    const auto mouse = Vector2{mousePos} * config.gui.scale;
+
     for (auto& window : windows) {
-        if (!window.ptr->isEnabled()) {
+        if (!window->isEnabled()) {
             continue;
         }
 
-        const auto& pos = window.ptr->getPos();
-        const auto& size = window.ptr->getSize();
+        const auto& pos = window->getPos();
+        const auto& size = window->getSize();
 
-        if (mousePos.x >= pos.x && mousePos.x <= pos.x + size.x && mousePos.y >= pos.y &&
-            mousePos.y <= pos.y + size.y) {
+        if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y) {
             return true;
         }
     }
@@ -228,126 +164,42 @@ bool GuiManager::isMousePosOverlap(const Vector2i& mousePos) const {
 }
 
 void GuiManager::eventMouseMoved(const Vector2i& pos) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        const auto& p = Vector2i{window.ptr->getPos()};
-        const auto& s = Vector2i{window.ptr->getSize()};
-
-        if (p.x <= pos.x && p.x + s.x >= pos.x && p.y <= pos.y && p.y + s.y >= pos.y) {
-            window.hover = true;
-            window.ptr->eventMouseMoved(pos - p);
-        } else if (window.hover) {
-            window.hover = false;
-            window.ptr->eventMouseMoved({999999.0f, 999999.0f});
-        }
-    }
+    ctx.eventMouseMoved(Vector2{pos} * config.gui.scale);
 }
 
 void GuiManager::eventMousePressed(const Vector2i& pos, const MouseButton button) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (!window.ptr->isEnabled()) {
-            continue;
-        }
-
-        const auto& p = Vector2i{window.ptr->getPos()};
-        const auto& s = Vector2i{window.ptr->getSize()};
-
-        if (p.x <= pos.x && p.x + s.x >= pos.x && p.y <= pos.y && p.y + s.y >= pos.y) {
-            window.buttonMask |= 1 << static_cast<uint64_t>(button);
-            window.ptr->eventMousePressed(pos - p, button);
-        } else if (window.ptr->hasActiveInput()) {
-            window.buttonMask |= 1 << static_cast<uint64_t>(button);
-            window.ptr->eventMousePressed({0, 0}, button);
-        }
-    }
+    ctx.eventMousePressed(Vector2{pos} * config.gui.scale, button);
 }
 
 void GuiManager::eventMouseReleased(const Vector2i& pos, const MouseButton button) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (!window.ptr->isEnabled()) {
-            continue;
-        }
-
-        const auto& p = Vector2i{window.ptr->getPos()};
-        const auto& s = Vector2i{window.ptr->getSize()};
-
-        if ((p.x <= pos.x && p.x + s.x >= pos.x && p.y <= pos.y && p.y + s.y >= pos.y) ||
-            (window.buttonMask & 1 << static_cast<uint64_t>(button))) {
-            window.ptr->eventMouseReleased(pos - p, button);
-        }
-
-        window.buttonMask &= ~(1 << static_cast<uint64_t>(button));
-    }
+    ctx.eventMouseReleased(Vector2{pos} * config.gui.scale, button);
 }
 
 void GuiManager::eventMouseScroll(const int xscroll, const int yscroll) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (window.hover) {
-            window.ptr->eventMouseScroll(xscroll, yscroll);
-        }
-    }
+    ctx.eventMouseScroll(xscroll, yscroll);
 }
 
 void GuiManager::eventKeyPressed(const Key key, const Modifiers modifiers) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (!window.ptr->isEnabled()) {
-            continue;
-        }
-
-        if (window.ptr->hasActiveInput()) {
-            window.ptr->eventKeyPressed(key, modifiers);
-        }
-    }
+    ctx.eventKeyPressed(key, modifiers);
 }
 
 void GuiManager::eventKeyReleased(const Key key, const Modifiers modifiers) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (!window.ptr->isEnabled()) {
-            continue;
-        }
-
-        if (window.ptr->hasActiveInput()) {
-            window.ptr->eventKeyReleased(key, modifiers);
-        }
-    }
+    ctx.eventKeyReleased(key, modifiers);
 }
 
 void GuiManager::eventCharTyped(const uint32_t code) {
-    for (auto& window : windows) {
-        if (focused != nullptr && focused != window.ptr.get()) {
-            continue;
-        }
-
-        if (window.ptr->hasActiveInput()) {
-            window.ptr->eventCharTyped(code);
-        }
-    }
+    ctx.eventCharTyped(code);
 }
 
-void GuiManager::createRenderPass() {
+void GuiManager::eventInputBegin() {
+    ctx.eventInputBegin();
+}
+
+void GuiManager::eventInputEnd() {
+    ctx.eventInputEnd();
+}
+
+/*void GuiManager::createRenderPass() {
     VkAttachmentDescription attachmentDescription{};
     attachmentDescription.format = vulkan.getSwapChain().getFormat();
     attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -373,9 +225,9 @@ void GuiManager::createRenderPass() {
     renderPassInfo.subPasses = {subpassDescription};
 
     renderPass = vulkan.createRenderPass(renderPassInfo);
-}
+}*/
 
-void GuiManager::createFbo(GuiManager::WindowData& data) {
+/*void GuiManager::createFbo(GuiManager::WindowData& data) {
     if (data.fbo) {
         vulkan.dispose(std::move(data.fbo));
     }
@@ -392,9 +244,9 @@ void GuiManager::createFbo(GuiManager::WindowData& data) {
     framebufferInfo.layers = 1;
 
     data.fbo = vulkan.createFramebuffer(framebufferInfo);
-}
+}*/
 
-void GuiManager::createFboTexture(GuiManager::WindowData& data) {
+/*void GuiManager::createFboTexture(GuiManager::WindowData& data) {
     if (data.fboColor) {
         vulkan.dispose(std::move(data.fboColor));
     }
@@ -439,17 +291,17 @@ void GuiManager::createFboTexture(GuiManager::WindowData& data) {
     textureInfo.sampler.maxLod = 0.0f;
 
     data.fboColor = vulkan.createTexture(textureInfo);
-}
+}*/
 
-bool GuiManager::fboNeedsResizing(GuiManager::WindowData& data) const {
+/*bool GuiManager::fboNeedsResizing(GuiManager::WindowData& data) const {
     const auto expected = getExtent(data);
     return !data.fbo || !data.fboColor || data.fboColor.getExtent().width != expected.width ||
            data.fboColor.getExtent().height != expected.height;
-}
+}*/
 
-VkExtent3D GuiManager::getExtent(GuiManager::WindowData& data) const {
+/*VkExtent3D GuiManager::getExtent(GuiManager::WindowData& data) const {
     const auto size = data.ptr->getSize();
     const auto width = (static_cast<uint32_t>(std::floor(size.x / 128.0f)) + 1) * 128;
     const auto height = (static_cast<uint32_t>(std::floor(size.y / 128.0f)) + 1) * 128;
     return {width, height, 1};
-}
+}*/

@@ -50,7 +50,6 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
     gui.toolbar = guiManager.addWindow<GuiWindowShipToolbar>(assetsManager);
     gui.status = guiManager.addWindow<GuiWindowShipStatus>(assetsManager);
     gui.location = guiManager.addWindow<GuiWindowCurrentLocation>(assetsManager);
-    gui.overview = guiManager.addWindow<GuiWindowSceneOverview>();
 
     icons.nested = assetsManager.getImages().find("icon_menu_nested");
     icons.approach = assetsManager.getImages().find("icon_transform");
@@ -61,11 +60,6 @@ ViewSpace::ViewSpace(const Config& config, VulkanRenderer& vulkan, GuiManager& g
 }
 
 void ViewSpace::update(const float deltaTime, const Vector2i& viewport) {
-    gui.toolbar->updatePos(viewport);
-    gui.status->updatePos(viewport);
-    gui.location->updatePos(viewport);
-    gui.overview->updatePos(viewport);
-
     updateGuiCurrentLocation();
 }
 
@@ -179,19 +173,15 @@ Scene* ViewSpace::getScene() {
 }
 
 void ViewSpace::onEnter() {
-    // guiContextMenu.setEnabled(false);
     gui.toolbar->setEnabled(true);
     gui.status->setEnabled(true);
     gui.location->setEnabled(true);
-    gui.overview->setEnabled(true);
 }
 
 void ViewSpace::onExit() {
     gui.toolbar->setEnabled(false);
     gui.status->setEnabled(false);
     gui.location->setEnabled(false);
-    gui.overview->setEnabled(false);
-    // guiContextMenu.setEnabled(false);
 }
 
 void ViewSpace::showContextMenu(const Vector2i& mousePos) {

@@ -10,17 +10,16 @@ public:
     using ModalCallback = std::function<void(const std::string&)>;
     using ContextMenuCallback = std::function<void(GuiWindowContextMenu&)>;
 
-    explicit GuiManager(VulkanRenderer& vulkan, RendererCanvas& renderer, const FontFamily& fontFamily, int fontSize);
+    explicit GuiManager(const Config& config, VulkanRenderer& vulkan, const FontFamily& fontFamily, int fontSize);
     virtual ~GuiManager();
 
-    void render(VulkanCommandBuffer& vkb, const Vector2i& viewport);
-    void blit(Canvas& canvas);
+    void draw(const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, RendererCanvas& renderer, const Vector2i& viewport);
 
     template <typename T, typename... Args> T* addWindow(Args&&... args) {
-        windows.emplace_back();
-        windows.back().canvas = std::make_unique<Canvas>(vulkan);
-        windows.back().ptr = std::make_shared<T>(fontFamily, fontSize, std::forward<Args>(args)...);
-        return dynamic_cast<T*>(windows.back().ptr.get());
+        auto ptr = std::make_shared<T>(ctx, fontFamily, fontSize, std::forward<Args>(args)...);
+        windows.push_back(ptr);
+        return ptr.get();
     }
     void removeWindow(const GuiWindow& window);
     void setFocused(const GuiWindow& window);
@@ -28,6 +27,7 @@ public:
 
     bool isContextMenuVisible() const;
 
+    GuiWindowModal* modalPrimary(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
@@ -46,32 +46,22 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers);
     void eventKeyReleased(Key key, Modifiers modifiers);
     void eventCharTyped(uint32_t code);
+    void eventInputBegin();
+    void eventInputEnd();
 
 private:
-    struct WindowData {
-        std::unique_ptr<Canvas> canvas;
-        std::shared_ptr<GuiWindow> ptr;
-        VulkanTexture fboColor;
-        VulkanFramebuffer fbo;
-        bool hover{false};
-        uint64_t buttonMask{0};
-        bool drawn{false};
-    };
-
     void removeWindowInternal(const GuiWindow* window);
-    void createRenderPass();
-    void createFbo(WindowData& data);
-    void createFboTexture(WindowData& data);
-    bool fboNeedsResizing(WindowData& data) const;
-    VkExtent3D getExtent(WindowData& data) const;
+    Vector2i getScaledViewport(const Vector2i& viewport) const;
 
+    const Config& config;
     VulkanRenderer& vulkan;
-    RendererCanvas& renderer;
     const FontFamily& fontFamily;
     int fontSize;
+    GuiContext ctx;
     VulkanRenderPass renderPass;
+    Canvas canvas;
 
-    std::list<WindowData> windows;
+    std::list<std::shared_ptr<GuiWindow>> windows;
     std::vector<const GuiWindow*> windowsToRemove;
     const GuiWindow* focused{nullptr};
     GuiWindowContextMenu* contextMenu;

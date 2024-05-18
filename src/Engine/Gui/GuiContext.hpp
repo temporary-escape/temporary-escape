@@ -37,6 +37,8 @@ public:
         ScaleLeft = (1 << (9)),
         NoInput = (1 << (10)),
         Dynamic = (1 << (11)),
+        NonInteractive = (1 << (10)) | (1 << (12)),
+        HeaderPrimary = (1 << (28)),
         HeaderSuccess = (1 << (29)),
         HeaderDanger = (1 << (30)),
     };
@@ -81,9 +83,9 @@ public:
     void progress(float value, float max);
     void progress(float value, float max, const GuiStyleProgress& style, float height);
     void image(const ImagePtr& img, const Color4& color);
-    bool imageToggle(const ImagePtr& img, bool& value, const Color4& color);
-    bool imageToggleLabel(const ImagePtr& img, bool& value, const Color4& color, const std::string& text,
-                          const GuiTextAlign align);
+    bool imageToggle(const ImagePtr& img, bool& value, const GuiStyleButton& style, const Color4& color);
+    bool imageToggleLabel(const ImagePtr& img, bool& value, const GuiStyleButton& style, const Color4& color,
+                          const std::string& text, const GuiTextAlign align);
     void tooltip(const std::string& text);
     bool isHovered() const;
     bool isMouseDown(const MouseButton button) const;
@@ -97,16 +99,12 @@ public:
     void eventKeyPressed(Key key, Modifiers modifiers);
     void eventKeyReleased(Key key, Modifiers modifiers);
     void eventCharTyped(uint32_t code);
+    void eventInputBegin();
+    void eventInputEnd();
+    void setFocused(const std::string& id);
+    bool isWindowClosed() const;
+    void setInputEnabled(bool value);
 
-    bool isDirty() const {
-        return dirty;
-    }
-    void clearDirty() {
-        dirty = false;
-    }
-    void setDirty() {
-        dirty = true;
-    }
     bool hasActiveInput() const {
         return activeInput;
     }
@@ -125,13 +123,11 @@ private:
     const int fontSize;
     std::unique_ptr<nk_context> nk;
     std::unique_ptr<nk_user_font> font;
-    std::list<std::function<void()>> inputEvents;
-    bool dirty{true};
     std::unique_ptr<CustomStyle> custom;
 
     std::vector<char> editBuffer;
     bool activeInput{false};
-    Flags windowFlags{0};
+    bool inputEnabled{true};
 };
 
 inline GuiContext::Flags operator|(const GuiContext::WindowFlag a, const GuiContext::WindowFlag b) {

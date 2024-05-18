@@ -7,6 +7,10 @@ install(DIRECTORY
         PATTERN "*.spirv" EXCLUDE
         PATTERN "*.glsl" EXCLUDE)
 
+install(DIRECTORY
+        "${CMAKE_CURRENT_SOURCE_DIR}/fonts"
+        DESTINATION ".")
+
 if (MSVC)
     install(DIRECTORY
             "${CMAKE_BINARY_DIR}/"
