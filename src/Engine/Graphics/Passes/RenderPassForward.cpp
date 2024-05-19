@@ -330,14 +330,14 @@ void RenderPassForward::renderSceneSpaceDust(VulkanCommandBuffer& vkb, Scene& sc
 }
 
 void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
-    /*pipelineLines.bind(vkb);
+    pipelineLines.bind(vkb);
 
     for (auto&& [entity, transform, shipControl] : scene.getView<ComponentTransform, ComponentShipControl>().each()) {
         if (shipControl.getApproachEntity() == NullEntity) {
             continue;
         }
 
-        if (shipControl.getOrbitRadius() > 1.0f) {
+        /*if (shipControl.getOrbitRadius() > 1.0f) {
             Matrix4 modelMatrix{1.0f};
             modelMatrix = glm::translate(modelMatrix, shipControl.getOrbitOrigin());
             modelMatrix = glm::scale(modelMatrix, Vector3{shipControl.getOrbitRadius()});
@@ -351,8 +351,9 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
             pipelineLines.flushDescriptors(vkb);
 
             pipelineLines.renderMesh(vkb, resources.getMeshOrbit());
-        } else {
-            const auto target = shipControl.getApproachPos();
+        } else*/
+        {
+            const auto target = shipControl.getTargetPos();
             const auto origin = transform.getAbsolutePosition();
 
             auto modelMatrix = glm::lookAt(origin, target, Vector3{0.0f, 1.0f, 0.0f});
@@ -361,7 +362,7 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
             // modelMatrix = glm::translate(modelMatrix, origin);
 
             pipelineLines.setModelMatrix(modelMatrix);
-            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 0.2f});
+            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 1.0f});
             pipelineLines.flushConstants(vkb);
 
             pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
@@ -369,7 +370,7 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
 
             pipelineLines.renderMesh(vkb, resources.getMeshLineForward());
         }
-    }*/
+    }
 }
 
 void RenderPassForward::renderSceneTacticalOverlay(VulkanCommandBuffer& vkb, Scene& scene,

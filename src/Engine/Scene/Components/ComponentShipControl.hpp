@@ -48,7 +48,7 @@ public:
     void setReplicated(bool value);
 
     MSGPACK_DEFINE_ARRAY(approachTarget, action, forwardVelocity, forwardAcceleration, forwardVelocityMax,
-                         angularVelocity, targetDistance, keepAtDistance);
+                         angularVelocity, targetDistance, keepAtDistance, targetPos);
 
     /*void setActive(bool value);
     [[nodiscard]] bool isActive() const {
@@ -83,6 +83,10 @@ public:
     /*const Vector3& getApproachPos() const {
         return approachPos;
     }*/
+
+    const Vector3& getTargetPos() const {
+        return targetPos;
+    }
 
     float getForwardVelocity() const {
         return forwardVelocity;
@@ -131,10 +135,18 @@ private:
     ShipAutopilotAction action{ShipAutopilotAction::Idle};
     float forwardVelocity{0.0f};
     float forwardAcceleration{20.0f};
-    float forwardVelocityMax{300.0f};
+    float forwardVelocityMax{500.0f};
     float angularVelocity{glm::radians(45.0f)};
     float targetDistance{0.0f};
     float keepAtDistance{0.0f};
+    Matrix4 orbitMatrix{1.0f};
+    Vector3 orbitOrigin;
+    Vector3 targetPos;
+    bool orbitMatrixChosen{false};
+    float orbitDistance{0.0f};
+    float ourBounds{0.0f};
+    float targetBounds{0.0f};
+    bool recalculateBounds{true};
 
     std::vector<ComponentTurret*> turrets;
 

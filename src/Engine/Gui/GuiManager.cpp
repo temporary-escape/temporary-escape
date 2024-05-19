@@ -32,6 +32,9 @@ void GuiManager::draw(const Vector2i& viewport) {
         window->update(scaledViewport);
 
         if (!window->isEnabled()) {
+            if (focused == window.get()) {
+                clearFocused();
+            }
             continue;
         }
 

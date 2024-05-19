@@ -11,6 +11,8 @@ extern "C" {
 #include "../Utils/Exceptions.hpp"
 #include "../Utils/Log.hpp"
 #include "../Utils/StringUtils.hpp"
+#include "../Vulkan/VulkanRenderer.hpp"
+#include "../Vulkan/VulkanTexture.hpp"
 #include "Ktx2FileReader.hpp"
 #include "PngFileReader.hpp"
 
@@ -161,7 +163,7 @@ Ktx2FileReader::Ktx2FileReader(const Span<uint8_t>& data) {
     ktx = std::shared_ptr<ktxTexture2>{ptr, [](ktxTexture2* p) { ktxTexture_Destroy(ktxTexture(p)); }};
 
     if (ktx->classId != ktxTexture2_c) {
-        EXCEPTION("Failed to read ktx2 file: {} error: file is in ktx1 format but expected ktx2 format");
+        EXCEPTION("Failed to read ktx2 file error: file is in ktx1 format but expected ktx2 format");
     }
 }
 
@@ -420,4 +422,72 @@ void Engine::ktxCompressFile(const Path& src, const Path& dst, const bool basis)
     } catch (...) {
         EXCEPTION_NESTED("Failed to compress texture: {}", src);
     }
+}
+
+void Ktx2FileReader::loadAsTexture(VulkanRenderer& vulkan, VulkanTexture& texture) {
+    if (needsTranscoding()) {
+        transcode(vulkan.getCompressionType(), TextureCompressionTarget::RGBA);
+    }
+
+    readData();
+
+    VkExtent3D extent{
+        static_cast<uint32_t>(getSize().x), static_cast<uint32_t>(getSize().y), static_cast<uint32_t>(getSize().z)};
+
+    VulkanTexture::CreateInfo textureInfo{};
+    textureInfo.image.format = getFormat();
+    textureInfo.image.imageType = VK_IMAGE_TYPE_2D;
+    textureInfo.image.extent = extent;
+    textureInfo.image.mipLevels = getMipMapsCount();
+    textureInfo.image.arrayLayers = 1;
+    textureInfo.image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    textureInfo.image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    textureInfo.image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    textureInfo.image.samples = VK_SAMPLE_COUNT_1_BIT;
+    textureInfo.image.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    textureInfo.view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    textureInfo.view.format = getFormat();
+    textureInfo.view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    textureInfo.view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    textureInfo.view.subresourceRange.baseMipLevel = 0;
+    textureInfo.view.subresourceRange.levelCount = getMipMapsCount();
+    textureInfo.view.subresourceRange.baseArrayLayer = 0;
+    textureInfo.view.subresourceRange.layerCount = 1;
+
+    textureInfo.sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    textureInfo.sampler.magFilter = VK_FILTER_LINEAR;
+    textureInfo.sampler.minFilter = VK_FILTER_LINEAR;
+
+    textureInfo.sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureInfo.sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    if (vulkan.getPhysicalDeviceFeatures().samplerAnisotropy) {
+        textureInfo.sampler.anisotropyEnable = VK_TRUE;
+        textureInfo.sampler.maxAnisotropy =
+            std::max(4.0f, vulkan.getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+    } else {
+        textureInfo.sampler.anisotropyEnable = VK_FALSE;
+        textureInfo.sampler.maxAnisotropy = 1.0f;
+    }
+
+    textureInfo.sampler.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    textureInfo.sampler.unnormalizedCoordinates = VK_FALSE;
+    textureInfo.sampler.compareEnable = VK_FALSE;
+    textureInfo.sampler.compareOp = VK_COMPARE_OP_ALWAYS;
+    textureInfo.sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    textureInfo.sampler.maxLod = static_cast<float>(textureInfo.image.mipLevels);
+
+    texture = vulkan.createTexture(textureInfo);
+
+    vulkan.transitionImageLayout(texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    for (auto i = 0; i < getMipMapsCount(); i++) {
+        const auto& chunk = getData(i, 0);
+        vulkan.copyDataToImage(texture, i, {0, 0}, 0, chunk.size, chunk.pixels.data(), chunk.pixels.size());
+    }
+
+    vulkan.transitionImageLayout(
+        texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }

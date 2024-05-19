@@ -22,6 +22,10 @@ public:
     }
     void setTooltip(std::string value);
     void setOnHover(OnHoverCallback value);
+    void setHidden(bool value);
+    bool isHidden() const {
+        return hidden;
+    }
 
 protected:
     virtual void beforeDraw() {
@@ -36,5 +40,6 @@ private:
     std::string tooltip;
     OnHoverCallback onHover;
     bool hovered{false};
+    bool hidden{false};
 };
 } // namespace Engine

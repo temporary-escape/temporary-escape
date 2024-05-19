@@ -10,6 +10,9 @@ struct ktxTexture2;
 struct ktxStream;
 
 namespace Engine {
+class ENGINE_API VulkanTexture;
+class ENGINE_API VulkanRenderer;
+
 struct ENGINE_API Ktx2Chunk {
     Vector3 size;
     int level{0};
@@ -26,6 +29,7 @@ public:
     [[nodiscard]] bool needsTranscoding() const;
     void transcode(VulkanCompressionType type, TextureCompressionTarget target);
     void readData();
+    void loadAsTexture(VulkanRenderer& vulkan, VulkanTexture& texture);
 
     [[nodiscard]] VkFormat getFormat() const;
     [[nodiscard]] const Ktx2Chunk& getData(int level, int layer);

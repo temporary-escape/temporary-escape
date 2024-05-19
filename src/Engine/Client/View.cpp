@@ -28,6 +28,10 @@ void ViewContext::setCurrent(View* value) {
 }
 
 void ViewContext::clear() {
+    if (current) {
+        current->onExit();
+    }
+    current = nullptr;
     views.clear();
 }
 

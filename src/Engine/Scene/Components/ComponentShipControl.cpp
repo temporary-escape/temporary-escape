@@ -19,6 +19,16 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
         return;
     }
 
+    if (approachTarget != NullEntity && recalculateBounds && scene.isValid(approachTarget)) {
+        ourBounds = scene.getEntityBounds(getEntity(), ourTransform);
+        const auto* theirTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
+        if (theirTransform) {
+            targetBounds = scene.getEntityBounds(approachTarget, *theirTransform);
+        } else {
+            targetBounds = 0.0f;
+        }
+    }
+
     // Get our position
     const auto ourPos = ourTransform.getAbsolutePosition();
 
@@ -35,7 +45,6 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
         res = getSteeringOrbit(scene, delta, ourTransform);
     }
 
-    Vector3 targetPos;
     if (!res) {
         actionCancelMovement();
         targetPos = ourPos + ourForward;
@@ -86,6 +95,11 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
     if (std::isnan(angle)) {
         angle = 0.0f;
     }
+
+    // Are we orbiting?
+    /*if (action == ShipAutopilotAction::Orbit && angle < slowdownAngle) {
+        targetSpeed = forwardVelocityMax;
+    }*/
 
     // Calculate the new orientation, delta time adjusted, to rotate towards the target
     Quaternion newOrientation;
@@ -159,18 +173,17 @@ std::optional<Vector3> ComponentShipControl::getSteeringApproach(Scene& scene, c
     }
 
     // Their position
-    auto targetPos = theirTransform->getAbsolutePosition();
+    auto theirPos = theirTransform->getAbsolutePosition();
 
     // Get vector towards the target
-    auto direction = targetPos - ourTransform.getAbsolutePosition();
+    auto direction = theirPos - ourTransform.getAbsolutePosition();
     direction = glm::normalize(direction);
 
     // Subtract entity size from the approach pos
-    const auto bounds = scene.getEntityBounds(approachTarget, *theirTransform);
-    targetPos -= direction * bounds;
+    theirPos -= direction * targetBounds;
 
     // The target pos is the position we need to arrive to
-    return targetPos;
+    return theirPos;
 }
 
 std::optional<Vector3> ComponentShipControl::getSteeringKeepAtDistance(Scene& scene, float delta,
@@ -192,6 +205,58 @@ std::optional<Vector3> ComponentShipControl::getSteeringKeepAtDistance(Scene& sc
 std::optional<Vector3> ComponentShipControl::getSteeringOrbit(Scene& scene, const float delta,
                                                               ComponentTransform& ourTransform) {
     (void)delta;
+
+    // Cancel approach action if invalid entity
+    if (approachTarget == entity || !scene.valid(approachTarget)) {
+        return std::nullopt;
+    }
+
+    // Cancel approach if the entity has no transform
+    const auto* theirTransform = scene.tryGetComponent<ComponentTransform>(approachTarget);
+    if (!theirTransform) {
+        return std::nullopt;
+    }
+
+    // Their position
+    auto theirPos = theirTransform->getAbsolutePosition();
+
+    // Our position
+    const auto ourPos = ourTransform.getAbsolutePosition();
+
+    if (!orbitMatrixChosen) {
+        orbitMatrixChosen = true;
+        orbitMatrix = glm::inverse(glm::lookAt(ourPos, theirPos, {0.0f, 1.0f, 0.0f}));
+        orbitMatrix = glm::rotate(orbitMatrix, glm::radians(180.0f), Vector3{0.0f, 1.0f, 0.0f});
+        orbitMatrix[3] = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+    }
+
+    orbitOrigin = theirPos;
+
+    // Get the orbit circle normal vector (up)
+    const auto orbitNormal = Vector3{orbitMatrix * Vector4{0.0f, 1.0f, 0.0f, 0.0f}};
+
+    // Get the direction to our ship
+    const auto orbitToShip = ourPos - theirPos;
+
+    // Get the distance of us towards the orbit plane
+    const auto dist = glm::dot(orbitToShip, orbitNormal);
+
+    // Project our position onto the orbit plane
+    auto orbitPlaneProjected = ourPos - dist * orbitNormal;
+
+    // How far should we orbit?
+    orbitDistance = keepAtDistance + targetBounds + ourBounds;
+
+    // Move the projected point to match the orbit distance
+    orbitPlaneProjected = (theirPos + glm::normalize(orbitPlaneProjected - theirPos) * orbitDistance);
+
+    // Direction towards the projected point
+    const auto orbitToProjected = glm::normalize(orbitPlaneProjected - theirPos);
+
+    // Forward direction along the orbit plane
+    const auto orbitForward = glm::rotate(Vector3{0.0f, 1.0f, 0.0f}, -glm::radians(90.0f), orbitToProjected);
+
+    return orbitPlaneProjected + (orbitForward * 50.0f);
 }
 
 void ComponentShipControl::actionApproach(const EntityId target) {
@@ -215,6 +280,7 @@ void ComponentShipControl::actionOrbit(const EntityId target, const float radius
     action = ShipAutopilotAction::Orbit;
     approachTarget = target;
     keepAtDistance = radius;
+    orbitMatrixChosen = false;
 }
 
 void ComponentShipControl::setReplicated(const bool value) {

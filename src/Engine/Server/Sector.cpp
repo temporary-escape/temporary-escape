@@ -202,7 +202,7 @@ void Sector::handle(const SessionPtr& session, MessageActionApproach req) {
 void Sector::handle(const SessionPtr& session, MessageActionOrbit req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} orbiting: {}", entity.getHandle(), req.entityId);
-        // shipControl.actionOrbit(req.entityId, req.radius);
+        shipControl.actionOrbit(req.entityId, req.radius);
     });
 }
 
@@ -216,7 +216,7 @@ void Sector::handle(const SessionPtr& session, MessageActionKeepDistance req) {
 void Sector::handle(const SessionPtr& session, MessageActionStopMovement req) {
     handleShipAction(session, [req](Entity& entity, ComponentShipControl& shipControl) {
         logger.debug("Entity: {} stopping", entity.getHandle());
-        // shipControl.actionStopMovement();
+        shipControl.actionCancelMovement();
     });
 }
 

@@ -26,10 +26,11 @@ Application::Application(Config& config) :
     config{config},
     audio{},
     audioSource{audio.createSource()},
-    font{config, *this, 40},
+    font{config, *this, 42},
     rendererCanvas{*this},
     canvas{*this},
-    guiManager{config, *this, font, config.guiFontSize} {
+    guiManager{config, *this, font, config.guiFontSize},
+    bannerTexture{*this} {
 
     // Fix monitor name
     const auto monitors = listSystemMonitors();
@@ -86,7 +87,7 @@ Application::Application(Config& config) :
         gui.loadSave->setEnabled(true);
         gui.loadSave->loadInfos();
     });
-    gui.mainMenu->setOnClickMultiplayer([this]() {
+    gui.mainMenu->setOnClickServerBrowser([this]() {
         gui.mainMenu->setEnabled(false);
         gui.serverBrowser->setEnabled(true);
         gui.serverBrowser->connect();
@@ -109,7 +110,13 @@ Application::Application(Config& config) :
     });
     gui.settings->setOnSubmit([this](bool value) {
         gui.settings->setEnabled(false);
-        gui.mainMenu->setEnabled(true);
+
+        if (views) {
+            gui.gameMenu->setEnabled(true);
+            guiManager.setFocused(*gui.gameMenu);
+        } else {
+            gui.mainMenu->setEnabled(true);
+        }
 
         if (value) {
             saveSettings(this->config);
@@ -150,6 +157,26 @@ Application::Application(Config& config) :
         startSinglePlayer();
     });
 
+    gui.gameMenu = guiManager.addWindow<GuiWindowGameMenu>();
+    gui.gameMenu->setOnClickContinue([this]() {
+        gui.gameMenu->close();
+        guiManager.clearFocused();
+    });
+    gui.gameMenu->setOnClickSettings([this]() {
+        gui.gameMenu->close();
+        gui.settings->setEnabled(true);
+        gui.settings->reset();
+        guiManager.setFocused(*gui.settings);
+    });
+    gui.gameMenu->setOnClickQuitToMenu([this]() {
+        gui.gameMenu->close();
+        quitToMenu();
+    });
+    gui.gameMenu->setOnClickQuitGame([this]() {
+        gui.gameMenu->close();
+        closeWindow();
+    });
+
     loadProfile();
 
     VkQueryPoolCreateInfo createInfo{};
@@ -176,12 +203,7 @@ Application::~Application() {
         }
     }
 
-    if (worker) {
-        udpClient->stop();
-        worker->stop();
-        udpClient.reset();
-        worker.reset();
-    }
+    stopServerSide();
 }
 
 void Application::render(const Vector2i& viewport, const float deltaTime) {
@@ -240,7 +262,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
         vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
     }
 
-    if (renderer) {
+    if (renderer && !isViewsInputSuspended()) {
         renderer->setMousePos(mousePos);
     }
 
@@ -309,6 +331,8 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }*/
 
     if (!views || !views->getCurrent()) {
+        renderBanner(viewport);
+
         if (!status.message.empty()) {
             renderStatus(viewport);
         }
@@ -348,6 +372,58 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     const auto t1 = std::chrono::steady_clock::now();
     const auto frameTime = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
     perf.frameTime.update(frameTime);
+}
+
+void Application::quitToMenu() {
+    status.message = "Exiting...";
+    status.value = 1.0f;
+
+    NEXT(shutdownViews());
+}
+
+void Application::shutdownViews() {
+    views->setCurrent(nullptr);
+    views->clear();
+
+    NEXT(shutdownClientSide());
+}
+
+void Application::stopClientSide() {
+    views.reset();
+    client.reset();
+    renderer.reset();
+    rendererBackground.reset();
+    renderResources.reset();
+    voxelShapeCache.reset();
+}
+
+void Application::stopServerSide() {
+    if (worker) {
+        udpClient->stop();
+        worker->stop();
+        udpClient.reset();
+        worker.reset();
+    }
+
+    server.reset();
+    assetsManager.reset();
+}
+
+void Application::shutdownClientSide() {
+    stopClientSide();
+    NEXT(shutdownServerSide());
+}
+
+void Application::shutdownServerSide() {
+    stopServerSide();
+    NEXT(shutdownDone());
+}
+
+void Application::shutdownDone() {
+    status.message.clear();
+    status.value = 0.0f;
+
+    gui.mainMenu->setEnabled(true);
 }
 
 void Application::renderVersion(const Vector2i& viewport) {
@@ -404,6 +480,13 @@ void Application::renderStatus(const Vector2i& viewport) {
     canvas.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
                     {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
                     Colors::primary);
+}
+
+void Application::renderBanner(const Vector2i& viewport) {
+    auto adjustedViewport = viewport - Vector2i{0, 200.0f};
+    const auto size = bannerTexture.get().getSize2D();
+    const auto pos = Vector2{adjustedViewport / 2 - size / 2};
+    canvas.drawTexture(pos, size, bannerTexture.get(), Color4{1.0f});
 }
 
 void Application::loadProfile() {
@@ -719,10 +802,14 @@ void Application::startEditor() {
     startSinglePlayer();
 }
 
+bool Application::isViewsInputSuspended() const {
+    return gui.gameMenu->isEnabled() || gui.settings->isEnabled();
+}
+
 void Application::eventMouseMoved(const Vector2i& pos) {
     mousePos = pos;
     guiManager.eventMouseMoved(pos);
-    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+    if (views && !guiManager.isMousePosOverlap(mousePos) && !isViewsInputSuspended()) {
         views->eventMouseMoved(pos);
     }
     /*if (!nuklear.isCursorInsideWindow(pos)) {
@@ -737,7 +824,7 @@ void Application::eventMouseMoved(const Vector2i& pos) {
 void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     guiManager.eventMousePressed(pos, button);
-    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+    if (views && !guiManager.isMousePosOverlap(mousePos) && !isViewsInputSuspended()) {
         views->eventMousePressed(pos, button);
     }
     /*if (!nuklear.isCursorInsideWindow(pos) && !nuklear.isInputActive()) {
@@ -752,7 +839,7 @@ void Application::eventMousePressed(const Vector2i& pos, MouseButton button) {
 void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
     mousePos = pos;
     guiManager.eventMouseReleased(pos, button);
-    if (views) {
+    if (views && !isViewsInputSuspended()) {
         views->eventMouseReleased(pos, button);
     }
     /*if (!nuklear.isInputActive()) {
@@ -766,7 +853,7 @@ void Application::eventMouseReleased(const Vector2i& pos, MouseButton button) {
 
 void Application::eventMouseScroll(const int xscroll, const int yscroll) {
     guiManager.eventMouseScroll(xscroll, yscroll);
-    if (views && !guiManager.isMousePosOverlap(mousePos)) {
+    if (views && !guiManager.isMousePosOverlap(mousePos) && !isViewsInputSuspended()) {
         views->eventMouseScroll(xscroll, yscroll);
     }
     /*if (!nuklear.isCursorInsideWindow(mousePos) && !nuklear.isInputActive()) {
@@ -781,33 +868,44 @@ void Application::eventMouseScroll(const int xscroll, const int yscroll) {
 void Application::eventKeyPressed(const Key key, const Modifiers modifiers) {
     guiManager.eventKeyPressed(key, modifiers);
 
-    if (modifiers == 0 && key == Key::LetterM && !view.editor) {
+    if (modifiers == 0 && key == Key::LetterM && !view.editor && !isViewsInputSuspended()) {
         if (views->getCurrent() == view.galaxy) {
             views->setCurrent(view.space);
         } else {
             views->setCurrent(view.galaxy);
         }
-    } else if (modifiers == 0 && key == Key::LetterN && !view.editor) {
+    } else if (modifiers == 0 && key == Key::LetterN && !view.editor && !isViewsInputSuspended()) {
         if (views->getCurrent() == view.system) {
             views->setCurrent(view.space);
         } else {
             views->setCurrent(view.system);
         }
-    } else if (views) {
+    } else if (views && key == Key::Escape) {
+        if (gui.gameMenu->isEnabled()) {
+            gui.gameMenu->close();
+        } else if (gui.settings->isEnabled()) {
+            gui.settings->close();
+            gui.gameMenu->setEnabled(true);
+            guiManager.setFocused(*gui.gameMenu);
+        } else {
+            gui.gameMenu->setEnabled(true);
+            guiManager.setFocused(*gui.gameMenu);
+        }
+    } else if (views && !isViewsInputSuspended()) {
         views->eventKeyPressed(key, modifiers);
     }
-    /*if (!nuklear.isInputActive()) {
-        if (game) {
-            game->eventKeyPressed(key, modifiers);
-        } else if (editor) {
-            editor->eventKeyPressed(key, modifiers);
-        }
-    }*/
 }
+/*if (!nuklear.isInputActive()) {
+    if (game) {
+        game->eventKeyPressed(key, modifiers);
+    } else if (editor) {
+        editor->eventKeyPressed(key, modifiers);
+    }
+}*/
 
 void Application::eventKeyReleased(const Key key, const Modifiers modifiers) {
     guiManager.eventKeyReleased(key, modifiers);
-    if (views) {
+    if (views && !isViewsInputSuspended()) {
         views->eventKeyReleased(key, modifiers);
     }
     /*if (!nuklear.isInputActive()) {
@@ -825,7 +923,7 @@ void Application::eventWindowResized(const Vector2i& size) {
 
 void Application::eventCharTyped(const uint32_t code) {
     guiManager.eventCharTyped(code);
-    if (views) {
+    if (views && !isViewsInputSuspended()) {
         views->eventCharTyped(code);
     }
 

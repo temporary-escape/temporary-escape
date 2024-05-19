@@ -4,25 +4,122 @@ using namespace Engine;
 
 GuiWindowMainMenu::GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFamily, int fontSize) :
     GuiWindow{ctx, fontFamily, fontSize} {
-    setSize({250.0f, 500.0f});
-    setTitle("MAIN MENU");
+    setSize({180.0f * 6.0f, 60.0f * 3.0f + 15.0f});
+    setHeader(false);
     setDynamic(true);
+    setBordered(false);
+    setBackground(true);
+    setOpacity(0.0f);
 
-    auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
-    buttonNewGame = &row.addWidget<GuiWidgetButton>("New Game");
-    buttonNewGame->setStyle(&GuiWidgetButton::menuStyle);
-    buttonLoadSave = &row.addWidget<GuiWidgetButton>("Load Save");
-    buttonLoadSave->setStyle(&GuiWidgetButton::menuStyle);
-    buttonMultiplayer = &row.addWidget<GuiWidgetButton>("Multiplayer");
-    buttonMultiplayer->setStyle(&GuiWidgetButton::menuStyle);
-    buttonEditor = &row.addWidget<GuiWidgetButton>("Editor");
-    buttonEditor->setStyle(&GuiWidgetButton::menuStyle);
-    buttonSettings = &row.addWidget<GuiWidgetButton>("Settings");
-    buttonSettings->setStyle(&GuiWidgetButton::menuStyle);
-    buttonMods = &row.addWidget<GuiWidgetButton>("Mods");
-    buttonMods->setStyle(&GuiWidgetButton::menuStyle);
-    buttonQuit = &row.addWidget<GuiWidgetButton>("Quit");
-    buttonQuit->setStyle(&GuiWidgetButton::menuStyle);
+    const float count = 6.0f;
+
+    {
+        auto& row = addWidget<GuiWidgetRow>(60.0f, count);
+
+        buttonSingleplayer = &row.addWidget<GuiWidgetButtonToggle>("Singleplayer");
+        buttonSingleplayer->setWidth(1.0f / count);
+        buttonSingleplayer->setOnClick([this](const bool value) {
+            if (value) {
+                buttonMultiplayer->setValue(false);
+            }
+        });
+
+        buttonMultiplayer = &row.addWidget<GuiWidgetButtonToggle>("Multiplayer");
+        buttonMultiplayer->setWidth(1.0f / count);
+        buttonMultiplayer->setOnClick([this](const bool value) {
+            if (value) {
+                buttonSingleplayer->setValue(false);
+            }
+        });
+
+        buttonEditor = &row.addWidget<GuiWidgetButton>("Editor");
+        buttonEditor->setWidth(1.0f / count);
+        buttonEditor->setOnClick([this]() {
+            resetButtons();
+            if (onClickEditor) {
+                onClickEditor();
+            }
+        });
+
+        buttonSettings = &row.addWidget<GuiWidgetButton>("Settings");
+        buttonSettings->setWidth(1.0f / count);
+        buttonSettings->setOnClick([this]() {
+            resetButtons();
+            if (onClickSettings) {
+                onClickSettings();
+            }
+        });
+
+        buttonMods = &row.addWidget<GuiWidgetButton>("Mods");
+        buttonMods->setWidth(1.0f / count);
+        buttonMods->setOnClick([this]() {
+            resetButtons();
+            if (onClickMods) {
+                onClickMods();
+            }
+        });
+
+        buttonQuit = &row.addWidget<GuiWidgetButton>("Quit");
+        buttonQuit->setWidth(1.0f / count);
+        buttonQuit->setStyle(&GuiWidgetButton::dangerStyle);
+    }
+
+    {
+        auto& row = addWidget<GuiWidgetRow>(60.0f, count);
+
+        buttonNewGame = &row.addWidget<GuiWidgetButton>("New Game");
+        buttonNewGame->setWidth(1.0f / count);
+        buttonNewGame->setHidden(true);
+        buttonNewGame->setOnClick([this]() {
+            resetButtons();
+            if (onClickNewGame) {
+                onClickNewGame();
+            }
+        });
+
+        buttonServerBrowser = &row.addWidget<GuiWidgetButton>("Connect");
+        buttonServerBrowser->setWidth(1.0f / count);
+        buttonServerBrowser->setHidden(true);
+        buttonServerBrowser->setOnClick([this]() {
+            resetButtons();
+            if (onClickServerBrowser) {
+                onClickServerBrowser();
+            }
+        });
+    }
+
+    {
+        auto& row = addWidget<GuiWidgetRow>(60.0f, count);
+
+        buttonLoadSave = &row.addWidget<GuiWidgetButton>("Load Save");
+        buttonLoadSave->setWidth(1.0f / count);
+        buttonLoadSave->setHidden(true);
+        buttonLoadSave->setOnClick([this]() {
+            resetButtons();
+            if (onClickLoadSave) {
+                onClickLoadSave();
+            }
+        });
+    }
+}
+
+void GuiWindowMainMenu::update(const Vector2i& viewport) {
+    GuiWindow::update(viewport);
+
+    buttonNewGame->setHidden(!buttonSingleplayer->getValue());
+    buttonLoadSave->setHidden(!buttonSingleplayer->getValue());
+    buttonServerBrowser->setHidden(!buttonMultiplayer->getValue());
+
+    const auto size = getSize();
+    setPos({
+        static_cast<float>(viewport.x) / 2.0f - size.x / 2.0f,
+        static_cast<float>(viewport.y) - size.y - 30.0f,
+    });
+}
+
+void GuiWindowMainMenu::resetButtons() {
+    buttonSingleplayer->setValue(false);
+    buttonMultiplayer->setValue(false);
 }
 
 void GuiWindowMainMenu::setOnClickQuit(GuiWidgetButton::OnClickCallback callback) {
@@ -30,25 +127,25 @@ void GuiWindowMainMenu::setOnClickQuit(GuiWidgetButton::OnClickCallback callback
 }
 
 void GuiWindowMainMenu::setOnClickSettings(GuiWidgetButton::OnClickCallback callback) {
-    buttonSettings->setOnClick(std::move(callback));
+    onClickSettings = std::move(callback);
 }
 
 void GuiWindowMainMenu::setOnClickNewGame(GuiWidgetButton::OnClickCallback callback) {
-    buttonNewGame->setOnClick(std::move(callback));
+    onClickNewGame = std::move(callback);
 }
 
 void GuiWindowMainMenu::setOnClickLoadSave(GuiWidgetButton::OnClickCallback callback) {
-    buttonLoadSave->setOnClick(std::move(callback));
+    onClickLoadSave = std::move(callback);
 }
 
-void GuiWindowMainMenu::setOnClickMultiplayer(GuiWidgetButton::OnClickCallback callback) {
-    buttonMultiplayer->setOnClick(std::move(callback));
+void GuiWindowMainMenu::setOnClickServerBrowser(GuiWidgetButton::OnClickCallback callback) {
+    onClickServerBrowser = std::move(callback);
 }
 
 void GuiWindowMainMenu::setOnClickEditor(GuiWidgetButton::OnClickCallback callback) {
-    buttonEditor->setOnClick(std::move(callback));
+    onClickEditor = std::move(callback);
 }
 
 void GuiWindowMainMenu::setOnClickMods(GuiWidgetButton::OnClickCallback callback) {
-    buttonMods->setOnClick(std::move(callback));
+    onClickMods = std::move(callback);
 }

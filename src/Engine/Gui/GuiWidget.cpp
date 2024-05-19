@@ -6,6 +6,11 @@ GuiWidget::GuiWidget(GuiContext& ctx) : ctx{ctx} {
 }
 
 void GuiWidget::draw() {
+    if (hidden) {
+        ctx.skip();
+        return;
+    }
+
     beforeDraw();
 
     if (!tooltip.empty()) {
@@ -40,4 +45,8 @@ void GuiWidget::setTooltip(std::string value) {
 
 void GuiWidget::setOnHover(OnHoverCallback value) {
     onHover = std::move(value);
+}
+
+void GuiWidget::setHidden(const bool value) {
+    hidden = value;
 }

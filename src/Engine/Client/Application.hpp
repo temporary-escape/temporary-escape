@@ -6,6 +6,7 @@
 #include "../Gui/GuiManager.hpp"
 #include "../Gui/Windows/GuiWindowCreateProfile.hpp"
 #include "../Gui/Windows/GuiWindowCreateSave.hpp"
+#include "../Gui/Windows/GuiWindowGameMenu.hpp"
 #include "../Gui/Windows/GuiWindowLoadSave.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Gui/Windows/GuiWindowServerBrowser.hpp"
@@ -13,6 +14,7 @@
 #include "../Server/Server.hpp"
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Vulkan/VulkanRenderer.hpp"
+#include "BannerImage.hpp"
 #include "Client.hpp"
 #include "View.hpp"
 #include <queue>
@@ -55,10 +57,18 @@ public:
     void eventWindowInputEnd() override;
 
 private:
+    void quitToMenu();
+    void shutdownServerSide();
+    void shutdownClientSide();
+    void shutdownViews();
+    void stopServerSide();
+    void stopClientSide();
+    void shutdownDone();
     void loadProfile();
     void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
     void renderFrameTime(const Vector2i& viewport);
+    void renderBanner(const Vector2i& viewport);
     void checkForClientScene();
     void loadAssets();
     void createEditor();
@@ -79,6 +89,7 @@ private:
     void createBlockThumbnails(RendererThumbnail& thumbnailRenderer);
     void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
     void createPlanetThumbnails(RendererThumbnail& thumbnailRenderer);
+    bool isViewsInputSuspended() const;
 
     Config& config;
 
@@ -90,6 +101,7 @@ private:
     RendererCanvas rendererCanvas;
     Canvas canvas;
     GuiManager guiManager;
+    BannerImage bannerTexture;
 
     struct {
         GuiWindowMainMenu* mainMenu{nullptr};
@@ -98,6 +110,7 @@ private:
         GuiWindowServerBrowser* serverBrowser{nullptr};
         GuiWindowLoadSave* loadSave{nullptr};
         GuiWindowCreateSave* createSave{nullptr};
+        GuiWindowGameMenu* gameMenu{nullptr};
     } gui;
 
     struct {
