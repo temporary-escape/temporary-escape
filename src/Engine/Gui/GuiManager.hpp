@@ -7,7 +7,7 @@
 namespace Engine {
 class ENGINE_API GuiManager {
 public:
-    using ModalCallback = std::function<void(const std::string&)>;
+    using ModalCallback = std::function<bool(const std::string&)>;
     using ContextMenuCallback = std::function<void(GuiWindowContextMenu&)>;
 
     explicit GuiManager(const Config& config, VulkanRenderer& vulkan, const FontFamily& fontFamily, int fontSize);
@@ -32,6 +32,8 @@ public:
     GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
     GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
                           const ModalCallback& callback = nullptr, int timeout = 0);
+    void showModal(GuiWindowModal& window);
+    void closeModal(GuiWindowModal& window);
     GuiWindowContextMenu& getContextMenu() {
         return *contextMenu;
     }

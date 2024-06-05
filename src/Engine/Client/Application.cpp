@@ -30,7 +30,8 @@ Application::Application(Config& config) :
     rendererCanvas{*this},
     canvas{*this},
     guiManager{config, *this, font, config.guiFontSize},
-    bannerTexture{*this} {
+    bannerTexture{*this},
+    matchmaker{config} {
 
     // Fix monitor name
     const auto monitors = listSystemMonitors();
@@ -52,8 +53,6 @@ Application::Application(Config& config) :
         config.graphics.ssao = false;
     }
 
-    matchmaker = std::make_unique<Matchmaker>(config.network.matchmakerUrl);
-
     gui.createProfile = guiManager.addWindow<GuiWindowCreateProfile>();
     gui.createProfile->setOnCreateCallback([this](const GuiWindowCreateProfile::Result& result) {
         try {
@@ -65,12 +64,14 @@ Application::Application(Config& config) :
             guiManager.modalSuccess("Success", "User profile created!", [this](const std::string& choice) {
                 (void)choice;
                 gui.mainMenu->setEnabled(true);
+                return true;
             });
 
         } catch (std::exception& e) {
             guiManager.modalDanger("Error", "Failed to save profile!", [this](const std::string& choice) {
                 (void)choice;
                 closeWindow();
+                return true;
             });
 
             BACKTRACE(e, "Failed to create user profile");
@@ -86,11 +87,11 @@ Application::Application(Config& config) :
         gui.mainMenu->setEnabled(false);
         gui.loadSave->setEnabled(true);
         gui.loadSave->loadInfos();
+        gui.loadSave->setMode(MultiplayerMode::Singleplayer);
     });
-    gui.mainMenu->setOnClickServerBrowser([this]() {
+    gui.mainMenu->setOnClickOnline([this]() {
         gui.mainMenu->setEnabled(false);
-        gui.serverBrowser->setEnabled(true);
-        gui.serverBrowser->connect();
+        checkOnlineServices();
     });
     gui.mainMenu->setOnClickEditor([this]() {
         gui.mainMenu->setEnabled(false);
@@ -123,7 +124,7 @@ Application::Application(Config& config) :
         }
     });
 
-    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>(*matchmaker, guiManager);
+    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>(matchmaker, guiManager);
     gui.serverBrowser->setOnClose([this]() {
         gui.mainMenu->setEnabled(true);
         gui.serverBrowser->setEnabled(false);
@@ -131,6 +132,12 @@ Application::Application(Config& config) :
     gui.serverBrowser->setOnConnect([this](const std::string& serverId) {
         logger.info("Starting connection to the server id: {}", serverId);
         startConnectServer(serverId);
+    });
+    gui.serverBrowser->setOnCreate([this]() {
+        gui.serverBrowser->setEnabled(false);
+        gui.loadSave->setEnabled(true);
+        gui.loadSave->loadInfos();
+        gui.loadSave->setMode(MultiplayerMode::Online);
     });
 
     gui.createSave = guiManager.addWindow<GuiWindowCreateSave>(guiManager, config.userdataSavesPath);
@@ -142,7 +149,13 @@ Application::Application(Config& config) :
         gui.createSave->setEnabled(false);
         serverOptions.seed = form.seed;
         serverOptions.savePath = form.path;
-        startSinglePlayer();
+        if (gui.loadSave->getMode() == MultiplayerMode::Singleplayer) {
+            serverOptions.name.clear();
+            serverOptions.password.clear();
+            startSinglePlayer();
+        } else {
+            openMultiplayerSettings();
+        }
     });
 
     gui.loadSave = guiManager.addWindow<GuiWindowLoadSave>(guiManager, config.userdataSavesPath);
@@ -154,7 +167,17 @@ Application::Application(Config& config) :
         gui.loadSave->setEnabled(false);
         serverOptions.seed = 0;
         serverOptions.savePath = path;
-        startSinglePlayer();
+        if (gui.loadSave->getMode() == MultiplayerMode::Singleplayer) {
+            serverOptions.name.clear();
+            serverOptions.password.clear();
+            startSinglePlayer();
+        } else {
+            openMultiplayerSettings();
+        }
+    });
+    gui.loadSave->setOnCreate([this]() {
+        gui.loadSave->setEnabled(false);
+        gui.createSave->setEnabled(true);
     });
 
     gui.gameMenu = guiManager.addWindow<GuiWindowGameMenu>();
@@ -175,6 +198,15 @@ Application::Application(Config& config) :
     gui.gameMenu->setOnClickQuitGame([this]() {
         gui.gameMenu->close();
         closeWindow();
+    });
+
+    gui.multiplayerSettings = guiManager.addWindow<GuiWindowMultiplayerSettings>();
+    gui.multiplayerSettings->setOnClose([this]() { gui.mainMenu->setEnabled(true); });
+    gui.multiplayerSettings->setOnStart([this](const GuiWindowMultiplayerSettings::Form& form) {
+        gui.multiplayerSettings->setEnabled(false);
+        serverOptions.name = form.name;
+        serverOptions.password = form.password;
+        startMultiPlayerHosted();
     });
 
     loadProfile();
@@ -331,10 +363,10 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     }*/
 
     if (!views || !views->getCurrent()) {
-        renderBanner(viewport);
-
         if (!status.message.empty()) {
             renderStatus(viewport);
+        } else {
+            renderBanner(viewport);
         }
 
         /*nuklear.begin(viewport);
@@ -536,12 +568,8 @@ void Application::startClient() {
     status.value = 0.9f;
 
     future = std::async([this]() -> std::function<void()> {
-        client = std::make_unique<Client>(config,
-                                          *assetsManager,
-                                          playerLocalProfile,
-                                          voxelShapeCache.get(),
-                                          config.network.serverBindAddress,
-                                          server->getPort());
+        client = std::make_unique<Client>(
+            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), connectAddress, server->getPort());
 
         return [this]() { checkForClientScene(); };
     });
@@ -747,9 +775,43 @@ void Application::compressAssets() {
     });
 }
 
+void Application::checkOnlineServices() {
+    gui.logIn = guiManager.addWindow<GuiWindowLogIn>(*this, matchmaker);
+    guiManager.showModal(*gui.logIn);
+    gui.logIn->start();
+
+    gui.logIn->setOnClose([this]() {
+        guiManager.closeModal(*gui.logIn);
+        gui.mainMenu->setEnabled(true);
+    });
+
+    gui.logIn->setOnSuccessCallback([this]() {
+        matchmaker.saveDataFile();
+        guiManager.closeModal(*gui.logIn);
+        gui.serverBrowser->setEnabled(true);
+        gui.serverBrowser->fetchServers(1);
+    });
+}
+
+void Application::startMultiPlayerHosted() {
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::";
+    connectAddress = "::1";
+
+    logger.info("Starting multi player mode");
+
+    status.message = "Loading...";
+    status.value = 0.0f;
+
+    // gui.mainMenu.setEnabled(false);
+
+    NEXT(compressAssets());
+}
+
 void Application::startSinglePlayer() {
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
+    connectAddress = "::1";
 
     logger.info("Starting single player mode");
 
@@ -759,6 +821,11 @@ void Application::startSinglePlayer() {
     // gui.mainMenu.setEnabled(false);
 
     NEXT(compressAssets());
+}
+
+void Application::openMultiplayerSettings() {
+    gui.multiplayerSettings->setEnabled(true);
+    gui.multiplayerSettings->setServerName(fmt::format("{} server", playerLocalProfile.name));
 }
 
 void Application::startConnectServer(const std::string& serverId) {
@@ -774,7 +841,7 @@ void Application::startConnectServer(const std::string& serverId) {
     // udpClient = std::make_shared<NetworkUdpClient>(config, worker->getService());
 
     logger.info("Sending STUN request");
-    udpClient->getStunClient().send([this, serverId](const NetworkStunClient::Result& result) {
+    /*udpClient->getStunClient().send([this, serverId](const NetworkStunClient::Result& result) {
         Matchmaker::ServerConnectModel body{};
         body.address = result.endpoint.address().to_string();
         body.port = result.endpoint.port();
@@ -793,7 +860,7 @@ void Application::startConnectServer(const std::string& serverId) {
                 });
             }
         });
-    });
+    });*/
 }
 
 void Application::startEditor() {

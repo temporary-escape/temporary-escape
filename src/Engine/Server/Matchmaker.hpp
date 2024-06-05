@@ -24,6 +24,20 @@ template <> struct adl_serializer<asio::ip::udp::endpoint> {
 } // namespace nlohmann
 
 namespace Engine {
+struct MatchmakerDataFile {
+    std::string token;
+
+    void convert(const Xml::Node& xml) {
+        xml.convert("token", token);
+    }
+
+    void pack(Xml::Node& xml) const {
+        xml.pack("token", token);
+    }
+};
+
+XML_DEFINE(MatchmakerDataFile, "matchmaker");
+
 class ENGINE_API NetworkUdpServer;
 class ENGINE_API Matchmaker : public BackgroundWorker, public NetworkWebsockets::Receiver {
 public:
@@ -41,7 +55,45 @@ public:
 
     template <typename T> using Callback = std::function<void(const T&)>;
 
-    struct LoginModel {
+    struct PageModel {
+        int page;
+        int total;
+        int pages;
+    };
+
+    template <typename T> struct TypedPageModel : PageModel {
+        std::vector<T> items;
+    };
+
+    struct AuthMe {
+        std::string userId;
+    };
+
+    using AuthMeResponse = Response<AuthMe>;
+
+    struct AuthStateCreated {
+        std::string state;
+    };
+
+    using AuthStateCreatedResponse = Response<AuthStateCreated>;
+
+    struct AuthLogInRequest {
+        std::string state;
+    };
+
+    using AuthLogInRespose = Response<void>;
+
+    struct Server {
+        std::string id;
+        std::string name;
+        std::string version;
+    };
+
+    using ServerPage = TypedPageModel<Server>;
+
+    using ServerPageResponse = Response<ServerPage>;
+
+    /*struct LoginModel {
         std::string username;
         std::string password;
     };
@@ -84,10 +136,6 @@ public:
         int port;
     };
 
-    template <typename T> struct TypedPageModel : PageModel {
-        std::vector<T> items;
-    };
-
     using ServerPageModel = TypedPageModel<ServerModel>;
 
     using LoginResponse = Response<void>;
@@ -95,12 +143,19 @@ public:
     using ServerGetResponse = Response<ServerPageModel>;
     using ServerRegisterResponse = Response<ServerModel>;
     using ServerPingResponse = Response<void>;
-    using ServerConnectResponse = Response<ServerConnectModel>;
+    using ServerConnectResponse = Response<ServerConnectModel>;*/
 
-    Matchmaker(std::string url);
+    Matchmaker(const Config& config);
     ~Matchmaker();
 
-    void registerServerAndListen(std::string name, NetworkUdpServer& server);
+    void close();
+
+    Future<AuthMeResponse> apiAuthGetMe();
+    Future<AuthStateCreatedResponse> apiAuthCreateState();
+    Future<AuthLogInRespose> apiAuthLogIn(const std::string& state);
+    Future<ServerPageResponse> apiServersList(int page);
+
+    /*void registerServerAndListen(std::string name, NetworkUdpServer& server);
 
     // void withLogin(std::function<void()> callback);
     void apiAuthLogin(Callback<LoginResponse> callback);
@@ -124,21 +179,35 @@ public:
             return api->getAuthorization();
         }
         return dummy;
+    }*/
+
+    const std::string& getBaseUrl() const {
+        return url;
     }
 
+    bool hasAuthorization() const;
+
+    const std::string& getAuthorization() const;
+
+    std::string getUrlForAuthRedirect(const std::string& state) const;
+
+    void saveDataFile();
+
 private:
-    void doLogin();
-    void doRegister();
-    void doPing();
-    void startWs();
+    void loadDataFile();
+    // void doLogin();
+    // void doRegister();
+    // void doPing();
+    /// void startWs();
 
     void onWsReceive(Json json) override;
     void onWsConnect() override;
     void onWsConnectFailed() override;
     void onWsClose(int code) override;
 
-    void onEvent(const EventConnectionRequest& event);
+    // void onEvent(const EventConnectionRequest& event);
 
+    const Config& config;
     std::string url;
     std::shared_ptr<NetworkHttpsClient> api;
     std::atomic<bool> authorized{false};
@@ -160,7 +229,7 @@ template <> struct Matchmaker::Response<void> {
     std::string error;
 };
 
-inline void to_json(Json& j, const Matchmaker::LoginModel& m) {
+/*inline void to_json(Json& j, const Matchmaker::LoginModel& m) {
     j = Json{
         {"username", m.username},
         {"password", m.password},
@@ -236,117 +305,27 @@ inline void from_json(const Json& j, Matchmaker::EventConnectionResponse& m) {
     j.at("id").get_to(m.id);
     j.at("address").get_to(m.address);
     j.at("port").get_to(m.port);
-}
-
-/*class ENGINE_API Matchmaker : public BackgroundWorker, public NetworkWebsockets::Receiver {
-public:
-    class Listener {
-    public:
-        virtual void onMatchmakerConnect() = 0;
-        virtual void onMatchmakerDisconnect() = 0;
-    };
-
-    struct MessageHello {
-        static constexpr auto type = "hello";
-
-        std::string description;
-    };
-
-    struct MessageServerRegister {
-        static constexpr auto type = "server_register";
-
-        std::string name;
-        asio::ip::udp::endpoint endpoint;
-    };
-
-    struct MessageServerRegistered {
-        static constexpr auto type = "server_registered";
-
-        std::string id;
-    };
-
-    struct MessageServerPing {
-        static constexpr auto type = "server_ping";
-
-        std::chrono::system_clock::time_point time;
-    };
-
-    Matchmaker(Listener& listener, std::string url);
-    ~Matchmaker();
-
-    void serverRegister(std::string name, const asio::ip::udp::endpoint& endpoint);
-    void close();
-
-private:
-    using HandlerFunc = std::function<void(Json)>;
-
-    template <typename T> void send(const T& value);
-    void doPing();
-    void retryWsConnection();
-    void onWsReceive(Json json) override;
-    void onWsConnect() override;
-    void onWsConnectFailed() override;
-    void onWsClose() override;
-
-    void handle(const MessageHello& msg);
-    void handle(const MessageServerRegistered& msg);
-
-    template <typename T> void addHandler() {
-        handlers.emplace(T::type, [this](Json json) { handle(json.template get<T>()); });
-    }
-
-    Listener& listener;
-    std::string url;
-    std::shared_ptr<NetworkWebsockets> ws;
-    std::unordered_map<std::string, HandlerFunc> handlers;
-    // Promise<void> promise;
-    std::unique_ptr<asio::steady_timer> retry;
-    std::atomic<bool> connected{false};
-    std::atomic<bool> closing{false};
-    std::unique_ptr<asio::steady_timer> pingTimer;
-};
-
-inline void to_json(Json& j, const Matchmaker::MessageHello& m) {
-    j = Json{
-        {"description", m.description},
-    };
-}
-
-inline void from_json(const Json& j, Matchmaker::MessageHello& m) {
-    j.at("description").get_to(m.description);
-}
-
-inline void to_json(Json& j, const Matchmaker::MessageServerRegister& m) {
-    j = Json{
-        {"name", m.name},
-        {"endpoint", m.endpoint},
-    };
-}
-
-inline void from_json(const Json& j, Matchmaker::MessageServerRegister& m) {
-    j.at("name").get_to(m.name);
-    j.at("endpoint").get_to(m.endpoint);
-}
-
-inline void to_json(Json& j, const Matchmaker::MessageServerRegistered& m) {
-    j = Json{
-        {"id", m.id},
-    };
-}
-
-inline void from_json(const Json& j, Matchmaker::MessageServerRegistered& m) {
-    j.at("id").get_to(m.id);
-}
-
-inline void to_json(Json& j, const Matchmaker::MessageServerPing& m) {
-    j = Json{
-        {"time", m.time},
-    };
-}
-
-inline void from_json(const Json& j, Matchmaker::MessageServerPing& m) {
-    j.at("time").get_to(m.time);
 }*/
+
+inline void from_json(const Json& j, Matchmaker::AuthMe& m) {
+    j.at("user_id").get_to(m.userId);
+}
+
+inline void from_json(const Json& j, Matchmaker::AuthStateCreated& m) {
+    j.at("state").get_to(m.state);
+}
+
+inline void to_json(Json& j, const Matchmaker::AuthLogInRequest& m) {
+    j = Json{
+        {"state", m.state},
+    };
+}
+
+inline void from_json(const Json& j, Matchmaker::Server& m) {
+    j.at("id").get_to(m.id);
+    j.at("name").get_to(m.name);
+    j.at("version").get_to(m.version);
+}
 } // namespace Engine
 
 namespace nlohmann {

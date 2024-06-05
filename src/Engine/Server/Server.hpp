@@ -26,6 +26,8 @@ public:
     struct Options {
         Path savePath;
         uint64_t seed{123456789LL};
+        std::string name;
+        std::string password;
     };
 
     explicit Server(const Config& config, AssetsManager& assetsManager, const Options& options);

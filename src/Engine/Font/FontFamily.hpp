@@ -39,6 +39,7 @@ public:
     [[nodiscard]] float getGlyphAdvance(uint32_t code, float height) const;
     [[nodiscard]] Vector2 getBounds(const std::string_view& text, float height) const;
     [[nodiscard]] Vector2 getPenOffset(const std::string_view& text, float height, TextAlign textAlign) const;
+    [[nodiscard]] std::string wrapText(const std::string_view& text, float height, float width) const;
 
     [[nodiscard]] VulkanTexture& getTexture() {
         return texture;

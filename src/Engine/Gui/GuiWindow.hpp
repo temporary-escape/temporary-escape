@@ -7,14 +7,17 @@
 #include "Widgets/GuiWidgetCheckbox.hpp"
 #include "Widgets/GuiWidgetCombo.hpp"
 #include "Widgets/GuiWidgetContextButton.hpp"
+#include "Widgets/GuiWidgetGroup.hpp"
 #include "Widgets/GuiWidgetImage.hpp"
 #include "Widgets/GuiWidgetImageToggle.hpp"
 #include "Widgets/GuiWidgetLabel.hpp"
 #include "Widgets/GuiWidgetLayout.hpp"
 #include "Widgets/GuiWidgetProgressBar.hpp"
 #include "Widgets/GuiWidgetRow.hpp"
+#include "Widgets/GuiWidgetSelectableGroup.hpp"
 #include "Widgets/GuiWidgetTabs.hpp"
 #include "Widgets/GuiWidgetTemplateRow.hpp"
+#include "Widgets/GuiWidgetText.hpp"
 #include "Widgets/GuiWidgetTextInput.hpp"
 
 namespace Engine {

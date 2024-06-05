@@ -309,6 +309,10 @@ void NetworkHttpsClient::processCookies(const std::string_view& header) {
     }
 }
 
+void NetworkHttpsClient::setAuthorization(const std::string& value) {
+    token = value;
+}
+
 void NetworkHttpsClient::processBody(const NetworkHttpsClient::HttpRequestPtr& req) {
     asio::error_code ec;
     (void)req->socket.shutdown(ec);
@@ -350,15 +354,15 @@ void NetworkHttpsClient::processBody(const NetworkHttpsClient::HttpRequestPtr& r
 }
 
 void NetworkHttpsClient::finalize(const NetworkHttpsClient::HttpRequestPtr& req) {
-    if (req->res.error.empty() && (req->res.status == 200 || req->res.status == 201)) {
+    if (req->res.error.empty() && req->res.status >= 200 && req->res.status <= 204) {
         logger.info("HTTPS client {} {}{} HTTP/1.1 {}", methodToStr(req->method), url, req->path, req->res.status);
     } else {
-        logger.error("HTTPS client {} {}{} HTTP/1.1 {} {}",
-                     methodToStr(req->method),
-                     url,
-                     req->path,
-                     req->res.status,
-                     req->res.error);
+        logger.warn("HTTPS client {} {}{} HTTP/1.1 {} {}",
+                    methodToStr(req->method),
+                    url,
+                    req->path,
+                    req->res.status,
+                    req->res.error);
     }
     req->callback(req->res);
 }

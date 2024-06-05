@@ -30,6 +30,9 @@ format: ./venv
 image:
 	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
 
+run: ./venv
+	$(PYTHON3) -m matchmaker.main --log-config=log_conf.yaml
+
 deploy: image
 	docker save $(IMAGE_NAME):$(IMAGE_VERSION) | ssh -C $(SERVER_HOST) k3s ctr images import -
 	scp -r ./chart $(SERVER_HOST):~/

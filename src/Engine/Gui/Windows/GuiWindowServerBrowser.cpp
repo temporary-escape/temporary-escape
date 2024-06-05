@@ -1,5 +1,6 @@
 #include "GuiWindowServerBrowser.hpp"
 #include "../../Server/Matchmaker.hpp"
+#include "../../Utils/Platform.hpp"
 #include "../GuiManager.hpp"
 
 using namespace Engine;
@@ -20,6 +21,10 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily
     { // Top row
         auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
 
+        buttonCreate = &row.addWidget<GuiWidgetButton>("Host Game");
+        buttonCreate->setWidth(200.0f, true);
+        buttonCreate->setStyle(&GuiWidgetButton::infoStyle);
+
         auto& input = row.addWidget<GuiWidgetTextInput>();
         input.setWidth(0.0f);
 
@@ -32,14 +37,8 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily
 
     { // Header
         auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
-        auto& actions = row.addWidget<GuiWidgetLabel>("Action:");
-        actions.setWidth(80.0f, true);
-
-        auto& name = row.addWidget<GuiWidgetLabel>("Name:");
-        name.setWidth(0.0f);
-
-        auto& version = row.addWidget<GuiWidgetLabel>("Version:");
-        version.setWidth(250.0f, true);
+        auto& label = row.addWidget<GuiWidgetLabel>("Server list:");
+        label.setWidth(0.0f);
     }
 
     { // Server list
@@ -48,16 +47,27 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily
         group->setScrollbar(true);
         group->setBorder(true);
     }
+
+    setMessage("Fetching servers...");
 }
 
 void GuiWindowServerBrowser::update(const Vector2i& viewport) {
-    tasks.reset();
-    tasks.run();
+    // tasks.reset();
+    // tasks.run();
     GuiWindow::update(viewport);
+
+    if (futureServerPage) {
+        const auto& resp = futureServerPage.get();
+        recreateList(resp.data);
+    }
 }
 
 void GuiWindowServerBrowser::setOnConnect(OnConnectCallback callback) {
     onConnectCallback = std::move(callback);
+}
+
+void GuiWindowServerBrowser::setOnCreate(OnCreateCallback callback) {
+    buttonCreate->setOnClick(std::move(callback));
 }
 
 /*void GuiWindowServerBrowser::doConnect(const std::string& id) {
@@ -86,10 +96,13 @@ void GuiWindowServerBrowser::setOnConnect(OnConnectCallback callback) {
     });
 }*/
 
-void GuiWindowServerBrowser::recreateList() {
-    group->clearWidgets();
+void GuiWindowServerBrowser::recreateList(const Matchmaker::ServerPage& page) {
+    if (page.items.empty()) {
+        setMessage("No servers found!");
+        return;
+    }
 
-    for (const auto& server : servers) {
+    /*for (const auto& server : servers) {
         auto& row = group->addWidget<GuiWidgetTemplateRow>(30.0f);
 
         auto& connect = row.addWidget<GuiWidgetButton>("Connect");
@@ -105,34 +118,16 @@ void GuiWindowServerBrowser::recreateList() {
 
         auto& version = row.addWidget<GuiWidgetLabel>(server.version);
         version.setWidth(250.0f, true);
-    }
+    }*/
 }
 
-void GuiWindowServerBrowser::connect() {
-    matchmaker.apiAuthLogin([this](const Matchmaker::LoginResponse& res) {
-        if (!res.error.empty()) {
-            tasks.post([this, res]() { guiManager.modalDanger("Failed to get servers", res.error); });
-        } else {
-            tasks.post([this]() {
-                servers.clear();
-                fetchServers(1);
-            });
-        }
-    });
+void GuiWindowServerBrowser::setMessage(const std::string& value) {
+    group->clearWidgets();
+
+    auto& row = group->addWidget<GuiWidgetTemplateRow>(30.0f);
+    row.addWidget<GuiWidgetLabel>(value);
 }
 
 void GuiWindowServerBrowser::fetchServers(const int page) {
-    matchmaker.apiServersGet(page, [this](const Matchmaker::ServerGetResponse res) {
-        if (!res.error.empty()) {
-            tasks.post([this, res]() { guiManager.modalDanger("Failed to get servers", res.error); });
-        } else {
-            tasks.post([this, res]() { servers.insert(servers.end(), res.data.items.begin(), res.data.items.end()); });
-
-            if (res.data.page < res.data.pages) {
-                fetchServers(res.data.page + 1);
-            } else {
-                tasks.post([this]() { recreateList(); });
-            }
-        }
-    });
+    futureServerPage = matchmaker.apiServersList(page);
 }

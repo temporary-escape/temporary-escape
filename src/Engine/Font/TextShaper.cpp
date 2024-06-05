@@ -87,6 +87,7 @@ TextShaper::TextShaper(const FontFamily& font, const float size, const Vector2& 
 void TextShaper::write(const std::string_view& text) {
     // const auto total = utf8::distance(text.begin(), text.end());
     auto it = text.begin();
+    auto current = it;
     unsigned int previous = 0;
     const char* cmdStart = nullptr;
     std::string_view cmd;
@@ -125,6 +126,12 @@ void TextShaper::write(const std::string_view& text) {
 
         previous = code;
 
+        if (code == '\n') {
+            pos.x = origin.x;
+            pos.y += size * 1.25f;
+            continue;
+        }
+
         const auto& glyph = face->getGlyph(code);
 
         const auto p = pos + Vector2{0.0f, glyph.ascend * scale};
@@ -155,12 +162,8 @@ void TextShaper::write(const std::string_view& text) {
         bounds.x = glm::max(bounds.x, p.x + glyph.size.x * scale);
         bounds.y = glm::max(bounds.y, p.y + size);
 
-        onGlyph(*face, glyph, pos, quad, color);
-
-        if (code == '\n') {
-            pos.x = origin.x;
-            pos.y += size * 1.25f;
-        }
+        onGlyph(*face, glyph, pos, quad, color, current, code);
+        current = it;
 
         pos += Vector2{quad.advance, 0.0f};
     }
@@ -171,10 +174,64 @@ Vector2 TextShaper::getBounds() const {
 }
 
 void TextShaper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen,
-                         const TextShaper::Quad& quad, const Color4& color) {
+                         const TextShaper::Quad& quad, const Color4& color, const std::string_view::const_iterator it,
+                         const uint32_t code) {
     (void)fontFace;
     (void)glyph;
     (void)pen;
     (void)quad;
     (void)color;
+    (void)it;
+    (void)code;
+}
+
+void TextShaper::resetPen(const Vector2& value) {
+    pos = value;
+    bounds = value;
+    origin = value;
+}
+
+TextWrapper::TextWrapper(const FontFamily& font, const float size, const float maxWidth) :
+    TextShaper{font, size}, size{size}, maxWidth{maxWidth} {
+}
+
+void TextWrapper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen,
+                          const TextShaper::Quad& quad, const Color4& color, const std::string_view::const_iterator it,
+                          const uint32_t code) {
+    if (!startChar) {
+        startChar = it;
+        lastWordChar = it;
+        previousChar = it;
+    }
+
+    if (*previousChar != ' ' && *it == ' ') {
+        lastWordChar = it;
+    }
+
+    if (getBounds().x >= maxWidth && lastWordChar > startChar) {
+        if (!result.empty()) {
+            result.append("\n");
+        }
+        result.append(std::string_view{startChar, static_cast<size_t>(lastWordChar - startChar)});
+        resetPen();
+        startChar = lastWordChar;
+        numLines++;
+    }
+
+    previousChar = it;
+}
+
+void TextWrapper::flush(const std::string_view::const_iterator end) {
+    if (previousChar > startChar && previousChar < end) {
+        utf8::next(previousChar, end);
+        if (!result.empty()) {
+            result.append("\n");
+        }
+        numLines++;
+        result.append(std::string_view{startChar, static_cast<size_t>(previousChar - startChar)});
+    }
+}
+
+float TextWrapper::getHeight() const {
+    return static_cast<float>(numLines) * size * 1.25f;
 }

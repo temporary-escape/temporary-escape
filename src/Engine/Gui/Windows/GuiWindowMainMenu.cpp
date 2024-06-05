@@ -77,13 +77,13 @@ GuiWindowMainMenu::GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFami
             }
         });
 
-        buttonServerBrowser = &row.addWidget<GuiWidgetButton>("Connect");
-        buttonServerBrowser->setWidth(1.0f / count);
-        buttonServerBrowser->setHidden(true);
-        buttonServerBrowser->setOnClick([this]() {
+        buttonOnline = &row.addWidget<GuiWidgetButton>("Online");
+        buttonOnline->setWidth(1.0f / count);
+        buttonOnline->setHidden(true);
+        buttonOnline->setOnClick([this]() {
             resetButtons();
-            if (onClickServerBrowser) {
-                onClickServerBrowser();
+            if (onClickOnline) {
+                onClickOnline();
             }
         });
     }
@@ -100,6 +100,16 @@ GuiWindowMainMenu::GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFami
                 onClickLoadSave();
             }
         });
+
+        buttonLocalLan = &row.addWidget<GuiWidgetButton>("Local LAN");
+        buttonLocalLan->setWidth(1.0f / count);
+        buttonLocalLan->setHidden(true);
+        buttonLocalLan->setOnClick([this]() {
+            resetButtons();
+            if (onClickLocalLan) {
+                onClickLocalLan();
+            }
+        });
     }
 }
 
@@ -108,7 +118,8 @@ void GuiWindowMainMenu::update(const Vector2i& viewport) {
 
     buttonNewGame->setHidden(!buttonSingleplayer->getValue());
     buttonLoadSave->setHidden(!buttonSingleplayer->getValue());
-    buttonServerBrowser->setHidden(!buttonMultiplayer->getValue());
+    buttonOnline->setHidden(!buttonMultiplayer->getValue());
+    buttonLocalLan->setHidden(!buttonMultiplayer->getValue());
 
     const auto size = getSize();
     setPos({
@@ -138,8 +149,12 @@ void GuiWindowMainMenu::setOnClickLoadSave(GuiWidgetButton::OnClickCallback call
     onClickLoadSave = std::move(callback);
 }
 
-void GuiWindowMainMenu::setOnClickServerBrowser(GuiWidgetButton::OnClickCallback callback) {
-    onClickServerBrowser = std::move(callback);
+void GuiWindowMainMenu::setOnClickOnline(GuiWidgetButton::OnClickCallback callback) {
+    onClickOnline = std::move(callback);
+}
+
+void GuiWindowMainMenu::setOnClickLocalLan(GuiWidgetButton::OnClickCallback callback) {
+    onClickLocalLan = std::move(callback);
 }
 
 void GuiWindowMainMenu::setOnClickEditor(GuiWidgetButton::OnClickCallback callback) {

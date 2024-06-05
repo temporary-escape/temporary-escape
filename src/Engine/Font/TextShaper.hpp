@@ -29,9 +29,11 @@ public:
 
     Vector2 getBounds() const;
 
+    void resetPen(const Vector2& value = {0.0f, 0.0f});
+
 private:
     virtual void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
-                         const Color4& color);
+                         const Color4& color, std::string_view::const_iterator it, uint32_t code);
 
     const FontFamily& font;
     float size;
@@ -40,5 +42,28 @@ private:
     Vector2 bounds;
     float scale;
     Color4 mainColor;
+};
+
+class TextWrapper : public TextShaper {
+public:
+    TextWrapper(const FontFamily& font, float size, float maxWidth);
+
+    [[nodiscard]] const std::string& getResult() const {
+        return result;
+    }
+    void flush(std::string_view::const_iterator end);
+    float getHeight() const;
+
+private:
+    void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
+                 const Color4& color, std::string_view::const_iterator it, uint32_t code) override;
+
+    float size;
+    float maxWidth;
+    std::string_view::const_iterator startChar{nullptr};
+    std::string_view::const_iterator lastWordChar{nullptr};
+    std::string_view::const_iterator previousChar{nullptr};
+    std::string result;
+    int numLines{0};
 };
 } // namespace Engine

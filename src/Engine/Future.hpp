@@ -22,7 +22,7 @@ public:
     }
 
     bool ready() const {
-        return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+        return f.valid() && f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
     }
 
     void wait() const {

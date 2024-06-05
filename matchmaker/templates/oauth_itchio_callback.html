@@ -1,0 +1,24 @@
+{% extends "hero.html" %}
+{% block box %}
+<p class="mb-4"><b>We got your login!</b></p>
+
+<form id="oauth-form" action="/oauth/itchio" method="post">
+    <input type="hidden" id="access_token" name="access_token" value="">
+    <input type="hidden" id="state" name="state" value="">
+    <button type="submit" class="button is-link is-large">Click to continue</button>
+</form>
+<script>
+// Get the access token and state from the URL hash
+var queryString = window.location.hash.slice(1);
+var params = new URLSearchParams(queryString);
+var accessToken = params.get("access_token");
+var state = params.get("state");
+
+document.getElementById('access_token').value = accessToken;
+if (state && state !== "") {
+    document.getElementById('state').value = state;
+} else {
+    document.getElementById('state').value = "null";
+}
+</script>
+{% endblock %}

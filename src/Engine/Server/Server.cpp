@@ -368,7 +368,7 @@ void Server::handle(Request2<MessageLoginRequest> req) {
     auto data = req.get();
 
     // Check for server password
-    if (!config.serverPassword.empty() && config.serverPassword != data.password) {
+    if (!options.password.empty() && options.password != data.password) {
         req.respondError("Bad server password");
         lobby.disconnectPeer(req.peer);
         return;

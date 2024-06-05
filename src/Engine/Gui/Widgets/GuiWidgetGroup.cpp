@@ -7,7 +7,7 @@ GuiWidgetGroup::GuiWidgetGroup(GuiContext& ctx) :
 }
 
 void GuiWidgetGroup::draw() {
-    if (ctx.groupBegin(name, scrollbar, border)) {
+    if (ctx.groupBegin(name, scrollbar, border, Colors::border)) {
         GuiWidgetLayout::drawInternal();
         ctx.groupEnd();
     }

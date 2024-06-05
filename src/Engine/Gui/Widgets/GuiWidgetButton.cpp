@@ -44,6 +44,20 @@ const GuiStyleButton GuiWidgetButton::dangerStyle{
     Colors::danger,
 };
 
+const GuiStyleButton GuiWidgetButton::infoStyle{
+    {
+        .normal = Colors::infoBackground,
+        .hover = Colors::infoBackground,
+        .active = Colors::primaryBackground,
+    },
+    {
+        .normal = Colors::info,
+        .hover = Colors::white,
+        .active = Colors::white,
+    },
+    Colors::info,
+};
+
 const GuiStyleButton GuiWidgetButton::menuStyle{
     {
         .normal = Colors::border,

@@ -36,6 +36,11 @@ spec:
             - name: api
               containerPort: 8000
               protocol: TCP
+          env:
+            - name: "OAUTH_ITCHIO_CLIENT_SECRET"
+              value: "{{ .Values.api.oauth.itchio.client_secret }}"
+            - name: "OAUTH_GITHUB_CLIENT_SECRET"
+              value: "{{ .Values.api.oauth.github.client_secret }}"
           securityContext:
             allowPrivilegeEscalation: false
           volumeMounts:
@@ -43,4 +48,9 @@ spec:
               mountPath: "/app/data"
       volumes:
         - name: data
+          {{- if .Values.api.dataPath }}
+          hostPath:
+            path: "{{ .Values.api.dataPath }}"
+          {{- else }}
           emptyDir: {}
+          {{- end }}

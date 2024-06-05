@@ -127,7 +127,7 @@ static float getTextWidth(const nk_handle handle, const float height, const char
     if (it == str + len) {
         return font.getGlyphAdvance(code, height);
     } else {
-        return font.getBounds({str, static_cast<size_t>(len)}, height).x;
+        return font.getBounds({str, static_cast<size_t>(len)}, height).x - 1.0f;
     }
 }
 
@@ -198,6 +198,10 @@ GuiContext::~GuiContext() {
     if (nk) {
         nk_free(nk.get());
     }
+}
+
+const FontFamily& Engine::GuiContext::getFont() const {
+    return *static_cast<const FontFamily*>(font->userdata.ptr);
 }
 
 void GuiContext::update() {
@@ -368,7 +372,8 @@ void Engine::GuiContext::setFocused(const std::string& id) {
     nk_window_set_focus(nk.get(), id.c_str());
 }
 
-bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const bool border) {
+bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const bool border,
+                            const Color4& borderColor) {
     Flags flags{0};
     if (!scrollbar) {
         flags = flags | WindowFlag::NoScrollbar;
@@ -376,6 +381,8 @@ bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const
     if (border) {
         flags = flags | WindowFlag::Border;
         // nk_style_push_vec2(nk.get(), &nk->style.window.group_padding, nk_vec2(0.0f, 0.0f));
+        // nk_style_push_color(nk.get(), &nk->style.window.group_border_color, fromColor(borderColor));
+        nk->style.window.group_border_color = fromColor(borderColor);
     }
 
     nk_style_push_color(nk.get(), &nk->style.window.background, nk_rgba(0, 0, 0, 0));
@@ -383,14 +390,20 @@ bool GuiContext::groupBegin(const std::string& name, const bool scrollbar, const
 
     const auto res = nk_group_begin_titled(nk.get(), name.c_str(), name.c_str(), flags) == nk_true;
 
-    if (border) {
-        // nk_style_pop_vec2(nk.get());
-    }
-
     nk_style_pop_color(nk.get());
     nk_style_pop_style_item(nk.get());
 
+    // if (border) {
+    //  nk_style_pop_vec2(nk.get());
+    //  nk_style_pop_color(nk.get());
+    //}
+
     return res;
+}
+
+void GuiContext::groupEnd() {
+    nk_group_end(nk.get());
+    nk->style.window.group_border_color = fromColor(Colors::border);
 }
 
 bool GuiContext::comboBegin(const Vector2& size, const std::string& label) {
@@ -473,10 +486,6 @@ bool GuiContext::imageToggleLabel(const ImagePtr& img, bool& value, const GuiSty
     }
 
     return previous != value;
-}
-
-void GuiContext::groupEnd() {
-    nk_group_end(nk.get());
 }
 
 void GuiContext::layoutRowBegin(const float height, const int columns) {
@@ -603,9 +612,14 @@ bool GuiContext::checkbox(const std::string& label, bool& value) {
     return previous != value;
 }
 
-void GuiContext::label(const std::string& label, const Color4& color) {
+void GuiContext::label(const std::string& value, const Color4& color) {
     const auto flags = nk_text_align::NK_TEXT_ALIGN_LEFT | nk_text_align::NK_TEXT_ALIGN_MIDDLE;
-    nk_text_colored(nk.get(), label.c_str(), label.size(), flags, fromColor(color));
+    nk_text_colored(nk.get(), value.c_str(), value.size(), flags, fromColor(color));
+}
+
+void GuiContext::text(const std::string& value) {
+    const auto flags = nk_text_align::NK_TEXT_ALIGN_LEFT | nk_text_align::NK_TEXT_ALIGN_TOP;
+    nk_text_colored(nk.get(), value.c_str(), value.size(), flags, nk->style.text.color);
 }
 
 bool GuiContext::textInput(std::string& text, size_t max) {
@@ -662,8 +676,10 @@ bool GuiContext::isMouseDown(const MouseButton button) const {
     }
     }
 
-    const auto bounds = nk_widget_bounds(nk.get());
-    return nk_input_has_mouse_click_down_in_rect(&nk->input, nb, bounds, nk_true) == nk_true;
+    return nk_input_is_mouse_down(&nk->input, nb);
+
+    // const auto bounds = nk_widget_bounds(nk.get());
+    // return nk_input_has_mouse_click_down_in_rect(&nk->input, nb, bounds, nk_true) == nk_true;
 }
 
 Vector2 GuiContext::getWidgetSize() const {
@@ -776,9 +792,7 @@ void GuiContext::applyTheme() {
     window.group_border = 2.0f;
     window.background = fromColor(Colors::background);
     window.min_row_height_padding = 0;
-    window.combo_border_color = fromColor(Colors::primary);
     window.combo_border = 2.0f;
-    window.group_border_color = fromColor(Colors::border);
 
     window.border = border;
     window.combo_border = border;
@@ -793,7 +807,7 @@ void GuiContext::applyTheme() {
     window.combo_border_color = fromColor(Colors::primary);
     window.contextual_border_color = fromColor(Colors::primary);
     window.menu_border_color = fromColor(Colors::primary);
-    window.group_border_color = fromColor(Colors::border);
+    window.group_border_color = fromColor(Colors::white);
     window.tooltip_border_color = fromColor(Colors::border);
 
     combo.border = border;

@@ -32,6 +32,12 @@ enum class WindowMode {
     Borderless,
 };
 
+enum class MultiplayerMode {
+    Singleplayer,
+    LocalLan,
+    Online,
+};
+
 XML_DEFINE_ENUM(WindowMode, Windowed, FullScreen, Borderless);
 
 struct Config {
@@ -110,7 +116,6 @@ struct Config {
     std::optional<std::string> saveFolderName;
     bool saveFolderClean{false};
     bool autoStart{false};
-    std::string serverPassword;
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 16;

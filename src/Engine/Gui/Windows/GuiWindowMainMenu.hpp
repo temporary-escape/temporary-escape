@@ -9,7 +9,8 @@ public:
 
     void setOnClickNewGame(GuiWidgetButton::OnClickCallback callback);
     void setOnClickLoadSave(GuiWidgetButton::OnClickCallback callback);
-    void setOnClickServerBrowser(GuiWidgetButton::OnClickCallback callback);
+    void setOnClickOnline(GuiWidgetButton::OnClickCallback callback);
+    void setOnClickLocalLan(GuiWidgetButton::OnClickCallback callback);
     void setOnClickEditor(GuiWidgetButton::OnClickCallback callback);
     void setOnClickSettings(GuiWidgetButton::OnClickCallback callback);
     void setOnClickMods(GuiWidgetButton::OnClickCallback callback);
@@ -24,7 +25,8 @@ private:
     GuiWidgetButton* buttonNewGame;
     GuiWidgetButton* buttonLoadSave;
     GuiWidgetButtonToggle* buttonMultiplayer;
-    GuiWidgetButton* buttonServerBrowser;
+    GuiWidgetButton* buttonOnline;
+    GuiWidgetButton* buttonLocalLan;
     GuiWidgetButton* buttonEditor;
     GuiWidgetButton* buttonSettings;
     GuiWidgetButton* buttonMods;
@@ -35,6 +37,7 @@ private:
     GuiWidgetButton::OnClickCallback onClickMods;
     GuiWidgetButton::OnClickCallback onClickNewGame;
     GuiWidgetButton::OnClickCallback onClickLoadSave;
-    GuiWidgetButton::OnClickCallback onClickServerBrowser;
+    GuiWidgetButton::OnClickCallback onClickOnline;
+    GuiWidgetButton::OnClickCallback onClickLocalLan;
 };
 } // namespace Engine

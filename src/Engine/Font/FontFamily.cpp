@@ -107,12 +107,19 @@ float FontFamily::getGlyphAdvance(const uint32_t code, const float height) const
     return faces[static_cast<size_t>(FontType::Regular)]->getGlyphAdvance(code, height);
 }
 
-Vector2 FontFamily::getBounds(const std::string_view& text, float height) const {
+Vector2 FontFamily::getBounds(const std::string_view& text, const float height) const {
     TextShaper shaper{*this, height};
     shaper.write(text);
     return shaper.getBounds();
 }
 
-Vector2 FontFamily::getPenOffset(const std::string_view& text, float height, const TextAlign textAlign) const {
+Vector2 FontFamily::getPenOffset(const std::string_view& text, const float height, const TextAlign textAlign) const {
     return getBounds(text, height) * textAlignToVector(textAlign);
+}
+
+std::string FontFamily::wrapText(const std::string_view& text, const float height, const float width) const {
+    TextWrapper wrapper{*this, height, width};
+    wrapper.write(text);
+    wrapper.flush(text.end());
+    return wrapper.getResult();
 }

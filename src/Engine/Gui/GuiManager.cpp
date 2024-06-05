@@ -106,14 +106,10 @@ bool GuiManager::isContextMenuVisible() const {
 GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std::vector<std::string>& choices,
                                   const ModalCallback& callback, const int timeout) {
     auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices, timeout);
-    window->setEnabled(true);
-    setFocused(*window);
+    showModal(*window);
     window->setOnClickCallback([this, window, callback](const std::string& choice) {
-        window->setEnabled(false);
-        clearFocused();
-        this->removeWindow(*window);
-        if (callback) {
-            callback(choice);
+        if (!callback || callback(choice)) {
+            this->closeModal(*window);
         }
     });
     return window;
@@ -138,6 +134,19 @@ GuiWindowModal* GuiManager::modalDanger(std::string title, std::string text, con
     auto window = modal(std::move(title), std::move(text), choices, callback);
     window->setHeaderDanger(true);
     return window;
+}
+
+void GuiManager::showModal(GuiWindowModal& window) {
+    window.setEnabled(true);
+    setFocused(window);
+}
+
+void GuiManager::closeModal(GuiWindowModal& window) {
+    if (window.isEnabled()) {
+        window.setEnabled(false);
+        clearFocused();
+        removeWindow(window);
+    }
 }
 
 void GuiManager::showContextMenu(const Vector2& pos, ContextMenuCallback callback) {

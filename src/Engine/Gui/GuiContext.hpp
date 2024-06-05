@@ -57,7 +57,7 @@ public:
     bool windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
                      const WindowOptions& options);
     void windowEnd(Flags flags);
-    bool groupBegin(const std::string& name, bool scrollbar, bool border);
+    bool groupBegin(const std::string& name, bool scrollbar, const bool border, const Color4& borderColor);
     void groupEnd();
 
     void layoutRowBegin(float height, int columns);
@@ -76,6 +76,7 @@ public:
     bool contextButton(const std::string& label, const ImagePtr& imageLeft, const ImagePtr& imageRight);
     bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label, const Color4& color);
+    void text(const std::string& value);
     bool textInput(std::string& text, size_t max);
     bool comboBegin(const Vector2& size, const std::string& label);
     void comboEnd();
@@ -112,6 +113,7 @@ public:
         return fontSize;
     }
     void setPadding(float value);
+    const FontFamily& getFont() const;
 
 private:
     struct CustomStyle;

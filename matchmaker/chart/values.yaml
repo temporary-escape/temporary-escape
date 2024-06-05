@@ -55,6 +55,12 @@ api:
 
   fsGroup: 1000
 
+  oauth:
+    itchio:
+      client_secret: ""
+    github:
+      client_secret: ""
+
   securityContext:
     capabilities:
       drop:

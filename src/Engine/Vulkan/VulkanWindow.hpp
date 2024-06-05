@@ -24,6 +24,7 @@ public:
     void closeWindow();
     void setWindowMode(WindowMode value, const Vector2i& size, const std::string& monitorName);
     std::vector<Vector2i> getSupportedResolutionModes();
+    void setClipboard(const std::string& value);
 
 protected:
     virtual void onNextFrame() = 0;

@@ -205,7 +205,10 @@ public:
 
 private:
     void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
-                 const Color4& color) override {
+                 const Color4& color, std::string_view::const_iterator it, const uint32_t code) override {
+        (void)it;
+        (void)code;
+
         v[0].pos = quad.vertices[0].pos;
         v[0].color = color;
         v[0].uv = Vector4{quad.vertices[0].uv, 2.0f, tex};

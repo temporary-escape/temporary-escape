@@ -8,7 +8,9 @@
 #include "../Gui/Windows/GuiWindowCreateSave.hpp"
 #include "../Gui/Windows/GuiWindowGameMenu.hpp"
 #include "../Gui/Windows/GuiWindowLoadSave.hpp"
+#include "../Gui/Windows/GuiWindowLogIn.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
+#include "../Gui/Windows/GuiWindowMultiplayerSettings.hpp"
 #include "../Gui/Windows/GuiWindowServerBrowser.hpp"
 #include "../Gui/Windows/GuiWindowSettings.hpp"
 #include "../Server/Server.hpp"
@@ -57,6 +59,7 @@ public:
     void eventWindowInputEnd() override;
 
 private:
+    void checkOnlineServices();
     void quitToMenu();
     void shutdownServerSide();
     void shutdownClientSide();
@@ -81,6 +84,8 @@ private:
     void loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next);
     void startServer();
     void startClient();
+    void openMultiplayerSettings();
+    void startMultiPlayerHosted();
     void startSinglePlayer();
     void startConnectServer(const std::string& serverId);
     void startEditor();
@@ -102,6 +107,7 @@ private:
     Canvas canvas;
     GuiManager guiManager;
     BannerImage bannerTexture;
+    Matchmaker matchmaker;
 
     struct {
         GuiWindowMainMenu* mainMenu{nullptr};
@@ -111,6 +117,8 @@ private:
         GuiWindowLoadSave* loadSave{nullptr};
         GuiWindowCreateSave* createSave{nullptr};
         GuiWindowGameMenu* gameMenu{nullptr};
+        GuiWindowLogIn* logIn{nullptr};
+        GuiWindowMultiplayerSettings* multiplayerSettings{nullptr};
     } gui;
 
     struct {
@@ -120,7 +128,6 @@ private:
         ViewBuild* editor{nullptr};
     } view;
 
-    std::unique_ptr<Matchmaker> matchmaker;
     std::unique_ptr<AssetsManager> assetsManager;
     std::unique_ptr<BackgroundWorker> worker;
     std::shared_ptr<NetworkUdpClient> udpClient;
@@ -145,5 +152,6 @@ private:
     } perf;
 
     Server::Options serverOptions;
+    std::string connectAddress{"::1"};
 };
 } // namespace Engine

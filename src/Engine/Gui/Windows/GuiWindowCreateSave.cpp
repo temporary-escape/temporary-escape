@@ -34,7 +34,7 @@ GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& font
                                          GuiManager& guiManager, Path dir) :
     GuiWindow{ctx, fontFamily, fontSize}, guiManager{guiManager}, dir{std::move(dir)} {
 
-    setSize({500.0f, 355.0f});
+    setSize({500.0f, 600.0f});
     setTitle("CREATE GAME");
     setNoScrollbar(true);
     setCloseable(true);
@@ -100,7 +100,7 @@ GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& font
     }
 
     { // Padding
-        addWidget<GuiWidgetTemplateRow>(110.0f);
+        addWidget<GuiWidgetTemplateRow>(355.0f);
     }
 
     { // Bottom row
@@ -122,20 +122,29 @@ GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& font
 
             if (form.seed == 0) {
                 this->guiManager.modalDanger(
-                    "Error", "Seed must be a valid number!", [this](const std::string& choice) { (void)choice; });
+                    "Error", "Seed must be a valid number!", [this](const std::string& choice) {
+                        (void)choice;
+                        return true;
+                    });
                 return;
             }
 
             if (name.empty()) {
                 this->guiManager.modalDanger(
-                    "Error", "Save file name must be valid!", [this](const std::string& choice) { (void)choice; });
+                    "Error", "Save file name must be valid!", [this](const std::string& choice) {
+                        (void)choice;
+                        return true;
+                    });
                 return;
             }
 
             form.path = this->dir / name;
             if (Fs::exists(form.path)) {
                 this->guiManager.modalDanger(
-                    "Error", "Save file name already exists!", [this](const std::string& choice) { (void)choice; });
+                    "Error", "Save file name already exists!", [this](const std::string& choice) {
+                        (void)choice;
+                        return true;
+                    });
                 return;
             }
 

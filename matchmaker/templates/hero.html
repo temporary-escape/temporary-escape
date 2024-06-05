@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero is-fullheight">
+    <div class="hero-body">
+        <div class="container has-text-centered">
+            <img class="banner-image" src="/static/images/banner.png"></img>
+            <div class="columns is-desktop">
+                <div class="column is-4 is-offset-4">
+                    <div class="box">
+                        {% block box %}
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

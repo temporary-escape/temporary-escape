@@ -48,7 +48,8 @@ public:
     void setReplicated(bool value);
 
     MSGPACK_DEFINE_ARRAY(approachTarget, action, forwardVelocity, forwardAcceleration, forwardVelocityMax,
-                         angularVelocity, targetDistance, keepAtDistance, targetPos);
+                         angularVelocity, targetDistance, keepAtDistance, orbitMatrix, orbitOrigin, targetPos,
+                         orbitDistance);
 
     /*void setActive(bool value);
     [[nodiscard]] bool isActive() const {
@@ -60,13 +61,13 @@ public:
         return turrets;
     }*/
 
-    /*const Matrix4& getOrbitMatrix() const {
+    const Matrix4& getOrbitMatrix() const {
         return orbitMatrix;
-    }*/
+    }
 
-    /*const Vector3& getOrbitOrigin() const {
+    const Vector3& getOrbitOrigin() const {
         return orbitOrigin;
-    }*/
+    }
 
     /*float getOrbitRadius() const {
         return orbitRadius;
@@ -110,6 +111,10 @@ public:
 
     float getKeepAtDistance() const {
         return keepAtDistance;
+    }
+
+    float getOrbitDistance() const {
+        return orbitDistance;
     }
 
     /*void setForwardVelocityMax(float value);

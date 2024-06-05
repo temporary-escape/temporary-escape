@@ -32,6 +32,7 @@ public:
     const std::string& getAuthorization() const {
         return token;
     }
+    void setAuthorization(const std::string& value);
 
 private:
     using Socket = asio::ssl::stream<asio::ip::tcp::socket>;

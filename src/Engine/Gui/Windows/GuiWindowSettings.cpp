@@ -171,7 +171,10 @@ void GuiWindowSettings::onSave() {
         "Confirm",
         "Confirm the changes?",
         {"Yes", "No"},
-        [this](const std::string& choice) { onModalClick(choice); },
+        [this](const std::string& choice) {
+            onModalClick(choice);
+            return true;
+        },
         10);
     modal->setHeaderPrimary(true);
 }

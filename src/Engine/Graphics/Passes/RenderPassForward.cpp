@@ -337,21 +337,22 @@ void RenderPassForward::renderSceneShipControls(VulkanCommandBuffer& vkb, Scene&
             continue;
         }
 
-        /*if (shipControl.getOrbitRadius() > 1.0f) {
+        if (shipControl.getAction() == ShipAutopilotAction::Orbit) {
             Matrix4 modelMatrix{1.0f};
             modelMatrix = glm::translate(modelMatrix, shipControl.getOrbitOrigin());
-            modelMatrix = glm::scale(modelMatrix, Vector3{shipControl.getOrbitRadius()});
+            modelMatrix = glm::scale(modelMatrix, Vector3{shipControl.getOrbitDistance()});
             modelMatrix *= shipControl.getOrbitMatrix();
 
             pipelineLines.setModelMatrix(modelMatrix);
-            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 0.2f});
+            pipelineLines.setColor(Color4{0.0f, 0.7f, 1.0f, 1.0f});
             pipelineLines.flushConstants(vkb);
 
             pipelineLines.setUniformCamera(camera.getUbo().getCurrentBuffer());
             pipelineLines.flushDescriptors(vkb);
 
             pipelineLines.renderMesh(vkb, resources.getMeshOrbit());
-        } else*/
+        }
+
         {
             const auto target = shipControl.getTargetPos();
             const auto origin = transform.getAbsolutePosition();

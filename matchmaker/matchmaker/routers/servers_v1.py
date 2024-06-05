@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from math import ceil
 from typing import List
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -25,13 +25,13 @@ class RegisterServerModel(BaseModel):
     version: str
 
 
-class PageModel(BaseModel):
+class PageResponse(BaseModel):
     page: int
     total: int
     pages: int
 
 
-class ServerModel(BaseModel):
+class ServerResponse(BaseModel):
     id: uuid.UUID
     name: str
     version: str
@@ -42,8 +42,8 @@ class ServerConnectModel(BaseModel):
     port: int
 
 
-class ServerPageModel(PageModel):
-    items: List[ServerModel]
+class ServerPageResponse(PageResponse):
+    items: List[ServerResponse]
 
 
 @router.post(
@@ -59,9 +59,9 @@ class ServerPageModel(PageModel):
 )
 async def register_server(
     body: RegisterServerModel, user: JwtAuth, db: Database
-) -> ServerModel:
+) -> ServerResponse:
     logger.info(f"Registering server name: '{body.name}'")
-    server = Server(
+    server = ServerResponse(
         id=str(uuid.uuid4()),
         name=body.name,
         version=body.version,
@@ -73,7 +73,7 @@ async def register_server(
     db.add(server)
     db.commit()
 
-    return ServerModel(
+    return ServerResponse(
         id=server.id,
         name=server.name,
         version=server.version,
@@ -119,9 +119,9 @@ async def ping_server(server_id: str, user: JwtAuth, db: Database):
 )
 async def list_servers(
     user: JwtAuth, db: Database, page: int = 1, limit: int = 10
-) -> ServerPageModel:
-    def to_model(server: Server) -> ServerModel:
-        return ServerModel(
+) -> ServerPageResponse:
+    def to_model(server: Server) -> ServerResponse:
+        return ServerResponse(
             id=uuid.UUID(server.id),
             name=server.name,
             version=server.version,
@@ -135,7 +135,7 @@ async def list_servers(
 
     servers = db.query(Server).limit(limit).offset(page * limit)
 
-    return ServerPageModel(
+    return ServerPageResponse(
         page=page + 1,
         total=total,
         pages=int(ceil(float(total) / float(limit))),

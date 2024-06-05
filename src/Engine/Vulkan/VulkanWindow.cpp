@@ -458,6 +458,10 @@ void VulkanWindow::setWindowMode(const WindowMode value, const Vector2i& size, c
     windowMode = value;
 }
 
+void VulkanWindow::setClipboard(const std::string& value) {
+    glfwSetClipboardString(window.get(), value.c_str());
+}
+
 /*void VulkanWindow::setWindowFullScreen(const bool value) {
     if (value) {
         logger.info("Setting window to fullscreen");

@@ -18,8 +18,17 @@ RUN . ./venv/bin/activate && \
 
 FROM ubuntu:22.04
 
+RUN apt-get update && \
+    apt-get install -y ca-certificates --no-install-recommends && \
+    update-ca-certificates && \
+    apt-get clean && \
+    rm -rf "/var/lib/apt/lists/*"
+
 COPY --from=builder /build/dist/matchmaker/ /app/
 COPY ./log_conf.yaml /app/
+COPY ./static /app/_internal/static
+COPY ./templates /app/_internal/templates
+RUN mkdir -p /app/_internal/matchmaker/routers # Workaround
 
 EXPOSE 8000
 

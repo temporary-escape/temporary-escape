@@ -1,0 +1,17 @@
+{% extends "hero.html" %}
+{% block box %}
+<p class="mb-4"><b>Login to game online services</b></p>
+
+<a href="{{ oauth_github_url }}" class="button is-large is-fullwidth login-button mb-2">
+    <img src="/static/images/github-mark-white.png">Sign in via GitHub
+</a>
+<a href="{{ oauth_itchio_url }}" class="button is-large is-fullwidth login-button mb-2">
+    <img src="/static/images/itchio-textless-white.svg">Sign in via Itch.io
+</a>
+<a class="button is-large is-fullwidth login-button mb-2">
+    <img src="/static/images/steam.png">Sign in via Steam
+</a>
+
+<p class="has-text-warning mt-4">We only store your email!</p>
+<p>Your email information will <b>NOT</b> be visible to anyone in the game! You can choose any player name within the game.</p>
+{% endblock %}
