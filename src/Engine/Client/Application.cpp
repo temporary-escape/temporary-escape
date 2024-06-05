@@ -575,6 +575,20 @@ void Application::startClient() {
     });
 }
 
+void Application::startClientToServer() {
+    logger.info("Starting client");
+
+    status.message = "Connecting...";
+    status.value = 0.9f;
+
+    future = std::async([this]() -> std::function<void()> {
+        client = std::make_unique<Client>(
+            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), matchmakerClient, connectServerId);
+
+        return [this]() { checkForClientScene(); };
+    });
+}
+
 void Application::startServer() {
     logger.info("Starting server");
 
@@ -665,7 +679,9 @@ void Application::createThumbnails() {
 
     views = std::make_unique<ViewContext>(config, *this, *assetsManager, guiManager, *rendererBackground);
 
-    if (editorOnly) {
+    if (!connectServerId.empty()) {
+        NEXT(startClientToServer());
+    } else if (editorOnly) {
         NEXT(createEditor());
     } else {
         NEXT(startServer());
@@ -804,8 +820,6 @@ void Application::startMultiPlayerHosted() {
     status.message = "Loading...";
     status.value = 0.0f;
 
-    // gui.mainMenu.setEnabled(false);
-
     NEXT(compressAssets());
 }
 
@@ -819,8 +833,6 @@ void Application::startSinglePlayer() {
     status.message = "Loading...";
     status.value = 0.0f;
 
-    // gui.mainMenu.setEnabled(false);
-
     NEXT(compressAssets());
 }
 
@@ -830,38 +842,15 @@ void Application::openMultiplayerSettings() {
 }
 
 void Application::startConnectServer(const std::string& serverId) {
-    /*future = std::async([this, address, port]() -> std::function<void()> {
-        worker = std::make_unique<BackgroundWorker>();
-        udpClient = std::make_unique<NetworkUdpClient>(config, worker->getService());
-        udpClient->connect(address, port);
-        return [=]() {};
-    });*/
+    config.network.clientBindAddress = "::";
+    connectServerId = serverId;
 
-    logger.info("Starting connection to the server: {}", serverId);
-    worker = std::make_unique<BackgroundWorker>();
-    // udpClient = std::make_shared<NetworkUdpClient>(config, worker->getService());
+    logger.info("Starting connecting to server mode");
 
-    logger.info("Sending STUN request");
-    /*udpClient->getStunClient().send([this, serverId](const NetworkStunClient::Result& result) {
-        Matchmaker::ServerConnectModel body{};
-        body.address = result.endpoint.address().to_string();
-        body.port = result.endpoint.port();
+    status.message = "Loading...";
+    status.value = 0.0f;
 
-        logger.info("Sending connection request to the matchmaker server");
-        matchmaker->apiServersConnect(serverId, body, [this](const Matchmaker::ServerConnectResponse& res) {
-            if (!res.error.empty()) {
-                logger.error("Connection request failed with error: {}", res.error);
-            } else {
-                logger.info("Got response from the matchmaker server");
-
-                future = std::async([this, endpoint = res.data]() -> std::function<void()> {
-                    udpClient->connect(endpoint.address, endpoint.port);
-
-                    return []() {};
-                });
-            }
-        });
-    });*/
+    NEXT(compressAssets());
 }
 
 void Application::startEditor() {

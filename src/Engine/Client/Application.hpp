@@ -83,6 +83,7 @@ private:
     void createRenderers();
     void loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator next);
     void startServer();
+    void startClientToServer();
     void startClient();
     void openMultiplayerSettings();
     void startMultiPlayerHosted();
@@ -153,5 +154,6 @@ private:
 
     Server::Options serverOptions;
     std::string connectAddress{"::1"};
+    std::string connectServerId;
 };
 } // namespace Engine

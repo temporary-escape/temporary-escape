@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "../Scene/Controllers/ControllerNetwork.hpp"
 #include "../Scene/Controllers/ControllerTurret.hpp"
+#include "../Server/MatchmakerClient.hpp"
 #include "../Utils/Random.hpp"
 #include <fstream>
 
@@ -9,7 +10,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
-               VoxelShapeCache* voxelShapeCache, const std::string& address, int port) :
+               VoxelShapeCache* voxelShapeCache) :
     config{config},
     assetsManager{assetsManager},
     localProfile{localProfile},
@@ -33,9 +34,57 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     // addHandler(this, &Client::handleSceneSnapshot, "MessageComponentSnapshot");
 
     network = std::make_shared<NetworkUdpClient>(config, worker.getService(), dispatcher);
+    network->start();
+}
 
+Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+               VoxelShapeCache* voxelShapeCache, const std::string& address, int port) :
+    Client{config, assetsManager, localProfile, voxelShapeCache} {
+
+    connectToAddress(address, port);
+}
+
+Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+               VoxelShapeCache* voxelShapeCache, MatchmakerClient& matchmakerClient, const std::string& serverId) :
+    Client{config, assetsManager, localProfile, voxelShapeCache} {
+
+    connectToServer(matchmakerClient, serverId);
+}
+
+Client::~Client() {
+    logger.info("Stopping client");
+    network->stop();
+    worker.stop();
+    network.reset();
+}
+
+void Client::connectToServer(MatchmakerClient& matchmakerClient, const std::string& serverId) {
+    auto promise = std::make_shared<Promise<void>>();
+
+    network->getStunClient().send([this, promise, m = &matchmakerClient, serverId](
+                                      const NetworkStunClient::Result& stun) {
+        m->apiServersConnect(serverId, stun.endpoint, [this, promise](MatchmakerClient::ServerConnectResponse resp) {
+            if (!resp.error.empty()) {
+                promise->reject<std::runtime_error>(resp.error);
+            } else if (resp.status != 200) {
+                promise->reject<std::runtime_error>(fmt::format("Server responded with error code: {}", resp.status));
+            } else {
+                connectToAddress(resp.data.address, resp.data.port);
+                promise->resolve();
+            }
+        });
+    });
+
+    auto future = promise->future();
+    if (future.waitFor(std::chrono::seconds{5}) != std::future_status::ready) {
+        EXCEPTION("Timeout waiting for the server to respond");
+    }
+
+    future.get();
+}
+
+void Client::connectToAddress(const std::string& address, int port) {
     try {
-        network->start();
         network->connect(address, port);
 
         // Start login sequence by sending manifest request
@@ -52,13 +101,6 @@ Client::Client(const Config& config, AssetsManager& assetsManager, const PlayerL
     } catch (...) {
         EXCEPTION_NESTED("Failed to login");
     }
-}
-
-Client::~Client() {
-    logger.info("Stopping client");
-    network->stop();
-    worker.stop();
-    network.reset();
 }
 
 void Client::disconnect() {

@@ -100,6 +100,18 @@ public:
         std::string version;
     };
 
+    struct ServerConnect {
+        std::string address;
+        int port;
+    };
+
+    using ServerConnectResponse = Response<ServerConnect>;
+
+    struct ServerConnectRequest {
+        std::string address;
+        int port;
+    };
+
     MatchmakerClient(const Config& config);
     ~MatchmakerClient();
 
@@ -109,6 +121,8 @@ public:
     Future<AuthStateCreatedResponse> apiAuthCreateState();
     Future<AuthLogInRespose> apiAuthLogIn(const std::string& state);
     Future<ServerPageResponse> apiServersList(int page);
+    void apiServersConnect(const std::string& serverId, const asio::ip::udp::endpoint& endpoint,
+                           std::function<void(ServerConnectResponse)> callback);
     void apiServersRegister(std::string name, std::string version, std::function<void(ServerResponse)> callback);
     void apiServersUnregister(const std::string& serverId);
 
@@ -165,6 +179,18 @@ inline void to_json(Json& j, const MatchmakerClient::ServerRegisterRequest& m) {
         {"name", m.name},
         {"version", m.version},
     };
+}
+
+inline void to_json(Json& j, const MatchmakerClient::ServerConnectRequest& m) {
+    j = Json{
+        {"address", m.address},
+        {"port", m.port},
+    };
+}
+
+inline void from_json(const Json& j, MatchmakerClient::ServerConnect& m) {
+    j.at("address").get_to(m.address);
+    j.at("port").get_to(m.port);
 }
 } // namespace Engine
 

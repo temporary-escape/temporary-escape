@@ -9,6 +9,7 @@
 #include "../Utils/PerformanceRecord.hpp"
 #include "../Utils/Worker.hpp"
 #include "Generator.hpp"
+#include "MatchmakerSession.hpp"
 #include "Messages.hpp"
 #include "PeerLobby.hpp"
 #include "PlayerSessions.hpp"
@@ -17,12 +18,10 @@
 #include <shared_mutex>
 
 namespace Engine {
-class ENGINE_API MatchmakerClient;
 class ENGINE_API Lua;
-class ENGINE_API MatchmakerSession;
 class ENGINE_API NetworkUdpServer;
 
-class ENGINE_API Server : public NetworkDispatcher2 {
+class ENGINE_API Server : public NetworkDispatcher2, public MatchmakerSession::Receiver {
 public:
     struct Options {
         Path savePath;
@@ -96,6 +95,7 @@ public:
     static Server* instance;
 
 private:
+    void onStunRequest(MatchmakerSession::EventConnectionRequest event) override;
     void load();
     void startTick();
     void tick();

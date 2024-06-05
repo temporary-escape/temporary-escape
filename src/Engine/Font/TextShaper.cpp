@@ -220,7 +220,7 @@ void TextWrapper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph
     previousChar = it;
 }
 
-void TextWrapper::flush(const std::string_view::const_iterator end) {
+void TextWrapper::flush(const char* end) {
     if (previousChar > startChar && previousChar < end) {
         utf8::next(previousChar, end);
         if (!result.empty()) {

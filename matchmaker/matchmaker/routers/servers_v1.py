@@ -15,7 +15,7 @@ from matchmaker.db import Database, get_db
 from matchmaker.internal.connections import (
     EventConnectionResponse,
     connection_manager,
-    EventStatus,
+    EventStatus, Endpoint,
 )
 from matchmaker.models import ServerModel
 from matchmaker.utils import repeat_every, HTTPError
@@ -41,7 +41,12 @@ class ServerResponse(BaseModel):
     version: str
 
 
-class ServerConnectModel(BaseModel):
+class ServerConnectRequest(BaseModel):
+    address: str
+    port: int
+
+
+class ServerConnectResponse(BaseModel):
     address: str
     port: int
 
@@ -151,8 +156,8 @@ async def list_servers(
     },
 )
 async def connect_server(
-    body: ServerConnectModel, server_id: str, user: JwtAuth, db: Database
-) -> ServerConnectModel:
+    body: ServerConnectRequest, server_id: str, user: JwtAuth, db: Database
+) -> ServerConnectResponse:
     server = db.query(ServerModel).get(server_id)
     if not server:
         raise HTTPException(
@@ -160,8 +165,13 @@ async def connect_server(
             detail="Server not found",
         )
 
+    endpoint = Endpoint(
+        address=body.address,
+        port=body.port,
+    )
+
     endpoint = await connection_manager.contact_server(
-        server_id, user, body
+        server_id, user, endpoint
     )
     if endpoint is None:
         raise HTTPException(
@@ -169,7 +179,7 @@ async def connect_server(
             detail="Failed to contact the server",
         )
 
-    return ServerConnectModel(
+    return ServerConnectResponse(
         address=endpoint.address,
         port=endpoint.port,
     )

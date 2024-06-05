@@ -51,7 +51,7 @@ public:
     [[nodiscard]] const std::string& getResult() const {
         return result;
     }
-    void flush(std::string_view::const_iterator end);
+    void flush(const char* end);
     float getHeight() const;
 
 private:

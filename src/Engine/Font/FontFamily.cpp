@@ -120,6 +120,6 @@ Vector2 FontFamily::getPenOffset(const std::string_view& text, const float heigh
 std::string FontFamily::wrapText(const std::string_view& text, const float height, const float width) const {
     TextWrapper wrapper{*this, height, width};
     wrapper.write(text);
-    wrapper.flush(text.end());
+    wrapper.flush(text.data() + text.size());
     return wrapper.getResult();
 }

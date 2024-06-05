@@ -15,6 +15,8 @@
 #include "Stats.hpp"
 
 namespace Engine {
+class ENGINE_API MatchmakerClient;
+
 struct PlayerLocalProfile {
     std::string name;
     uint64_t secret;
@@ -34,8 +36,12 @@ XML_DEFINE(PlayerLocalProfile, "profile");
 
 class ENGINE_API Client : public NetworkDispatcher2 {
 public:
-    explicit Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
-                    VoxelShapeCache* voxelShapeCache, const std::string& address, int port);
+    Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+           VoxelShapeCache* voxelShapeCache);
+    Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+           VoxelShapeCache* voxelShapeCache, const std::string& address, int port);
+    Client(const Config& config, AssetsManager& assetsManager, const PlayerLocalProfile& localProfile,
+           VoxelShapeCache* voxelShapeCache, MatchmakerClient& matchmakerClient, const std::string& serverId);
     virtual ~Client();
 
     void update(float deltaTime);
@@ -89,6 +95,8 @@ public:
     }
 
 private:
+    void connectToServer(MatchmakerClient& matchmakerClient, const std::string& serverId);
+    void connectToAddress(const std::string& address, int port);
     void startCacheSync();
     void createScene(const SectorData& sector);
 

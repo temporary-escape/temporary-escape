@@ -132,7 +132,7 @@ void Server::load() {
     eventBus->enqueue("server_started", eventData);
 
     if (matchmakerClient) {
-        matchmakerSession = std::make_unique<MatchmakerSession>(*matchmakerClient, options.name);
+        matchmakerSession = std::make_unique<MatchmakerSession>(*matchmakerClient, *this, options.name);
     }
 }
 
@@ -508,4 +508,12 @@ void Server::handle(Request2<MessageControlTargetEvent> req) {
 
     const auto data = req.get();
     sector->handle(session, data);
+}
+
+void Server::onStunRequest(MatchmakerSession::EventConnectionRequest event) {
+    network->getStunClient().send([this, event](const NetworkStunClient::Result& stun) {
+        network->notifyClientConnection(event.address, event.port, [this, stun, event]() {
+            matchmakerSession->sendStunResponse(event.id, stun.endpoint);
+        });
+    });
 }

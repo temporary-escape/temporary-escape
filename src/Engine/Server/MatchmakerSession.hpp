@@ -11,10 +11,34 @@ public:
         int numPlayers;
     };
 
-    MatchmakerSession(MatchmakerClient& client, std::string serverName);
+    struct EventConnectionRequest {
+        inline static const std::string_view type = "ConnectionRequest";
+
+        std::string id;
+        std::string address;
+        int port;
+    };
+
+    struct EventConnectionResponse {
+        inline static const std::string_view type = "ConnectionResponse";
+
+        std::string id;
+        std::string address;
+        int port;
+    };
+
+    class Receiver {
+    public:
+        virtual ~Receiver() = default;
+
+        virtual void onStunRequest(EventConnectionRequest event) = 0;
+    };
+
+    MatchmakerSession(MatchmakerClient& client, Receiver& receiver, std::string serverName);
     ~MatchmakerSession();
 
     void close();
+    void sendStunResponse(const std::string& id, const asio::ip::udp::endpoint& endpoint);
 
 private:
     void doPing();
@@ -27,6 +51,7 @@ private:
     void onWsClose(int code) override;
 
     MatchmakerClient& client;
+    Receiver& receiver;
     std::string serverName;
     std::string url;
     std::atomic<bool> stopFlag{false};
@@ -41,5 +66,19 @@ inline void to_json(Json& j, const MatchmakerSession::EventStatus& m) {
     j = Json{
         {"num_players", m.numPlayers},
     };
+}
+
+inline void to_json(Json& j, const MatchmakerSession::EventConnectionResponse& m) {
+    j = Json{
+        {"id", m.id},
+        {"address", m.address},
+        {"port", m.port},
+    };
+}
+
+inline void from_json(const Json& j, MatchmakerSession::EventConnectionRequest& m) {
+    j.at("id").get_to(m.id);
+    j.at("address").get_to(m.address);
+    j.at("port").get_to(m.port);
 }
 } // namespace Engine

@@ -7,13 +7,28 @@ static auto logger = createLogger(LOG_FILENAME);
 static std::chrono::seconds retryDelay{15};
 static std::chrono::seconds pingDelay{10};
 
-MatchmakerSession::MatchmakerSession(MatchmakerClient& client, std::string serverName) :
-    client{client}, serverName{std::move(serverName)}, url{client.getBaseUrl()} {
+MatchmakerSession::MatchmakerSession(MatchmakerClient& client, Receiver& receiver, std::string serverName) :
+    client{client}, receiver{receiver}, serverName{std::move(serverName)}, url{client.getBaseUrl()} {
     doRegister();
 }
 
 MatchmakerSession::~MatchmakerSession() {
     MatchmakerSession::close();
+}
+
+void MatchmakerSession::sendStunResponse(const std::string& id, const asio::ip::udp::endpoint& endpoint) {
+    post([this, id, endpoint]() {
+        EventConnectionResponse data{};
+        data.id = id;
+        data.address = endpoint.address().to_string();
+        data.port = endpoint.port();
+
+        logger.info("Sending STUN result back for client: {}", id);
+        ws->send(Json{
+            {"event", EventConnectionResponse::type},
+            {"data", data},
+        });
+    });
 }
 
 void MatchmakerSession::close() {
@@ -94,9 +109,9 @@ void MatchmakerSession::onWsReceive(Json json) {
         if (json.is_object() && json.contains("event") && json.at("event").is_string()) {
             const auto event = json.at("event").get<std::string>();
             logger.info("Received event from the remote server type: {}", event);
-            /*if (event == EventConnectionRequest::type) {
-                post([this, json]() { onEvent(json.at("data").get<EventConnectionRequest>()); });
-            }*/
+            if (event == EventConnectionRequest::type) {
+                post([this, json]() { receiver.onStunRequest(json.at("data").get<EventConnectionRequest>()); });
+            }
         }
     } catch (std::exception& e) {
         BACKTRACE(e, "Failed to process websocket event");
