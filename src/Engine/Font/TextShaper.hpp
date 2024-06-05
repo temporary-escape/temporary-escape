@@ -60,9 +60,9 @@ private:
 
     float size;
     float maxWidth;
-    std::string_view::const_iterator startChar{nullptr};
-    std::string_view::const_iterator lastWordChar{nullptr};
-    std::string_view::const_iterator previousChar{nullptr};
+    std::string_view::const_iterator startChar{};
+    std::string_view::const_iterator lastWordChar{};
+    std::string_view::const_iterator previousChar{};
     std::string result;
     int numLines{0};
 };
