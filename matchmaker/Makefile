@@ -38,3 +38,6 @@ deploy: image
 	scp -r ./chart $(SERVER_HOST):~/
 	ssh $(SERVER_HOST) "KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm upgrade --install matchmaker ./chart/ --values ~/.temporary-escape-chart-values.yaml --namespace matchmaker --create-namespace --wait"
 	ssh $(SERVER_HOST) "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl --namespace matchmaker rollout restart deployment matchmaker-api"
+
+tail:
+	ssh $(SERVER_HOST) 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl --namespace matchmaker logs -f $$(KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl --namespace matchmaker get pod -l app.kubernetes.io/instance=matchmaker-api -o jsonpath="{.items[0].metadata.name}")'

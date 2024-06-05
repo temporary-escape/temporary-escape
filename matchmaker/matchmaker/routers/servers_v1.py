@@ -12,15 +12,19 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from matchmaker.auth import validate_user, JwtAuth
 from matchmaker.db import Database, get_db
-from matchmaker.internal.connections import EventConnectionResponse, connection_manager
-from matchmaker.models import Server
+from matchmaker.internal.connections import (
+    EventConnectionResponse,
+    connection_manager,
+    EventStatus,
+)
+from matchmaker.models import ServerModel
 from matchmaker.utils import repeat_every, HTTPError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/servers", tags=["Server Management"])
 
 
-class RegisterServerModel(BaseModel):
+class RegisterServerRequest(BaseModel):
     name: str
     version: str
 
@@ -58,18 +62,28 @@ class ServerPageResponse(PageResponse):
     },
 )
 async def register_server(
-    body: RegisterServerModel, user: JwtAuth, db: Database
+    body: RegisterServerRequest, user: JwtAuth, db: Database
 ) -> ServerResponse:
     logger.info(f"Registering server name: '{body.name}'")
-    server = ServerResponse(
-        id=str(uuid.uuid4()),
-        name=body.name,
-        version=body.version,
-        address=None,
-        port=None,
-        owner=str(user.username),
-        last_ping=datetime.now(tz=timezone.utc),
+
+    server = (
+        db.query(ServerModel)
+        .filter(ServerModel.owner == user)
+        .filter(ServerModel.name == body.name)
+        .first()
     )
+    if server:
+        server.last_ping = datetime.now(tz=timezone.utc)
+    else:
+        server = ServerModel(
+            id=str(uuid.uuid4()),
+            name=body.name,
+            version=body.version,
+            address=None,
+            port=None,
+            owner=user,
+            last_ping=datetime.now(tz=timezone.utc),
+        )
     db.add(server)
     db.commit()
 
@@ -78,32 +92,6 @@ async def register_server(
         name=server.name,
         version=server.version,
     )
-
-
-"""
-@router.put("/{server_id}/ping", summary="Ping healthcheck from the server")
-async def ping_server(server_id: str, user: JwtAuth, db: Database):
-    logger.debug(f"Ping server id: '{server_id}'")
-
-    server = db.query(Server).get(server_id)
-    if not server:
-        raise HTTPException(
-            status_code=404,
-            detail="Server not found",
-        )
-
-    if server.owner != str(user.username):
-        raise HTTPException(
-            status_code=403,
-            detail="You are not owner of this server",
-        )
-
-    server.last_ping = datetime.now(tz=timezone.utc)
-    db.add(server)
-    db.commit()
-
-    return Response(status_code=201)
-"""
 
 
 @router.get(
@@ -120,20 +108,20 @@ async def ping_server(server_id: str, user: JwtAuth, db: Database):
 async def list_servers(
     user: JwtAuth, db: Database, page: int = 1, limit: int = 10
 ) -> ServerPageResponse:
-    def to_model(server: Server) -> ServerResponse:
+    def to_model(server: ServerModel) -> ServerResponse:
         return ServerResponse(
             id=uuid.UUID(server.id),
             name=server.name,
             version=server.version,
         )
 
-    total = db.query(Server).count()
+    total = db.query(ServerModel).count()
 
     page = page - 1
     if limit > 20:
         limit = 20
 
-    servers = db.query(Server).limit(limit).offset(page * limit)
+    servers = db.query(ServerModel).limit(limit).offset(page * limit)
 
     return ServerPageResponse(
         page=page + 1,
@@ -165,7 +153,7 @@ async def list_servers(
 async def connect_server(
     body: ServerConnectModel, server_id: str, user: JwtAuth, db: Database
 ) -> ServerConnectModel:
-    server = db.query(Server).get(server_id)
+    server = db.query(ServerModel).get(server_id)
     if not server:
         raise HTTPException(
             status_code=404,
@@ -173,7 +161,7 @@ async def connect_server(
         )
 
     endpoint = await connection_manager.contact_server(
-        server_id, str(user.username), body
+        server_id, user, body
     )
     if endpoint is None:
         raise HTTPException(
@@ -207,14 +195,14 @@ async def connect_server(
     },
 )
 async def delete_server(server_id: str, user: JwtAuth, db: Database):
-    server = db.query(Server).get(server_id)
+    server = db.query(ServerModel).get(server_id)
     if not server:
         raise HTTPException(
             status_code=404,
             detail="Server not found",
         )
 
-    if server.owner != str(user.username):
+    if server.owner != user:
         raise HTTPException(
             status_code=403,
             detail="You are not the owner of this server",
@@ -235,12 +223,12 @@ async def websocket_endpoint(server_id: str, db: Database, websocket: WebSocket)
         await websocket.close(e.status_code)
         return
 
-    server = db.query(Server).get(server_id)
+    server = db.query(ServerModel).get(server_id)
     if not server:
         await websocket.close(3404)
         return
 
-    if server.owner != str(user.username):
+    if server.owner != user:
         await websocket.close(3403)
         return
 
@@ -270,6 +258,12 @@ async def websocket_endpoint(server_id: str, db: Database, websocket: WebSocket)
                     server_id, EventConnectionResponse(**data["data"])
                 )
 
+            if event == EventStatus.__type__:
+                server = db.query(ServerModel).get(server_id)
+                server.last_ping = datetime.now(tz=timezone.utc)
+                db.add(server)
+                db.commit()
+
             else:
                 logger.error(
                     f"Received unknown event type: {event} from server: {server_id}"
@@ -291,7 +285,7 @@ async def websocket_endpoint(server_id: str, db: Database, websocket: WebSocket)
 def cleanup_stale_servers():
     with get_db() as db:
         tp = datetime.now(tz=timezone.utc) - timedelta(seconds=30)
-        servers = db.query(Server).filter(Server.last_ping <= tp).all()
+        servers = db.query(ServerModel).filter(ServerModel.last_ping <= tp).all()
 
         # logger.info(f"Found {len(servers)} stale servers, cleaning them now...")
         for server in servers:

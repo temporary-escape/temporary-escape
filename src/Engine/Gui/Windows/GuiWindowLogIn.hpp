@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Server/Matchmaker.hpp"
+#include "../../Server/MatchmakerClient.hpp"
 #include "GuiWindowModal.hpp"
 
 namespace Engine {
@@ -9,7 +9,7 @@ public:
     using OnSuccessCallback = std::function<void()>;
 
     GuiWindowLogIn(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, VulkanWindow& window,
-                   Matchmaker& matchmaker);
+                   MatchmakerClient& matchmakerClient);
 
     void update(const Vector2i& viewport) override;
     void start();
@@ -23,12 +23,12 @@ private:
     void setError(const std::string& msg);
 
     VulkanWindow& window;
-    Matchmaker& matchmaker;
+    MatchmakerClient& matchmakerClient;
     OnSuccessCallback onSuccess;
     std::string authState;
-    Future<Matchmaker::AuthMeResponse> futureAuthMe;
-    Future<Matchmaker::AuthStateCreatedResponse> futureAuthState;
-    Future<Matchmaker::AuthLogInRespose> futureLogIn;
+    Future<MatchmakerClient::AuthMeResponse> futureAuthMe;
+    Future<MatchmakerClient::AuthStateCreatedResponse> futureAuthState;
+    Future<MatchmakerClient::AuthLogInRespose> futureLogIn;
     std::chrono::steady_clock::time_point nextLogInTime{};
 };
 } // namespace Engine

@@ -3,7 +3,7 @@
 #include "../Config.hpp"
 #include "../Network/NetworkUdpClient.hpp"
 #include "../Network/NetworkUdpServer.hpp"
-#include "../Server/Matchmaker.hpp"
+#include "../Server/MatchmakerClient.hpp"
 #include <list>
 #include <thread>
 
@@ -28,7 +28,7 @@ private:
     std::unique_ptr<asio::io_service::work> work;
     std::list<std::thread> threads;
     std::unique_ptr<NetworkUdpServer> server;
-    std::unique_ptr<Matchmaker> matchmaker;
+    std::unique_ptr<MatchmakerClient> matchmaker;
     std::string publicId;
 };
 } // namespace Engine

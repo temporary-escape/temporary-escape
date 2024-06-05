@@ -1,5 +1,5 @@
 #include "GuiWindowServerBrowser.hpp"
-#include "../../Server/Matchmaker.hpp"
+#include "../../Server/MatchmakerClient.hpp"
 #include "../../Utils/Platform.hpp"
 #include "../GuiManager.hpp"
 
@@ -8,7 +8,7 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
-                                               Matchmaker& matchmaker, GuiManager& guiManager) :
+                                               MatchmakerClient& matchmaker, GuiManager& guiManager) :
     GuiWindow{ctx, fontFamily, fontSize}, matchmaker{matchmaker}, guiManager{guiManager} {
 
     setSize({1100.0f, 600.0f});
@@ -96,7 +96,7 @@ void GuiWindowServerBrowser::setOnCreate(OnCreateCallback callback) {
     });
 }*/
 
-void GuiWindowServerBrowser::recreateList(const Matchmaker::ServerPage& page) {
+void GuiWindowServerBrowser::recreateList(const MatchmakerClient::ServerPage& page) {
     if (page.items.empty()) {
         setMessage("No servers found!");
         return;

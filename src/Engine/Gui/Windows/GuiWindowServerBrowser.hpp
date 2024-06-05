@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Server/Matchmaker.hpp"
+#include "../../Server/MatchmakerClient.hpp"
 #include "../../Utils/Worker.hpp"
 #include "../GuiWindow.hpp"
 
@@ -13,8 +13,8 @@ public:
     using OnCreateCallback = GuiWidgetButton::OnClickCallback;
     using OnConnectCallback = std::function<void(const std::string&)>;
 
-    explicit GuiWindowServerBrowser(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, Matchmaker& matchmaker,
-                                    GuiManager& guiManager);
+    explicit GuiWindowServerBrowser(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
+                                    MatchmakerClient& matchmaker, GuiManager& guiManager);
 
     void fetchServers(int page);
     void setOnConnect(OnConnectCallback callback);
@@ -23,13 +23,13 @@ public:
 
 private:
     void setMessage(const std::string& value);
-    void recreateList(const Matchmaker::ServerPage& page);
+    void recreateList(const MatchmakerClient::ServerPage& page);
 
-    Matchmaker& matchmaker;
+    MatchmakerClient& matchmaker;
     GuiManager& guiManager;
     GuiWidgetGroup* group;
     GuiWidgetButton* buttonCreate;
     OnConnectCallback onConnectCallback;
-    Future<Matchmaker::ServerPageResponse> futureServerPage;
+    Future<MatchmakerClient::ServerPageResponse> futureServerPage;
 };
 } // namespace Engine

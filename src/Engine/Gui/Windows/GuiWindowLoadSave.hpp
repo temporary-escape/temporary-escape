@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Database/SaveInfo.hpp"
-#include "../../Server/Matchmaker.hpp"
+#include "../../Server/MatchmakerClient.hpp"
 #include "../../Utils/Worker.hpp"
 #include "../GuiWindow.hpp"
 

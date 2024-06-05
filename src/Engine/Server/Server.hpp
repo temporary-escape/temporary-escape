@@ -17,8 +17,9 @@
 #include <shared_mutex>
 
 namespace Engine {
-class ENGINE_API Matchmaker;
+class ENGINE_API MatchmakerClient;
 class ENGINE_API Lua;
+class ENGINE_API MatchmakerSession;
 class ENGINE_API NetworkUdpServer;
 
 class ENGINE_API Server : public NetworkDispatcher2 {
@@ -30,7 +31,8 @@ public:
         std::string password;
     };
 
-    explicit Server(const Config& config, AssetsManager& assetsManager, const Options& options);
+    explicit Server(const Config& config, AssetsManager& assetsManager, const Options& options,
+                    MatchmakerClient* matchmakerClient = nullptr);
     virtual ~Server();
 
     void onAcceptSuccess(const NetworkStreamPtr& peer) override;
@@ -109,6 +111,7 @@ private:
     const Config& config;
     AssetsManager& assetsManager;
     Options options;
+    MatchmakerClient* matchmakerClient;
     DatabaseRocksDB db;
     PlayerSessions playerSessions;
     PeerLobby lobby;
@@ -124,6 +127,7 @@ private:
     BackgroundWorker loadQueue;
     Worker::Strand strand;
     std::shared_ptr<NetworkUdpServer> network;
+    std::unique_ptr<MatchmakerSession> matchmakerSession;
     uint16_t port{0};
 
     struct {

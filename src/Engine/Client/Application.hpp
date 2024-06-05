@@ -27,7 +27,7 @@ struct ENGINE_API Status {
     float value{0.0f};
 };
 
-class ENGINE_API Matchmaker;
+class ENGINE_API MatchmakerClient;
 class ENGINE_API ViewSpace;
 class ENGINE_API ViewGalaxy;
 class ENGINE_API ViewSystem;
@@ -107,7 +107,7 @@ private:
     Canvas canvas;
     GuiManager guiManager;
     BannerImage bannerTexture;
-    Matchmaker matchmaker;
+    MatchmakerClient matchmakerClient;
 
     struct {
         GuiWindowMainMenu* mainMenu{nullptr};

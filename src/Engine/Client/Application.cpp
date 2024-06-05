@@ -31,7 +31,7 @@ Application::Application(Config& config) :
     canvas{*this},
     guiManager{config, *this, font, config.guiFontSize},
     bannerTexture{*this},
-    matchmaker{config} {
+    matchmakerClient{config} {
 
     // Fix monitor name
     const auto monitors = listSystemMonitors();
@@ -124,7 +124,7 @@ Application::Application(Config& config) :
         }
     });
 
-    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>(matchmaker, guiManager);
+    gui.serverBrowser = guiManager.addWindow<GuiWindowServerBrowser>(matchmakerClient, guiManager);
     gui.serverBrowser->setOnClose([this]() {
         gui.mainMenu->setEnabled(true);
         gui.serverBrowser->setEnabled(false);
@@ -582,7 +582,8 @@ void Application::startServer() {
     status.value = 0.8f;
 
     future = std::async([this]() -> std::function<void()> {
-        server = std::make_unique<Server>(config, *assetsManager, serverOptions);
+        auto* m = gui.loadSave->getMode() == MultiplayerMode::Online ? &matchmakerClient : nullptr;
+        server = std::make_unique<Server>(config, *assetsManager, serverOptions, m);
 
         return [this]() { startClient(); };
     });
@@ -776,7 +777,7 @@ void Application::compressAssets() {
 }
 
 void Application::checkOnlineServices() {
-    gui.logIn = guiManager.addWindow<GuiWindowLogIn>(*this, matchmaker);
+    gui.logIn = guiManager.addWindow<GuiWindowLogIn>(*this, matchmakerClient);
     guiManager.showModal(*gui.logIn);
     gui.logIn->start();
 
@@ -786,7 +787,7 @@ void Application::checkOnlineServices() {
     });
 
     gui.logIn->setOnSuccessCallback([this]() {
-        matchmaker.saveDataFile();
+        matchmakerClient.saveDataFile();
         guiManager.closeModal(*gui.logIn);
         gui.serverBrowser->setEnabled(true);
         gui.serverBrowser->fetchServers(1);

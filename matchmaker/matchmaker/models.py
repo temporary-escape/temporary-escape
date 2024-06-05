@@ -3,11 +3,11 @@ from matchmaker.db import Base
 from sqlalchemy.orm import relationship
 
 
-class Server(Base):
+class ServerModel(Base):
     __tablename__ = "servers"
 
     id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, index=True, nullable=False)
     version = Column(String, nullable=False)
     address = Column(String, nullable=True)
     port = Column(Integer, nullable=True)

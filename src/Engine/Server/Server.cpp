@@ -3,6 +3,7 @@
 #include "../Network/NetworkUdpServer.hpp"
 #include "../Utils/Random.hpp"
 #include "Lua.hpp"
+#include "MatchmakerSession.hpp"
 #include "Services/ServiceFactions.hpp"
 #include "Services/ServiceGalaxy.hpp"
 #include "Services/ServicePlanets.hpp"
@@ -26,10 +27,12 @@ static DatabaseRocksDB::Options getDatabaseOptions(const Config& config) {
     return options;
 }
 
-Server::Server(const Config& config, AssetsManager& assetsManager, const Options& options) :
+Server::Server(const Config& config, AssetsManager& assetsManager, const Options& options,
+               MatchmakerClient* matchmakerClient) :
     config{config},
     assetsManager{assetsManager},
     options{options},
+    matchmakerClient{matchmakerClient},
     db{options.savePath, getDatabaseOptions(config)},
     playerSessions{config, db},
     lobby{config},
@@ -127,6 +130,10 @@ void Server::load() {
     EventData eventData{};
     eventData["seed"] = std::get<int64_t>(seed->value);
     eventBus->enqueue("server_started", eventData);
+
+    if (matchmakerClient) {
+        matchmakerSession = std::make_unique<MatchmakerSession>(*matchmakerClient, options.name);
+    }
 }
 
 void Server::updateSaveInfo() {
@@ -145,14 +152,19 @@ void Server::cleanup() {
 
     logger.info("Cleanup started");
 
+    if (matchmakerSession) {
+        logger.info("Stopping matchmaker session");
+        matchmakerSession.reset();
+    }
+
     logger.info("Clearing lobby");
     lobby.clear();
 
     logger.info("Clearing sessions");
     playerSessions.clear();
 
-    logger.info("Waiting for network to stop");
     if (network) {
+        logger.info("Waiting for network to stop");
         network->stop();
     }
 

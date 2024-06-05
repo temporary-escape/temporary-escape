@@ -223,6 +223,7 @@ void NetworkWebsockets::wsHandshakeReceive() {
             const auto res = parseResponse(self->streambuf);
             if (res.status != 101 || !res.hasHeader("Upgrade", "websocket")) {
                 logger.error("WSS client failed to perform handshake status: {}", res.status);
+                self->receiver.onWsClose(3403);
                 self->close();
             } else {
                 logger.info("WSS client received handshake");

@@ -29,6 +29,11 @@ class ConnectionInfo:
     pending_connections: Dict[str, PendingConnection]
 
 
+class EventStatus(BaseModel):
+    __type__: str = "Status"
+    num_players: int
+
+
 class EventConnectionRequest(BaseModel):
     __type__: str = "ConnectionRequest"
 

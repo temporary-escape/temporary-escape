@@ -6,10 +6,10 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 GuiWindowLogIn::GuiWindowLogIn(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, VulkanWindow& window,
-                               Matchmaker& matchmaker) :
+                               MatchmakerClient& matchmakerClient) :
     GuiWindowModal{ctx, fontFamily, fontSize, "ONLINE SERVICES", "Connecting! Please wait...", {"Cancel"}, 0},
     window{window},
-    matchmaker{matchmaker} {
+    matchmakerClient{matchmakerClient} {
 
     setSize({500.0f, getSize().y});
     setHeaderPrimary(true);
@@ -22,10 +22,10 @@ GuiWindowLogIn::GuiWindowLogIn(GuiContext& ctx, const FontFamily& fontFamily, in
         } else if (choice == "Cancel") {
             this->close();
         } else if (choice == "Open Link") {
-            const auto url = this->matchmaker.getUrlForAuthRedirect(authState);
+            const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
             openWebBrowser(url);
         } else {
-            const auto url = this->matchmaker.getUrlForAuthRedirect(authState);
+            const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
             this->window.setClipboard(url);
         }
     });
@@ -37,7 +37,7 @@ void GuiWindowLogIn::update(const Vector2i& viewport) {
     if (futureAuthMe) {
         const auto& resp = futureAuthMe.get();
 
-        if (resp.status == 200 && matchmaker.hasAuthorization()) {
+        if (resp.status == 200 && matchmakerClient.hasAuthorization()) {
             // OK!
             if (authState.empty()) {
                 if (onSuccess) {
@@ -65,9 +65,9 @@ void GuiWindowLogIn::update(const Vector2i& viewport) {
         }
     } else if (futureLogIn) {
         const auto& resp = futureLogIn.get();
-        if (resp.status == 201 && matchmaker.hasAuthorization()) {
+        if (resp.status == 201 && matchmakerClient.hasAuthorization()) {
             // Logged in!
-            futureAuthMe = matchmaker.apiAuthGetMe();
+            futureAuthMe = matchmakerClient.apiAuthGetMe();
         } else if (resp.status == 204) {
             // Not yet!
         } else {
@@ -95,13 +95,13 @@ void GuiWindowLogIn::stepLoggedIn() {
 void GuiWindowLogIn::tryLogIn() {
     if (std::chrono::steady_clock::now() > nextLogInTime) {
         nextLogInTime = std::chrono::steady_clock::now() + std::chrono::seconds{3};
-        futureLogIn = matchmaker.apiAuthLogIn(authState);
+        futureLogIn = matchmakerClient.apiAuthLogIn(authState);
     }
 }
 
 void GuiWindowLogIn::stepGenerateToken() {
     setText("Not logged in to the online services. Creating token. Please wait...");
-    futureAuthState = matchmaker.apiAuthCreateState();
+    futureAuthState = matchmakerClient.apiAuthCreateState();
 }
 
 void GuiWindowLogIn::stepProcessState() {
@@ -125,5 +125,5 @@ void GuiWindowLogIn::setError(const std::string& msg) {
 void GuiWindowLogIn::start() {
     nextLogInTime = {};
     authState.clear();
-    futureAuthMe = matchmaker.apiAuthGetMe();
+    futureAuthMe = matchmakerClient.apiAuthGetMe();
 }
