@@ -27,7 +27,8 @@ FontLoader::FontLoader(const Path& path, int size) {
     auto ft = getFreeType();
 
     FT_Face f;
-    if (FT_New_Face(ft, path.c_str(), 0, &f)) {
+    const auto pathStr = path.string();
+    if (FT_New_Face(ft, pathStr.c_str(), 0, &f)) {
         EXCEPTION("Failed to open font from memory");
     }
 

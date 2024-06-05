@@ -33,7 +33,7 @@ public:
 
 private:
     virtual void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
-                         const Color4& color, std::string_view::const_iterator it, uint32_t code);
+                         const Color4& color, const char* it, uint32_t code);
 
     const FontFamily& font;
     float size;
@@ -56,13 +56,13 @@ public:
 
 private:
     void onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen, const Quad& quad,
-                 const Color4& color, std::string_view::const_iterator it, uint32_t code) override;
+                 const Color4& color, const char* it, uint32_t code) override;
 
     float size;
     float maxWidth;
-    std::string_view::const_iterator startChar{};
-    std::string_view::const_iterator lastWordChar{};
-    std::string_view::const_iterator previousChar{};
+    const char* startChar{nullptr};
+    const char* lastWordChar{nullptr};
+    const char* previousChar{nullptr};
     std::string result;
     int numLines{0};
 };

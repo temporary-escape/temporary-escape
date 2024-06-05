@@ -175,8 +175,7 @@ Vector2 TextShaper::getBounds() const {
 }
 
 void TextShaper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen,
-                         const TextShaper::Quad& quad, const Color4& color, const std::string_view::const_iterator it,
-                         const uint32_t code) {
+                         const TextShaper::Quad& quad, const Color4& color, const char* it, const uint32_t code) {
     (void)fontFace;
     (void)glyph;
     (void)pen;
@@ -197,8 +196,7 @@ TextWrapper::TextWrapper(const FontFamily& font, const float size, const float m
 }
 
 void TextWrapper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph, const Vector2& pen,
-                          const TextShaper::Quad& quad, const Color4& color, const std::string_view::const_iterator it,
-                          const uint32_t code) {
+                          const TextShaper::Quad& quad, const Color4& color, const char* it, const uint32_t code) {
     if (!startChar) {
         startChar = it;
         lastWordChar = it;
