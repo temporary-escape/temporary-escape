@@ -107,7 +107,7 @@ MESSAGE_DEFINE(MessageSceneUpdateEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessagePlayerControlEvent {
-    EntityId entityId{0};
+    EntityId entityId{NullEntity};
 
     MSGPACK_DEFINE_ARRAY(entityId);
 };
@@ -116,7 +116,7 @@ MESSAGE_DEFINE(MessagePlayerControlEvent);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageActionApproach {
-    EntityId entityId{0};
+    EntityId entityId{NullEntity};
 
     MSGPACK_DEFINE_ARRAY(entityId);
 };
@@ -125,7 +125,7 @@ MESSAGE_DEFINE(MessageActionApproach);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageActionOrbit {
-    EntityId entityId{0};
+    EntityId entityId{NullEntity};
     float radius{0};
 
     MSGPACK_DEFINE_ARRAY(entityId, radius);
@@ -135,7 +135,7 @@ MESSAGE_DEFINE(MessageActionOrbit);
 
 // --------------------------------------------------------------------------------------------------------------------
 struct MessageActionKeepDistance {
-    EntityId entityId{0};
+    EntityId entityId{NullEntity};
     float distance{0};
 
     MSGPACK_DEFINE_ARRAY(entityId, distance);

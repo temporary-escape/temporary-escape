@@ -44,8 +44,7 @@ static inline glm::vec<3, V> idxToOffset(const int idx, const glm::vec<3, V>& or
     }
 }
 
-template <typename... Args>
-static inline constexpr uint8_t idxToMask(const Args... args) {
+template <typename... Args> static inline constexpr uint8_t idxToMask(const Args... args) {
     uint8_t result{0};
     ((result |= 1 << args), ...);
     return result;
@@ -156,7 +155,7 @@ bool Pathfinding::findPath(const Vector3& from, const Vector3& to) {
     data.frontier.emplace(NodeInfoDistance{data.start, 0});
 
     data.costSoFar.reserve(1 * 1024);
-    data.costSoFar[data.start.code] = Info{.from = 0, .cost = 0,};
+    data.costSoFar[data.start.code] = Info{0, 0};
 
     size_t count{0};
 
@@ -192,8 +191,8 @@ void Pathfinding::optimize() {
         // Update the offsets in this layer
         // The start of the next layer is exactly at the end of this layer
         for (size_t i = start; i < start + temp[level].size(); i++) {
-            //if (nodes[i].offset) {
-                nodes[i].offset += start + temp[level].size();
+            // if (nodes[i].offset) {
+            nodes[i].offset += start + temp[level].size();
             //}
         }
     }
@@ -270,14 +269,12 @@ Pathfinding::Index Pathfinding::allocateTempNodes(const int level) {
 void Pathfinding::getNeighbours(const NodeInfo& info, QueryData& data) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - info.level)));
 
-    std::array<NodeInfo, 6> neighbours = {
-        findNearest(info.pos + Vector3i{nodeWidth, 0, 0}, info.level),
-        findNearest(info.pos + Vector3i{-nodeWidth, 0, 0}, info.level),
-        findNearest(info.pos + Vector3i{0, nodeWidth, 0}, info.level),
-        findNearest(info.pos + Vector3i{0, -nodeWidth, 0}, info.level),
-        findNearest(info.pos + Vector3i{0, 0, nodeWidth}, info.level),
-        findNearest(info.pos + Vector3i{0, 0, -nodeWidth}, info.level)
-    };
+    std::array<NodeInfo, 6> neighbours = {findNearest(info.pos + Vector3i{nodeWidth, 0, 0}, info.level),
+                                          findNearest(info.pos + Vector3i{-nodeWidth, 0, 0}, info.level),
+                                          findNearest(info.pos + Vector3i{0, nodeWidth, 0}, info.level),
+                                          findNearest(info.pos + Vector3i{0, -nodeWidth, 0}, info.level),
+                                          findNearest(info.pos + Vector3i{0, 0, nodeWidth}, info.level),
+                                          findNearest(info.pos + Vector3i{0, 0, -nodeWidth}, info.level)};
 
     for (size_t i = 0; i < neighbours.size(); i++) {
         if (!neighbours[i]) {
@@ -302,14 +299,17 @@ void Pathfinding::getNeighbours(const NodeInfo& info, QueryData& data) {
         getNeighboursSide(n.offset, n.pos, n.level, n.code, side, data);
     }
 
-    //const auto& n = neighbours[0];
-    // getNeighboursSide(n.offset, n.pos, n.level, n.code, 1, callback);
+    // const auto& n = neighbours[0];
+    //  getNeighboursSide(n.offset, n.pos, n.level, n.code, 1, callback);
 }
 
 void Pathfinding::processNeighbour(const NodeInfo& next, QueryData& data) {
     const auto newCost = data.costSoFar[data.current.info.code].cost + heuristic(data.current.info.pos, next.pos);
     if (data.costSoFar.find(next.code) == data.costSoFar.end() || newCost < data.costSoFar[next.code].cost) {
-        data.costSoFar[next] = Info{.from = data.current.info.code, .cost = newCost,};
+        data.costSoFar[next] = Info{
+            data.current.info.code,
+            newCost,
+        };
         const auto priority = newCost + heuristic(next.pos, data.goal.pos);
         data.frontier.push(NodeInfoDistance{next, priority});
     }
@@ -320,12 +320,14 @@ void Pathfinding::getNeighboursSide(const Index index, const Vector3i& origin, c
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
     if (level + 1 == depth || !nodes[index].children) {
-        processNeighbour(NodeInfo{
-            .pos = origin,
-            .offset = index,
-            .code = previous,
-            .level = level,
-        }, data);
+        processNeighbour(
+            NodeInfo{
+                origin,
+                index,
+                previous,
+                level,
+            },
+            data);
         return;
     }
 
@@ -343,12 +345,14 @@ void Pathfinding::getNeighboursSide(const Index index, const Vector3i& origin, c
                 continue;
             } else {
                 // Empty space
-                processNeighbour(NodeInfo{
-                    .pos = childOrigin,
-                    .offset = level + 1 == depth ? 0 : static_cast<Index>(node.offset + idx),
-                    .code = nextCode,
-                    .level = level + 1,
-                }, data);
+                processNeighbour(
+                    NodeInfo{
+                        childOrigin,
+                        level + 1 == depth ? 0 : static_cast<Index>(node.offset + idx),
+                        nextCode,
+                        level + 1,
+                    },
+                    data);
             }
         }
     }
@@ -384,7 +388,7 @@ std::optional<Pathfinding::HashCode> Pathfinding::find(const Index index, const 
 }
 
 Pathfinding::NodeInfo Pathfinding::findNearest(const Index index, const Vector3i& origin, const int level,
-                                             const HashCode previous, const Vector3& pos, int maxLevel) {
+                                               const HashCode previous, const Vector3& pos, int maxLevel) {
     const auto nodeWidth = scale * static_cast<int>(std::pow(2.0f, static_cast<float>(depth - level)));
 
     const auto childWidth = nodeWidth / 2;
@@ -400,19 +404,19 @@ Pathfinding::NodeInfo Pathfinding::findNearest(const Index index, const Vector3i
                 return findNearest(node.offset + idx, childOrigin, level + 1, nextCode, pos, maxLevel);
             } else {
                 return NodeInfo{
-                    .pos = childOrigin,
-                    .offset = static_cast<Index>(node.offset + idx),
-                    .code = nextCode,
-                    .level = level + 1,
+                    childOrigin,
+                    static_cast<Index>(node.offset + idx),
+                    nextCode,
+                    level + 1,
                 };
             }
         }
     }
 
     return {
-        .pos = {0, 0, 0},
-        .offset = 0,
-        .code = 0,
-        .level = 0,
+        {0, 0, 0},
+        0,
+        0,
+        0,
     };
 }

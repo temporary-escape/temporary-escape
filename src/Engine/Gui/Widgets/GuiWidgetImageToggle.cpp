@@ -4,14 +4,14 @@ using namespace Engine;
 
 const GuiStyleButton GuiWidgetImageToggle::defaultStyle{
     {
-        .normal = Colors::background,
-        .hover = Colors::background,
-        .active = Colors::primaryBackground,
+        Colors::background,
+        Colors::background,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::white,
-        .hover = Colors::primary,
-        .active = Colors::primary,
+        Colors::white,
+        Colors::primary,
+        Colors::primary,
     },
     Colors::white,
 };

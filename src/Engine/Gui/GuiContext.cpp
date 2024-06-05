@@ -111,7 +111,7 @@ static nk_color HEX(const uint32_t v) {
     return nk_rgba((v & 0xFF000000) >> 24, (v & 0x00FF0000) >> 16, (v & 0x0000FF00) >> 8, (v & 0x000000FF) >> 0);
 }
 
-static constexpr nk_color fromColor(const Color4& color) {
+static nk_color fromColor(const Color4& color) {
     return nk_rgba(color.r * 255, color.g * 255, color.b * 255, color.a * 255);
 }
 

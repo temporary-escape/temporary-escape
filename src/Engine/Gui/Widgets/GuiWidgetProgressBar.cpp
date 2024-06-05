@@ -3,18 +3,16 @@
 using namespace Engine;
 
 const GuiStyleProgress GuiWidgetProgressBar::defaultStyle{
-    .border =
-        {
-            .normal = Colors::border,
-            .hover = Colors::border,
-            .active = Colors::border,
-        },
-    .bar =
-        {
-            .normal = Colors::text,
-            .hover = Colors::text,
-            .active = Colors::text,
-        },
+    {
+        Colors::border,
+        Colors::border,
+        Colors::border,
+    },
+    {
+        Colors::text,
+        Colors::text,
+        Colors::text,
+    },
 };
 
 GuiWidgetProgressBar::GuiWidgetProgressBar(GuiContext& ctx) : GuiWidget{ctx}, progress{0.0f} {

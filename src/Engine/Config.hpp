@@ -121,7 +121,7 @@ struct Config {
     int guiFontSize = 16;
 
     struct Server {
-        size_t dbCacheSize{256};
+        uint64_t dbCacheSize{256};
         bool dbDebug{false};
         bool dbCompression{true};
 

@@ -266,7 +266,7 @@ void NetworkUdpStream::ackReceived(const PacketBytesPtr& packet) {
     // logger.info("UDP connection got ack: {}", header.sequence);
 
     // Out of the window?
-    if (header.sequence < ackNum || header.sequence >= ackNum + packetWindowSize) {
+    if (sendQueueList.empty() || header.sequence < ackNum || header.sequence >= ackNum + packetWindowSize) {
         logger.warn("UDP connection got out of bounds ack: {}", header.sequence);
         return;
     }

@@ -4,70 +4,70 @@ using namespace Engine;
 
 const GuiStyleButton GuiWidgetButton::defaultStyle{
     {
-        .normal = Colors::background,
-        .hover = Colors::background,
-        .active = Colors::primaryBackground,
+        Colors::background,
+        Colors::background,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::white,
-        .hover = Colors::primary,
-        .active = Colors::primary,
+        Colors::white,
+        Colors::primary,
+        Colors::primary,
     },
     Colors::white,
 };
 
 const GuiStyleButton GuiWidgetButton::successStyle{
     {
-        .normal = Colors::successBackground,
-        .hover = Colors::successBackground,
-        .active = Colors::primaryBackground,
+        Colors::successBackground,
+        Colors::successBackground,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::success,
-        .hover = Colors::white,
-        .active = Colors::white,
+        Colors::success,
+        Colors::white,
+        Colors::white,
     },
     Colors::success,
 };
 
 const GuiStyleButton GuiWidgetButton::dangerStyle{
     {
-        .normal = Colors::dangerBackground,
-        .hover = Colors::dangerBackground,
-        .active = Colors::primaryBackground,
+        Colors::dangerBackground,
+        Colors::dangerBackground,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::danger,
-        .hover = Colors::white,
-        .active = Colors::white,
+        Colors::danger,
+        Colors::white,
+        Colors::white,
     },
     Colors::danger,
 };
 
 const GuiStyleButton GuiWidgetButton::infoStyle{
     {
-        .normal = Colors::infoBackground,
-        .hover = Colors::infoBackground,
-        .active = Colors::primaryBackground,
+        Colors::infoBackground,
+        Colors::infoBackground,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::info,
-        .hover = Colors::white,
-        .active = Colors::white,
+        Colors::info,
+        Colors::white,
+        Colors::white,
     },
     Colors::info,
 };
 
 const GuiStyleButton GuiWidgetButton::menuStyle{
     {
-        .normal = Colors::border,
-        .hover = Colors::border,
-        .active = Colors::primaryBackground,
+        Colors::border,
+        Colors::border,
+        Colors::primaryBackground,
     },
     {
-        .normal = Colors::white,
-        .hover = Colors::primary,
-        .active = Colors::primary,
+        Colors::white,
+        Colors::primary,
+        Colors::primary,
     },
     Colors::transparent,
 };

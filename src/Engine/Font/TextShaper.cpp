@@ -86,7 +86,8 @@ TextShaper::TextShaper(const FontFamily& font, const float size, const Vector2& 
 
 void TextShaper::write(const std::string_view& text) {
     // const auto total = utf8::distance(text.begin(), text.end());
-    auto it = text.begin();
+    auto it = text.data();
+    const auto end = text.data() + text.size();
     auto current = it;
     unsigned int previous = 0;
     const char* cmdStart = nullptr;
@@ -96,8 +97,8 @@ void TextShaper::write(const std::string_view& text) {
     const auto* face = getFontFace(font, modifiers);
     auto color{mainColor};
 
-    while (it < text.end()) {
-        const auto code = utf8::next(it, text.end());
+    while (it < end) {
+        const auto code = utf8::next(it, end);
 
         // Is it a beginning of a command?
         if (code == '<' && previous != '\\') {

@@ -9,33 +9,30 @@ static const auto colorEnergy = hexColorGamma(0xfed839ff);
 static const auto progressHeight = 16.0f;
 
 const GuiStyleProgress GuiWindowShipStatus::styleProgressShields = {
-    .border = GuiWidgetProgressBar::defaultStyle.border,
-    .bar =
-        {
-            .normal = colorShield,
-            .hover = colorShield,
-            .active = colorShield,
-        },
+    GuiWidgetProgressBar::defaultStyle.border,
+    {
+        colorShield,
+        colorShield,
+        colorShield,
+    },
 };
 
 const GuiStyleProgress GuiWindowShipStatus::styleProgressHealth = {
-    .border = GuiWidgetProgressBar::defaultStyle.border,
-    .bar =
-        {
-            .normal = colorHealth,
-            .hover = colorHealth,
-            .active = colorHealth,
-        },
+    GuiWidgetProgressBar::defaultStyle.border,
+    {
+        colorHealth,
+        colorHealth,
+        colorHealth,
+    },
 };
 
 const GuiStyleProgress GuiWindowShipStatus::styleProgressEnergy = {
-    .border = GuiWidgetProgressBar::defaultStyle.border,
-    .bar =
-        {
-            .normal = colorEnergy,
-            .hover = colorEnergy,
-            .active = colorEnergy,
-        },
+    GuiWidgetProgressBar::defaultStyle.border,
+    {
+        colorEnergy,
+        colorEnergy,
+        colorEnergy,
+    },
 };
 
 GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
@@ -124,7 +121,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
 
 void GuiWindowShipStatus::update(const Vector2i& viewport) {
     GuiWindow::update(viewport);
-    
+
     const auto size = getSize();
     setPos({
         25.0f,

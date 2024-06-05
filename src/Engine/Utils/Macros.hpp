@@ -115,6 +115,10 @@
         return map.at(value);                                                                                          \
     }
 
+#ifdef DEFINE_ENUM_FLAG_OPERATORS
+#undef DEFINE_ENUM_FLAG_OPERATORS
+#endif
+
 #define DEFINE_ENUM_FLAG_OPERATORS(Type)                                                                               \
     inline Type operator~(Type a) {                                                                                    \
         return static_cast<Type>(~static_cast<std::underlying_type_t<Type>>(a));                                       \
