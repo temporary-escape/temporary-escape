@@ -130,8 +130,6 @@ private:
     } view;
 
     std::unique_ptr<AssetsManager> assetsManager;
-    std::unique_ptr<BackgroundWorker> worker;
-    std::shared_ptr<NetworkUdpClient> udpClient;
     std::unique_ptr<Server> server;
     std::unique_ptr<RendererBackground> rendererBackground;
     std::unique_ptr<RenderResources> renderResources;

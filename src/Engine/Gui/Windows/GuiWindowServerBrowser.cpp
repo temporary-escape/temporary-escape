@@ -102,7 +102,9 @@ void GuiWindowServerBrowser::recreateList(const MatchmakerClient::ServerPage& pa
         return;
     }
 
-    /*for (const auto& server : servers) {
+    group->clearWidgets();
+
+    for (const auto& server : page.items) {
         auto& row = group->addWidget<GuiWidgetTemplateRow>(30.0f);
 
         auto& connect = row.addWidget<GuiWidgetButton>("Connect");
@@ -118,7 +120,7 @@ void GuiWindowServerBrowser::recreateList(const MatchmakerClient::ServerPage& pa
 
         auto& version = row.addWidget<GuiWidgetLabel>(server.version);
         version.setWidth(250.0f, true);
-    }*/
+    }
 }
 
 void GuiWindowServerBrowser::setMessage(const std::string& value) {

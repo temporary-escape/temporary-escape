@@ -90,11 +90,12 @@ void MatchmakerClient::apiServersUnregister(const std::string& serverId) {
 
 void MatchmakerClient::apiServersConnect(const std::string& serverId, const asio::ip::udp::endpoint& endpoint,
                                          std::function<void(ServerConnectResponse)> callback) {
+    const auto path = fmt::format("/api/v1/servers/{}/connect", serverId);
     ServerConnectRequest body{};
     body.address = endpoint.address().to_string();
     body.port = endpoint.port();
 
-    api->request(HttpMethod::Post, "/api/v1/auth/login", body, [c = std::move(callback)](const HttpResponse& res) {
+    api->request(HttpMethod::Post, path, body, [c = std::move(callback)](const HttpResponse& res) {
         c(ServerConnectResponse{res});
     });
 }

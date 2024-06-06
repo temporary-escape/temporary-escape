@@ -8,6 +8,9 @@
 #include <thread>
 
 namespace Engine {
+class ENGINE_API Server;
+class ENGINE_API AssetsManager;
+
 class ENGINE_API DedicatedServer : public NetworkDispatcher2 {
 public:
     explicit DedicatedServer(Config& config);
@@ -18,17 +21,9 @@ public:
 private:
     void stop();
 
-public:
-    /*void onMatchmakerConnect() override;
-    void onMatchmakerDisconnect() override;*/
-
-private:
     Config& config;
-    asio::io_service service;
-    std::unique_ptr<asio::io_service::work> work;
-    std::list<std::thread> threads;
-    std::unique_ptr<NetworkUdpServer> server;
-    std::unique_ptr<MatchmakerClient> matchmaker;
-    std::string publicId;
+    MatchmakerClient matchmakerClient;
+    std::unique_ptr<AssetsManager> assetsManager;
+    std::unique_ptr<Server> server;
 };
 } // namespace Engine

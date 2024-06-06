@@ -1,31 +1,33 @@
 #include "DedicatedServer.hpp"
+#include "../Assets/AssetsManager.hpp"
+#include "../Server/Server.hpp"
+#include <csignal>
 
 using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-DedicatedServer::DedicatedServer(Config& config) : config{config} {
-    work = std::make_unique<asio::io_service::work>(service);
-    for (auto i = 0; i < 4; i++) {
-        threads.emplace_back([this]() {
-            try {
-                logger.debug("Started server thread");
-                service.run();
-                logger.debug("Stopped server thread");
-            } catch (std::exception& e) {
-                BACKTRACE(e, "Exception caught in DedicatedServer thread");
-            }
-        });
+volatile std::sig_atomic_t signalStatus{0};
+
+static void signalHandler(const int signal) {
+    signalStatus = signal;
+}
+
+DedicatedServer::DedicatedServer(Config& config) : config{config}, matchmakerClient{config} {
+    assetsManager = std::make_unique<AssetsManager>(config);
+
+    const auto loadQueue = assetsManager->getLoadQueue();
+    for (auto& loadFn : loadQueue) {
+        loadFn(nullptr, nullptr);
     }
 
-    try {
-        server = std::make_unique<NetworkUdpServer>(config, service, *this);
-        matchmaker = std::make_unique<MatchmakerClient>(config);
-        // matchmaker->registerServerAndListen("Some server name", *server);
-    } catch (...) {
-        stop();
-        throw;
-    }
+    Server::Options options{};
+    options.seed = 123456789ULL;
+    options.savePath = config.userdataSavesPath / "Default";
+    options.name = "Dedicated Server";
+    options.password = "";
+
+    server = std::make_unique<Server>(config, *assetsManager, options, &matchmakerClient);
 }
 
 DedicatedServer::~DedicatedServer() {
@@ -33,52 +35,17 @@ DedicatedServer::~DedicatedServer() {
 }
 
 void DedicatedServer::stop() {
-    if (matchmaker) {
-        logger.info("Stopping matchmaker");
-        matchmaker->close();
-    }
+    logger.info("Stopping dedicated server");
 
-    if (server) {
-        logger.info("Stopping server");
-        server->stop();
-    }
-
-    if (work) {
-        logger.info("Stopping io_service");
-        work.reset();
-        service.stop();
-    }
-
-    if (!threads.empty()) {
-        logger.info("Joining threads");
-        for (auto& thread : threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-        threads.clear();
-    }
-
-    matchmaker.reset();
     server.reset();
+    assetsManager.reset();
+    matchmakerClient.close();
 }
 
 void DedicatedServer::wait() {
-    asio::signal_set signals(service, SIGINT, SIGTERM);
-    auto future = signals.async_wait(asio::use_future);
-    const auto res = future.get();
-
-    logger.info("Received signal: {}", res);
-    // std::this_thread::sleep_for(std::chrono::seconds{1});
-    stop();
+    logger.warn("Press CTRL+C to stop the server!");
+    std::signal(SIGINT, signalHandler);
+    while (signalStatus == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    }
 }
-
-/*void DedicatedServer::onMatchmakerConnect() {
-    server->stunRequest([this](NetworkStunClient::Result result) {
-        logger.info("Got STUN response endpoint: {}", result.endpoint);
-        matchmaker->serverRegister("Some Server Name", result.endpoint);
-    });
-}
-
-void DedicatedServer::onMatchmakerDisconnect() {
-}*/

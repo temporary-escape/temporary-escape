@@ -5,4 +5,4 @@
 
 namespace Engine {
 ENGINE_API void openWebBrowser(const std::string_view& url);
-}
+} // namespace Engine

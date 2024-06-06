@@ -430,13 +430,6 @@ void Application::stopClientSide() {
 }
 
 void Application::stopServerSide() {
-    if (worker) {
-        udpClient->stop();
-        worker->stop();
-        udpClient.reset();
-        worker.reset();
-    }
-
     server.reset();
     assetsManager.reset();
 }
