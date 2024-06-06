@@ -130,6 +130,7 @@ Application::Application(Config& config) :
         gui.serverBrowser->setEnabled(false);
     });
     gui.serverBrowser->setOnConnect([this](const std::string& serverId) {
+        gui.serverBrowser->setEnabled(false);
         logger.info("Starting connection to the server id: {}", serverId);
         startConnectServer(serverId);
     });

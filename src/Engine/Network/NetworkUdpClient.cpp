@@ -84,11 +84,9 @@ void NetworkUdpClient::receive() {
 
                 if (self->stun.isRunning() && self->stun.isValid(packet->data(), packet->size())) {
                     self->stun.parse(packet->data(), packet->size());
-                } else if (self->peerEndpoint == self->endpoint) {
-                    // logger.info("UDP client received {} bytes", packet->size());
+                } else {
                     self->onReceive(packet);
                 }
-
                 self->receive();
             }
         }));
@@ -143,7 +141,7 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
     });
 
     std::unique_lock lock{connectedLock};
-    if (!connectedCv.wait_for(lock, std::chrono::seconds{1}, [this] { return connected; })) {
+    if (!connectedCv.wait_for(lock, std::chrono::seconds{2}, [this] { return connected; })) {
         EXCEPTION("Failed to connect to address: {}", address);
     }
 }
