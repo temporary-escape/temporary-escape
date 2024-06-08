@@ -264,7 +264,6 @@ TEST_CASE("Database perform a transcation", TAG) {
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().name == "Some Name 2");
 }
-#endif
 
 TEST_CASE("Database update a single key", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
@@ -403,3 +402,4 @@ TEST_CASE("Benchmark RocksDB", TAG) {
     std::cout << "random read: " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms"
               << std::endl;
 }*/
+#endif
