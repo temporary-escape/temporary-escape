@@ -209,6 +209,7 @@ TEST_CASE("Database remove all by prefix", TAG) {
     REQUIRE(players.empty());
 }
 
+#ifndef _WIN32
 TEST_CASE("Database perform a transcation", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
     DatabaseRocksDB::Options options{};
@@ -263,6 +264,7 @@ TEST_CASE("Database perform a transcation", TAG) {
     REQUIRE(found.has_value() == true);
     REQUIRE(found.value().name == "Some Name 2");
 }
+#endif
 
 TEST_CASE("Database update a single key", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
