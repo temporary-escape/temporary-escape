@@ -209,7 +209,6 @@ TEST_CASE("Database remove all by prefix", TAG) {
     REQUIRE(players.empty());
 }
 
-#ifndef _WIN32
 TEST_CASE("Database perform a transcation", TAG) {
     auto tmpDir = std::make_shared<TmpDir>();
     DatabaseRocksDB::Options options{};
@@ -402,4 +401,3 @@ TEST_CASE("Benchmark RocksDB", TAG) {
     std::cout << "random read: " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms"
               << std::endl;
 }*/
-#endif

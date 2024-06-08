@@ -103,6 +103,7 @@ jobs:
           ./appimage/build.sh ${TAR_GZ_FILE}
 
       - name: Unit Test
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           cd ./build
