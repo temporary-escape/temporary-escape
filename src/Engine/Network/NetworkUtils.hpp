@@ -14,6 +14,7 @@ struct UrlParts {
 };
 
 ENGINE_API std::optional<UrlParts> parseUrl(const std::string_view& url);
+ENGINE_API asio::ip::udp::endpoint toIPv6(const asio::ip::udp::endpoint& e);
 } // namespace Engine
 
 template <> struct fmt::formatter<asio::ip::tcp::endpoint> {

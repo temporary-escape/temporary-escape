@@ -115,8 +115,12 @@ void NetworkStunClient::doQuery(const RequestPtr& req) {
             endpoints.clear();
             for (const auto& e : result) {
                 if (e.endpoint().address().is_v4()) {
-                    logger.debug("STUN client resolved host: {}", e.endpoint());
-                    endpoints.push_back(e.endpoint());
+                    if (socket.local_endpoint().address().is_v6()) {
+                        endpoints.push_back(toIPv6(e));
+                    } else {
+                        endpoints.push_back(e.endpoint());
+                    }
+                    logger.debug("STUN client resolved host: {}", endpoints.back());
                 }
             }
 

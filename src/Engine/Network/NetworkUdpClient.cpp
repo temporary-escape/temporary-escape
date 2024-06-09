@@ -98,7 +98,7 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
         connected = false;
     }
 
-    logger.info("UDP client connecting to address: {} port: {}", address, port);
+    logger.info("UDP client resolving host: {} port: {}", address, port);
 
     const asio::ip::udp::resolver::query query(address, std::to_string(port));
     asio::ip::udp::resolver resolver{service};
@@ -116,7 +116,11 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
             continue;
         }
 
-        endpoint = e.endpoint();
+        if (localEndpoint.address().is_v6() && e.endpoint().address().is_v4()) {
+            endpoint = toIPv6(e);
+        } else {
+            endpoint = e.endpoint();
+        }
         found = true;
         break;
     }
@@ -126,6 +130,8 @@ void NetworkUdpClient::connect(const std::string& address, const uint16_t port) 
     }
 
     this->address = fmt::format("{}", endpoint);
+
+    logger.info("UDP client connecting to: {}", endpoint);
 
     const auto& publicKey = getPublicKey();
     const auto buff = asio::buffer(publicKey.data(), publicKey.size());

@@ -25,3 +25,12 @@ TEST_CASE("Parse url", "[Network]") {
     REQUIRE(parts->port == 443);
     REQUIRE(parts->path == "/path.txt");
 }
+
+TEST_CASE("IPv4 to IPv6", "[Network]") {
+    const auto address = asio::ip::udp::endpoint{asio::ip::address::from_string("10.20.30.40"), 1234};
+    const auto expected =
+        asio::ip::udp::endpoint{asio::ip::address::from_string("0000:0000:0000:0000:0000:ffff:0a14:1e28"), 1234};
+    const auto converted = toIPv6(address);
+
+    REQUIRE(expected == converted);
+}

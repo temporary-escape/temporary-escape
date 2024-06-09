@@ -34,3 +34,11 @@ std::optional<UrlParts> Engine::parseUrl(const std::string_view& url) {
         return std::nullopt;
     }
 }
+
+asio::ip::udp::endpoint Engine::toIPv6(const asio::ip::udp::endpoint& e) {
+    const auto bytes = e.address().to_v4().to_bytes();
+    return asio::ip::udp::endpoint{
+        asio::ip::address::from_string(fmt::format(
+            "0000:0000:0000:0000:0000:ffff:{:02x}{:02x}:{:02x}{:02x}", bytes[0], bytes[1], bytes[2], bytes[3])),
+        e.port()};
+}
