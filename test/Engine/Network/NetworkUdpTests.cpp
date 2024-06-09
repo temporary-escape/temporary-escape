@@ -160,8 +160,8 @@ TEST_CASE("Start UDP server with client and exchange data", "[Network]") {
     const auto count = 10;
 
     Config config{};
-    config.network.clientBindAddress = "127.0.0.1";
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
     config.network.serverPort = 0;
 
     TestUdpServer server{config};
@@ -199,8 +199,8 @@ TEST_CASE("Start UDP server with connect with multiple clients", "[Network]") {
     static constexpr size_t totalClients = 16;
 
     Config config{};
-    config.network.clientBindAddress = "127.0.0.1";
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
     config.network.serverPort = 0;
 
     TestUdpServer server{config};
@@ -258,8 +258,8 @@ TEST_CASE("Start UDP server with connect with multiple clients", "[Network]") {
 
 TEST_CASE("Connect to UDP server and receive ping", "[Network]") {
     Config config{};
-    config.network.clientBindAddress = "127.0.0.1";
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
     config.network.serverPort = 0;
 
     TestUdpServer server{config};
@@ -280,8 +280,8 @@ TEST_CASE("Connect to UDP server and receive ping", "[Network]") {
 
 TEST_CASE("Connect to UDP server and disconnect from client", "[Network]") {
     Config config{};
-    config.network.clientBindAddress = "127.0.0.1";
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
     config.network.serverPort = 0;
 
     TestUdpServer server{config};
@@ -301,8 +301,8 @@ TEST_CASE("Connect to UDP server and disconnect from client", "[Network]") {
 
 TEST_CASE("Connect to UDP server and disconnect from server", "[Network]") {
     Config config{};
-    config.network.clientBindAddress = "127.0.0.1";
-    config.network.serverBindAddress = "127.0.0.1";
+    config.network.clientBindAddress = "::1";
+    config.network.serverBindAddress = "::1";
     config.network.serverPort = 0;
 
     TestUdpServer server{config};

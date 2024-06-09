@@ -151,7 +151,7 @@ private:
     } perf;
 
     Server::Options serverOptions;
-    std::string connectAddress{"127.0.0.1"};
+    std::string connectAddress{"::1"};
     std::string connectServerId;
 };
 } // namespace Engine
