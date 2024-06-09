@@ -805,9 +805,9 @@ void Application::checkOnlineServices() {
 }
 
 void Application::startMultiPlayerHosted() {
-    config.network.clientBindAddress = "::1";
-    config.network.serverBindAddress = "::";
-    connectAddress = "::1";
+    config.network.clientBindAddress = "127.0.0.1";
+    config.network.serverBindAddress = "0.0.0.0";
+    connectAddress = "127.0.0.1";
 
     logger.info("Starting multi player mode");
 
@@ -818,9 +818,9 @@ void Application::startMultiPlayerHosted() {
 }
 
 void Application::startSinglePlayer() {
-    config.network.clientBindAddress = "::1";
-    config.network.serverBindAddress = "::1";
-    connectAddress = "::1";
+    config.network.clientBindAddress = "127.0.0.1";
+    config.network.serverBindAddress = "127.0.0.1";
+    connectAddress = "127.0.0.1";
 
     logger.info("Starting single player mode");
 
@@ -836,7 +836,7 @@ void Application::openMultiplayerSettings() {
 }
 
 void Application::startConnectServer(const std::string& serverId) {
-    config.network.clientBindAddress = "::";
+    config.network.clientBindAddress = "0.0.0.0";
     connectServerId = serverId;
 
     logger.info("Starting connecting to server mode");
