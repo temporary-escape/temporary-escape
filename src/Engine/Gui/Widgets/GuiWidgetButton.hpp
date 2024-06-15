@@ -5,12 +5,6 @@
 namespace Engine {
 class ENGINE_API GuiWidgetButton : public GuiWidget {
 public:
-    static const GuiStyleButton defaultStyle;
-    static const GuiStyleButton successStyle;
-    static const GuiStyleButton dangerStyle;
-    static const GuiStyleButton infoStyle;
-    static const GuiStyleButton menuStyle;
-
     using OnClickCallback = std::function<void()>;
 
     explicit GuiWidgetButton(GuiContext& ctx, std::string label);
@@ -25,9 +19,9 @@ public:
     }
     void setOnClick(OnClickCallback value);
 
-    void setStyle(const GuiStyleButton* value);
-    const GuiStyleButton* getStyle() const {
-        return style ? style : &defaultStyle;
+    void setStyle(const GuiStyleButton& value);
+    const GuiStyleButton& getStyle() const {
+        return *style;
     }
 
 private:
@@ -36,6 +30,6 @@ private:
     std::string label;
     ImagePtr image;
     OnClickCallback onClick;
-    const GuiStyleButton* style{nullptr};
+    const GuiStyleButton* style;
 };
 } // namespace Engine

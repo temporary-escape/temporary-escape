@@ -53,6 +53,9 @@ Application::Application(Config& config) :
         config.graphics.ssao = false;
     }
 
+    gui.loadStatus = guiManager.addWindow<GuiWindowLoadStatus>();
+    gui.loadStatus->setEnabled(false);
+
     gui.createProfile = guiManager.addWindow<GuiWindowCreateProfile>();
     gui.createProfile->setOnCreateCallback([this](const GuiWindowCreateProfile::Result& result) {
         try {
@@ -61,20 +64,12 @@ Application::Application(Config& config) :
             Xml::toFile(this->config.userdataPath / profileFilename, playerLocalProfile);
             gui.createProfile->setEnabled(false);
 
-            guiManager.modalSuccess("Success", "User profile created!", [this](const std::string& choice) {
-                (void)choice;
-                gui.mainMenu->setEnabled(true);
-                return true;
-            });
+            auto* modal = guiManager.modal("Success", "User profile created!");
+            modal->setStyle(guiStyleWindowGreen);
+            modal->addChoice("Done", guiStyleButtonGreen, [this]() { gui.mainMenu->setEnabled(true); });
 
-        } catch (std::exception& e) {
-            guiManager.modalDanger("Error", "Failed to save profile!", [this](const std::string& choice) {
-                (void)choice;
-                closeWindow();
-                return true;
-            });
-
-            BACKTRACE(e, "Failed to create user profile");
+        } catch (...) {
+            EXCEPTION_NESTED("Failed to create user profile");
         }
     });
 
@@ -351,38 +346,12 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     renderVersion(viewport);
     renderFrameTime(viewport);
 
-    if (views) {
+    if (views && views->getCurrent()) {
         views->renderCanvas(canvas, viewport);
     }
 
-    /*if (shouldBlit()) {
-        if (game && game->isReady()) {
-            // game->renderCanvas(canvas, nuklear, viewport);
-        } else if (editor) {
-            // editor->renderCanvas(canvas, nuklear, viewport);
-        }
-    }*/
-
-    if (!views || !views->getCurrent()) {
-        if (!status.message.empty()) {
-            renderStatus(viewport);
-        } else {
-            renderBanner(viewport);
-        }
-
-        /*nuklear.begin(viewport);
-        gui.mainMenu.draw(nuklear, viewport);
-        gui.createProfile.draw(nuklear, viewport);
-        gui.mainSettings.draw(nuklear, viewport);
-        gui.keepSettings.draw(nuklear, viewport);
-        nuklear.end();*/
-
-        /*canvas.begin();
-        canvas.drawRect({200.0f, 200.0f}, {300.0f, 100.0f}, {1.0f, 0.0f, 0.0f, 1.0f});
-        canvas.drawRect({500.0f, 500.0f}, {50.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f});
-        canvas.flush();
-
-        rendererCanvas.render(vkb, canvas, viewport);*/
+    if ((!views || !views->getCurrent()) && !gui.loadStatus->isEnabled()) {
+        renderBanner(viewport);
     }
 
     canvas.flush();
@@ -408,15 +377,16 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 }
 
 void Application::quitToMenu() {
-    status.message = "Exiting...";
-    status.value = 1.0f;
+    // gui.loadStatus->setStatus("Exiting...", 1.0f);
 
     NEXT(shutdownViews());
 }
 
 void Application::shutdownViews() {
-    views->setCurrent(nullptr);
-    views->clear();
+    if (views) {
+        views->setCurrent(nullptr);
+        views->clear();
+    }
 
     NEXT(shutdownClientSide());
 }
@@ -446,10 +416,25 @@ void Application::shutdownServerSide() {
 }
 
 void Application::shutdownDone() {
-    status.message.clear();
-    status.value = 0.0f;
+    gui.loadStatus->setStatus("Done", 0.0f);
+    gui.loadStatus->close();
 
     gui.mainMenu->setEnabled(true);
+}
+
+void Application::showError(std::string message) {
+    gui.mainMenu->setEnabled(false);
+    gui.loadStatus->close();
+
+    auto* modal = guiManager.modal("ERROR", "");
+    modal->setSize({500.0f, 300.0f});
+    modal->setText(std::move(message));
+    modal->setStyle(guiStyleWindowRed);
+    modal->setCloseOnClick(true);
+    modal->addChoice("OK", [this]() {
+        gui.mainMenu->setEnabled(true);
+        gui.loadStatus->close();
+    });
 }
 
 void Application::renderVersion(const Vector2i& viewport) {
@@ -491,23 +476,6 @@ void Application::renderFrameTime(const Vector2i& viewport) {
     }
 }
 
-void Application::renderStatus(const Vector2i& viewport) {
-    const auto fontHeight = static_cast<float>(config.guiFontSize) * 2.0f;
-    canvas.drawText(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f - fontHeight},
-                    status.message,
-                    font,
-                    config.guiFontSize * 2,
-                    Colors::text);
-
-    canvas.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                    {static_cast<float>(viewport.x) - 100.0f, 25.0f},
-                    Colors::background);
-
-    canvas.drawRect(Vector2{50.0f, static_cast<float>(viewport.y) - 75.0f},
-                    {(static_cast<float>(viewport.x) - 100.0f) * status.value, 25.0f},
-                    Colors::primary);
-}
-
 void Application::renderBanner(const Vector2i& viewport) {
     auto adjustedViewport = viewport - Vector2i{0, 200.0f};
     const auto size = bannerTexture.get().getSize2D();
@@ -529,8 +497,7 @@ void Application::loadProfile() {
 }
 
 void Application::createEditor() {
-    status.message = "Entering...";
-    status.value = 1.0f;
+    gui.loadStatus->setStatus("Entering...", 1.0f);
     // editor = std::make_unique<Editor>(config, *this, audio, *assetsManager, *voxelShapeCache, font);
 
     logger.info("Creating editor views");
@@ -540,8 +507,7 @@ void Application::createEditor() {
 }
 
 void Application::checkForClientScene() {
-    status.message = "Entering...";
-    status.value = 1.0f;
+    gui.loadStatus->setStatus("Entering...", 1.0f);
 
     if (client->getScene()) {
         logger.info("Client has a scene, creating game views");
@@ -550,6 +516,8 @@ void Application::checkForClientScene() {
         view.galaxy = views->addView<ViewGalaxy>(*assetsManager, *voxelShapeCache, font, *client);
         view.system = views->addView<ViewSystem>(*assetsManager, *voxelShapeCache, font, *client);
         views->setCurrent(view.space);
+
+        gui.loadStatus->close();
     } else {
         NEXT(checkForClientScene());
     }
@@ -558,36 +526,51 @@ void Application::checkForClientScene() {
 void Application::startClient() {
     logger.info("Starting client");
 
-    status.message = "Connecting...";
-    status.value = 0.9f;
+    gui.loadStatus->setStatus("Connecting...", 0.9f);
 
     future = std::async([this]() -> std::function<void()> {
-        client = std::make_unique<Client>(
-            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), connectAddress, server->getPort());
+        try {
+            client = std::make_unique<Client>(
+                config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), connectAddress, server->getPort());
+            return [this]() { checkForClientScene(); };
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Failed to connect to the server");
 
-        return [this]() { checkForClientScene(); };
+            const auto msg = getUserFriendlyMessage(e);
+            return [=]() {
+                shutdownViews();
+                showError(fmt::format("Failed to start the universe! {}", msg));
+            };
+        }
     });
 }
 
 void Application::startClientToServer() {
     logger.info("Starting client");
 
-    status.message = "Connecting...";
-    status.value = 0.9f;
+    gui.loadStatus->setStatus("Connecting...", 0.9f);
 
     future = std::async([this]() -> std::function<void()> {
-        client = std::make_unique<Client>(
-            config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), matchmakerClient, connectServerId);
+        try {
+            client = std::make_unique<Client>(
+                config, *assetsManager, playerLocalProfile, voxelShapeCache.get(), matchmakerClient, connectServerId);
+            return [this]() { checkForClientScene(); };
+        } catch (std::exception& e) {
+            BACKTRACE(e, "Failed to connect to the server");
 
-        return [this]() { checkForClientScene(); };
+            const auto msg = getUserFriendlyMessage(e);
+            return [=]() {
+                shutdownViews();
+                showError(fmt::format("Failed to connect to the server! {}", msg));
+            };
+        }
     });
 }
 
 void Application::startServer() {
     logger.info("Starting server");
 
-    status.message = "Starting universe (this may take a while)...";
-    status.value = 0.8f;
+    gui.loadStatus->setStatus("Starting universe. This may take a while.", 0.8f);
 
     future = std::async([this]() -> std::function<void()> {
         auto* m = gui.loadSave->getMode() == MultiplayerMode::Online ? &matchmakerClient : nullptr;
@@ -617,8 +600,7 @@ void Application::createPlanetLowResTextures(RendererPlanetSurface& renderer) {
 void Application::createPlanetLowResTextures() {
     logger.info("Creating planet low-res textures");
 
-    status.message = "Creating planets...";
-    status.value = 0.5f;
+    gui.loadStatus->setStatus("Rendering planets...", 0.5f);
 
     const Vector2i viewport{config.graphics.planetLowResTextureSize, config.graphics.planetLowResTextureSize};
     auto rendererPlanetSurfaceLowRes =
@@ -660,8 +642,7 @@ void Application::createBlockThumbnails(RendererThumbnail& thumbnailRenderer) {
 void Application::createThumbnails() {
     logger.info("Creating thumbnails");
 
-    status.message = "Creating thumbnails...";
-    status.value = 0.6f;
+    gui.loadStatus->setStatus("Creating thumbnails...", 0.6f);
 
     auto rendererThumbnail = std::make_unique<RendererThumbnail>(config, *this, *renderResources, *voxelShapeCache);
 
@@ -695,12 +676,16 @@ void Application::loadNextAssetInQueue(AssetsManager::LoadQueue::const_iterator 
             try {
                 (*next)(this, &audio);
                 ++next;
-            } catch (...) {
-                EXCEPTION_NESTED("Failed to load asset");
+            } catch (std::exception& e) {
+                BACKTRACE(e, "Failed to load asset");
+                shutdownViews();
+                showError(getUserFriendlyMessage(e));
+                return;
             }
 
-            status.message = fmt::format("Loading assets ({}/{})...", count, assetsManager->getLoadQueue().size());
-            status.value = 0.3f + progress * 0.2f;
+            gui.loadStatus->setStatus(
+                fmt::format("Loading assets ({}/{})...", count, assetsManager->getLoadQueue().size()),
+                0.3f + progress * 0.2f);
 
             const auto now = std::chrono::steady_clock::now();
             const auto test = std::chrono::duration_cast<std::chrono::microseconds>(now - start);
@@ -718,8 +703,7 @@ void Application::loadAssets() {
 
     this->assetsManager->init(*this);
 
-    status.message = "Loading assets...";
-    status.value = 0.3f;
+    gui.loadStatus->setStatus("Loading assets.", 0.3f);
 
     loadNextAssetInQueue(assetsManager->getLoadQueue().cbegin());
 }
@@ -727,8 +711,7 @@ void Application::loadAssets() {
 void Application::createRegistry() {
     logger.info("Setting up assetsManager");
 
-    status.message = "Loading mod packs...";
-    status.value = 0.3f;
+    gui.loadStatus->setStatus("Loading mod packs.", 0.3f);
 
     future = std::async([this]() -> std::function<void()> {
         this->assetsManager = std::make_unique<AssetsManager>(config);
@@ -750,8 +733,7 @@ void Application::createSceneRenderer(const Vector2i& viewport) {
 void Application::createRenderers() {
     logger.info("Creating renderer");
 
-    status.message = "Creating renderer...";
-    status.value = 0.5f;
+    gui.loadStatus->setStatus("Creating renderer.", 0.5f);
 
     renderResources = std::make_unique<RenderResources>(
         *this, assetsManager->getBlockMaterialsUbo(), assetsManager->getMaterialTextures(), font, config.guiFontSize);
@@ -766,8 +748,7 @@ void Application::createRenderers() {
 void Application::createVoxelShapeCache() {
     logger.info("Creating voxel shape cache");
 
-    status.message = "Creating voxel shape cache...";
-    status.value = 0.2f;
+    gui.loadStatus->setStatus("Creating voxel shape cache.", 0.2f);
 
     voxelShapeCache = std::make_unique<VoxelShapeCache>(config);
 
@@ -777,8 +758,7 @@ void Application::createVoxelShapeCache() {
 void Application::compressAssets() {
     logger.info("Compressing assets");
 
-    status.message = "Compressing assets (may take several minutes)...";
-    status.value = 0.1f;
+    gui.loadStatus->setStatus("Compressing assets. This may take several minutes.", 0.1f);
 
     future = std::async([this]() -> std::function<void()> {
         AssetsManager::compressAssets(config);
@@ -811,8 +791,8 @@ void Application::startMultiPlayerHosted() {
 
     logger.info("Starting multi player mode");
 
-    status.message = "Loading...";
-    status.value = 0.0f;
+    gui.loadStatus->setEnabled(true);
+    gui.loadStatus->setStatus("Loading assets.", 0.0f);
 
     NEXT(compressAssets());
 }
@@ -824,8 +804,8 @@ void Application::startSinglePlayer() {
 
     logger.info("Starting single player mode");
 
-    status.message = "Loading...";
-    status.value = 0.0f;
+    gui.loadStatus->setEnabled(true);
+    gui.loadStatus->setStatus("Loading assets.", 0.0f);
 
     NEXT(compressAssets());
 }
@@ -841,8 +821,8 @@ void Application::startConnectServer(const std::string& serverId) {
 
     logger.info("Starting connecting to server mode");
 
-    status.message = "Loading...";
-    status.value = 0.0f;
+    gui.loadStatus->setEnabled(true);
+    gui.loadStatus->setStatus("Loading assets.", 0.0f);
 
     NEXT(compressAssets());
 }

@@ -14,14 +14,14 @@ GuiWindowLoadSave::GuiWindowLoadSave(GuiContext& ctx, const FontFamily& fontFami
     setNoScrollbar(true);
     setCloseable(true);
 
-    const auto height = getSize().y - 30.0 - 30.0f * 3.0f - ctx.getPadding().y * 5.0f;
+    const auto height = getSize().y - 30.0 - 30.0f * 2.0f - ctx.getPadding().y * 4.0f;
 
     { // Top row
         auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
 
         buttonCreate = &row.addWidget<GuiWidgetButton>("New Save");
         buttonCreate->setWidth(100.0f, true);
-        buttonCreate->setStyle(&GuiWidgetButton::infoStyle);
+        buttonCreate->setStyle(guiStyleButtonBlue);
 
         inputSearch = &row.addWidget<GuiWidgetTextInput>();
         inputSearch->setWidth(0.0f);
@@ -31,17 +31,11 @@ GuiWindowLoadSave::GuiWindowLoadSave(GuiContext& ctx, const FontFamily& fontFami
         clear.setOnClick([this]() { inputSearch->setValue(""); });
     }
 
-    { // Header
-        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
-        auto& name = row.addWidget<GuiWidgetLabel>("Save files:");
-        name.setWidth(200.0f);
-    }
-
     { // Save file list
         auto& row = addWidget<GuiWidgetRow>(height, 1);
         group = &row.addWidget<GuiWidgetGroup>();
         group->setScrollbar(true);
-        group->setBorder(true);
+        group->setStyle(guiStyleGroupNone);
     }
 
     { // Bottom row
@@ -49,15 +43,13 @@ GuiWindowLoadSave::GuiWindowLoadSave(GuiContext& ctx, const FontFamily& fontFami
 
         buttonDelete = &row.addWidget<GuiWidgetButton>("Delete");
         buttonDelete->setWidth(100.0f, true);
-        buttonDelete->setStyle(&GuiWidgetButton::dangerStyle);
-        buttonDelete->setHidden(true);
+        buttonDelete->setStyle(guiStyleButtonGrayOutline);
 
         row.addEmpty().setWidth(0.0f);
 
         buttonPlay = &row.addWidget<GuiWidgetButton>("Play");
         buttonPlay->setWidth(150.0f, true);
-        buttonPlay->setStyle(&GuiWidgetButton::successStyle);
-        buttonPlay->setHidden(true);
+        buttonPlay->setStyle(guiStyleButtonGrayOutline);
         buttonPlay->setOnClick([this]() {
             if (!selected.empty() && selectedInfo.compatible && onLoad) {
                 onLoad(selected);
@@ -90,8 +82,8 @@ void GuiWindowLoadSave::setMode(const MultiplayerMode value) {
 
 void GuiWindowLoadSave::loadInfos() {
     selected.clear();
-    buttonPlay->setHidden(true);
-    buttonDelete->setHidden(true);
+    buttonPlay->setStyle(guiStyleButtonGrayOutline);
+    buttonDelete->setStyle(guiStyleButtonGrayOutline);
 
     logger.info("Loading save file infos from: '{}'", dir);
 
@@ -109,11 +101,11 @@ void GuiWindowLoadSave::loadInfos() {
         auto& child = childRow.addWidget<GuiWidgetSelectableGroup<Path>>(selected, info.path);
         child.setOnClick([this, info]() {
             selectedInfo = info;
-            buttonDelete->setHidden(false);
+            buttonDelete->setStyle(guiStyleButtonRedOutline);
             if (info.compatible) {
-                buttonPlay->setHidden(false);
+                buttonPlay->setStyle(guiStyleButtonGreen);
             } else {
-                buttonPlay->setHidden(true);
+                buttonPlay->setStyle(guiStyleButtonGrayOutline);
             }
         });
 

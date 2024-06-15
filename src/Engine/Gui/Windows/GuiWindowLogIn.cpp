@@ -7,28 +7,14 @@ static auto logger = createLogger(LOG_FILENAME);
 
 GuiWindowLogIn::GuiWindowLogIn(GuiContext& ctx, const FontFamily& fontFamily, int fontSize, VulkanWindow& window,
                                MatchmakerClient& matchmakerClient) :
-    GuiWindowModal{ctx, fontFamily, fontSize, "ONLINE SERVICES", "Connecting! Please wait...", {"Cancel"}, 0},
+    GuiWindowModal{ctx, fontFamily, fontSize, "ONLINE SERVICES", "Connecting! Please wait..."},
     window{window},
     matchmakerClient{matchmakerClient} {
 
     setSize({500.0f, getSize().y});
-    setHeaderPrimary(true);
+    setCloseOnClick(false);
 
-    setOnClickCallback([this](const std::string& choice) {
-        if (choice == "Done") {
-            if (onSuccess) {
-                onSuccess();
-            }
-        } else if (choice == "Cancel") {
-            this->close();
-        } else if (choice == "Open Link") {
-            const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
-            openWebBrowser(url);
-        } else {
-            const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
-            this->window.setClipboard(url);
-        }
-    });
+    addChoice("Cancel", [this]() { this->close(); });
 }
 
 void GuiWindowLogIn::update(const Vector2i& viewport) {
@@ -88,8 +74,13 @@ void GuiWindowLogIn::setOnSuccessCallback(OnSuccessCallback callback) {
 void GuiWindowLogIn::stepLoggedIn() {
     nextLogInTime = {};
     setText("Logged in!");
-    setHeaderSuccess(true);
-    setChoices({"Done"});
+
+    clearChoices();
+    addChoice("Done", [this]() {
+        if (onSuccess) {
+            onSuccess();
+        }
+    });
 }
 
 void GuiWindowLogIn::tryLogIn() {
@@ -107,11 +98,17 @@ void GuiWindowLogIn::stepGenerateToken() {
 void GuiWindowLogIn::stepProcessState() {
     setText("You must log in to use online services! Click <b><p>Open Link</b></p> to open a web browser and "
             "complete the log in process. Or click <b><p>Copy Link</b></p> to copy the link.");
-    setChoices({
-        "Open Link",
-        "Copy Link",
-        "Cancel",
+
+    clearChoices();
+    addChoice("Open Link", [this]() {
+        const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
+        openWebBrowser(url);
     });
+    addChoice("Copy Link", [this]() {
+        const auto url = this->matchmakerClient.getUrlForAuthRedirect(authState);
+        this->window.setClipboard(url);
+    });
+    addChoice("Cancel", [this]() { this->close(); });
 
     nextLogInTime = std::chrono::steady_clock::now() + std::chrono::seconds{5};
 }
@@ -119,7 +116,6 @@ void GuiWindowLogIn::stepProcessState() {
 void GuiWindowLogIn::setError(const std::string& msg) {
     setText(msg);
     logger.error("Updated log-in status: {}", msg);
-    setHeaderDanger(true);
 }
 
 void GuiWindowLogIn::start() {

@@ -16,9 +16,8 @@ GuiWindowCurrentLocation::GuiWindowCurrentLocation(GuiContext& ctx, const FontFa
     setBackground(true);
     setNoScrollbar(true);
     setHeader(false);
-    setOpacity(0.0f);
     setBordered(false);
-    //   setNoInput(true);
+    setStyle(guiStyleWindowNone);
 
     const auto totalWidth = getSize().x - ctx.getPadding().x * 2.0f;
     const auto totalHeight = getSize().y - ctx.getPadding().y * 2.0f;
@@ -57,7 +56,7 @@ void GuiWindowCurrentLocation::setSectorLabel(const std::string& value) {
 
 void GuiWindowCurrentLocation::update(const Vector2i& viewport) {
     GuiWindow::update(viewport);
-    
+
     const auto size = getSize();
     setPos({
         25.0f,

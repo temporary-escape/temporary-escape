@@ -8,33 +8,6 @@ static const auto colorHealth = hexColorGamma(0xa4d949ff);
 static const auto colorEnergy = hexColorGamma(0xfed839ff);
 static const auto progressHeight = 16.0f;
 
-const GuiStyleProgress GuiWindowShipStatus::styleProgressShields = {
-    GuiWidgetProgressBar::defaultStyle.border,
-    {
-        colorShield,
-        colorShield,
-        colorShield,
-    },
-};
-
-const GuiStyleProgress GuiWindowShipStatus::styleProgressHealth = {
-    GuiWidgetProgressBar::defaultStyle.border,
-    {
-        colorHealth,
-        colorHealth,
-        colorHealth,
-    },
-};
-
-const GuiStyleProgress GuiWindowShipStatus::styleProgressEnergy = {
-    GuiWidgetProgressBar::defaultStyle.border,
-    {
-        colorEnergy,
-        colorEnergy,
-        colorEnergy,
-    },
-};
-
 GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& fontFamily, int fontSize,
                                          AssetsManager& assetsManager) :
     GuiWindow{ctx, fontFamily, fontSize} {
@@ -48,9 +21,8 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
     setBackground(true);
     setNoScrollbar(true);
     setHeader(false);
-    setOpacity(0.0f);
     setBordered(false);
-    //   setNoInput(true);
+    setStyle(guiStyleWindowNone);
 
     const auto totalWidth = getSize().x - ctx.getPadding().x * 2.0f;
     const auto totalHeight = getSize().y - ctx.getPadding().y * 2.0f;
@@ -67,7 +39,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
 
     auto& group = main.addWidget<GuiWidgetGroup>();
     group.setScrollbar(false);
-    group.setBorder(false);
+    group.setStyle(guiStyleGroupNone);
     group.setWidth(groupWidth, true);
 
     { // Shields
@@ -81,7 +53,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
         progressShields->setValue(1000.0f);
         progressShields->setMax(1000.0f);
         progressShields->setHeight(progressHeight / 2.0f);
-        progressShields->setStyle(&styleProgressShields);
+        progressShields->setStyle(guiStyleProgressBlue);
         progressShields->setWidth(progressWidth, true);
         progressShields->setTooltip("Shields");
     }
@@ -97,7 +69,7 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
         progressHealth->setValue(1000.0f);
         progressHealth->setMax(1000.0f);
         progressHealth->setHeight(progressHeight / 2.0f);
-        progressHealth->setStyle(&styleProgressHealth);
+        progressHealth->setStyle(guiStyleProgressGreen);
         progressHealth->setWidth(progressWidth, true);
         progressHealth->setTooltip("Health");
     }
@@ -110,10 +82,10 @@ GuiWindowShipStatus::GuiWindowShipStatus(GuiContext& ctx, const FontFamily& font
         image.setWidth(progressHeight, true);
 
         progressEnergy = &row.addWidget<GuiWidgetProgressBar>();
-        progressEnergy->setValue(1000.0f);
+        progressEnergy->setValue(500.0f);
         progressEnergy->setMax(1000.0f);
         progressEnergy->setHeight(progressHeight / 2.0f);
-        progressEnergy->setStyle(&styleProgressEnergy);
+        progressEnergy->setStyle(guiStyleProgressYellow);
         progressEnergy->setWidth(progressWidth, true);
         progressEnergy->setTooltip("Energy");
     }

@@ -6,7 +6,8 @@ GuiWindow::GuiWindow(GuiContext& ctx, const FontFamily& fontFamily, const int fo
     GuiWidgetLayout{ctx},
     ctx{ctx},
     id{std::to_string(reinterpret_cast<uint64_t>(this))},
-    flags{GuiContext::WindowFlag::Title | GuiContext::WindowFlag::NoScrollbar | GuiContext::WindowFlag::Border} {
+    flags{GuiContext::WindowFlag::Title | GuiContext::WindowFlag::NoScrollbar | GuiContext::WindowFlag::Border},
+    style{&guiStyleWindowDefault} {
 }
 
 void GuiWindow::update(const Vector2i& viewport) {
@@ -16,15 +17,9 @@ void GuiWindow::update(const Vector2i& viewport) {
 }
 
 void GuiWindow::draw() {
-    // We are rendering into an FBO, therefore the position is always at [0, 0]
-    GuiContext::WindowOptions options{
-        flags,
-        opacity,
-    };
-
     if (ignoreInput == 0) {
         ctx.setPadding(padding);
-        if (ctx.windowBegin(id, title, pos, size, options)) {
+        if (ctx.windowBegin(*style, id, title, pos, size, flags)) {
             GuiWidgetLayout::draw();
         } else {
             close();
@@ -42,6 +37,10 @@ void GuiWindow::close() {
     if (onCloseCallback) {
         onCloseCallback();
     }
+}
+
+void GuiWindow::setStyle(const GuiStyleWindow& value) {
+    style = &value;
 }
 
 void GuiWindow::setOnClose(OnCloseCallback value) {
@@ -120,30 +119,6 @@ void GuiWindow::setNoInput(const bool value) {
         flags |= GuiContext::WindowFlag::NoInput;
     } else {
         flags &= ~GuiContext::WindowFlag::NoInput;
-    }
-}
-
-void GuiWindow::setHeaderPrimary(const bool value) {
-    if (value) {
-        flags |= GuiContext::WindowFlag::HeaderPrimary;
-    } else {
-        flags &= ~GuiContext::WindowFlag::HeaderPrimary;
-    }
-}
-
-void GuiWindow::setHeaderSuccess(const bool value) {
-    if (value) {
-        flags |= GuiContext::WindowFlag::HeaderSuccess;
-    } else {
-        flags &= ~GuiContext::WindowFlag::HeaderSuccess;
-    }
-}
-
-void GuiWindow::setHeaderDanger(const bool value) {
-    if (value) {
-        flags |= GuiContext::WindowFlag::HeaderDanger;
-    } else {
-        flags &= ~GuiContext::WindowFlag::HeaderDanger;
     }
 }
 

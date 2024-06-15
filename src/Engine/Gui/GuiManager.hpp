@@ -27,11 +27,7 @@ public:
 
     bool isContextMenuVisible() const;
 
-    GuiWindowModal* modalPrimary(std::string title, std::string text, const ModalCallback& callback = nullptr);
-    GuiWindowModal* modalSuccess(std::string title, std::string text, const ModalCallback& callback = nullptr);
-    GuiWindowModal* modalDanger(std::string title, std::string text, const ModalCallback& callback = nullptr);
-    GuiWindowModal* modal(std::string title, std::string text, const std::vector<std::string>& choices,
-                          const ModalCallback& callback = nullptr, int timeout = 0);
+    GuiWindowModal* modal(std::string title, std::string text);
     void showModal(GuiWindowModal& window);
     void closeModal(GuiWindowModal& window);
     GuiWindowContextMenu& getContextMenu() {

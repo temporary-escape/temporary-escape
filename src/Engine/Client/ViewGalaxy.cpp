@@ -276,7 +276,7 @@ void ViewGalaxy::load() {
         auto& icon = entities.currentPos.addComponent<ComponentIcon>(icons.currentPos);
         icon.setOffset(Vector2{0.0f, -(systemStarSize.y / 2.0f)});
         icon.setSize(systemStarSize);
-        icon.setColor(Colors::primary);
+        icon.setColor(Colors::yellow);
         icon.setSelectable(false);
     }
 

@@ -49,28 +49,22 @@ void Canvas::begin(const Vector2i& viewport) {
         texture = nullptr;
     }
 
-    auto& batch = batches.emplace_back();
-    batch.offset = 0;
-    batch.length = 0;
-    batch.scissor = {
-        {0, 0},
-        {static_cast<int>(viewport.x), static_cast<int>(viewport.y)},
-    };
+    setScissor({0, 0}, viewport);
 }
 
 void Canvas::setScissor(const Vector2& pos, const Vector2& size) {
-    /*if (batches.back().length) {
-        const auto newOffset = batches.back().offset + batches.back().length;
-
-        auto& batch = batches.emplace_back();
-        batch.offset = newOffset;
-        batch.length = 0;
+    size_t offset{0};
+    if (!batches.empty()) {
+        offset = batches.back().offset + batches.back().length;
     }
 
-    batches.back().scissor = {
-        {static_cast<int>(pos.x), static_cast<int>(pos.x)},
+    auto& batch = batches.emplace_back();
+    batch.offset = offset;
+    batch.length = 0;
+    batch.scissor = {
+        {static_cast<int>(pos.x), static_cast<int>(pos.y)},
         {static_cast<int>(size.x), static_cast<int>(size.y)},
-    };*/
+    };
 }
 
 void Canvas::clearScissor() {

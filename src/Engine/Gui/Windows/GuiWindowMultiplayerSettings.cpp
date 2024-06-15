@@ -69,7 +69,7 @@ GuiWindowMultiplayerSettings::GuiWindowMultiplayerSettings(GuiContext& ctx, cons
 
         auto& done = row.addWidget<GuiWidgetButton>("Start");
         done.setWidth(0.5f);
-        done.setStyle(&GuiWidgetButton::successStyle);
+        done.setStyle(guiStyleButtonGreen);
         done.setOnClick([this]() {
             if (onStart && valid) {
                 Form form{};

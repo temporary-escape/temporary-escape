@@ -5,8 +5,6 @@
 namespace Engine {
 class ENGINE_API GuiWidgetProgressBar : public GuiWidget {
 public:
-    static const GuiStyleProgress defaultStyle;
-
     explicit GuiWidgetProgressBar(GuiContext& ctx);
 
     void setValue(float value);
@@ -21,9 +19,9 @@ public:
     float getHeight() const {
         return height;
     }
-    void setStyle(const GuiStyleProgress* value);
-    const GuiStyleProgress* getStyle() const {
-        return style ? style : &defaultStyle;
+    void setStyle(const GuiStyleProgress& value);
+    const GuiStyleProgress& getStyle() const {
+        return *style;
     }
 
 private:
@@ -32,6 +30,6 @@ private:
     float progress{50.0f};
     float max{100.0f};
     float height{0.0f};
-    const GuiStyleProgress* style{nullptr};
+    const GuiStyleProgress* style;
 };
 } // namespace Engine

@@ -31,7 +31,9 @@ NetworkUdpClient::~NetworkUdpClient() {
 }
 
 void NetworkUdpClient::stop() {
-    sendClosePacket();
+    if (connected) {
+        sendClosePacket();
+    }
     stopInternal();
 }
 

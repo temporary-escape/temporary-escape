@@ -153,7 +153,7 @@ GuiWindowSettings::GuiWindowSettings(GuiContext& ctx, const FontFamily& fontFami
     footer.addEmpty().setWidth(0.375f);
 
     auto& save = footer.addWidget<GuiWidgetButton>("Save");
-    save.setStyle(&GuiWidgetButton::successStyle);
+    save.setStyle(guiStyleButtonGreen);
     save.setWidth(0.25f);
     save.setOnClick([this]() { onSave(); });
 
@@ -167,16 +167,10 @@ void GuiWindowSettings::onSave() {
         onApplyCallback();
     }
 
-    auto* modal = this->guiManager.modal(
-        "Confirm",
-        "Confirm the changes?",
-        {"Yes", "No"},
-        [this](const std::string& choice) {
-            onModalClick(choice);
-            return true;
-        },
-        10);
-    modal->setHeaderPrimary(true);
+    auto* modal = this->guiManager.modal("Confirm", "Confirm the changes?");
+    modal->addChoice("Yes", guiStyleButtonGreen, [this]() { onModalClickYes(); });
+    modal->addChoice("No", guiStyleButtonRed, [this]() { onModalClickNo(); });
+    modal->setTimeout(10, [this]() { onModalClickNo(); });
 }
 
 void GuiWindowSettings::onCancel() {
@@ -186,21 +180,21 @@ void GuiWindowSettings::onCancel() {
     }
 }
 
-void GuiWindowSettings::onModalClick(const std::string& choice) {
-    if (choice == "Yes") {
-        if (onSubmitCallback) {
-            onSubmitCallback(true);
-        }
-    } else {
-        this->config = configBackup;
+void GuiWindowSettings::onModalClickYes() {
+    if (onSubmitCallback) {
+        onSubmitCallback(true);
+    }
+}
 
-        if (onApplyCallback) {
-            onApplyCallback();
-        }
+void GuiWindowSettings::onModalClickNo() {
+    this->config = configBackup;
 
-        if (onSubmitCallback) {
-            onSubmitCallback(false);
-        }
+    if (onApplyCallback) {
+        onApplyCallback();
+    }
+
+    if (onSubmitCallback) {
+        onSubmitCallback(false);
     }
 }
 

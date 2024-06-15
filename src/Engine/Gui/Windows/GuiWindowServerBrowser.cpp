@@ -23,7 +23,7 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily
 
         buttonCreate = &row.addWidget<GuiWidgetButton>("Host Game");
         buttonCreate->setWidth(200.0f, true);
-        buttonCreate->setStyle(&GuiWidgetButton::infoStyle);
+        buttonCreate->setStyle(guiStyleButtonBlue);
 
         auto& input = row.addWidget<GuiWidgetTextInput>();
         input.setWidth(0.0f);
@@ -35,25 +35,30 @@ GuiWindowServerBrowser::GuiWindowServerBrowser(GuiContext& ctx, const FontFamily
         clear.setWidth(100.0f, true);
     }
 
-    { // Header
-        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
-        auto& label = row.addWidget<GuiWidgetLabel>("Server list:");
-        label.setWidth(0.0f);
-    }
-
     { // Server list
         auto& row = addWidget<GuiWidgetRow>(height, 1);
         group = &row.addWidget<GuiWidgetGroup>();
         group->setScrollbar(true);
-        group->setBorder(true);
+        group->setStyle(guiStyleGroupNone);
+    }
+
+    { // Bottom row
+        auto& row = addWidget<GuiWidgetTemplateRow>(30.0f);
+        row.addEmpty().setWidth(0.0f);
+        buttonConnect = &row.addWidget<GuiWidgetButton>("Connect");
+        buttonConnect->setStyle(guiStyleButtonGrayOutline);
+        buttonConnect->setWidth(200.0f, true);
+        buttonConnect->setOnClick([this]() {
+            if (!selected.empty() && onConnectCallback) {
+                onConnectCallback(selected);
+            }
+        });
     }
 
     setMessage("Fetching servers...");
 }
 
 void GuiWindowServerBrowser::update(const Vector2i& viewport) {
-    // tasks.reset();
-    // tasks.run();
     GuiWindow::update(viewport);
 
     if (futureServerPage) {
@@ -70,32 +75,6 @@ void GuiWindowServerBrowser::setOnCreate(OnCreateCallback callback) {
     buttonCreate->setOnClick(std::move(callback));
 }
 
-/*void GuiWindowServerBrowser::doConnect(const std::string& id) {
-    logger.info("Chosen server: {}", id);
-
-    if (connecting) {
-        return;
-    }
-    connecting = true;
-
-    matchmaker.apiServersConnect(id, [this](const Matchmaker::ServerConnectResponse& res) {
-        if (!res.error.empty()) {
-            tasks.post([this, res]() {
-                connecting = false;
-                guiManager.modalDanger("Failed to connect to the server", res.error);
-            });
-        } else {
-            tasks.post([this, res]() {
-                logger.info("Received server connection address: '{}' port: {}", res.data.address, res.data.port);
-                connecting = false;
-                if (onConnectCallback) {
-                    onConnectCallback(res.data.address, res.data.port);
-                }
-            });
-        }
-    });
-}*/
-
 void GuiWindowServerBrowser::recreateList(const MatchmakerClient::ServerPage& page) {
     if (page.items.empty()) {
         setMessage("No servers found!");
@@ -105,21 +84,20 @@ void GuiWindowServerBrowser::recreateList(const MatchmakerClient::ServerPage& pa
     group->clearWidgets();
 
     for (const auto& server : page.items) {
-        auto& row = group->addWidget<GuiWidgetTemplateRow>(30.0f);
+        auto& groupRow = group->addWidget<GuiWidgetRow>(30.0f * 2.0f + 10.0f, 1);
 
-        auto& connect = row.addWidget<GuiWidgetButton>("Connect");
-        connect.setWidth(80.0f, true);
-        connect.setOnClick([this, id = server.id]() {
-            if (onConnectCallback) {
-                onConnectCallback(id);
-            }
-        });
+        auto& child = groupRow.addWidget<GuiWidgetSelectableGroup<std::string>>(selected, server.id);
+        child.setOnClick([this, serverId = server.id]() { buttonConnect->setStyle(guiStyleButtonGreenOutline); });
 
-        auto& label = row.addWidget<GuiWidgetLabel>(server.name);
-        label.setWidth(0.0f);
+        { // Name
+            auto& row = child.addWidget<GuiWidgetRow>(30.0f, 1);
+            auto& label = row.addWidget<GuiWidgetLabel>(server.name);
+        }
 
-        auto& version = row.addWidget<GuiWidgetLabel>(server.version);
-        version.setWidth(250.0f, true);
+        { // Version
+            auto& row = child.addWidget<GuiWidgetRow>(30.0f, 1);
+            auto& label = row.addWidget<GuiWidgetLabel>(fmt::format("<g>Version: {} Players: 0</g>", server.version));
+        }
     }
 }
 
@@ -131,5 +109,7 @@ void GuiWindowServerBrowser::setMessage(const std::string& value) {
 }
 
 void GuiWindowServerBrowser::fetchServers(const int page) {
+    buttonConnect->setStyle(guiStyleButtonGrayOutline);
+    selected.clear();
     futureServerPage = matchmaker.apiServersList(page);
 }

@@ -64,9 +64,6 @@ public:
     void setHeader(bool value);
     void setDynamic(bool value);
     void setNoInput(bool value);
-    void setHeaderPrimary(bool value);
-    void setHeaderSuccess(bool value);
-    void setHeaderDanger(bool value);
     void setCloseable(bool value);
     int getFontSize() const {
         return ctx.getFontSize();
@@ -79,6 +76,10 @@ public:
     }
     void close();
     void setOnClose(OnCloseCallback value);
+    const GuiStyleWindow& getStyle() const {
+        return *style;
+    }
+    void setStyle(const GuiStyleWindow& value);
 
 private:
     GuiContext& ctx;
@@ -93,5 +94,6 @@ private:
     float padding{2.0f};
     int ignoreInput{0};
     OnCloseCallback onCloseCallback;
+    const GuiStyleWindow* style;
 };
 } // namespace Engine

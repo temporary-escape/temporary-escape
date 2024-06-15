@@ -9,7 +9,7 @@ GuiWindowMainMenu::GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFami
     setDynamic(true);
     setBordered(false);
     setBackground(true);
-    setOpacity(0.0f);
+    setStyle(guiStyleWindowNone);
 
     const float count = 6.0f;
 
@@ -61,7 +61,7 @@ GuiWindowMainMenu::GuiWindowMainMenu(GuiContext& ctx, const FontFamily& fontFami
 
         buttonQuit = &row.addWidget<GuiWidgetButton>("Quit");
         buttonQuit->setWidth(1.0f / count);
-        buttonQuit->setStyle(&GuiWidgetButton::dangerStyle);
+        buttonQuit->setStyle(guiStyleButtonRedOutline);
     }
 
     {

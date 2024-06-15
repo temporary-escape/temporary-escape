@@ -6,8 +6,6 @@
 namespace Engine {
 class ENGINE_API GuiWidgetImageToggle : public GuiWidget {
 public:
-    static const GuiStyleButton defaultStyle;
-
     using OnClickCallback = std::function<void(bool)>;
 
     explicit GuiWidgetImageToggle(GuiContext& ctx, ImagePtr image);
@@ -34,9 +32,9 @@ public:
     }
     void setOnClick(OnClickCallback value);
 
-    void setStyle(const GuiStyleButton* value);
-    const GuiStyleButton* getStyle() const {
-        return style ? style : &defaultStyle;
+    void setStyle(const GuiStyleButton& value);
+    const GuiStyleButton& getStyle() const {
+        return *style;
     }
 
 private:
@@ -48,6 +46,6 @@ private:
     Color4 color{1.0f};
     bool toggle{false};
     OnClickCallback onClick;
-    const GuiStyleButton* style{nullptr};
+    const GuiStyleButton* style;
 };
 } // namespace Engine

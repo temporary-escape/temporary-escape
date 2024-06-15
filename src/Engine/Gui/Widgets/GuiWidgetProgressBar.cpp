@@ -2,24 +2,12 @@
 
 using namespace Engine;
 
-const GuiStyleProgress GuiWidgetProgressBar::defaultStyle{
-    {
-        Colors::border,
-        Colors::border,
-        Colors::border,
-    },
-    {
-        Colors::text,
-        Colors::text,
-        Colors::text,
-    },
-};
-
-GuiWidgetProgressBar::GuiWidgetProgressBar(GuiContext& ctx) : GuiWidget{ctx}, progress{0.0f} {
+GuiWidgetProgressBar::GuiWidgetProgressBar(GuiContext& ctx) :
+    GuiWidget{ctx}, progress{0.0f}, style{&guiStyleProgressYellow} {
 }
 
 void GuiWidgetProgressBar::drawInternal() {
-    ctx.progress(progress, max, style ? *style : defaultStyle, height);
+    ctx.progress(progress, max, *style, height);
 }
 
 void GuiWidgetProgressBar::setValue(const float value) {
@@ -34,6 +22,6 @@ void GuiWidgetProgressBar::setHeight(const float value) {
     height = value;
 }
 
-void GuiWidgetProgressBar::setStyle(const GuiStyleProgress* value) {
-    style = value;
+void GuiWidgetProgressBar::setStyle(const GuiStyleProgress& value) {
+    style = &value;
 }

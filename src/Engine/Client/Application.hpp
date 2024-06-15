@@ -8,6 +8,7 @@
 #include "../Gui/Windows/GuiWindowCreateSave.hpp"
 #include "../Gui/Windows/GuiWindowGameMenu.hpp"
 #include "../Gui/Windows/GuiWindowLoadSave.hpp"
+#include "../Gui/Windows/GuiWindowLoadStatus.hpp"
 #include "../Gui/Windows/GuiWindowLogIn.hpp"
 #include "../Gui/Windows/GuiWindowMainMenu.hpp"
 #include "../Gui/Windows/GuiWindowMultiplayerSettings.hpp"
@@ -22,11 +23,6 @@
 #include <queue>
 
 namespace Engine {
-struct ENGINE_API Status {
-    std::string message;
-    float value{0.0f};
-};
-
 class ENGINE_API MatchmakerClient;
 class ENGINE_API ViewSpace;
 class ENGINE_API ViewGalaxy;
@@ -68,7 +64,6 @@ private:
     void stopClientSide();
     void shutdownDone();
     void loadProfile();
-    void renderStatus(const Vector2i& viewport);
     void renderVersion(const Vector2i& viewport);
     void renderFrameTime(const Vector2i& viewport);
     void renderBanner(const Vector2i& viewport);
@@ -96,13 +91,13 @@ private:
     void createEmptyThumbnail(RendererThumbnail& thumbnailRenderer);
     void createPlanetThumbnails(RendererThumbnail& thumbnailRenderer);
     bool isViewsInputSuspended() const;
+    void showError(std::string message);
 
     Config& config;
 
     AudioContext audio;
     AudioSource audioSource;
     FontFamilyDefault font;
-    Status status;
     VulkanQueryPool renderQueryPool;
     RendererCanvas rendererCanvas;
     Canvas canvas;
@@ -120,6 +115,7 @@ private:
         GuiWindowGameMenu* gameMenu{nullptr};
         GuiWindowLogIn* logIn{nullptr};
         GuiWindowMultiplayerSettings* multiplayerSettings{nullptr};
+        GuiWindowLoadStatus* loadStatus{nullptr};
     } gui;
 
     struct {

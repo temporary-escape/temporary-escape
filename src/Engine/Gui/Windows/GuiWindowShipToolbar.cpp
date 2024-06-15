@@ -10,7 +10,7 @@ GuiWindowShipToolbar::GuiWindowShipToolbar(GuiContext& ctx, const FontFamily& fo
     GuiWindow{ctx, fontFamily, fontSize} {
 
     setSize({
-        actionBarSize * 10.0f + ctx.getPadding().x * 11.0f,
+        actionBarSize * 10.0f + ctx.getPadding().x * 11.0f + 17.0f,
         actionBarSize + ctx.getPadding().y * 2.0f,
     });
     setTitle("Ship Status");

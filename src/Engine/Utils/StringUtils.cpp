@@ -1,4 +1,5 @@
 #include "StringUtils.hpp"
+#include <algorithm>
 
 using namespace Engine;
 

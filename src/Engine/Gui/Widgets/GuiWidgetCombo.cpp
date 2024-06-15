@@ -13,16 +13,17 @@ void GuiWidgetCombo::drawInternal() {
 
     const auto& label = choices.empty() ? std::string{""} : choices.at(chosen);
 
-    if (ctx.comboBegin(size, label)) {
+    bool begin{false};
+    if (begin = ctx.comboBegin(size, label); begin) {
         for (size_t i = 0; i < choices.size(); i++) {
             if (ctx.comboItem(choices[i])) {
                 chosen = i;
                 onSelected(chosen, choices[chosen]);
             }
         }
-
-        ctx.comboEnd();
     }
+
+    ctx.comboEnd(begin);
 }
 
 void GuiWidgetCombo::setOnSelected(OnSelectedCallback value) {

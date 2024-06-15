@@ -421,7 +421,8 @@ void VulkanWindow::setWindowMode(const WindowMode value, const Vector2i& size, c
         const auto pos = Vector2i{mode->width, mode->height} / 2 - currentWindowSize / 2;
 
         glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_TRUE);
-        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
+        // glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
+        glfwRestoreWindow(window.get());
         glfwSetWindowMonitor(window.get(), nullptr, pos.x, pos.y, currentWindowSize.x, currentWindowSize.y, 0);
     }
 
@@ -432,7 +433,7 @@ void VulkanWindow::setWindowMode(const WindowMode value, const Vector2i& size, c
         const auto* mode = glfwGetVideoMode(monitor);
 
         glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_TRUE);
-        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
+        // glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_FALSE);
         glfwSetWindowMonitor(window.get(), monitor, 0, 0, currentWindowSize.x, currentWindowSize.y, mode->refreshRate);
     }
 
@@ -446,7 +447,8 @@ void VulkanWindow::setWindowMode(const WindowMode value, const Vector2i& size, c
         logger.info("Setting window to borderless of size: {}", currentWindowSize);
 
         glfwSetWindowAttrib(window.get(), GLFW_DECORATED, GLFW_FALSE);
-        glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_TRUE);
+        // glfwSetWindowAttrib(window.get(), GLFW_MAXIMIZED, GLFW_TRUE);
+        glfwMaximizeWindow(window.get());
         glfwSetWindowMonitor(
             window.get(), nullptr, moveToPos.x, moveToPos.y, currentWindowSize.x, currentWindowSize.y, 0);
 

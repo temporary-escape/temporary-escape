@@ -38,9 +38,6 @@ public:
         NoInput = (1 << (10)),
         Dynamic = (1 << (11)),
         NonInteractive = (1 << (10)) | (1 << (12)),
-        HeaderPrimary = (1 << (28)),
-        HeaderSuccess = (1 << (29)),
-        HeaderDanger = (1 << (30)),
     };
 
     struct WindowOptions {
@@ -48,16 +45,16 @@ public:
         float opacity;
     };
 
-    explicit GuiContext(const FontFamily& fontFamily, int fontSize);
+    explicit GuiContext(const Config& config, const FontFamily& fontFamily, int fontSize);
     virtual ~GuiContext();
 
     void update();
-    void render(Canvas& canvas);
+    void render(Canvas& canvas, const Vector2& viewport);
 
-    bool windowBegin(const std::string& id, const std::string& title, const Vector2& pos, const Vector2& size,
-                     const WindowOptions& options);
+    bool windowBegin(const GuiStyleWindow& style, const std::string& id, const std::string& title, const Vector2& pos,
+                     const Vector2& size, Flags flags);
     void windowEnd(Flags flags);
-    bool groupBegin(const std::string& name, bool scrollbar, const bool border, const Color4& borderColor);
+    bool groupBegin(const std::string& name, const GuiStyleGroup& style, bool scrollbar, bool active);
     void groupEnd();
 
     void layoutRowBegin(float height, int columns);
@@ -72,14 +69,14 @@ public:
 
     void skip();
     bool button(const std::string& label, const GuiStyleButton& style, const ImagePtr& image = nullptr);
-    bool buttonToggle(const std::string& label, bool& value);
+    bool buttonToggle(const std::string& label, const GuiStyleButton& style, bool& value);
     bool contextButton(const std::string& label, const ImagePtr& imageLeft, const ImagePtr& imageRight);
     bool checkbox(const std::string& label, bool& value);
     void label(const std::string& label, const Color4& color);
     void text(const std::string& value);
     bool textInput(std::string& text, size_t max);
     bool comboBegin(const Vector2& size, const std::string& label);
-    void comboEnd();
+    void comboEnd(bool value);
     bool comboItem(const std::string& label);
     void progress(float value, float max);
     void progress(float value, float max, const GuiStyleProgress& style, float height);
@@ -116,12 +113,21 @@ public:
     const FontFamily& getFont() const;
 
 private:
+    struct GroupState {
+        GuiColor backgroundColor;
+        GuiColor groupBorderColor;
+        GuiColor borderColor;
+    };
+
     struct CustomStyle;
 
     static inline const auto padding = 4.0f;
 
     void applyTheme();
+    void pushGroupState();
+    void popGroupState();
 
+    const Config& config;
     const int fontSize;
     std::unique_ptr<nk_context> nk;
     std::unique_ptr<nk_user_font> font;
@@ -130,6 +136,8 @@ private:
     std::vector<char> editBuffer;
     bool activeInput{false};
     bool inputEnabled{true};
+
+    std::list<GroupState> groupStates;
 };
 
 inline GuiContext::Flags operator|(const GuiContext::WindowFlag a, const GuiContext::WindowFlag b) {

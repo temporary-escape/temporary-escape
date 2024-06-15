@@ -19,6 +19,7 @@ private:
     OnCreateCallback onCreateCallback;
     GuiWidgetTextInput* input;
     GuiWidgetLabel* labelError;
+    GuiWidgetButton* button;
     bool valid{true};
 };
 } // namespace Engine

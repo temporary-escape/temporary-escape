@@ -10,11 +10,15 @@ public:
     void draw() override;
 
     void setScrollbar(bool value);
-    void setBorder(bool value);
+
+    void setStyle(const GuiStyleGroup& value);
+    const GuiStyleGroup& getStyle() const {
+        return *style;
+    }
 
 private:
     std::string name;
     bool scrollbar{false};
-    bool border{true};
+    const GuiStyleGroup* style;
 };
 } // namespace Engine

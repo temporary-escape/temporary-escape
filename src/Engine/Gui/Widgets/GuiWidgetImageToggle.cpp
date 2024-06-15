@@ -2,30 +2,17 @@
 
 using namespace Engine;
 
-const GuiStyleButton GuiWidgetImageToggle::defaultStyle{
-    {
-        Colors::background,
-        Colors::background,
-        Colors::primaryBackground,
-    },
-    {
-        Colors::white,
-        Colors::primary,
-        Colors::primary,
-    },
-    Colors::white,
-};
-
-GuiWidgetImageToggle::GuiWidgetImageToggle(GuiContext& ctx, ImagePtr image) : GuiWidget{ctx}, image{std::move(image)} {
+GuiWidgetImageToggle::GuiWidgetImageToggle(GuiContext& ctx, ImagePtr image) :
+    GuiWidget{ctx}, image{std::move(image)}, style{&guiStyleButtonYellowOutline} {
 }
 
 void GuiWidgetImageToggle::drawInternal() {
     if (label.empty()) {
-        if (ctx.imageToggle(image, toggle, *getStyle(), color) && onClick) {
+        if (ctx.imageToggle(image, toggle, getStyle(), color) && onClick) {
             onClick(toggle);
         }
     } else {
-        if (ctx.imageToggleLabel(image, toggle, *getStyle(), color, label, textAlign) && onClick) {
+        if (ctx.imageToggleLabel(image, toggle, getStyle(), color, label, textAlign) && onClick) {
             onClick(toggle);
         }
     }
@@ -53,4 +40,8 @@ void GuiWidgetImageToggle::setValue(const bool value) {
 
 void GuiWidgetImageToggle::setOnClick(OnClickCallback value) {
     onClick = std::move(value);
+}
+
+void GuiWidgetImageToggle::setStyle(const GuiStyleButton& value) {
+    style = &value;
 }

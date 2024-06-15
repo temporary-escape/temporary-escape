@@ -18,6 +18,10 @@ public:
     bool getValue() const {
         return toggle;
     }
+    void setStyle(const GuiStyleButton& value);
+    const GuiStyleButton& getStyle() const {
+        return *style;
+    }
 
 private:
     void drawInternal() override;
@@ -25,5 +29,6 @@ private:
     std::string label;
     OnClickCallback onClick;
     bool toggle{false};
+    const GuiStyleButton* style;
 };
 } // namespace Engine

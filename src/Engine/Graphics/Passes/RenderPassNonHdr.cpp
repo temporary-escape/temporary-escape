@@ -71,7 +71,7 @@ void RenderPassNonHDR::renderOutline(VulkanCommandBuffer& vkb, Scene& scene) {
 
     const auto& texEntity = buffer.getAttachmentTexture(RenderBufferPbr::Attachment::Entity);
     const auto selectedColor = entityColor(selected->getHandle());
-    const auto finalColor = Colors::primary * alpha(0.2);
+    const auto finalColor = Colors::yellow * alpha(0.2);
 
     pipelineOutline.setColorFinal(finalColor);
     pipelineOutline.setColorSelected(selectedColor);

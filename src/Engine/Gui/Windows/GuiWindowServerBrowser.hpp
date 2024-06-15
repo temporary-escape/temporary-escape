@@ -29,7 +29,9 @@ private:
     GuiManager& guiManager;
     GuiWidgetGroup* group;
     GuiWidgetButton* buttonCreate;
+    GuiWidgetButton* buttonConnect;
     OnConnectCallback onConnectCallback;
+    std::string selected;
     Future<MatchmakerClient::ServerPageResponse> futureServerPage;
 };
 } // namespace Engine

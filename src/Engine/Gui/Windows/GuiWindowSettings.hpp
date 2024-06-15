@@ -20,7 +20,8 @@ public:
 private:
     void onSave();
     void onCancel();
-    void onModalClick(const std::string& choice);
+    void onModalClickYes();
+    void onModalClickNo();
 
     VulkanRenderer& vulkan;
     Config& config;

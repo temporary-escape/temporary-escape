@@ -8,7 +8,6 @@ GuiWindowGameMenu::GuiWindowGameMenu(GuiContext& ctx, const FontFamily& fontFami
     setTitle("GAME MENU");
     setDynamic(true);
     setEnabled(false);
-    setHeaderPrimary(true);
 
     const float count = 4.0f;
 
@@ -17,7 +16,7 @@ GuiWindowGameMenu::GuiWindowGameMenu(GuiContext& ctx, const FontFamily& fontFami
 
         buttonContinue = &row.addWidget<GuiWidgetButton>("Continue");
         buttonContinue->setWidth(1.0f / count);
-        buttonContinue->setStyle(&GuiWidgetButton::successStyle);
+        buttonContinue->setStyle(guiStyleButtonGreenOutline);
 
         buttonSettings = &row.addWidget<GuiWidgetButton>("Settings");
         buttonSettings->setWidth(1.0f / count);

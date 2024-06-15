@@ -8,7 +8,11 @@ public:
     using OnClickCallback = std::function<void()>;
 
     explicit GuiWidgetSelectableGroup(GuiContext& ctx, T& shared, const T& value) :
-        GuiWidgetLayout{ctx}, shared{shared}, value{value}, name{std::to_string(reinterpret_cast<uint64_t>(this))} {
+        GuiWidgetLayout{ctx},
+        shared{shared},
+        value{value},
+        name{std::to_string(reinterpret_cast<uint64_t>(this))},
+        style{&guiStyleGroupSelectable} {
     }
 
     void draw() override {
@@ -24,7 +28,7 @@ public:
             }
         }
 
-        if (ctx.groupBegin(name, false, true, hovered || selected ? Colors::primary : Colors::white)) {
+        if (ctx.groupBegin(name, *style, false, selected)) {
             GuiWidgetLayout::drawInternal();
             ctx.groupEnd();
         }
@@ -32,11 +36,18 @@ public:
     void setOnClick(OnClickCallback value) {
         onClick = std::move(value);
     }
+    void setStyle(const GuiStyleGroup& value) {
+        style = &value;
+    }
+    const GuiStyleGroup& getStyle() const {
+        return *style;
+    }
 
 private:
     T& shared;
     T value;
     std::string name;
     OnClickCallback onClick;
+    const GuiStyleGroup* style;
 };
 } // namespace Engine

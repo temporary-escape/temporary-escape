@@ -76,7 +76,7 @@ void RendererCanvas::render(VulkanCommandBuffer& vkb, Canvas& canvas, const Vect
             continue;
         }
 
-        // vkb.setScissor(batch.scissor.pos, batch.scissor.size);
+        vkb.setScissor(batch.scissor.pos, batch.scissor.size);
         vkb.drawIndexedIndirect(canvas.getCbo(),
                                 batch.offset * sizeof(VkDrawIndexedIndirectCommand),
                                 batch.length,

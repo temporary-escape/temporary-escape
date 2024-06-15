@@ -109,7 +109,7 @@ GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& font
 
         buttonCreate = &row.addWidget<GuiWidgetButton>("Done");
         buttonCreate->setWidth(0.50f);
-        buttonCreate->setStyle(&GuiWidgetButton::successStyle);
+        buttonCreate->setStyle(guiStyleButtonGreen);
         buttonCreate->setOnClick([this]() {
             if (!valid) {
                 return;
@@ -121,30 +121,21 @@ GuiWindowCreateSave::GuiWindowCreateSave(GuiContext& ctx, const FontFamily& font
             const auto name = inputName->getValue();
 
             if (form.seed == 0) {
-                this->guiManager.modalDanger(
-                    "Error", "Seed must be a valid number!", [this](const std::string& choice) {
-                        (void)choice;
-                        return true;
-                    });
+                auto* modal = this->guiManager.modal("Error", "Seed must be a valid number!");
+                modal->setStyle(guiStyleWindowRed);
                 return;
             }
 
             if (name.empty()) {
-                this->guiManager.modalDanger(
-                    "Error", "Save file name must be valid!", [this](const std::string& choice) {
-                        (void)choice;
-                        return true;
-                    });
+                auto* modal = this->guiManager.modal("Error", "Save file name must be valid!");
+                modal->setStyle(guiStyleWindowRed);
                 return;
             }
 
             form.path = this->dir / name;
             if (Fs::exists(form.path)) {
-                this->guiManager.modalDanger(
-                    "Error", "Save file name already exists!", [this](const std::string& choice) {
-                        (void)choice;
-                        return true;
-                    });
+                auto* modal = this->guiManager.modal("Error", "Save file name already exists!");
+                modal->setStyle(guiStyleWindowRed);
                 return;
             }
 

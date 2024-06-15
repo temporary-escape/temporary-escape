@@ -10,6 +10,7 @@
 namespace Engine {
 
 ENGINE_API void backtrace(Logger& logger, const std::exception& e);
+ENGINE_API std::string getUserFriendlyMessage(const std::exception& e);
 } // namespace Engine
 
 #define EXCEPTION_VA_ARGS(...) , ##__VA_ARGS__

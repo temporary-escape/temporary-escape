@@ -10,7 +10,7 @@ GuiManager::GuiManager(const Config& config, VulkanRenderer& vulkan, const FontF
     fontFamily{fontFamily},
     fontSize{fontSize},
     canvas{vulkan},
-    ctx{fontFamily, fontSize} {
+    ctx{config, fontFamily, fontSize} {
 
     auto nestedContextMenu = addWindow<GuiWindowContextMenu>(nullptr);
     contextMenu = addWindow<GuiWindowContextMenu>(nestedContextMenu);
@@ -51,7 +51,8 @@ void GuiManager::draw(const Vector2i& viewport) {
     }
 
     canvas.begin(scaledViewport);
-    ctx.render(canvas);
+    canvas.setScissor({0, 0}, viewport);
+    ctx.render(canvas, scaledViewport);
     canvas.flush();
 }
 
@@ -103,36 +104,10 @@ bool GuiManager::isContextMenuVisible() const {
     return contextMenu->isEnabled();
 }
 
-GuiWindowModal* GuiManager::modal(std::string title, std::string text, const std::vector<std::string>& choices,
-                                  const ModalCallback& callback, const int timeout) {
-    auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text), choices, timeout);
+GuiWindowModal* GuiManager::modal(std::string title, std::string text) {
+    auto* window = addWindow<GuiWindowModal>(std::move(title), std::move(text));
     showModal(*window);
-    window->setOnClickCallback([this, window, callback](const std::string& choice) {
-        if (!callback || callback(choice)) {
-            this->closeModal(*window);
-        }
-    });
-    return window;
-}
-
-GuiWindowModal* GuiManager::modalPrimary(std::string title, std::string text, const ModalCallback& callback) {
-    static std::vector<std::string> choices{"Ok"};
-    auto window = modal(std::move(title), std::move(text), choices, callback);
-    window->setHeaderPrimary(true);
-    return window;
-}
-
-GuiWindowModal* GuiManager::modalSuccess(std::string title, std::string text, const ModalCallback& callback) {
-    static std::vector<std::string> choices{"Ok"};
-    auto window = modal(std::move(title), std::move(text), choices, callback);
-    window->setHeaderSuccess(true);
-    return window;
-}
-
-GuiWindowModal* GuiManager::modalDanger(std::string title, std::string text, const ModalCallback& callback) {
-    static std::vector<std::string> choices{"Ok"};
-    auto window = modal(std::move(title), std::move(text), choices, callback);
-    window->setHeaderDanger(true);
+    window->setOnClose([this, window]() { closeModal(*window); });
     return window;
 }
 
@@ -142,11 +117,9 @@ void GuiManager::showModal(GuiWindowModal& window) {
 }
 
 void GuiManager::closeModal(GuiWindowModal& window) {
-    if (window.isEnabled()) {
-        window.setEnabled(false);
-        clearFocused();
-        removeWindow(window);
-    }
+    window.setEnabled(false);
+    clearFocused();
+    removeWindow(window);
 }
 
 void GuiManager::showContextMenu(const Vector2& pos, ContextMenuCallback callback) {

@@ -14,6 +14,7 @@ GuiWindowCreateProfile::GuiWindowCreateProfile(GuiContext& ctx, const FontFamily
     setSize({350.0f, 200.0f});
     setTitle("CREATE NEW PROFILE");
     setDynamic(true);
+    setStyle(guiStyleWindowYellow);
 
     {
         auto& row = addWidget<GuiWidgetRow>(30.0f, 1);
@@ -37,6 +38,12 @@ GuiWindowCreateProfile::GuiWindowCreateProfile(GuiContext& ctx, const FontFamily
                 labelError->setLabel("");
                 valid = true;
             }
+
+            if (valid) {
+                button->setStyle(guiStyleButtonGreen);
+            } else {
+                button->setStyle(guiStyleButtonGrayOutline);
+            }
         });
     }
 
@@ -48,9 +55,10 @@ GuiWindowCreateProfile::GuiWindowCreateProfile(GuiContext& ctx, const FontFamily
     {
         auto& row = addWidget<GuiWidgetRow>(30.0f, 3);
         row.addEmpty().setWidth(0.25f);
-        auto& button = row.addWidget<GuiWidgetButton>("Create");
-        button.setWidth(0.5f);
-        button.setOnClick([this]() {
+        button = &row.addWidget<GuiWidgetButton>("Create");
+        button->setStyle(guiStyleButtonGreen);
+        button->setWidth(0.5f);
+        button->setOnClick([this]() {
             if (valid && onCreateCallback) {
                 Result result{};
                 result.name = input->getValue();

@@ -62,13 +62,13 @@ const FontFace* getFontFace(const FontFamily& font, const uint32_t modifiers) {
 
 static Color4 getFontColor(const Color4& mainColor, const uint32_t modifiers) {
     if (modifiers & IsPrimaryColor) {
-        return mainColor * Colors::primary;
+        return mainColor * Colors::yellow;
     } else if (modifiers & IsSecondaryColor) {
-        return mainColor * Colors::success;
+        return mainColor * Colors::green;
     } else if (modifiers & IsTernaryColor) {
-        return mainColor * Colors::danger;
+        return mainColor * Colors::red;
     } else if (modifiers & IsGrayColor) {
-        return mainColor * Colors::textGray;
+        return mainColor * Colors::grey;
     } else {
         return mainColor;
     }
@@ -211,6 +211,11 @@ void TextWrapper::onGlyph(const FontFace& fontFace, const FontFace::Glyph& glyph
         if (!result.empty()) {
             result.append("\n");
         }
+
+        while (lastWordChar > startChar && *startChar == ' ') {
+            utf8::next(startChar, lastWordChar);
+        }
+
         result.append(std::string_view{startChar, static_cast<size_t>(lastWordChar - startChar)});
         resetPen();
         startChar = lastWordChar;
@@ -226,6 +231,11 @@ void TextWrapper::flush(const char* end) {
         if (!result.empty()) {
             result.append("\n");
         }
+
+        while (previousChar > startChar && *startChar == ' ') {
+            utf8::next(startChar, previousChar);
+        }
+
         numLines++;
         result.append(std::string_view{startChar, static_cast<size_t>(previousChar - startChar)});
     }
