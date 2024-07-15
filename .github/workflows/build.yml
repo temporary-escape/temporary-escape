@@ -107,7 +107,11 @@ jobs:
         shell: bash
         run: |
           cd ./build
-          ctest --config Release --verbose
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ctest --config Release --verbose
+          else
+            ctest --verbose
+          fi
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
