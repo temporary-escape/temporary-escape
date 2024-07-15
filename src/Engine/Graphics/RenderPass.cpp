@@ -4,23 +4,26 @@
 
 using namespace Engine;
 
+static auto logger = createLogger(LOG_FILENAME);
+
 RenderPass::RenderPass(VulkanRenderer& vulkan, RenderBuffer& renderBuffer, std::string name) :
     vulkan{vulkan}, renderBuffer{renderBuffer}, name{std::move(name)} {
+    logger.info("Creating render pass: {}", this->name);
 }
 
 void RenderPass::create() {
     for (const auto& [pipeline, _] : pipelines) {
-        isCompute |= pipeline->isCompute();
+        compute |= pipeline->isCompute();
     }
 
-    if (!isCompute) {
+    if (!compute) {
         createRenderPass();
         createFbo();
     }
 
     for (const auto& [pipeline, subpass] : pipelines) {
         try {
-            if (isCompute) {
+            if (compute) {
                 pipeline->create(renderPass, subpass, {});
             } else {
                 const auto& subpassData = *std::next(subpassDescriptionData.begin(), subpass);
@@ -39,7 +42,7 @@ void RenderPass::begin(VulkanCommandBuffer& vkb) {
         pipeline->getDescriptionPool().reset();
     }
 
-    if (!isCompute) {
+    if (!compute) {
         renderPassBeginInfo.framebuffer = &getFbo();
         renderPassBeginInfo.renderPass = &getRenderPass();
         renderPassBeginInfo.offset = {0, 0};
@@ -50,7 +53,7 @@ void RenderPass::begin(VulkanCommandBuffer& vkb) {
 }
 
 void RenderPass::end(VulkanCommandBuffer& vkb) {
-    if (!isCompute) {
+    if (!compute) {
         vkb.endRenderPass();
     }
 

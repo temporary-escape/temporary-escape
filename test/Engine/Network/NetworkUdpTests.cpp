@@ -162,7 +162,6 @@ TEST_CASE("Start UDP server with client and exchange data", "[Network]") {
     Config config{};
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
-    config.network.serverPort = 0;
 
     TestUdpServer server{config};
 
@@ -201,7 +200,6 @@ TEST_CASE("Start UDP server with connect with multiple clients", "[Network]") {
     Config config{};
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
-    config.network.serverPort = 0;
 
     TestUdpServer server{config};
 
@@ -260,7 +258,6 @@ TEST_CASE("Connect to UDP server and receive ping", "[Network]") {
     Config config{};
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
-    config.network.serverPort = 0;
 
     TestUdpServer server{config};
     TestUdpClient client{config};
@@ -282,7 +279,6 @@ TEST_CASE("Connect to UDP server and disconnect from client", "[Network]") {
     Config config{};
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
-    config.network.serverPort = 0;
 
     TestUdpServer server{config};
     TestUdpClient client{config};
@@ -303,7 +299,6 @@ TEST_CASE("Connect to UDP server and disconnect from server", "[Network]") {
     Config config{};
     config.network.clientBindAddress = "::1";
     config.network.serverBindAddress = "::1";
-    config.network.serverPort = 0;
 
     TestUdpServer server{config};
     TestUdpClient client{config};

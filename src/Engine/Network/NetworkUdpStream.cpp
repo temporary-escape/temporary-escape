@@ -129,8 +129,8 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
             startPingTimer();
         }
         return;
-    } else if (!sharedSecret.empty() && packet->size() >= sizeof(PacketHeader) &&
-               AES::getDecryptSize(packet->size() - sizeof(PacketHeader)) <= maxPacketDataSize) {
+    } else if (established.load() && !sharedSecret.empty() && packet->size() >= sizeof(PacketHeader) &&
+               AES::getDecryptSize(packet->size() - sizeof(PacketHeader)) <= maxPacketDataSize + HMAC::resultSize) {
 
         using Ms = std::chrono::milliseconds;
 
@@ -150,18 +150,30 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
             ackReceived(packet);
         } else if (header.type == PacketType::DataReliable) {
             receivePacketReliable(packet);
-            sendAck(packet);
+            if (established.load()) {
+                sendAck(packet);
+            }
         } else if (header.type == PacketType::Data) {
             receivePacketUnreliable(packet);
         }
-    }
+    } /*else if (!sharedSecret.empty()) {
+        logger.warn("UDP connection ignoring packet too small: {}", packet->size());
+    }*/
 }
 
 void NetworkUdpStream::receivePacketUnreliable(const PacketBytesPtr& packet) {
     ++totalReceived;
 
+    bool verify{false};
     const auto length =
-        decrypt(packet->data() + sizeof(PacketHeader), plaintext.data(), packet->size() - sizeof(PacketHeader));
+        decrypt(packet->data() + sizeof(PacketHeader), plaintext.data(), packet->size() - sizeof(PacketHeader), verify);
+
+    if (!verify) {
+        logger.warn("UDP connection received bad message signature");
+        sendClosePacket();
+        forceClosed();
+        return;
+    }
 
     auto oh = msgpack::unpack(reinterpret_cast<const char*>(plaintext.data()), length);
     receiveObject(std::move(oh));
@@ -188,8 +200,16 @@ void NetworkUdpStream::receivePacketReliable(const PacketBytesPtr& packet) {
     }
 
     // Read the packet contents
-    item.length =
-        decrypt(packet->data() + sizeof(PacketHeader), item.buffer.data(), packet->size() - sizeof(PacketHeader));
+    bool verify{false};
+    item.length = decrypt(
+        packet->data() + sizeof(PacketHeader), item.buffer.data(), packet->size() - sizeof(PacketHeader), verify);
+
+    if (!verify) {
+        logger.warn("UDP connection received bad message signature");
+        sendClosePacket();
+        forceClosed();
+        return;
+    }
     // logger.info("Decrypted: {} bytes", item.length);
 
     // Process receive queue

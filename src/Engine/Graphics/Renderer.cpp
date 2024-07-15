@@ -7,7 +7,7 @@ using namespace Engine;
 Renderer::Renderer(VulkanRenderer& vulkan) : vulkan{vulkan} {
 }
 
-void Renderer::render(VulkanCommandBuffer& vkb, Scene& scene) {
+void Renderer::render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Scene& scene) {
     scene.recalculate(vulkan);
 
     for (auto& pass : passes) {
@@ -16,9 +16,10 @@ void Renderer::render(VulkanCommandBuffer& vkb, Scene& scene) {
         }
 
         try {
-            pass->begin(vkb);
-            pass->render(vkb, scene);
-            pass->end(vkb);
+            auto& cmd = pass->isCompute() ? vkbc : vkb;
+            pass->begin(cmd);
+            pass->render(cmd, scene);
+            pass->end(cmd);
         } catch (...) {
             EXCEPTION_NESTED("Failed to render scene pass: {}", pass->getName());
         }

@@ -113,9 +113,7 @@ struct Config {
     std::filesystem::path cwdPath;
     std::filesystem::path userdataSavesPath;
 
-    std::optional<std::string> saveFolderName;
     bool saveFolderClean{false};
-    bool autoStart{false};
     float cameraFov = 75.0f;
     int thumbnailSize = 256;
     int guiFontSize = 16;
@@ -163,17 +161,8 @@ struct Config {
         };
         std::string clientBindAddress{"0.0.0.0"};
         std::string serverBindAddress{"0.0.0.0"};
-        uint16_t serverPort{22443};
         std::string matchmakerUrl{"https://server.temporaryescape.org"};
         uint32_t pkeyLength{2048};
-
-        void convert(const Xml::Node& xml) {
-            xml.convert("serverPort", serverPort);
-        }
-
-        void pack(Xml::Node& xml) const {
-            xml.pack("serverPort", serverPort);
-        }
     } network;
 
     struct Input {
@@ -193,14 +182,12 @@ struct Config {
         xml.convert("graphics", graphics);
         xml.convert("gui", gui);
         xml.convert("server", server);
-        xml.convert("network", network);
     }
 
     void pack(Xml::Node& xml) const {
         xml.pack("graphics", graphics);
         xml.pack("gui", gui);
         xml.pack("server", server);
-        xml.pack("network", network);
     }
 };
 

@@ -18,5 +18,7 @@ private:
     VulkanRenderer& vulkan;
     VoxelShapeCache& voxelShapeCache;
     VulkanCommandBuffer vkb;
+    VulkanCommandBuffer vkbc;
+    VulkanSemaphore semaphore;
 };
 } // namespace Engine

@@ -15,7 +15,7 @@ public:
     NON_MOVEABLE(Renderer);
     NON_COPYABLE(Renderer);
 
-    virtual void render(VulkanCommandBuffer& vkb, Scene& scene);
+    virtual void render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Scene& scene);
 
 protected:
     void addRenderPass(std::unique_ptr<RenderPass> pass);

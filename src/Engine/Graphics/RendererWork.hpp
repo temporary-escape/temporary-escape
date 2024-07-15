@@ -28,6 +28,8 @@ private:
     VoxelShapeCache& voxelShapeCache;
     VulkanFence fence;
     VulkanCommandBuffer vkb;
+    VulkanCommandBuffer vkbc;
+    VulkanSemaphore semaphore;
     bool running{false};
     size_t jobsTotal{0};
     size_t jobsCurrent{0};

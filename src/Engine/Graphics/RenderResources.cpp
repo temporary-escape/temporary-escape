@@ -70,9 +70,11 @@ static VulkanTexture createTextureOfColor(VulkanRenderer& vulkan, const Color4& 
 }
 
 RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
-                                 const MaterialTextures& materialTextures, const FontFamily& font, const int fontSize) :
+                                 const VulkanBuffer& particlesTypes, const MaterialTextures& materialTextures,
+                                 const FontFamily& font, const int fontSize) :
     vulkan{vulkan},
     blockMaterials{blockMaterials},
+    particlesTypes{particlesTypes},
     materialTextures{materialTextures},
     textTacticalOverlay{font},
     defaultSkybox{vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}} {

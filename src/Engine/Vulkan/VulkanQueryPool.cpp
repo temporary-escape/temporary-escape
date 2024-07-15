@@ -81,3 +81,15 @@ std::vector<uint64_t> VulkanQueryPool::getResult<uint64_t>(const uint32_t firstQ
 
     return {};
 }
+
+std::chrono::nanoseconds VulkanQueryPool::getDiffNanos() {
+    const auto queryResult = getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
+    if (!queryResult.empty()) {
+        uint64_t timeDiff = queryResult[1] - queryResult[0];
+        timeDiff =
+            static_cast<uint64_t>(static_cast<double>(timeDiff) *
+                                  static_cast<double>(device->getPhysicalDeviceProperties().limits.timestampPeriod));
+        return std::chrono::nanoseconds{timeDiff};
+    }
+    return std::chrono::nanoseconds{0};
+}

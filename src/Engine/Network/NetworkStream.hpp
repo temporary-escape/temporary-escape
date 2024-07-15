@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Crypto/AES.hpp"
+#include "../Crypto/HMAC.hpp"
 #include "NetworkMessage.hpp"
 #include "NetworkPacket.hpp"
 #include <mutex>
@@ -25,7 +26,8 @@ struct ENGINE_API PacketBytes {
 
 using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
-static constexpr size_t maxPacketDataSize = maxPacketSize - AES::getEncryptSize(0) - sizeof(PacketHeader);
+static constexpr size_t maxPacketDataSize =
+    maxPacketSize - AES::getEncryptSize(0) - sizeof(PacketHeader) - HMAC::resultSize;
 
 class ENGINE_API NetworkStream {
 public:
@@ -77,11 +79,13 @@ protected:
     virtual PacketBytesPtr allocatePacket() = 0;
     virtual void enqueuePacket(const PacketBytesPtr& packet) = 0;
     void onSharedSecret(const std::vector<uint8_t>& sharedSecret);
-    size_t decrypt(const void* src, void* dst, size_t size);
+    size_t decrypt(const void* src, void* dst, size_t size, bool& verify);
 
 private:
     std::mutex mutex;
     std::unique_ptr<AES> aes;
+    std::unique_ptr<HMAC> hmac;
+    std::array<uint8_t, HMAC::resultSize> verifyBuffer;
 };
 
 template <typename T> inline void BaseRequest2::respond(const T& msg) const {

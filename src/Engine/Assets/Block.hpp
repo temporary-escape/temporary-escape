@@ -15,6 +15,11 @@ public:
         Full,
     };
 
+    enum class Type {
+        Regular,
+        Engine,
+    };
+
     struct Material {
         TexturePtr baseColorTexture;
         TexturePtr emissiveTexture;
@@ -31,9 +36,6 @@ public:
     };
 
     struct MaterialUniform {
-        MaterialUniform() = default;
-        explicit MaterialUniform(const Material& material);
-
         int baseColorTexture;
         int emissiveTexture;
         int normalTexture;
@@ -66,18 +68,15 @@ public:
             }
         };
 
-        struct ParticlesInfo {
-            Vector3 offset;
-            ParticlesTypePtr type;
+        struct ThrustInfo {
+            ParticlesTypePtr particles;
 
             void convert(const Xml::Node& xml) {
-                xml.convert("offset", offset);
-                xml.convert("type", type);
+                xml.convert("particles", particles);
             }
 
             void pack(Xml::Node& xml) const {
-                xml.pack("offset", offset);
-                xml.pack("type", type);
+                xml.pack("particles", particles);
             }
         };
 
@@ -115,7 +114,8 @@ public:
         std::vector<VoxelShape::Type> shapes;
         std::string category;
         std::string label;
-        std::optional<ParticlesInfo> particles;
+        Type type{Type::Regular};
+        ThrustInfo thrust{};
         std::vector<MaterialDefinition> materials;
         RotationMode rotation{RotationMode::Full};
 
@@ -123,7 +123,8 @@ public:
             xml.convert("shape", shapes);
             xml.convert("category", category);
             xml.convert("label", label);
-            xml.convert("particles", particles);
+            xml.convert("type", type, false);
+            xml.convert("thrust", thrust, false);
             xml.convert("material", materials);
             xml.convert("rotation", rotation);
         }
@@ -132,7 +133,8 @@ public:
             xml.pack("shape", shapes);
             xml.pack("category", category);
             xml.pack("label", label);
-            xml.pack("particles", particles);
+            xml.pack("type", type);
+            xml.pack("thrust", thrust);
             xml.pack("material", materials);
             xml.pack("rotation", rotation);
         }
@@ -184,8 +186,12 @@ public:
         return thumbnails[shape];
     }
 
-    const std::optional<Definition::ParticlesInfo>& getParticlesInfo() const {
-        return definition.particles;
+    [[nodiscard]] Type getType() const {
+        return definition.type;
+    }
+
+    [[nodiscard]] const Definition::ThrustInfo& getThrustInfo() const {
+        return definition.thrust;
     }
 
     static std::shared_ptr<Block> from(const std::string& name);
@@ -201,6 +207,7 @@ private:
 
 XML_DEFINE(Block::Definition, "block");
 XML_DEFINE_ENUM(Block::RotationMode, None, Limited, Full);
+XML_DEFINE_ENUM(Block::Type, Regular, Engine);
 
 using BlockPtr = std::shared_ptr<Block>;
 

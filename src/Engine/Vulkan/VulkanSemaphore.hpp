@@ -11,6 +11,7 @@ public:
     using CreateInfo = VkSemaphoreCreateInfo;
 
     VulkanSemaphore() = default;
+    explicit VulkanSemaphore(VulkanDevice& device);
     explicit VulkanSemaphore(VulkanDevice& device, const CreateInfo& createInfo);
     ~VulkanSemaphore();
     VulkanSemaphore(const VulkanSemaphore& other) = delete;

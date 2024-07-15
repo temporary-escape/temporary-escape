@@ -21,3 +21,15 @@ struct SBlockMaterial {
     vec4 ambientOcclusionFactor;
     vec4 metallicRoughnessFactor;
 };
+
+struct SParticlesType {
+    vec4 startColor;
+    vec4 endColor;
+    float duration;
+    int count;
+    vec3 direction;
+    vec3 startSpawn;
+    vec3 endSpawn;
+    vec2 startSize;
+    vec2 endSize;
+};

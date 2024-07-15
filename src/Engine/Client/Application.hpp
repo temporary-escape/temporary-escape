@@ -54,6 +54,8 @@ public:
     void eventWindowInputBegin() override;
     void eventWindowInputEnd() override;
 
+    void setLoadSaveName(const Path& path);
+
 private:
     void checkOnlineServices();
     void quitToMenu();
@@ -99,11 +101,14 @@ private:
     AudioSource audioSource;
     FontFamilyDefault font;
     VulkanQueryPool renderQueryPool;
+    VulkanQueryPool computeQueryPool;
     RendererCanvas rendererCanvas;
     Canvas canvas;
     GuiManager guiManager;
     BannerImage bannerTexture;
     MatchmakerClient matchmakerClient;
+    std::array<VulkanFence, MAX_FRAMES_IN_FLIGHT> computeQueueFences;
+    std::array<VulkanSemaphore, MAX_FRAMES_IN_FLIGHT> computeQueueSemaphores;
 
     struct {
         GuiWindowMainMenu* mainMenu{nullptr};
@@ -144,6 +149,7 @@ private:
     struct {
         PerformanceRecord frameTime;
         PerformanceRecord renderTime;
+        PerformanceRecord computeTime;
     } perf;
 
     Server::Options serverOptions;

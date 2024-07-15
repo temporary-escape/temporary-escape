@@ -12,8 +12,7 @@ NetworkUdpServer::NetworkUdpServer(const Config& config, asio::io_service& servi
     strand{service},
     socket{
         service,
-        asio::ip::udp::endpoint{asio::ip::address::from_string(config.network.serverBindAddress),
-                                static_cast<asio::ip::port_type>(config.network.serverPort)},
+        asio::ip::udp::endpoint{asio::ip::address::from_string(config.network.serverBindAddress), 0},
     },
     stun{config, service, strand, socket},
     localEndpoint{socket.local_endpoint()} {

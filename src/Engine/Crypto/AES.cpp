@@ -5,16 +5,17 @@
 
 using namespace Engine;
 
+const EVP_CIPHER* AES::cipher = EVP_get_cipherbyname("aes-128-ctr");
+const EVP_MD* AES::digest = EVP_get_digestbyname("sha256");
+
 AES::AES(const std::vector<uint8_t>& sharedKey) {
     const unsigned char* salt = nullptr;
 
-    static const auto cipher = EVP_get_cipherbyname("aes-128-ctr");
     if (!cipher) {
         EXCEPTION("Failed to get cipher by name");
     }
 
-    static const auto digest = EVP_get_digestbyname("sha256");
-    if (!cipher) {
+    if (!digest) {
         EXCEPTION("Failed to get digest by name");
     }
 
@@ -31,7 +32,7 @@ size_t AES::encrypt(const void* src, void* dst, const size_t size) {
 
     std::unique_ptr<EVP_CIPHER_CTX, decltype(&evpDeleter)> ctx{EVP_CIPHER_CTX_new(), &evpDeleter};
 
-    if (EVP_EncryptInit_ex(ctx.get(), EVP_aes_128_ctr(), nullptr, key.data(), ivec.data()) != 1) {
+    if (EVP_EncryptInit_ex(ctx.get(), cipher, nullptr, key.data(), ivec.data()) != 1) {
         return 0;
     }
 
@@ -64,7 +65,7 @@ size_t AES::decrypt(const void* src, void* dst, const size_t size) {
 
     const auto start = reinterpret_cast<const unsigned char*>(src);
 
-    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_128_ctr(), nullptr, key.data(), start) != 1) {
+    if (EVP_DecryptInit_ex(ctx.get(), cipher, nullptr, key.data(), start) != 1) {
         return 0;
     }
 

@@ -228,9 +228,15 @@ public:
         MSGPACK_DEFINE_ARRAY(block, count);
     };
 
+    struct ThrusterInfo {
+        Matrix4 mat;
+        ParticlesTypePtr particles;
+    };
+
     struct BlocksData {
         std::vector<VoxelShape::VertexFinal> vertices;
         std::vector<uint32_t> indices;
+        std::vector<ThrusterInfo> thrusters;
     };
 
     static constexpr size_t maxNodesPerTree = 256 * 256 * 256;
@@ -389,7 +395,7 @@ private:
     void generateMeshBlock(Iterator& iterator, const VoxelShapeCache& voxelShapeCache, BlocksData& data);
     void generateMeshCache(Iterator& iterator, Voxel* cache, const Vector3i& offset) const;
     void build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
-               BlocksData& data, const Vector3& offset);
+               BlocksData& data, const Vector3i& offset);
     void updateBounds(Iterator& iterator);
     // void buildBlock(const Voxel& voxel, BlockBuilder& blockBuilder, const Vector3i& pos, TypePrimitiveMap& map);
 

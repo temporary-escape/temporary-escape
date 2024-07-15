@@ -32,6 +32,34 @@ void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
     for (auto&& [_, grid] : reg.view<ComponentGrid>().each()) {
         grid.recalculate(vulkan, *voxelShapeCache);
     }
+
+    particlesBatch.count = 0;
+
+    for (auto&& [_, transform, grid, shipControl] :
+         reg.view<ComponentTransform, ComponentGrid, ComponentShipControl>().each()) {
+
+        auto strength = map(shipControl.getForwardVelocity(), 0.0f, shipControl.getForwardVelocityMax(), 0.0f, 3.0f);
+        auto alpha =
+            map(shipControl.getForwardVelocity(), 0.0f, shipControl.getForwardVelocityMax() / 5.0f, 0.0f, 1.0f);
+        strength = glm::clamp(strength, 0.0f, 2.0f);
+        alpha = glm::clamp(alpha, 0.0f, 1.0f);
+
+        auto model = transform.getAbsoluteInterpolatedTransform();
+
+        for (const auto& thruster : grid.getThrusters()) {
+            if (!thruster.particles) {
+                continue;
+            }
+
+            ComponentParticles::ParticlesBatchUniform batch{};
+            batch.type = static_cast<int>(thruster.particles->getIndex());
+            batch.modelMatrix = model * thruster.mat;
+            batch.timeDelta = vulkan.getRenderTime();
+            batch.strength = strength;
+            batch.alpha = alpha;
+            addThrustParticles(vulkan, batch, thruster.particles);
+        }
+    }
 }
 
 void ControllerGrid::addOrUpdate(entt::entity handle, ComponentGrid& component) {
@@ -61,4 +89,32 @@ void ControllerGrid::onUpdate(entt::registry& r, entt::entity handle) {
 void ControllerGrid::onDestroy(entt::registry& r, entt::entity handle) {
     (void)r;
     (void)handle;
+}
+
+void ControllerGrid::addThrustParticles(VulkanRenderer& vulkan,
+                                        const ComponentParticles::ParticlesBatchUniform& uniform,
+                                        const ParticlesTypePtr& particlesType) {
+    if (!particlesBatch.uniforms) {
+        VulkanBuffer::CreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(ComponentParticles::ParticlesBatchUniform) * particlesBatchSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+        bufferInfo.memoryFlags =
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        particlesBatch.uniforms = VulkanDoubleBuffer{vulkan, bufferInfo};
+    }
+
+    if (particlesBatch.count >= particlesBatchSize) {
+        return;
+    }
+
+    auto* dst = reinterpret_cast<ComponentParticles::ParticlesBatchUniform*>(
+        particlesBatch.uniforms.getCurrentBuffer().getMappedPtr());
+
+    const auto index = particlesBatch.count++;
+    particlesBatch.textures[index] = &particlesType->getTexture()->getVulkanTexture();
+    particlesBatch.counts[index] = particlesType->getCount();
+    std::memcpy(&dst[index], &uniform, sizeof(uniform));
 }

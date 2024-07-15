@@ -4,7 +4,10 @@
 
 using namespace Engine;
 
-VulkanSemaphore::VulkanSemaphore(VulkanDevice& device, const CreateInfo& createInfo) : device{device.getDevice()} {
+VulkanSemaphore::VulkanSemaphore(VulkanDevice& device) : device{device.getDevice()} {
+    VkSemaphoreCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
     if (vkCreateSemaphore(device.getDevice(), &createInfo, nullptr, &semaphore) != VK_SUCCESS) {
         EXCEPTION("Failed to create semaphore!");
     }

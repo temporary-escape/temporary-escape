@@ -41,12 +41,17 @@ public:
         return graphicsQueueProperties;
     }
 
+    const VkQueueFamilyProperties& getComputeQueueFamilyProperties() const {
+        return computeQueueProperties;
+    }
+
 private:
     void destroy();
 
     const Config& config;
     VkDevice device{VK_NULL_HANDLE};
     VkQueueFamilyProperties graphicsQueueProperties;
+    VkQueueFamilyProperties computeQueueProperties;
     VkQueue graphicsQueue{VK_NULL_HANDLE};
     VkQueue presentQueue{VK_NULL_HANDLE};
     VkQueue computeQueue{VK_NULL_HANDLE};

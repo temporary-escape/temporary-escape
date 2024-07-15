@@ -24,8 +24,16 @@
 struct ktxVulkanDeviceInfo;
 
 namespace Engine {
-using VulkanSemaphoreOpt = std::optional<std::reference_wrapper<VulkanSemaphore>>;
-using VulkanFenceOpt = std::optional<std::reference_wrapper<VulkanFence>>;
+using VulkanSemaphoreOpt = std::optional<std::reference_wrapper<const VulkanSemaphore>>;
+using VulkanFenceOpt = std::optional<std::reference_wrapper<const VulkanFence>>;
+struct VulkanSubmitInfo {
+    VkPipelineStageFlags waitMask{0};
+    const VulkanSemaphore* signal{nullptr};
+    const VulkanSemaphore* wait{nullptr};
+    const VulkanFence* fence{nullptr};
+    bool compute{false};
+    bool present{false};
+};
 
 class ENGINE_API VulkanRenderer : public VulkanDevice {
 public:
@@ -42,7 +50,7 @@ public:
     VulkanRenderPass createRenderPass(const VulkanRenderPass::CreateInfo& createInfo);
     VulkanFramebuffer createFramebuffer(const VulkanFramebuffer::CreateInfo& createInfo);
     VulkanFence createFence();
-    VulkanSemaphore createSemaphore(const VulkanSemaphore::CreateInfo& createInfo);
+    VulkanSemaphore createSemaphore();
     VulkanCommandPool createCommandPool(const VulkanCommandPool::CreateInfo& createInfo);
     VulkanCommandBuffer createCommandBuffer();
     VulkanCommandBuffer createComputeCommandBuffer();
@@ -58,11 +66,7 @@ public:
 
     void waitDeviceIdle();
     void waitQueueIdle();
-    void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer);
-    void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer, VkPipelineStageFlags waitStages,
-                             const VulkanSemaphoreOpt& wait, const VulkanSemaphoreOpt& signal,
-                             const VulkanFenceOpt& fence);
-    void submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait = nullptr);
+    void submitCommandBuffer(const VulkanCommandBuffer& commandBuffer, const VulkanSubmitInfo& info);
     void submitPresentQueue();
     void recreateSwapChain();
     void copyDataToBuffer(VulkanBuffer& buffer, const void* data, size_t size);

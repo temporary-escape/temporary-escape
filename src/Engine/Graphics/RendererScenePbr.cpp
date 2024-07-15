@@ -78,7 +78,7 @@ void RendererScenePbr::setMousePos(const Vector2i& mousePos) {
     getRenderPass<RenderPassOpaque>().setMousePos(mousePos);
 }
 
-void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
+void RendererScenePbr::render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Scene& scene) {
     const auto camera = scene.getPrimaryCamera();
     if (!camera) {
         EXCEPTION("Failed to render scene error: no primary camera");
@@ -87,7 +87,7 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, Scene& scene) {
     camera->setViewport(getViewport());
     camera->recalculate(vulkan);
 
-    Renderer::render(vkb, scene);
+    Renderer::render(vkb, vkbc, scene);
 
     const auto selectedEntityId = getRenderPass<RenderPassOpaque>().getMousePosEntity();
     scene.feedbackSelectedEntity(selectedEntityId);

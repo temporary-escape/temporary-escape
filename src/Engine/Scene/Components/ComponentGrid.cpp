@@ -63,49 +63,6 @@ void ComponentGrid::createShape(btCompoundShape& compoundShape, Grid::Iterator i
     }
 }
 
-/*void ComponentGrid::updateShape(btDynamicsWorld& dynamicsWorld) {
-    if (rigidBody) {
-        return;
-    }
-
-    logger.info("ComponentGrid::updateShape");
-
-    btVector3 localInertia{0.0f, 0.0f, 0.0f};
-    btScalar mass{1.0f};
-
-    shape = std::make_unique<btCompoundShape>();
-    auto& compoundShape = *static_cast<btCompoundShape*>(shape.get());
-
-    auto iterator = iterate();
-    createShape(compoundShape, iterator);
-
-    compoundShape.recalculateLocalAabb();
-
-    shape->calculateLocalInertia(mass, localInertia);
-
-    if (!rigidBody) {
-        auto transform = tryGet<ComponentTransform>();
-        if (!transform) {
-            EXCEPTION("ComponentGrid added on entity with no ComponentTransform");
-        }
-        motionState = std::unique_ptr<btMotionState>{new ComponentGridMotionState(*this, *transform)};
-
-        logger.info("ComponentGrid::updateShape new rigidBody");
-        btRigidBody::btRigidBodyConstructionInfo rbInfo{mass, motionState.get(), shape.get(), localInertia};
-        rigidBody = std::make_unique<btRigidBody>(rbInfo);
-        rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-        rigidBody->setActivationState(DISABLE_DEACTIVATION);
-        btTransform trans;
-        motionState->getWorldTransform(trans);
-        rigidBody->setWorldTransform(trans);
-
-        dynamicsWorld.addRigidBody(rigidBody.get());
-    } else {
-        logger.info("ComponentGrid::updateShape setCollisionShape");
-        rigidBody->setCollisionShape(shape.get());
-    }
-}*/
-
 void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
     if (!shipTemplate) {
         EXCEPTION("Can not set grid from null ship template");
@@ -141,26 +98,6 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
     }
 }
 
-void ComponentGrid::createParticlesVertices(Grid::Iterator iterator) {
-    while (iterator) {
-        if (iterator.isVoxel()) {
-            auto pos = iterator.getPos();
-            auto& cache = blockCache.at(iterator.value().voxel.type.value());
-            if (cache.particles.type) {
-                const auto test = find(pos + Vector3i{0, 0, 1});
-                if (!test) {
-                    auto& mat = particles[cache.particles.type].emplace_back();
-                    mat = glm::translate(Matrix4{1.0f}, Vector3{pos} + cache.particles.offset);
-                }
-            }
-        } else {
-            createParticlesVertices(iterator.children());
-        }
-
-        iterator.next();
-    }
-}
-
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
     if (!dirty) {
         return;
@@ -175,50 +112,12 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
     for (size_t i = 0; i < blockCache.size(); i++) {
         auto& cache = blockCache.at(i);
         cache.block = Grid::getType(i);
-        if (const auto& info = cache.block->getParticlesInfo(); info.has_value()) {
-            cache.particles = *info;
-        }
-    }
-
-    /*if (debug) {
-        debug->clear();
-        auto iterator = iterate();
-        debugIterate(iterator);
-    }*/
-
-    {
-        particles.clear();
-        auto iterator = iterate();
-        createParticlesVertices(iterator);
-
-        /*vulkan.dispose(std::move(particles.mesh.vbo));
-
-        if (!particles.vertices.empty()) {
-            VulkanBuffer::CreateInfo bufferInfo{};
-            bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-            bufferInfo.size = particles.vertices.size() * sizeof(ComponentParticles::Vertex);
-            bufferInfo.usage =
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
-            bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-
-            particles.mesh.vbo = vulkan.createBuffer(bufferInfo);
-
-            vulkan.copyDataToBuffer(particles.mesh.vbo, particles.vertices.data(), bufferInfo.size);
-
-            particles.mesh.instances = particles.vertices.size();
-            particles.mesh.count = 10 * 6;
-
-            logger.info("Created particles size: {}", particles.vertices.size());
-
-            particles.vertices.clear();
-            particles.vertices.shrink_to_fit();
-        }*/
     }
 
     Grid::BlocksData data;
     generateMesh(voxelShapeCache, data);
+
+    thrusters = std::move(data.thrusters);
 
     if (mesh) {
         vulkan.dispose(std::move(mesh));

@@ -20,6 +20,7 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     };
 
     graphicsQueueProperties = *indices.graphicsFamilyProperties;
+    computeQueueProperties = *indices.computeFamilyProperties;
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -40,6 +41,9 @@ VulkanDevice::VulkanDevice(const Config& config) : VulkanInstance{config}, confi
     }
     if (getPhysicalDeviceFeatures().wideLines) {
         deviceFeatures.wideLines = VK_TRUE;
+    }
+    if (getPhysicalDeviceFeatures().fillModeNonSolid) {
+        deviceFeatures.fillModeNonSolid = VK_TRUE;
     }
     deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
     deviceFeatures.multiDrawIndirect = VK_TRUE;

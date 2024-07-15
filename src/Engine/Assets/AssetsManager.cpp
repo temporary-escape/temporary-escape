@@ -42,6 +42,10 @@ AssetsManager::AssetsManager(const Config& config) : config{config} {
     instance = this;
     blockMaterials.reserve(1024);
     std::memset(blockMaterials.data(), 0, sizeof(Block::MaterialUniform) * blockMaterials.size());
+
+    particlesTypeUniforms.reserve(1024);
+    std::memset(particlesTypeUniforms.data(), 0, sizeof(ParticlesType::Uniform) * particlesTypeUniforms.size());
+    
     findAssets();
 }
 
@@ -171,6 +175,10 @@ void AssetsManager::findAssets() {
         for (const auto& [_, block] : blocks) {
             block->allocateMaterials(*this);
         }
+
+        for (const auto& [_, particlesType] : particlesTypes) {
+            particlesType->allocateUniforms(*this);
+        }
     });
 
     loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
@@ -188,6 +196,17 @@ void AssetsManager::findAssets() {
         bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
         blockMaterialsUbo = vulkan->createBuffer(bufferInfo);
         vulkan->copyDataToBuffer(blockMaterialsUbo, blockMaterials.data(), bufferInfo.size);
+
+        bufferInfo = VulkanBuffer::CreateInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = particlesTypeUniforms.capacity() * sizeof(ParticlesType::Uniform);
+        bufferInfo.usage =
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.memoryUsage = VMA_MEMORY_USAGE_AUTO;
+        bufferInfo.memoryFlags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        particlesTypesUbo = vulkan->createBuffer(bufferInfo);
+        vulkan->copyDataToBuffer(particlesTypesUbo, particlesTypeUniforms.data(), bufferInfo.size);
     });
 
     loadQueue.emplace_back([this](VulkanRenderer* vulkan, AudioContext* audio) {
@@ -330,4 +349,9 @@ ImagePtr AssetsManager::addImage(const std::string& name, const ImageAtlas::Allo
 std::tuple<size_t, Block::MaterialUniform*> AssetsManager::addBlockMaterial() {
     blockMaterials.emplace_back();
     return {blockMaterials.size() - 1, &blockMaterials.back()};
+}
+
+std::tuple<size_t, ParticlesType::Uniform*> AssetsManager::addParticleType() {
+    particlesTypeUniforms.emplace_back();
+    return {particlesTypeUniforms.size() - 1, &particlesTypeUniforms.back()};
 }

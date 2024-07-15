@@ -2,6 +2,7 @@
 #include "Engine/Utils/StringUtils.hpp"
 #include <Engine/Crypto/AES.hpp>
 #include <Engine/Crypto/ECDH.hpp>
+#include <Engine/Crypto/HMAC.hpp>
 
 using namespace Engine;
 
@@ -66,4 +67,16 @@ TEST_CASE("Generate ECDH keys and derive shared secret", "[crypto]") {
     out = aesB.decrypt(res1.data(), res2.data(), res1.size());
     REQUIRE(out == res2.size());
     REQUIRE(std::string{res2.data(), res2.size()} == msg);
+
+    // Sign the encrypted data from both sides (A & B)
+    HMAC hmacA{secretA};
+    HMAC hmacB{secretB};
+    std::array<char, HMAC::resultSize> signA{};
+    std::array<char, HMAC::resultSize> signB{};
+
+    hmacA.sign(res0.data(), signA.data(), res0.size());
+    hmacB.sign(res0.data(), signB.data(), res0.size());
+
+    // The signatures must equal
+    REQUIRE(std::memcmp(signA.data(), signB.data(), signA.size()) == 0);
 }

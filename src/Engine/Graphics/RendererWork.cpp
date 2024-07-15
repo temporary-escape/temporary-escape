@@ -4,7 +4,7 @@
 using namespace Engine;
 
 RendererWork::RendererWork(const Config& config, VulkanRenderer& vulkan, VoxelShapeCache& voxelShapeCache) :
-    Renderer{vulkan}, config{config}, vulkan{vulkan}, voxelShapeCache{voxelShapeCache} {
+    Renderer{vulkan}, config{config}, vulkan{vulkan}, voxelShapeCache{voxelShapeCache}, semaphore{vulkan} {
 }
 
 void RendererWork::render() {
@@ -27,20 +27,33 @@ void RendererWork::render() {
 
         vulkan.dispose(std::move(vkb));
         vkb = vulkan.createCommandBuffer();
+        vkbc = vulkan.createCommandBuffer();
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkb.start(beginInfo);
+        vkbc.start(beginInfo);
 
         beforeRender(vkb, *scene, jobsCurrent);
 
-        Renderer::render(vkb, *scene);
+        Renderer::render(vkb, vkbc, *scene);
 
         postRender(vkb, *scene, jobsCurrent);
 
         vkb.end();
-        vulkan.submitCommandBuffer(vkb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, {}, {}, fence);
+        vkbc.end();
+
+        VulkanSubmitInfo submitInfo{};
+        submitInfo.signal = &semaphore;
+        submitInfo.compute = true;
+        vulkan.submitCommandBuffer(vkbc, submitInfo);
+
+        submitInfo = VulkanSubmitInfo{};
+        submitInfo.wait = &semaphore;
+        submitInfo.waitMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        submitInfo.fence = &fence;
+        vulkan.submitCommandBuffer(vkb, submitInfo);
     }
 }
 

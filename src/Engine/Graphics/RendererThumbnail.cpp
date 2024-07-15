@@ -22,18 +22,21 @@ RendererThumbnail::RendererThumbnail(const Config& config, VulkanRenderer& vulka
     RendererScenePbr{getOptionsThumbnails(config), vulkan, resources},
     config{config},
     vulkan{vulkan},
-    voxelShapeCache{voxelShapeCache} {
+    voxelShapeCache{voxelShapeCache},
+    semaphore{vulkan} {
 }
 
 void RendererThumbnail::renderOneTime(Scene& scene) {
     vkb = vulkan.createCommandBuffer();
+    vkbc = vulkan.createComputeCommandBuffer();
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
+    vkbc.start(beginInfo);
 
-    RendererScenePbr::render(vkb, scene);
+    RendererScenePbr::render(vkb, vkbc, scene);
 
     const auto& texture = getFinalBuffer();
 
@@ -55,8 +58,17 @@ void RendererThumbnail::renderOneTime(Scene& scene) {
     vkb.pipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     vkb.end();
+    vkbc.end();
 
-    vulkan.submitCommandBuffer(vkb);
+    VulkanSubmitInfo submitInfo{};
+    submitInfo.signal = &semaphore;
+    submitInfo.compute = true;
+    vulkan.submitCommandBuffer(vkbc, submitInfo);
+
+    submitInfo = VulkanSubmitInfo{};
+    submitInfo.wait = &semaphore;
+    submitInfo.waitMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    vulkan.submitCommandBuffer(vkb, submitInfo);
     vulkan.waitQueueIdle();
 }
 

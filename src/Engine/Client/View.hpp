@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Graphics/Nuklear.hpp"
 #include "../Graphics/Renderer.hpp"
 #include "../Window.hpp"
 
@@ -47,7 +46,7 @@ public:
     }
 
     void update(float deltaTime, const Vector2i& viewport);
-    void render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport);
+    void render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Renderer& renderer, const Vector2i& viewport);
     void renderCanvas(Canvas& canvas, const Vector2i& viewport);
 
     void eventMouseMoved(const Vector2i& pos) override;

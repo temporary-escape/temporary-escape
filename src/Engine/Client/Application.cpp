@@ -31,7 +31,15 @@ Application::Application(Config& config) :
     canvas{*this},
     guiManager{config, *this, font, config.guiFontSize},
     bannerTexture{*this},
-    matchmakerClient{config} {
+    matchmakerClient{config},
+    computeQueueFences{
+        VulkanFence{*this},
+        VulkanFence{*this},
+    },
+    computeQueueSemaphores{
+        VulkanSemaphore{*this},
+        VulkanSemaphore{*this},
+    } {
 
     // Fix monitor name
     const auto monitors = listSystemMonitors();
@@ -213,12 +221,8 @@ Application::Application(Config& config) :
     createInfo.flags = 0;
     createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
     createInfo.queryCount = MAX_FRAMES_IN_FLIGHT;
-    renderQueryPool = createQueryPool(createInfo);
-
-    if (config.autoStart) {
-        gui.mainMenu->setEnabled(false);
-        startSinglePlayer();
-    }
+    renderQueryPool = VulkanQueryPool{*this, createInfo};
+    computeQueryPool = VulkanQueryPool{*this, createInfo};
 }
 
 Application::~Application() {
@@ -234,7 +238,20 @@ Application::~Application() {
     stopServerSide();
 }
 
+void Application::setLoadSaveName(const Path& path) {
+    logger.info("Loading single player with save: '{}'", path);
+    gui.mainMenu->close();
+    serverOptions.seed = 0;
+    serverOptions.savePath = path;
+    startSinglePlayer();
+}
+
 void Application::render(const Vector2i& viewport, const float deltaTime) {
+    auto& computeFence = computeQueueFences.at(getCurrentFrameNum());
+    auto& computeSemaphore = computeQueueSemaphores.at(getCurrentFrameNum());
+    computeFence.wait();
+    computeFence.reset();
+
     // gui.keepSettings.updateProgress(deltaTime);
     // gui.mainMenu.setEnabled(!gui.keepSettings.isEnabled() && !gui.mainSettings.isEnabled() && status.value <= 0.0f);
 
@@ -269,25 +286,24 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     rendererCanvas.reset();
 
     auto vkb = createCommandBuffer();
+    auto vkbc = createComputeCommandBuffer();
 
-    const auto queryResult = renderQueryPool.getResult<uint64_t>(0, 2, VK_QUERY_RESULT_64_BIT);
-    if (!queryResult.empty()) {
-        uint64_t timeDiff = queryResult[1] - queryResult[0];
-        timeDiff = static_cast<uint64_t>(static_cast<double>(timeDiff) *
-                                         static_cast<double>(getPhysicalDeviceProperties().limits.timestampPeriod));
-        const auto timeDiffNano = std::chrono::nanoseconds{timeDiff};
-        perf.renderTime.update(timeDiffNano);
-        // const auto timeDiffMs = std::chrono::duration_cast<std::chrono::milliseconds>(timeDiffNano);
-    }
+    perf.renderTime.update(renderQueryPool.getDiffNanos());
+    perf.computeTime.update(computeQueryPool.getDiffNanos());
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkb.start(beginInfo);
+    vkbc.start(beginInfo);
 
     if (getGraphicsQueueFamilyProperties().timestampValidBits) {
         vkb.resetQueryPool(renderQueryPool, 0, 2);
         vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+    }
+    if (getComputeQueueFamilyProperties().timestampValidBits) {
+        vkbc.resetQueryPool(computeQueryPool, 0, 2);
+        vkbc.writeTimestamp(computeQueryPool, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
     }
 
     if (renderer && !isViewsInputSuspended()) {
@@ -311,7 +327,7 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
 
     if (views) {
         views->update(deltaTime, viewport);
-        views->render(vkb, *renderer, viewport);
+        views->render(vkb, vkbc, *renderer, viewport);
     }
 
     // GUI
@@ -364,12 +380,27 @@ void Application::render(const Vector2i& viewport, const float deltaTime) {
     if (getGraphicsQueueFamilyProperties().timestampValidBits) {
         vkb.writeTimestamp(renderQueryPool, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1);
     }
+    if (getComputeQueueFamilyProperties().timestampValidBits) {
+        vkbc.writeTimestamp(computeQueryPool, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1);
+    }
 
+    vkbc.end();
     vkb.end();
 
-    submitPresentCommandBuffer(vkb);
+    VulkanSubmitInfo submitInfo{};
+    submitInfo.signal = &computeSemaphore;
+    submitInfo.fence = &computeFence;
+    submitInfo.compute = true;
+    submitCommandBuffer(vkbc, submitInfo);
+
+    submitInfo = VulkanSubmitInfo{};
+    submitInfo.wait = &computeSemaphore;
+    submitInfo.waitMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    submitInfo.present = true;
+    submitCommandBuffer(vkb, submitInfo);
 
     dispose(std::move(vkb));
+    dispose(std::move(vkbc));
 
     const auto t1 = std::chrono::steady_clock::now();
     const auto frameTime = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0);
@@ -458,21 +489,27 @@ void Application::renderFrameTime(const Vector2i& viewport) {
     }
 
     {
+        const auto computeTimeMs = static_cast<float>(perf.computeTime.value().count()) / 1000000.0f;
+        const auto text = fmt::format("Compute: {:.1f}ms", computeTimeMs);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 2.0f}, text, font, config.guiFontSize, color);
+    }
+
+    {
         const auto frameTimeMs = static_cast<float>(perf.frameTime.value().count()) / 1000000.0f;
         const auto text = fmt::format("Frame: {:.1f}ms", frameTimeMs);
-        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 2.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 3.0f}, text, font, config.guiFontSize, color);
     }
 
     {
         const auto vRamMB = static_cast<float>(getAllocator().getUsedBytes()) / 1048576.0f;
         const auto text = fmt::format("VRAM: {:.0f}MB", vRamMB);
-        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 3.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 4.0f}, text, font, config.guiFontSize, color);
     }
 
     if (server) {
         const auto tickTimeMs = static_cast<float>(server->getPerfTickTime().count()) / 1000000.0f;
         const auto text = fmt::format("Tick: {:.1f}ms", tickTimeMs);
-        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 4.0}, text, font, config.guiFontSize, color);
+        canvas.drawText({posX - 170.0f, 5.0f + fontSize * 5.0f}, text, font, config.guiFontSize, color);
     }
 }
 
@@ -735,8 +772,12 @@ void Application::createRenderers() {
 
     gui.loadStatus->setStatus("Creating renderer.", 0.5f);
 
-    renderResources = std::make_unique<RenderResources>(
-        *this, assetsManager->getBlockMaterialsUbo(), assetsManager->getMaterialTextures(), font, config.guiFontSize);
+    renderResources = std::make_unique<RenderResources>(*this,
+                                                        assetsManager->getBlockMaterialsUbo(),
+                                                        assetsManager->getParticlesTypesUbo(),
+                                                        assetsManager->getMaterialTextures(),
+                                                        font,
+                                                        config.guiFontSize);
 
     createSceneRenderer(config.graphics.windowSize);
 

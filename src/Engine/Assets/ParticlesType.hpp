@@ -98,12 +98,9 @@ public:
     MOVEABLE(ParticlesType);
 
     void load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioContext* audio) override;
+    void allocateUniforms(AssetsManager& assetsManager);
 
     static std::shared_ptr<ParticlesType> from(const std::string& name);
-
-    [[nodiscard]] const VulkanBuffer& getUbo() const {
-        return ubo;
-    }
 
     [[nodiscard]] int getCount() const {
         return definition.count;
@@ -113,10 +110,14 @@ public:
         return definition.texture;
     }
 
+    [[nodiscard]] size_t getIndex() const {
+        return index;
+    }
+
 private:
     Path path;
     Definition definition;
-    VulkanBuffer ubo;
+    size_t index{0};
 };
 
 XML_DEFINE(ParticlesType::Definition, "particles");

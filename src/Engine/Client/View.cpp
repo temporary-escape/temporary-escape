@@ -41,7 +41,8 @@ void ViewContext::update(const float deltaTime, const Vector2i& viewport) {
     }
 }
 
-void ViewContext::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vector2i& viewport) {
+void ViewContext::render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Renderer& renderer,
+                         const Vector2i& viewport) {
     if (!current) {
         return;
     }
@@ -54,7 +55,7 @@ void ViewContext::render(VulkanCommandBuffer& vkb, Renderer& renderer, const Vec
     }
 
     if (scene && scene->getPrimaryCamera()) {
-        renderer.render(vkb, *scene);
+        renderer.render(vkb, vkbc, *scene);
     }
 }
 

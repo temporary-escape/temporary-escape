@@ -95,8 +95,7 @@ ECDH::ECDH(const std::string_view& curve) : evp{nullptr, &evpDeleter} {
     evp.reset(keyPair);
 }
 
-ECDH::~ECDH() {
-}
+ECDH::~ECDH() = default;
 
 std::string ECDH::getPublicKey() const {
     BioPtr bio{BIO_new(BIO_s_mem()), &BIO_free};
@@ -112,7 +111,7 @@ std::string ECDH::getPublicKey() const {
 
     std::string result;
     result.resize(len);
-    if (!BIO_read(bio.get(), &result[0], result.size())) {
+    if (!BIO_read(bio.get(), &result[0], static_cast<int>(result.size()))) {
         EXCEPTION("Failed to read public key data");
     }
 
@@ -122,7 +121,7 @@ std::string ECDH::getPublicKey() const {
 std::vector<uint8_t> ECDH::deriveSharedSecret(const std::string_view& other) {
     BioPtr bio{BIO_new(BIO_s_mem()), &BIO_free};
 
-    if (!BIO_write(bio.get(), other.data(), other.size())) {
+    if (!BIO_write(bio.get(), other.data(), static_cast<int>(other.size()))) {
         EXCEPTION("BIO_write failed to read public key data");
     }
 

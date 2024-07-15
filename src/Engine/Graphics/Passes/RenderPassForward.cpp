@@ -2,6 +2,7 @@
 #include "../../Assets/AssetsManager.hpp"
 #include "../../Font/FontFamily.hpp"
 #include "../../Scene/Controllers/ControllerBullets.hpp"
+#include "../../Scene/Controllers/ControllerGrid.hpp"
 #include "../../Scene/Controllers/ControllerIcon.hpp"
 #include "../../Scene/Controllers/ControllerTurret.hpp"
 #include "../../Scene/Scene.hpp"
@@ -90,7 +91,6 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     collectForRender<ComponentPointCloud>(vkb, scene, jobs);
     collectForRender<ComponentPolyShape>(vkb, scene, jobs);
     collectForRender<ComponentLines>(vkb, scene, jobs);
-    collectForRender<ComponentGrid>(vkb, scene, jobs);
 
     std::sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) { return a.order > b.order; });
 
@@ -100,6 +100,7 @@ void RenderPassForward::render(VulkanCommandBuffer& vkb, Scene& scene) {
     }
 
     auto& camera = *scene.getPrimaryCamera();
+    renderSceneThrusters(vkb, scene, camera);
     renderSceneBullets(vkb, scene, camera);
     renderSceneBulletsTrail(vkb, scene, camera);
     renderSceneDebug(vkb, scene, camera);
@@ -176,46 +177,28 @@ void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scen
     pipelineLines.renderMesh(vkb, mesh);
 }
 
-void RenderPassForward::renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
-                                           ComponentTransform& transform, ComponentGrid& component) {
-    const auto& particles = component.getParticles();
-    if (particles.empty()) {
+void RenderPassForward::renderSceneThrusters(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {
+    const auto& controller = scene.getController<ControllerGrid>();
+    const auto& batches = controller.getParticlesBatch();
+
+    if (!batches.count) {
         return;
     }
 
-    const auto* shipControl = scene.tryGetComponent<ComponentShipControl>(component.getEntity());
-    if (!shipControl) {
-        return;
-    }
+    pipelineParticles.bind(vkb);
+    currentPipeline = &pipelineParticles;
 
-    /*auto strength = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax(), 0.0f, 3.0f);
-    auto alpha = map(shipControl->getForwardVelocity(), 0.0f, shipControl->getForwardVelocityMax() / 5.0f, 0.0f, 1.0f);
-    strength = glm::clamp(strength, 0.0f, 2.0f);
-    alpha = glm::clamp(alpha, 0.0f, 1.0f);
+    pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
+    pipelineParticles.setUniformParticlesTypes(resources.getParticlesTypes());
 
-    if (currentPipeline != &pipelineParticles) {
-        pipelineParticles.bind(vkb);
-        currentPipeline = &pipelineParticles;
-    }
+    for (size_t i = 0; i < batches.count; i++) {
+        const auto* texture = batches.textures[i];
 
-    for (const auto& [particlesType, matrices] : particles) {
-
-        pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
-        pipelineParticles.setUniformParticlesType(particlesType->getUbo());
-        pipelineParticles.setTextureColor(particlesType->getTexture()->getVulkanTexture());
+        pipelineParticles.setUniformBatch(batches.uniforms.getCurrentBuffer(), i);
+        pipelineParticles.setTextureColor(*texture);
         pipelineParticles.flushDescriptors(vkb);
-
-        for (const auto& matrix : matrices) {
-            const auto modelMatrix = transform.getAbsoluteInterpolatedTransform() * matrix;
-            pipelineParticles.setModelMatrix(modelMatrix);
-            pipelineParticles.setTimeDelta(vulkan.getRenderTime());
-            pipelineParticles.setOverrideStrength(strength);
-            pipelineParticles.setOverrideAlpha(alpha);
-            pipelineParticles.flushConstants(vkb);
-
-            vkb.draw(4, particlesType->getCount(), 0, 0);
-        }
-    }*/
+        vkb.draw(4, batches.counts[i], 0, 0);
+    }
 }
 
 void RenderPassForward::renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera) {

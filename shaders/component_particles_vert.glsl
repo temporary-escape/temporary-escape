@@ -1,33 +1,22 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#include "includes/common.glsl"
 
 layout (std140, binding = 0) uniform Camera {
-    mat4 transformationProjectionMatrix;
-    mat4 viewProjectionInverseMatrix;
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    ivec2 viewport;
-    vec3 eyesPos;
-} camera;
+    SCamera camera;
+};
 
-layout (std140, binding = 1) uniform ParticlesType {
-    vec4 startColor;
-    vec4 endColor;
-    float duration;
-    int count;
-    vec3 direction;
-    vec3 startSpawn;
-    vec3 endSpawn;
-    vec2 startSize;
-    vec2 endSize;
-} particlesType;
+layout (std140, binding = 1) uniform ParticlesTypes {
+    SParticlesType particlesTypes[1024];
+};
 
-layout (push_constant) uniform Uniforms {
+layout (std140, binding = 2) uniform ParticlesBatch {
     mat4 modelMatrix;
+    int type;
     float timeDelta;
-    float overrideStrength;
-    float overrideAlpha;
-} uniforms;
+    float strength;
+    float alpha;
+} batch;
 
 layout (location = 0) out VS_OUT {
     vec2 texCoords;
@@ -106,7 +95,7 @@ float snoise(vec2 v) {
     return 130.0 * dot(m, g);
 }
 
-void geometrize(vec4 pos, float time) {
+void geometrize(SParticlesType particlesType, vec4 pos, float time) {
     vs_out.color = mix(particlesType.startColor, particlesType.endColor, time);
 
     vec2 particleSize = mix(particlesType.startSize, particlesType.endSize, time);
@@ -142,10 +131,12 @@ void geometrize(vec4 pos, float time) {
 }
 
 void main() {
+    SParticlesType particlesType = particlesTypes[batch.type];
+
     float step = particlesType.duration / float(particlesType.count);
     int index = gl_InstanceIndex;
 
-    float time = mod(uniforms.timeDelta + step * index, particlesType.duration) * (1.0 / particlesType.duration);
+    float time = mod(batch.timeDelta + step * index, particlesType.duration) * (1.0 / particlesType.duration);
 
     vec3 spawn = mix(particlesType.startSpawn, particlesType.endSpawn, time);
     // vec3 spawn = particlesType.startSpawn;
@@ -156,8 +147,8 @@ void main() {
     // vec3 modelPos = in_Position + in_Direction * (time * distance);
     // modelPos.x += index * 0.5;
     // vec3 modelPos = in_Position + in_Direction * index;
-    vec3 direction = (uniforms.modelMatrix * vec4(particlesType.direction, 0.0)).xyz;
-    vec4 worldPos = uniforms.modelMatrix * vec4(ox, oy, oz, 1.0);
-    worldPos += vec4(direction * time * uniforms.overrideStrength, 0.0);
-    geometrize(camera.transformationProjectionMatrix * worldPos, time);
+    vec3 direction = (batch.modelMatrix * vec4(particlesType.direction, 0.0)).xyz;
+    vec4 worldPos = batch.modelMatrix * vec4(ox, oy, oz, 1.0);
+    worldPos += vec4(direction * time * batch.strength, 0.0);
+    geometrize(particlesType, camera.transformationProjectionMatrix * worldPos, time);
 }

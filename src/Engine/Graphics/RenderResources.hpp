@@ -11,7 +11,8 @@ namespace Engine {
 class ENGINE_API RenderResources {
 public:
     explicit RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blockMaterials,
-                             const MaterialTextures& materialTextures, const FontFamily& font, int fontSize);
+                             const VulkanBuffer& particlesTypes, const MaterialTextures& materialTextures,
+                             const FontFamily& font, int fontSize);
     ~RenderResources();
 
     const Mesh& getMeshFullScreenQuad() const {
@@ -94,6 +95,10 @@ public:
         return materialTextures;
     }
 
+    const VulkanBuffer& getParticlesTypes() const {
+        return particlesTypes;
+    }
+
     const WorldSpaceText& getTextTacticalOverlay() const {
         return textTacticalOverlay;
     }
@@ -109,6 +114,7 @@ private:
 
     VulkanRenderer& vulkan;
     const VulkanBuffer& blockMaterials;
+    const VulkanBuffer& particlesTypes;
     const MaterialTextures& materialTextures;
     WorldSpaceText textTacticalOverlay;
     Mesh meshFullScreenQuad;

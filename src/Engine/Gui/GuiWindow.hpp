@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Graphics/Nuklear.hpp"
 #include "GuiContext.hpp"
 #include "Widgets/GuiWidgetButton.hpp"
 #include "Widgets/GuiWidgetButtonToggle.hpp"

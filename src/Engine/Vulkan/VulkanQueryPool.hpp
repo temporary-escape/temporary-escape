@@ -24,6 +24,7 @@ public:
 
     template <typename T>
     std::vector<uint64_t> getResult(uint32_t firstQuery, uint32_t count, VkQueryResultFlags flags);
+    std::chrono::nanoseconds getDiffNanos();
 
 private:
     VulkanRenderer* device{nullptr};

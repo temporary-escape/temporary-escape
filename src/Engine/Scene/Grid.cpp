@@ -4,6 +4,8 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
+static Vector3 thrustOffset{0.0f, 0.0f, 0.8f};
+
 static Vector3i normalToOrientation(const Vector3& normal) {
     if (normal.x > 0.5f) {
         return Vector3i{1, 0, 0};
@@ -222,7 +224,7 @@ Vector2 boxProjection(Vector3 normal, Vector3 position) {
 }
 
 void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, const std::vector<Type>& types,
-                 BlocksData& data, const Vector3& offset) {
+                 BlocksData& data, const Vector3i& offset) {
     static const Vector3i neighbourOffset[6] = {
         Vector3i{1, 0, 0},
         Vector3i{-1, 0, 0},
@@ -304,6 +306,7 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
     static std::array<std::array<uint8_t, 24>, 64> rotatedMasks = generateRotatedMasks();
 
     const auto typeSideToMaterial = [&](const uint16_t type, const uint8_t side) {};
+    const auto offsetf = Vector3{offset};
 
     const auto appendShapeVertices = [&](BlocksData& data,
                                          const VoxelShapeCache::ShapePrebuilt& shape,
@@ -318,7 +321,7 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
             auto& dst = data.vertices[vertexOffset + i];
             dst.position = src.position;
             dst.normal = src.normal;
-            dst.position += pos + offset;
+            dst.position += pos + offsetf;
             dst.tangent = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
 
             const auto texCoords = boxProjection(dst.normal, dst.position);
@@ -384,6 +387,13 @@ void Grid::build(const VoxelShapeCache& voxelShapeCache, const Voxel* cache, con
 
                 const auto posf = Vector3{pos};
                 const auto& block = types.at(item.type).block;
+
+                if (block->getType() == Block::Type::Engine && !find(pos + offset + Vector3i{0, 0, 1})) {
+                    auto& info = data.thrusters.emplace_back();
+                    info.mat = Matrix4{1.0f};
+                    info.mat[3] = Vector4{Vector3{pos + offset} + thrustOffset, 1.0f};
+                    info.particles = block->getThrustInfo().particles;
+                }
 
                 // auto& data = map[item.type];
 

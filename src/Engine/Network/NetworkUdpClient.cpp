@@ -87,6 +87,7 @@ void NetworkUdpClient::receive() {
                 if (self->stun.isRunning() && self->stun.isValid(packet->data(), packet->size())) {
                     self->stun.parse(packet->data(), packet->size());
                 } else {
+                    // logger.info("UDP client received {} bytes", packet->size());
                     self->onReceive(packet);
                 }
                 self->receive();

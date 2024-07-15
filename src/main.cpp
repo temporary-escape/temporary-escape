@@ -8,9 +8,12 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-static int commandPlay(Config& config) {
+static int commandPlay(Config& config, const Path& singlePlayerSavePath) {
     {
         Application window{config};
+        if (!singlePlayerSavePath.empty()) {
+            window.setLoadSaveName(singlePlayerSavePath);
+        }
         window.run();
     }
     logger.info("Exit success");
@@ -47,14 +50,15 @@ int main(int argc, char** argv) {
     Config config{};
     CLI::App parser{"Temporary Escape"};
 
+    std::string singlePlayerSaveName;
+    Path singlePlayerSavePath;
     Path rootPath;
     parser.add_option("--root", rootPath, "Root directory")
         ->check(CLI::ExistingDirectory)
         ->default_val(defaultRoot.string());
     parser.add_option("--width", config.graphics.windowSize.x, "Window width");
     parser.add_option("--height", config.graphics.windowSize.y, "Window height");
-    parser.add_flag("--clean-save", config.saveFolderClean, "Delete an already existing save");
-    parser.add_flag("--singleplayer", config.autoStart, "Auto start singleplayer");
+    parser.add_option("--single-player", singlePlayerSaveName, "Auto start single player mode with a save name");
 
     parser.add_subcommand("play", "Play the game")->fallthrough(true);
     parser.add_subcommand("server", "Start a dedicated server")->fallthrough(true);
@@ -105,16 +109,18 @@ int main(int argc, char** argv) {
             config.graphics.enableValidationLayers = false;
         }
 
-        // config.graphics.debugDraw = true;
+        if (!singlePlayerSaveName.empty()) {
+            singlePlayerSavePath = config.userdataSavesPath / singlePlayerSaveName;
+        }
 
         if (parser.got_subcommand("compress-assets")) {
             return commandCompressAssets(config);
         } else if (parser.got_subcommand("play")) {
-            return commandPlay(config);
+            return commandPlay(config, singlePlayerSavePath);
         } else if (parser.got_subcommand("server")) {
             return commandServer(config);
         } else {
-            return commandPlay(config);
+            return commandPlay(config, singlePlayerSavePath);
         }
 
     } catch (const std::exception& e) {

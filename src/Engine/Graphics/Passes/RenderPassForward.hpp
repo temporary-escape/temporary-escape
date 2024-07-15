@@ -56,8 +56,7 @@ private:
                             ComponentTransform& transform, ComponentPolyShape& component);
     void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
                             ComponentTransform& transform, ComponentLines& component);
-    void renderSceneForward(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera,
-                            ComponentTransform& transform, ComponentGrid& component);
+    void renderSceneThrusters(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneBullets(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneBulletsTrail(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);
     void renderSceneDebug(VulkanCommandBuffer& vkb, Scene& scene, const ComponentCamera& camera);

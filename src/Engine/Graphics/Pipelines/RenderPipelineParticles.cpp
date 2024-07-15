@@ -19,28 +19,21 @@ RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan) :
     setBlending(Blending::Additive);
 }
 
-void RenderPipelineParticles::setModelMatrix(const Matrix4& value) {
-    pushConstants(PushConstant{"modelMatrix", value});
-}
-
-void RenderPipelineParticles::setTimeDelta(const float value) {
-    pushConstants(PushConstant{"timeDelta", value});
-}
-
-void RenderPipelineParticles::setOverrideStrength(const float value) {
-    pushConstants(PushConstant{"overrideStrength", value});
-}
-
-void RenderPipelineParticles::setOverrideAlpha(const float value) {
-    pushConstants(PushConstant{"overrideAlpha", value});
-}
-
 void RenderPipelineParticles::setUniformCamera(const VulkanBuffer& ubo) {
     uniforms[0] = {"Camera", ubo};
 }
 
-void RenderPipelineParticles::setUniformParticlesType(const Engine::VulkanBuffer& ubo) {
-    uniforms[1] = {"ParticlesType", ubo};
+void RenderPipelineParticles::setUniformParticlesTypes(const Engine::VulkanBuffer& ubo) {
+    uniforms[1] = {"ParticlesTypes", ubo};
+}
+
+void RenderPipelineParticles::setUniformBatch(const VulkanBuffer& ubo, const size_t index) {
+    uniforms[2] = {
+        "ParticlesBatch",
+        ubo,
+        sizeof(ComponentParticles::ParticlesBatchUniform) * index,
+        sizeof(ComponentParticles::ParticlesBatchUniform),
+    };
 }
 
 void RenderPipelineParticles::setTextureColor(const VulkanTexture& texture) {

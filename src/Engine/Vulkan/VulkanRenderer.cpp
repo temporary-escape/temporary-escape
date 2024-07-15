@@ -34,14 +34,14 @@ VulkanRenderer::VulkanRenderer(const Config& config) :
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        semaphore = createSemaphore(semaphoreInfo);
+        semaphore = createSemaphore();
     }
 
     for (auto& semaphore : renderFinishedSemaphore) {
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        semaphore = createSemaphore(semaphoreInfo);
+        semaphore = createSemaphore();
     }
 
     for (auto& descriptorPool : descriptorPools) {
@@ -210,8 +210,8 @@ VulkanFence VulkanRenderer::createFence() {
     return VulkanFence{*this};
 }
 
-VulkanSemaphore VulkanRenderer::createSemaphore(const VulkanSemaphore::CreateInfo& createInfo) {
-    return VulkanSemaphore{*this, createInfo};
+VulkanSemaphore VulkanRenderer::createSemaphore() {
+    return VulkanSemaphore{*this};
 }
 
 VulkanCommandPool VulkanRenderer::createCommandPool(const VulkanCommandPool::CreateInfo& createInfo) {
@@ -278,71 +278,51 @@ void VulkanRenderer::waitQueueIdle() {
     }
 }
 
-void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer) {
+void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& vkb, const VulkanSubmitInfo& info) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
-
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-        EXCEPTION("Failed to submit command buffer");
-    }
-}
-
-void VulkanRenderer::submitCommandBuffer(const VulkanCommandBuffer& commandBuffer,
-                                         const VkPipelineStageFlags waitStages, const VulkanSemaphoreOpt& wait,
-                                         const VulkanSemaphoreOpt& signal, const VulkanFenceOpt& fence) {
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.getHandle();
-
-    if (wait) {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &wait.value().get().getHandle();
-        submitInfo.pWaitDstStageMask = &waitStages;
-    } else {
-        submitInfo.waitSemaphoreCount = 0;
-    }
-
-    if (signal) {
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &signal.value().get().getHandle();
-    } else {
-        submitInfo.signalSemaphoreCount = 0;
-    }
+    submitInfo.pCommandBuffers = &vkb.getHandle();
 
     VkFence f = VK_NULL_HANDLE;
-    if (fence) {
-        f = fence.value().get().getHandle();
+    if (info.present) {
+        f = getCurrentInFlightFence().getHandle();
+    } else if (info.fence) {
+        f = info.fence->getHandle();
     }
+
+    VkSemaphore signalSemaphores[2];
+    if (info.signal) {
+        signalSemaphores[submitInfo.signalSemaphoreCount] = info.signal->getHandle();
+        submitInfo.signalSemaphoreCount += 1;
+    }
+    if (info.present) {
+        signalSemaphores[submitInfo.signalSemaphoreCount] = getCurrentRenderFinishedSemaphore().getHandle();
+        submitInfo.signalSemaphoreCount += 1;
+    }
+
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    VkSemaphore waitSemaphores[2];
+    VkPipelineStageFlags waitMask[2];
+
+    if (info.present) {
+        waitSemaphores[submitInfo.waitSemaphoreCount] = getCurrentImageAvailableSemaphore().getHandle();
+        waitMask[submitInfo.waitSemaphoreCount] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        submitInfo.waitSemaphoreCount += 1;
+    }
+
+    if (info.wait) {
+        waitSemaphores[submitInfo.waitSemaphoreCount] = info.wait->getHandle();
+        waitMask[submitInfo.waitSemaphoreCount] = info.waitMask;
+        submitInfo.waitSemaphoreCount += 1;
+    }
+
+    submitInfo.pWaitDstStageMask = waitMask;
+    submitInfo.pWaitSemaphores = waitSemaphores;
 
     if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, f) != VK_SUCCESS) {
         EXCEPTION("Failed to submit command buffer");
-    }
-}
-
-void VulkanRenderer::submitPresentCommandBuffer(const VulkanCommandBuffer& commandBuffer, VulkanSemaphore* wait) {
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {wait ? wait->getHandle() : getCurrentImageAvailableSemaphore().getHandle()};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    const auto commandBufferHandle = commandBuffer.getHandle();
-
-    VkSemaphore signalSemaphores[] = {getCurrentRenderFinishedSemaphore().getHandle()};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBufferHandle;
-
-    if (vkQueueSubmit(getGraphicsQueue(), 1, &submitInfo, getCurrentInFlightFence().getHandle()) != VK_SUCCESS) {
-        EXCEPTION("Failed to submit draw command buffer!");
     }
 }
 

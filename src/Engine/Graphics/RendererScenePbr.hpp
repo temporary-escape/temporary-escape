@@ -13,7 +13,7 @@ public:
     explicit RendererScenePbr(const RenderOptions& options, VulkanRenderer& vulkan, RenderResources& resources);
 
     void setMousePos(const Vector2i& mousePos);
-    void render(VulkanCommandBuffer& vkb, Scene& scene) override;
+    void render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkbc, Scene& scene) override;
     void transitionForBlit(VulkanCommandBuffer& vkb);
     void blit(VulkanCommandBuffer& vkb);
     Vector2i getViewport() const;

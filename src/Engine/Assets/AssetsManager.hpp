@@ -175,8 +175,12 @@ public:
     const VulkanBuffer& getBlockMaterialsUbo() const {
         return blockMaterialsUbo;
     }
+    const VulkanBuffer& getParticlesTypesUbo() const {
+        return particlesTypesUbo;
+    }
 
     std::tuple<size_t, Block::MaterialUniform*> addBlockMaterial();
+    std::tuple<size_t, ParticlesType::Uniform*> addParticleType();
 
 private:
     void addManifest(const Path& path);
@@ -200,7 +204,9 @@ private:
     Category<Turret> turrets;
     std::vector<ModManifest> manifests;
     std::vector<Block::MaterialUniform> blockMaterials;
+    std::vector<ParticlesType::Uniform> particlesTypeUniforms;
     VulkanBuffer blockMaterialsUbo;
+    VulkanBuffer particlesTypesUbo;
     LoadQueue loadQueue;
 };
 } // namespace Engine

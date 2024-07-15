@@ -41,7 +41,9 @@ void NetworkStream::Writer::flush() {
     header.sequence = 0;
     packet->length = sizeof(PacketHeader);
 
-    packet->length += stream.aes->encrypt(temp.data(), packet->data() + packet->length, written);
+    auto* messageData = packet->data() + packet->length;
+    packet->length += stream.aes->encrypt(temp.data(), messageData, written);
+    packet->length += stream.hmac->sign(messageData, packet->data() + packet->length, written + AES::ivecLength);
 
     written = 0;
 
@@ -50,11 +52,19 @@ void NetworkStream::Writer::flush() {
 
 void NetworkStream::onSharedSecret(const std::vector<uint8_t>& sharedSecret) {
     aes = std::make_unique<AES>(sharedSecret);
+    hmac = std::make_unique<HMAC>(sharedSecret);
 }
 
-size_t NetworkStream::decrypt(const void* src, void* dst, const size_t size) {
-    if (!aes) {
+size_t NetworkStream::decrypt(const void* src, void* dst, const size_t size, bool& verify) {
+    if (!aes || !hmac || size <= HMAC::resultSize) {
         return 0;
     }
-    return aes->decrypt(src, dst, size);
+    const auto length = aes->decrypt(src, dst, size - HMAC::resultSize);
+
+    hmac->sign(src, verifyBuffer.data(), size - HMAC::resultSize);
+
+    const auto signatureSrc = reinterpret_cast<const uint8_t*>(src) + size - HMAC::resultSize;
+    verify = std::memcmp(verifyBuffer.data(), signatureSrc, HMAC::resultSize) == 0;
+
+    return length;
 }

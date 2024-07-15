@@ -5,21 +5,6 @@ using namespace Engine;
 
 static auto logger = createLogger(LOG_FILENAME);
 
-Block::MaterialUniform::MaterialUniform(const Material& material) {
-    baseColorFactor = material.baseColorFactor;
-    emissiveFactor = material.emissiveFactor;
-    normalFactor = material.normalFactor;
-    metallicRoughnessFactor = material.metallicRoughnessFactor;
-    ambientOcclusionFactor = material.ambientOcclusionFactor;
-
-    baseColorTexture = material.baseColorTexture->getLayer();
-    emissiveTexture = material.emissiveTexture->getLayer();
-    normalTexture = material.normalTexture->getLayer();
-    metallicRoughnessTexture = material.metallicRoughnessTexture->getLayer();
-    ambientOcclusionTexture = material.ambientOcclusionTexture->getLayer();
-    maskTexture = material.maskTexture->getLayer();
-}
-
 Block::Block(std::string name, Path path) : Asset{std::move(name)}, path{std::move(path)} {
 }
 
@@ -106,11 +91,22 @@ void Block::load(AssetsManager& assetsManager, VulkanRenderer* vulkan, AudioCont
 
 void Block::allocateMaterials(AssetsManager& assetsManager) {
     for (int i = 0; i < materials.size(); i++) {
-        const auto& mat = materials[i];
+        const auto& material = materials[i];
 
         const auto [index, uniform] = assetsManager.addBlockMaterial();
 
-        *uniform = MaterialUniform{mat};
+        uniform->baseColorFactor = material.baseColorFactor;
+        uniform->emissiveFactor = material.emissiveFactor;
+        uniform->normalFactor = material.normalFactor;
+        uniform->metallicRoughnessFactor = material.metallicRoughnessFactor;
+        uniform->ambientOcclusionFactor = material.ambientOcclusionFactor;
+
+        uniform->baseColorTexture = material.baseColorTexture->getLayer();
+        uniform->emissiveTexture = material.emissiveTexture->getLayer();
+        uniform->normalTexture = material.normalTexture->getLayer();
+        uniform->metallicRoughnessTexture = material.metallicRoughnessTexture->getLayer();
+        uniform->ambientOcclusionTexture = material.ambientOcclusionTexture->getLayer();
+        uniform->maskTexture = material.maskTexture->getLayer();
 
         for (auto& m : shapeSideToMaterial) {
             if (m == i) {

@@ -34,11 +34,11 @@ public:
         return mesh;
     }
 
-    [[nodiscard]] const ParticlesMap& getParticles() const {
-        return particles;
-    }
-
     [[nodiscard]] std::unique_ptr<btCollisionShape> createCollisionShape();
+
+    [[nodiscard]] const std::vector<Grid::ThrusterInfo>& getThrusters() const {
+        return thrusters;
+    }
 
     void setDirty() {
         dirty = true;
@@ -49,11 +49,9 @@ public:
 private:
     struct BlockCache {
         BlockPtr block;
-        Block::Definition::ParticlesInfo particles;
     };
 
     void debugIterate(Grid::Iterator iterator);
-    void createParticlesVertices(Grid::Iterator iterator);
     void createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) const;
 
     bool dirty{false};
@@ -61,6 +59,6 @@ private:
     VulkanRenderer* vulkanRenderer{nullptr};
     Mesh mesh;
     std::vector<BlockCache> blockCache;
-    ParticlesMap particles;
+    std::vector<Grid::ThrusterInfo> thrusters;
 };
 } // namespace Engine

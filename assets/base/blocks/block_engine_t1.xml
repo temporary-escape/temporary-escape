@@ -4,14 +4,10 @@
   <label>Engine</label>
   <shape>Cube</shape>
   <rotation>None</rotation>
-  <particles>
-    <offset>
-      <x>0.0</x>
-      <y>0.0</y>
-      <z>0.8</z>
-    </offset>
-    <type>particles_engine_thruster</type>
-  </particles>
+  <type>Engine</type>
+  <thrust>
+    <particles>particles_engine_thruster</particles>
+  </thrust>
   <material>
     <face>PositiveX</face>
     <face>NegativeX</face>
