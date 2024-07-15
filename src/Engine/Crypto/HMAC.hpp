@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+typedef struct evp_md_st EVP_MD;
+
 namespace Engine {
 class ENGINE_API HMAC {
 public:
@@ -18,6 +20,8 @@ public:
     size_t sign(const void* src, void* dst, size_t size) const;
 
 private:
+    static const EVP_MD* digest;
+
     std::array<uint8_t, keySize> key{};
 };
 } // namespace Engine

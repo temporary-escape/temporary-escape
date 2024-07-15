@@ -9,8 +9,6 @@ const EVP_CIPHER* AES::cipher = EVP_get_cipherbyname("aes-128-ctr");
 const EVP_MD* AES::digest = EVP_get_digestbyname("sha256");
 
 AES::AES(const std::vector<uint8_t>& sharedKey) {
-    const unsigned char* salt = nullptr;
-
     if (!cipher) {
         EXCEPTION("Failed to get cipher by name");
     }
@@ -19,6 +17,7 @@ AES::AES(const std::vector<uint8_t>& sharedKey) {
         EXCEPTION("Failed to get digest by name");
     }
 
+    static const unsigned char* salt = nullptr;
     if (!EVP_BytesToKey(
             cipher, digest, salt, sharedKey.data(), static_cast<int>(sharedKey.size()), 1, &key[0], &ivec[0])) {
         EXCEPTION("Failed to derive key and iv from the shared secret");
@@ -51,7 +50,9 @@ size_t AES::encrypt(const void* src, void* dst, const size_t size) {
         return 0;
     }
 
-    (void)EVP_CIPHER_CTX_get_updated_iv(ctx.get(), &ivec[0], ivec.size());
+    if (EVP_CIPHER_CTX_get_updated_iv(ctx.get(), &ivec[0], ivec.size()) != 1) {
+        return 0;
+    }
 
     return static_cast<size_t>(result) + static_cast<size_t>(final) + ivecLength;
 }
