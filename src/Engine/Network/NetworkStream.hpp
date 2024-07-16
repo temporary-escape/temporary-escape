@@ -26,8 +26,7 @@ struct ENGINE_API PacketBytes {
 
 using PacketBytesPtr = std::shared_ptr<PacketBytes>;
 
-static constexpr size_t maxPacketDataSize =
-    maxPacketSize - AES::getEncryptSize(0) - sizeof(PacketHeader) - HMAC::resultSize;
+static constexpr size_t maxPacketDataSize = maxPacketSize - AES::ivecLength - sizeof(PacketHeader) - HMAC::resultSize;
 
 class ENGINE_API NetworkStream {
 public:

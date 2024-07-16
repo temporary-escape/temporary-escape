@@ -1,5 +1,6 @@
 #include "AES.hpp"
 #include "../Utils/Exceptions.hpp"
+#include "HKDF.hpp"
 #include <cstring>
 #include <openssl/evp.h>
 
@@ -17,11 +18,11 @@ AES::AES(const std::vector<uint8_t>& sharedKey) {
         EXCEPTION("Failed to get digest by name");
     }
 
-    static const unsigned char* salt = nullptr;
-    if (!EVP_BytesToKey(
-            cipher, digest, salt, sharedKey.data(), static_cast<int>(sharedKey.size()), 1, &key[0], &ivec[0])) {
-        EXCEPTION("Failed to derive key and iv from the shared secret");
-    }
+    static const std::string_view salt = "encrypt";
+    auto result = hkdfKeyDerivation(sharedKey, salt);
+
+    std::memcpy(key.data(), result.data(), 16);
+    std::memcpy(ivec.data(), result.data() + 16, 16);
 }
 
 AES::~AES() = default;

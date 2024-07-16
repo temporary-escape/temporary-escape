@@ -112,6 +112,11 @@ void NetworkUdpStream::stopPingTimer() {
     releasePacket(packet);
 }*/
 
+static bool isPacketDataSizeValid(const PacketBytesPtr& packet) {
+    static constexpr size_t overhead = sizeof(PacketHeader) + AES::ivecLength + HMAC::resultSize;
+    return packet->size() > overhead && packet->size() - overhead <= maxPacketDataSize;
+}
+
 void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
     // Is it public key?
     if (ECDH::isPublicKey({reinterpret_cast<const char*>(packet->data()), packet->size()})) {
@@ -129,8 +134,10 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
             startPingTimer();
         }
         return;
-    } else if (established.load() && !sharedSecret.empty() && packet->size() >= sizeof(PacketHeader) &&
-               AES::getDecryptSize(packet->size() - sizeof(PacketHeader)) <= maxPacketDataSize + HMAC::resultSize) {
+    } else if (established.load() &&                  // Are we connected?
+               !sharedSecret.empty() &&               // Did we compute the shared secret?
+               packet->size() >= sizeof(PacketHeader) // Is the packet big enough to have a header?
+    ) {
 
         using Ms = std::chrono::milliseconds;
 
@@ -148,12 +155,12 @@ void NetworkUdpStream::onReceive(const PacketBytesPtr& packet) {
             lastPingTime = getTimeNowMs();
         } else if (header.type == PacketType::Ack) {
             ackReceived(packet);
-        } else if (header.type == PacketType::DataReliable) {
+        } else if (header.type == PacketType::DataReliable && isPacketDataSizeValid(packet)) {
             receivePacketReliable(packet);
             if (established.load()) {
                 sendAck(packet);
             }
-        } else if (header.type == PacketType::Data) {
+        } else if (header.type == PacketType::Data && isPacketDataSizeValid(packet)) {
             receivePacketUnreliable(packet);
         }
     } /*else if (!sharedSecret.empty()) {

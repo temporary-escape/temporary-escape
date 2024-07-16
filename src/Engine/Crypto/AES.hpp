@@ -14,25 +14,10 @@ namespace Engine {
 class ENGINE_API AES {
 public:
     static constexpr size_t ivecLength = 16;
+    static constexpr size_t keyLength = 16;
 
     explicit AES(const std::vector<uint8_t>& sharedKey);
     ~AES();
-
-    static constexpr size_t getEncryptSize(size_t size) {
-        return size + ivecLength;
-        /*if (size % 16 == 0) {
-            return size + ivecLength;
-        } else {
-            return size + 16 - (size % 16) + ivecLength;
-        }*/
-    }
-
-    static constexpr size_t getDecryptSize(size_t size) {
-        if (size < ivecLength) {
-            return 0;
-        }
-        return size - ivecLength;
-    }
 
     size_t encrypt(const void* src, void* dst, size_t size);
     size_t decrypt(const void* src, void* dst, size_t size);
@@ -42,7 +27,7 @@ private:
     static const EVP_CIPHER* cipher;
     static const EVP_MD* digest;
 
-    std::array<uint8_t, 64> key{};
+    std::array<uint8_t, keyLength> key{};
     std::array<uint8_t, ivecLength> ivec{};
 };
 } // namespace Engine

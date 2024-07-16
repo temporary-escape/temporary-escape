@@ -33,7 +33,7 @@ TEST_CASE("Generate ECDH keys and derive shared secret", "[crypto]") {
     // Encryption step
     std::string msg = "Hello World from temporary escape unit tests!";
     std::vector<char> res0;
-    res0.resize(AES::getEncryptSize(msg.size()));
+    res0.resize(msg.size() + AES::ivecLength);
     std::vector<char> res1;
     res1.resize(res0.size());
 
@@ -50,7 +50,7 @@ TEST_CASE("Generate ECDH keys and derive shared secret", "[crypto]") {
 
     // Decryption step
     std::vector<char> res2;
-    res2.resize(AES::getDecryptSize(res0.size()));
+    res2.resize(res0.size() - AES::ivecLength);
     REQUIRE(res2.size() < res0.size());
 
     // Decrypt the message
