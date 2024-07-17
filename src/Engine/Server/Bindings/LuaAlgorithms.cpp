@@ -40,8 +40,8 @@ static void bindFloodFill(sol::table& m) {
     {
         auto cls =
             m.new_usertype<FloodFillPoints::Result>("FloodFillResult", sol::constructors<FloodFillPoints::Result()>{});
-        cls["index"] = &FloodFillPoints::Result::index;
-        cls["point"] = &FloodFillPoints::Result::point;
+        cls["index"] = LUA_PROP(&FloodFillPoints::Result::index);
+        cls["point"] = LUA_PROP(&FloodFillPoints::Result::point);
     }
 
     { // FloodFill

@@ -3,10 +3,11 @@
 #include "HKDF.hpp"
 #include <cstring>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 
 using namespace Engine;
 
-const EVP_CIPHER* AES::cipher = EVP_get_cipherbyname("aes-128-ctr");
+const EVP_CIPHER* AES::cipher = EVP_get_cipherbyname("aes-256-ctr");
 const EVP_MD* AES::digest = EVP_get_digestbyname("sha256");
 
 AES::AES(const std::vector<uint8_t>& sharedKey) {
@@ -21,8 +22,10 @@ AES::AES(const std::vector<uint8_t>& sharedKey) {
     static const std::string_view salt = "encrypt";
     auto result = hkdfKeyDerivation(sharedKey, salt);
 
-    std::memcpy(key.data(), result.data(), 16);
-    std::memcpy(ivec.data(), result.data() + 16, 16);
+    std::memcpy(key.data(), result.data(), key.size());
+
+    // Initialize IV with random data
+    RAND_bytes(ivec.data(), static_cast<int>(ivec.size()));
 }
 
 AES::~AES() = default;

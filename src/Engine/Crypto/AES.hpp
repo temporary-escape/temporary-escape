@@ -14,7 +14,7 @@ namespace Engine {
 class ENGINE_API AES {
 public:
     static constexpr size_t ivecLength = 16;
-    static constexpr size_t keyLength = 16;
+    static constexpr size_t keyLength = 32;
 
     explicit AES(const std::vector<uint8_t>& sharedKey);
     ~AES();

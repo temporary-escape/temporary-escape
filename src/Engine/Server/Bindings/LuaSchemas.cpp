@@ -308,25 +308,25 @@ static void bindSchemas(sol::table& m) {
          * A unique UUID of the galaxy
          * @type string
          */
-        cls["id"] = &GalaxyData::id;
+        cls["id"] = LUA_PROP(&GalaxyData::id);
         /**
          * @field GalaxyData.pos
          * The position within the system
          * @type Vector2
          */
-        cls["pos"] = &GalaxyData::pos;
+        cls["pos"] = LUA_PROP(&GalaxyData::pos);
         /**
          * @field GalaxyData.seed
          * A seed that is specific to this galaxy
          * @type integer
          */
-        cls["seed"] = &GalaxyData::seed;
+        cls["seed"] = LUA_PROP(&GalaxyData::seed);
         /**
          * @field GalaxyData.name
          * Name of the galaxy
          * @type string
          */
-        cls["name"] = &GalaxyData::name;
+        cls["name"] = LUA_PROP(&GalaxyData::name);
     }
 
     {
@@ -340,9 +340,9 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<RegionData>("RegionData", sol::constructors<RegionData>{});
-        cls["id"] = &RegionData::id;
-        cls["pos"] = &RegionData::pos;
-        cls["name"] = &RegionData::name;
+        cls["id"] = LUA_PROP(&RegionData::id);
+        cls["pos"] = LUA_PROP(&RegionData::pos);
+        cls["name"] = LUA_PROP(&RegionData::name);
     }
 
     {
@@ -356,11 +356,11 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<FactionData>("FactionData", sol::constructors<FactionData>{});
-        cls["id"] = &FactionData::id;
-        cls["name"] = &FactionData::name;
-        cls["color"] = &FactionData::color;
-        cls["home_galaxy_id"] = &FactionData::homeGalaxyId;
-        cls["home_system_id"] = &FactionData::homeSystemId;
+        cls["id"] = LUA_PROP(&FactionData::id);
+        cls["name"] = LUA_PROP(&FactionData::name);
+        cls["color"] = LUA_PROP(&FactionData::color);
+        cls["home_galaxy_id"] = LUA_PROP(&FactionData::homeGalaxyId);
+        cls["home_system_id"] = LUA_PROP(&FactionData::homeSystemId);
     }
 
     {
@@ -374,14 +374,14 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<SystemData>("SystemData", sol::constructors<SystemData>{});
-        cls["id"] = &SystemData::id;
-        cls["name"] = &SystemData::name;
-        cls["galaxy_id"] = &SystemData::galaxyId;
-        cls["region_id"] = &SystemData::regionId;
-        cls["faction_id"] = &SystemData::factionId;
-        cls["seed"] = &SystemData::seed;
-        cls["pos"] = &SystemData::pos;
-        cls["connections"] = &SystemData::connections;
+        cls["id"] = LUA_PROP(&SystemData::id);
+        cls["name"] = LUA_PROP(&SystemData::name);
+        cls["galaxy_id"] = LUA_PROP(&SystemData::galaxyId);
+        cls["region_id"] = LUA_PROP(&SystemData::regionId);
+        cls["faction_id"] = LUA_PROP(&SystemData::factionId);
+        cls["seed"] = LUA_PROP(&SystemData::seed);
+        cls["pos"] = LUA_PROP(&SystemData::pos);
+        cls["connections"] = LUA_PROP(&SystemData::connections);
     }
 
     {
@@ -395,14 +395,14 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<SectorData>("SectorData", sol::constructors<SectorData>{});
-        cls["id"] = &SectorData::id;
-        cls["name"] = &SectorData::name;
-        cls["galaxy_id"] = &SectorData::galaxyId;
-        cls["system_id"] = &SectorData::systemId;
-        cls["seed"] = &SectorData::seed;
-        cls["pos"] = &SectorData::pos;
-        cls["icon"] = &SectorData::icon;
-        cls["entity"] = &SectorData::entity;
+        cls["id"] = LUA_PROP(&SectorData::id);
+        cls["name"] = LUA_PROP(&SectorData::name);
+        cls["galaxy_id"] = LUA_PROP(&SectorData::galaxyId);
+        cls["system_id"] = LUA_PROP(&SectorData::systemId);
+        cls["seed"] = LUA_PROP(&SectorData::seed);
+        cls["pos"] = LUA_PROP(&SectorData::pos);
+        cls["icon"] = LUA_PROP(&SectorData::icon);
+        cls["entity"] = LUA_PROP(&SectorData::entity);
     }
 
     {
@@ -416,15 +416,15 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<PlanetData>("PlanetData", sol::constructors<PlanetData>{});
-        cls["id"] = &PlanetData::id;
-        cls["name"] = &PlanetData::name;
-        cls["galaxy_id"] = &PlanetData::galaxyId;
-        cls["system_id"] = &PlanetData::systemId;
-        cls["seed"] = &PlanetData::seed;
-        cls["pos"] = &PlanetData::pos;
-        cls["parent_id"] = &PlanetData::parentId;
-        cls["type"] = &PlanetData::type;
-        cls["radius"] = &PlanetData::radius;
+        cls["id"] = LUA_PROP(&PlanetData::id);
+        cls["name"] = LUA_PROP(&PlanetData::name);
+        cls["galaxy_id"] = LUA_PROP(&PlanetData::galaxyId);
+        cls["system_id"] = LUA_PROP(&PlanetData::systemId);
+        cls["seed"] = LUA_PROP(&PlanetData::seed);
+        cls["pos"] = LUA_PROP(&PlanetData::pos);
+        cls["parent_id"] = LUA_PROP(&PlanetData::parentId);
+        cls["type"] = LUA_PROP(&PlanetData::type);
+        cls["radius"] = LUA_PROP(&PlanetData::radius);
     }
 
     {
@@ -438,9 +438,9 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<PlayerData>("PlayerData", sol::constructors<PlayerData>{});
-        cls["name"] = &PlayerData::name;
-        cls["id"] = &PlayerData::id;
-        cls["admin"] = &PlayerData::admin;
+        cls["name"] = LUA_PROP(&PlayerData::name);
+        cls["id"] = LUA_PROP(&PlayerData::id);
+        cls["admin"] = LUA_PROP(&PlayerData::admin);
     }
 
     {
@@ -454,9 +454,9 @@ static void bindSchemas(sol::table& m) {
          * @type string
          */
         auto cls = m.new_usertype<PlayerLocationData>("PlayerLocationData", sol::constructors<PlayerLocationData>{});
-        cls["galaxy_id"] = &PlayerLocationData::galaxyId;
-        cls["system_id"] = &PlayerLocationData::systemId;
-        cls["sector_id"] = &PlayerLocationData::sectorId;
+        cls["galaxy_id"] = LUA_PROP(&PlayerLocationData::galaxyId);
+        cls["system_id"] = LUA_PROP(&PlayerLocationData::systemId);
+        cls["sector_id"] = LUA_PROP(&PlayerLocationData::sectorId);
     }
 
     {
@@ -466,9 +466,9 @@ static void bindSchemas(sol::table& m) {
          */
         auto cls =
             m.new_usertype<StartingLocationData>("StartingLocationData", sol::constructors<StartingLocationData>{});
-        cls["galaxy_id"] = &StartingLocationData::galaxyId;
-        cls["system_id"] = &StartingLocationData::systemId;
-        cls["sector_id"] = &StartingLocationData::sectorId;
+        cls["galaxy_id"] = LUA_PROP(&StartingLocationData::galaxyId);
+        cls["system_id"] = LUA_PROP(&StartingLocationData::systemId);
+        cls["sector_id"] = LUA_PROP(&StartingLocationData::sectorId);
     }
 
     {

@@ -31,12 +31,12 @@ static void bindMathVectors(sol::table& m) {
          * @field Vector2.x
          * @type number
          */
-        cls["x"] = &Vector2::x;
+        cls["x"] = LUA_PROP(&Vector2::x);
         /**
          * @field Vector2.y
          * @type number
          */
-        cls["y"] = &Vector2::x;
+        cls["y"] = LUA_PROP(&Vector2::x);
         metaArithemtic<Vector2, float>(cls);
         /**
          * @function Vector2:distance
@@ -63,9 +63,9 @@ static void bindMathVectors(sol::table& m) {
 
     { // Vector3
         auto cls = m.new_usertype<Vector3>("Vector3", sol::constructors<Vector3(), Vector3(float, float, float)>{});
-        cls["x"] = &Vector3::x;
-        cls["y"] = &Vector3::y;
-        cls["z"] = &Vector3::z;
+        cls["x"] = LUA_PROP(&Vector3::x);
+        cls["y"] = LUA_PROP(&Vector3::y);
+        cls["z"] = LUA_PROP(&Vector3::z);
         metaArithemtic<Vector3, float>(cls);
         cls["distance"] = [](Vector3& self, const Vector3& other) { return glm::distance(self, other); };
     }
@@ -73,20 +73,20 @@ static void bindMathVectors(sol::table& m) {
     { // Vector4
         auto cls =
             m.new_usertype<Vector4>("Vector4", sol::constructors<Vector4(), Vector4(float, float, float, float)>{});
-        cls["x"] = &Vector4::x;
-        cls["y"] = &Vector4::y;
-        cls["z"] = &Vector4::z;
-        cls["w"] = &Vector4::w;
+        cls["x"] = LUA_PROP(&Vector4::x);
+        cls["y"] = LUA_PROP(&Vector4::y);
+        cls["z"] = LUA_PROP(&Vector4::z);
+        cls["w"] = LUA_PROP(&Vector4::w);
         metaArithemtic<Vector4, float>(cls);
         cls["distance"] = [](Vector4& self, const Vector4& other) { return glm::distance(self, other); };
     }
 
     { // Color4
         auto cls = m.new_usertype<Color4>("Color4", sol::constructors<Color4(), Color4(float, float, float, float)>{});
-        cls["x"] = &Color4::x;
-        cls["y"] = &Color4::y;
-        cls["z"] = &Color4::z;
-        cls["w"] = &Color4::w;
+        cls["x"] = LUA_PROP(&Color4::x);
+        cls["y"] = LUA_PROP(&Color4::y);
+        cls["z"] = LUA_PROP(&Color4::z);
+        cls["w"] = LUA_PROP(&Color4::w);
         metaArithemtic<Color4, float>(cls);
         cls["distance"] = [](Color4& self, const Color4& other) { return glm::distance(self, other); };
     }
@@ -98,10 +98,10 @@ static void bindMathQuaternion(sol::table& m) {
     { // Quaternion
         auto cls = m.new_usertype<Quaternion>(
             "Quaternion", sol::constructors<Quaternion(), Quaternion(float, float, float, float)>{});
-        cls["x"] = &Quaternion::x;
-        cls["y"] = &Quaternion::y;
-        cls["z"] = &Quaternion::z;
-        cls["w"] = &Quaternion::w;
+        cls["x"] = LUA_PROP(&Quaternion::x);
+        cls["y"] = LUA_PROP(&Quaternion::y);
+        cls["z"] = LUA_PROP(&Quaternion::z);
+        cls["w"] = LUA_PROP(&Quaternion::w);
         cls[sol::meta_function::to_string] = &metaToString<Quaternion>;
         cls[sol::meta_function::multiplication] = &metaMul<Quaternion, Quaternion>;
         cls[sol::meta_function::equal_to] = &metaEq<Quaternion>;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Utils/Format.hpp"
+#include "../../Utils/Traits.hpp"
 #include "../Lua.hpp"
 #include <sol/sol.hpp>
 
@@ -42,6 +43,16 @@ template <typename T, typename O> static void metaArithemtic(sol::usertype<T>& c
     cls[sol::meta_function::unary_minus] = &metaNeg<T>;
     cls[sol::meta_function::equal_to] = &metaEq<T>;
 }
+
+template <typename V, typename C, V C::*Ptr> static auto asLuaPropertyInternal() {
+    return sol::property([](C& type) { return (type.*Ptr); }, [](C& type, const V& val) { (type.*Ptr) = val; });
+}
+
+template <auto Field> static auto asLuaProperty() {
+    using V = typename GetPointerType<decltype(Field)>::type;
+    using C = typename GetVarTraits<decltype(Field), Field>::klass;
+    return asLuaPropertyInternal<V, C, Field>();
+}
 } // namespace Engine
 
 #define LUA_CALL_FN(fn, ...)                                                                                           \
@@ -50,3 +61,5 @@ template <typename T, typename O> static void metaArithemtic(sol::usertype<T>& c
         sol::error err = result;                                                                                       \
         EXCEPTION("{}", err.what());                                                                                   \
     }
+
+#define LUA_PROP(Var) asLuaProperty<Var>()
