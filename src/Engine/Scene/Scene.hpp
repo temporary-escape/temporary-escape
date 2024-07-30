@@ -93,6 +93,8 @@ public:
         auto ptr = dynamic_cast<T*>(controller.get());
 
         controllers.emplace(type, std::move(controller));
+        // updateCounters.emplace(type, 0);
+        // renderCounters.emplace(type, 0);
 
         if constexpr (std::is_base_of_v<UserInput, T>) {
             userInputs.push_back(ptr);
@@ -150,6 +152,11 @@ private:
 
     EntityRegistry reg;
     std::unordered_map<std::type_index, std::unique_ptr<Controller>> controllers;
+    /*std::unordered_map<std::type_index, uint64_t> updateCounters;
+    std::unordered_map<std::type_index, uint64_t> renderCounters;
+    std::chrono::steady_clock::time_point counterTp;
+    uint64_t updateTicks{0};
+    uint64_t renderTicks{0};*/
     std::vector<UserInput*> userInputs;
 
     DynamicsWorld dynamicsWorld;

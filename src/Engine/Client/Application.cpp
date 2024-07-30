@@ -687,7 +687,7 @@ void Application::createThumbnails() {
     createEmptyThumbnail(*rendererThumbnail);
     createPlanetThumbnails(*rendererThumbnail);
 
-    assetsManager->finalize();
+    assetsManager->finalize(*this);
 
     views = std::make_unique<ViewContext>(config, *this, *assetsManager, guiManager, *rendererBackground);
 

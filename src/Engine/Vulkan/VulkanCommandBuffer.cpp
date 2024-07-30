@@ -11,6 +11,9 @@
 
 using namespace Engine;
 
+std::array<uint32_t, 0> noOffsetsArr;
+const Span<uint32_t> VulkanCommandBuffer::noOffsets{noOffsetsArr};
+
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice& device, VulkanCommandPool& commandPool,
                                          VulkanDescriptorPool& descriptorPool) :
     device{device.getDevice()}, commandPool{commandPool.getHandle()}, descriptorPool{&descriptorPool} {
@@ -191,16 +194,18 @@ void VulkanCommandBuffer::copyBufferToImage(const VulkanBuffer& src, const Vulka
 }
 
 void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet,
-                                            const VkPipelineLayout pipelineLayout, const bool isCompute) {
+                                            const VkPipelineLayout pipelineLayout, const bool isCompute,
+                                            const uint32_t numSet, const Span<uint32_t>& offsets) {
     auto set = descriptorSet.getHandle();
+
     vkCmdBindDescriptorSets(commandBuffer,
                             isCompute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout,
-                            0,
+                            numSet,
                             1,
                             &set,
-                            0,
-                            nullptr);
+                            offsets.size(),
+                            offsets.empty() ? nullptr : offsets.data());
 }
 
 void VulkanCommandBuffer::bindDescriptorSet(const VulkanDescriptorSet& descriptorSet,

@@ -381,7 +381,7 @@ void Client::handle(Request2<MessageFetchFactionsResponse> req) {
 void Client::handle(Request2<MessageFetchSystemsResponse> req) {
     auto data = req.get();
 
-    logger.debug("Received system data count: {}", data.items.size());
+    // logger.debug("Received system data count: {}", data.items.size());
 
     for (auto& item : data.items) {
         cache.galaxy.systems.emplace(item.id, std::move(item));

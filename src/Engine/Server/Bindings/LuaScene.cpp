@@ -87,6 +87,12 @@ static void bindComponentTurret(sol::table& m) {
 
 LUA_BINDINGS(bindComponentTurret);
 
+static void bindComponentAgent(sol::table& m) {
+    auto cls = m.new_usertype<ComponentAgent>("ComponentAgent");
+}
+
+LUA_BINDINGS(bindComponentAgent);
+
 static void bindScene(sol::table& m) {
     auto cls = m.new_usertype<Scene>("Scene");
     cls["create_entity"] = &Scene::createEntity;
@@ -153,6 +159,7 @@ static void bindEntity(sol::table& m) {
     cls["add_component_ship_control"] = [](Entity& self) -> ComponentShipControl& {
         return self.addComponent<ComponentShipControl>();
     };
+    cls["add_component_agent"] = [](Entity& self) -> ComponentAgent& { return self.addComponent<ComponentAgent>(); };
 
     cls["has_component_transform"] = &Entity::hasComponent<ComponentTransform>;
     cls["has_component_model"] = &Entity::hasComponent<ComponentModel>;
@@ -163,6 +170,7 @@ static void bindEntity(sol::table& m) {
     cls["has_component_script"] = &Entity::hasComponent<ComponentScript>;
     cls["has_component_turret"] = &Entity::hasComponent<ComponentTurret>;
     cls["has_component_ship_control"] = &Entity::hasComponent<ComponentShipControl>;
+    cls["has_component_agent"] = &Entity::hasComponent<ComponentAgent>;
 
     cls["get_component_transform"] = &Entity::tryGetComponent<ComponentTransform>;
     cls["get_component_model"] = &Entity::tryGetComponent<ComponentModel>;
@@ -174,6 +182,7 @@ static void bindEntity(sol::table& m) {
     cls["get_component_grid"] = &Entity::tryGetComponent<ComponentGrid>;
     cls["get_component_turret"] = &Entity::tryGetComponent<ComponentTurret>;
     cls["get_component_ship_control"] = &Entity::tryGetComponent<ComponentShipControl>;
+    cls["get_component_agent"] = &Entity::tryGetComponent<ComponentAgent>;
 
     cls["script"] = sol::readonly_property(&entityPropertyScript);
     cls["transform"] = sol::readonly_property(&Entity::tryGetComponent<ComponentTransform>);
@@ -186,6 +195,7 @@ static void bindEntity(sol::table& m) {
     cls["grid"] = sol::readonly_property(&Entity::tryGetComponent<ComponentGrid>);
     cls["turret"] = sol::readonly_property(&Entity::tryGetComponent<ComponentTurret>);
     cls["ship_control"] = sol::readonly_property(&Entity::tryGetComponent<ComponentShipControl>);
+    cls["agent"] = sol::readonly_property(&Entity::tryGetComponent<ComponentAgent>);
 }
 
 LUA_BINDINGS(bindEntity);

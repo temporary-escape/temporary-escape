@@ -17,11 +17,12 @@ void VulkanArrayBuffer::destroy() {
     vbo.destroy();
 }
 
-void VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
+bool VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
     if (flush == 0) {
-        return;
+        return false;
     }
 
+    auto recreated = false;
     if (!vbo || vbo.getSize() != buffer.capacity()) {
         // logger.debug("Resizing buffer to size: {} bytes", buffer.capacity());
 
@@ -29,13 +30,19 @@ void VulkanArrayBuffer::recalculate(VulkanRenderer& vulkan) {
         VulkanBuffer::CreateInfo bufferInfo = static_cast<VulkanBuffer::CreateInfo&>(createInfo);
         bufferInfo.size = buffer.capacity();
 
-        vbo = vulkan.createDoubleBuffer(bufferInfo);
+        if (vbo) {
+            vulkan.dispose(std::move(vbo));
+        }
+        vbo = VulkanDoubleBuffer{vulkan, bufferInfo};
+        recreated = true;
     }
 
     // logger.warn("Flushing memory");
     vbo.getCurrentBuffer().subDataLocal(buffer.data(), 0, buffer.size());
 
     --flush;
+
+    return recreated;
 }
 
 void* VulkanArrayBuffer::insert(const uint64_t id) {

@@ -101,11 +101,14 @@ public:
     const std::string& getName() const {
         return name;
     }
-    VulkanDescriptorPool& getDescriptionPool();
+    // VulkanDescriptorPool& getDescriptionPool();
+    void resetDescriptorPools();
     void bind(VulkanCommandBuffer& vkb);
     void flushConstants(VulkanCommandBuffer& vkb) {
         pushConstantsBuffer(vkb, constantsBuffer);
     }
+    void setDesriptorSet(VulkanCommandBuffer& vkb, uint32_t setNum, const VulkanDescriptorSet& descriptorSet,
+                         const Span<uint32_t>& offsets = VulkanCommandBuffer::noOffsets);
     void renderMesh(VulkanCommandBuffer& vkb, const Mesh& mesh) const;
     void renderMeshInstanced(VulkanCommandBuffer& vkb, const Mesh& mesh, const VulkanBuffer& vbo, uint32_t count) const;
 
@@ -123,13 +126,15 @@ protected:
     void setCompute(bool value);
     void setBlending(Blending blending);
     void setLineWidth(float width);
+    void setDynamic(const std::string_view& value);
 
     template <typename... Constants> void pushConstants(Constants&&... constants) {
         pushConstantsInternal(constantsBuffer, std::forward<Constants>(constants)...);
     }
 
     void bindDescriptors(VulkanCommandBuffer& vkb, const Span<UniformBindingRef>& uniforms,
-                         const Span<SamplerBindingRef>& textures, const Span<SubpassInputBindingRef>& inputs);
+                         const Span<SamplerBindingRef>& textures, const Span<SubpassInputBindingRef>& inputs,
+                         uint32_t setNum = 0);
 
 private:
     struct ReflectInfo {
@@ -160,7 +165,7 @@ private:
                                 const std::vector<uint32_t>& attachments);
     void createComputePipeline(const ReflectInfo& resources);
     void createDescriptorSetLayout(const ReflectInfo& resources);
-    void createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
+    void createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings, uint32_t setNum);
     void processPushConstants(const ReflectInfo& resources);
     void pushConstantsBuffer(VulkanCommandBuffer& vkb, const char* src);
     uint32_t findBinding(const std::string_view& name);
@@ -174,12 +179,13 @@ private:
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
     VulkanPipeline::CreateInfo pipelineInfo;
     VulkanPipeline pipeline;
-    VulkanDescriptorSetLayout descriptorSetLayout;
-    std::array<VulkanDescriptorPool, MAX_FRAMES_IN_FLIGHT> descriptorPools;
+    std::array<VulkanDescriptorSetLayout, 16> descriptorSetLayouts;
+    std::array<std::array<VulkanDescriptorPool, MAX_FRAMES_IN_FLIGHT>, 16> descriptorPools;
     char constantsBuffer[128];
     Blending attachmentBlending;
     std::map<std::string, VulkanStagePushMember, std::less<>> pushConstantsMap;
     std::map<std::string, uint32_t, std::less<>> bindingsMap;
+    std::unordered_set<std::string> dynamicUniforms;
     size_t pushConstantsSize{0};
 
     struct {

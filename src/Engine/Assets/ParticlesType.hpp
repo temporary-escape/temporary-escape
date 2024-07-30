@@ -114,9 +114,18 @@ public:
         return index;
     }
 
+    [[nodiscard]] const VulkanDescriptorSet& getDescriptorSet() const {
+        return descriptorSet;
+    }
+
+    void setDescriptorSet(VulkanDescriptorSet value) {
+        descriptorSet = std::move(value);
+    }
+
 private:
     Path path;
     Definition definition;
+    VulkanDescriptorSet descriptorSet;
     size_t index{0};
 };
 

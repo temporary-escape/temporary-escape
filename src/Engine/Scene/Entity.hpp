@@ -3,6 +3,7 @@
 #include "../Library.hpp"
 #include "../Utils/MsgpackAdaptors.hpp"
 #include "../Utils/MsgpackFriend.hpp"
+#include "Components/ComponentAgent.hpp"
 #include "Components/ComponentCamera.hpp"
 #include "Components/ComponentCameraOrbital.hpp"
 #include "Components/ComponentCameraPanning.hpp"
@@ -45,7 +46,7 @@ using EntityComponentIds =
                 ComponentDirectionalLight, ComponentPointLight, ComponentPointCloud, ComponentLines, ComponentDebug,
                 ComponentIcon, ComponentLabel, ComponentPolyShape, ComponentText, ComponentWorldText, ComponentPlanet,
                 ComponentStarFlare, ComponentSkybox, ComponentSpaceDust, ComponentNebula, ComponentTurret,
-                ComponentShipControl>;
+                ComponentShipControl, ComponentAgent>;
 
 template <typename T> static inline constexpr uint64_t componentMaskId() {
     return 1ULL << EntityComponentIds::value<T>;

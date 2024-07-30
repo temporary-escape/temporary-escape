@@ -20,6 +20,7 @@ RenderPipelineShadowsModel::RenderPipelineShadowsModel(VulkanRenderer& vulkan) :
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::None);
     setDepthClamp(DepthClamp::Enabled);
+    setDynamic("Camera");
 }
 
 void RenderPipelineShadowsModel::setModelMatrix(const Matrix4& value) {
@@ -32,12 +33,4 @@ void RenderPipelineShadowsModel::setNormalMatrix(const Matrix3& value) {
 
 void RenderPipelineShadowsModel::setEntityColor(const Color4& value) {
     pushConstants(PushConstant{"entityColor", value});
-}
-
-void RenderPipelineShadowsModel::setUniformCamera(const VulkanBuffer& ubo, const uint32_t index) {
-    uniforms[0] = {"Camera", ubo, index * sizeof(Camera::Uniform), sizeof(Camera::Uniform)};
-}
-
-void RenderPipelineShadowsModel::flushDescriptors(VulkanCommandBuffer& vkb) {
-    bindDescriptors(vkb, uniforms, {}, {});
 }

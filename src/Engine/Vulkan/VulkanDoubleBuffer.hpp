@@ -7,6 +7,7 @@ class ENGINE_API VulkanRenderer;
 
 class ENGINE_API VulkanDoubleBuffer : public VulkanDisposable {
 public:
+    using Buffers = std::array<VulkanBuffer, MAX_FRAMES_IN_FLIGHT>;
     using CreateInfo = VulkanBuffer::CreateInfo;
 
     VulkanDoubleBuffer() = default;
@@ -25,6 +26,10 @@ public:
     const VulkanBuffer& getCurrentBuffer() const;
     VulkanBuffer& getPreviousBuffer();
     const VulkanBuffer& getPreviousBuffer() const;
+
+    const Buffers& getBuffers() const {
+        return buffers;
+    }
 
     VkBuffer& getHandle() {
         return getCurrentBuffer().getHandle();
@@ -47,6 +52,6 @@ public:
 
 private:
     VulkanRenderer* device{nullptr};
-    std::array<VulkanBuffer, MAX_FRAMES_IN_FLIGHT> buffers;
+    Buffers buffers;
 };
 } // namespace Engine

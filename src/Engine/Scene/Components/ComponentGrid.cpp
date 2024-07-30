@@ -84,7 +84,7 @@ void ComponentGrid::setFrom(const ShipTemplatePtr& shipTemplate) {
     dirty = true;
 }
 
-void ComponentGrid::debugIterate(Grid::Iterator iterator) {
+/*void ComponentGrid::debugIterate(Grid::Iterator iterator) {
     while (iterator) {
         if (iterator.isVoxel()) {
             auto pos = iterator.getPos();
@@ -96,7 +96,7 @@ void ComponentGrid::debugIterate(Grid::Iterator iterator) {
 
         iterator.next();
     }
-}
+}*/
 
 void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& voxelShapeCache) {
     if (!dirty) {
@@ -123,7 +123,7 @@ void ComponentGrid::recalculate(VulkanRenderer& vulkan, const VoxelShapeCache& v
         vulkan.dispose(std::move(mesh));
     }
 
-    logger.debug("Building mesh of size: {} indices", data.indices.size());
+    // logger.debug("Building mesh of size: {} indices", data.indices.size());
 
     if (data.indices.empty()) {
         return;

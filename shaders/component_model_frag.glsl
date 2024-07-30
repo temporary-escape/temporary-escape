@@ -1,7 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#include "includes/common.glsl"
 
-layout (std140, binding = 1) uniform Material {
+layout (std140, set = 1, binding = 0) uniform Material {
     vec4 baseColorFactor;
     vec4 emissiveFactor;
     vec4 normalFactor;
@@ -9,11 +10,11 @@ layout (std140, binding = 1) uniform Material {
     vec4 metallicRoughnessFactor;
 } material;
 
-layout (binding = 3) uniform sampler2D baseColorTexture;
-layout (binding = 4) uniform sampler2D emissiveTexture;
-layout (binding = 5) uniform sampler2D normalTexture;
-layout (binding = 6) uniform sampler2D ambientOcclusionTexture;
-layout (binding = 7) uniform sampler2D metallicRoughnessTexture;
+layout (set = 1, binding = 1) uniform sampler2D baseColorTexture;
+layout (set = 1, binding = 2) uniform sampler2D emissiveTexture;
+layout (set = 1, binding = 3) uniform sampler2D normalTexture;
+layout (set = 1, binding = 4) uniform sampler2D ambientOcclusionTexture;
+layout (set = 1, binding = 5) uniform sampler2D metallicRoughnessTexture;
 
 layout (location = 0) in VS_OUT {
     vec3 normal;

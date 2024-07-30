@@ -16,7 +16,7 @@ void ServicePlanets::handle(Request2<MessageFetchPlanetsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchPlanetsRequest galaxy: {} system: {}", data.galaxyId, data.systemId);
+    // logger.debug("Handle MessageFetchPlanetsRequest galaxy: {} system: {}", data.galaxyId, data.systemId);
 
     MessageFetchPlanetsResponse res{};
     res.items =

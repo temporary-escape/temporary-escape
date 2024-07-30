@@ -17,7 +17,7 @@ void ServiceFactions::handle(Request2<MessageFetchFactionRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchFactionRequest faction: {}", data.factionId);
+    // logger.debug("Handle MessageFetchFactionRequest faction: {}", data.factionId);
 
     const auto found = db.find<FactionData>(fmt::format("{}", data.factionId));
     if (!found) {
@@ -33,7 +33,7 @@ void ServiceFactions::handle(Request2<MessageFetchFactionsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchFactionsRequest token: {}", data.token);
+    // logger.debug("Handle MessageFetchFactionsRequest token: {}", data.token);
 
     MessageFetchFactionsResponse res{};
     res.items = db.next<FactionData>("", data.token, 64, &res.page.token);

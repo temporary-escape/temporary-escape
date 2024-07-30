@@ -17,7 +17,7 @@ void ServiceSystems::handle(Request2<MessageFetchSystemRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchSystemRequest galaxy: {} system: {}", data.galaxyId, data.systemId);
+    // logger.debug("Handle MessageFetchSystemRequest galaxy: {} system: {}", data.galaxyId, data.systemId);
 
     const auto found = db.find<SystemData>(fmt::format("{}/{}", data.galaxyId, data.systemId));
     if (!found) {
@@ -33,7 +33,7 @@ void ServiceSystems::handle(Request2<MessageFetchSystemsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchSystemsRequest galaxy: {} token: {}", data.galaxyId, data.token);
+    // logger.debug("Handle MessageFetchSystemsRequest galaxy: {} token: {}", data.galaxyId, data.token);
 
     MessageFetchSystemsResponse res{};
     res.items = db.next<SystemData>(fmt::format("{}/", data.galaxyId), data.token, 64, &res.page.token);

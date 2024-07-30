@@ -28,7 +28,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice& device, const CreateInfo& createInfo) :
         EXCEPTION("Failed to allocate buffer memory!");
     }
 
-    logger.debug("Created VulkanBuffer of size: {} bytes", createInfo.size);
+    // logger.debug("Created VulkanBuffer of size: {} bytes", createInfo.size);
 
     bufferSize = createInfo.size;
     mappedPtr = allocationInfo.pMappedData;

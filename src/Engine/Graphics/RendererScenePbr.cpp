@@ -85,7 +85,7 @@ void RendererScenePbr::render(VulkanCommandBuffer& vkb, VulkanCommandBuffer& vkb
     }
 
     camera->setViewport(getViewport());
-    camera->recalculate(vulkan);
+    // camera->recalculate(vulkan);
 
     Renderer::render(vkb, vkbc, scene);
 
@@ -126,7 +126,7 @@ void RendererScenePbr::transitionForBlit(VulkanCommandBuffer& vkb) {
 
 void RendererScenePbr::blit(VulkanCommandBuffer& vkb) {
     const auto& src = getFinalBuffer();
-    pipelineBlit.getDescriptionPool().reset();
+    pipelineBlit.resetDescriptorPools();
     pipelineBlit.bind(vkb);
     pipelineBlit.setTexture(src);
     pipelineBlit.flushDescriptors(vkb);

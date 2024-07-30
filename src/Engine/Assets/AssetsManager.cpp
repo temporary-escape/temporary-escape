@@ -45,7 +45,7 @@ AssetsManager::AssetsManager(const Config& config) : config{config} {
 
     particlesTypeUniforms.reserve(1024);
     std::memset(particlesTypeUniforms.data(), 0, sizeof(ParticlesType::Uniform) * particlesTypeUniforms.size());
-    
+
     findAssets();
 }
 
@@ -72,8 +72,88 @@ void AssetsManager::init(VulkanRenderer& vulkan) {
     }
 }
 
-void AssetsManager::finalize() {
+void AssetsManager::finalize(VulkanRenderer& vulkan) {
     atlas->finalize();
+    finalizeDescriptorMaterials(vulkan);
+    finalizeDescriptorParticlesTypes(vulkan);
+}
+
+void AssetsManager::finalizeDescriptorMaterials(VulkanRenderer& vulkan) {
+    std::unordered_set<Material*> materials;
+
+    for (auto& model : models) {
+        for (auto& material : model.second->getMaterials()) {
+            materials.emplace(&material);
+        }
+    }
+
+    std::array<VkDescriptorSetLayoutBinding, 6> bindings{};
+    auto binding = bindings.begin();
+
+    binding->binding = 0;
+    binding->descriptorCount = 1;
+    binding->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    binding->pImmutableSamplers = nullptr;
+    binding->stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                          VK_SHADER_STAGE_COMPUTE_BIT;
+    binding++;
+
+    for (size_t i = 1; i <= 5; i++) {
+        binding->binding = i;
+        binding->descriptorCount = 1;
+        binding->descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        binding->pImmutableSamplers = nullptr;
+        binding->stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        binding++;
+    }
+
+    descriptorMaterials.layout = VulkanDescriptorSetLayout{vulkan, bindings};
+    descriptorMaterials.pool = VulkanDescriptorPool{vulkan, bindings, materials.size()};
+
+    for (auto& material : materials) {
+        material->descriptorSet = descriptorMaterials.pool.createDescriptorSet(descriptorMaterials.layout);
+
+        std::array<VulkanBufferBinding, 1> buffBindings{};
+        std::array<VulkanTextureBinding, 5> texBindings{};
+        buffBindings[0] = {0, &material->ubo};
+        texBindings[0] = {1, &material->baseColorTexture->getVulkanTexture()};
+        texBindings[1] = {2, &material->emissiveTexture->getVulkanTexture()};
+        texBindings[2] = {3, &material->normalTexture->getVulkanTexture()};
+        texBindings[3] = {4, &material->ambientOcclusionTexture->getVulkanTexture()};
+        texBindings[4] = {5, &material->metallicRoughnessTexture->getVulkanTexture()};
+        material->descriptorSet.bind(buffBindings, texBindings, {});
+    }
+}
+
+void AssetsManager::finalizeDescriptorParticlesTypes(VulkanRenderer& vulkan) {
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
+    auto binding = bindings.begin();
+
+    binding->binding = 0;
+    binding->descriptorCount = 1;
+    binding->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    binding->pImmutableSamplers = nullptr;
+    binding->stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                          VK_SHADER_STAGE_COMPUTE_BIT;
+    binding++;
+
+    binding->binding = 1;
+    binding->descriptorCount = 1;
+    binding->descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binding->pImmutableSamplers = nullptr;
+    binding->stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    descriptorParticlesTypes.layout = VulkanDescriptorSetLayout{vulkan, bindings};
+    descriptorParticlesTypes.pool = VulkanDescriptorPool{vulkan, bindings, particlesTypes.size()};
+
+    for (auto& particlesType : particlesTypes) {
+        auto descriptorSet = descriptorParticlesTypes.pool.createDescriptorSet(descriptorParticlesTypes.layout);
+
+        descriptorSet.bindUniform(0, particlesTypesUbo, true, sizeof(ParticlesType::Uniform));
+        descriptorSet.bindTexture(1, particlesType.second->getTexture()->getVulkanTexture());
+
+        particlesType.second->setDescriptorSet(std::move(descriptorSet));
+    }
 }
 
 void AssetsManager::findAssets() {

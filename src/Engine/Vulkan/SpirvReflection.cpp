@@ -101,6 +101,7 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
         input.format = findVkFormat(type);
         input.name = resource.name;
         input.location = compiler->get_decoration(resource.id, spv::DecorationLocation);
+        input.set = compiler->get_decoration(resource.id, spv::DecorationDescriptorSet);
     }
 
     for (const auto& resource : resources.uniform_buffers) {
@@ -112,13 +113,10 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
         uniform.binding = compiler->get_decoration(resource.id, spv::DecorationBinding);
         uniform.size = compiler->get_declared_struct_size(type);
         uniform.name = resource.name;
+        uniform.set = compiler->get_decoration(resource.id, spv::DecorationDescriptorSet);
 
         if (!type.array.empty()) {
             EXCEPTION("Array uniforms are not supported");
-        }
-
-        if (compiler->get_decoration(resource.id, spv::DecorationDescriptorSet) != 0) {
-            EXCEPTION("Uniforms with set number other than 0 are not supported");
         }
     }
 
@@ -130,13 +128,10 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
 
         storageBuffer.binding = compiler->get_decoration(resource.id, spv::DecorationBinding);
         storageBuffer.name = resource.name;
+        storageBuffer.set = compiler->get_decoration(resource.id, spv::DecorationDescriptorSet);
 
         if (!type.array.empty()) {
             EXCEPTION("Array storage buffers are not supported");
-        }
-
-        if (compiler->get_decoration(resource.id, spv::DecorationDescriptorSet) != 0) {
-            EXCEPTION("Storage buffers with set number other than 0 are not supported");
         }
     }
 
@@ -147,6 +142,7 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
         const auto& type = compiler->get_type_from_variable(resource.id);
         sampler.name = resource.name;
         sampler.binding = compiler->get_decoration(resource.id, spv::DecorationBinding);
+        sampler.set = compiler->get_decoration(resource.id, spv::DecorationDescriptorSet);
 
         if (!type.array.empty()) {
             EXCEPTION("Sampler: {} can not be of array type", resource.name);
@@ -160,6 +156,7 @@ SpirvReflection::SpirvReflection(const std::vector<uint32_t>& spriv) :
         const auto& type = compiler->get_type_from_variable(resource.id);
         subpassInput.name = resource.name;
         subpassInput.binding = compiler->get_decoration(resource.id, spv::DecorationBinding);
+        subpassInput.set = compiler->get_decoration(resource.id, spv::DecorationDescriptorSet);
 
         if (!type.array.empty()) {
             EXCEPTION("Sampler: {} can not be of array type", resource.name);

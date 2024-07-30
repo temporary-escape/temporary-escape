@@ -2,17 +2,16 @@
 #extension GL_ARB_separate_shader_objects: enable
 #include "includes/common.glsl"
 
-layout (std140, binding = 0) uniform Camera {
+layout (std140, set = 0, binding = 0) uniform Camera {
     SCamera camera;
 };
 
-layout (std140, binding = 1) uniform ParticlesTypes {
-    SParticlesType particlesTypes[1024];
+layout (std140, set = 1, binding = 0) uniform ParticlesType {
+    SParticlesType particlesType;
 };
 
-layout (std140, binding = 2) uniform ParticlesBatch {
+layout (std140, set = 2, binding = 0) uniform ParticlesBatch {
     mat4 modelMatrix;
-    int type;
     float timeDelta;
     float strength;
     float alpha;
@@ -131,8 +130,6 @@ void geometrize(SParticlesType particlesType, vec4 pos, float time) {
 }
 
 void main() {
-    SParticlesType particlesType = particlesTypes[batch.type];
-
     float step = particlesType.duration / float(particlesType.count);
     int index = gl_InstanceIndex;
 

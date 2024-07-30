@@ -20,9 +20,11 @@ function EntitySectorAsteroidField.populate (self)
     }
     scene:create_entity_template("asteroid_cluster", data)
 
-    for i = 0, 5 do
-        local npc = scene:create_entity_template("scout_ship", data)
-        npc.transform:translate(engine.Vector3.new(200.0 * i, 20.0, 0.0))
+    for x = 0, 9 do
+        for y = 0, 2 do
+            local npc = scene:create_entity_template("scout_ship", data)
+            npc.transform:translate(engine.Vector3.new(100.0 * x, 50.0, 100.0 * y))
+        end
     end
 end
 

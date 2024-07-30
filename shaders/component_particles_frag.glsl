@@ -6,15 +6,14 @@ layout (location = 0) in VS_OUT {
     vec4 color;
 } vs_out;
 
-layout (std140, binding = 2) uniform ParticlesBatch {
+layout (std140, set = 2, binding = 0) uniform ParticlesBatch {
     mat4 modelMatrix;
-    int type;
     float timeDelta;
     float strength;
     float alpha;
 } batch;
 
-layout (binding = 3) uniform sampler2D colorTexture;
+layout (set = 1, binding = 1) uniform sampler2D colorTexture;
 
 layout (location = 0) out vec4 outColor;
 

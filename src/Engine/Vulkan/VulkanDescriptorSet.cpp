@@ -6,9 +6,9 @@
 
 using namespace Engine;
 
-VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, const VulkanDescriptorPool& descriptorPool,
-                                         const VulkanDescriptorSetLayout& layout) :
-    device{device} {
+VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, VulkanDescriptorPool& descriptorPool,
+                                         const VulkanDescriptorSetLayout& layout, bool autoFree) :
+    device{device}, descriptorPool{&descriptorPool}, descriptorSetLayout{&layout}, autoFree{autoFree} {
 
     auto layoutPtr = layout.getHandle();
 
@@ -21,12 +21,23 @@ VulkanDescriptorSet::VulkanDescriptorSet(VkDevice device, const VulkanDescriptor
     if (const auto err = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet); err != VK_SUCCESS) {
         EXCEPTION("Failed to allocate descriptor sets! Error: {}", err);
     }
+
+    descriptorPool.setAllocated(1);
 }
 
-VulkanDescriptorSet::~VulkanDescriptorSet() = default;
+VulkanDescriptorSet::~VulkanDescriptorSet() {
+    VulkanDescriptorSet::destroy();
+}
 
 VulkanDescriptorSet::VulkanDescriptorSet(VulkanDescriptorSet&& other) noexcept {
     swap(other);
+}
+
+void VulkanDescriptorSet::destroy() {
+    if (autoFree && descriptorSet != VK_NULL_HANDLE) {
+        vkFreeDescriptorSets(device, descriptorPool->getHandle(), 1, &descriptorSet);
+        descriptorPool->setFreed(1);
+    }
 }
 
 VulkanDescriptorSet& VulkanDescriptorSet::operator=(VulkanDescriptorSet&& other) noexcept {
@@ -39,6 +50,8 @@ VulkanDescriptorSet& VulkanDescriptorSet::operator=(VulkanDescriptorSet&& other)
 void VulkanDescriptorSet::swap(VulkanDescriptorSet& other) noexcept {
     std::swap(descriptorSet, other.descriptorSet);
     std::swap(device, other.device);
+    std::swap(descriptorPool, other.descriptorPool);
+    std::swap(descriptorSetLayout, other.descriptorSetLayout);
 }
 
 void VulkanDescriptorSet::bind(const Span<VkWriteDescriptorSet>& writes) {
@@ -106,4 +119,70 @@ void VulkanDescriptorSet::bind(const Span<VulkanBufferBinding>& uniforms, const 
     }
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+
+void VulkanDescriptorSet::bindUniform(const uint32_t binding, const VulkanBuffer& buffer, const bool dynamic,
+                                      const size_t range) {
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = buffer.getHandle();
+    bufferInfo.offset = 0;
+    bufferInfo.range = range ? range : buffer.getSize();
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = descriptorSet;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = dynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &bufferInfo;
+
+    vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+}
+
+void VulkanDescriptorSet::bindTexture(const uint32_t binding, const VulkanTexture& texture) {
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = texture.getImageView();
+    imageInfo.sampler = texture.getSampler();
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = descriptorSet;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.descriptorCount = 1;
+    write.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+}
+
+void VulkanDescriptorSet::bindTextures(const Span<VulkanTextureBinding>& textures) {
+    std::array<VkDescriptorImageInfo, 16> imageInfos{};
+    auto imageInfo = imageInfos.begin();
+    for (const auto& texture : textures) {
+        imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo->imageView = texture.texture->getImageView();
+        imageInfo->sampler = texture.texture->getSampler();
+        imageInfo++;
+    }
+
+    std::array<VkWriteDescriptorSet, 16> writes{};
+    auto write = writes.begin();
+    for (const auto& texture : textures) {
+        const auto index = std::distance(writes.begin(), write);
+
+        write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write->dstSet = descriptorSet;
+        write->dstBinding = texture.binding;
+        write->dstArrayElement = 0;
+        write->descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write->descriptorCount = 1;
+        write->pImageInfo = &imageInfos.at(index);
+        write++;
+    }
+
+    const auto count = std::distance(writes.begin(), write);
+    vkUpdateDescriptorSets(device, count, writes.data(), 0, nullptr);
 }

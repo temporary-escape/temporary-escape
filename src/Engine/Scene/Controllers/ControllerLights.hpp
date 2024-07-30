@@ -29,9 +29,7 @@ public:
         return uboDirectionalLights;
     }
 
-    const VulkanDoubleBuffer& getUboShadowCamera() const {
-        return uboShadowCamera;
-    }
+    const VulkanDescriptorSet& getDescriptorSetShadowCamera() const;
 
     const VulkanDoubleBuffer& getUboShadowsViewProj() const {
         return uboShadowsViewProj;
@@ -45,12 +43,17 @@ private:
     void updateDirectionalLights(VulkanRenderer& vulkan);
     void calculateShadowCamera(VulkanRenderer& vulkan);
     void prepareUboShadow(VulkanRenderer& vulkan);
+    void prepareDescriptorSets(VulkanRenderer& vulkan);
 
     Scene& scene;
     entt::registry& reg;
     bool uboShadowReady{false};
+    VulkanRenderer* device{nullptr};
     VulkanDoubleBuffer uboShadowCamera;
     VulkanDoubleBuffer uboShadowsViewProj;
     VulkanDoubleBuffer uboDirectionalLights;
+    VulkanDescriptorPool descriptorPool;
+    VulkanDescriptorSetLayout descriptorSetLayout;
+    std::array<VulkanDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSetsShadowCamera;
 };
 } // namespace Engine

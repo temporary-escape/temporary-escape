@@ -97,6 +97,47 @@ RenderResources::RenderResources(VulkanRenderer& vulkan, const VulkanBuffer& blo
     defaultSSAO = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 1);
     defaultShadow = createTextureOfColor(vulkan, Color4{1.0f, 1.0f, 1.0f, 1.0f}, 4);
     defaultBloom = createTextureOfColor(vulkan, Color4{0.0f, 0.0f, 0.0f, 1.0f}, 1);
+
+    descriptorPool = VulkanDescriptorPool{vulkan};
+
+    {
+        std::array<VkDescriptorSetLayoutBinding, 8> bindings{};
+        auto binding = bindings.begin();
+
+        binding->binding = 0;
+        binding->descriptorCount = 1;
+        binding->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        binding->pImmutableSamplers = nullptr;
+        binding->stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                              VK_SHADER_STAGE_COMPUTE_BIT;
+        binding++;
+
+        for (size_t i = 1; i <= 7; i++) {
+            binding->binding = i;
+            binding->descriptorCount = 1;
+            binding->descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            binding->pImmutableSamplers = nullptr;
+            binding->stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            binding++;
+        }
+
+        blockMaterialsDescriptorSetLayout = VulkanDescriptorSetLayout{vulkan, bindings};
+
+        blockMaterialsDescriptorSet =
+            VulkanDescriptorSet{vulkan.getDevice(), descriptorPool, blockMaterialsDescriptorSetLayout};
+
+        std::array<VulkanBufferBinding, 1> uniforms{};
+        std::array<VulkanTextureBinding, 7> textures{};
+        uniforms[0] = {0, &blockMaterials};
+        textures[0] = {1, &materialTextures.get(TextureUsage::Diffuse).getTexture()};
+        textures[1] = {2, &materialTextures.get(TextureUsage::Emissive).getTexture()};
+        textures[2] = {3, &materialTextures.get(TextureUsage::Normal).getTexture()};
+        textures[3] = {4, &materialTextures.get(TextureUsage::AmbientOcclusion).getTexture()};
+        textures[4] = {5, &materialTextures.get(TextureUsage::MetallicRoughness).getTexture()};
+        textures[5] = {6, &materialTextures.get(TextureUsage::Mask).getTexture()};
+        textures[6] = {7, &palette};
+        blockMaterialsDescriptorSet.bind(uniforms, textures, {});
+    }
 }
 
 RenderResources::~RenderResources() {

@@ -87,12 +87,8 @@ public:
         return spaceDust;
     }
 
-    const VulkanBuffer& getBlockMaterials() const {
-        return blockMaterials;
-    }
-
-    const MaterialTextures& getMaterialTextures() const {
-        return materialTextures;
+    const VulkanDescriptorSet& getBlockMaterialsDescriptorSet() const {
+        return blockMaterialsDescriptorSet;
     }
 
     const VulkanBuffer& getParticlesTypes() const {
@@ -116,6 +112,9 @@ private:
     const VulkanBuffer& blockMaterials;
     const VulkanBuffer& particlesTypes;
     const MaterialTextures& materialTextures;
+    VulkanDescriptorPool descriptorPool;
+    VulkanDescriptorSetLayout blockMaterialsDescriptorSetLayout;
+    VulkanDescriptorSet blockMaterialsDescriptorSet;
     WorldSpaceText textTacticalOverlay;
     Mesh meshFullScreenQuad;
     Mesh meshPlanet;

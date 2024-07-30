@@ -52,7 +52,6 @@ void ControllerGrid::recalculate(VulkanRenderer& vulkan) {
             }
 
             ComponentParticles::ParticlesBatchUniform batch{};
-            batch.type = static_cast<int>(thruster.particles->getIndex());
             batch.modelMatrix = model * thruster.mat;
             batch.timeDelta = vulkan.getRenderTime();
             batch.strength = strength;
@@ -104,6 +103,24 @@ void ControllerGrid::addThrustParticles(VulkanRenderer& vulkan,
         bufferInfo.memoryFlags =
             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         particlesBatch.uniforms = VulkanDoubleBuffer{vulkan, bufferInfo};
+
+        VkDescriptorSetLayoutBinding binding{};
+        binding.binding = 0;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        binding.pImmutableSamplers = nullptr;
+        binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
+
+        particlesBatch.descriptorPool = VulkanDescriptorPool{vulkan, {&binding, 1}, MAX_FRAMES_IN_FLIGHT};
+        particlesBatch.descriptorSetLayout = VulkanDescriptorSetLayout{vulkan, {&binding, 1}};
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            particlesBatch.descriptorSetsBatch[i] =
+                particlesBatch.descriptorPool.createDescriptorSet(particlesBatch.descriptorSetLayout);
+            particlesBatch.descriptorSetsBatch[i].bindUniform(
+                0, particlesBatch.uniforms.getBuffers()[i], true, sizeof(ComponentParticles::ParticlesBatchUniform));
+        }
     }
 
     if (particlesBatch.count >= particlesBatchSize) {
@@ -114,7 +131,8 @@ void ControllerGrid::addThrustParticles(VulkanRenderer& vulkan,
         particlesBatch.uniforms.getCurrentBuffer().getMappedPtr());
 
     const auto index = particlesBatch.count++;
-    particlesBatch.textures[index] = &particlesType->getTexture()->getVulkanTexture();
+    particlesBatch.descriptorSetsTypes[index] = &particlesType->getDescriptorSet();
+    particlesBatch.descriptorSetsIndexes[index] = static_cast<uint32_t>(particlesType->getIndex());
     particlesBatch.counts[index] = particlesType->getCount();
     std::memcpy(&dst[index], &uniform, sizeof(uniform));
 }

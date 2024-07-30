@@ -16,7 +16,7 @@ void ServiceGalaxy::handle(Request2<MessageFetchGalaxyRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchGalaxyRequest");
+    // logger.debug("Handle MessageFetchGalaxyRequest");
 
     // Get the main galaxy ID
     const auto mainGalaxyId = db.get<MetaData>("main_galaxy_id");

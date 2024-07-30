@@ -30,6 +30,8 @@ struct ENGINE_API VulkanRenderPassBeginInfo {
 
 class ENGINE_API VulkanCommandBuffer : public VulkanDisposable {
 public:
+    static const Span<uint32_t> noOffsets;
+
     VulkanCommandBuffer() = default;
     explicit VulkanCommandBuffer(VulkanDevice& device, VulkanCommandPool& commandPool,
                                  VulkanDescriptorPool& descriptorPool);
@@ -77,7 +79,7 @@ public:
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const VkBufferImageCopy& region);
     void copyBufferToImage(const VulkanBuffer& src, const VulkanTexture& dst, const Span<VkBufferImageCopy>& regions);
     void bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineLayout pipelineLayout,
-                           bool isCompute = false);
+                           bool isCompute = false, uint32_t numSet = 0, const Span<uint32_t>& offsets = noOffsets);
     void bindDescriptorSet(const VulkanDescriptorSet& descriptorSet, VkPipelineBindPoint bindPoint,
                            VkPipelineLayout pipelineLayout, uint32_t setNumber);
     void pipelineBarrier(const VkPipelineStageFlags& source, const VkPipelineStageFlags& destination,

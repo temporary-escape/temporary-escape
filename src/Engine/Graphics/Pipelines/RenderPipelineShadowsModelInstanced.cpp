@@ -22,12 +22,5 @@ RenderPipelineShadowsModelInstanced::RenderPipelineShadowsModelInstanced(VulkanR
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::None);
     setDepthClamp(DepthClamp::Enabled);
-}
-
-void RenderPipelineShadowsModelInstanced::setUniformCamera(const VulkanBuffer& ubo, const uint32_t index) {
-    uniforms[0] = {"Camera", ubo, index * sizeof(Camera::Uniform), sizeof(Camera::Uniform)};
-}
-
-void RenderPipelineShadowsModelInstanced::flushDescriptors(VulkanCommandBuffer& vkb) {
-    bindDescriptors(vkb, uniforms, {}, {});
+    setDynamic("Camera");
 }

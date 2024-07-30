@@ -61,6 +61,7 @@ struct ENGINE_API VulkanStageInput {
     std::string name;
     uint32_t location{0};
     VkFormat format;
+    uint32_t set{0};
 
     bool operator==(const VulkanStageInput& other) const {
         return name == other.name && location == other.location && format == other.format;
@@ -75,6 +76,7 @@ struct ENGINE_API VulkanStageUniform {
     std::string name;
     uint32_t binding{0};
     uint32_t size{0};
+    uint32_t set{0};
 
     bool operator==(const VulkanStageUniform& other) const {
         return name == other.name && binding == other.binding && size == other.size;
@@ -88,6 +90,7 @@ struct ENGINE_API VulkanStageUniform {
 struct ENGINE_API VulkanStageStorageBuffer {
     std::string name;
     uint32_t binding{0};
+    uint32_t set{0};
 
     bool operator==(const VulkanStageStorageBuffer& other) const {
         return name == other.name && binding == other.binding;
@@ -139,6 +142,7 @@ struct ENGINE_API VulkanStagePushConstants {
 struct ENGINE_API VulkanStageSampler {
     std::string name;
     uint32_t binding{0};
+    uint32_t set{0};
 };
 
 struct ENGINE_API VulkanVertexLayout {

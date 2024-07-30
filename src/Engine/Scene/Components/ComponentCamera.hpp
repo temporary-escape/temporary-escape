@@ -11,7 +11,7 @@ public:
     COMPONENT_DEFAULTS(ComponentCamera);
 
     void update(float delta);
-    void recalculate(VulkanRenderer& vulkan);
+    void recalculate(VulkanRenderer& vulkan, VulkanDescriptorSetPool& descriptorPool);
 
     [[nodiscard]] const VulkanDoubleBuffer& getUbo() const {
         return ubo;
@@ -19,6 +19,14 @@ public:
 
     [[nodiscard]] const VulkanDoubleBuffer& getUboZeroPos() const {
         return uboZeroPos;
+    }
+
+    [[nodiscard]] const VulkanDescriptorSet& getDescriptorSet() const {
+        return descriptorSets.at(device->getCurrentFrameNum());
+    }
+    
+    [[nodiscard]] const VulkanDescriptorSet& getDescriptorSetZeroPos() const {
+        return descriptorSetsZeroPos.at(device->getCurrentFrameNum());
     }
 
     /*void setSpeed(float value) {
@@ -48,8 +56,11 @@ private:
     // void updateRotationFreeLook(const Vector2& diff);
     // void moveToOrtographic(const Vector3& position);
 
+    VulkanRenderer* device{nullptr};
     VulkanDoubleBuffer ubo;
     VulkanDoubleBuffer uboZeroPos;
+    std::array<VulkanDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
+    std::array<VulkanDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSetsZeroPos;
     bool panning{false};
     /*bool move[6]{false};
     float speed{2.0f};

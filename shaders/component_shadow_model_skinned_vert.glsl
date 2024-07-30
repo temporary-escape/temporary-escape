@@ -6,6 +6,11 @@ layout (std140, set = 0, binding = 0) uniform Camera {
     SCamera camera;
 };
 
+layout (std140, set = 1, binding = 0) uniform Armature {
+    mat4 joints[16];
+    int count;
+} armature;
+
 layout (push_constant) uniform Uniforms {
     mat4 modelMatrix;
     mat3 normalMatrix;
@@ -16,6 +21,8 @@ layout (location = 0) in vec3 in_Position;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 layout (location = 3) in vec4 in_Tangent;
+layout (location = 4) in vec4 in_Joints;
+layout (location = 5) in vec4 in_Weights;
 
 layout (location = 0) out VS_OUT {
     vec3 normal;
@@ -30,9 +37,15 @@ out gl_PerVertex {
 };
 
 void main() {
-    vec4 worldPos = uniforms.modelMatrix * vec4(in_Position, 1.0);
-    vec3 N = normalize(uniforms.modelMatrix * vec4(in_Normal, 0.0)).xyz;
-    vec3 T = normalize(uniforms.modelMatrix * vec4(in_Tangent.xyz, 0.0)).xyz;
+    mat4 skinMat =
+    in_Weights.x * armature.joints[int(in_Joints.x)] +
+    in_Weights.y * armature.joints[int(in_Joints.y)] +
+    in_Weights.z * armature.joints[int(in_Joints.z)] +
+    in_Weights.w * armature.joints[int(in_Joints.w)];
+
+    vec4 worldPos = uniforms.modelMatrix * skinMat * vec4(in_Position, 1.0);
+    vec3 N = normalize(uniforms.normalMatrix * mat3(skinMat) * in_Normal);
+    vec3 T = normalize(uniforms.normalMatrix * mat3(skinMat) * in_Tangent.xyz);
 
     vs_out.normal = N;
     vs_out.worldPos = worldPos.xyz;

@@ -64,6 +64,10 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
     auto systemGrids = scene.getView<ComponentTransform, ComponentGrid>(entt::exclude<TagDisabled>);
 
     pipelineGrid.bind(vkb);
+    std::array<uint32_t, 1> offsets = {
+        static_cast<uint32_t>(sizeof(Camera::Uniform) * index),
+    };
+    pipelineGrid.setDesriptorSet(vkb, 0, controllerLights.getDescriptorSetShadowCamera(), offsets);
 
     for (auto&& [entity, transform, grid] : systemGrids.each()) {
         const auto& mesh = grid.getMesh();
@@ -79,9 +83,6 @@ void RenderPassShadow::renderGrids(VulkanCommandBuffer& vkb, Scene& scene) {
         pipelineGrid.setEntityColor(entityColor(entity));
         pipelineGrid.flushConstants(vkb);
 
-        pipelineGrid.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-        pipelineGrid.flushDescriptors(vkb);
-
         pipelineGrid.renderMesh(vkb, mesh);
     }
 }
@@ -91,13 +92,17 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
     auto systemModels = scene.getView<ComponentTransform, ComponentModel>(entt::exclude<TagDisabled>);
 
     pipelineModel.bind(vkb);
+    std::array<uint32_t, 1> offsets = {
+        static_cast<uint32_t>(sizeof(Camera::Uniform) * index),
+    };
+    pipelineModel.setDesriptorSet(vkb, 0, controllerLights.getDescriptorSetShadowCamera(), offsets);
 
     for (auto&& [entity, transform, model] : systemModels.each()) {
         if (transform.isStatic()) {
             continue;
         }
 
-        const auto modelMatrix = transform.getAbsoluteTransform();
+        const auto modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineModel.setModelMatrix(modelMatrix);
@@ -116,9 +121,6 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
                     EXCEPTION("Primitive has no material");
                 }
 
-                pipelineModel.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-                pipelineModel.flushDescriptors(vkb);
-
                 pipelineModel.renderMesh(vkb, primitive.mesh);
             }
         }
@@ -128,12 +130,16 @@ void RenderPassShadow::renderModels(VulkanCommandBuffer& vkb, Scene& scene) {
 void RenderPassShadow::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scene) {
     auto viewModelsSkinned = scene.getView<ComponentTransform, ComponentModelSkinned>(entt::exclude<TagDisabled>);
     auto& controllerLights = scene.getController<ControllerLights>();
-    auto& controllerModelSkinned = scene.getController<ControllerModelSkinned>();
+    auto& controllerModelsSkinned = scene.getController<ControllerModelSkinned>();
 
     pipelineModelSkinned.bind(vkb);
+    std::array<uint32_t, 1> offsets = {
+        static_cast<uint32_t>(sizeof(Camera::Uniform) * index),
+    };
+    pipelineModelSkinned.setDesriptorSet(vkb, 0, controllerLights.getDescriptorSetShadowCamera(), offsets);
 
     for (auto&& [entity, transform, component] : viewModelsSkinned.each()) {
-        const auto& modelMatrix = transform.getAbsoluteTransform();
+        const auto& modelMatrix = transform.getAbsoluteInterpolatedTransform();
         const auto normalMatrix = glm::transpose(glm::inverse(glm::mat3x3(modelMatrix)));
 
         pipelineModelSkinned.setModelMatrix(modelMatrix);
@@ -147,15 +153,14 @@ void RenderPassShadow::renderModelsSkinned(VulkanCommandBuffer& vkb, Scene& scen
                 continue;
             }
 
+            offsets[0] = component.getUboOffset();
+            pipelineModelSkinned.setDesriptorSet(vkb, 1, controllerModelsSkinned.getDescriptorSet(), offsets);
+
             for (auto& primitive : node.primitives) {
                 if (!primitive.material) {
                     EXCEPTION("Primitive has no material");
                 }
 
-                pipelineModelSkinned.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(), index);
-                pipelineModelSkinned.setUniformArmature(controllerModelSkinned.getUbo().getCurrentBuffer(),
-                                                        component.getUboOffset());
-                pipelineModelSkinned.flushDescriptors(vkb);
                 pipelineModelSkinned.renderMesh(vkb, primitive.mesh);
             }
         }
@@ -167,6 +172,10 @@ void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
     auto& controllerStaticModel = scene.getController<ControllerStaticModel>();
 
     pipelineModelInstanced.bind(vkb);
+    std::array<uint32_t, 1> offsets = {
+        static_cast<uint32_t>(sizeof(Camera::Uniform) * index),
+    };
+    pipelineModelInstanced.setDesriptorSet(vkb, 0, controllerLights.getDescriptorSetShadowCamera(), offsets);
 
     for (auto&& [model, buffer] : controllerStaticModel.getBuffers()) {
         for (const auto& node : model->getNodes()) {
@@ -176,10 +185,6 @@ void RenderPassShadow::renderModelsInstanced(VulkanCommandBuffer& vkb, Scene& sc
             }
 
             for (auto& primitive : node.primitives) {
-                pipelineModelInstanced.setUniformCamera(controllerLights.getUboShadowCamera().getCurrentBuffer(),
-                                                        index);
-                pipelineModelInstanced.flushDescriptors(vkb);
-
                 pipelineModelInstanced.renderMeshInstanced(
                     vkb, primitive.mesh, buffer.getCurrentBuffer(), buffer.count());
             }

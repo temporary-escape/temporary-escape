@@ -30,7 +30,31 @@ void ControllerModelSkinned::update(const float delta) {
 }
 
 void ControllerModelSkinned::recalculate(VulkanRenderer& vulkan) {
-    buffer.recalculate(vulkan);
+    if (!descriptorPool) {
+        device = &vulkan;
+
+        VkDescriptorSetLayoutBinding binding{};
+        binding.binding = 0;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        binding.pImmutableSamplers = nullptr;
+        binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
+
+        descriptorPool = VulkanDescriptorPool{vulkan, {&binding, 1}, MAX_FRAMES_IN_FLIGHT * 2 * 2};
+        descriptorSetLayout = VulkanDescriptorSetLayout{vulkan, {&binding, 1}};
+    }
+
+    if (buffer.recalculate(vulkan)) {
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            if (descriptorSets[i]) {
+                vulkan.dispose(std::move(descriptorSets[i]));
+            }
+            descriptorSets[i] = descriptorPool.createDescriptorSet(descriptorSetLayout);
+            descriptorSets[i].bindUniform(
+                0, buffer.getBuffer().getBuffers()[i], true, sizeof(ComponentModelSkinned::Armature));
+        }
+    }
 }
 
 void ControllerModelSkinned::addOrUpdate(entt::entity handle, ComponentModelSkinned& component) {
@@ -79,4 +103,8 @@ void ControllerModelSkinned::onUpdate(entt::registry& r, const entt::entity hand
 void ControllerModelSkinned::onDestroy(entt::registry& r, const entt::entity handle) {
     (void)r;
     remove(handle);
+}
+
+const VulkanDescriptorSet& ControllerModelSkinned::getDescriptorSet() const {
+    return descriptorSets.at(device->getCurrentFrameNum());
 }

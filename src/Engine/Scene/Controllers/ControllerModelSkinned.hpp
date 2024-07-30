@@ -22,9 +22,7 @@ public:
 
     void recalculate(VulkanRenderer& vulkan) override;
 
-    [[nodiscard]] const VulkanArrayBuffer& getUbo() const {
-        return buffer;
-    }
+    [[nodiscard]] const VulkanDescriptorSet& getDescriptorSet() const;
 
 private:
     void addOrUpdate(entt::entity handle, ComponentModelSkinned& component);
@@ -37,5 +35,9 @@ private:
     Scene& scene;
     entt::registry& reg;
     VulkanArrayBuffer buffer;
+    VulkanRenderer* device{nullptr};
+    VulkanDescriptorPool descriptorPool;
+    VulkanDescriptorSetLayout descriptorSetLayout;
+    std::array<VulkanDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSets;
 };
 } // namespace Engine

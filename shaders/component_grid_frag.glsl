@@ -2,17 +2,17 @@
 #extension GL_ARB_separate_shader_objects: enable
 #include "includes/common.glsl"
 
-layout (std140, binding = 1) uniform Materials {
+layout (std140, set = 1, binding = 0) uniform Materials {
     SBlockMaterial materials[1024];
 };
 
-layout (binding = 2) uniform sampler2DArray baseColorTexture;
-layout (binding = 3) uniform sampler2DArray emissiveTexture;
-layout (binding = 4) uniform sampler2DArray normalTexture;
-layout (binding = 5) uniform sampler2DArray ambientOcclusionTexture;
-layout (binding = 6) uniform sampler2DArray metallicRoughnessTexture;
-layout (binding = 7) uniform sampler2DArray maskTexture;
-layout (binding = 8) uniform sampler1D paletteTexture;
+layout (set = 1, binding = 1) uniform sampler2DArray baseColorTexture;
+layout (set = 1, binding = 2) uniform sampler2DArray emissiveTexture;
+layout (set = 1, binding = 3) uniform sampler2DArray normalTexture;
+layout (set = 1, binding = 4) uniform sampler2DArray ambientOcclusionTexture;
+layout (set = 1, binding = 5) uniform sampler2DArray metallicRoughnessTexture;
+layout (set = 1, binding = 6) uniform sampler2DArray maskTexture;
+layout (set = 1, binding = 7) uniform sampler1D paletteTexture;
 
 layout (location = 0) in VS_OUT {
     vec3 normal;

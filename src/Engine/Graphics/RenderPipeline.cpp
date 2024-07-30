@@ -53,11 +53,20 @@ uint32_t RenderPipeline::findBinding(const std::string_view& binding) {
     return it->second;
 }
 
+void RenderPipeline::setDesriptorSet(VulkanCommandBuffer& vkb, uint32_t setNum,
+                                     const VulkanDescriptorSet& descriptorSet, const Span<uint32_t>& offsets) {
+    vkb.bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute(), setNum, offsets);
+}
+
 void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<UniformBindingRef>& uniforms,
                                      const Span<SamplerBindingRef>& textures,
-                                     const Span<SubpassInputBindingRef>& inputs) {
+                                     const Span<SubpassInputBindingRef>& inputs, const uint32_t setNum) {
+    if (!descriptorSetLayouts[setNum]) {
+        EXCEPTION("Pipeline: {} descriptor set layout num: {} is not allocated", name, setNum);
+    }
 
-    auto descriptorSet = descriptorPools.at(vulkan.getCurrentFrameNum()).createDescriptorSet(descriptorSetLayout);
+    auto descriptorSet =
+        descriptorPools[setNum].at(vulkan.getCurrentFrameNum()).createDescriptorSet(descriptorSetLayouts[setNum]);
 
     size_t w{0};
     size_t b{0};
@@ -137,7 +146,7 @@ void RenderPipeline::bindDescriptors(VulkanCommandBuffer& vkb, const Span<Unifor
     }
 
     descriptorSet.bind({descriptors.writes.data(), w});
-    vkb.bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute());
+    vkb.bindDescriptorSet(descriptorSet, pipeline.getLayout(), pipeline.isCompute(), setNum);
 }
 
 void RenderPipeline::pushConstantsBuffer(VulkanCommandBuffer& vkb, const char* src) {
@@ -193,21 +202,30 @@ RenderPipeline::ReflectInfo RenderPipeline::reflect() const {
 }
 
 void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings{};
+    using Bindings = std::vector<VkDescriptorSetLayoutBinding>;
+    std::unordered_map<uint32_t, Bindings> layoutBindingsMap;
 
-    for (const auto& [_, uniform] : resources.uniforms) {
+    for (const auto& [uniformName, uniform] : resources.uniforms) {
+        auto& layoutBindings = layoutBindingsMap[uniform.set];
+
         layoutBindings.emplace_back();
         auto& binding = layoutBindings.back();
 
         binding.binding = uniform.binding;
         binding.descriptorCount = 1;
-        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        if (dynamicUniforms.find(uniformName) != dynamicUniforms.end()) {
+            binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        } else {
+            binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        }
         binding.pImmutableSamplers = nullptr;
         binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
                              VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
     for (const auto& sampler : resources.samplers) {
+        auto& layoutBindings = layoutBindingsMap[sampler.set];
+
         layoutBindings.emplace_back();
         auto& binding = layoutBindings.back();
 
@@ -219,6 +237,8 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
     }
 
     for (const auto& subpassInput : resources.subpassInputs) {
+        auto& layoutBindings = layoutBindingsMap[subpassInput.set];
+
         layoutBindings.emplace_back();
         auto& binding = layoutBindings.back();
 
@@ -230,6 +250,8 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
     }
 
     for (const auto& storageBuffer : resources.storageBuffers) {
+        auto& layoutBindings = layoutBindingsMap[storageBuffer.set];
+
         layoutBindings.emplace_back();
         auto& binding = layoutBindings.back();
 
@@ -240,12 +262,14 @@ void RenderPipeline::createDescriptorSetLayout(const ReflectInfo& resources) {
         binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
-    descriptorSetLayout = vulkan.createDescriptorSetLayout(layoutBindings);
-
-    createDescriptorPool(layoutBindings);
+    for (const auto& [setNum, layoutBindings] : layoutBindingsMap) {
+        descriptorSetLayouts[setNum] = VulkanDescriptorSetLayout{vulkan, layoutBindings};
+        createDescriptorPool(layoutBindings, setNum);
+    }
 }
 
-void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings) {
+void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings,
+                                          const uint32_t setNum) {
     std::unordered_map<VkDescriptorType, uint32_t> descriptorTypeCounts;
     for (const auto& binding : layoutBindings) {
         descriptorTypeCounts[binding.descriptorType] += binding.descriptorCount;
@@ -254,6 +278,7 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
     VulkanDescriptorPool::CreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 
+    // TODO static const size_t maxSetsPerPool = 128;
     static const size_t maxSetsPerPool = 128;
 
     std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
@@ -270,7 +295,7 @@ void RenderPipeline::createDescriptorPool(const std::vector<VkDescriptorSetLayou
     poolInfo.pPoolSizes = descriptorPoolSizes.data();
     poolInfo.maxSets = maxSetsPerPool;
 
-    for (auto& descriptorPool : descriptorPools) {
+    for (auto& descriptorPool : descriptorPools[setNum]) {
         descriptorPool = vulkan.createDescriptorPool(poolInfo);
     }
 }
@@ -370,9 +395,18 @@ void RenderPipeline::createGraphicsPipeline(VulkanRenderPass& renderPass, const 
     pushConstantRange.stageFlags =
         VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_VERTEX_BIT;
 
+    size_t layoutsUsed{0};
+    std::array<VkDescriptorSetLayout, 16> layouts{};
+    auto nextLayout = layouts.begin();
+    for (const auto& descriptorSetLayout : descriptorSetLayouts) {
+        if (descriptorSetLayout) {
+            layoutsUsed++;
+            *nextLayout++ = descriptorSetLayout.getHandle();
+        }
+    }
     pipelineInfo.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineInfo.pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
+    pipelineInfo.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layoutsUsed);
+    pipelineInfo.pipelineLayoutInfo.pSetLayouts = layouts.data();
 
     if (pushConstantRange.size > 0) {
         pipelineInfo.pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -406,9 +440,18 @@ void RenderPipeline::createComputePipeline(const RenderPipeline::ReflectInfo& re
         computeInfo.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
     }
 
+    size_t layoutsUsed{0};
+    std::array<VkDescriptorSetLayout, 16> layouts{};
+    auto nextLayout = layouts.begin();
+    for (const auto& descriptorSetLayout : descriptorSetLayouts) {
+        if (descriptorSetLayout) {
+            layoutsUsed++;
+            *nextLayout++ = descriptorSetLayout.getHandle();
+        }
+    }
     computeInfo.pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    computeInfo.pipelineLayoutInfo.setLayoutCount = 1;
-    computeInfo.pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout.getHandle();
+    computeInfo.pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layoutsUsed);
+    computeInfo.pipelineLayoutInfo.pSetLayouts = layouts.data();
 
     pipeline = vulkan.createPipeline(computeInfo);
 }
@@ -522,9 +565,22 @@ void RenderPipeline::setLineWidth(const float width) {
     pipelineInfo.rasterizer.lineWidth = width;
 }
 
-VulkanDescriptorPool& RenderPipeline::getDescriptionPool() {
-    return descriptorPools.at(vulkan.getCurrentFrameNum());
+void RenderPipeline::setDynamic(const std::string_view& value) {
+    dynamicUniforms.emplace(value);
 }
+
+void RenderPipeline::resetDescriptorPools() {
+    for (auto& pools : descriptorPools) {
+        auto& pool = pools.at(vulkan.getCurrentFrameNum());
+        if (pool) {
+            pool.reset();
+        }
+    }
+}
+
+/*VulkanDescriptorPool& RenderPipeline::getDescriptionPool() {
+    return descriptorPools.at(vulkan.getCurrentFrameNum());
+}*/
 
 void RenderPipeline::bind(VulkanCommandBuffer& vkb) {
     vkb.bindPipeline(pipeline);

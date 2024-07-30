@@ -18,6 +18,7 @@ RenderPipelineModelSkinned::RenderPipelineModelSkinned(VulkanRenderer& vulkan) :
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::None);
+    setDynamic("Armature");
 }
 
 void RenderPipelineModelSkinned::setModelMatrix(const Matrix4& value) {
@@ -30,40 +31,4 @@ void RenderPipelineModelSkinned::setNormalMatrix(const Matrix3& value) {
 
 void RenderPipelineModelSkinned::setEntityColor(const Color4& value) {
     pushConstants(PushConstant{"entityColor", value});
-}
-
-void RenderPipelineModelSkinned::setUniformCamera(const VulkanBuffer& ubo) {
-    uniforms[0] = {"Camera", ubo};
-}
-
-void RenderPipelineModelSkinned::setUniformArmature(const VulkanBuffer& ubo, const size_t offset) {
-    uniforms[1] = {"Armature", ubo, offset, sizeof(ComponentModelSkinned::Armature)};
-}
-
-void RenderPipelineModelSkinned::setUniformMaterial(const VulkanBuffer& ubo) {
-    uniforms[2] = {"Material", ubo};
-}
-
-void RenderPipelineModelSkinned::setTextureBaseColor(const VulkanTexture& texture) {
-    textures[0] = {"baseColorTexture", texture};
-}
-
-void RenderPipelineModelSkinned::setTextureEmissive(const VulkanTexture& texture) {
-    textures[1] = {"emissiveTexture", texture};
-}
-
-void RenderPipelineModelSkinned::setTextureMetallicRoughness(const VulkanTexture& texture) {
-    textures[2] = {"metallicRoughnessTexture", texture};
-}
-
-void RenderPipelineModelSkinned::setTextureNormal(const VulkanTexture& texture) {
-    textures[3] = {"normalTexture", texture};
-}
-
-void RenderPipelineModelSkinned::setTextureAmbientOcclusion(const VulkanTexture& texture) {
-    textures[4] = {"ambientOcclusionTexture", texture};
-}
-
-void RenderPipelineModelSkinned::flushDescriptors(VulkanCommandBuffer& vkb) {
-    bindDescriptors(vkb, uniforms, textures, {});
 }

@@ -12,6 +12,28 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device, const
     }
 }
 
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice& device, const Span<Binding>& bindings) :
+    device{device.getDevice()} {
+
+    std::vector<Binding> sorted;
+    sorted.reserve(bindings.size());
+
+    for (const auto& binding : bindings) {
+        sorted.push_back(binding);
+    }
+
+    std::sort(sorted.begin(), sorted.end(), [](const Binding& a, const Binding& b) { return a.binding < b.binding; });
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(sorted.size());
+    layoutInfo.pBindings = sorted.data();
+
+    if (vkCreateDescriptorSetLayout(device.getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        EXCEPTION("Failed to create descriptor set layout!");
+    }
+}
+
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
     destroy();
 }

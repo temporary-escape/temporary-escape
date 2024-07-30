@@ -17,5 +17,6 @@ public:
 private:
     Scene& scene;
     entt::registry& reg;
+    VulkanDescriptorSetPool descriptorPool;
 };
 } // namespace Engine

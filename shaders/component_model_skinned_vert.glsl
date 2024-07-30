@@ -1,16 +1,12 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#include "includes/common.glsl"
 
-layout (std140, binding = 0) uniform Camera {
-    mat4 transformationProjectionMatrix;
-    mat4 viewProjectionInverseMatrix;
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    ivec2 viewport;
-    vec3 eyesPos;
-} camera;
+layout (std140, set = 0, binding = 0) uniform Camera {
+    SCamera camera;
+};
 
-layout (std140, binding = 2) uniform Armature {
+layout (std140, set = 2, binding = 0) uniform Armature {
     mat4 joints[16];
     int count;
 } armature;

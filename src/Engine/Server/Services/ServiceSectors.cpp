@@ -17,10 +17,10 @@ void ServiceSectors::handle(Request2<MessageFetchSectorRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchSectorRequest galaxy: {} system: {} sector: {}",
-                 data.galaxyId,
-                 data.systemId,
-                 data.sectorId);
+    // logger.debug("Handle MessageFetchSectorRequest galaxy: {} system: {} sector: {}",
+    //              data.galaxyId,
+    //              data.systemId,
+    //              data.sectorId);
 
     const auto found = db.find<SectorData>(fmt::format("{}/{}/{}", data.galaxyId, data.systemId, data.sectorId));
     if (!found) {
@@ -36,8 +36,9 @@ void ServiceSectors::handle(Request2<MessageFetchSectorsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug(
-        "Handle MessageFetchSectorsRequest galaxy: {} system: {} token: {}", data.galaxyId, data.systemId, data.token);
+    // logger.debug(
+    //     "Handle MessageFetchSectorsRequest galaxy: {} system: {} token: {}", data.galaxyId, data.systemId,
+    //     data.token);
 
     MessageFetchSectorsResponse res{};
     res.items =

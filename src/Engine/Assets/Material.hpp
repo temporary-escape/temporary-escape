@@ -20,5 +20,6 @@ struct Material {
     } uniform;
 
     VulkanBuffer ubo;
+    VulkanDescriptorSet descriptorSet;
 };
 } // namespace Engine

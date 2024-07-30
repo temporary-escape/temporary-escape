@@ -22,7 +22,39 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device) : device{device
     // poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        destroy();
+        VulkanDescriptorPool::destroy();
+        EXCEPTION("Failed to create descriptor pool!");
+    }
+
+    maxSets = poolInfo.maxSets;
+}
+
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, const Span<Binding>& bindings, const size_t maxSets) :
+    device{device.getDevice()}, maxSets{maxSets} {
+
+    std::unordered_map<VkDescriptorType, uint32_t> descriptorTypeCounts;
+    for (const auto& binding : bindings) {
+        descriptorTypeCounts[binding.descriptorType] += binding.descriptorCount;
+    }
+
+    VulkanDescriptorPool::CreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+
+    std::vector<VkDescriptorPoolSize> descriptorPoolSizes;
+    descriptorPoolSizes.resize(descriptorTypeCounts.size());
+    size_t idx = 0;
+    for (const auto& [type, descriptorCount] : descriptorTypeCounts) {
+        descriptorPoolSizes[idx].type = type;
+        descriptorPoolSizes[idx].descriptorCount = descriptorCount * maxSets;
+        idx++;
+    }
+
+    poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
+    poolInfo.pPoolSizes = descriptorPoolSizes.data();
+    poolInfo.maxSets = maxSets;
+
+    if (vkCreateDescriptorPool(device.getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        VulkanDescriptorPool::destroy();
         EXCEPTION("Failed to create descriptor pool!");
     }
 }
@@ -30,13 +62,23 @@ VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device) : device{device
 VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice& device, const CreateInfo& createInfo) :
     device{device.getDevice()} {
     if (vkCreateDescriptorPool(device.getDevice(), &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        destroy();
+        VulkanDescriptorPool::destroy();
         EXCEPTION("Failed to create descriptor pool!");
     }
+
+    maxSets = createInfo.maxSets;
+}
+
+void VulkanDescriptorPool::setAllocated(const size_t value) {
+    count += value;
+}
+
+void VulkanDescriptorPool::setFreed(const size_t value) {
+    count -= value;
 }
 
 VulkanDescriptorPool::~VulkanDescriptorPool() {
-    destroy();
+    VulkanDescriptorPool::destroy();
 }
 
 VulkanDescriptorPool::VulkanDescriptorPool(VulkanDescriptorPool&& other) noexcept {
@@ -53,6 +95,8 @@ VulkanDescriptorPool& VulkanDescriptorPool::operator=(VulkanDescriptorPool&& oth
 void VulkanDescriptorPool::swap(VulkanDescriptorPool& other) noexcept {
     std::swap(device, other.device);
     std::swap(descriptorPool, other.descriptorPool);
+    std::swap(count, other.count);
+    std::swap(maxSets, other.maxSets);
 }
 
 void VulkanDescriptorPool::destroy() {

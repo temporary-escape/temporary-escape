@@ -9,6 +9,7 @@ enum class ShipAutopilotAction {
     Idle = 0,
     CancellingRotation,
     Approach,
+    MoveTo,
     KeepDistance,
     Align,
     Orbit,
@@ -40,6 +41,7 @@ public:
     void actionKeepDistance(EntityId target, float distance);
     void actionOrbit(EntityId target, float radius);
     void actionCancelMovement();
+    void actionMoveTo(const Vector3& pos);
 
     bool isReplicated() const {
         return replicated;
@@ -95,6 +97,7 @@ private:
     std::optional<Vector3> getSteeringApproach(Scene& scene, float delta, ComponentTransform& ourTransform);
     std::optional<Vector3> getSteeringKeepAtDistance(Scene& scene, float delta, ComponentTransform& ourTransform);
     std::optional<Vector3> getSteeringOrbit(Scene& scene, float delta, ComponentTransform& ourTransform);
+    std::optional<Vector3> getSteeringMoveTo(Scene& scene, float delta, ComponentTransform& ourTransform);
 
     bool replicated{false};
     EntityId approachTarget{NullEntity};

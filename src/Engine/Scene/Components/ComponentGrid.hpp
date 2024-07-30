@@ -51,11 +51,10 @@ private:
         BlockPtr block;
     };
 
-    void debugIterate(Grid::Iterator iterator);
+    // void debugIterate(Grid::Iterator iterator);
     void createShape(btCompoundShape& compoundShape, Grid::Iterator iterator) const;
 
     bool dirty{false};
-    ComponentDebug* debug{nullptr};
     VulkanRenderer* vulkanRenderer{nullptr};
     Mesh mesh;
     std::vector<BlockCache> blockCache;

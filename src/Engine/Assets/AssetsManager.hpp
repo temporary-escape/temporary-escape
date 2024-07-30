@@ -90,6 +90,10 @@ public:
             return assets.end();
         }
 
+        size_t size() const {
+            return assets.size();
+        }
+
     private:
         Map assets;
     };
@@ -153,7 +157,7 @@ public:
 
     void findAssets();
     void init(VulkanRenderer& vulkan);
-    void finalize();
+    void finalize(VulkanRenderer& vulkan);
 
     const DefaultTextures& getDefaultTextures() const {
         if (!defaultTextures) {
@@ -188,6 +192,8 @@ private:
     template <typename T> void init(Category<T>& assets, const Path& path, const std::set<std::string>& ext);
     template <typename T> std::shared_ptr<T> addAsset(Category<T>& assets, const Path& path);
     template <typename T> void addToLoadQueue(Category<T>& assets);
+    void finalizeDescriptorMaterials(VulkanRenderer& vulkan);
+    void finalizeDescriptorParticlesTypes(VulkanRenderer& vulkan);
 
     const Config& config;
     std::unique_ptr<ImageAtlas> atlas;
@@ -207,6 +213,17 @@ private:
     std::vector<ParticlesType::Uniform> particlesTypeUniforms;
     VulkanBuffer blockMaterialsUbo;
     VulkanBuffer particlesTypesUbo;
+
+    struct {
+        VulkanDescriptorPool pool;
+        VulkanDescriptorSetLayout layout;
+    } descriptorMaterials;
+
+    struct {
+        VulkanDescriptorPool pool;
+        VulkanDescriptorSetLayout layout;
+    } descriptorParticlesTypes;
+
     LoadQueue loadQueue;
 };
 } // namespace Engine

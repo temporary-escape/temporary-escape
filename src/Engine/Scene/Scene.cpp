@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 #include "../Assets/AssetsManager.hpp"
+#include "Controllers/ControllerAgent.hpp"
 #include "Controllers/ControllerBullets.hpp"
 #include "Controllers/ControllerCamera.hpp"
 #include "Controllers/ControllerCameraOrbital.hpp"
@@ -28,21 +29,20 @@ using namespace Engine;
 static auto logger = createLogger(LOG_FILENAME);
 
 Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
-    lua{lua}, dynamicsWorld{*this, reg, config} {
+    lua{lua}, dynamicsWorld{*this, reg, config} /*, counterTp{std::chrono::steady_clock::now()}*/ {
 
     addController<ControllerGrid>(dynamicsWorld, voxelShapeCache);
     addController<ControllerRigidBody>(dynamicsWorld);
     network = &addController<ControllerNetwork>();
     auto& bullets = addController<ControllerBullets>(dynamicsWorld);
     addController<ControllerTurret>(dynamicsWorld, bullets);
-    addController<ControllerShipControl>();
     addController<ControllerModel>();
     // addController<ControllerPathfinding>(dynamicsWorld);
 
     if (voxelShapeCache) {
+        addController<ControllerCamera>();
         addController<ControllerIconSelectable>();
         addController<ControllerIcon>();
-        addController<ControllerCamera>();
         addController<ControllerCameraOrbital>();
         addController<ControllerCameraPanning>();
         addController<ControllerLights>();
@@ -53,6 +53,9 @@ Scene::Scene(const Config& config, VoxelShapeCache* voxelShapeCache, Lua* lua) :
         addController<ControllerPointCloud>();
         addController<ControllerPolyShape>();
         addController<ControllerLines>();
+    } else {
+        addController<ControllerShipControl>();
+        addController<ControllerAgent>();
     }
 }
 
@@ -108,16 +111,42 @@ Entity Scene::fromHandle(EntityId handle) {
 }
 
 void Scene::update(const float delta) {
-    // const auto t0 = std::chrono::steady_clock::now();
+    /*const auto now = std::chrono::steady_clock::now();
+    if (counterTp + std::chrono::seconds{60} < now) {
+        counterTp = now;
+        logger.info("Printing scene counters update: {} render: {}", updateTicks, renderTicks);
+        for (auto& [type, updateCounter] : updateCounters) {
+            auto& renderCounter = renderCounters.at(type);
+            auto avgUpdate = static_cast<float>(updateCounter) / static_cast<float>(updateTicks);
+            auto avgRender = static_cast<float>(renderCounter) / static_cast<float>(renderTicks);
+            avgUpdate /= 1000.0f;
+            avgRender /= 1000.0f;
+            logger.info("Controller: {} update: {:.2f} render: {:.2f}", type.name(), avgUpdate, avgRender);
+            updateCounter = 0;
+            renderCounter = 0;
+        }
+
+        updateTicks = 0;
+        renderTicks = 0;
+    }*/
 
     dynamicsWorld.update(delta);
+
+    //++updateTicks;
 
     // const auto t1 = std::chrono::steady_clock::now();
     // const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
     // logger.info("dynamicsWorld update took: {} ms", ms);
 
-    for (auto& [_, controller] : controllers) {
+    for (auto& [type, controller] : controllers) {
+        /*auto& counter = updateCounters.at(type);
+        const auto t0 = std::chrono::steady_clock::now();*/
+
         controller->update(delta);
+
+        /*const auto t1 = std::chrono::steady_clock::now();
+        const auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+        counter += us;*/
     }
 
     if (selectionEnabled) {
@@ -174,8 +203,17 @@ void Scene::updateSelection() {
 void Scene::recalculate(VulkanRenderer& vulkan) {
     dynamicsWorld.recalculate(vulkan);
 
-    for (auto& [_, controller] : controllers) {
+    // renderTicks++;
+
+    for (auto& [type, controller] : controllers) {
+        /*auto& counter = updateCounters.at(type);
+        const auto t0 = std::chrono::steady_clock::now();*/
+
         controller->recalculate(vulkan);
+
+        /*const auto t1 = std::chrono::steady_clock::now();
+        const auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+        counter += us;*/
     }
 
     if (hasController<ControllerIconSelectable>()) {

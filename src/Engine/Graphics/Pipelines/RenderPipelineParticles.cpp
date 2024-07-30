@@ -17,6 +17,8 @@ RenderPipelineParticles::RenderPipelineParticles(VulkanRenderer& vulkan) :
     setCullMode(VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT);
     setFrontFace(VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE);
     setBlending(Blending::Additive);
+    setDynamic("ParticlesBatch");
+    setDynamic("ParticlesType");
 }
 
 void RenderPipelineParticles::setUniformCamera(const VulkanBuffer& ubo) {

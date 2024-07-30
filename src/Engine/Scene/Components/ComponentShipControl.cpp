@@ -45,6 +45,8 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
         res = getSteeringKeepAtDistance(scene, delta, ourTransform);
     } else if (action == ShipAutopilotAction::Orbit) {
         res = getSteeringOrbit(scene, delta, ourTransform);
+    } else if (action == ShipAutopilotAction::MoveTo) {
+        res = getSteeringMoveTo(scene, delta, ourTransform);
     }
 
     if (!res) {
@@ -84,7 +86,7 @@ void ComponentShipControl::update(Scene& scene, const float delta, ComponentTran
     }
 
     // Did we arrive to the destination?
-    if (action == ShipAutopilotAction::Approach && distance < 10.0f) {
+    if ((action == ShipAutopilotAction::Approach || action == ShipAutopilotAction::MoveTo) && distance < 10.0f) {
         actionCancelMovement();
     }
 
@@ -278,6 +280,11 @@ std::optional<Vector3> ComponentShipControl::getSteeringOrbit(Scene& scene, cons
     return theirPos + rotated;
 }
 
+std::optional<Vector3> ComponentShipControl::getSteeringMoveTo(Scene& scene, const float delta,
+                                                               ComponentTransform& ourTransform) {
+    return targetPos;
+}
+
 void ComponentShipControl::actionApproach(const EntityId target) {
     if (target != approachTarget) {
         recalculateBounds = true;
@@ -309,6 +316,11 @@ void ComponentShipControl::actionOrbit(const EntityId target, const float radius
     approachTarget = target;
     keepAtDistance = radius;
     orbitMatrixChosen = false;
+}
+
+void ComponentShipControl::actionMoveTo(const Vector3& pos) {
+    action = ShipAutopilotAction::MoveTo;
+    targetPos = pos;
 }
 
 void ComponentShipControl::setReplicated(const bool value) {

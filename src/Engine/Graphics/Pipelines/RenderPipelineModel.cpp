@@ -30,35 +30,3 @@ void RenderPipelineModel::setNormalMatrix(const Matrix3& value) {
 void RenderPipelineModel::setEntityColor(const Color4& value) {
     pushConstants(PushConstant{"entityColor", value});
 }
-
-void RenderPipelineModel::setUniformCamera(const VulkanBuffer& ubo) {
-    uniforms[0] = {"Camera", ubo};
-}
-
-void RenderPipelineModel::setUniformMaterial(const VulkanBuffer& ubo) {
-    uniforms[1] = {"Material", ubo};
-}
-
-void RenderPipelineModel::setTextureBaseColor(const VulkanTexture& texture) {
-    textures[0] = {"baseColorTexture", texture};
-}
-
-void RenderPipelineModel::setTextureEmissive(const VulkanTexture& texture) {
-    textures[1] = {"emissiveTexture", texture};
-}
-
-void RenderPipelineModel::setTextureMetallicRoughness(const VulkanTexture& texture) {
-    textures[2] = {"metallicRoughnessTexture", texture};
-}
-
-void RenderPipelineModel::setTextureNormal(const VulkanTexture& texture) {
-    textures[3] = {"normalTexture", texture};
-}
-
-void RenderPipelineModel::setTextureAmbientOcclusion(const VulkanTexture& texture) {
-    textures[4] = {"ambientOcclusionTexture", texture};
-}
-
-void RenderPipelineModel::flushDescriptors(VulkanCommandBuffer& vkb) {
-    bindDescriptors(vkb, uniforms, textures, {});
-}

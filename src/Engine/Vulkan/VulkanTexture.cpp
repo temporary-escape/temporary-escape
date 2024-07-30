@@ -31,7 +31,7 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const CreateInfo& createInfo)
         EXCEPTION("Failed to allocate image view!");
     }
 
-    logger.debug("Created VulkanTexture of size: {} pixels", createInfo.image.extent);
+    // logger.debug("Created VulkanTexture of size: {} pixels", createInfo.image.extent);
 
     format = createInfo.image.format;
     extent = createInfo.image.extent;

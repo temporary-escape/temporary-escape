@@ -8,9 +8,11 @@ class ENGINE_API VulkanDevice;
 class ENGINE_API VulkanDescriptorSetLayout : public VulkanDisposable {
 public:
     using CreateInfo = VkDescriptorSetLayoutCreateInfo;
+    using Binding = VkDescriptorSetLayoutBinding;
 
     VulkanDescriptorSetLayout() = default;
     explicit VulkanDescriptorSetLayout(VulkanDevice& device, const CreateInfo& createInfo);
+    explicit VulkanDescriptorSetLayout(VulkanDevice& device, const Span<Binding>& bindings);
     ~VulkanDescriptorSetLayout();
     VulkanDescriptorSetLayout(const VulkanDescriptorSetLayout& other) = delete;
     VulkanDescriptorSetLayout(VulkanDescriptorSetLayout&& other) noexcept;

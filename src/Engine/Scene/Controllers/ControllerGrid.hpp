@@ -11,8 +11,12 @@ public:
 
     struct ParticlesBatch {
         VulkanDoubleBuffer uniforms;
-        std::array<VulkanTexture*, particlesBatchSize> textures{};
+        std::array<const VulkanDescriptorSet*, particlesBatchSize> descriptorSetsTypes{};
+        std::array<uint32_t, particlesBatchSize> descriptorSetsIndexes{};
         std::array<int, particlesBatchSize> counts{};
+        VulkanDescriptorPool descriptorPool;
+        VulkanDescriptorSetLayout descriptorSetLayout;
+        std::array<VulkanDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSetsBatch;
         size_t count{0};
     };
 

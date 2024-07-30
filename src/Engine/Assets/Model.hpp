@@ -39,6 +39,14 @@ public:
         return nodes;
     }
 
+    [[nodiscard]] const std::list<Material>& getMaterials() const {
+        return materials;
+    }
+
+    [[nodiscard]] std::list<Material>& getMaterials() {
+        return materials;
+    }
+
     float getRadius() const {
         return bbRadius;
     }

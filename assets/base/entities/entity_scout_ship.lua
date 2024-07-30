@@ -25,6 +25,8 @@ function EntityScoutShip.new (entity, data)
 
     entity:add_component_icon(image_icon)
     entity:add_component_label("NPC Ship")
+    entity:add_component_ship_control()
+    entity:add_component_agent()
 
     return inst
 end

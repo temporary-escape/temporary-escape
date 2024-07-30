@@ -188,15 +188,17 @@ void RenderPassForward::renderSceneThrusters(VulkanCommandBuffer& vkb, Scene& sc
     pipelineParticles.bind(vkb);
     currentPipeline = &pipelineParticles;
 
-    pipelineParticles.setUniformCamera(camera.getUbo().getCurrentBuffer());
-    pipelineParticles.setUniformParticlesTypes(resources.getParticlesTypes());
+    pipelineParticles.setDesriptorSet(vkb, 0, camera.getDescriptorSet());
+
+    std::array<uint32_t, 1> offsets{};
 
     for (size_t i = 0; i < batches.count; i++) {
-        const auto* texture = batches.textures[i];
+        offsets[0] = batches.descriptorSetsIndexes[i] * sizeof(ParticlesType::Uniform);
+        pipelineParticles.setDesriptorSet(vkb, 1, *batches.descriptorSetsTypes[i], offsets);
 
-        pipelineParticles.setUniformBatch(batches.uniforms.getCurrentBuffer(), i);
-        pipelineParticles.setTextureColor(*texture);
-        pipelineParticles.flushDescriptors(vkb);
+        offsets[0] = i * sizeof(ComponentParticles::ParticlesBatchUniform);
+        pipelineParticles.setDesriptorSet(vkb, 2, batches.descriptorSetsBatch.at(vulkan.getCurrentFrameNum()), offsets);
+
         vkb.draw(4, batches.counts[i], 0, 0);
     }
 }

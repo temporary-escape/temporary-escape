@@ -8,6 +8,7 @@
 #include "VulkanDescriptorPool.hpp"
 #include "VulkanDescriptorSet.hpp"
 #include "VulkanDescriptorSetLayout.hpp"
+#include "VulkanDescriptorSetPool.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanDoubleBuffer.hpp"
 #include "VulkanFence.hpp"

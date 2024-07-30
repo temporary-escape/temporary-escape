@@ -39,7 +39,7 @@ void RenderPass::begin(VulkanCommandBuffer& vkb) {
     beforeRender(vkb);
 
     for (auto& [pipeline, subpass] : pipelines) {
-        pipeline->getDescriptionPool().reset();
+        pipeline->resetDescriptorPools();
     }
 
     if (!compute) {

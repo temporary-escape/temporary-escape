@@ -167,7 +167,7 @@ EntityId Sector::spawnPlayerEntity(const SessionPtr& session) {
     auto entity = scene->createEntityFrom("player", table);
     auto* transform = scene->tryGetComponent<ComponentTransform>(entity);
     if (transform) {
-        transform->move(Vector3{5000.0f, 0.0f, 0.0f});
+        transform->move(Vector3{100.0f, 0.0f, 0.0f});
     }
 
     return entity;

@@ -21,6 +21,10 @@ void ControllerLights::recalculate(VulkanRenderer& vulkan) {
     prepareUboShadow(vulkan);
     calculateShadowCamera(vulkan);
     updateDirectionalLights(vulkan);
+    if (!descriptorPool) {
+        device = &vulkan;
+        prepareDescriptorSets(vulkan);
+    }
 }
 
 void ControllerLights::updateDirectionalLights(VulkanRenderer& vulkan) {
@@ -199,4 +203,26 @@ void ControllerLights::prepareUboShadow(VulkanRenderer& vulkan) {
             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         uboShadowsViewProj = vulkan.createDoubleBuffer(bufferInfo);
     }
+}
+
+void ControllerLights::prepareDescriptorSets(VulkanRenderer& vulkan) {
+    VkDescriptorSetLayoutBinding binding{};
+    binding.binding = 0;
+    binding.descriptorCount = 1;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    binding.pImmutableSamplers = nullptr;
+    binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                         VK_SHADER_STAGE_COMPUTE_BIT;
+
+    descriptorPool = VulkanDescriptorPool{vulkan, {&binding, 1}, MAX_FRAMES_IN_FLIGHT};
+    descriptorSetLayout = VulkanDescriptorSetLayout{vulkan, {&binding, 1}};
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        descriptorSetsShadowCamera[i] = descriptorPool.createDescriptorSet(descriptorSetLayout);
+        descriptorSetsShadowCamera[i].bindUniform(0, uboShadowCamera.getBuffers()[i], true, sizeof(Camera::Uniform));
+    }
+}
+
+const VulkanDescriptorSet& ControllerLights::getDescriptorSetShadowCamera() const {
+    return descriptorSetsShadowCamera.at(device->getCurrentFrameNum());
 }

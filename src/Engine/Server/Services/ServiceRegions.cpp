@@ -17,7 +17,7 @@ void ServiceRegions::handle(Request2<MessageFetchRegionRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchRegionRequest galaxy: {} region: {}", data.galaxyId, data.regionId);
+    // logger.debug("Handle MessageFetchRegionRequest galaxy: {} region: {}", data.galaxyId, data.regionId);
 
     MessageFetchRegionResponse res{};
     const auto found = db.find<RegionData>(fmt::format("{}/{}", data.galaxyId, data.regionId));
@@ -33,7 +33,7 @@ void ServiceRegions::handle(Request2<MessageFetchRegionsRequest> req) {
     (void)sessions.getSession(req.peer);
     const auto data = req.get();
 
-    logger.debug("Handle MessageFetchRegionsRequest galaxy: {} token: {}", data.galaxyId, data.token);
+    // logger.debug("Handle MessageFetchRegionsRequest galaxy: {} token: {}", data.galaxyId, data.token);
 
     MessageFetchRegionsResponse res{};
     res.items = db.next<RegionData>(fmt::format("{}/", data.galaxyId), data.token, 64, &res.page.token);
